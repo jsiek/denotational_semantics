@@ -31,5 +31,8 @@ unroll-roll = I.unfold-fold
 roll-unroll : (d : ⟨ 𝔻 ⟩) → roll · (unroll · d) ＝ d
 roll-unroll = I.fold-unfold
 
-defined-inj : (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) → defined (inj t · x)
-defined-inj t x = transport is-defined (unroll-roll (η (t , x)) ⁻¹) ⋆
+opaque
+ unfolding inj
+
+ defined-inj : (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) → defined (inj t · x)
+ defined-inj t x = transport is-defined (unroll-roll (η (t , x)) ⁻¹) ⋆

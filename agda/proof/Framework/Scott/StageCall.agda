@@ -107,13 +107,16 @@ seq-iff d d' e f g = antisymmetry 𝔻 (seq · d · e) (seq · d' · e) (below d
 seq-⊥ : (d : ⟨ 𝔻 ⟩) → seq · d · ⊥𝔻 ＝ ⊥𝔻
 seq-⊥ d = undefined-⊥ (seq · d · ⊥𝔻) (λ p → ⊥-undefined (seq-defined-r d ⊥𝔻 p))
 
-{- an application of a rolled value -}
-app-roll : (l : ⟨ L ⟩) (Y : ⟨ 𝔻 ⟩)
-  → app · (roll · l) · Y ＝ ∐ˢˢ 𝔻⊥ (λ p → app-br (pr₁ (value l p)) · pr₂ (value l p) · Y) (being-defined-is-prop l)
-app-roll l Y =
-  ap (λ - → extend (obj Val 𝔻) (𝔻 ⟹𝔻) (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) app-br) · - · Y) (unroll-roll l)
-  ∙ ∐ˢˢ-＝-if-continuous-and-strict (𝔻 ⟹𝔻) 𝔻⊥ (λ g → g · Y) (pr₂ (at-point₁ 𝔻 𝔻 Y)) refl
-      (λ p → app-br (pr₁ (value l p)) · pr₂ (value l p)) (being-defined-is-prop l)
+opaque
+ unfolding case
+
+ {- an application of a rolled value -}
+ app-roll : (l : ⟨ L ⟩) (Y : ⟨ 𝔻 ⟩)
+   → app · (roll · l) · Y ＝ ∐ˢˢ 𝔻⊥ (λ p → app-br (pr₁ (value l p)) · pr₂ (value l p) · Y) (being-defined-is-prop l)
+ app-roll l Y =
+   ap (λ - → extend (obj Val 𝔻) (𝔻 ⟹𝔻) (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) app-br) · - · Y) (unroll-roll l)
+   ∙ ∐ˢˢ-＝-if-continuous-and-strict (𝔻 ⟹𝔻) 𝔻⊥ (λ g → g · Y) (pr₂ (at-point₁ 𝔻 𝔻 Y)) refl
+       (λ p → app-br (pr₁ (value l p)) · pr₂ (value l p)) (being-defined-is-prop l)
 
 {- the branches of app, on the payload of an embedded element -}
 private

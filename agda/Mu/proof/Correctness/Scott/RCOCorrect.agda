@@ -90,38 +90,41 @@ strict-reflects κ s d p =
 Str : (⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩) → 𝓤₁ ̇
 Str F = (v : ⟨ 𝔻 ⟩) → defined (F v) → defined v
 
-case-natural : (E E' : DCPO⊥ {𝓤₁} {𝓤₁}) (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) (k : DCPO[ E ⁻ , E' ⁻ ])
-  → k · ⊥ E ＝ ⊥ E' → (d : ⟨ 𝔻 ⟩)
-  → k · (caseᵈ E h · d) ＝ caseᵈ E' (λ t → ∘₁ (obj (Payload t) 𝔻) (E ⁻) (E' ⁻) (h t) k) · d
-case-natural E E' h k s d =
- ∐ˢˢ-＝-if-continuous-and-strict E E' (pr₁ k) (pr₂ k) s
-   (λ p → copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h · value (unroll · d) p)
-   (being-defined-is-prop (unroll · d))
+opaque
+ unfolding caseᵈ
 
-{- primD p n is strict: each of its branches is -}
-prim-⊥ : (p : _) (n : ⟨ 𝔻 ⟩) → primD p · n · ⊥𝔻 ＝ ⊥𝔻
-prim-⊥ p n =
-  case-natural (𝔻 ⟹𝔻) 𝔻⊥ (prim-br₁ p) (at-point₁ 𝔻 𝔻 ⊥𝔻) refl n
-  ∙ antisymmetry 𝔻 (caseᵈ 𝔻⊥ h · n) ⊥𝔻
-      (∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ q → copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) 𝔻 h · value (unroll · n) q)
-        (being-defined-is-prop (unroll · n)) ⊥𝔻
-        (λ q → transport (λ - → - ⊑⟨ 𝔻 ⟩ ⊥𝔻) (br (pr₁ (value (unroll · n) q)) (pr₂ (value (unroll · n) q)) ⁻¹) (reflexivity 𝔻 ⊥𝔻)))
-      (⊥-is-least 𝔻⊥ (caseᵈ 𝔻⊥ h · n))
- where
-  h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
-  h t = ∘₁ (obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) 𝔻 (prim-br₁ p t) (at-point₁ 𝔻 𝔻 ⊥𝔻)
-  br : (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) → h t · x ＝ ⊥𝔻
-  br (con Int m) x = case-⊥ 𝔻⊥ (prim-br₂ p m)
-  br (con Nat m) x = refl
-  br (con 𝔹 m) x = refl
-  br (con Unit m) x = refl
-  br (con Void m) x = refl
-  br (con Blame m) x = refl
-  br (tup m) x = refl
-  br left x = refl
-  br right x = refl
-  br fun x = refl
-  br pr x = refl
+ case-natural : (E E' : DCPO⊥ {𝓤₁} {𝓤₁}) (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) (k : DCPO[ E ⁻ , E' ⁻ ])
+   → k · ⊥ E ＝ ⊥ E' → (d : ⟨ 𝔻 ⟩)
+   → k · (caseᵈ E h · d) ＝ caseᵈ E' (λ t → ∘₁ (obj (Payload t) 𝔻) (E ⁻) (E' ⁻) (h t) k) · d
+ case-natural E E' h k s d =
+  ∐ˢˢ-＝-if-continuous-and-strict E E' (pr₁ k) (pr₂ k) s
+    (λ p → copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h · value (unroll · d) p)
+    (being-defined-is-prop (unroll · d))
+
+ {- primD p n is strict: each of its branches is -}
+ prim-⊥ : (p : _) (n : ⟨ 𝔻 ⟩) → primD p · n · ⊥𝔻 ＝ ⊥𝔻
+ prim-⊥ p n =
+   case-natural (𝔻 ⟹𝔻) 𝔻⊥ (prim-br₁ p) (at-point₁ 𝔻 𝔻 ⊥𝔻) refl n
+   ∙ antisymmetry 𝔻 (caseᵈ 𝔻⊥ h · n) ⊥𝔻
+       (∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ q → copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) 𝔻 h · value (unroll · n) q)
+         (being-defined-is-prop (unroll · n)) ⊥𝔻
+         (λ q → transport (λ - → - ⊑⟨ 𝔻 ⟩ ⊥𝔻) (br (pr₁ (value (unroll · n) q)) (pr₂ (value (unroll · n) q)) ⁻¹) (reflexivity 𝔻 ⊥𝔻)))
+       (⊥-is-least 𝔻⊥ (caseᵈ 𝔻⊥ h · n))
+  where
+   h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
+   h t = ∘₁ (obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) 𝔻 (prim-br₁ p t) (at-point₁ 𝔻 𝔻 ⊥𝔻)
+   br : (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) → h t · x ＝ ⊥𝔻
+   br (con Int m) x = case-⊥ 𝔻⊥ (prim-br₂ p m)
+   br (con Nat m) x = refl
+   br (con 𝔹 m) x = refl
+   br (con Unit m) x = refl
+   br (con Void m) x = refl
+   br (con Blame m) x = refl
+   br (tup m) x = refl
+   br left x = refl
+   br right x = refl
+   br fun x = refl
+   br pr x = refl
 
 {- callc applies the code of the closure a to its environment and to b -}
 CALL : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩

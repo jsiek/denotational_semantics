@@ -33,11 +33,14 @@ open import Lifting.Miscelanea-PropExt-FunExt 𝓤₀ pe fe using (is-defined-η
 view : (d : ⟨ 𝔻 ⟩) → defined d → ⟨ obj Val 𝔻 ⟩
 view d q = value (unroll · d) q
 
-inj-view : (d : ⟨ 𝔻 ⟩) (q : defined d) → d ＝ inj (pr₁ (view d q)) · pr₂ (view d q)
-inj-view d q = roll-unroll d ⁻¹ ∙ ap (roll ·_) (is-defined-η-＝ q)
+opaque
+ unfolding inj
 
-unroll-inj : (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) → unroll · (inj t · x) ＝ η (t , x)
-unroll-inj t x = unroll-roll (η (t , x))
+ inj-view : (d : ⟨ 𝔻 ⟩) (q : defined d) → d ＝ inj (pr₁ (view d q)) · pr₂ (view d q)
+ inj-view d q = roll-unroll d ⁻¹ ∙ ap (roll ·_) (is-defined-η-＝ q)
+
+ unroll-inj : (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) → unroll · (inj t · x) ＝ η (t , x)
+ unroll-inj t x = unroll-roll (η (t , x))
 
 {- the view of inj t x is (t , x) -}
 view-inj : (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) (q : defined (inj t · x)) → view (inj t · x) q ＝ (t , x)
@@ -48,16 +51,19 @@ view-inj t x q = lemma (unroll · (inj t · x)) (unroll-inj t x) q
 
 {- A case into 𝔻 is defined only if the scrutinee is -}
 
-case-defined : (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]) (d : ⟨ 𝔻 ⟩) → defined (case 𝔻⊥ h · d) → defined d
-case-defined h d = ∐ˢˢ-defined (λ q → h (pr₁ (view d q)) · pr₂ (view d q)) (defined-is-prop d)
+opaque
+ unfolding case
 
-{- and so is a case into functions, applied -}
-case-defined₂ : (A : DCPO₁) (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , A ⟹₁ 𝔻 ]) (d : ⟨ 𝔻 ⟩) (a : ⟨ A ⟩)
-  → defined (case (A ⟹𝔻) h · d · a) → defined d
-case-defined₂ A h d a p =
- ∐ˢˢ-defined (λ q → h (pr₁ (view d q)) · pr₂ (view d q) · a) (defined-is-prop d)
-   (transport defined (∐ˢˢ-＝-if-continuous-and-strict (A ⟹𝔻) 𝔻⊥ (λ g → g · a) (pr₂ (at-point₁ A 𝔻 a)) refl
-                         (λ q → h (pr₁ (view d q)) · pr₂ (view d q)) (defined-is-prop d)) p)
+ case-defined : (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]) (d : ⟨ 𝔻 ⟩) → defined (case 𝔻⊥ h · d) → defined d
+ case-defined h d = ∐ˢˢ-defined (λ q → h (pr₁ (view d q)) · pr₂ (view d q)) (defined-is-prop d)
+
+ {- and so is a case into functions, applied -}
+ case-defined₂ : (A : DCPO₁) (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , A ⟹₁ 𝔻 ]) (d : ⟨ 𝔻 ⟩) (a : ⟨ A ⟩)
+   → defined (case (A ⟹𝔻) h · d · a) → defined d
+ case-defined₂ A h d a p =
+  ∐ˢˢ-defined (λ q → h (pr₁ (view d q)) · pr₂ (view d q) · a) (defined-is-prop d)
+    (transport defined (∐ˢˢ-＝-if-continuous-and-strict (A ⟹𝔻) 𝔻⊥ (λ g → g · a) (pr₂ (at-point₁ A 𝔻 a)) refl
+                          (λ q → h (pr₁ (view d q)) · pr₂ (view d q)) (defined-is-prop d)) p)
 
 app-defined : (f a : ⟨ 𝔻 ⟩) → defined (app · f · a) → defined f
 app-defined = case-defined₂ 𝔻 app-br

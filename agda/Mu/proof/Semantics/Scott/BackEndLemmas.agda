@@ -83,22 +83,26 @@ seq-seq d e = seq-cong d (seq · d · e) e (λ p → seq-defined d e p)
    what it does to each branch (stated, as cases-defined in
    proof/Framework/Scott/Values.agda, for case (A ⟹𝔻) h · d · a, so that
    an instance for cases is checked quickly) -}
-case-natural₂ : (A : DCPO₁) (h h' : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , A ⟹₁ 𝔻 ]) (a a' : ⟨ A ⟩)
-  (κ : DCPO[ 𝔻 , 𝔻 ]) → κ · ⊥𝔻 ＝ ⊥𝔻
-  → ((t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) → κ · (h t · x · a) ＝ h' t · x · a')
-  → (d : ⟨ 𝔻 ⟩) → κ · (case (A ⟹𝔻) h · d · a) ＝ case (A ⟹𝔻) h' · d · a'
-case-natural₂ A h h' a a' κ s e d =
- ap (κ ·_) (∐ˢˢ-＝-if-continuous-and-strict (A ⟹𝔻) 𝔻⊥ (λ g → g · a) (pr₂ (at-point₁ A 𝔻 a)) refl α ρ)
- ∙ ∐ˢˢ-＝-if-continuous-and-strict 𝔻⊥ 𝔻⊥ (pr₁ κ) (pr₂ κ) s (λ q → α q · a) ρ
- ∙ ∐ˢˢ-family-＝ 𝔻⊥ {_} {λ q → κ · (α q · a)} {λ q → α' q · a'} ρ (dfunext fe λ q → e (pr₁ (v q)) (pr₂ (v q)))
- ∙ (∐ˢˢ-＝-if-continuous-and-strict (A ⟹𝔻) 𝔻⊥ (λ g → g · a') (pr₂ (at-point₁ A 𝔻 a')) refl α' ρ) ⁻¹
- where
-  ρ = defined-is-prop d
-  v : defined d → ⟨ obj Val 𝔻 ⟩
-  v q = value (unroll · d) q
-  α α' : defined d → DCPO[ A , 𝔻 ]
-  α q = h (pr₁ (v q)) · pr₂ (v q)
-  α' q = h' (pr₁ (v q)) · pr₂ (v q)
+opaque
+ unfolding case
+
+ case-natural₂ : (A : DCPO₁) (h h' : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , A ⟹₁ 𝔻 ]) (a a' : ⟨ A ⟩)
+   (κ : DCPO[ 𝔻 , 𝔻 ]) → κ · ⊥𝔻 ＝ ⊥𝔻
+   → ((t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) → κ · (h t · x · a) ＝ h' t · x · a')
+   → (d : ⟨ 𝔻 ⟩) → κ · (case (A ⟹𝔻) h · d · a) ＝ case (A ⟹𝔻) h' · d · a'
+ case-natural₂ A h h' a a' κ s e d =
+  ap (κ ·_) (∐ˢˢ-＝-if-continuous-and-strict (A ⟹𝔻) 𝔻⊥ (λ g → g · a) (pr₂ (at-point₁ A 𝔻 a)) refl α ρ)
+  ∙ ∐ˢˢ-＝-if-continuous-and-strict 𝔻⊥ 𝔻⊥ (pr₁ κ) (pr₂ κ) s (λ q → α q · a) ρ
+  ∙ ∐ˢˢ-family-＝ 𝔻⊥ {_} {λ q → κ · (α q · a)} {λ q → α' q · a'} ρ (dfunext fe λ q → e (pr₁ (v q)) (pr₂ (v q)))
+  ∙ (∐ˢˢ-＝-if-continuous-and-strict (A ⟹𝔻) 𝔻⊥ (λ g → g · a') (pr₂ (at-point₁ A 𝔻 a')) refl α' ρ) ⁻¹
+  where
+   ρ : is-prop (defined d)
+   ρ = defined-is-prop d
+   v : defined d → ⟨ obj Val 𝔻 ⟩
+   v q = value (unroll · d) q
+   α α' : defined d → DCPO[ A , 𝔻 ]
+   α q = h (pr₁ (v q)) · pr₂ (v q)
+   α' q = h' (pr₁ (v q)) · pr₂ (v q)
 
 {- a strict continuation goes into the (strict) branches of a case -}
 module _ (κ : DCPO[ 𝔻 , 𝔻 ]) (s : κ · ⊥𝔻 ＝ ⊥𝔻) (f g f' g' : DCPO[ 𝔻 , 𝔻 ])

@@ -115,19 +115,23 @@ seq-strict f s d e = ∐ˢˢ-＝-if-continuous-and-strict 𝔻⊥ 𝔻⊥ (pr₁
 
 {- Taking values apart -------------------------------------------------------------}
 
-case-inj : (E : DCPO⊥ {𝓤₁} {𝓤₁}) (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩)
-  → case E h · (inj t · x) ＝ h t · x
-case-inj E h t x = ap (extend V E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h) ·_) (unroll-roll (η (t , x)))
-                   ∙ extend-η V E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h) (t , x)
+opaque
+ unfolding case inj
 
-case-⊥ : (E : DCPO⊥ {𝓤₁} {𝓤₁}) (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) → case E h · ⊥𝔻 ＝ ⊥ E
-case-⊥ E h = antisymmetry (E ⁻) _ _ below (⊥-is-least E _)
- where
-  k = extend V E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h)
-  below : case E h · ⊥𝔻 ⊑⟨ E ⁻ ⟩ ⊥ E
-  below = transport (λ - → case E h · ⊥𝔻 ⊑⟨ E ⁻ ⟩ -) (extend-⊥ V E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h))
-            (transport (λ - → case E h · ⊥𝔻 ⊑⟨ E ⁻ ⟩ k · -) (unroll-roll ⊥L)
-              (monotone-if-continuous 𝔻 (E ⁻) (case E h) ⊥𝔻 (roll · ⊥L) (⊥-is-least 𝔻⊥ _)))
+ case-inj : (E : DCPO⊥ {𝓤₁} {𝓤₁}) (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩)
+   → case E h · (inj t · x) ＝ h t · x
+ case-inj E h t x = ap (extend V E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h) ·_) (unroll-roll (η (t , x)))
+                    ∙ extend-η V E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h) (t , x)
+
+ case-⊥ : (E : DCPO⊥ {𝓤₁} {𝓤₁}) (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) → case E h · ⊥𝔻 ＝ ⊥ E
+ case-⊥ E h = antisymmetry (E ⁻) _ _ below (⊥-is-least E _)
+  where
+   k : DCPO[ L , E ⁻ ]
+   k = extend V E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h)
+   below : case E h · ⊥𝔻 ⊑⟨ E ⁻ ⟩ ⊥ E
+   below = transport (λ - → case E h · ⊥𝔻 ⊑⟨ E ⁻ ⟩ -) (extend-⊥ V E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h))
+             (transport (λ - → case E h · ⊥𝔻 ⊑⟨ E ⁻ ⟩ k · -) (unroll-roll ⊥L)
+               (monotone-if-continuous 𝔻 (E ⁻) (case E h) ⊥𝔻 (roll · ⊥L) (⊥-is-least 𝔻⊥ _)))
 
 {- Functions -------------------------------------------------------------------------}
 

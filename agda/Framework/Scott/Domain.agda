@@ -66,17 +66,23 @@ open 𝔻-solution using (D∞-has-least)
 𝔻⊥ : DCPO⊥ {𝓤₁} {𝓤₁}
 𝔻⊥ = 𝔻 , D∞-has-least
 
-{- a value with a given tag -}
-inj : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
-inj t = ∘₁ (obj (Payload t) 𝔻) (𝓛ᵈ (obj Val 𝔻)) 𝔻
-          (∘₁ (obj (Payload t) 𝔻) (obj Val 𝔻) (𝓛ᵈ (obj Val 𝔻))
-             (ι Tag Tag-is-set (λ t → obj (Payload t) 𝔻) t) (ηᶜ (obj Val 𝔻)))
-          roll
+{- inj and case are opaque: elsewhere they are known only through the
+   lemmas in proof/Framework/Scott/ that unfold them (case-inj, case-⊥,
+   defined-inj, ...). (Transparent, they are unfolded, through lifting
+   and the sum, whenever Agda compares two meanings that differ, and the
+   proofs of the passes take minutes to check instead of seconds.) -}
+opaque
+ {- a value with a given tag -}
+ inj : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
+ inj t = ∘₁ (obj (Payload t) 𝔻) (𝓛ᵈ (obj Val 𝔻)) 𝔻
+           (∘₁ (obj (Payload t) 𝔻) (obj Val 𝔻) (𝓛ᵈ (obj Val 𝔻))
+              (ι Tag Tag-is-set (λ t → obj (Payload t) 𝔻) t) (ηᶜ (obj Val 𝔻)))
+           roll
 
-{- taking a value apart, strictly -}
-case : (E : DCPO⊥ {𝓤₁} {𝓤₁}) → ((t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) → DCPO[ 𝔻 , E ⁻ ]
-case E h = ∘₁ 𝔻 (𝓛ᵈ (obj Val 𝔻)) (E ⁻) unroll
-             (extend (obj Val 𝔻) E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h))
+ {- taking a value apart, strictly -}
+ case : (E : DCPO⊥ {𝓤₁} {𝓤₁}) → ((t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) → DCPO[ 𝔻 , E ⁻ ]
+ case E h = ∘₁ 𝔻 (𝓛ᵈ (obj Val 𝔻)) (E ⁻) unroll
+              (extend (obj Val 𝔻) E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h))
 
 {- a value is defined when it is not ⊥ -}
 defined : ⟨ 𝔻 ⟩ → 𝓤₀ ̇
