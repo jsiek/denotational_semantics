@@ -25,8 +25,8 @@ the code pointer. It therefore turns functions into data, and a
 correctness proof must relate two different views of what a function
 is.
 
-A correct compiler must neither lose a program's answers nor invent
-new ones. \emph{Semantic preservation} says that whatever the source
+A correct compiler must keep every answer of the source program and
+produce only those answers. \emph{Semantic preservation} says that whatever the source
 program computes, the compiled program computes; \emph{semantic
 reflection} says the converse. By contraposition, reflection
 guarantees that a diverging source program compiles to a diverging
