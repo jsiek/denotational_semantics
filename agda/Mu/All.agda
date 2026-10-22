@@ -48,7 +48,10 @@
     adequacy of its graph semantics for its interpreter
     (Mu/proof/Adequacy/ISWIM.agda): Mu/proof/Mixed/CompilerMixed.agda
     (the interpreter column's compile-x86-const and
-    compile-x86-diverges for main : Int).
+    compile-x86-diverges for main : Int);
+  * a design experiment, in no proof's total: delay's relation on
+    target sets of bounded depth, which is the relation on their finite
+    sublists (Mu/proof/Correctness/Graph/DelayDesignBoundedSets.agda).
 
 -}
 
@@ -71,3 +74,4 @@ import Mu.proof.Semantics.Interp.NoError
 import Mu.proof.Semantics.Reduction.NoError
 import Mu.proof.Compiler.Examples.RecursionExample
 import Mu.proof.Compiler.Examples.RecursionInterp
+import Mu.proof.Correctness.Graph.DelayDesignBoundedSets

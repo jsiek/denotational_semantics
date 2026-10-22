@@ -572,7 +572,7 @@ GROUPS = [
     ('mu-den', 'CC: enclose', [MUP + 'Correctness/Graph/EncloseCorrect.agda']),
     ('mu-den', 'CC: optimize', [MUP + 'Correctness/Graph/OptimizeCorrect.agda']),
     ('mu-den', 'CC: concretize', [MUP + 'Correctness/Graph/ConcretizeCorrect.agda']),
-    ('mu-den', 'CC: delay', [MUP + 'Correctness/Graph/Delay*.agda']),
+    ('mu-den', 'CC: delay', [MUP + 'Correctness/Graph/Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')]),
     ('mu-den', 'CC: globalize', [MUP + 'Correctness/Graph/GlobalizeCorrect.agda']),
     ('mu-den', 'rco', [MUP + 'Correctness/Graph/RCOCorrect.agda']),
     ('mu-den', 'lift locals', [MUP + 'Correctness/Graph/LiftLocalsCorrect.agda']),
@@ -638,6 +638,10 @@ GROUPS = [
     ('mu-adeq-cek', 'X86', [MUP + 'Adequacy/CEK/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
     ('mu-adeq-cek', 'end to end', [MUP + 'Adequacy/CEK/EndToEnd.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
+    # design experiments, in no total: the delay relation on target sets of
+    # bounded depth (the paper's design space for reflection, §4.2)
+    ('mu-exp', 'delay: the relation on target sets of bounded depth',
+     [MUP + 'Correctness/Graph/DelayDesign*.agda']),
     # mixing semantics (--mixed): simplify in the graph model and the other
     # passes by the interpreters, joined by the bridge at ISWIMμ (its graph
     # semantics against its interpreter: the ISWIM row of adequacy); it
