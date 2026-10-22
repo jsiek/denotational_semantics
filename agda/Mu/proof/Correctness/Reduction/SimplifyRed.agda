@@ -98,12 +98,6 @@ closed-[] N V = trans (cong (S._[ V ]) (sym (S.sub-id (S.sub-id-exts (λ _ → r
 rename-sub : ∀ {Γ Δ A} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (M : Tm Γ A) → ren r M ≡ sub (λ x → ` r x) M
 rename-sub r M = trans (sym (S.sub-id (λ _ → refl) (ren r M))) (S.ren-trav tmK (λ _ → refl) M)
 
-sub-shift : ∀ {Γ Δ A B} (V : Tm Δ B) (υ : Sb Γ Δ) (T : Tm Γ A) → sub (V S.• υ) (ren S T) ≡ sub υ T
-sub-shift V υ T = S.ren-trav tmK (λ _ → refl) T
-
-exts-shift : ∀ {Γ Δ A B} (υ : Sb Γ Δ) (T : Tm Γ A) → sub (S.exts tmK {B = B} υ) (ren S T) ≡ ren S (sub υ T)
-exts-shift υ T = S.Laws.exts-ren tmL υ T
-
 sub-lookup : ∀ {Γ Δ Δ' A} (τ : Sb Γ Δ) (Ks : All (Tm Γ) Δ') (i : Δ' ∋ A) → sub τ (lookup Ks i) ≡ lookup (S.travs tmK τ Ks) i
 sub-lookup τ (K ∷ Ks) Z = refl
 sub-lookup τ (K ∷ Ks) (S i) = sub-lookup τ Ks i
@@ -218,28 +212,21 @@ star-det (s RT.◅ _) RT.ε _ w = ⊥-elim (sv-nostep w s)
 star-det (s RT.◅ σ) (s' RT.◅ σ') w w' with det s s'
 ... | refl = star-det σ σ' w w'
 
-{- closed values are the semantics' values, and conversely -}
-val-sv : ∀ {A} {V : Tm [] A} → S.Value V → SV V
-vals-sv : ∀ {Δ} {Vs : All (Tm []) Δ} → Each S.Value Vs → SVs Vs
-val-sv S.lam = P.lam
-val-sv S.lit = P.lit
-val-sv (S.tuple vs) = P.tuple (vals-sv vs)
-val-sv (S.inl v) = P.inl (val-sv v)
-val-sv (S.inr v) = P.inr (val-sv v)
-val-sv (S.fold v) = P.fold (val-sv v)
-vals-sv [] = P.[]
-vals-sv (v ∷ vs) = val-sv v P.∷ vals-sv vs
+{- closed values reduce to val -}
+sv-red : ∀ {A} {V : Tm [] A} → SV V → S.red V ≡ val
+svs-red : ∀ {Δ} {Vs : All (Tm []) Δ} → SVs Vs → S.reds Vs ≡ val
+sv-red P.lam = refl
+sv-red P.lit = refl
+sv-red (P.tuple vs) rewrite svs-red vs = refl
+sv-red (P.inl v) rewrite sv-red v = refl
+sv-red (P.inr v) rewrite sv-red v = refl
+sv-red (P.fold v) rewrite sv-red v = refl
+svs-red P.[] = refl
+svs-red (v P.∷ vs) rewrite sv-red v | svs-red vs = refl
 
-sv-value : ∀ {A} {V : Tm [] A} → SV V → S.Value V
-svs-value : ∀ {Δ} {Vs : All (Tm []) Δ} → SVs Vs → Each S.Value Vs
-sv-value P.lam = S.lam
-sv-value P.lit = S.lit
-sv-value (P.tuple vs) = S.tuple (svs-value vs)
-sv-value (P.inl v) = S.inl (sv-value v)
-sv-value (P.inr v) = S.inr (sv-value v)
-sv-value (P.fold v) = S.fold (sv-value v)
-svs-value P.[] = []
-svs-value (v P.∷ vs) = sv-value v ∷ svs-value vs
+each-svs : ∀ {Δ} {Vs : All (Tm []) Δ} → Each SV Vs → SVs Vs
+each-svs [] = P.[]
+each-svs (v ∷ vs) = v P.∷ each-svs vs
 
 {- substitution by values commutes with steps -}
 sub-⟶ : ∀ {Γ Δ A} {τ : Sb Γ Δ} {M M' : Tm Γ A} → (∀ {B} (x : Γ ∋ B) → SV (τ x)) → M ⟶ M' → sub τ M ⟶ sub τ M'
@@ -270,27 +257,27 @@ sub-⟶s h (there v s) = there (sv-trav h v) (sub-⟶s h s)
 {- in a closed term, a step of the reduction semantics -}
 closed-red : ∀ {A} {M M' : Tm [] A} → M ⟶ M' → S.red M ≡ to M'
 closed-reds : ∀ {Δ} {Ms Ms' : All (Tm []) Δ} → Ms ⟶s Ms' → S.reds Ms ≡ to Ms'
-closed-red (β {N = N} {V} v) rewrite S.value-red (sv-value v) = cong to (closed-[] N V)
+closed-red (β {N = N} {V} v) rewrite sv-red v = cong to (closed-[] N V)
 closed-red (app₁ s) rewrite closed-red s = refl
 closed-red (app₂ s) rewrite closed-red s = refl
 closed-red (tuple s) rewrite closed-reds s = refl
-closed-red (get vs) rewrite S.values-red (svs-value vs) = refl
+closed-red (get vs) rewrite svs-red vs = refl
 closed-red (get₁ s) rewrite closed-red s = refl
 closed-red (inl₁ s) rewrite closed-red s = refl
 closed-red (inr₁ s) rewrite closed-red s = refl
-closed-red (case-l {V = V} {M} v) rewrite S.value-red (sv-value v) = cong to (closed-[] M V)
-closed-red (case-r {V = V} {N = N} v) rewrite S.value-red (sv-value v) = cong to (closed-[] N V)
+closed-red (case-l {V = V} {M} v) rewrite sv-red v = cong to (closed-[] M V)
+closed-red (case-r {V = V} {N = N} v) rewrite sv-red v = cong to (closed-[] N V)
 closed-red (case₁ s) rewrite closed-red s = refl
 closed-red (prim {p} {n} {m}) = cong to (prim-term-out p n m)
 closed-red (prim₁ s) rewrite closed-red s = refl
-closed-red (prim₂ v s) rewrite S.value-red (sv-value v) | closed-red s = refl
-closed-red (letβ {V = V} {N} v) rewrite S.value-red (sv-value v) = cong to (closed-[] N V)
+closed-red (prim₂ v s) rewrite sv-red v | closed-red s = refl
+closed-red (letβ {V = V} {N} v) rewrite sv-red v = cong to (closed-[] N V)
 closed-red (let₁ s) rewrite closed-red s = refl
 closed-red (fold₁ s) rewrite closed-red s = refl
-closed-red (unfoldβ v) rewrite S.value-red (sv-value v) = refl
+closed-red (unfoldβ v) rewrite sv-red v = refl
 closed-red (unfold₁ s) rewrite closed-red s = refl
 closed-reds (here s) rewrite closed-red s = refl
-closed-reds (there v s) rewrite S.value-red (sv-value v) | closed-reds s = refl
+closed-reds (there v s) rewrite sv-red v | closed-reds s = refl
 
 {- The relation on terms: the source on the left -------------------------------}
 
@@ -300,7 +287,7 @@ data _≽_ {Γ} : ∀ {A} → Tm Γ A → Tm Γ A → Set where
   lam≽ : ∀ {A B} {N N' : Tm (A ∷ Γ) B} → N ≽ N' → lam N ≽ lam N'
   app≽ : ∀ {A B} {L L' : Tm Γ (A ⇒ B)} {M M'} → L ≽ L' → M ≽ M' → app L M ≽ app L' M'
   lit≽ : ∀ {B c} → lit B c ≽ lit B c
-  tuple≽ : ∀ {Δ} {Ms Ms' : All (Tm Γ) Δ} → All₂ _≽_ Ms Ms' → tuple Ms ≽ tuple Ms'
+  tuple≽ : ∀ {Δ} {Ms Ms' : All (Tm Γ) Δ} → All₂ (λ M' M → M ≽ M') Ms' Ms → tuple Ms ≽ tuple Ms'
   get≽ : ∀ {Δ A} {i : Δ ∋ A} {M M'} → M ≽ M' → get i M ≽ get i M'
   inl≽ : ∀ {A B} {M M' : Tm Γ A} → M ≽ M' → inl {B = B} M ≽ inl M'
   inr≽ : ∀ {A B} {M M' : Tm Γ B} → M ≽ M' → inr {A = A} M ≽ inr M'
@@ -321,6 +308,11 @@ data _≽_ {Γ} : ∀ {A} → Tm Γ A → Tm Γ A → Set where
   fold≽ : ∀ {A} {M M' : Tm Γ (unroll A)} → M ≽ M' → fold {A = A} M ≽ fold M'
   unfold≽ : ∀ {A} {M M' : Tm Γ (μ A)} → M ≽ M' → unfold M ≽ unfold M'
 
+{- the converse, for a simulation, which takes the simulated machine
+   (here the target) first -}
+R˘ : ∀ {Γ A} → Tm Γ A → Tm Γ A → Set
+R˘ M' M = M ≽ M'
+
 steps : ∀ {Γ A} {M M₁ M' : Tm Γ A} → M ⟶* M₁ → M₁ ≽ M' → M ≽ M'
 steps RT.ε r = r
 steps (s RT.◅ σ) r = step s (steps σ r)
@@ -332,8 +324,8 @@ module Kit (Pr : ∀ {Γ Δ} → Sb Γ Δ → Sb Γ Δ → Set) (p≽ : ∀ {Γ 
   (pexts : ∀ {Γ Δ C} {τ υ : Sb Γ Δ} → Pr τ υ → Pr (S.exts tmK {B = C} τ) (S.exts tmK υ)) where
 
   ≽-sub : ∀ {Γ Δ A} {τ υ : Sb Γ Δ} {M M' : Tm Γ A} → Pr τ υ → M ≽ M' → sub τ M ≽ sub υ M'
-  ≽-subs : ∀ {Γ Δ Δ'} {τ υ : Sb Γ Δ} {Ms Ms' : All (Tm Γ) Δ'} → Pr τ υ → All₂ _≽_ Ms Ms'
-    → All₂ _≽_ (S.travs tmK τ Ms) (S.travs tmK υ Ms')
+  ≽-subs : ∀ {Γ Δ Δ'} {τ υ : Sb Γ Δ} {Ms Ms' : All (Tm Γ) Δ'} → Pr τ υ → All₂ R˘ Ms' Ms
+    → All₂ R˘ (S.travs tmK υ Ms') (S.travs tmK τ Ms)
   ≽-sub p (var≽ {x = x}) = p≽ p x
   ≽-sub p (lam≽ r) = lam≽ (≽-sub (pexts p) r)
   ≽-sub p (app≽ r s) = app≽ (≽-sub p r) (≽-sub p s)
@@ -387,8 +379,8 @@ module KS = Kit Rel (λ p → proj₁ p) (λ p → proj₂ p)
 {- Values: the source reaches the values that the target has -------------------}
 
 eval-sv : ∀ {Γ A} {M V' : Tm Γ A} → SV V' → M ≽ V' → Σ[ W ∈ Tm Γ A ] M ⟶* W × SV W × W ≽ V'
-eval-svs : ∀ {Γ Δ} {Ms Ms' : All (Tm Γ) Δ} → SVs Ms' → All₂ _≽_ Ms Ms'
-  → Σ[ Ws ∈ All (Tm Γ) Δ ] Star _⟶s_ Ms Ws × SVs Ws × All₂ _≽_ Ws Ms'
+eval-svs : ∀ {Γ Δ} {Ms Ms' : All (Tm Γ) Δ} → SVs Ms' → All₂ R˘ Ms' Ms
+  → Σ[ Ws ∈ All (Tm Γ) Δ ] Star _⟶s_ Ms Ws × SVs Ws × All₂ R˘ Ms' Ws
 eval-sv (P.var x) var≽ = ` x , RT.ε , P.var x , var≽
 eval-sv P.lam (lam≽ r) = _ , RT.ε , P.lam , lam≽ r
 eval-sv P.lit lit≽ = _ , RT.ε , P.lit , lit≽
@@ -417,7 +409,7 @@ inr-inv (P.inr w) (inr≽ r) = _ , refl , w , r
 inr-inv w (step s _) = ⊥-elim (sv-nostep w s)
 
 tuple-inv : ∀ {Γ Δ} {W : Tm Γ (tup Δ)} {Ms'} → SV W → W ≽ tuple Ms'
-  → Σ[ Ws ∈ All (Tm Γ) Δ ] W ≡ tuple Ws × SVs Ws × All₂ _≽_ Ws Ms'
+  → Σ[ Ws ∈ All (Tm Γ) Δ ] W ≡ tuple Ws × SVs Ws × All₂ R˘ Ms' Ws
 tuple-inv (P.tuple ws) (tuple≽ rs) = _ , refl , ws , rs
 tuple-inv w (step s _) = ⊥-elim (sv-nostep w s)
 
@@ -494,7 +486,7 @@ ren-⟶* : ∀ {Γ A C} {X Y : Tm Γ A} → X ⟶* Y → ren (S {b = C}) X ⟶* 
 ren-⟶* = gmap (ren S) (λ {X} {Y} s → subst₂ _⟶_ (sym (rename-sub S X)) (sym (rename-sub S Y)) (sub-⟶ (λ x → P.var (S x)) s))
 
 tm-ext : ∀ {Γ Θ A C} (T : Tm Γ A) (υ : Sb Γ Θ) {X} → X ≽ sub υ T → ren (S {b = C}) X ≽ sub (S.exts tmK υ) (ren S T)
-tm-ext T υ r = subst (_ ≽_) (sym (exts-shift υ T)) (≽-ren S r)
+tm-ext T υ r = subst (_ ≽_) (sym (S.Laws.exts-ren tmL υ T)) (≽-ren S r)
 
 desc-ext : ∀ {Γ Θ A C} (I : Info Γ A) {X : Tm Θ A} {υ : Sb Γ Θ} → Desc X I υ → Desc (ren (S {b = C}) X) (shift-info I) (S.exts tmK υ)
 kdesc-ext : ∀ {Γ Θ A C} (K : Known Γ A) {X : Tm Θ A} {υ : Sb Γ Θ} → KDesc X K υ → KDesc (ren (S {b = C}) X) (shift-known K) (S.exts tmK υ)
@@ -508,7 +500,7 @@ kdesc-ext (P.fun N E) {X = X} (τ , ok , σ) =
 
 {- under one more binder, in the target only, bound to V -}
 tm-cons : ∀ {Γ Θ A C} (T : Tm Γ A) (υ : Sb Γ Θ) {X} (V : Tm Θ C) → X ≽ sub υ T → X ≽ sub (V S.• υ) (ren S T)
-tm-cons T υ V r = subst (_ ≽_) (sym (sub-shift V υ T)) r
+tm-cons T υ V r = subst (_ ≽_) (sym (S.ren-trav tmK (λ _ → refl) T)) r
 
 desc-cons : ∀ {Γ Θ A C} (I : Info Γ A) {X : Tm Θ A} {υ : Sb Γ Θ} (V : Tm Θ C) → SV V → Desc X I υ → Desc X (shift-info I) (V S.• υ)
 kdesc-cons : ∀ {Γ Θ A C} (K : Known Γ A) {X : Tm Θ A} {υ : Sb Γ Θ} (V : Tm Θ C) → SV V → KDesc X K υ → KDesc X (shift-known K) (V S.• υ)
@@ -552,7 +544,7 @@ bnd-letv letF = letv≽
 
 simp-ok : ∀ {Δ Γ Θ A} fl (M : Tm Δ A) {E : Facts Δ Γ} {τ : Sb Δ Θ} {υ : Sb Γ Θ} → Inv E τ υ → Desc (sub τ M) (simp fl E M) υ
 simps-ok : ∀ {Δ Γ Θ Δ'} fl (Ms : All (Tm Δ) Δ') {E : Facts Δ Γ} {τ : Sb Δ Θ} {υ : Sb Γ Θ} → Inv E τ υ
-  → All₂ _≽_ (S.travs tmK τ Ms) (S.travs tmK υ (simps fl E Ms))
+  → All₂ R˘ (S.travs tmK υ (simps fl E Ms)) (S.travs tmK τ Ms)
 app-ok : ∀ {Δ Γ Θ A B} fl (L : Tm Δ (A ⇒ B)) M {E : Facts Δ Γ} {τ : Sb Δ Θ} {υ : Sb Γ Θ} {I} → Inv E τ υ → Desc (sub τ M) I υ
   → Desc (sub τ (app L M)) (simp-app fl E L I) υ
 let-ok : ∀ {Δ Γ Θ A B} fl f (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {τ : Sb Δ Θ} {υ : Sb Γ Θ} {I X} → Inv E τ υ → Desc X I υ
@@ -694,113 +686,100 @@ simplify-≽ M = subst₂ _≽_ (S.sub-id (λ _ → refl) M) (S.sub-id (λ _ →
 
 {- The simulation of the target by the source -----------------------------------}
 
-{- the simulation takes the simulated machine, here the target, first:
-   the converse of _≽_, and pointwise on operands -}
-R˘ : ∀ {A} → Tm [] A → Tm [] A → Set
-R˘ M' M = M ≽ M'
-
-flip₂ : ∀ {Δ} {Ms Ms' : All (Tm []) Δ} → All₂ _≽_ Ms Ms' → All₂ R˘ Ms' Ms
-flip₂ [] = []
-flip₂ (r ∷ rs) = r ∷ flip₂ rs
-
-unflip₂ : ∀ {Δ} {Ms Ms' : All (Tm []) Δ} → All₂ R˘ Ms' Ms → All₂ _≽_ Ms Ms'
-unflip₂ [] = []
-unflip₂ (r ∷ rs) = r ∷ unflip₂ rs
-
 Ans′ : ∀ {A} → Tm [] A → Red (Tm [] A) → Tm [] A → Set
-Ans′ = Ans S.red S.Value R˘
+Ans′ = Ans S.red SV R˘
 
 {- a target term related to a source value is a value, observed alike -}
-≽-value : ∀ {A} {W V' : Tm [] A} → S.Value W → W ≽ V' → S.Value V'
-≽-values : ∀ {Δ} {Ws Vs' : All (Tm []) Δ} → Each S.Value Ws → All₂ _≽_ Ws Vs' → Each S.Value Vs'
-≽-value S.lam (lam≽ _) = S.lam
-≽-value S.lit lit≽ = S.lit
-≽-value (S.tuple vs) (tuple≽ rs) = S.tuple (≽-values vs rs)
-≽-value (S.inl v) (inl≽ r) = S.inl (≽-value v r)
-≽-value (S.inr v) (inr≽ r) = S.inr (≽-value v r)
-≽-value (S.fold v) (fold≽ r) = S.fold (≽-value v r)
-≽-value v (step s _) = ⊥-elim (sv-nostep (val-sv v) s)
-≽-values [] [] = []
-≽-values (v ∷ vs) (r ∷ rs) = ≽-value v r ∷ ≽-values vs rs
+≽-value : ∀ {A} {W V' : Tm [] A} → SV W → W ≽ V' → SV V'
+≽-values : ∀ {Δ} {Ws Vs' : All (Tm []) Δ} → SVs Ws → All₂ R˘ Vs' Ws → SVs Vs'
+≽-value P.lam (lam≽ _) = P.lam
+≽-value P.lit lit≽ = P.lit
+≽-value (P.tuple vs) (tuple≽ rs) = P.tuple (≽-values vs rs)
+≽-value (P.inl v) (inl≽ r) = P.inl (≽-value v r)
+≽-value (P.inr v) (inr≽ r) = P.inr (≽-value v r)
+≽-value (P.fold v) (fold≽ r) = P.fold (≽-value v r)
+≽-value v (step s _) = ⊥-elim (sv-nostep v s)
+≽-values P.[] [] = P.[]
+≽-values (v P.∷ vs) (r ∷ rs) = ≽-value v r P.∷ ≽-values vs rs
 
-obs≽ : ∀ {A} {W V' : Tm [] A} → S.Value W → W ≽ V' → S.obs W ≡ S.obs V'
-obs≽s : ∀ {Δ} {Ws Vs' : All (Tm []) Δ} → Each S.Value Ws → All₂ _≽_ Ws Vs' → S.obss Ws ≡ S.obss Vs'
-obs≽ S.lam (lam≽ _) = refl
-obs≽ S.lit lit≽ = refl
-obs≽ (S.tuple vs) (tuple≽ rs) = cong o-tuple (obs≽s vs rs)
-obs≽ (S.inl v) (inl≽ r) = cong o-inl (obs≽ v r)
-obs≽ (S.inr v) (inr≽ r) = cong o-inr (obs≽ v r)
-obs≽ (S.fold v) (fold≽ r) = obs≽ v r
-obs≽ v (step s _) = ⊥-elim (sv-nostep (val-sv v) s)
-obs≽s [] [] = refl
-obs≽s (v ∷ vs) (r ∷ rs) = cong₂ _∷_ (obs≽ v r) (obs≽s vs rs)
+obs≽ : ∀ {A} {W V' : Tm [] A} → SV W → W ≽ V' → S.obs W ≡ S.obs V'
+obs≽s : ∀ {Δ} {Ws Vs' : All (Tm []) Δ} → SVs Ws → All₂ R˘ Vs' Ws → S.obss Ws ≡ S.obss Vs'
+obs≽ P.lam (lam≽ _) = refl
+obs≽ P.lit lit≽ = refl
+obs≽ (P.tuple vs) (tuple≽ rs) = cong o-tuple (obs≽s vs rs)
+obs≽ (P.inl v) (inl≽ r) = cong o-inl (obs≽ v r)
+obs≽ (P.inr v) (inr≽ r) = cong o-inr (obs≽ v r)
+obs≽ (P.fold v) (fold≽ r) = obs≽ v r
+obs≽ v (step s _) = ⊥-elim (sv-nostep v s)
+obs≽s P.[] [] = refl
+obs≽s (v P.∷ vs) (r ∷ rs) = cong₂ _∷_ (obs≽ v r) (obs≽s vs rs)
 
 {- the body of a function, after β, is related to the target's -}
-β≽ : ∀ {A B} {N N' : Tm (A ∷ []) B} {W V'} → N ≽ N' → W ≽ V' → S.Value W → R˘ (N' S.[ V' ]) (N S.[ W ])
-β≽ {N = N} {N'} {W} {V'} r s v = subst₂ _≽_ (sym (closed-[] N W)) (sym (closed-[] N' V')) (≽-[] (val-sv v) s r)
+β≽ : ∀ {A B} {N N' : Tm (A ∷ []) B} {W V'} → N ≽ N' → W ≽ V' → SV W → R˘ (N' S.[ V' ]) (N S.[ W ])
+β≽ {N = N} {N'} {W} {V'} r s v = subst₂ _≽_ (sym (closed-[] N W)) (sym (closed-[] N' V')) (≽-[] v s r)
 
 ≽-out : ∀ p n m → S.out {[]} p n m ≽ S.out p n m
 ≽-out p n m rewrite prim-term-out p n m = ≽-prim-term p n m
 
 {- a target let of a value takes its step -}
-let-val : ∀ {A B} {N' : Tm (A ∷ []) B} {V' W M} → S.Value W → W ≽ V' → Ans′ (let′ V' N') (to (N' S.[ V' ])) M
+let-val : ∀ {A B} {N' : Tm (A ∷ []) B} {V' W M} → SV W → W ≽ V' → Ans′ (let′ V' N') (to (N' S.[ V' ])) M
   → Ans′ (let′ V' N') (S.red (let′ V' N')) M
-let-val {N' = N'} {V'} {M = M} v r a = subst (λ x → Ans′ (let′ V' N') x M) (sym (val-in (S.value-red (≽-value v r)))) a
+let-val {N' = N'} {V'} {M = M} v r a = subst (λ x → Ans′ (let′ V' N') x M) (sym (val-in (sv-red (≽-value v r)))) a
 
 sim : ∀ {A} {M M' : Tm [] A} → M ≽ M' → Ans′ M' (S.red M') M
-sims : ∀ {Δ} {Ms Ms' : All (Tm []) Δ} → All₂ _≽_ Ms Ms' → Ans S.reds (Each S.Value) (All₂ R˘) Ms' (S.reds Ms') Ms
+sims : ∀ {Δ} {Ms Ms' : All (Tm []) Δ} → All₂ R˘ Ms' Ms → Ans S.reds (Each SV) (All₂ R˘) Ms' (S.reds Ms') Ms
 sim (var≽ {x = ()})
-sim (lam≽ r) = val ε S.lam (lam≽ r)
+sim (lam≽ r) = val ε P.lam (lam≽ r)
 sim (app≽ {M = M} {M'} r s) = ans-in (frame _ (λ _ → refl)) (λ r' → app≽ r' s) (sim r) app-sim
   where
-  app-sim : ∀ {W} → S.Value W → R˘ _ W → Ans′ (app _ M') _ (app W M)
-  app-sim {W = W} S.lam (lam≽ r₁) =
+  app-sim : ∀ {W} → SV W → R˘ _ W → Ans′ (app _ M') _ (app W M)
+  app-sim {W = W} P.lam (lam≽ r₁) =
     ans-in (frame {g = app W} _ (λ X → refl)) (λ s' → app≽ (lam≽ r₁) s') (sim s)
-           λ v' s' → to (one (val-in (S.value-red v'))) (β≽ r₁ s' v')
-  app-sim v (step st _) = ⊥-elim (sv-nostep (val-sv v) st)
-sim lit≽ = val ε S.lit lit≽
-sim (tuple≽ rs) = ans-in (frame _ (λ _ → refl)) (λ ms → tuple≽ (unflip₂ ms)) (sims rs)
-  (λ vs ms → val ε (S.tuple vs) (tuple≽ (unflip₂ ms)))
+           λ v' s' → to (one (val-in (sv-red v'))) (β≽ r₁ s' v')
+  app-sim v (step st _) = ⊥-elim (sv-nostep v st)
+sim lit≽ = val ε P.lit lit≽
+sim (tuple≽ rs) = ans-in (frame _ (λ _ → refl)) tuple≽ (sims rs)
+  (λ vs ms → val ε (P.tuple (each-svs vs)) (tuple≽ ms))
 sim (get≽ {i = i} r) = ans-in (frame _ (λ _ → refl)) get≽ (sim r) get-sim
   where
-  get-sim : ∀ {W} → S.Value W → R˘ _ W → Ans′ (get i _) _ (get i W)
-  get-sim v@(S.tuple _) (tuple≽ rs) = to (one (val-in (S.value-red v))) (lookup₂ rs i)
-  get-sim v (step st _) = ⊥-elim (sv-nostep (val-sv v) st)
-sim (inl≽ r) = ans-in (frame _ (λ _ → refl)) inl≽ (sim r) (λ v r' → val ε (S.inl v) (inl≽ r'))
-sim (inr≽ r) = ans-in (frame _ (λ _ → refl)) inr≽ (sim r) (λ v r' → val ε (S.inr v) (inr≽ r'))
+  get-sim : ∀ {W} → SV W → R˘ _ W → Ans′ (get i _) _ (get i W)
+  get-sim v@(P.tuple _) (tuple≽ rs) = to (one (val-in (sv-red v))) (lookup₂ rs i)
+  get-sim v (step st _) = ⊥-elim (sv-nostep v st)
+sim (inl≽ r) = ans-in (frame _ (λ _ → refl)) inl≽ (sim r) (λ v r' → val ε (P.inl v) (inl≽ r'))
+sim (inr≽ r) = ans-in (frame _ (λ _ → refl)) inr≽ (sim r) (λ v r' → val ε (P.inr v) (inr≽ r'))
 sim (case≽ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ r' → case≽ r' s t) (sim r) case-sim
   where
-  case-sim : ∀ {W} → S.Value W → R˘ _ W → Ans′ (case _ M' N') _ (case W M N)
-  case-sim v@(S.inl v₁) (inl≽ r') = to (one (val-in (S.value-red v))) (β≽ s r' v₁)
-  case-sim v@(S.inr v₁) (inr≽ r') = to (one (val-in (S.value-red v))) (β≽ t r' v₁)
-  case-sim v (step st _) = ⊥-elim (sv-nostep (val-sv v) st)
+  case-sim : ∀ {W} → SV W → R˘ _ W → Ans′ (case _ M' N') _ (case W M N)
+  case-sim v@(P.inl v₁) (inl≽ r') = to (one (val-in (sv-red v))) (β≽ s r' v₁)
+  case-sim v@(P.inr v₁) (inr≽ r') = to (one (val-in (sv-red v))) (β≽ t r' v₁)
+  case-sim v (step st _) = ⊥-elim (sv-nostep v st)
 sim (prim≽ {p = p} {M = M} {M'} r s) = ans-in (frame _ (λ _ → refl)) (λ r' → prim≽ r' s) (sim r) prim-sim
   where
-  prim-sim₂ : ∀ {n W V'} → S.Value W → R˘ V' W → Ans′ (prim p (lit Int n) V') (S.prim? p (lit Int n) V') (prim p (lit Int n) W)
-  prim-sim₂ S.lit lit≽ = to (one refl) (≽-out p _ _)
-  prim-sim₂ v (step st _) = ⊥-elim (sv-nostep (val-sv v) st)
-  prim-sim : ∀ {W V'} → S.Value W → R˘ V' W
+  prim-sim₂ : ∀ {n W V'} → SV W → R˘ V' W → Ans′ (prim p (lit Int n) V') (S.prim? p (lit Int n) V') (prim p (lit Int n) W)
+  prim-sim₂ P.lit lit≽ = to (one refl) (≽-out p _ _)
+  prim-sim₂ v (step st _) = ⊥-elim (sv-nostep v st)
+  prim-sim : ∀ {W V'} → SV W → R˘ V' W
     → Ans′ (prim p V' M') (step-in (prim p V') (S.red M') (S.prim? p V' M')) (prim p W M)
-  prim-sim S.lit lit≽ = ans-in (frame {g = prim p _} _ (λ _ → refl)) (prim≽ lit≽) (sim s) prim-sim₂
-  prim-sim v (step st _) = ⊥-elim (sv-nostep (val-sv v) st)
+  prim-sim P.lit lit≽ = ans-in (frame {g = prim p _} _ (λ _ → refl)) (prim≽ lit≽) (sim s) prim-sim₂
+  prim-sim v (step st _) = ⊥-elim (sv-nostep v st)
 sim (step st r) = ans-step (closed-red st) (sim r)
-sim (let≽ r s) = ans-in (frame _ (λ _ → refl)) (λ r' → let≽ r' s) (sim r) λ v r' → to (one (val-in (S.value-red v))) (β≽ s r' v)
+sim (let≽ r s) = ans-in (frame _ (λ _ → refl)) (λ r' → let≽ r' s) (sim r) λ v r' → to (one (val-in (sv-red v))) (β≽ s r' v)
 sim (letλ≽ {N = N} r s) = ans-in (frame {g = app (lam N)} _ (λ _ → refl)) (λ r' → letλ≽ r' s) (sim r)
-  λ v r' → to (one (val-in (S.value-red v))) (β≽ s r' v)
-sim (letλv≽ {W = W} {V'} {N} {N'} wv r₁ r₂) = let-val (sv-value wv) r₁
-  (to (one (val-in (S.value-red (sv-value wv)))) (subst₂ _≽_ (sym (closed-[] N W)) (sym (closed-[] N' V')) r₂))
-sim (letv≽ {W = W} {V'} {N} {N'} wv r₁ r₂) = let-val (sv-value wv) r₁
-  (to (one (val-in (S.value-red (sv-value wv)))) (subst₂ _≽_ (sym (closed-[] N W)) (sym (closed-[] N' V')) r₂))
-sim (fold≽ r) = ans-in (frame _ (λ _ → refl)) fold≽ (sim r) (λ v r' → val ε (S.fold v) (fold≽ r'))
+  λ v r' → to (one (val-in (sv-red v))) (β≽ s r' v)
+sim (letλv≽ {W = W} {V'} {N} {N'} wv r₁ r₂) = let-val wv r₁
+  (to (one (val-in (sv-red wv))) (subst₂ _≽_ (sym (closed-[] N W)) (sym (closed-[] N' V')) r₂))
+sim (letv≽ {W = W} {V'} {N} {N'} wv r₁ r₂) = let-val wv r₁
+  (to (one (val-in (sv-red wv))) (subst₂ _≽_ (sym (closed-[] N W)) (sym (closed-[] N' V')) r₂))
+sim (fold≽ r) = ans-in (frame _ (λ _ → refl)) fold≽ (sim r) (λ v r' → val ε (P.fold v) (fold≽ r'))
 sim (unfold≽ r) = ans-in (frame _ (λ _ → refl)) unfold≽ (sim r) unfold-sim
   where
-  unfold-sim : ∀ {W} → S.Value W → R˘ _ W → Ans′ (unfold _) _ (unfold W)
-  unfold-sim v@(S.fold _) (fold≽ r') = to (one (val-in (S.value-red v))) r'
-  unfold-sim v (step st _) = ⊥-elim (sv-nostep (val-sv v) st)
+  unfold-sim : ∀ {W} → SV W → R˘ _ W → Ans′ (unfold _) _ (unfold W)
+  unfold-sim v@(P.fold _) (fold≽ r') = to (one (val-in (sv-red v))) r'
+  unfold-sim v (step st _) = ⊥-elim (sv-nostep v st)
 sims [] = val ε [] []
-sims (r ∷ rs) = ans-∷ S.reds (λ _ _ → refl) S.value-red (flip₂ rs) (sim r) (sims rs)
+sims (r ∷ rs) = ans-∷ S.reds (λ _ _ → refl) sv-red rs (sim r) (sims rs)
 
 {- The end theorem: for every closed program ----------------------------------------}
 
 simplify-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (S.sem (simplify M))
-simplify-correct M = equiv-sym (red-equivalent S.value-red R˘ sim (λ m _ v → sym (obs≽ v m)) (simplify-≽ M))
+simplify-correct M = equiv-sym (red-equivalent sv-red R˘ sim (λ m _ v → sym (obs≽ v m)) (simplify-≽ M))
