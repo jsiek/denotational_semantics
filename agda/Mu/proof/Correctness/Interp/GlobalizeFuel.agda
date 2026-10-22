@@ -25,7 +25,7 @@ open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-t
 import Mu.Language.Clos4 as S
 open import Mu.Language.Clos5
 open import Mu.Compiler.Globalize
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂)
+open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import proof.Semantics.Interp.Clock
 import Mu.Semantics.Interp.Clos4 as S4
 import Mu.Semantics.Interp.Clos5 as T
@@ -127,7 +127,6 @@ glob₂-ext f L M D with glob L D | glob-ext L D
 {- For the final table dsf ------------------------------------------------------}
 
 module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
-  open T.Vals Σf renaming (Val to TVal; Env to TEnv)
 
   {- the definitions D are found in dsf through r -}
   Contains : ∀ {Σ} → Made Σ → Ren Σ Σf → Set
@@ -158,32 +157,22 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
   open import Mu.proof.Semantics.Interp.Rel {λ Δ A B → S.Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → Σf ∋ sig Δ A B}
   open Rel GCode (Same GCode) public
 
-  Env≈ : ∀ {Γ} → S4.Env Γ → TEnv Γ → Set
-  Env≈ ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ lookup ρ₂ x
-
-  env-ext : ∀ {Γ B ρ₁ ρ₂ v w} → v ≈ w → Env≈ {Γ} ρ₁ ρ₂ → Env≈ {B ∷ Γ} (v ∷ ρ₁) (w ∷ ρ₂)
-  env-ext v E Z = v
-  env-ext v E (S x) = E x
-
-  pack≈' : ∀ {Δ A B} {c : S4.Val (code Δ A B)} {c' e e'} → c ≈ c' → e ≈ e' → S4.pack c e ≈ T.Vals.pack c' e'
-  pack≈' (code≈ g) (tup≈ rs) = pack≈ rs (same g)
-
   run≈ : ∀ ck {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) {r : Ren (Out.Σ' (glob M D)) Σf} {ρ₁ ρ₂}
-    → Contains (Out.made (glob M D)) r → Env≈ ρ₁ ρ₂
+    → Contains (Out.made (glob M D)) r → All₂ _≈_ ρ₁ ρ₂
     → RelResult _≈_ (S4.eval ck ρ₁ M) (T.eval dsf ck ρ₂ (wk r (Out.res (glob M D))))
   runs≈ : ∀ ck {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) {r : Ren (Out.Σ' (globs Ms D)) Σf} {ρ₁ ρ₂}
-    → Contains (Out.made (globs Ms D)) r → Env≈ ρ₁ ρ₂
+    → Contains (Out.made (globs Ms D)) r → All₂ _≈_ ρ₁ ρ₂
     → RelResult (All₂ _≈_) (S4.evals ck ρ₁ Ms) (T.evals dsf ck ρ₂ (wks r (Out.res (globs Ms D))))
   call≈ : ∀ ck {A B} {f : S4.Val (A ⇒ B)} {g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S4.call ck f v) (T.call dsf ck g w)
 
-  run≈ ck (S.` x) D c E = ret (E x)
+  run≈ ck (S.` x) D c E = ret (lookup₂ E x)
   run≈ ck (S.code N) D {r} c E with glob N D in eq
   ... | out s D' N' with c
   ...   | r' , h , d , c' = ret (code≈ (gcode D _ eq r' (contains-cong D' h c') d))
   run≈ ck (S.pack L M) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
-    bind-rel (ihL (contains-ext e₂ c) E) λ v → bind-rel (ihM c E) λ w → ret (pack≈' v w)
+    bind-rel (ihL (contains-ext e₂ c) E) λ { (code≈ g) → bind-rel (ihM c E) λ { (tup≈ rs) → ret (pack≈ rs (same g)) } }
   run≈ ck (S.callc L M) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
@@ -202,7 +191,7 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
   ...   | out s₂ D₂ M' | e₂ | ihM with glob N D₂ | glob-ext N D₂ | run≈ ck N D₂
   ...     | out s₃ D₃ N' | e₃ | ihN rewrite wk-wk r (⊑-∋ (⊑-trans s₂ s₃)) L' | wk-wk r (⊑-∋ s₃) M' =
     bind-rel (ihL (contains-ext (ext-trans e₂ e₃) c) E) λ u → either≈ u
-      (λ v → ihM (contains-ext e₃ c) (env-ext v E)) (λ v → ihN c (env-ext v E))
+      (λ v → ihM (contains-ext e₃ c) (v ∷ E)) (λ v → ihN c (v ∷ E))
   run≈ ck (S.prim p L M) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
@@ -210,7 +199,7 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
   run≈ ck (S.let′ M N) D {r} c E with glob M D | run≈ ck M D
   ... | out s₁ D₁ M' | ihM with glob N D₁ | glob-ext N D₁ | run≈ ck N D₁
   ...   | out s₂ D₂ N' | e₂ | ihN rewrite wk-wk r (⊑-∋ s₂) M' =
-    bind-rel (ihM (contains-ext e₂ c) E) λ v → ihN c (env-ext v E)
+    bind-rel (ihM (contains-ext e₂ c) E) λ v → ihN c (v ∷ E)
   run≈ ck (S.fold M) D c E with glob M D | run≈ ck M D
   ... | out s D' M' | ih = bind-rel (ih c E) λ v → ret (fold≈ v)
   run≈ ck (S.unfold M) D c E with glob M D | run≈ ck M D
@@ -224,7 +213,7 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
 
   call≈ zero f w = timeout
   call≈ (suc ck) (pack≈ {c = N} rs (same (gcode D _ refl r c d))) w rewrite d =
-    run≈ ck N D c λ { Z → w ; (S Z) → tup≈ rs }
+    run≈ ck N D c (w ∷ tup≈ rs ∷ [])
 
 {- the definitions made, closed over the whole table, are found there -}
 close-ok : ∀ {Σ Σf} (dsf : All (Code Σf) Σf) (D : Made Σ) (s : Σ ⊑ Σf)
@@ -238,10 +227,10 @@ close-ok dsf (D ▷ N) s h =
 globalize-correct : ∀ {A} (M : S.Tm [] A) → Equivalent (S4.sem M) (T.sem (globalize M))
 globalize-correct M with glob M [] in eq
 ... | out s D M' = clocked _≈_ obs≈ λ ck → subst (λ N → RelResult _≈_ (S4.eval ck [] M) (T.eval dsf ck [] N)) (wk-id M')
-    (run-out ck eq (close-ok dsf D here⊑ λ x → refl) λ ())
+    (run-out ck eq (close-ok dsf D here⊑ λ x → refl) [])
   where
   dsf = close D here⊑
   open G dsf
-  run-out : ∀ ck {o} → glob M [] ≡ o → {r : Ren (Out.Σ' o) _} → Contains (Out.made o) r → Env≈ [] []
+  run-out : ∀ ck {o} → glob M [] ≡ o → {r : Ren (Out.Σ' o) _} → Contains (Out.made o) r → All₂ _≈_ [] []
     → RelResult _≈_ (S4.eval ck [] M) (T.eval dsf ck [] (wk r (Out.res o)))
   run-out ck refl = run≈ ck M []

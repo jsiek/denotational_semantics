@@ -45,7 +45,6 @@ open import Mu.proof.Correctness.Interp.SelectFuel using (select-correct)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
-open import Data.Product using (_,_; proj₁; proj₂)
 
 compile₄-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem M) (Clos4μᵢ.sem (compile₄ M))
 compile₄-correct M =
@@ -68,26 +67,6 @@ compile-cfg-correct M = equiv-trans (compile-imp-correct M) (explicate-correct (
 
 compile-x86-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem M) (X86μᵢ.sem (compile-x86 M))
 compile-x86-correct M = equiv-trans (compile-cfg-correct M) (select-correct (compile-cfg M))
-
-{- in particular -}
-
-compile-const : ∀ {A} (M : Tm [] A) → ∀ B k
-  → Terminates (ISWIMμᵢ.sem M) (o-const B k) ⇔ Terminates (Clos5μᵢ.sem (compile M)) (o-const B k)
-compile-const M B k = Equivalent.terminates (compile-correct M) (o-const B k)
-
-compile-converges : ∀ {A} (M : Tm [] A)
-  → Converges (Terminates (ISWIMμᵢ.sem M)) ⇔ Converges (Terminates (Clos5μᵢ.sem (compile M)))
-compile-converges M =
-    (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
-  , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
-  where E = compile-correct M
-
-compile-error : ∀ {A} (M : Tm [] A)
-  → Terminates (ISWIMμᵢ.sem M) o-error ⇔ Terminates (Clos5μᵢ.sem (compile M)) o-error
-compile-error M = Equivalent.terminates (compile-correct M) o-error
-
-compile-diverges : ∀ {A} (M : Tm [] A) → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (Clos5μᵢ.sem (compile M))
-compile-diverges M = Equivalent.diverges (compile-correct M)
 
 {- for a main of type Int, as the other columns state it -}
 

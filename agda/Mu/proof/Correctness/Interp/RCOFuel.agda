@@ -17,7 +17,6 @@
 module Mu.proof.Correctness.Interp.RCOFuel where
 
 open import Mu.Language.Type
-open import Framework.Primitives using (Int)
 open import Mu.Language.Clos5
 import Mu.Language.Mon as M
 open M using (Atm; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
@@ -46,9 +45,6 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
   atom-ren (lit B c) h = refl
   atom-ren (ref f) h = refl
 
-  K-prim : ∀ p → Val (base Int) → Val (base Int) → Result (Val (out-ty p))
-  K-prim p v w = ret (δ p v w)
-
   module _ (ck : ℕ) (calls : ∀ {A B} (f : Val (A ⇒ B)) w → call ds ck f w ≡ call ds' ck f w) where
 
     {- K v is what k means, given an atom of value v in an environment that extends φ -}
@@ -72,25 +68,25 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
 
     rco-ok (` x) ρ ag = cong ret (ag x)
     rco-ok (fun-ref f) ρ ag = refl
-    rco-ok (pack L N) ρ ag = atomize₂-ok L N ρ {k = M.pack} {K₂ = λ v w → ret (pack v w)} ag λ φ' a b → sym (trans (atm-bind a) (atm-bind b))
+    rco-ok (pack L N) ρ ag = atomize₂-ok L N ρ {k = M.pack} ag λ φ' a b → sym (trans (atm-bind a) (atm-bind b))
     rco-ok (callc L N) ρ ag =
       trans (bind-cong (eval ds ck _ L) λ f → bind-cong (eval ds ck _ N) λ w → calls f w)
-        (atomize₂-ok L N ρ {k = M.callc} {K₂ = call ds' ck} ag λ φ' a b → sym (trans (atm-bind a) (atm-bind b)))
+        (atomize₂-ok L N ρ {k = M.callc} ag λ φ' a b → sym (trans (atm-bind a) (atm-bind b)))
     rco-ok (lit B c) ρ ag = refl
-    rco-ok (tuple Ns) ρ ag = atomizes-ok Ns ρ {k = λ _ as → M.tuple as} {K' = λ vs → ret (tup vs)} ag λ r φ' as h → sym (atoms-bind as)
-    rco-ok (get i N) ρ ag = atomize-ok N ρ {k = λ _ a → M.get i a} {K' = λ v → ret (nth i v)} ag λ r φ' a h → sym (atm-bind a)
-    rco-ok (inl N) ρ ag = atomize-ok N ρ {k = λ _ a → M.inl a} {K' = λ v → ret (inl v)} ag λ r φ' a h → sym (atm-bind a)
-    rco-ok (inr N) ρ ag = atomize-ok N ρ {k = λ _ a → M.inr a} {K' = λ v → ret (inr v)} ag λ r φ' a h → sym (atm-bind a)
+    rco-ok (tuple Ns) ρ ag = atomizes-ok Ns ρ ag λ r φ' as h → sym (atoms-bind as)
+    rco-ok (get i N) ρ ag = atomize-ok N ρ ag λ r φ' a h → sym (atm-bind a)
+    rco-ok (inl N) ρ ag = atomize-ok N ρ ag λ r φ' a h → sym (atm-bind a)
+    rco-ok (inr N) ρ ag = atomize-ok N ρ ag λ r φ' a h → sym (atm-bind a)
     rco-ok (case L N₁ N₂) ρ {γ} ag =
       atomize-ok L ρ {K' = λ u → either u (λ v → eval ds ck (v ∷ γ) N₁) (λ v → eval ds ck (v ∷ γ) N₂)} ag λ r φ' a h →
       trans (either-cong (atom φ' a)
         (λ v → rco-ok N₁ _ λ { Z → refl ; (S x) → trans (ag x) (h (ρ x)) })
         (λ v → rco-ok N₂ _ λ { Z → refl ; (S x) → trans (ag x) (h (ρ x)) })) (sym (atm-bind a))
-    rco-ok (prim p L N) ρ ag = atomize₂-ok L N ρ {k = M.prim p} {K₂ = K-prim p} ag λ φ' a b → sym (trans (atm-bind a) (atm-bind b))
+    rco-ok (prim p L N) ρ ag = atomize₂-ok L N ρ {k = M.prim p} ag λ φ' a b → sym (trans (atm-bind a) (atm-bind b))
     rco-ok (let′ N₁ N₂) ρ ag =
       bind≡ (rco-ok N₁ ρ ag) λ v → rco-ok N₂ (ext ρ) λ { Z → refl ; (S x) → ag x }
-    rco-ok (fold N) ρ ag = atomize-ok N ρ {k = λ _ a → M.fold a} {K' = λ v → ret (fold v)} ag λ r φ' a h → sym (atm-bind a)
-    rco-ok (unfold N) ρ ag = atomize-ok N ρ {k = λ _ a → M.unfold a} {K' = λ v → ret (unfold-v v)} ag λ r φ' a h → sym (atm-bind a)
+    rco-ok (fold N) ρ ag = atomize-ok N ρ ag λ r φ' a h → sym (atm-bind a)
+    rco-ok (unfold N) ρ ag = atomize-ok N ρ ag λ r φ' a h → sym (atm-bind a)
 
     atomize-let N ρ ag kok = bind≡ (rco-ok N ρ ag) λ v → kok S (v ∷ _) (var Z) λ x → refl
 
