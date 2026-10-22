@@ -8,6 +8,7 @@
   - [[#Infrastructure]]
   - [[#Audit-surface counts]]
   - [[#Shared modules]]
+  - [[#Scott domains]]
 - [[#Dynamic typing and errors]]
 - [[#Mixing semantics]]
 - [[#The ISWIM pipeline in full]]
@@ -288,6 +289,46 @@ The adequacy statements also use ρ₀ from the denotational ones (Mu/Theorems/D
 Examples, not counted: 53 lines.
 
 Module (+ proof/): the definitions are on the audit surface, the lemmas in its proof/ half; the lines are those of both.
+
+### Scott domains
+
+The fifth column, a second denotational proof with Scott domains (`loc.py --scott`; `make check-scott`, which needs TypeTopology, so the column is not in `make check` or the four-column tables above). It has the same rows as the graph model, and its semantics row counts the meaning of the primitives, as the graph model's does. After the opaque `inj`/`case` (PR #93) and the cleanup (PR #95), a clean `make check-scott`, TypeTopology included, takes about 2.5 minutes.
+
+| component (ISWIMμ) | denotational: graph model | denotational: Scott domains |
+|---|---:|---:|
+| semantics of the languages | 427 | **395** |
+| lemmas shared by the passes | — | 135 |
+| simplify | **349** | 411 |
+| CC: enclose | **37** | 49 |
+| CC: optimize | **66** | 92 |
+| CC: concretize | **46** | 58 |
+| CC: delay | **450** | 723 |
+| CC: globalize | **115** | 147 |
+| rco | **109** | 159 |
+| lift locals | **39** | 59 |
+| explicate control | **64** | 92 |
+| select instructions | **76** | 133 |
+| composition | **28** | 32 |
+| **total** | **1806** | 2485 |
+
+Counted in the graph model's semantics row: `Semantics.Graph.Prim` (+ proof/) (34).
+
+The Scott column counts the meaning of the primitives (`Semantics.Scott.Prim`) in its semantics row, and simplify's syntactic lemmas (`Mu.proof.Compiler.SimplifyFacts`) in its simplify row, as the graph model does; its delay row includes the calls of approximated closures (`proof.Framework.Scott.StageCall`).
+
+| infrastructure of the Scott column (not in the total) | lines |
+|---|---:|
+| dcpos on TypeTopology: exponentials, products, powers, sums, lifting | 471 |
+| locally continuous functors, the solution of D ≅ F D as a bilimit | 389 |
+| the domain of values and its operators | 361 |
+| combinators for continuous meanings | 155 |
+| the stages of the bilimit (approximations by depth) | 131 |
+| **total** | 1507 |
+
+Theorem statements (Mu/Theorems/Scott.agda): 84 lines.
+
+* **Total:** 2485, 1.4 times the graph model (1.3 by tokens), larger in every row but the semantics.
+* **Delay (723 against 450):** one stage-indexed relation `R δ n s w` over a direction δ serves both halves (`DelayRel.agda`). By category, out of 838 comment-stripped lines with imports: the relation's definitions, is-prop, monotonicity, admissibility and the moves between stages 174; calls 101 and `StageCall` 198 (299, the largest share: a call of a pair seen at stage m + 2 shows its result only at stage m); primitives and tagged values 71 (about a twelfth); closures 43, other operators 62, terms and top level 66, header and imports 123.
+* **Remaining workarounds for slow `with`** (slow whenever a value of 𝔻 or an environment is in scope): the -res/-eq lemmas and `kfun` in simplify, `th-cons` in optimize, the records OK/OKs/Cong₁/Cong₂ and `programO` in globalize, Out projections in explicate control, and the opaque `db` and `Start` module in select instructions.
 
 ## Dynamic typing and errors
 
@@ -890,6 +931,8 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 | 2026-10-15 | the graph model's adequacy against the clocked interpreters instead of the CEK machines (reported separately, not in the totals; see [[#Adequacy]]): ISWIMμ's is the mixing experiment's bridge, moved to `Mu/proof/Adequacy/` (464 → 395); X86μ's direct against its interpreter (697 → 712; Clos5 values 307 → 301); end to end the interpreter column's statements, with no no-error lemma (22 → 15); adequacy 1599 → 1532, the graph model to running code 3557 → 3490; the CEK version kept as an alternative (`Mu/proof/Adequacy/CEK/`, in no total); the mixed total unchanged (1839, the bridge counted once); no total changes (PR #76) | 1958 | 2258 | **1653** | 3207 |
 | 2026-10-20 | graph-model pass proofs shortened, no theorem statement changed: binder congruences whose bodies Agda infers (`lam-≃`, `let-≃`, `case-≃` on every nonempty consistent set, `Body-≃`), `ne-≃`, `guard-yes` and `body-mono`, in `Mu/proof/Semantics/Graph/Binders.agda` (semantics row, +17); rco's frame invariants in one record (`Ext`); concretize's tuple consistency from `con` of a tuple term; simplify 360 → 349, enclose 43 → 37, optimize 83 → 66, concretize 68 → 46, globalize 118 → 115, rco 125 → 109, lift locals 44 → 39, explicate control 71 → 64, select 83 → 76; adequacy 1532 → 1529 (`X86Compiled` uses rco's and lift locals' `code-rco`, `code-lift`) | 1884 | 2258 | **1653** | 3207 |
 | 2026-10-21 | final cleanup pass of the other columns (PRs #88–#91, after the graph model's PR #87 above; no theorem statement changed, nothing moved into the infrastructure); loc.md refreshed. Interpreter (PR #88): simplify one induction for both directions at each clock (`sim`, `let-sim`) and one for the source running ahead (`run`) (633 → 508), globalize's environments by `All₂` (183 → 175), rco 85 → 83, the composition without four unused corollaries about Clos5μ (36 → 22). CEK (PR #89): the machines of ISWIMμ and Clos2μ–Clos4μ share their values (`Mu/Semantics/CEK/Values.agda`) and enclose, concretize and delay their value relation (`Mu/proof/Semantics/CEK/Rel.agda`, lemmas shared by the passes 11 → 38); simplify one `run` with `let-run` and `call-run` (584 → 560); semantics 575 → 511, enclose 93 → 71, optimize 127 → 128, concretize 111 → 88, delay 96 → 73, rco 147 → 120. Graph model (PR #90): delay around `Approx` and `Approx-fold` (524 → 450), composition 30 → 28, semantics 395 → 393. Reduction (PR #91): semantics 965 → 961, simplify 715 → 697, enclose 164 → 147, optimize 232 → 212, concretize 154 → 148, delay 139 → 126, globalize 219 → 192, rco 164 → 157, composition 20 → 18. Adequacy 1529 (its alternative for the CEK machines 1596 → 1599); audit surface 1548, 1669, **1468**, 1923 (adequacy 1773); mixed (a) 1848 → 1838. Also counted here, without rows of their own: the environment filler ⟨⟩ instead of ω (PR #85; graph model 1958 → 1961, `TypedOkBase` 90 → 92 in the infrastructure of both pipelines) and no contractiveness condition on μ (PR #86; ISWIMμ's languages and passes 938 → 921, `Type` 69 → 52; no total changes) | 1806 | 2103 | **1504** | 3093 |
+| 2026-10-22 | Scott-domain column (not in the four-column totals; see [[#Scott domains]]): `inj` and `case` opaque (PR #93), a clean `make check-scott` 3057 s → 152 s, Scott total 3450 → 3457 (lemmas 132 → 135, delay 1403 → 1405, rco 195 → 197; infrastructure 1495 → 1507) | 1806 | 2103 | **1504** | 3093 |
+| 2026-10-22 | Scott-domain cleanup (PR #95; no theorem statement changed, nothing moved into the infrastructure): one stage-indexed relation over a direction for both halves of delay, tags matched by `Same` (delay 1405 → 723); globalize with `with` in the recursion (262 → 147); select 204 → 133, rco 197 → 159, optimize 119 → 92, simplify 441 → 411, lift locals 63 → 59, concretize 62 → 58, enclose 50 → 49; Scott total 3457 → 2485; check 145 s | 1806 | 2103 | **1504** | 3093 |
 
 **The typed pipeline (PRs #55, #56).** The third row from the end (the last two are the typed assembly language). The pilot (the two rows before it, see [[#Typed intermediate languages (pilot, superseded)]]) recommended inserting the checks early; phase 1 (PR #56) defined the typed languages and passes from untyped ISWIM to X86, phase 2 ported each column, and phase 3 made the typed pipeline the main one: the untyped modules moved to `agda/Untyped/` (module prefix `Untyped.`), the typed ones took the main names (`Compiler/Typed/X` → `Compiler/X`, `proof/Correctness/Typed/<style>/X` → `proof/Correctness/<style>/X`, `Theorems/Typed/X` → `Theorems/X`), and the pilot's statements (`Theorems/Typed.agda`) and composition (`compileᵀ`) were retired, the main statements subsuming them. The modules both pipelines use stayed in `agda/`; to keep them independent of the untyped languages, the frames and tables of X86's semantics (`Semantics/Graph/Frames.agda`, `Semantics/GraphErr/Frames.agda`), the X86 interpreter's values (`Semantics/Interp/Values.agda`), the X86 machine's frames (into `Semantics/CEK/Values.agda`) and `block-at` (into `Language/X86.agda`) were split off, and ISWIM adequacy lost the untyped compiler's corollaries (now `Untyped/proof/Adequacy/ISWIMCompile.agda`). That moves the untyped totals by a few lines (2608 → 2610, 3526 → 3521, 2794 → 2795, 3689 → 3684); the lemmas about X86's case that both graph-model select proofs had (`case-core`) are now shared, in `proof/Semantics/Graph/X86.agda`.
 

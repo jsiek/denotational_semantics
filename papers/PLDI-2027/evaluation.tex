@@ -24,11 +24,10 @@ the languages and passes, and each is our best effort in its style.
 \item \emph{Graph model.} The semantics of each language is the
   graph-model semantics of Appendix~\ref{app:languages}, and each pass
     is proved as in Section~\ref{sec:compiler-proof}.
-\item \emph{Scott domains.} The semantics of each language maps into a
-  universal domain $\mathbb{D} \cong
-  \mathcal{L}(\Sigma_t\, \mathit{Payload}_t(\mathbb{D}))$, solved as a
-  bilimit using the domain theory of TypeTopology
-    \citep{Escardo:TypeTopology}, and meanings are continuous functions.
+\item \emph{Scott domains.} Meanings are continuous functions into a
+  universal domain of tagged values (Appendix~\ref{app:scott}), built as
+  a bilimit with the domain theory of TypeTopology
+  \citep{Escardo:TypeTopology}.
 \item \emph{Abstract machines and simulations}, in the style of
   CompCert \citep{Leroy:2009aa}. Each language has a small-step CEK
   machine, and each pass is proved by a forward simulation. The
@@ -88,20 +87,20 @@ claim about prior work ourselves.
  & graph model & Scott domains & machines & interpreters & reduction\\
 \midrule
 semantics of the languages & 427 & 395 & 529 & \textbf{391} & 980\\
-lemmas shared by the passes & --- & 132 & 38 & --- & ---\\
-\pass{simplify} & \textbf{349} & 441 & 560 & 508 & 697\\
-\pass{enclose} & 37 & 50 & 71 & \textbf{33} & 147\\
-\pass{optimize} & 66 & 119 & 128 & \textbf{65} & 212\\
-\pass{concretize} & 46 & 62 & 88 & \textbf{42} & 148\\
-\pass{delay} & 450 & 1403 & 73 & \textbf{35} & 126\\
-\pass{globalize} & \textbf{115} & 262 & 213 & 175 & 192\\
-\pass{remove complex operands} & 109 & 195 & 120 & \textbf{83} & 157\\
-\pass{lift locals} & 39 & 63 & 51 & \textbf{27} & 204\\
+lemmas shared by the passes & --- & 135 & 38 & --- & ---\\
+\pass{simplify} & \textbf{349} & 411 & 560 & 508 & 697\\
+\pass{enclose} & 37 & 49 & 71 & \textbf{33} & 147\\
+\pass{optimize} & 66 & 92 & 128 & \textbf{65} & 212\\
+\pass{concretize} & 46 & 58 & 88 & \textbf{42} & 148\\
+\pass{delay} & 450 & 723 & 73 & \textbf{35} & 126\\
+\pass{globalize} & \textbf{115} & 147 & 213 & 175 & 192\\
+\pass{remove complex operands} & 109 & 159 & 120 & \textbf{83} & 157\\
+\pass{lift locals} & 39 & 59 & 51 & \textbf{27} & 204\\
 \pass{explicate control} & \textbf{64} & 92 & 105 & 75 & 105\\
-\pass{select instructions} & 76 & 204 & 107 & \textbf{48} & 107\\
+\pass{select instructions} & 76 & 133 & 107 & \textbf{48} & 107\\
 composition & 28 & 32 & 20 & 22 & \textbf{18}\\
 \midrule
-total & 1806 & 3450 & 2103 & \textbf{1504} & 3093\\
+total & 1806 & 2485 & 2103 & \textbf{1504} & 3093\\
 \bottomrule
 \end{tabular}
 \caption{Lines of Agda in the five correctness proofs of the compiler.
@@ -114,7 +113,7 @@ interpreters is the smallest, at 1,504 lines, followed by the graph
 model at 1,806, abstract machines at 2,103, and reduction semantics at 3,093. One pass decides the graph model's place: \pass{delay} alone is
 450 lines, a quarter of the total, against 35 to 126 lines in the
 operational styles. Without \pass{delay}, the graph model would be the
-smallest, at 1,356 lines against 1,469 for the interpreters. The second denotational proof, with Scott domains, is the largest but one, at 3,450 lines: 1.9 times the graph model, and larger in every row.
+smallest, at 1,356 lines against 1,469 for the interpreters. The second denotational proof, with Scott domains, is 2,485 lines, between the abstract machines and reduction semantics: 1.4 times the graph model, and larger in every row but the semantics of the languages.
 
 \subsection{Analysis}
 
@@ -200,29 +199,33 @@ Lemma~\ref{lem:beta} holds only under side conditions of nonemptiness,
 consistency, and continuity, whereas a machine does not have such side
 conditions.
 
-\paragraph{The graph model is much smaller than Scott domains.}
+\paragraph{The graph model is smaller than Scott domains.}
 
-The two denotational proofs have the same structure, with an equation
-for every pass but \pass{delay}, yet the Scott-domain proof is larger
-in every row and 1.9 times the graph model overall, by lines and by
-tokens. For the equational passes it is 1.3 to 2.7 times larger.  The gap is widest for \pass{delay}, at
-1,403 lines against 450. The relational method of
-\citet{Pitts:1996aa} for recursively defined domains does not apply
-directly: \pass{delay} turns a function into a pair of code and
-environment, so the closure clause of the relation looks three levels
-into the target domain but only one into the source, which does not
-match the action of the domain's functor. We therefore followed
-\citet{Reynolds:1974aa} and built both relations stage by stage along
-the bilimit. For preservation, the relation pairs a depth-$n$
-approximation of the source with the full target; for reflection, it
-pairs the full source with a depth-$n$ approximation of the target,
-the counterpart of the approximant logical relation with the stages of
-the bilimit in place of the depth of finite elements. Each relation
-must be shown admissible and compatible with the projections between
-stages, arguments that finite elements make unnecessary in the graph
-model. The Scott-domain proof also relies on 1,495
-lines of its own infrastructure on top of TypeTopology, and it takes
-much longer to check: about 50 minutes, against 3 for the graph model.
+The two denotational proofs have the same structure, yet the
+Scott-domain proof is 1.4 times the graph model (1.3 by tokens),
+larger in every row but the semantics: 1.2 to 1.8 times for the
+equational passes, and 723 lines against 450 for \pass{delay}. Three
+properties of Scott domains explain much of the difference. First, a
+Scott value is infinite, so the relation for \pass{delay} cannot recurse
+on values. We built it stage by stage along the bilimit, as
+\citet{Reynolds:1974aa} did, with one relation, parameterized by the
+direction, for both halves. Each stage must be shown to be a
+proposition, downward closed, admissible, and preserved by the maps
+between stages: 174 of the 838 lines of the proof of \pass{delay}.
+Second, the method of \citet{Pitts:1996aa} does not apply directly,
+because \pass{delay} turns a function into a pair of code and
+environment, so the closure clause looks three levels into the target
+domain but only one into the source. A call of a pair seen at stage
+$m + 2$ shows its result only at stage $m$, and relating calls across
+stages takes 299 lines, the largest share. Third, the universal domain
+is a sum of tagged values: the primitives and tagged values take 71
+lines, and the 135 lines of shared lemmas are laws of strictness and
+definedness, which replace nonemptiness; in exchange, no consistency is
+needed. The graph-model relations recurse on finite elements, and none
+of the first two costs arise. The rest of the gap is a property of
+Agda: its \texttt{with}-abstraction is very slow when a value of the
+domain is in scope, so six places in five passes use auxiliary lemmas,
+records, or an opaque definition instead.
 
 \paragraph{The graph-model semantics is about as small as the interpreters', but it needs more infrastructure.}
 
@@ -259,7 +262,7 @@ easier to write. Because experience gained in writing one development could carr
 over to the next, after completing all four we gave each of them a
 final cleanup pass with the same goals and rules: shorten and clarify
 the proofs without changing any theorem statement and without moving
-code into the uncounted infrastructure. The cleanup removed between 114 and 155 lines from each style, and the ranking did not change. The Scott-domain proof, which we wrote last, did not receive this pass.
+code into the uncounted infrastructure. The cleanup removed between 114 and 155 lines from each operational style and the graph model, and the ranking did not change. The Scott-domain proof, which we wrote last, had more to remove: 3,457 lines before its cleanup and 2,485 after.
 
 The comparison covers one compiler, and the totals depend on its
 selection of passes. The denotational proofs tend to be smaller for
@@ -276,7 +279,7 @@ did for recursive and existential types. Our graph model makes the
 same choice, so the two denotational columns are like for like. For
 typed languages, a domain for each type is more usual
 \citep{Benton:2009ab,Dockins:2014aa}. It would avoid the case analysis
-on tags, about an eighth of the Scott-domain proof of \pass{delay}, but
+on tags, about a twelfth of the Scott-domain proof of \pass{delay}, but
 it would need a domain equation for each recursive type, and the
 existential types of closures fit it less directly. The stage-indexed
 relations would remain.

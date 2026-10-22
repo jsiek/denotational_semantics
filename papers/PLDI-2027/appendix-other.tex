@@ -195,8 +195,8 @@ the value of a subterm:
     \mid \mathit{tupK}(\vec{v}, \vec{M}, \rho, \kappa) \mid \mathit{getK}_i(\kappa)
     \mid \mathit{inlK}(\kappa) \mid \mathit{inrK}(\kappa) \\
  &\mid \mathit{caseK}(x.\,M, y.\,N, \rho, \kappa) \mid \mathit{primL}_p(M, \rho, \kappa)
-    \mid \mathit{primR}_p(n, \kappa) \mid \mathit{letK}(x.\,N, \rho, \kappa)
-    \mid \mathit{foldK}(\kappa) \mid \mathit{unfoldK}(\kappa)
+    \mid \mathit{primR}_p(n, \kappa) \\
+ &\mid \mathit{letK}(x.\,N, \rho, \kappa) \mid \mathit{foldK}(\kappa) \mid \mathit{unfoldK}(\kappa)
 \end{align*}
 The machine steps by:
 \begin{align*}
@@ -244,9 +244,10 @@ Appendix~\ref{app:interp}, the machine steps by:
  & \quad\text{where } \mathit{arg}(a, m) = \kw{code}\,f,\ e = m(\kw{rdi}),\ w = m(\kw{rsi}) \\
   \mathit{run}(\kw{retq}, B, \mathit{halt}, m) &\Downarrow \mathit{obs}(m(\kw{rax})) \\
   \mathit{run}(\kw{retq}, B, (\mathit{retK}(s, B', \sigma'), \Sigma), m) &\longrightarrow \mathit{run}(s, B', \Sigma, m') \\
- & \quad\text{where $m'$ has the frame $\sigma'$, $m(\kw{rax})$ in $\kw{rax}$, and nothing else set} \\
+ & \quad\text{where $m'$ has the frame $\sigma'$ and only $\kw{rax}$ set, to $m(\kw{rax})$} \\
   \mathit{run}(\kw{jmp}\;l, B, \Sigma, m) &\longrightarrow \mathit{run}(s_l, B_l, \Sigma, m_\sigma) \\
-  \mathit{run}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2), B, \Sigma, m) &\longrightarrow \mathit{run}(s_{l_1}, B_{l_1}, \Sigma, m_{\sigma|_y[y{:=}v]}) \quad\text{if } \sigma(x) = \kw{inl}\,v \\
+  \mathit{run}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2), B, \Sigma, m) &\longrightarrow \mathit{run}(s_{l_1}, B_{l_1}, \Sigma, m_{\sigma|_y[y{:=}v]}) \\
+ & \quad\text{if } \sigma(x) = \kw{inl}\,v \\
  & \text{(and likewise for $\kw{inr}$ and $l_2$)}
 \end{align*}
 The machine of a program starts in $\mathit{run}(s, B, \mathit{halt},
@@ -274,20 +275,20 @@ the subterms are values the term takes its own step:
 \begin{align*}
   \mathit{red}(V) &= \mathsf{val} \\
   \mathit{red}(L\;M) &= \mathsf{to}\,(L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
- &= \mathsf{to}\,(V\;M') &&\text{if } L = V \text{ and } \mathit{red}(M) = \mathsf{to}\,M' \\
- &= \mathsf{to}\,(N[x{:=}W]) &&\text{if } L = \lambda x.\,N \text{ and } M = W \\
+ &= \mathsf{to}\,(V\;M') &&\text{if } L = V,\ \mathit{red}(M) = \mathsf{to}\,M' \\
+ &= \mathsf{to}\,(N[x{:=}W]) &&\text{if } L = \lambda x.\,N,\ M = W \\
   \mathit{red}(\kw{tuple}\,(\vec{V}, M, \vec{M})) &= \mathsf{to}\,(\kw{tuple}\,(\vec{V}, M', \vec{M})) &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
   \mathit{red}(\kw{get}_i\,M) &= \mathsf{to}\,(\kw{get}_i\,M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
  &= \mathsf{to}\,V_i &&\text{if } M = \kw{tuple}\,(V_1, \ldots, V_n) \\
-  \mathit{red}(\kw{inl}\,M) &= \mathsf{to}\,(\kw{inl}\,M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M'
-    \quad\text{(likewise $\kw{inr}$, $\kw{fold}$)} \\
+  \mathit{red}(\kw{inl}\,M) &= \mathsf{to}\,(\kw{inl}\,M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
+ & &&\text{(likewise $\kw{inr}$ and $\kw{fold}$)} \\
   \mathit{red}(\kw{case}\;L\;(x.\,M)\;(y.\,N)) &= \mathsf{to}\,(\kw{case}\;L'\;(x.\,M)\;(y.\,N)) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
  &= \mathsf{to}\,(M[x{:=}V]) &&\text{if } L = \kw{inl}\,V \\
  &= \mathsf{to}\,(N[y{:=}V]) &&\text{if } L = \kw{inr}\,V \\
   \mathit{red}(\kw{prim}_p\;L\;M) &= \mathsf{to}\,(\kw{prim}_p\;L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
- &= \mathsf{to}\,(\kw{prim}_p\;V\;M') &&\text{if } L = V \text{ and } \mathit{red}(M) = \mathsf{to}\,M' \\
- &= \mathsf{to}\,\delta_p(n, m) &&\text{if } L = n \text{ and } M = m \\
-  \mathit{red}(\kw{let}\;x = M\;\kw{in}\;N) &= \mathsf{to}\,(\kw{let}\;x = M'\;\kw{in}\;N) &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
+ &= \mathsf{to}\,(\kw{prim}_p\;V\;M') &&\text{if } L = V,\ \mathit{red}(M) = \mathsf{to}\,M' \\
+ &= \mathsf{to}\,\delta_p(n, m) &&\text{if } L = n,\ M = m \\
+  \mathit{red}(\kw{let}\;x{=}M\;\kw{in}\;N) &= \mathsf{to}\,(\kw{let}\;x{=}M'\;\kw{in}\;N) &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
  &= \mathsf{to}\,(N[x{:=}V]) &&\text{if } M = V \\
   \mathit{red}(\kw{unfold}\;M) &= \mathsf{to}\,(\kw{unfold}\;M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
  &= \mathsf{to}\,V &&\text{if } M = \kw{fold}\,V
