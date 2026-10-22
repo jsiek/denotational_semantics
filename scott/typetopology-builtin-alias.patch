@@ -1,0 +1,69 @@
+--- a/source/MLTT/Bool.lagda	2026-10-12 17:39:17.982773081 -0400
++++ b/source/MLTT/Bool.lagda	2026-10-12 17:43:47.180579412 -0400
+@@ -6,12 +6,7 @@
+ 
+ open import MLTT.Spartan
+ 
+-data Bool : 𝓤₀ ̇ where
+- true false : Bool
+-
+-{-# BUILTIN BOOL  Bool  #-}
+-{-# BUILTIN FALSE false #-}
+-{-# BUILTIN TRUE  true  #-}
++open import Agda.Builtin.Bool public using (Bool; true; false)
+ 
+ true-is-not-false : true ≠ false
+ true-is-not-false p = transport f p ⋆
+--- a/source/MLTT/List.lagda	2026-10-12 17:39:17.982773081 -0400
++++ b/source/MLTT/List.lagda	2026-10-12 17:43:47.180714387 -0400
+@@ -18,13 +18,7 @@
+ open import UF.Base
+ open import UF.Subsingletons
+ 
+-data List {𝓤} (X : 𝓤 ̇ ) : 𝓤 ̇ where
+- [] : List X
+- _∷_ : X → List X → List X
+-
+-infixr 3 _∷_
+-
+-{-# BUILTIN LIST List #-}
++open import Agda.Builtin.List public using (List; []; _∷_)
+ 
+ length : {X : 𝓤 ̇ } → List X → ℕ
+ length []       = 0
+--- a/source/MLTT/Natural-Numbers-Type.lagda	2026-10-12 17:39:17.982773081 -0400
++++ b/source/MLTT/Natural-Numbers-Type.lagda	2026-10-12 17:43:47.180304222 -0400
+@@ -4,10 +4,6 @@
+ 
+ module MLTT.Natural-Numbers-Type where
+ 
+-data ℕ : Set₀  where
+- zero : ℕ
+- succ : ℕ → ℕ
+-
+-{-# BUILTIN NATURAL ℕ #-}
++open import Agda.Builtin.Nat public using (zero) renaming (Nat to ℕ; suc to succ)
+ 
+ \end{code}
+--- a/source/Naturals/Addition.lagda	2026-10-12 17:39:17.983841265 -0400
++++ b/source/Naturals/Addition.lagda	2026-10-12 17:43:47.180397903 -0400
+@@ -18,7 +18,7 @@
+ _+ᴸ_ : ℕ → ℕ → ℕ
+ m +ᴸ n = n + m
+ 
+-{-# BUILTIN NATPLUS _+_ #-}
++
+ 
+ zero-right-neutral : (n : ℕ) → n + 0 ＝ n
+ zero-right-neutral n = refl
+--- a/source/Naturals/Multiplication.lagda	2026-10-12 17:39:17.983841265 -0400
++++ b/source/Naturals/Multiplication.lagda	2026-10-12 17:43:47.180511988 -0400
+@@ -27,7 +27,7 @@
+ 
+ infixl 32 _*_
+ 
+-{-# BUILTIN NATTIMES _*_ #-}
++
+ 
+ _*ᴸ_ : (x y : ℕ) → ℕ
+ x *ᴸ y = y * x

@@ -65,6 +65,14 @@ Line counts of the proofs, and their comparison, are in
 `papers/PLDI-2027/loc.md` (`python3 papers/PLDI-2027/loc.py`, and
 `--untyped` for the preserved pipeline).
 
+The denotational: Scott domains column (`agda/AllScott.agda`,
+`agda/Mu/Theorems/Scott.agda`) also needs TypeTopology; check it with
+
+    make check-scott
+
+which clones TypeTopology at a pinned commit into `_deps/` (not tracked),
+patches it, and checks the column against it and the standard library.
+
 ## Other developments
 
 * `agda/old/` holds the earlier developments. They use the abt library
