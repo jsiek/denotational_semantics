@@ -88,7 +88,7 @@ homomorphically:
   (u :: U) \sqsubseteq^* E' & = & u \sqsubseteq E' \land U \sqsubseteq^* E'
 \end{array}
 \]
-\caption{The relation $v \sqsubseteq D'$ (``$D'$ satisfies $v$'') for
+\caption{The relation $v \sqsubseteq D'$ (``$D'$ includes the behavior of $v$'') for
   the preservation half of \pass{delay}. It relates a single source (EnvClos)
   element $v$ to a set $D'$ of target (FlatClos) elements and is
   defined by recursion on $v$. The relation $U \sqsubseteq^* E'$
@@ -104,11 +104,7 @@ something exactly when the other does (Theorem~\ref{thm:delay}). The forward hal
 preservation, requires only a relation between a \emph{single} source
 element and the \emph{set} of target elements, defined by recursion on
 the source element (Figure~\ref{fig:preserve}): a source function has
-no code and environment to separate. We read $v \sqsubseteq D'$ as
-``$D'$ satisfies $v$''. The relation is in
-the style of the satisfaction relation of Abramsky's domain logic
-\citep{Abramsky:1990vv,Abramsky:1993fk}, with a source element
-as the formula. The source element is finite, so the
+no code and environment to separate. We read $v \sqsubseteq D'$ as ``$D'$ includes the behavior of $v$''. The source element is finite, so the
 recursion is structural, and preservation is a routine induction on
 $M$.
 
