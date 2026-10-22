@@ -75,7 +75,7 @@ Counts are code lines: lines that are neither blank, nor comments, nor part of a
 
 ## Current counts
 
-*Other measures.* `loc.py --tokens` and `loc.py --chars` count the same code in lexical tokens and in non-whitespace characters. On ISWIMμ the totals are 38780, 48250, **34710** and 65206 tokens and 74948, 95949, **70601** and 126655 characters (graph model, CEK, interpreter, reduction), against 1884, 2258, **1653** and 3207 lines: the same ranking, with 20.3–21.4 tokens per line in every column. By tokens, explicate control goes to the interpreter (1500 against 1595); every other row has the same smallest column as by lines.
+*Other measures.* `loc.py --tokens` and `loc.py --chars` count the same code in lexical tokens and in non-whitespace characters. After the final cleanup pass (PRs #88–#91), the ISWIMμ totals are 38106, 45314, **31181** and 63923 tokens and 73680, 90244, **62838** and 123391 characters (graph model, CEK, interpreter, reduction), against 1806, 2103, **1504** and 3093 lines: the same ranking, with 20.7–21.5 tokens per line in every column. By tokens, explicate control goes to the interpreter (1500 against 1595), and the composition to reduction by lines and tokens; every other row has the same smallest column under each measure.
 
 In every table that compares the proof styles, the lowest number of each row is in bold: the best result for that row. Tables of infrastructure are not marked, since relying on less of it is not in itself better.
 
@@ -83,27 +83,27 @@ The four styles on ISWIMμ (`loc.py`). Each total counts the shared modules that
 
 | component (ISWIMμ) | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
 |---|---:|---:|---:|---:|
-| semantics of the languages | 395 | 575 | **374** | 965 |
-| lemmas shared by the passes | — | 11 | — | — |
-| simplify | **349** | 584 | 633 | 715 |
-| CC: enclose | 37 | 93 | **33** | 164 |
-| CC: optimize | 66 | 127 | **65** | 232 |
-| CC: concretize | 46 | 111 | **42** | 154 |
-| CC: delay | 524 | 96 | **35** | 139 |
-| CC: globalize | **115** | 213 | 183 | 219 |
-| rco | 109 | 147 | **85** | 164 |
+| semantics of the languages | 393 | 511 | **374** | 961 |
+| lemmas shared by the passes | — | 38 | — | — |
+| simplify | **349** | 560 | 508 | 697 |
+| CC: enclose | 37 | 71 | **33** | 147 |
+| CC: optimize | 66 | 128 | **65** | 212 |
+| CC: concretize | 46 | 88 | **42** | 148 |
+| CC: delay | 450 | 73 | **35** | 126 |
+| CC: globalize | **115** | 213 | 175 | 192 |
+| rco | 109 | 120 | **83** | 157 |
 | lift locals | 39 | 51 | **27** | 204 |
 | explicate control | **64** | 105 | 75 | 105 |
 | select instructions | 76 | 107 | **48** | 107 |
-| composition | 30 | **20** | 36 | **20** |
+| composition | 28 | 20 | 22 | **18** |
 | shared modules not used by all four proofs | — | **15** | **15** | **15** |
 | the ISWIM pipeline's modules it reuses (meaning of the primitives, framework instances) | 34 | 3 | **2** | 4 |
-| **total** | 1884 | 2258 | **1653** | 3207 |
+| **total** | 1806 | 2103 | **1504** | 3093 |
 
-Not counted: ISWIMμ's languages and passes (938, shared by all four, with simplify and the renaming of ISWIMμ that it shares with the reduction semantics), the primitives and registers (13), and the infrastructure (below). The CEK and reduction columns share the machines of Clos5μ, Impμ, CFGμ and X86μ and the proofs of explicate control and select instructions (counted in both, `mu-op+mu-red`).
+Not counted: ISWIMμ's languages and passes (921, shared by all four, with simplify and the renaming of ISWIMμ that it shares with the reduction semantics), the primitives and registers (13), and the infrastructure (below). The CEK and reduction columns share the machines of Clos5μ, Impμ, CFGμ and X86μ and the proofs of explicate control and select instructions (counted in both, `mu-op+mu-red`).
 
-* **The ranking:** interpreter (1653) < graph model (1884) < CEK (2258) < reduction (3207), the same as the ISWIM pipeline's (1814 < 2131 < 2582 < 3620; see [[#Dynamic typing and errors]]).
-* **Delay decides the graph model's place.** Without delay the graph model is 1360, below the interpreter (1618), CEK (2162) and reduction (3068); delay alone is a quarter of the graph column (524), against 96, 35 and 139. Delay is not a cost of errors (see [[#Dynamic typing and errors]]): it is the change of representation of closures under recursive types, which needs the approximant logical relation and its depth index (see [[#Why delay costs more on the denotational side]]).
+* **The ranking:** interpreter (1504) < graph model (1806) < CEK (2103) < reduction (3093), after the final cleanup pass of every column (PRs #87–#91; before it, 1653 < 1961 < 2258 < 3207), the same as the ISWIM pipeline's (1814 < 2131 < 2582 < 3620; see [[#Dynamic typing and errors]]).
+* **Delay decides the graph model's place.** Without delay the graph model is 1356, below the interpreter (1469), CEK (2030) and reduction (2967); delay alone is a quarter of the graph column (450), against 73, 35 and 126. Delay is not a cost of errors (see [[#Dynamic typing and errors]]): it is the change of representation of closures under recursive types, which needs the approximant logical relation and its depth index (see [[#Why delay costs more on the denotational side]]).
 * **Every other row of the graph model is near the interpreter's or below it.** The equational passes are cheap where the interpreter's value relations are cheap: simplify is 349 (graph), 584 (CEK), 633 (interpreter), 715 (reduction); the closure-conversion passes but delay 149, 331, 140, 550; the back end (globalize to select) 403, 623, 418, 799. The graph model is lowest on simplify, globalize (115 against 183 for the interpreter, which relates the two tables of definitions value by value) and explicate control.
 * **Simplify** (`Mu/Compiler/Simplify.agda`) is the ISWIM pipeline's simplify (a simplified cp0: constant folding, case of a known injection, projection from a known tuple, β on a value or a let, inlining with fuel, the same substitution policy and sizes), intrinsically typed, with one more known-value rule: `unfold` of a term known to be `fold V` becomes V (V if small, otherwise the unfold, known to be V), as a projection does. Its rows are 349, 584, 633 and 715 against the ISWIM pipeline's 342, 574, 640 and 716 (both with their syntactic lemmas, `SimplifyFacts`, in each column): typing removes the scope invariant (`WS`, `Closed`), the error cases of the machines and interpreters, and the lengths of tuples, and the new rule, `fold`/`unfold` and the typed indices cost about as much. The graph model pays 7 more: untyped ISWIM gets renaming and continuity from the syntax of any signature, ISWIMμ proves its renaming lemma in the simplify proof (`ren-≃`, 26) and its continuity by induction on the term (`Mu/proof/Semantics/Graph/ISWIM.agda`, 20, in the semantics row, shared with adequacy). See [[#Simplify]].
 * **Semantics:** the graph model's and the interpreter's are the smallest (395 and 374; the graph model's is a meaning function per language, no values, continuations or clocks, ISWIMμ's continuity, and the binder congruences that the pass proofs share, `Mu/proof/Semantics/Graph/Binders.agda`, 17), the reduction semantics' the largest (965: substitution's laws, and the machines of the first-order languages; ISWIMμ's renaming and substitution, 30, are shared with simplify and so not counted, while `loc.py --mu-detail` keeps them in ISWIM's row against ISWIMᵀ's).

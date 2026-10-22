@@ -59,7 +59,6 @@ each style relies on, and the adequacy of the graph model, separately.
 %% section). Facts from the authors: no AI before 2026; all Agda code of
 %% 2026 written by Claude Code; theorem statements checked by the authors.
 %% Commit trailers: Claude Opus 5.5 (544) and Claude Sonnet 5.5 (11).
-%% TODO: mention the final cleanup pass once its PRs are merged.
 \paragraph{AI Use}
 
 All of the Agda code of the four developments, including the adequacy
@@ -89,23 +88,23 @@ source.
 \toprule
  & graph model & machines & interpreters & reduction\\
 \midrule
-semantics of the languages & 395 & 575 & \textbf{374} & 965\\
-lemmas shared by the passes & --- & 11 & --- & ---\\
-\pass{simplify} & \textbf{349} & 584 & 633 & 715\\
-\pass{enclose} & 37 & 93 & \textbf{33} & 164\\
-\pass{optimize} & 66 & 127 & \textbf{65} & 232\\
-\pass{concretize} & 46 & 111 & \textbf{42} & 154\\
-\pass{delay} & 524 & 96 & \textbf{35} & 139\\
-\pass{globalize} & \textbf{115} & 213 & 183 & 219\\
-\pass{remove complex operands} & 109 & 147 & \textbf{85} & 164\\
+semantics of the languages & 393 & 511 & \textbf{374} & 961\\
+lemmas shared by the passes & --- & 38 & --- & ---\\
+\pass{simplify} & \textbf{349} & 560 & 508 & 697\\
+\pass{enclose} & 37 & 71 & \textbf{33} & 147\\
+\pass{optimize} & 66 & 128 & \textbf{65} & 212\\
+\pass{concretize} & 46 & 88 & \textbf{42} & 148\\
+\pass{delay} & 450 & 73 & \textbf{35} & 126\\
+\pass{globalize} & \textbf{115} & 213 & 175 & 192\\
+\pass{remove complex operands} & 109 & 120 & \textbf{83} & 157\\
 \pass{lift locals} & 39 & 51 & \textbf{27} & 204\\
 \pass{explicate control} & \textbf{64} & 105 & 75 & 105\\
 \pass{select instructions} & 76 & 107 & \textbf{48} & 107\\
-composition & 30 & \textbf{20} & 36 & \textbf{20}\\
+composition & 28 & 20 & 22 & \textbf{18}\\
 shared modules not used by all four & --- & \textbf{15} & \textbf{15} & \textbf{15}\\
 modules reused from an earlier pipeline & 34 & 3 & \textbf{2} & 4\\
 \midrule
-total & 1884 & 2258 & \textbf{1653} & 3207\\
+total & 1806 & 2103 & \textbf{1504} & 3093\\
 \bottomrule
 \end{tabular}
 \caption{Lines of Agda in the four correctness proofs of the compiler.
@@ -114,12 +113,11 @@ total & 1884 & 2258 & \textbf{1653} & 3207\\
 \end{table}
 
 Table~\ref{tab:loc} gives the sizes. The proof with clocked
-interpreters is the smallest, at 1,653 lines, followed by the graph
-model at 1,884, abstract machines at 2,258, and reduction semantics at
-3,207. One pass decides the graph model's place: \pass{delay} alone is
-524 lines, more than a quarter of the total, against 35 to 139 lines in the
+interpreters is the smallest, at 1,504 lines, followed by the graph
+model at 1,806, abstract machines at 2,103, and reduction semantics at 3,093. One pass decides the graph model's place: \pass{delay} alone is
+450 lines, a quarter of the total, against 35 to 126 lines in the
 operational styles. Without \pass{delay}, the graph model would be the
-smallest, at 1,360 lines against 1,618 for the interpreters.
+smallest, at 1,356 lines against 1,469 for the interpreters.
 
 \subsection{Analysis}
 
@@ -168,15 +166,14 @@ substitution, is often much larger even for these passes, as for
 
 \paragraph{When denotational correctness is an equation but the runs differ more, the denotational proof tends to be smallest.}
 
-\pass{simplify} is the clearest case, at 349 lines against 584 to 715.
+\pass{simplify} is the clearest case, at 349 lines against 508 to 697.
 It reduces programs under binders and removes calls, so the target
 takes fewer steps than the source. Each operational proof must replay
 those reductions as steps of the source program: on open terms in the
 reduction semantics, or as a run-ahead of the source machine or
-interpreter, with stuttering where the target does more. The
-interpreter proof is the largest of the three, because the target
-needs fewer clock ticks than the source, which breaks the usual
-clock-for-clock argument. \pass{globalize} fits the pattern less
+interpreter, with stuttering where the target does more. For the
+interpreters, the target needs fewer clock ticks than the source,
+which breaks the usual clock-for-clock argument. \pass{globalize} fits the pattern less
 cleanly. Its interpreter proof is still clock for clock; the runs
 differ only in where the code of a function lives, since in the target
 it is a reference into a table of definitions. The interpreter proof
@@ -187,8 +184,8 @@ shows that a reference means what the code it replaced means.
 
 \pass{Delay} changes how closures are represented, so its correctness
 is not an equation, yet the run of the target follows the run of the
-source closely. Its denotational proof takes 524 lines of Agda,
-against 35 to 139 lines in the three operational styles. Most of the
+source closely. Its denotational proof takes 450 lines of Agda,
+against 35 to 126 lines in the three operational styles. Most of the
 difference has three sources. First, the denotational proof needs two
 directions, while a simulation proof gets the backward direction for
 free from forward simulation and the determinism of the target. The
@@ -213,9 +210,7 @@ conditions.
 
 \paragraph{The graph-model semantics is about as small as the interpreters', but it needs more infrastructure.}
 
-The graph-model semantics of the ten languages is 395 lines, slightly
-more than the interpreters' 374. The machines need 575 lines and the
-reduction semantics 965, which include the laws of substitution and
+The graph-model semantics of the ten languages is 393 lines, slightly more than the interpreters' 374. The machines need 511 lines and the reduction semantics 961, which include the laws of substitution and
 the machines of the first-order languages. The language-independent
 infrastructure, which the totals exclude, differs more. The graph model
 relies on 1,544 lines of it, mostly the graph model itself and its
@@ -243,16 +238,18 @@ by \pass{delay}, the one pass that is not an equation.
 We measure the size of the proofs, which is only a proxy for the
 effort of writing them. Lines of Agda depend on layout; lexical tokens
 and non-whitespace characters do not, but they are proxies too. The
-three measures agree on the ranking: each style averages 20 to 21
-tokens per line, and the graph model's total is 1.12 times the
-interpreters' by tokens, against 1.14 times by lines. Size also says
+three measures agree on the ranking: each style averages about 21 tokens per line, and the graph model's total is 1.22 times the interpreters' by tokens, against 1.20 times by lines. Size also says
 little about difficulty, which depends heavily on whether a proof has
 precedent in the literature or must be invented. The reflection proof
 for \pass{delay} took us far more effort than its size suggests,
 because no denotational proof of its kind existed; with the
 approximant logical relation in hand, a similar proof should be much
-easier to write. Each development is our best effort, but experience
-gained in one style carries over to the next.
+easier to write. Because experience gained in writing one development could carry
+over to the next, after completing all four we gave each of them a
+final cleanup pass with the same goals and rules: shorten and clarify
+the proofs without changing any theorem statement and without moving
+code into the uncounted infrastructure. The cleanup removed between 114
+and 155 lines from each style, and the ranking did not change.
 
 The comparison covers one compiler, and the totals depend on its
 selection of passes. The denotational proofs tend to be smaller for

@@ -1736,8 +1736,9 @@ together,
 \begin{align*}
   \Same(D, D') &\iff (\forall c.\; c \in D \iff c \in D') \land (D \NE \iff D' \NE) .
 \end{align*}
-Every pass but delay gives $\simeq$, which composes with $\Same$
-(\texttt{then}), and delay gives $\Same$ (Theorem~\ref{thm:m-den-delay}).
+Every pass but delay gives $\simeq$, which implies $\Same$
+(\texttt{same}), delay gives $\Same$ (Theorem~\ref{thm:m-den-delay}), and
+two $\Same$s compose (\texttt{then}).
 
 \begin{theorem}[Compiler Correctness, Graph Model]\label{thm:m-den-compiler}\sloppy
 For every closed $\Ml{ISWIM}$ program $M$ of any type,
@@ -2159,8 +2160,8 @@ source closure $\cloV{\lam{y} N}{\rho_f}$ for some $\rho_f \models_{E_f} \rho'$.
 \end{align*}
 Where simplify reduced, the source runs ahead: if $\pass{simp}_E(M)$ is a
 value, or $M$ has a known value, then $\ev{M}{\rho}{\kappa} \lto^*
-\rt{v}{\kappa}$ for a $v$ it describes (\texttt{run-term},
-\texttt{run-known}); at an inlined call, the source runs the operator to
+\rt{v}{\kappa}$ for a $v$ it describes (\texttt{run}, one lemma for
+both cases); at an inlined call, the source runs the operator to
 the known function's closure, then continues as for $\beta$. Where the
 target does more (it evaluates a duplicated small value, or the value of
 a let that simplify kept), it stutters, and a match is indexed by the
@@ -2486,7 +2487,7 @@ the proof, \texttt{compile$_4$-correct} of \texttt{PipelineSim.agda}).
   through the renaming or map that a pass carries (\texttt{Agree},
   \texttt{EnvRel}, \texttt{ER}), here by name. Simplify's are
   \texttt{Ok}, \texttt{Strong}, \texttt{Den}, \texttt{KDen}, with the source's
-  run ahead \texttt{run-term}, \texttt{run-known}, \texttt{let-sim}.
+  run ahead \texttt{run}, \texttt{let-run}, \texttt{call-run}.
   Explicate's two clauses of $\sim$ are \texttt{tail\char`\~} and
   \texttt{asg\char`\~}, those of $\mathit{Ctl}$ \texttt{asgT}, \texttt{asgA}
   and \texttt{jmp}. Select's $\kappa \sim \Pi$ is \texttt{\_\char`\~\_} and
@@ -2698,19 +2699,20 @@ out; at $k + 1$ both run the bodies of related closures with clock $k$.
 Simplify removes calls ($\beta$ of a small value, inlining), so its proof
 is not clock for clock but clock monotone (Theorem~\ref{thm:clocked-le};
 \texttt{SimplifyFuel.agda}), from the monotonicity of the interpreter in
-the clock (\texttt{mono}) and two lemmas, with the relations of the CEK
-proof (a target closure the simplified body of a source closure, under
-facts true of the two environments, \texttt{Ok}, \texttt{KDen}):
+the clock (\texttt{mono}) and one lemma (\texttt{sim}) that proves both directions at each clock,
+with relations like those of the CEK proof (a target closure the
+simplified body of a source closure, under facts true of the two
+environments, \texttt{Ok}, \texttt{KDen}):
 \begin{itemize}
-\item forward, at the same clock (\texttt{run$\approx$}): if
-  $\rho \models_E \rho'$, the source's result, if it does not time out, is
-  the target's, related ($\mathit{Le}_{\approx}$);
-\item backward (\texttt{back}): if the target does not time out at a clock,
-  then the source has a related result at every large enough clock.
+\item forward, at the same clock: if $\rho \models_E \rho'$, the
+  source's result, if it does not time out, is the target's, related
+  ($\mathit{Le}_{\approx}$);
+\item backward: if the target does not time out at a clock, then the
+  source has a related result at every large enough clock.
 \end{itemize}
 When $\pass{simp}_E(M)$ returns a value term, or $M$ has a known value,
 the source runs $M$ to a value it describes, at every large enough clock
-(\texttt{run-term}, \texttt{run-known}; \texttt{run-unf} for the
+(\texttt{run}; \texttt{run-unf} for the
 $\Munfold$ rule).
 \begin{theorem}[Correctness of Simplify, Interpreter]\label{thm:m-interp-simplify}
 For every closed $M$,
