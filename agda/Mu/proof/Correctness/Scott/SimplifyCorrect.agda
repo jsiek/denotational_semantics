@@ -80,38 +80,35 @@ open import Mu.Semantics.Scott.ISWIM pt fe pe
 
 {- Renaming ---------------------------------------------------------------------}
 
-ren-＝ : ∀ {Γ Δ A} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (M : Tm Γ A) (ρ ρ' : ⟨ Env ⟩)
+ren-＝ : ∀ {Γ Δ A} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (M : Tm Γ A) {ρ ρ' : ⟨ Env ⟩}
   → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ＝ ρ (idx x)) → ⟦ ren r M ⟧ · ρ' ＝ ⟦ M ⟧ · ρ
-rens-nth : ∀ {Γ Δ Δ'} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (Ms : All (Tm Γ) Δ') (ρ ρ' : ⟨ Env ⟩)
+rens-nth : ∀ {Γ Δ Δ'} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (Ms : All (Tm Γ) Δ') {ρ ρ' : ⟨ Env ⟩}
   → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ＝ ρ (idx x)) → ∀ i → (⟦ travs varK r Ms ⟧s · ρ') i ＝ (⟦ Ms ⟧s · ρ) i
-ren-ext : ∀ {Γ Δ C} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (ρ ρ' : ⟨ Env ⟩) (d : ⟨ 𝔻 ⟩) → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ＝ ρ (idx x))
+ren-ext : ∀ {Γ Δ C} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) {ρ ρ' : ⟨ Env ⟩} {d : ⟨ 𝔻 ⟩} → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ＝ ρ (idx x))
   → ∀ {B} (x : (C ∷ Γ) ∋ B) → (d • ρ') (idx (exts varK r x)) ＝ (d • ρ) (idx x)
-ren-ext r ρ ρ' d h Z = refl
-ren-ext r ρ ρ' d h (S x) = h x
-ren-＝ r (` x) ρ ρ' h = h x
-ren-＝ r (lam N) ρ ρ' h =
-  lamᶜ-cong ⟦ ren (exts varK r) N ⟧ ⟦ N ⟧ ρ' ρ (λ d _ → ren-＝ (exts varK r) N (d • ρ) (d • ρ') (ren-ext r ρ ρ' d h))
-ren-＝ r (app L M) ρ ρ' h = ap₂ (λ a b → appᵈ · a · b) (ren-＝ r L ρ ρ' h) (ren-＝ r M ρ ρ' h)
-ren-＝ r (lit B c) ρ ρ' h = refl
-ren-＝ r (tuple {Δ} Ms) ρ ρ' h = ap (tupleᵈ (length Δ) ·_) (dfunext fe (rens-nth r Ms ρ ρ' h))
-ren-＝ r (get i M) ρ ρ' h = ap (proj (pos i) ·_) (ren-＝ r M ρ ρ' h)
-ren-＝ r (inl M) ρ ρ' h = ap (inlᵈ ·_) (ren-＝ r M ρ ρ' h)
-ren-＝ r (inr M) ρ ρ' h = ap (inrᵈ ·_) (ren-＝ r M ρ ρ' h)
-ren-＝ r (case L M N) ρ ρ' h =
-  caseᶜ-cong ⟦ ren r L ⟧ ⟦ L ⟧ ⟦ ren (exts varK r) M ⟧ ⟦ M ⟧ ⟦ ren (exts varK r) N ⟧ ⟦ N ⟧ ρ' ρ (ren-＝ r L ρ ρ' h)
-    (λ d _ → ren-＝ (exts varK r) M (d • ρ) (d • ρ') (ren-ext r ρ ρ' d h))
-    (λ d _ → ren-＝ (exts varK r) N (d • ρ) (d • ρ') (ren-ext r ρ ρ' d h))
-ren-＝ r (prim p L M) ρ ρ' h = ap₂ (λ a b → primD p · a · b) (ren-＝ r L ρ ρ' h) (ren-＝ r M ρ ρ' h)
-ren-＝ r (let′ M N) ρ ρ' h =
-  letᶜ-cong ⟦ ren r M ⟧ ⟦ M ⟧ ⟦ ren (exts varK r) N ⟧ ⟦ N ⟧ ρ' ρ (ren-＝ r M ρ ρ' h)
-    (λ d _ → ren-＝ (exts varK r) N (d • ρ) (d • ρ') (ren-ext r ρ ρ' d h))
-ren-＝ r (fold M) ρ ρ' h = ren-＝ r M ρ ρ' h
-ren-＝ r (unfold M) ρ ρ' h = ren-＝ r M ρ ρ' h
-rens-nth r (M ∷ Ms) ρ ρ' h zero = ren-＝ r M ρ ρ' h
-rens-nth r (M ∷ Ms) ρ ρ' h (suc i) = rens-nth r Ms ρ ρ' h i
+ren-ext r h Z = refl
+ren-ext r h (S x) = h x
+ren-＝ r (` x) h = h x
+ren-＝ r (lam N) {ρ} {ρ'} h = lamᶜ-cong ⟦ ren (exts varK r) N ⟧ ⟦ N ⟧ ρ' ρ (λ d _ → ren-＝ (exts varK r) N (ren-ext r h))
+ren-＝ r (app L M) h = ap₂ (λ a b → appᵈ · a · b) (ren-＝ r L h) (ren-＝ r M h)
+ren-＝ r (lit B c) h = refl
+ren-＝ r (tuple {Δ} Ms) h = ap (tupleᵈ (length Δ) ·_) (dfunext fe (rens-nth r Ms h))
+ren-＝ r (get i M) h = ap (proj (pos i) ·_) (ren-＝ r M h)
+ren-＝ r (inl M) h = ap (inlᵈ ·_) (ren-＝ r M h)
+ren-＝ r (inr M) h = ap (inrᵈ ·_) (ren-＝ r M h)
+ren-＝ r (case L M N) {ρ} {ρ'} h =
+  caseᶜ-cong ⟦ ren r L ⟧ ⟦ L ⟧ ⟦ ren (exts varK r) M ⟧ ⟦ M ⟧ ⟦ ren (exts varK r) N ⟧ ⟦ N ⟧ ρ' ρ (ren-＝ r L h)
+    (λ d _ → ren-＝ (exts varK r) M (ren-ext r h)) (λ d _ → ren-＝ (exts varK r) N (ren-ext r h))
+ren-＝ r (prim p L M) h = ap₂ (λ a b → primD p · a · b) (ren-＝ r L h) (ren-＝ r M h)
+ren-＝ r (let′ M N) {ρ} {ρ'} h =
+  letᶜ-cong ⟦ ren r M ⟧ ⟦ M ⟧ ⟦ ren (exts varK r) N ⟧ ⟦ N ⟧ ρ' ρ (ren-＝ r M h) (λ d _ → ren-＝ (exts varK r) N (ren-ext r h))
+ren-＝ r (fold M) h = ren-＝ r M h
+ren-＝ r (unfold M) h = ren-＝ r M h
+rens-nth r (M ∷ Ms) h zero = ren-＝ r M h
+rens-nth r (M ∷ Ms) h (suc i) = rens-nth r Ms h i
 
 shift-＝ : ∀ {Γ A B} (M : Tm Γ A) (d : ⟨ 𝔻 ⟩) (γ : ⟨ Env ⟩) → ⟦ ren (S {b = B}) M ⟧ · (d • γ) ＝ ⟦ M ⟧ · γ
-shift-＝ M d γ = ren-＝ S M γ (d • γ) (λ x → refl)
+shift-＝ M d γ = ren-＝ S M (λ x → refl)
 
 {- β for a defined value -}
 let-β : (N : Den Env) (γ : ⟨ Env ⟩) (d : ⟨ 𝔻 ⟩) → defined d → appᵈ · (lamᶜ N · γ) · d ＝ N · (d • γ)
