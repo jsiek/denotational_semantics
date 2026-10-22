@@ -19,7 +19,7 @@ Moreover, $\den{M} \neq \emptyset$ if and only if
 $\den{\pass{compile}(M)} \neq \emptyset$.
 \end{theorem}
 
-The same statement holds for closed terms of every type; we state it for $\kw{Int}$, the type of a whole program's result, to align it with the operational theorems (Section~\ref{sec:evaluation}). The proof composes one result per pass. Every pass except
+Theorem~\ref{thm:compiler}, which we mechanize in Agda, answers RQ1 affirmatively; with adequacy (Section~\ref{sec:adequacy}), it says that the compiler preserves and reflects divergence. The same statement holds for closed terms of every type; we state it for $\kw{Int}$, the type of a whole program's result, to align it with the operational theorems (Section~\ref{sec:evaluation}). The proof composes one result per pass. Every pass except
 \pass{delay} preserves the meaning of a program exactly: the program
 and its translation denote the same set. The theorem for \pass{delay}
 (Theorem~\ref{thm:delay}) is the weaker statement about constants and
@@ -32,9 +32,7 @@ same answer as the source, and diverges exactly when the source does.
 
 This section first shows how we prove the passes other than \pass{delay} (Section~\ref{sec:equational}). These proofs answer whether the
 compositionality and equational reasoning of denotational semantics
-yield concise correctness proofs for some compiler passes (RQ2). The
-section then shows why \pass{delay} needs more
-(Section~\ref{sec:approx-lr}).
+yield concise correctness proofs for some compiler passes (RQ2). The section then shows why \pass{delay} needs more (Section~\ref{sec:approx-lr}), and ends with the adequacy of the graph-model semantics, which connects Theorem~\ref{thm:compiler} to running code (Section~\ref{sec:adequacy}).
 
 \subsection{Passes Proved by an Equation}
 \label{sec:equational}
@@ -143,11 +141,9 @@ model or the semantic equations, the induction hypothesis, and the
 meaning of the target form. The remaining cases are congruences. No
 proof mentions evaluation steps, machine states, or clocks.
 Section~\ref{sec:evaluation} measures how concise these proofs are by
-comparing them with proofs of the same passes in three operational
-styles. The exception is \pass{delay}, the pass that changes the
+comparing them with proofs of the same passes in four other styles. The exception is \pass{delay}, the pass that changes the
 representation of closures from functions to pairs of code and
-environment. Its correctness is not an equation, and its proof is the
-subject of the rest of this section.
+environment. Its correctness is not an equation, so the answer to RQ3 is negative, and its proof is the subject of Section~\ref{sec:approx-lr}.
 
 \input{delay}
 
