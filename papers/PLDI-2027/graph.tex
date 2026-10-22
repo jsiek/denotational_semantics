@@ -148,10 +148,7 @@ $\Delta = \lambda x.\, (\kw{unfold}\;x)\; x$ denotes $\emptyset$: an
 output of $\Omega$ would need an entry of $\den{\Delta}$ whose input
 contains a strictly smaller entry of $\den{\Delta}$ with the same
 output, and so on forever, which is impossible for finite elements.
-Divergence
-as the empty set is the reason that reflection is the hard direction
-of a correctness proof: a relation that follows the source program
-forward cannot carry the absence of elements to the target.
+
 
 \paragraph{Consistency}
 
@@ -199,14 +196,13 @@ similarly for a function of two sets.
 
 We chose a graph model to keep the mechanization small. Our graph
 model, including the operators of all the compiler's languages, is
-about 1,200 lines of Agda. An early experiment with Scott domains,
-built on the domain theory of TypeTopology \citep{Escardo:TypeTopology}
-and covering only the source language and Clos of an earlier version
-of the compiler, needed 847 lines of its own constructions on top of
-about 5,400 lines of TypeTopology. It also assumed propositional
-truncation, function extensionality, and propositional
-extensionality, whereas our development uses only Agda's safe mode and
-standard library. \citet{Benton:2010aa} report around 4,400 lines of
-Coq for a comparable library of domain theory.
+about 1,200 lines of Agda, and it needs only Agda's safe mode and
+standard library. A proof of the same compiler with Scott domains, on
+the domain theory of TypeTopology \citep{Escardo:TypeTopology}, is 1.9
+times as large (Section~\ref{sec:evaluation}), relies on 1,495 lines
+of its own infrastructure on top of TypeTopology, and assumes
+propositional truncation and two extensionality principles.
+\citet{Benton:2010aa} report around 4,400 lines of Coq for a library of
+domain theory.
 
 

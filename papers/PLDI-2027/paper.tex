@@ -79,16 +79,17 @@
 \section*{Data-Availability Statement}
 
 The artifact is our Agda development that mechanizes the results of
-this paper: the four proofs of correctness of the compiler (graph
-model, abstract machines, clocked interpreters, and reduction
-semantics), the adequacy of the graph-model semantics, the approximant
+this paper: the five proofs of
+correctness of the compiler (graph model, Scott domains, abstract
+machines, clocked interpreters, and reduction semantics), the adequacy of the graph-model semantics, the approximant
 logical relation, and the shared definitions of the languages and
 passes, together with the script that computes the proof sizes in
 Section~\ref{sec:evaluation}. The development checks with Agda 2.8 and
 its standard library 2.4 in safe mode, with no postulates, in about
 three minutes on a desktop workstation (an Intel Core Ultra 9 285K
-with 64\,GB of memory), and the theorem statements are collected in a
-few files for inspection. An anonymized version is provided as
+with 64\,GB of memory), and the theorem statements are collected in a few files for
+inspection. The Scott-domain proof also needs a fixed version of the
+TypeTopology library and takes about 50 minutes to check. An anonymized version is provided as
 supplementary material, and we will submit the artifact for Artifact
 Evaluation.
 

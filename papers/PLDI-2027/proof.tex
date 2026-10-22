@@ -53,10 +53,10 @@ translate most forms homomorphically, the case for such a form applies
 the same operator to equal arguments and is immediate. The real work
 is in the few cases that the pass changes, where an equation about the
 operators of the graph model replaces the source form with the target
-form. Below we show that case as a calculation for four representative
+form. Below we show that case as a calculation for three representative
 passes, with the justification of each step on the right;
 Appendix~\ref{app:calculations} gives the calculations for the other
-five. Where a step needs a set to
+six. Where a step needs a set to
 be nonempty, we show the nonempty case; in the other case both sides
 are empty.
 
@@ -110,30 +110,6 @@ $\kw{get}_i\,z$, and $\pi_{\mathsf{tup}_i}(\mathcal{T}(\vec{D}')) =
 D'_i = D_i$ when every $D'_i$ is nonempty. The use of
 Lemma~\ref{lem:beta} needs the tuple $\mathcal{T}(\vec{D}')$ to be
 nonempty and consistent.
-
-\paragraph{Lift locals}
-
-The semantics of Imp is in continuation-passing style, so the
-induction hypothesis relates a Mon term $e$ and its translation under
-a continuation $\kappa$: $\kappa(\den{e}_T\,\sigma) =
-\den{\pass{lift}(e)}_{T'}\,\sigma\,\kappa$. A $\kw{let}$ becomes an
-assignment to the next slot $x$. With $\kappa' = \mlam{D}
-\Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app
-D$:
-{\small
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \kappa(\den{\kw{let}\;x = M\;\kw{in}\;N}_T\,\sigma)
-    & = & \kappa(\Lambda(\mlam{X} \den{N}_T\,\sigma[x{:=}X]) \app \den{M}_T\,\sigma) & \text{(meaning of $\kw{let}$)}\\
-    & = & \Lambda(\mlam{X} \kappa(\den{N}_T\,\sigma[x{:=}X])) \app \den{M}_T\,\sigma & \text{(a $\kw{let}$ commutes with $\kappa$)}\\
-    & = & \Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app \den{M}_T\,\sigma & \text{(induction hypothesis for $N$)}\\
-    & = & \den{\pass{lift}(M)}_{T'}\,\sigma\,\kappa' & \text{(induction hypothesis for $M$)}\\
-    & = & \den{x \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)}_{T'}\,\sigma\,\kappa & \text{(meaning of assignment)}
-\end{array}
-\]}
-The second step, a commuting conversion, needs $\den{M}_T\,\sigma$ to be
-consistent and the body to be monotone. The $\kw{case}$ case follows
-the same pattern.
 
 \paragraph{Select instructions}
 

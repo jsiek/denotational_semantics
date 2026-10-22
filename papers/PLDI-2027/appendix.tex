@@ -892,7 +892,7 @@ environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
 \section{Calculations for the Other Equational Passes}
 \label{app:calculations}
 
-This appendix gives the key case of the proofs of the remaining five
+This appendix gives the key case of the proofs of the remaining six
 passes that are proved by an equation (Section~\ref{sec:equational}).
 
 \paragraph{Enclose}
@@ -992,3 +992,26 @@ We show the first branch; the second is the same:
 A further lemma says that blocks added later do not change the meaning
 of a label made earlier.
 
+\paragraph{Lift locals}
+
+The semantics of Imp is in continuation-passing style, so the
+induction hypothesis relates a Mon term $e$ and its translation under
+a continuation $\kappa$: $\kappa(\den{e}_T\,\sigma) =
+\den{\pass{lift}(e)}_{T'}\,\sigma\,\kappa$. A $\kw{let}$ becomes an
+assignment to the next slot $x$. With $\kappa' = \mlam{D}
+\Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app
+D$:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \kappa(\den{\kw{let}\;x = M\;\kw{in}\;N}_T\,\sigma)
+    & = & \kappa(\Lambda(\mlam{X} \den{N}_T\,\sigma[x{:=}X]) \app \den{M}_T\,\sigma) & \text{(meaning of $\kw{let}$)}\\
+    & = & \Lambda(\mlam{X} \kappa(\den{N}_T\,\sigma[x{:=}X])) \app \den{M}_T\,\sigma & \text{(a $\kw{let}$ commutes with $\kappa$)}\\
+    & = & \Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app \den{M}_T\,\sigma & \text{(induction hypothesis for $N$)}\\
+    & = & \den{\pass{lift}(M)}_{T'}\,\sigma\,\kappa' & \text{(induction hypothesis for $M$)}\\
+    & = & \den{x \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)}_{T'}\,\sigma\,\kappa & \text{(meaning of assignment)}
+\end{array}
+\]}
+The second step, a commuting conversion, needs $\den{M}_T\,\sigma$ to be
+consistent and the body to be monotone. The $\kw{case}$ case follows
+the same pattern.
