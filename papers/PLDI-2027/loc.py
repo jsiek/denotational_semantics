@@ -1542,6 +1542,7 @@ MU_ADEQ = ('mu-adeq', 'mu-adeq-cek')
 MU_LABELS = {'mu-den': 'denotational: graph model', 'mu-op': 'CEK machine + simulation',
              'mu-ck': 'clocked interpreter + value relations', 'mu-red': 'reduction semantics + simulation',
              'mu-adeq': 'adequacy', 'mu-adeq-cek': 'adequacy for the CEK machines'}
+SEM = 'semantics of the languages'
 MU_BORROWED = "the ISWIM pipeline's modules it reuses (meaning of the primitives, framework instances)"
 # ISWIMμ as a pipeline, for the audit-surface table (it has no graph model
 # with errors)
@@ -1591,12 +1592,16 @@ def mu_main(c, T, M):
     infrastructure by use, the audit surface and the shared modules."""
     print('| component (ISWIMμ) | ' + ' | '.join(MU_LABELS[s] for s in MU_SIDES) + ' |')
     print('|---|' + '---:|' * len(MU_SIDES))
+    # the shared modules a column reaches that not all four do (the
+    # observations), and the ISWIM pipeline's modules it reuses (the meaning
+    # of the primitives, framework instances), are counted in its semantics row
     for r in ROWS:
         ns = [c.counts.get((s, r)) for s in MU_SIDES]
+        if r == SEM:
+            ns = [(n or 0) + c.lines(M['extra'][s]) + c.lines(M['borrowed'][s]) or None
+                  for n, s in zip(ns, MU_SIDES)]
         if any(n is not None for n in ns):
             print(f'| {r} | ' + ' | '.join(bold_min(ns)) + ' |')
-    print(f'| {EXTRA} | ' + ' | '.join(bold_min([c.lines(M["extra"][s]) or None for s in MU_SIDES])) + ' |')
-    print(f'| {MU_BORROWED} | ' + ' | '.join(bold_min([c.lines(M["borrowed"][s]) or None for s in MU_SIDES])) + ' |')
     print('| **total** | ' + ' | '.join(bold_min([M['total'][s] for s in MU_SIDES])) + ' |')
     print()
     mush = {un for un, (side, _) in c.group_of.items() if side == 'mu-shared'}
@@ -1604,7 +1609,7 @@ def mu_main(c, T, M):
           f"and {c.lines(M['by_all'] - mush)} lines of the ISWIM pipeline's (the primitives, registers).")
     for s in MU_SIDES:
         if M['extra'][s] or M['borrowed'][s]:
-            print(f'Counted in {MU_LABELS[s]}: '
+            print(f'Counted in the semantics row of {MU_LABELS[s]}: '
                   + ', '.join(f'{c.display(un)} ({c.ulines(un)})' for un in sorted(M['extra'][s] | M['borrowed'][s])) + '.')
     print()
 
@@ -1942,19 +1947,27 @@ def scott_report(c, M):
                 and un not in c.infra and un not in shared}
     print('| component (ISWIMμ) | denotational: graph model | denotational: Scott domains |')
     print('|---|---:|---:|')
-    stotal = 0
+    # as in mu_main, modules reached outside the rows count in the semantics row
+    nx, nb = c.lines(extra), c.lines(borrowed)
+    gx = c.lines(M['extra']['mu-den']) + c.lines(M['borrowed']['mu-den'])
+    stotal = nx + nb
     for r, fs in rows:
         n = sum(code_lines(f) for f in fs)
         stotal += n
-        print(f'| {r} | ' + ' | '.join(bold_min([c.counts.get(('mu-den', r)), n or None])) + ' |')
-    nx, nb = c.lines(extra), c.lines(borrowed)
-    print(f'| {EXTRA} | ' + ' | '.join(bold_min([c.lines(M['extra']['mu-den']) or None, nx or None])) + ' |')
-    print(f'| {MU_BORROWED} | ' + ' | '.join(bold_min([c.lines(M['borrowed']['mu-den']) or None, nb or None])) + ' |')
-    print('| **total** | ' + ' | '.join(bold_min([M['total']['mu-den'], stotal + nx + nb])) + ' |')
+        g = c.counts.get(('mu-den', r))
+        if r == SEM:
+            n, g = n + nx + nb, (g or 0) + gx
+        print(f'| {r} | ' + ' | '.join(bold_min([g, n or None])) + ' |')
+    print('| **total** | ' + ' | '.join(bold_min([M['total']['mu-den'], stotal])) + ' |')
     print()
+    if M['extra']['mu-den'] | M['borrowed']['mu-den']:
+        print('Counted in the graph model\'s semantics row: '
+              + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
+                          for un in sorted(M['extra']['mu-den'] | M['borrowed']['mu-den'])) + '.')
+        print()
     if extra | borrowed:
-        print('Counted in the Scott column: ' + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
-                                                       for un in sorted(extra | borrowed)) + '.')
+        print('Counted in the Scott column\'s semantics row: ' + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
+                                                                         for un in sorted(extra | borrowed)) + '.')
         print()
     print('The Scott column counts the meaning of the primitives (`Semantics.Scott.Prim`) in its '
           "semantics row, and simplify's syntactic lemmas (`Mu.proof.Compiler.SimplifyFacts`) in its "
