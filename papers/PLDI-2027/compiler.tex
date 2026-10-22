@@ -95,9 +95,7 @@ passes through seven intermediate languages:
   \node[font=\itshape, text=gray!70!black] at (2.45,-0.5){closure conversion};
 \end{tikzpicture}
 \end{center}
-The grammars for all the languages are presented in
-Figure~\ref{fig:grammars}, and their typing rules in
-Appendix~\ref{app:types}.\footnote{Every language is intrinsically
+Figure~\ref{fig:grammars} presents the grammars of all the languages, and Appendix~\ref{app:types} gives their typing rules.\footnote{Every language is intrinsically
 typed in our Agda development, so every term is well typed by
 construction and no pass needs a precondition about scoping or
 typing.} In Figure~\ref{fig:grammars}, each closure language lists
@@ -108,8 +106,7 @@ block labels, and $f_k$ over the names of a program's global
 definitions, where $f_k$ refers to the definition $d_k$. In the
 languages prior to Imp, $x$, $y$, and $z$ range over variables. From
 Imp on, they range over fixed locations in a function's stack frame,
-as we explain below. A binder is written as one or more names followed
-by a period, and the names are bound in what follows the period: in
+as we explain below. We write a binder as one or more names followed by a period, and the binder binds the names in what follows the period: in
 $\lambda x.\,N$ and $\kw{case}\;L\;(x.\,M)\;(y.\,N)$, the name $x$ is
 bound in $N$ and $M$, and $\kw{clos}\;(\vec{x}, y.\,N)$ binds $\vec{x}$
 and $y$ in $N$. Every language also has a semantics in the graph
@@ -135,7 +132,7 @@ type, and $\kw{unfold}$ turns it back:
 Neither coercion does anything at run time. The other typing rules are
 straightforward (Appendix~\ref{app:types}). \iswim\ has no recursion
 operator.  Instead, recursive types make self-application typable, so
-the call-by-value fixed-point combinator can be written directly:
+a program can define the call-by-value fixed-point combinator directly:
 \[
   \mathit{fix} = \lambda f.\, g\;(\kw{fold}\;g)
   \quad\text{where}\quad
@@ -229,8 +226,7 @@ slots in its frame, and its blocks and starting point are sequences
 $s$ of instructions $i$. A sequence ends as a tail does in CFG, with
 $\kw{retq}$, $\kw{jmp}\;l$, or $\kw{case}$. An instruction reads operands $a$, which are slots, constants,
 names of definitions, and registers, and writes to a destination $d$,
-which is a register or a slot. The registers are used to stage
-arithmetic and calls. The instruction $\kw{alloc}$ allocates an object
+which is a register or a slot. The compiled code uses the registers to stage arithmetic and calls. The instruction $\kw{alloc}$ allocates an object
 $o$: a closure ($\kw{pair}$), a tuple, or an injection. A call
 $\kw{callc}\;x\;a$ of the closure in slot $x$ on the argument $a$
 becomes the following instructions:

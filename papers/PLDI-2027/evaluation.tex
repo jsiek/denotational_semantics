@@ -23,26 +23,24 @@ compiler (Section~\ref{sec:compiler}), from the same Agda definitions of
 the languages and passes, and each is our best effort in its style.
 \begin{itemize}
 \item \emph{Graph model.} The semantics of each language is the
-  graph-model semantics of Appendix~\ref{app:languages}, and each pass
-    is proved as in Section~\ref{sec:compiler-proof}.
+  graph-model semantics of Appendix~\ref{app:languages}, and we prove each pass as in Section~\ref{sec:compiler-proof}.
 \item \emph{Scott domains.} Meanings are continuous functions into a
   universal domain of tagged values (Appendix~\ref{app:scott}), built as
   a bilimit with the domain theory of TypeTopology
   \citep{Escardo:TypeTopology}.
 \item \emph{Abstract machines and simulations}, in the style of
   CompCert \citep{Leroy:2009aa}. Each language has a small-step CEK
-  machine, and each pass is proved by a forward simulation. The
+  machine, and we prove each pass by a forward simulation. The
   backward direction follows from forward simulation and the
   determinism of the machines.
 \item \emph{Clocked interpreters and value relations}, in the style of
   CakeML \citep{Kumar:2014aa}, a technique that goes back to the clocked
   evaluator of \citet{Boyer:1984aa}. Each language has a total interpreter
   with a clock that ticks each time the interpreted program calls a
-  function, and each pass is
-  proved by relating the two interpreters' results at the same clock.
+  function, and we prove each pass by relating the two interpreters' results at the same clock.
 \item \emph{Reduction semantics and simulations.} Each language has a
   reduction semantics, using substitution for function application,
-  and each pass is proved by a simulation between reductions.
+  and we prove each pass by a simulation between reductions.
 \end{itemize}
 Appendix~\ref{app:other} states each style's theorem, with its
 semantics of \iswim\ and x86$\mu$. The operational theorems say that
@@ -69,9 +67,7 @@ All of the Agda code of the five developments was written in 2026 by
 Claude Code (Opus 5.5 and Sonnet 5.5) under our direction. It started
 from our 2018--2024 Agda mechanizations of graph and filter models of
 the $\lambda$-calculus and ISWIM, with soundness and adequacy proofs,
-and unfinished attempts at closure conversion; the back-end passes and
-parts of their operational proofs were adapted from
-\citet{Siek:2025ab}. Claude Code also wrote the line-counting script
+and unfinished attempts at closure conversion; we adapted the back-end passes and parts of their operational proofs from \citet{Siek:2025ab}. Claude Code also wrote the line-counting script
 and assisted with the literature search. The results do not depend on
 trusting the AI: Agda checks every development in safe mode, with no
 postulates, and we checked every theorem statement, citation, and
@@ -179,7 +175,7 @@ shows that a reference means what the code it replaced means.
 
 \paragraph{When denotational correctness is not an equation, the operational proofs are much smaller.}
 
-\pass{Delay} changes how closures are represented, so its correctness
+\pass{Delay} changes the representation of closures, so its correctness
 is not an equation, yet the run of the target follows the run of the
 source closely. Its denotational proof takes 450 lines of Agda,
 against 35 to 126 lines in the three operational styles. Most of the
@@ -210,8 +206,7 @@ properties of Scott domains explain much of the difference. First, a
 Scott value is infinite, so the relation for \pass{delay} cannot recurse
 on values. We built it stage by stage along the bilimit, as
 \citet{Reynolds:1974aa} did, with one relation, parameterized by the
-direction, for both halves. Each stage must be shown to be a
-proposition, downward closed, admissible, and preserved by the maps
+direction, for both halves. The proof must show that each stage is a proposition, downward closed, admissible, and preserved by the maps
 between stages: 174 of the 838 lines of the proof of \pass{delay}.
 Second, the method of \citet{Pitts:1996aa} does not apply directly,
 because \pass{delay} turns a function into a pair of code and
@@ -221,8 +216,7 @@ $m + 2$ shows its result only at stage $m$, and relating calls across
 stages takes 299 lines, the largest share. Third, the universal domain
 is a sum of tagged values: the primitives and tagged values take 71
 lines, and the 135 lines of shared lemmas are laws of strictness and
-definedness, which replace nonemptiness; in exchange, no consistency is
-needed. The graph-model relations recurse on finite elements, and neither
+definedness, which replace nonemptiness; in exchange, the proof needs no consistency. The graph-model relations recurse on finite elements, and neither
 of the first two costs arises. The rest of the gap is a property of
 Agda: its \texttt{with}-abstraction is very slow when a value of the
 domain is in scope, so six places in five passes use auxiliary lemmas,
@@ -257,8 +251,7 @@ We measure the size of the proofs, which is only a proxy for the
 effort of writing them. Lines of Agda depend on layout; lexical tokens
 and non-whitespace characters do not, but they are proxies too. The
 three measures agree on the ranking: each style averages about 21 tokens per line, and the graph model's total is 1.22 times the interpreters' by tokens, against 1.20 times by lines. Size also says
-little about difficulty, which depends heavily on whether a proof has
-precedent in the literature or must be invented. The reflection proof
+little about difficulty, which depends heavily on whether a proof has precedent in the literature or its authors must invent it. The reflection proof
 for \pass{delay} took us far more effort than its size suggests,
 because no denotational proof of its kind existed; with the
 approximant logical relation in hand, a similar proof should be much

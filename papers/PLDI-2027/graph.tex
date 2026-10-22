@@ -22,7 +22,7 @@
     \mid \langle\rangle
 \end{array}
 \]
-\noindent where $V, W$ range over finite lists of elements, read as the sets of their elements where a set is expected, and $i, j \in \mathbb{N}$.
+\noindent where $V, W$ range over finite lists of elements, which we read as the sets of their elements where an operator expects a set, and $i, j \in \mathbb{N}$.
 
 \defhead{Operators on denotations}{\mathit{op}(D_1, \ldots, D_n) \subseteq \Elem}
 \[
@@ -94,9 +94,7 @@ contain one entry for each call to it.
 The meaning of a function, given by operator $\Lambda$
 (Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
 \mapsto w$ such that each output $w$ is in the meaning of the
-function's body when the body is evaluated in an environment that maps
-its parameter to input $V$.  In \iswim, the meaning of a
-$\lambda$-abstraction is given below, where an environment $\rho$ maps
+function's body in an environment that maps its parameter to input $V$.  The following equation gives the meaning of a $\lambda$-abstraction in \iswim, where an environment $\rho$ maps
 each variable to a set of elements and $\boldsymbol{\lambda}$ denotes a
 mathematical function.
 \[
@@ -157,8 +155,7 @@ $\Lambda$ builds only entries whose inputs are consistent, which rules
 out entries such as $[1, 2] \mapsto 3$ in the meaning of $\lambda x.\,
 x + 1$, whose input describes no single argument.
 %
-Our model requires consistency because it is needed in the proof for
-the \pass{delay} pass (Section~\ref{sec:approx-lr}). A call in FlatClos takes
+Our model requires consistency because the proof for the \pass{delay} pass needs it (Section~\ref{sec:approx-lr}). A call in FlatClos takes
 the code from one pair and the environment from another, so a
 closure's meaning may combine the code of one pair with the
 environment of a different pair. Consistency ensures that the

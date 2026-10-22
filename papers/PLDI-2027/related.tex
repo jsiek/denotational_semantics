@@ -28,8 +28,7 @@ closures. \OE{}uf \citep{Mullen:2018aa} gives a denotation only to its
 total source language and proves every pass operationally. Most
 compiler proofs, finally, are operational on both sides. The CLI stack
 \citep{Moore:1989aa,Young:1989aa} runs the source for $n$ steps and the
-target for a number of steps given by a clock function, and shows that
-runs without error are preserved, but says nothing about divergence.
+target for a number of steps given by a clock function, and shows that the target reproduces every run of the source that ends without error, but says nothing about divergence.
 CompCert \citep{Leroy:2009aa} and CakeML \citep{Kumar:2014aa},
 discussed in the introduction, use simulations and clocked big-step
 semantics, respectively. The calculated compilers of
@@ -41,8 +40,7 @@ first-order compiler.
 \paragraph{Closure conversion}
 
 Typed closure conversion represents a closure as a package of an
-existential type \citep{Minamide:1996ys}, as our FlatClos does, and is
-proved correct with logical relations over terms. \citet{Ahmed:2008aa}
+existential type \citep{Minamide:1996ys}, as our FlatClos does, and \citet{Minamide:1996ys} prove it correct with logical relations over terms. \citet{Ahmed:2008aa}
 show that it preserves observational equivalence, and
 \citet{Bowman:2018aa} extend it to the calculus of constructions. \citet{Wand:1994aa} prove the partial
 correctness of lightweight closure conversion with an operational

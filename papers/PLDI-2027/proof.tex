@@ -30,8 +30,7 @@ semantics of \iswim\ and x86$\mu$ with respect to their interpreters
 usual operational statement: the compiled program terminates with the
 same answer as the source, and diverges exactly when the source does.
 
-This section first shows how the passes other than \pass{delay} are
-proved (Section~\ref{sec:equational}). These proofs answer whether the
+This section first shows how we prove the passes other than \pass{delay} (Section~\ref{sec:equational}). These proofs answer whether the
 compositionality and equational reasoning of denotational semantics
 yield concise correctness proofs for some compiler passes (RQ2). The
 section then shows why \pass{delay} needs more
@@ -64,11 +63,9 @@ are empty.
 
 The main lemma for \pass{simplify} carries an invariant: whatever
 \pass{simplify} knows about each variable is true of the source
-environment $\rho$ and the target environment $\rho'$. If a variable is
-replaced by the term $T$, it means $\den{T}\rho'$, and if it is known to
-be a function $\langle \lambda x.\, N, E_f \rangle$, it means
+environment $\rho$ and the target environment $\rho'$. If \pass{simplify} replaces a variable by the term $T$, the variable means $\den{T}\rho'$, and if \pass{simplify} knows it to be a function $\langle \lambda x.\, N, E_f \rangle$, it means
 $\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ of which
-$E_f$ is true. The key case is inlining. Suppose $L$ is known to be
+$E_f$ is true. The key case is inlining. Suppose \pass{simplify} knows $L$ to be
 $\langle \lambda x.\, N, E_f \rangle$, the operand $M$ simplifies to a
 small value, and the inlined body simplifies to $T''$. Then
 {\small
