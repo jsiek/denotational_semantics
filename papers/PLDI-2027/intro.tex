@@ -90,21 +90,14 @@ together. We also prove that the denotational semantics of
 \iswim\ and of the assembly language are adequate with respect to
 the interpreters for those languages. Our correctness theorem is therefore equivalent to the usual operational one.  We mechanize all of these results in Agda.
 
-The graph model we use is essentially the $D_A$ model
-of \citet{Engeler:1981aa} (see
-also \citet{barendregt84:_lambda_calculus}), which is a variation on
-the earlier models of
-\citet{Plotkin:1993ab} and \citet{Scott:1976lq}. Each graph element
-is a finite piece of evidence about a program's behavior. The meaning of a function is a set of input--output
-entries, and the meaning of an application collects the outputs of the
-entries whose inputs are covered by the meaning of the argument. An
-\iswim\ program that diverges does not produce output, so its meaning
-is the empty set. We chose a graph model because it is elementary: a denotation is a set of inductively defined graph elements, so
-mechanizing the model takes a fraction of the size of traditional
-domain theory (Section~\ref{sec:graph-models}). Our use of graph
-models draws inspiration from the filter models of
-\citet{Wadler:2020aa} and the proof of correctness of a function
-inliner of \citet{Siek:2017ab}.
+In a graph model, each graph element is a finite piece of evidence
+about a program's behavior, the meaning of a function is a set of
+input--output entries, and a program that diverges produces no
+evidence, so its meaning is the empty set
+\citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq}. We chose a graph
+model because it is elementary: a denotation is a set of inductively
+defined graph elements, so mechanizing the model takes a fraction of
+the size of traditional domain theory (Section~\ref{sec:graph-models}).
 
 The closest prior denotational proofs each stop short of this
 combination of closure conversion, general recursion, and semantic
