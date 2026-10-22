@@ -197,30 +197,22 @@ paragraph on termination below.
       \land U_a \neq [\,] \land U_a \subseteq U)
 \]
 
-\defhead{One layer of the relation}{D \layer{Q} V}
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{}}
-  D \layer{Q} V & \iff &
-    (\forall c.\; c \in V \Rightarrow c \in D)\\
-  & \land & (V \neq [\,] \Rightarrow D \neq \emptyset)\\
-  & \land & (\forall U, W, E.\;
-     \callsto{V}{U}{W} \land \mathsf{con}(E) \land \mathsf{con}(U)
-     \land E \mathrel{Q} U \Rightarrow (D \app E) \mathrel{Q} W)\\
-  & \land & (\forall \pi, W.\; W \subseteq \pi(V) \Rightarrow \pi(D) \mathrel{Q} W)
-\end{array}
-\]
-
 \defhead{The approximant logical relation}{D \ALR_k V \qquad D \ALR V}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   D \ALR_0 V & \iff & \mathsf{true}\\
-  D \ALR_{k+1} V & \iff & D \layer{\ALR_k} V\\
+  D \ALR_{k+1} V & \iff &
+    (\forall c.\; c \in V \Rightarrow c \in D)\\
+  & \land & (V \neq [\,] \Rightarrow D \neq \emptyset)\\
+  & \land & (\forall U, W, E.\;
+     \callsto{V}{U}{W} \land \mathsf{con}(E) \land \mathsf{con}(U)
+     \land E \ALR_k U \Rightarrow (D \app E) \ALR_k W)\\
+  & \land & (\forall \pi, W.\; W \subseteq \pi(V) \Rightarrow \pi(D) \ALR_k W)\\[4pt]
   D \ALR V & \iff & D \ALR_{1 + \depth(V)} V
 \end{array}
 \]
-\noindent Here $V, U, U_a, U_e, W$ are finite lists of target elements,
-$D, E \subseteq \Elem$ are sets of source elements, and $Q$ is the
-relation used for the recursive occurrences.
+\noindent Here $V, U, U_a, U_e, W$ are finite lists of target elements
+and $D, E \subseteq \Elem$ are sets of source elements.
 \caption{The approximant logical relation $D \ALR V$ between a set $D$
   of source (EnvClos) elements and a finite list $V$ of target (FlatClos)
   elements. A finite list stands for the set of its elements. Here $c$
@@ -258,7 +250,8 @@ arguments shallower than $V$, which the recursion needs. The second
 conjunct says that each result $w$ in $W$ is produced by a usable entry
 of $V$ whose arguments are among $U$.
 
-One layer ${\trianglerighteq^{Q}}$ of the relation has four clauses:
+The relation $D \ALR_{k+1} V$ has four clauses, which use ${\ALR_k}$
+at the recursive occurrences:
 \begin{enumerate}
   \item every constant in $V$ is in $D$;
   \item if $V$ is nonempty, then $D$ is nonempty;
@@ -288,17 +281,18 @@ elements of $V$.
 
 The index $k$ of ${\ALR_k}$ serves only to ensure termination. Any
 index that bounds the depth of $V$ gives the same relation, and
-therefore ${\ALR}$ satisfies its defining equation
-${\ALR} = {\trianglerighteq^{\trianglerighteq}}$
+therefore $D \ALR V$ is equivalent to the four clauses with ${\ALR}$
+itself at the recursive occurrences
 (Lemma~\ref{lem:depth-irrelevant}). The proofs about ${\ALR}$ use this
-equation in both directions and never mention the index.
+equivalence in both directions and never mention the index.
 
 \begin{lemma}[Depth irrelevance and unfolding]\label{lem:depth-irrelevant}
 \leavevmode
 \begin{enumerate}
 \item If every element in $V$ has depth less than $k$ and less than
   $j$, then $D \ALR_k V$ if and only if $D \ALR_j V$.
-\item $D \ALR V$ if and only if $D \layer{\ALR} V$.
+\item $D \ALR V$ if and only if the four clauses of
+  $D \ALR_{k+1} V$ hold with ${\ALR}$ in place of ${\ALR_k}$.
 \end{enumerate}
 \end{lemma}
 
@@ -330,7 +324,7 @@ $V \subseteq \den{\pass{delay}(M)}\rho'$.
 
 The proof is by induction on $M$. Throughout, the second part of
 Lemma~\ref{lem:depth-irrelevant} lets us pass between $D \ALR V$ and
-the four clauses of $D \layer{\ALR} V$. Most cases are routine. In the case of a
+its four clauses, with ${\ALR}$ at the recursive occurrences. Most cases are routine. In the case of a
 variable, the relation between $\rho$ and $\rho'$ gives the conclusion
 directly. The constructs $\kw{fold}$ and
 $\kw{unfold}$ denote the identity function in both languages, so their
@@ -359,7 +353,7 @@ $\pass{delay}(M) = \kw{pack}\,(\kw{code}\,(z, y.\,\pass{delay}(N)))\,(\kw{tuple}
 so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\pass{delay}(\vec{K})}\rho')$. Let
 $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
-four clauses of $D \layer{\ALR} V$. Clauses 1 and 4 hold trivially
+four clauses of $D \ALR V$. Clauses 1 and 4 hold trivially
 because $V$ contains only pairs. Clause 2 follows from the induction
 hypothesis for $\vec{K}$.
 
