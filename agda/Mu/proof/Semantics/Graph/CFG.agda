@@ -50,20 +50,17 @@ module _ {Σ Δ} {T T' : Table Σ} {σ σ'} (h : ∀ {A} (a : Atm Σ Δ A) → �
   𝒮-⊆ (fold a) = h a
   𝒮-⊆ (unfold a) = h a
 
-{- in the table -}
-𝒜-T⊆ : ∀ {Σ Δ A} {T T' : Table Σ} → (∀ {s} (f : Σ ∋ s) → T f ⊆ T' f) → ∀ (a : Atm Σ Δ A) {σ} → 𝒜 a T σ ⊆ 𝒜 a T' σ
-𝒜-T⊆ h (var x) = λ _ z → z
-𝒜-T⊆ h (lit B c) = λ _ z → z
-𝒜-T⊆ h (ref f) = h f
+{- an atom, in the table and the frame -}
+𝒜-⊆ : ∀ {Σ Δ A} {T T' : Table Σ} {σ σ'} → (∀ {s} (f : Σ ∋ s) → T f ⊆ T' f) → σ ⊆ₑ σ' → ∀ (a : Atm Σ Δ A) → 𝒜 a T σ ⊆ 𝒜 a T' σ'
+𝒜-⊆ h s (var x) = s (idx x)
+𝒜-⊆ h s (lit B c) = λ _ z → z
+𝒜-⊆ h s (ref f) = h f
 
 𝒮-≃ : ∀ {Σ Δ A} {T T' : Table Σ} → (∀ {s} (f : Σ ∋ s) → T f ≃ T' f) → ∀ (s : Simple Σ Δ A) σ → 𝒮 s T σ ≃ 𝒮 s T' σ
-𝒮-≃ TT s σ = ⟨ 𝒮-⊆ (λ a → 𝒜-T⊆ (λ f → proj₁ (TT f)) a) s , 𝒮-⊆ (λ a → 𝒜-T⊆ (λ f → proj₂ (TT f)) a) s ⟩
+𝒮-≃ TT s σ = ⟨ 𝒮-⊆ (𝒜-⊆ (λ f → proj₁ (TT f)) (λ _ _ z → z)) s , 𝒮-⊆ (𝒜-⊆ (λ f → proj₂ (TT f)) (λ _ _ z → z)) s ⟩
 
-{- in the frame -}
 𝒜-mono : ∀ {Σ Δ A} {T : Table Σ} {σ σ'} → σ ⊆ₑ σ' → ∀ (a : Atm Σ Δ A) → 𝒜 a T σ ⊆ 𝒜 a T σ'
-𝒜-mono s (var x) = s (idx x)
-𝒜-mono s (lit B c) = λ _ z → z
-𝒜-mono s (ref f) = λ _ z → z
+𝒜-mono = 𝒜-⊆ (λ _ _ z → z)
 
 drop-mono : ∀ {Δ' Δ : Ctx} (p : Δ' ⊑ Δ) {σ σ'} → σ ⊆ₑ σ' → drop p σ ⊆ₑ drop p σ'
 drop-mono here⊑ s = s

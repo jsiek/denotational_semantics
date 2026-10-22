@@ -27,9 +27,10 @@ open S4 using () renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
 open import proof.Framework.GraphModel.TypedOkBase using (fin₁; fin₂)
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
 open import Mu.Compiler.Delay using (Ren; ext; delay; delays; delay-program)
-open import Mu.proof.Correctness.Graph.DelayRel using (_●_; _⊙_; out-data)
-open import Mu.proof.Correctness.Graph.DelayReflect using (mono₁)
-open import Language.Prim using (δ)
+open import Mu.proof.Correctness.Graph.DelayRel using (_●_; _⊙_; ●-mono)
+open import Mu.proof.Semantics.Graph.Binders using (body-mono)
+open import Language.Prim using (δ; int; bool)
+open import Data.Bool using (true; false)
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -40,15 +41,14 @@ open import Data.Unit using (tt)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit.Polymorphic using () renaming (⊤ to pTrue; tt to ptt)
 open import Level using (Lift; lift; lower) renaming (suc to lsuc; zero to lzero)
-open import Relation.Binary.PropositionalEquality using (refl)
+open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module Mu.proof.Correctness.Graph.DelayPreserve where
 
 {- The relation -----------------------------------------------------------------}
 
 ⋆⋆-mono : ∀ {C C' Y Y' X X'} → C ⊆ C' → Y ⊆ Y' → X ⊆ X' → (C ● Y) ● X ⊆ (C' ● Y') ● X'
-⋆⋆-mono {C} {C'} {Y} {Y'} {X} {X'} C⊆ Y⊆ X⊆ =
-  lower (⋆₂-mono ⟨ C , ⟨ Y , ⟨ X , ptt ⟩ ⟩ ⟩ ⟨ C' , ⟨ Y' , ⟨ X' , ptt ⟩ ⟩ ⟩ ⟨ lift C⊆ , ⟨ lift Y⊆ , ⟨ lift X⊆ , ptt ⟩ ⟩ ⟩)
+⋆⋆-mono {C} {C'} {Y} {Y'} C⊆ Y⊆ = ●-mono {C ● Y} {C' ● Y'} (●-mono C⊆ Y⊆)
 
 ⊙-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
 ⊙-mono-l {D₁} {D₂} D⊆ = ⋆⋆-mono {car ⟨ D₁ , ptt ⟩} {car ⟨ D₂ , ptt ⟩} {cdr ⟨ D₁ , ptt ⟩} {cdr ⟨ D₂ , ptt ⟩} (λ { u ⟨ v , p ⟩ → ⟨ v , D⊆ _ p ⟩ }) (λ { v ⟨ u , p ⟩ → ⟨ u , D⊆ _ p ⟩ }) (λ d z → z)
@@ -92,12 +92,10 @@ v ⊑ D' = Lift (lsuc lzero) (v ∈ D')
 ⊑-ne ⦅ u , v ⦆ (lift v∈) = ⟨ _ , v∈ ⟩
 ⊑-ne ⟨⟩ (lift v∈) = ⟨ _ , v∈ ⟩
 
-data-⊑ : ∀ v {D'} → Data v → v ∈ D' → v ⊑ D'
-data-⊑ (left d) dd v∈ = data-⊑ d dd v∈
-data-⊑ (right d) dd v∈ = data-⊑ d dd v∈
-data-⊑ (const k) _ v∈ = lift v∈
-data-⊑ ω _ v∈ = lift v∈
-data-⊑ ⟨⟩ _ v∈ = lift v∈
+out-⊑ : ∀ o {D'} → out o ∈ D' → out o ⊑ D'
+out-⊑ (int n) v∈ = lift v∈
+out-⊑ (bool true) v∈ = lift v∈
+out-⊑ (bool false) v∈ = lift v∈
 
 ⊑*-intro : ∀ U {D E'} → mem U ⊆ D → (∀ v → v ∈ D → v ⊑ E') → U ⊑* E'
 ⊑*-intro [] U⊆ f = ptt
@@ -126,46 +124,37 @@ preserve-nth : ∀ {Γ Δ Δ'} (Ms : All (Tm Γ) Δ') {r : Ren Γ Δ} {ρ ρ'} �
 preserve-𝒯 : ∀ {Γ Δ Δ'} (Ms : All (Tm Γ) Δ') {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
   → ∀ v → v ∈ 𝒯 (length Δ') (⟦ Ms ⟧s ρ) → v ⊑ 𝒯 (length Δ') (⟦ delays r Ms ⟧s' ρ')
 
+{- the body B of a binder, on the meaning X' of the target's bound term, which satisfies the source's U -}
+preserve-body : ∀ {Γ Δ A C} (B : Tm (A ∷ Γ) C) {r : Ren Γ Δ} {ρ ρ' U X' Y'} → Envs r ρ ρ' → U ≢ [] → Con X'
+  → (∀ u → u ∈ mem U → u ⊑ X') → (nonempty X' → ⟦ delay (ext r) B ⟧' (X' • ρ') ⊆ Y') → ∀ v → v ∈ ⟦ B ⟧ (mem U • ρ) → v ⊑ Y'
+preserve-body B E neU c U⊑ B⊆ v v∈ = ⊑-mono v (B⊆ ne) (preserve B (ext-envs E ne c U⊑) v v∈)
+  where ne = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (U⊑ u u∈)
+
 preserve (` x) E = Envs.ρ⊑ E x
 preserve (app L N) {r} E v ⟨ U , ⟨ U↦v∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ =
   proj₂ (preserve L E (U ↦ v) U↦v∈) _ (S4.con (delay r N) (Envs.ρ'~ E)) (⊑*-intro U U⊆ (preserve N E))
-preserve (lit B k) E v v∈ = data-⊑ v (flat-data (ℬ-flat v v∈)) v∈
+preserve (lit B k) E (const k') v∈ = lift v∈
 preserve (prim p L M) {r} {ρ' = ρ'} E _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
-  data-⊑ (out (δ p n m)) {⟦ delay r (prim p L M) ⟧' ρ'} (out-data (δ p n m))
+  out-⊑ (δ p n m) {⟦ delay r (prim p L M) ⟧' ρ'}
     ⟨ n , ⟨ m , ⟨ lower (preserve L E _ n∈) , ⟨ lower (preserve M E _ m∈) , refl ⟩ ⟩ ⟩ ⟩
 preserve (tuple Ms) = preserve-𝒯 Ms
 preserve (get i M) E v v∈ = preserve M E (tup[ pos i ] v) v∈
 preserve (inl M) E (left v) v∈ = preserve M E v v∈
 preserve (inr M) E (right v) v∈ = preserve M E v v∈
 preserve (case L M N) {r} {ρ} {ρ'} E v (inj₁ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
-  ⊑-mono v (𝒞-left {⟦ delay r L ⟧' ρ'} {λ X → ⟦ delay (ext r) M ⟧' (X • ρ')} {λ X → ⟦ delay (ext r) N ⟧' (X • ρ')}
-              (fin₁ (S4.ok (delay (ext r) M)) NE' ne) cS)
-    (preserve M (ext-envs E ne cS u⊑) v v∈)
-  where
-  open Envs E
-  cS = Untag-con leftT (λ c → c) (S4.con (delay r L) ρ'~)
-  u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Lefts (⟦ delay r L ⟧' ρ')
-  u⊑ d d∈ = preserve L E (left d) (U⊆ d d∈)
-  ne = ⊑-ne u (u⊑ u (here refl))
+  preserve-body M E (λ ()) cS (λ d d∈ → preserve L E (left d) (U⊆ d d∈))
+    (λ ne → 𝒞-left {⟦ delay r L ⟧' ρ'} {λ X → ⟦ delay (ext r) M ⟧' (X • ρ')} {λ X → ⟦ delay (ext r) N ⟧' (X • ρ')}
+              (fin₁ (S4.ok (delay (ext r) M)) (Envs.NE' E) ne) cS) v v∈
+  where cS = Untag-con leftT (λ c → c) (S4.con (delay r L) (Envs.ρ'~ E))
 preserve (case L M N) {r} {ρ} {ρ'} E v (inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
-  ⊑-mono v (𝒞-right {⟦ delay r L ⟧' ρ'} {λ X → ⟦ delay (ext r) M ⟧' (X • ρ')} {λ X → ⟦ delay (ext r) N ⟧' (X • ρ')}
-              (fin₁ (S4.ok (delay (ext r) N)) NE' ne) cS)
-    (preserve N (ext-envs E ne cS u⊑) v v∈)
-  where
-  open Envs E
-  cS = Untag-con rightT (λ c → c) (S4.con (delay r L) ρ'~)
-  u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Rights (⟦ delay r L ⟧' ρ')
-  u⊑ d d∈ = preserve L E (right d) (U⊆ d d∈)
-  ne = ⊑-ne u (u⊑ u (here refl))
+  preserve-body N E (λ ()) cS (λ d d∈ → preserve L E (right d) (U⊆ d d∈))
+    (λ ne → 𝒞-right {⟦ delay r L ⟧' ρ'} {λ X → ⟦ delay (ext r) M ⟧' (X • ρ')} {λ X → ⟦ delay (ext r) N ⟧' (X • ρ')}
+              (fin₁ (S4.ok (delay (ext r) N)) (Envs.NE' E) ne) cS) v v∈
+  where cS = Untag-con rightT (λ c → c) (S4.con (delay r L) (Envs.ρ'~ E))
 preserve (let′ M N) {r} {ρ} {ρ'} E v ⟨ U , ⟨ ⟨ v∈ , _ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
-  ⊑-mono v (proj₂ (Λ-β (mono₁ (S4.ok (delay (ext r) N)) ρ') (fin₁ (S4.ok (delay (ext r) N)) NE' ne) cM))
-    (preserve N (ext-envs E ne cM u⊑) v v∈)
-  where
-  open Envs E
-  cM = S4.con (delay r M) ρ'~
-  u⊑ : ∀ d → d ∈ mem U → d ⊑ ⟦ delay r M ⟧' ρ'
-  u⊑ d d∈ = preserve M E d (U⊆ d d∈)
-  ne = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (u⊑ u u∈)
+  preserve-body N E neU cM (λ d d∈ → preserve M E d (U⊆ d d∈))
+    (λ ne → proj₂ (Λ-β (body-mono (S4.ok (delay (ext r) N)) ρ') (fin₁ (S4.ok (delay (ext r) N)) (Envs.NE' E) ne) cM)) v v∈
+  where cM = S4.con (delay r M) (Envs.ρ'~ E)
 preserve (fold M) E = preserve M E
 preserve (unfold M) E = preserve M E
 preserve (clos {Δ} N Ms) {r} {ρ} {ρ'} E v ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ = G v v∈
@@ -176,14 +165,11 @@ preserve (clos {Δ} N Ms) {r} {ρ} {ρ'} E v ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , ⟨
   T' = 𝒯 n (⟦ delays r Ms ⟧s' ρ')
   cT' = S4.con (T.tuple (delays r Ms)) ρ'~
   P' = ⟦ delay r (clos N Ms) ⟧' ρ'
-  fv⊑ : ∀ fv → fv ∈ mem FV → fv ⊑ T'
-  fv⊑ fv fv∈ = preserve-𝒯 Ms E fv (FV⊆ fv fv∈)
+  fv⊑ = λ fv fv∈ → preserve-𝒯 Ms E fv (FV⊆ fv fv∈)
   NE-T' = let ⟨ fv , fv∈ ⟩ = ne-mem neFV (λ d d∈ → d∈) in ⊑-ne fv (fv⊑ fv fv∈)
-  PV : PairV P'
-  PV = ⟨ ν , ⟨ proj₁ NE-T' , ⟨ tt , proj₂ NE-T' ⟩ ⟩ ⟩
   G : ∀ v → v ∈ Λ ⟨ (λ Y → ⟦ N ⟧ (Y • mem FV • (λ _ → ⌈ ⟨⟩ ⌉))) , ptt ⟩ → v ⊑ P'
-  G ν _ = lift PV
-  G (U ↦ w) ⟨ w∈ , ⟨ neU , _ ⟩ ⟩ = ⟨ lift PV , call ⟩
+  G ν _ = lift ⟨ ν , ⟨ _ , ⟨ tt , proj₂ NE-T' ⟩ ⟩ ⟩
+  G (U ↦ w) ⟨ w∈ , ⟨ neU , _ ⟩ ⟩ = ⟨ lift ⟨ ν , ⟨ _ , ⟨ tt , proj₂ NE-T' ⟩ ⟩ ⟩ , call ⟩
     where
     call : ∀ E' → Con E' → U ⊑* E' → w ⊑ P' ⊙ E'
     call E' cE' U⊑ = ⊑-mono w β (preserve N {r = λ x → x} Eb w w∈)
