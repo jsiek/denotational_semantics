@@ -203,17 +203,17 @@ tuple-sv : ∀ {Γ Δ} {Ks : All (Tm Γ) Δ} → SV (tuple Ks) → SVs Ks
 tuple-sv (P.tuple vs) = vs
 
 {- a known value, inspected: its term T, or K itself if K is small -}
-known-small : ∀ {Γ A} (K T : Tm Γ A) (D : ⟨ 𝔻 ⟩) (γ' : ⟨ Env ⟩) → D ＝ ⟦ T ⟧ · γ' → SV K → D ＝ ⟦ K ⟧ · γ'
+known-small : ∀ {Γ A} (K T : Tm Γ A) {D γ'} → D ＝ ⟦ T ⟧ · γ' → SV K → D ＝ ⟦ K ⟧ · γ'
   → (b : Bool) → Desc D (if b then self K else (T ∣ just (val K))) γ'
-known-small K T D γ' T＝ v K＝ true = desc-self v K＝
-known-small K T D γ' T＝ v K＝ false = desc T＝ (λ { Eq.refl → kval v K＝ })
+known-small K T T＝ v K＝ true = desc-self v K＝
+known-small K T T＝ v K＝ false = desc T＝ (λ { Eq.refl → kval v K＝ })
 
 {- a component of a known tuple -}
-component-ok : ∀ {Γ Δ A} (i : Δ ∋ A) (k : Maybe (Known Γ (tup Δ))) {K} (γ' : ⟨ Env ⟩) (D : ⟨ 𝔻 ⟩) → defined-env γ'
+component-ok : ∀ {Γ Δ A} (i : Δ ∋ A) (k : Maybe (Known Γ (tup Δ))) {K γ' D} → defined-env γ'
   → (∀ {Kt} → k ≡ just Kt → KDesc D Kt γ')
   → DP.Σ (All (Tm Γ) Δ) (λ Ks → (k ≡ just (val (tuple Ks))) DP.× (lookup Ks i ≡ K))
   → SV K × (proj (pos i) · D ＝ ⟦ K ⟧ · γ')
-component-ok {Δ = Δ} i k γ' D ne h ⟨ Ks , ⟨ Eq.refl , Eq.refl ⟩ ⟩ =
+component-ok {Δ = Δ} i k {γ' = γ'} ne h ⟨ Ks , ⟨ Eq.refl , Eq.refl ⟩ ⟩ =
   svs-lookup vs i ,
   (ap (proj (pos i) ·_) (pr₂ c) ∙ proj-tuple (length Δ) (⟦ Ks ⟧s · γ') (svs-defined vs ne) (pos i) ∙ nth-lookup Ks i γ')
   where
@@ -229,25 +229,20 @@ get-eq i I with component i (known I) Eq.refl
 ... | just K = Eq.refl
 ... | nothing = Eq.refl
 
-get-ok-aux : ∀ {Γ Δ A} (i : Δ ∋ A) (I : Info Γ (tup Δ)) (γ' : ⟨ Env ⟩) (D : ⟨ 𝔻 ⟩) → defined-env γ' → Desc D I γ'
+get-ok-aux : ∀ {Γ Δ A} (i : Δ ∋ A) (I : Info Γ (tup Δ)) {γ' D} → defined-env γ' → Desc D I γ'
   → (c : Maybe (Tm Γ A)) → component i (known I) Eq.refl ≡ c → Desc (proj (pos i) · D) (get-res i I c) γ'
-get-ok-aux i I γ' D ne d nothing e = desc (ap (proj (pos i) ·_) (tm d)) (λ ())
-get-ok-aux i I γ' D ne d (just K) e =
-  known-small K (get i (term I)) (proj (pos i) · D) γ' (ap (proj (pos i) ·_) (tm d)) (pr₁ c) (pr₂ c) (small K)
-  where c = component-ok i (known I) γ' D ne (kn d) (comp-inv i (known I) Eq.refl e)
+get-ok-aux i I ne d nothing e = desc (ap (proj (pos i) ·_) (tm d)) (λ ())
+get-ok-aux i I ne d (just K) e = known-small K (get i (term I)) (ap (proj (pos i) ·_) (tm d)) (pr₁ c) (pr₂ c) (small K)
+  where c = component-ok i (known I) ne (kn d) (comp-inv i (known I) Eq.refl e)
 
-get-ok : ∀ {Γ Δ A} (i : Δ ∋ A) (I : Info Γ (tup Δ)) (γ' : ⟨ Env ⟩) (D : ⟨ 𝔻 ⟩) → defined-env γ' → Desc D I γ'
-  → Desc (proj (pos i) · D) (simp-get i I) γ'
-get-ok i I γ' D ne d =
-  Eq.subst (λ J → Desc (proj (pos i) · D) J γ') (Eq.sym (get-eq i I))
-    (get-ok-aux i I γ' D ne d (component i (known I) Eq.refl) Eq.refl)
+get-ok : ∀ {Γ Δ A} (i : Δ ∋ A) (I : Info Γ (tup Δ)) {γ' D} → defined-env γ' → Desc D I γ' → Desc (proj (pos i) · D) (simp-get i I) γ'
+get-ok i I {γ'} {D} ne d =
+  Eq.subst (λ J → Desc (proj (pos i) · D) J γ') (Eq.sym (get-eq i I)) (get-ok-aux i I ne d (component i (known I) Eq.refl) Eq.refl)
 
 {- a known integer -}
-int-ok : ∀ {Γ} (k : Maybe (Known Γ (base Int))) {n} (γ' : ⟨ Env ⟩) (D : ⟨ 𝔻 ⟩)
-  → (∀ {K} → k ≡ just K → KDesc D K γ')
-  → DP.Σ (base Int ≡ base Int) (λ e → k ≡ just (val (Eq.subst (Tm Γ) e (lit Int n))))
-  → D ＝ const Int n
-int-ok k γ' D h ⟨ Eq.refl , Eq.refl ⟩ = pr₂ (kv (h Eq.refl))
+int-ok : ∀ {Γ} (k : Maybe (Known Γ (base Int))) {n γ' D} → (∀ {K} → k ≡ just K → KDesc D K γ')
+  → DP.Σ (base Int ≡ base Int) (λ e → k ≡ just (val (Eq.subst (Tm Γ) e (lit Int n)))) → D ＝ const Int n
+int-ok k h ⟨ Eq.refl , Eq.refl ⟩ = pr₂ (kv (h Eq.refl))
 
 {- the result of a primitive -}
 prim-eq-＝ : ∀ {Γ} (b : Bool) (γ : ⟨ Env ⟩)
@@ -271,21 +266,19 @@ prim-eq p I J with int-of (known I)
 ...   | nothing = Eq.refl
 ...   | just m = Eq.refl
 
-prim-ok-aux : ∀ {Γ} p (I J : Info Γ (base Int)) (γ' : ⟨ Env ⟩) (DI DJ : ⟨ 𝔻 ⟩) → Desc DI I γ' → Desc DJ J γ'
+prim-ok-aux : ∀ {Γ} p (I J : Info Γ (base Int)) {γ' DI DJ} → Desc DI I γ' → Desc DJ J γ'
   → (a b : Maybe ℤ) → int-of (known I) ≡ a → int-of (known J) ≡ b → Desc (primD p · DI · DJ) (prim-res p I J a b) γ'
-prim-ok-aux p I J γ' DI DJ dI dJ (just n) (just m) e₁ e₂ =
+prim-ok-aux p I J {γ'} dI dJ (just n) (just m) e₁ e₂ =
   desc-self (prim-term-sv p n m)
-    (ap₂ (λ a b → primD p · a · b) (int-ok (known I) γ' DI (kn dI) (int-inv (known I) e₁))
-                                   (int-ok (known J) γ' DJ (kn dJ) (int-inv (known J) e₂))
+    (ap₂ (λ a b → primD p · a · b) (int-ok (known I) (kn dI) (int-inv (known I) e₁)) (int-ok (known J) (kn dJ) (int-inv (known J) e₂))
      ∙ primD-const p n m ∙ prim-term-＝ p n m γ')
-prim-ok-aux p I J γ' DI DJ dI dJ (just n) nothing e₁ e₂ = desc (ap₂ (λ a b → primD p · a · b) (tm dI) (tm dJ)) (λ ())
-prim-ok-aux p I J γ' DI DJ dI dJ nothing b e₁ e₂ = desc (ap₂ (λ a b → primD p · a · b) (tm dI) (tm dJ)) (λ ())
+prim-ok-aux p I J dI dJ (just n) nothing e₁ e₂ = desc (ap₂ (λ a b → primD p · a · b) (tm dI) (tm dJ)) (λ ())
+prim-ok-aux p I J dI dJ nothing b e₁ e₂ = desc (ap₂ (λ a b → primD p · a · b) (tm dI) (tm dJ)) (λ ())
 
-prim-ok : ∀ {Γ} p (I J : Info Γ (base Int)) (γ' : ⟨ Env ⟩) (DI DJ : ⟨ 𝔻 ⟩) → Desc DI I γ' → Desc DJ J γ'
-  → Desc (primD p · DI · DJ) (simp-prim p I J) γ'
-prim-ok p I J γ' DI DJ dI dJ =
+prim-ok : ∀ {Γ} p (I J : Info Γ (base Int)) {γ' DI DJ} → Desc DI I γ' → Desc DJ J γ' → Desc (primD p · DI · DJ) (simp-prim p I J) γ'
+prim-ok p I J {γ'} {DI} {DJ} dI dJ =
   Eq.subst (λ R → Desc (primD p · DI · DJ) R γ') (Eq.sym (prim-eq p I J))
-    (prim-ok-aux p I J γ' DI DJ dI dJ (int-of (known I)) (int-of (known J)) Eq.refl Eq.refl)
+    (prim-ok-aux p I J dI dJ (int-of (known I)) (int-of (known J)) Eq.refl Eq.refl)
 
 {- a known fold -}
 fold-sv : ∀ {Γ A} {K : Tm Γ (unroll A)} → SV (fold {A = A} K) → SV K
@@ -300,15 +293,15 @@ unfold-eq I with unfolded (known I) Eq.refl
 ... | just K = Eq.refl
 ... | nothing = Eq.refl
 
-unfold-ok-aux : ∀ {Γ A} (I : Info Γ (μ A)) (γ' : ⟨ Env ⟩) (D : ⟨ 𝔻 ⟩) → Desc D I γ'
+unfold-ok-aux : ∀ {Γ A} (I : Info Γ (μ A)) {γ' D} → Desc D I γ'
   → (u : Maybe (Tm Γ (unroll A))) → unfolded (known I) Eq.refl ≡ u → Desc D (unfold-res I u) γ'
-unfold-ok-aux I γ' D d nothing e = desc (tm d) (λ ())
-unfold-ok-aux I γ' D d (just K) e = known-small K (unfold (term I)) D γ' (tm d) (fold-sv (pr₁ c)) (pr₂ c) (small K)
+unfold-ok-aux I d nothing e = desc (tm d) (λ ())
+unfold-ok-aux I d (just K) e = known-small K (unfold (term I)) (tm d) (fold-sv (pr₁ c)) (pr₂ c) (small K)
   where c = kv (kn d (unfold-inv (known I) Eq.refl e))
 
-unfold-ok : ∀ {Γ A} (I : Info Γ (μ A)) (γ' : ⟨ Env ⟩) (D : ⟨ 𝔻 ⟩) → Desc D I γ' → Desc D (simp-unfold I) γ'
-unfold-ok I γ' D d =
-  Eq.subst (λ J → Desc D J γ') (Eq.sym (unfold-eq I)) (unfold-ok-aux I γ' D d (unfolded (known I) Eq.refl) Eq.refl)
+unfold-ok : ∀ {Γ A} (I : Info Γ (μ A)) {γ' D} → Desc D I γ' → Desc D (simp-unfold I) γ'
+unfold-ok I {γ'} {D} d =
+  Eq.subst (λ J → Desc D J γ') (Eq.sym (unfold-eq I)) (unfold-ok-aux I d (unfolded (known I) Eq.refl) Eq.refl)
 
 {- a known injection: the value it injects -}
 inl-sv : ∀ {Γ A B} {K : Tm Γ A} → SV (inl {B = B} K) → SV K
@@ -317,14 +310,14 @@ inl-sv (P.inl v) = v
 inr-sv : ∀ {Γ A B} {K : Tm Γ B} → SV (inr {A = A} K) → SV K
 inr-sv (P.inr v) = v
 
-branch-inl-ok : ∀ {Γ A B} (I : Info Γ (A ⊹ B)) {K} (γ' : ⟨ Env ⟩) (D : ⟨ 𝔻 ⟩) → branch (known I) Eq.refl ≡ just (inj₁ K)
+branch-inl-ok : ∀ {Γ A B} (I : Info Γ (A ⊹ B)) {K γ' D} → branch (known I) Eq.refl ≡ just (inj₁ K)
   → Desc D I γ' → SV K × (D ＝ inlᵈ · (⟦ K ⟧ · γ'))
-branch-inl-ok I γ' D e d = inl-sv (pr₁ c) , pr₂ c
+branch-inl-ok I e d = inl-sv (pr₁ c) , pr₂ c
   where c = kv (kn d (DP.proj₁ (branch-inl (known I) Eq.refl e)))
 
-branch-inr-ok : ∀ {Γ A B} (I : Info Γ (A ⊹ B)) {K} (γ' : ⟨ Env ⟩) (D : ⟨ 𝔻 ⟩) → branch (known I) Eq.refl ≡ just (inj₂ K)
+branch-inr-ok : ∀ {Γ A B} (I : Info Γ (A ⊹ B)) {K γ' D} → branch (known I) Eq.refl ≡ just (inj₂ K)
   → Desc D I γ' → SV K × (D ＝ inrᵈ · (⟦ K ⟧ · γ'))
-branch-inr-ok I γ' D e d = inr-sv (pr₁ c) , pr₂ c
+branch-inr-ok I e d = inr-sv (pr₁ c) , pr₂ c
   where c = kv (kn d (DP.proj₁ (branch-inr (known I) Eq.refl e)))
 
 {- The tests of the pass, by their results ----------------------------------------}
@@ -402,17 +395,16 @@ simp-ok fl (app L M) {E} {γ} {γ'} ok ne =
   Eq.subst (λ J → Desc (⟦ app L M ⟧ · γ) J γ') (Eq.sym (app-eq fl E L (simp fl E M))) (app-ok fl L M ok ne (simp-ok fl M ok ne) (lam? L))
 simp-ok fl (lit B c) ok ne = desc-self P.lit refl
 simp-ok fl (tuple {Δ'} Ms) ok ne = desc-info (ap (tupleᵈ (length Δ') ·_) (dfunext fe (simps-ok fl Ms ok ne)))
-simp-ok fl (get i L) {E} {γ} {γ'} ok ne = get-ok i (simp fl E L) γ' (⟦ L ⟧ · γ) ne (simp-ok fl L ok ne)
+simp-ok fl (get i L) {E} ok ne = get-ok i (simp fl E L) ne (simp-ok fl L ok ne)
 simp-ok fl (inl M) ok ne = desc-info (ap (inlᵈ ·_) (tm (simp-ok fl M ok ne)))
 simp-ok fl (inr M) ok ne = desc-info (ap (inrᵈ ·_) (tm (simp-ok fl M ok ne)))
 simp-ok fl (case L M N) {E} {γ} {γ'} ok ne =
   Eq.subst (λ J → Desc (⟦ case L M N ⟧ · γ) J γ') (Eq.sym (case-eq fl E (simp fl E L) M N))
     (case-ok fl L M N ok ne (simp-ok fl L ok ne) (branch (known (simp fl E L)) Eq.refl) Eq.refl)
-simp-ok fl (prim p L M) {E} {γ} {γ'} ok ne =
-  prim-ok p (simp fl E L) (simp fl E M) γ' (⟦ L ⟧ · γ) (⟦ M ⟧ · γ) (simp-ok fl L ok ne) (simp-ok fl M ok ne)
+simp-ok fl (prim p L M) {E} ok ne = prim-ok p (simp fl E L) (simp fl E M) (simp-ok fl L ok ne) (simp-ok fl M ok ne)
 simp-ok fl (let′ M N) ok ne = let-ok fl N ok ne (simp-ok fl M ok ne)
 simp-ok fl (fold M) ok ne = desc-info (tm (simp-ok fl M ok ne))
-simp-ok fl (unfold L) {E} {γ} {γ'} ok ne = unfold-ok (simp fl E L) γ' (⟦ L ⟧ · γ) (simp-ok fl L ok ne)
+simp-ok fl (unfold L) {E} ok ne = unfold-ok (simp fl E L) (simp-ok fl L ok ne)
 
 simps-ok fl (M ∷ Ms) ok ne zero = tm (simp-ok fl M ok ne)
 simps-ok fl (M ∷ Ms) ok ne (suc i) = simps-ok fl Ms ok ne i
@@ -459,10 +451,10 @@ case-ok fl L M N {E} {γ} {γ'} {I} ok ne d nothing e =
        (λ ())
 case-ok fl L M N {γ = γ} {γ'} {I} ok ne d (just (inj₁ K)) e =
   desc-＝ (simp-ok fl M (ok-• (desc-self (pr₁ h) refl) ok) ne) (caseᶜ-inl ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ γ (⟦ K ⟧ · γ') (pr₂ h) (sv-defined (pr₁ h) ne))
-  where h = branch-inl-ok I γ' (⟦ L ⟧ · γ) e d
+  where h = branch-inl-ok I e d
 case-ok fl L M N {γ = γ} {γ'} {I} ok ne d (just (inj₂ K)) e =
   desc-＝ (simp-ok fl N (ok-• (desc-self (pr₁ h) refl) ok) ne) (caseᶜ-inr ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ γ (⟦ K ⟧ · γ') (pr₂ h) (sv-defined (pr₁ h) ne))
-  where h = branch-inr-ok I γ' (⟦ L ⟧ · γ) e d
+  where h = branch-inr-ok I e d
 
 {- The end theorem: every closed program -}
 simplify-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ · ρ₀ ＝ ⟦ simplify M ⟧ · ρ₀
