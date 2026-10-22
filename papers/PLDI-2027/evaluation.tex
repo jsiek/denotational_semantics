@@ -65,7 +65,15 @@ each style relies on, and the adequacy of the graph model, separately.
 All of the Agda code of the four developments, including the adequacy
 proofs, was written in 2026 by Claude Code (Opus 5.5 and Sonnet 5.5
 models), under our direction, starting from a repository that already
-contained ???, which was written by the authors.  Claude Code wrote
+contained Agda mechanizations, written by the authors from 2018 to
+2024, of graph and filter models of the untyped $\lambda$-calculus and
+of ISWIM, with proofs of soundness and adequacy with respect to their
+operational semantics, together with several unfinished attempts to
+prove closure conversion correct. The passes of the back end
+(\pass{remove complex operands}, \pass{lift locals}, \pass{explicate
+control}, and \pass{select instructions}) and parts of their
+operational proofs were adapted from the Agda development of \citet{Siek:2025ab}, which
+covers these passes for a first-order language.  Claude Code wrote
 the script that counts the lines of the proofs and assisted with the
 literature search. The mechanized results do not depend on trusting
 the AI: every development is checked by Agda in safe mode, with no
