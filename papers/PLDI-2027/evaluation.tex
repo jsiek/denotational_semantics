@@ -43,19 +43,19 @@ the languages and passes, and each is our best effort in its style.
   reduction semantics, using substitution for function application,
   and each pass is proved by a simulation between reductions.
 \end{itemize}
-Appendix~\ref{app:other} states the theorem of each style, with its
+Appendix~\ref{app:other} states each style's theorem, with its
 semantics of \iswim\ and x86$\mu$. The operational theorems say that
 the compiled program terminates with the same observation as the
-source, and diverges exactly when the source does; by adequacy
+source and diverges exactly when it does; by adequacy
 (Section~\ref{sec:adequacy}), the denotational theorem is equivalent.
 
 We measure each proof by its lines of Agda, not counting comments,
 blank lines, or imports. The counts include the semantics of the
 languages, the proof of each pass, and the composition of the passes.
-They exclude the Agda code that all five proofs use unchanged: the
+They exclude the code that all five proofs use unchanged: the
 intrinsically typed syntax of the languages and the functions that
-implement the passes (921 lines). We report the language-independent infrastructure that
-each style relies on, and the adequacy of the graph model, separately.
+implement the passes (921 lines). We report separately the language-independent
+infrastructure of each style and the graph model's adequacy.
 
 %% AI Use paragraph required by the PLDI 2027 call for papers (in the main
 %% text, counts toward the page limit; ACM asks for it in the methods
@@ -103,7 +103,7 @@ composition & 28 & 32 & 20 & 22 & \textbf{18}\\
 total & 1806 & 2485 & 2103 & \textbf{1504} & 3093\\
 \bottomrule
 \end{tabular}
-\caption{Lines of Agda in the five correctness proofs of the compiler.
+\caption{Lines of Agda in the five correctness proofs.
   The smallest number in each row is in bold.}
 \label{tab:loc}
 \end{table}
@@ -279,10 +279,10 @@ did for recursive and existential types. Our graph model makes the
 same choice, so the two denotational columns are like for like. For
 typed languages, a domain for each type is more usual
 \citep{Benton:2009ab,Dockins:2014aa}. It would avoid the case analysis
-on tags, about a twelfth of the Scott-domain proof of \pass{delay}, but
-it would need a domain equation for each recursive type, and the
-existential types of closures fit it less directly. The stage-indexed
-relations would remain.
+on tags, a twelfth of the Scott-domain proof of \pass{delay}, but
+would need a domain equation for each recursive type, fit the
+existential types of closures less directly, and leave the
+stage-indexed relations in place.
 
 The sizes also depend on the proof assistant. Agda offers little proof
 automation apart from normalization: it unfolds definitions

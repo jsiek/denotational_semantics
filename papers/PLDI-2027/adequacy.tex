@@ -14,8 +14,8 @@ interpreters of Section~\ref{sec:evaluation} (Appendix~\ref{app:interp}).
 Let $M$ be a closed term of \iswim. For every constant $c$,
 $c \in \den{M}$ if and only if the interpreter of \iswim\ terminates on
 $M$ with $c$, and $\den{M}$ is empty if and only if the interpreter
-diverges on $M$, that is, runs out of clock for every clock. The same
-holds for x86$\mu$ and the program $\pass{compile}(M)$.
+diverges on $M$, that is, times out at every clock. The same holds
+for x86$\mu$ and $\pass{compile}(M)$.
 \end{theorem}
 
 The proof for each language has two halves. Soundness says that what
