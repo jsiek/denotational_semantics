@@ -22,19 +22,20 @@
     \mid \langle\rangle
 \end{array}
 \]
-\noindent where $V, W$ range over finite lists of elements, which we read as the sets of their elements where an operator expects a set, and $i, j \in \mathbb{N}$.
+\noindent where $V, W$ range over finite lists of elements and $i, j
+\in \mathbb{N}$.
 
 \defhead{Operators on denotations}{\mathit{op}(D_1, \ldots, D_n) \subseteq \Elem}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   D \app E & = & \{\, w \mid V \mapsto w \in D,\; V \neq [\,],\; V \subseteq E \,\}\\
   \Lambda(F) & = & \{\, V \mapsto w \mid V \neq [\,],\; \mathsf{con}(V),\; w \in F(V) \,\} \cup \{\nu\}
-    \qquad (F \text{ a function on sets, e.g. } \mlam{X} E)\\
+    \hfill (F \text{ a function on sets, e.g. } \mlam{X} E)\\
   \mathsf{pair}(D, E) & = & \{\, \pairv{u}{v} \mid u \in D,\; v \in E \,\}\\
   \car(D) & = & \{\, u \mid \pairv{u}{v} \in D \,\}\\
   \cdr(D) & = & \{\, v \mid \pairv{u}{v} \in D \,\}\\
   D \callop E & = & (\car(D) \app \cdr(D)) \app E
-    \qquad \text{(calling the closures in } D\text{)}\\
+    \hfill \text{(call a closure}\text{)}\\
   \mathcal{T}(D_1, \ldots, D_n) & = &
     \{\, \mathsf{tup}_i(v) \mid v \in D_i \,\}
     \quad \text{if } D_1, \ldots, D_n \neq \emptyset,
@@ -46,7 +47,6 @@
     \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}
 \end{array}
 \]
-
 \caption{The elements of the graph model and the operators on denotations
   (sets of elements).}
 \label{fig:graph-ops}
@@ -86,16 +86,20 @@ to it. A table then needs only a smaller copy of itself, and elements,
 defined as an inductive data type, can provide that.
 
 Concretely, a row is an element $V \mapsto w$, called an \emph{entry},
-whose input $V$ is a finite list of elements and whose output $w$ is
-an element. The input could instead be a single element, as in filter models
-\citep{Barendregt:1983aa}, but a list makes the metatheory cleaner: the
-argument of a function is often itself a function, and $V$ can then
-contain one entry for each call to it.
+whose input $V$ is a list of elements\footnote{We sometimes use a list
+of elements where a set of elements is expected, and assume the
+natural conversion takes place.} and whose output $w$ is an
+element. (The input of an entry could instead be a single element, as
+in filter models \citep{Barendregt:1983aa}, but a list makes the
+metatheory cleaner: the argument of a function is often itself a
+function, and $V$ can then contain one entry for each call to it.)
 The meaning of a function, given by operator $\Lambda$
 (Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
 \mapsto w$ such that each output $w$ is in the meaning of the
-function's body in an environment that maps its parameter to input $V$.  The following equation gives the meaning of a $\lambda$-abstraction in \iswim, where an environment $\rho$ maps
-each variable to a set of elements and $\boldsymbol{\lambda}$ denotes a
+function's body in an environment that maps its parameter to input
+$V$.  The following equation gives the meaning of a
+$\lambda$-abstraction in \iswim, where $\rho$ maps each
+variable to a set of elements and $\boldsymbol{\lambda}$ denotes a
 mathematical function.
 \[
 \begin{array}{rcl}
@@ -129,10 +133,9 @@ position of an environment to be nonempty.
 
 \paragraph{Recursion and divergence}
 
-\iswim\ has no recursion operator. As in the untyped
-$\lambda$-calculus, recursion comes from self-application, which the
-recursive types of \iswim\ make typable. The constructs $\kw{fold}$
-and $\kw{unfold}$ mean the identity, so recursive types cost nothing in
+Recursion in \iswim\ comes from self-application, which the recursive
+types of \iswim\ make typable. The constructs $\kw{fold}$ and
+$\kw{unfold}$ mean the identity, so recursive types cost nothing in
 the semantics. Because entries apply to arguments that include their
 input, the self-applied function in a fixed-point combinator such as
 $Z$ has a meaning whose tables contain smaller copies of themselves,
@@ -191,13 +194,12 @@ similarly for a function of two sets.
 
 We chose a graph model to keep the mechanization small. Our graph
 model, including the operators of all the compiler's languages, is
-about 1,200 lines of Agda and needs only Agda's safe mode and
-standard library. A proof of the same compiler with Scott domains, on
+about 1,200 lines of Agda, needs only Agda's standard library, and
+checks under safe. A proof of the same compiler with Scott domains, on
 the domain theory of TypeTopology \citep{Escardo:TypeTopology}, is 1.4
 times as large (Section~\ref{sec:evaluation}), relies on 1,507 lines
-of its own infrastructure, and assumes
-propositional truncation and two extensionality principles.
-\citet{Benton:2010aa} report around 4,400 lines of Coq for their
-domain theory.
+of its own infrastructure, and assumes propositional truncation and
+two extensionality principles.  \citet{Benton:2010aa} report around
+4,400 lines of Coq for their domain theory.
 
 
