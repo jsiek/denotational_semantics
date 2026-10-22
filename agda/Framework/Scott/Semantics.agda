@@ -165,6 +165,11 @@ fv-envᶜ n = f n , to-Pow-continuous ℕ 𝔻 (Pow (Fin n) 𝔻 ×₁ 𝔻) (f 
                 (fst₁ (Pow (Fin (succ n)) 𝔻) 𝔻) (at (Fin (succ n)) 𝔻 zero)))
           ((λ p → f n p i) , c n i))
 
+{- the function of a closure with n free variables xs and body N:
+   Y ↦ N (fv-env n xs Y) -}
+closure-fun : (n : ℕ) → Den Env → ⟨ Pow (Fin n) 𝔻 ⟩ → DCPO[ 𝔻 , 𝔻 ]
+closure-fun n N xs = curry₁ (Pow (Fin n) 𝔻) 𝔻 𝔻 (∘₁ (Pow (Fin n) 𝔻 ×₁ 𝔻) Env 𝔻 (fv-envᶜ n) N) · xs
+
 {- a closure with n free variables xs and body N: guard n xs (Λ Y. N (fv-env n xs Y)) -}
 closureᶜ : (n : ℕ) → Den Env → DCPO[ Pow (Fin n) 𝔻 , 𝔻 ]
 closureᶜ n N =

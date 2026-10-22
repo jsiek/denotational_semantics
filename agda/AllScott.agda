@@ -18,6 +18,7 @@ module AllScott where
 import proof.Framework.Scott.Solve
 import proof.Framework.Scott.Domain
 import proof.Framework.Scott.Ops
+import proof.Framework.Scott.Semantics
 
 {- the semantics of the languages -}
 import Mu.Semantics.Scott.ISWIM
@@ -28,3 +29,6 @@ import Mu.Semantics.Scott.Clos5
 import Mu.Semantics.Scott.Imp
 import Mu.Semantics.Scott.CFG
 import Mu.Semantics.Scott.X86
+
+{- the correctness of the passes -}
+import Mu.proof.Correctness.Scott.EncloseCorrect

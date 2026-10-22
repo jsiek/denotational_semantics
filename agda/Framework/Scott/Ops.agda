@@ -88,12 +88,14 @@ strict = to-exp₁ (𝔻 ⟹₁ 𝔻) 𝔻 𝔻 s
 Λ = ∘₁ (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻) 𝔻 strict (inj fun)
 
 {- application: app f d applies f to d if f is a function, else ⊥ -}
+{- (the branches of the cases below are named, so that lemmas can
+   refer to them) -}
+app-br : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ⟹₁ 𝔻 ]
+app-br fun = id₁ (𝔻 ⟹₁ 𝔻)
+app-br t = const₁ (obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) (const₁ 𝔻 𝔻 ⊥𝔻)
+
 app : DCPO[ 𝔻 , 𝔻 ⟹₁ 𝔻 ]
-app = case (𝔻 ⟹𝔻) h
- where
-  h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ⟹₁ 𝔻 ]
-  h fun = id₁ (𝔻 ⟹₁ 𝔻)
-  h t = const₁ (obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) (const₁ 𝔻 𝔻 ⊥𝔻)
+app = case (𝔻 ⟹𝔻) app-br
 
 {- Tuples ----------------------------------------------------------------------}
 
@@ -127,23 +129,24 @@ at-tup m n i (no _) = const₁ (Pow (Fin m) 𝔻) 𝔻 ⊥𝔻
 unit : ⟨ 𝔻 ⟩
 unit = tuple 0 · (λ ())
 
+proj-br : {n : ℕ} → Fin n → (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
+proj-br {n} i (tup m) = at-tup m n i (m Nat.≟ n)
+proj-br i t = const₁ (obj (Payload t) 𝔻) 𝔻 ⊥𝔻
+
 proj : {n : ℕ} → Fin n → DCPO[ 𝔻 , 𝔻 ]
-proj {n} i = case 𝔻⊥ h
- where
-  h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
-  h (tup m) = at-tup m n i (m Nat.≟ n)
-  h t = const₁ (obj (Payload t) 𝔻) 𝔻 ⊥𝔻
+proj i = case 𝔻⊥ (proj-br i)
 
 {- Pairs ------------------------------------------------------------------------}
 
-{- (a , b) ↦ the two values a and b -}
+{- the two values a and b -}
+pick₂ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → Fin 2 → ⟨ 𝔻 ⟩
+pick₂ a b zero = a
+pick₂ a b (suc zero) = b
+
 two : DCPO[ 𝔻 ×₁ 𝔻 , Pow (Fin 2) 𝔻 ]
-two = (λ p → pick p) , to-Pow-continuous (Fin 2) 𝔻 (𝔻 ×₁ 𝔻) pick c
+two = (λ p → pick₂ (pr₁ p) (pr₂ p)) , to-Pow-continuous (Fin 2) 𝔻 (𝔻 ×₁ 𝔻) (λ p → pick₂ (pr₁ p) (pr₂ p)) c
  where
-  pick : ⟨ 𝔻 ⟩ × ⟨ 𝔻 ⟩ → Fin 2 → ⟨ 𝔻 ⟩
-  pick (a , b) zero = a
-  pick (a , b) (suc zero) = b
-  c : (i : Fin 2) → is-continuous (𝔻 ×₁ 𝔻) 𝔻 (λ p → pick p i)
+  c : (i : Fin 2) → is-continuous (𝔻 ×₁ 𝔻) 𝔻 (λ p → pick₂ (pr₁ p) (pr₂ p) i)
   c zero = pr₂ (fst₁ 𝔻 𝔻)
   c (suc zero) = pr₂ (snd₁ 𝔻 𝔻)
 
@@ -156,12 +159,12 @@ pair = curry₁ 𝔻 𝔻 𝔻
                (eval₁ 𝔻 𝔻)))
 
 {- the components of a pair, else ⊥ -}
+component-br : Fin 2 → (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
+component-br i pr = at (Fin 2) 𝔻 i
+component-br i t = const₁ (obj (Payload t) 𝔻) 𝔻 ⊥𝔻
+
 component : Fin 2 → DCPO[ 𝔻 , 𝔻 ]
-component i = case 𝔻⊥ h
- where
-  h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
-  h pr = at (Fin 2) 𝔻 i
-  h t = const₁ (obj (Payload t) 𝔻) 𝔻 ⊥𝔻
+component i = case 𝔻⊥ (component-br i)
 
 car cdr : DCPO[ 𝔻 , 𝔻 ]
 car = component zero
@@ -177,18 +180,19 @@ inr = ∘₁ 𝔻 ((𝔻 ⟹₁ 𝔻) ×₁ 𝔻) 𝔻 (pair₁ 𝔻 (𝔻 ⟹�
 
 {- (f , g) are the two branches of a case:
    cases d (f , g) = f x if d is left x, g y if d is right y, else ⊥ -}
+{- a branch: apply the function that pick chooses to the payload -}
+branch : DCPO[ Br , 𝔻 ⟹₁ 𝔻 ] → DCPO[ 𝔻 , Br ⟹₁ 𝔻 ]
+branch pick = to-exp₁ 𝔻 Br 𝔻 (λ x → ∘₁ Br (𝔻 ⟹₁ 𝔻) 𝔻 pick (at-point₁ 𝔻 𝔻 x)) (λ b → pr₂ (pick · b))
+
+cases-br : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , Br ⟹₁ 𝔻 ]
+cases-br left = branch (fst₁ (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻))
+cases-br right = branch (snd₁ (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻))
+cases-br t = const₁ (obj (Payload t) 𝔻) (Br ⟹₁ 𝔻) (const₁ Br 𝔻 ⊥𝔻)
+
+{- (f , g) are the two branches of a case:
+   cases d (f , g) = f x if d is left x, g y if d is right y, else ⊥ -}
 cases : DCPO[ 𝔻 , Br ⟹₁ 𝔻 ]
-cases = case (Br ⟹𝔻) h
- where
-  branch : DCPO[ Br , 𝔻 ⟹₁ 𝔻 ] → DCPO[ 𝔻 , Br ⟹₁ 𝔻 ]
-  branch pick = to-exp₁ 𝔻 Br 𝔻 k (λ b → pr₂ (pick · b))
-   where
-    k : ⟨ 𝔻 ⟩ → DCPO[ Br , 𝔻 ]
-    k x = ∘₁ Br (𝔻 ⟹₁ 𝔻) 𝔻 pick (at-point₁ 𝔻 𝔻 x)
-  h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , Br ⟹₁ 𝔻 ]
-  h left = branch (fst₁ (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻))
-  h right = branch (snd₁ (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻))
-  h t = const₁ (obj (Payload t) 𝔻) (Br ⟹₁ 𝔻) (const₁ Br 𝔻 ⊥𝔻)
+cases = case (Br ⟹𝔻) cases-br
 
 {- Environments ----------------------------------------------------------------}
 

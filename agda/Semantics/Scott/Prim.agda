@@ -36,12 +36,14 @@ out (int n) = const Int n
 out (bool true) = inl · unit
 out (bool false) = inr · unit
 
+{- the branches: on the second operand, and on the first -}
+prim-br₂ : Prim → ℤ → (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
+prim-br₂ p n (con Int m) = const₁ 𝟙ᵈ 𝔻 (out (δ p n m))
+prim-br₂ p n t = const₁ (obj (Payload t) 𝔻) 𝔻 ⊥𝔻
+
+prim-br₁ : Prim → (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ⟹₁ 𝔻 ]
+prim-br₁ p (con Int n) = const₁ 𝟙ᵈ (𝔻 ⟹₁ 𝔻) (case 𝔻⊥ (prim-br₂ p n))
+prim-br₁ p t = const₁ (obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) (const₁ 𝔻 𝔻 ⊥𝔻)
+
 primD : Prim → DCPO[ 𝔻 , 𝔻 ⟹₁ 𝔻 ]
-primD p = case (𝔻 ⟹𝔻) h₁
- where
-  h₂ : ℤ → (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
-  h₂ n (con Int m) = const₁ 𝟙ᵈ 𝔻 (out (δ p n m))
-  h₂ n t = const₁ (obj (Payload t) 𝔻) 𝔻 ⊥𝔻
-  h₁ : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ⟹₁ 𝔻 ]
-  h₁ (con Int n) = const₁ 𝟙ᵈ (𝔻 ⟹₁ 𝔻) (case 𝔻⊥ (h₂ n))
-  h₁ t = const₁ (obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) (const₁ 𝔻 𝔻 ⊥𝔻)
+primD p = case (𝔻 ⟹𝔻) (prim-br₁ p)
