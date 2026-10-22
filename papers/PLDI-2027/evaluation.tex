@@ -273,11 +273,12 @@ little about difficulty, which depends heavily on whether a proof has precedent 
 for \pass{delay} took us far more effort than its size suggests,
 because no denotational proof of its kind existed; with the
 approximant logical relation in hand, a similar proof should be much
-easier to write. Because experience gained in writing one development could carry
-over to the next, after completing all four we gave each of them a
-final cleanup pass with the same goals and rules: shorten and clarify
-the proofs without changing any theorem statement and without moving
-code into the uncounted infrastructure. The cleanup removed between 114 and 155 lines from each operational style and the graph model, and the ranking did not change. The Scott-domain proof, which we wrote last, had more to remove, 3,457 lines before its cleanup and 2,485 after, mostly because the cleanup merged its two stage-indexed relations for \pass{delay} into one and removed workarounds for slow checking in Agda.
+easier to write. Because experience carries over from one development to the next, we
+gave every development a final cleanup pass under the same rules
+(shorten and clarify, change no theorem statement, move nothing into
+the uncounted infrastructure). It did not change the ranking; the
+Scott-domain proof, written last, shrank the most, from 3,457 to 2,485
+lines.
 
 The comparison covers one compiler, and the totals depend on its
 selection of passes. The denotational proofs tend to be smaller for

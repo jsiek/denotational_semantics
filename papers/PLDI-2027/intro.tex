@@ -137,15 +137,10 @@ Turing-complete programming languages.'' We know of no prior denotational proof 
 Finally, to answer RQ2, RQ4, and RQ5, which depend on comparing the
 graph-model proof with other styles, we prove the same compiler
 correct four more times: with abstract machines and simulations, as in CompCert; with clocked interpreters and value relations, as in CakeML; with standard reduction semantics and simulations; and, denotationally, with Scott domains.  Each development covers the ten-pass pipeline and proves an
-analogous correctness property in its own semantics. Prior comparisons
-of semantic styles for compiler proofs exist, but at a smaller
-scale. \citet{Owens:2016aa} found that proving one compiler phase
-correct took 43 lines with a relational big-step semantics and 18
-lines with a functional one, and \citet{Kahn:2025aa} compared three
-operational semantics by the lines of Agda needed to prove compilation
-to a Krivine machine correct. Our comparison is, to our knowledge, the
-first on a compiler for a higher-order language down to assembly that
-includes a denotational style.
+analogous correctness property in its own semantics. Earlier comparisons of semantic styles for compiler proofs cover a
+single phase or pass \citep{Owens:2016aa,Kahn:2025aa}; ours is, to our
+knowledge, the first on a compiler for a higher-order language down to
+assembly that includes a denotational style.
 
 The comparison answers RQ2 affirmatively and explains, pass by pass,
 the mixed answer to RQ4. Where a pass keeps the representation of
