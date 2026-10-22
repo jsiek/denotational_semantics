@@ -125,19 +125,14 @@ divergence avoid closure conversion. Some concern compilers for first-order lang
 imperative language to assembly, and \citet{Cheng:2026aa} use sets of
 behaviors for the front end of CompCert. Others concern compilers whose target languages support closures directly, such as those of \citet{Clinger:1984aa}, Guttman, Ramsdell, and Wand \citeyearpar{Guttman:1995aa}, and \citet{Benton:2009aa}.
 
-Operational proofs do handle closure conversion in the presence of
-recursion. \citet{Pottier:2006aa} proved that untyped
-defunctionalization preserves both convergence and divergence by a
-simulation between operational configurations. When
+Operational proofs handle closure conversion with recursion routinely,
+with simulations (CompCert \citep{Leroy:2009aa}), clocked big-step
+semantics (CakeML \citep{Kumar:2014aa}), or step-indexed logical
+relations (CertiCoq \citep{Paraskevopoulou:2019aa}). When
 \citet{Chlipala:2010aa} built a compiler for an untyped language with
 general recursion, he switched to operational semantics, explaining
 that the approach of his 2007 compiler ``cannot be applied directly to
-Turing-complete programming languages.'' CakeML
-\citep{Kumar:2014aa} proves closure conversion correct with a clocked
-big-step semantics, and CertiCoq \citep{Paraskevopoulou:2019aa} uses
-step-indexed logical relations. CompCert \citep{Leroy:2009aa}, whose
-source language is first-order, established simulations as a standard
-technique for compiler verification. We know of no prior denotational proof of closure conversion for a language with general recursion that both preserves and reflects divergence.
+Turing-complete programming languages.'' We know of no prior denotational proof of closure conversion for a language with general recursion that both preserves and reflects divergence.
 
 Finally, to answer RQ2, RQ4, and RQ5, which depend on comparing the
 graph-model proof with other styles, we prove the same compiler
