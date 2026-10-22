@@ -44,6 +44,7 @@ open import Mu.proof.Correctness.Graph.RCOCorrect using (rco-correct)
 open import Mu.proof.Correctness.Graph.LiftLocalsCorrect using (lift-locals-correct)
 open import Mu.proof.Correctness.Graph.ExplicateCorrect using (explicate-correct)
 open import Mu.proof.Correctness.Graph.SelectCorrect using (select-correct)
+open import Mu.proof.Semantics.Graph.Binders using (ne-≃)
 
 open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
@@ -55,36 +56,35 @@ Same D E = (∀ {B} (c : base-rep B) → (dconst c ∈ D) ⇔ (dconst c ∈ E)) 
 ⇔∘ : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
 ⇔∘ ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
-{- Same D E, and E ≃ E' -}
-then : ∀ {D E E'} → Same D E → E ≃ E' → Same D E'
-then ⟨ c , n ⟩ ⟨ E⊆ , E'⊆ ⟩ =
-  ⟨ (λ k → ⇔∘ (c k) ⟨ E⊆ _ , E'⊆ _ ⟩)
-  , ⇔∘ n ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E'⊆ d d∈ ⟩ }) ⟩ ⟩
+{- one Same after another (then), and an equation as one (same) -}
+then : ∀ {D E F} → Same D E → Same E F → Same D F
+then ⟨ c , n ⟩ ⟨ c' , n' ⟩ = ⟨ (λ k → ⇔∘ (c k) (c' k)) , ⇔∘ n n' ⟩
+
+same : ∀ {D E} → D ≃ E → Same D E
+same D≃@(⟨ D⊆ , E⊆ ⟩) = ⟨ (λ k → ⟨ D⊆ _ , E⊆ _ ⟩) , ⟨ ne-≃ D≃ , ne-≃ (≃-sym D≃) ⟩ ⟩
 
 compile₄-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) (⟦ compile₄ M ⟧₄ ρ₀)
-compile₄-same M with ≃-trans (simplify-correct M) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂)))
+compile₄-same M =
+  then (same (≃-trans (simplify-correct M) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂)))))
+       ⟨ delay-correct-const (concretize-program M₂) , delay-correct-nonempty (concretize-program M₂) ⟩
   where
   M₁ = simplify M
   M₂ = optimize-program (enclose M₁)
-... | ⟨ D⊆ , E⊆ ⟩ =
-  ⟨ (λ k → ⇔∘ ⟨ D⊆ _ , E⊆ _ ⟩ (delay-correct-const M₃ k))
-  , ⇔∘ ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , D⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) ⟩ (delay-correct-nonempty M₃) ⟩
-  where M₃ = concretize-program (optimize-program (enclose (simplify M)))
 
 compile-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
-compile-same M = then (compile₄-same M) (globalize-correct (compile₄ M))
+compile-same M = then (compile₄-same M) (same (globalize-correct (compile₄ M)))
 
 compile-mon-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
-compile-mon-same M = then (compile-same M) (rco-correct (compile M))
+compile-mon-same M = then (compile-same M) (same (rco-correct (compile M)))
 
 compile-imp-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
-compile-imp-same M = then (compile-mon-same M) (lift-locals-correct (compile-mon M))
+compile-imp-same M = then (compile-mon-same M) (same (lift-locals-correct (compile-mon M)))
 
 compile-cfg-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
-compile-cfg-same M = then (compile-imp-same M) (explicate-correct (compile-imp M))
+compile-cfg-same M = then (compile-imp-same M) (same (explicate-correct (compile-imp M)))
 
 compile-x86-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
-compile-x86-same M = then (compile-cfg-same M) (select-correct (compile-cfg M))
+compile-x86-same M = then (compile-cfg-same M) (same (select-correct (compile-cfg M)))
 
 {- the end-to-end theorem, for a main program of type Int -}
 compile-x86-int : ∀ (M : Tm [] (base Int)) → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
