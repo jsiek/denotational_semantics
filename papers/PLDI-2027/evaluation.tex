@@ -43,18 +43,32 @@ the languages and passes, and each is our best effort in its style.
   and we prove each pass by a simulation between reductions.
 \end{itemize}
 Appendix~\ref{app:other} states each style's theorem, with its
-semantics of \iswim\ and x86$\mu$. The operational theorems say that
-the compiled program terminates with the same observation as the
-source and diverges exactly when it does; by adequacy
-(Section~\ref{sec:adequacy}), the denotational theorem is equivalent.
+semantics of \iswim\ and x86$\mu$.
+
+\paragraph{What each theorem states}
+
+Each development proves the compiler correct with respect to its own
+semantics. The denotational theorems state that a program and its
+compilation produce the same constants and that one has a meaning
+exactly when the other does; the operational theorems state that they
+have the same observable behaviour, for three different operational
+semantics. We do not regard either kind of statement as the more
+fundamental: \citet{Scott:1971ab} proposed a mathematical semantics as
+``the standard against which to judge an implementation'', while
+\citet{Plotkin:1977oc} judged denotational semantics by their closeness
+to an operational one. Adequacy (Section~\ref{sec:adequacy}) makes the
+choice immaterial for our compiler: for programs of integer type, it
+makes the graph-model theorem and the interpreter theorem equivalent,
+and an alternative proof does the same for the abstract machines. We
+therefore count each development up to its own theorem and report
+adequacy, 1,529 lines, separately.
 
 We measure each proof by its lines of Agda, not counting comments,
 blank lines, or imports. The counts include the semantics of the
 languages, the proof of each pass, and the composition of the passes.
 They exclude the code that all five proofs use unchanged: the
 intrinsically typed syntax of the languages and the functions that
-implement the passes (921 lines). We report separately the language-independent
-infrastructure of each style and the graph model's adequacy.
+implement the passes (921 lines). We report separately the language-independent infrastructure of each style.
 
 %% AI Use paragraph required by the PLDI 2027 call for papers (in the main
 %% text, counts toward the page limit; ACM asks for it in the methods
