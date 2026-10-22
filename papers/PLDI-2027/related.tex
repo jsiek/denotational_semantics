@@ -9,7 +9,7 @@
 \section{Related Work}
 \label{sec:related}
 
-We first place our proof among compiler-correctness proofs by their semantic style, then discuss operational proofs of closure conversion, relations between denotations, graph models, and comparisons of semantic styles.
+We first place our proof among compiler-correctness proofs by their semantic style, then discuss operational proofs of closure conversion, relations between denotations, graph models and consistency, and comparisons of semantic styles.
 
 \paragraph{Semantic styles in compiler correctness}
 
@@ -85,17 +85,15 @@ alternatives. To our knowledge, the approximant logical relation is
 the first relation between two denotational semantics indexed by
 finite approximations on one side only.
 
-\paragraph{Graph models and their mechanization}
+\paragraph{Graph models and consistency}
 
 Our model descends from the graph models of \citet{Plotkin:1993ab},
 \citet{Scott:1976lq}, and \citet{Engeler:1981aa} and is related to the
-filter models of \citet{Barendregt:1983aa}. Consistency has a
-precedent in the $\lambda$-calculus model that \citet{Scott:1982aa}
-builds from information systems, whose function entries pair
-consistent sets of inputs and outputs. As in the coherent domains of
-\citet{Plotkin:1978aa}, our consistency is pairwise, and our rule for
-entries is the function-space consistency of \citet{Larsen:1984aa} in
-its pairwise form \citep{Schwichtenberg:2006aa}. 
+filter models of \citet{Barendregt:1983aa}. Our consistency is
+pairwise, as in the coherent domains of \citet{Plotkin:1978aa}, and our
+rule for entries is the function-space consistency of information
+systems \citep{Scott:1982aa,Larsen:1984aa} in the pairwise form of
+\citet{Schwichtenberg:2006aa}.
 
 \paragraph{Comparisons of semantic styles}
 
