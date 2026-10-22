@@ -447,7 +447,6 @@ let-ok fl N {E} γ γ' {I} D ok ne d =
 let-ok-aux fl N γ γ' {I} D ok ne d true _ s v =
   desc-＝ (simp-ok fl N (D • γ) γ' (ok-• d ok) ne) (let-β ⟦ N ⟧ γ D pD)
   where
-  pD : defined D
   pD = transport defined (tm d ⁻¹) (sv-defined (small-sv (term I) s) ne)
 let-ok-aux fl N {E} γ γ' {I} D ok ne d false true s v =
   desc (let-β ⟦ N ⟧ γ D pD
@@ -455,11 +454,8 @@ let-ok-aux fl N {E} γ γ' {I} D ok ne d false true s v =
         ∙ (let-β ⟦ term (simp fl (known-as I E) N) ⟧ γ' V pV ⁻¹))
        (λ ())
   where
-  V : ⟨ 𝔻 ⟩
   V = ⟦ term I ⟧ · γ'
-  pV : defined V
   pV = sv-defined (value-sv (term I) v) ne
-  pD : defined D
   pD = transport defined (tm d ⁻¹) pV
 let-ok-aux fl N {E} γ γ' {I} D ok ne d false false s v =
   desc (ap₂ (λ a b → appᵈ · a · b) (lamᶜ-cong ⟦ N ⟧ ⟦ term (simp fl (under E) N) ⟧ γ γ' (under-ok fl N γ γ' ok ne)) (tm d))

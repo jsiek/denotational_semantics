@@ -88,9 +88,7 @@ conc (clos {Δ} N Ms) φ {ρ₂} {ρ₃} rel =
   ys = ⟦ concs φ Ms ⟧s₃ · ρ₃
   eqs = concs-ok Ms φ rel
   t = tupleᵈ n · ys
-  B : DCPO[ 𝔻 ×₁ 𝔻 , 𝔻 ]
   B = ∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ ⟦ concretize fv-ref N ⟧₃
-  G : DCPO[ 𝔻 , 𝔻 ]
   G = ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B) Λ
   e' = Λ · (curry₁ 𝔻 𝔻 𝔻 B · t)
 conc (app L M) φ rel = ap₂ (λ a b → appᵈ · a · b) (conc L φ rel) (conc M φ rel)

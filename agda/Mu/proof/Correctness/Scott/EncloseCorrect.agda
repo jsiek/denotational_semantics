@@ -79,7 +79,6 @@ enc {Γ} (lam N) {ρ} {ρ'} r =
   ∙ (guard-defined (length Γ) xs (tab-defined T.`_ ρ' (λ x → pr₂ (r x)))
        (Λ · closure-fun (length Γ) ⟦ enclose N ⟧₂ xs) ⁻¹)
  where
-  xs : Fin (length Γ) → ⟨ 𝔻 ⟩
   xs = ⟦ tab {P = T.Tm Γ} T.`_ ⟧s₂ · ρ'
 enc (app L M) r = ap₂ (λ a b → appᵈ · a · b) (enc L r) (enc M r)
 enc (lit B c) r = refl

@@ -179,7 +179,6 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
       ap (appᵈ · (Λ · K) ·_) e
       ∙ ap (λ G → appᵈ · G · (D' · (ρ , (R , F')))) (Λ-cong K G (λ X d → f {Γ} {O} {F} X d R F'))
      where
-      G : DCPO[ 𝔻 , 𝔻 ]
       G = curry₁ 𝕊 𝔻 𝔻 (∘₁ (𝕊 ×₁ 𝔻) 𝕊 𝔻 (X86.next T' p) (X86.⟦_⟧ˢ T' (k {Γ} {O} {F}) B')) · (ρ , (R , F'))
 
     {- the code selected for s into o, then k -}
