@@ -25,9 +25,6 @@ open import Framework.Scott.Lift pt fe pe
 open import proof.Framework.Scott.Domain pt fe pe public
 open import Framework.Scott.Ops pt fe pe public
 
-ω-defined : defined ω
-ω-defined = defined-inj wrong ⋆
-
 seq-defined : (d e : ⟨ 𝔻 ⟩) → defined d → seq · d · e ＝ e
 seq-defined d e p = ∐ˢˢ-＝-if-domain-holds 𝔻⊥ (being-defined-is-prop (unroll · d)) p
 

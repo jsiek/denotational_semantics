@@ -4,8 +4,8 @@
   of values 𝔻 (Framework/Scott/Domain.agda), and environments.
 
   The operators are strict, as the graph model's are (Ops.agda there):
-  a function value is strict (Λ g maps ⊥ to ⊥), as are tuples (a tuple
-  is ⊥ unless each component is defined), the injections, and taking a
+  a function value is strict (Λ g maps ⊥ to ⊥), as are tuples and pairs
+  (⊥ unless each component is defined), the injections, and taking a
   value apart. seq d e is e when d is defined, and ⊥ otherwise.
 
 -}
@@ -44,12 +44,9 @@ Br = (𝔻 ⟹₁ 𝔻) ×₁ (𝔻 ⟹₁ 𝔻)
 _⟹𝔻 : DCPO₁ → DCPO⊥ {𝓤₁} {𝓤₁}
 A ⟹𝔻 = (A ⟹₁ 𝔻) , const₁ A 𝔻 ⊥𝔻 , (λ g a → ⊥-is-least 𝔻⊥ (g · a))
 
-{- constants, and the error value -}
+{- constants -}
 const : (B : Base) → base-rep B → ⟨ 𝔻 ⟩
 const B k = inj (con B k) · ⋆
-
-ω : ⟨ 𝔻 ⟩
-ω = inj wrong · ⋆
 
 {- seq d e = e if d is defined, and ⊥ otherwise: the sup of the family e,
    indexed by the proposition that d is defined -}
@@ -126,12 +123,49 @@ at-tup : (m n : ℕ) → Fin n → Dec (m Eq.≡ n) → DCPO[ Pow (Fin m) 𝔻 ,
 at-tup m .m i (yes Eq.refl) = at (Fin m) 𝔻 i
 at-tup m n i (no _) = const₁ (Pow (Fin m) 𝔻) 𝔻 ⊥𝔻
 
+{- the empty tuple -}
+unit : ⟨ 𝔻 ⟩
+unit = tuple 0 · (λ ())
+
 proj : {n : ℕ} → Fin n → DCPO[ 𝔻 , 𝔻 ]
 proj {n} i = case 𝔻⊥ h
  where
   h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
   h (tup m) = at-tup m n i (m Nat.≟ n)
   h t = const₁ (obj (Payload t) 𝔻) 𝔻 ⊥𝔻
+
+{- Pairs ------------------------------------------------------------------------}
+
+{- (a , b) ↦ the two values a and b -}
+two : DCPO[ 𝔻 ×₁ 𝔻 , Pow (Fin 2) 𝔻 ]
+two = (λ p → pick p) , to-Pow-continuous (Fin 2) 𝔻 (𝔻 ×₁ 𝔻) pick c
+ where
+  pick : ⟨ 𝔻 ⟩ × ⟨ 𝔻 ⟩ → Fin 2 → ⟨ 𝔻 ⟩
+  pick (a , b) zero = a
+  pick (a , b) (suc zero) = b
+  c : (i : Fin 2) → is-continuous (𝔻 ×₁ 𝔻) 𝔻 (λ p → pick p i)
+  c zero = pr₂ (fst₁ 𝔻 𝔻)
+  c (suc zero) = pr₂ (snd₁ 𝔻 𝔻)
+
+{- a pair, ⊥ unless both components are defined -}
+pair : DCPO[ 𝔻 , 𝔻 ⟹₁ 𝔻 ]
+pair = curry₁ 𝔻 𝔻 𝔻
+         (∘₁ (𝔻 ×₁ 𝔻) (Pow (Fin 2) 𝔻) 𝔻 two
+            (∘₁ (Pow (Fin 2) 𝔻) ((𝔻 ⟹₁ 𝔻) ×₁ 𝔻) 𝔻
+               (pair₁ (Pow (Fin 2) 𝔻) (𝔻 ⟹₁ 𝔻) 𝔻 (guard 2) (inj pr))
+               (eval₁ 𝔻 𝔻)))
+
+{- the components of a pair, else ⊥ -}
+component : Fin 2 → DCPO[ 𝔻 , 𝔻 ]
+component i = case 𝔻⊥ h
+ where
+  h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ]
+  h pr = at (Fin 2) 𝔻 i
+  h t = const₁ (obj (Payload t) 𝔻) 𝔻 ⊥𝔻
+
+car cdr : DCPO[ 𝔻 , 𝔻 ]
+car = component zero
+cdr = component (suc zero)
 
 {- Sums ------------------------------------------------------------------------}
 

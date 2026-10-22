@@ -29,10 +29,6 @@ open import Framework.Scott.Functor pt fe pe
 open import Framework.Scott.Domain pt fe pe
 open import Framework.Scott.Ops pt fe pe
 
-{- the empty tuple -}
-unit : ⟨ 𝔻 ⟩
-unit = tuple 0 · (λ ())
-
 {- the value of the result of a primitive: eq returns left ⟨⟩ for true
    and right ⟨⟩ for false -}
 out : Out → ⟨ 𝔻 ⟩

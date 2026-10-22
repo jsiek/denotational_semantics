@@ -5,10 +5,10 @@
     𝔻 ≅ 𝓛 ( Σ t : Tag , Payload t 𝔻 )
 
   where a tag is a constant, a tuple of n components (𝔻ⁿ), left or right
-  (𝔻), a function (𝔻 ⟹ 𝔻) or the error value ω (as the graph model's
-  values, Framework/GraphModel/Domain.agda, without its pairs, which only
-  Clos3 and later use). The least element of 𝔻 means no value
-  (divergence or going wrong).
+  (𝔻), a function (𝔻 ⟹ 𝔻) or a pair (𝔻², the closures of Clos4μ and
+  later): as the graph model's values (Framework/GraphModel/Domain.agda),
+  without its error value, as ISWIMμ has no errors. The least element
+  of 𝔻 means no value (divergence).
 
   A value is made with inj t, and taken apart, strictly, by case: case h
   maps inj t x to h t x and ⊥ to ⊥.
@@ -42,7 +42,7 @@ data Tag : 𝓤₀ ̇ where
   left : Tag                            {- sums -}
   right : Tag
   fun : Tag                             {- a function -}
-  wrong : Tag                           {- ω -}
+  pr : Tag                              {- a pair -}
 
 {- every type is a set, as this development uses K -}
 Tag-is-set : is-set Tag
@@ -54,7 +54,7 @@ Payload (tup n) = Powᶠ (Fin n) Idᶠ
 Payload left = Idᶠ
 Payload right = Idᶠ
 Payload fun = Expᶠ Idᶠ Idᶠ
-Payload wrong = Constᶠ 𝟙ᵈ
+Payload pr = Powᶠ (Fin 2) Idᶠ
 
 Val : Functor
 Val = Σᶠ Tag Tag-is-set Payload
