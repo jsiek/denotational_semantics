@@ -243,22 +243,16 @@ caps-lookup {fl = fl} cs m (S i) e with ρsq fl i in eq | e
         go (drop vv cs) Z ()
         go (drop vv cs) (S i) e = go cs i e
 
-obs≈ : ∀ {A} {V : Tm [] A} {V'} → R V V' → T.obs V ≡ T.obs V'
-obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ R Vs Vs' → T.obss Vs ≡ T.obss Vs'
-obs≈ (clos≈ _ _ _) = refl
-obs≈ (app≈ _ _) = refl
-obs≈ lit≈ = refl
-obs≈ (tuple≈ rs) = cong o-tuple (obss≈ rs)
-obs≈ (get≈ _) = refl
-obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈ (case≈ _ _ _) = refl
-obs≈ (prim≈ _ _) = refl
-obs≈ (let≈ _ _) = refl
-obs≈ (fold≈ r) = obs≈ r
-obs≈ (unfold≈ _) = refl
-obss≈ [] = refl
-obss≈ (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obss≈ rs)
+obs≈ : ∀ {A} {V : Tm [] A} {V'} → R V V' → Value V' → T.obs V ≡ T.obs V'
+obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ R Vs Vs' → Each Value Vs' → T.obss Vs ≡ T.obss Vs'
+obs≈ (clos≈ _ _ _) _ = refl
+obs≈ lit≈ _ = refl
+obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
+obs≈ (inl≈ r) (T.inl v) = cong o-inl (obs≈ r v)
+obs≈ (inr≈ r) (T.inr v) = cong o-inr (obs≈ r v)
+obs≈ (fold≈ r) (T.fold v) = obs≈ r v
+obss≈ [] [] = refl
+obss≈ (r ∷ rs) (v ∷ vs) = cong₂ _∷_ (obs≈ r v) (obss≈ rs vs)
 
 out≈ : ∀ p n m → R (T.out p n m) (T.out p n m)
 out≈ P.sub n m = lit≈
@@ -316,4 +310,4 @@ caps-sim (drop vv cs) =
 {- The end theorem ---------------------------------------------------------------}
 
 optimize-correct : ∀ {A} (M : Tm [] A) → Equivalent (T.sem M) (T.sem (optimize-program M))
-optimize-correct M = red-equivalent value-red R sim (λ m _ _ → obs≈ m) (opt≈ M λ ())
+optimize-correct M = red-equivalent value-red R sim (λ m _ → obs≈ m) (opt≈ M λ ())

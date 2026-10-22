@@ -131,23 +131,16 @@ module _ {ρ₀ : Ren [] []} where
   Ans′ : ∀ {A} → Tm [] A → Red (Tm [] A) → C.Tm [] A → Set
   Ans′ = Ans T.red Value R
 
-  obs≈ : ∀ {A} {V V'} → R {A} V V' → S.obs V ≡ T.obs V'
-  obss≈ : ∀ {Θ} {Vs : All _ Θ} {Vs'} → All₂ R Vs Vs' → S.obss Vs ≡ T.obss Vs'
-  obs≈ (var≈ {x = ()} _)
-  obs≈ (clos≈ _ _) = refl
-  obs≈ (app≈ _ _) = refl
-  obs≈ lit≈ = refl
-  obs≈ (tuple≈ rs) = cong o-tuple (obss≈ rs)
-  obs≈ (get≈ _) = refl
-  obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-  obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-  obs≈ (case≈ _ _ _) = refl
-  obs≈ (prim≈ _ _) = refl
-  obs≈ (let≈ _ _) = refl
-  obs≈ (fold≈ r) = obs≈ r
-  obs≈ (unfold≈ _) = refl
-  obss≈ [] = refl
-  obss≈ (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obss≈ rs)
+  obs≈ : ∀ {A} {V V'} → R {A} V V' → Value V' → S.obs V ≡ T.obs V'
+  obss≈ : ∀ {Θ} {Vs : All _ Θ} {Vs'} → All₂ R Vs Vs' → Each Value Vs' → S.obss Vs ≡ T.obss Vs'
+  obs≈ (clos≈ _ _) _ = refl
+  obs≈ lit≈ _ = refl
+  obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
+  obs≈ (inl≈ r) (T.inl v) = cong o-inl (obs≈ r v)
+  obs≈ (inr≈ r) (T.inr v) = cong o-inr (obs≈ r v)
+  obs≈ (fold≈ r) (T.fold v) = obs≈ r v
+  obss≈ [] [] = refl
+  obss≈ (r ∷ rs) (v ∷ vs) = cong₂ _∷_ (obs≈ r v) (obss≈ rs vs)
 
   out≈ : ∀ p n m → R (S.out p n m) (T.out p n m)
   out≈ P.sub n m = lit≈
@@ -196,4 +189,4 @@ module _ {ρ₀ : Ren [] []} where
 {- The end theorem ----------------------------------------------------------------------}
 
 delay-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (T.sem (delay-program M))
-delay-correct M = red-equivalent value-red R sim (λ m _ _ → obs≈ m) (delay≈ _ M)
+delay-correct M = red-equivalent value-red R sim (λ m _ → obs≈ m) (delay≈ _ M)

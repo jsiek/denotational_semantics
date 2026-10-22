@@ -211,24 +211,17 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   Ans′ : ∀ {A} → Tm [] A → Red (Tm [] A) → C.Tm Σf [] A → Set
   Ans′ = Ans (T.red ds) Value _≈_
 
-  obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → S.obs V ≡ T.obs V'
-  obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ _≈_ Vs Vs' → S.obss Vs ≡ T.obss Vs'
-  obs≈ (var≈ {x = ()})
-  obs≈ (code≈ _) = refl
-  obs≈ (pack≈ _ _) = refl
-  obs≈ (callc≈ _ _) = refl
-  obs≈ lit≈ = refl
-  obs≈ (tuple≈ rs) = cong o-tuple (obss≈ rs)
-  obs≈ (get≈ _) = refl
-  obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-  obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-  obs≈ (case≈ _ _ _) = refl
-  obs≈ (prim≈ _ _) = refl
-  obs≈ (let≈ _ _) = refl
-  obs≈ (fold≈ r) = obs≈ r
-  obs≈ (unfold≈ _) = refl
-  obss≈ [] = refl
-  obss≈ (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obss≈ rs)
+  obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → Value V' → S.obs V ≡ T.obs V'
+  obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ _≈_ Vs Vs' → Each Value Vs' → S.obss Vs ≡ T.obss Vs'
+  obs≈ (code≈ _) _ = refl
+  obs≈ (pack≈ _ _) _ = refl
+  obs≈ lit≈ _ = refl
+  obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
+  obs≈ (inl≈ r) (T.inl v) = cong o-inl (obs≈ r v)
+  obs≈ (inr≈ r) (T.inr v) = cong o-inr (obs≈ r v)
+  obs≈ (fold≈ r) (T.fold v) = obs≈ r v
+  obss≈ [] [] = refl
+  obss≈ (r ∷ rs) (v ∷ vs) = cong₂ _∷_ (obs≈ r v) (obss≈ rs vs)
 
   out≈ : ∀ p n m → S.out {[]} p n m ≈ T.out p n m
   out≈ P.sub n m = lit≈
@@ -300,5 +293,5 @@ wks-id h (M ∷ Ms) = cong₂ _∷_ (wk-id h M) (wks-id h Ms)
 globalize-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (T.sem (globalize M))
 globalize-correct M with glob M [] | (λ {Σf} (ds : All (C.Code Σf) Σf) → glob≈ ds M [])
 ... | out g D M' | ih =
-  red-equivalent value-red (_≈_ (close D here⊑)) (sim (close D here⊑)) (λ m _ _ → obs≈ (close D here⊑) m)
+  red-equivalent value-red (_≈_ (close D here⊑)) (sim (close D here⊑)) (λ m _ → obs≈ (close D here⊑) m)
     (subst (λ X → _≈_ (close D here⊑) M X) (wk-id (λ _ → refl) M') (proj₁ (ih (close D here⊑) here⊑ (agree-close (close D here⊑) D here⊑ λ _ → refl))))

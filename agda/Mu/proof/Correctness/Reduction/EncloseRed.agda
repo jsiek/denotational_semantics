@@ -170,22 +170,16 @@ vvs-values [] = []
 vvs-values (var () ∷ vv)
 vvs-values (val v ∷ vv) = v ∷ vvs-values vv
 
-obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → S.obs V ≡ T.obs V'
-obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ _≈_ Vs Vs' → S.obss Vs ≡ T.obss Vs'
-obs≈ (lam≈ _ _ _) = refl
-obs≈ (app≈ _ _) = refl
-obs≈ lit≈ = refl
-obs≈ (tuple≈ rs) = cong o-tuple (obss≈ rs)
-obs≈ (get≈ _) = refl
-obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈ (case≈ _ _ _) = refl
-obs≈ (prim≈ _ _) = refl
-obs≈ (let≈ _ _) = refl
-obs≈ (fold≈ r) = obs≈ r
-obs≈ (unfold≈ _) = refl
-obss≈ [] = refl
-obss≈ (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obss≈ rs)
+obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → Value V' → S.obs V ≡ T.obs V'
+obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ _≈_ Vs Vs' → Each Value Vs' → S.obss Vs ≡ T.obss Vs'
+obs≈ (lam≈ _ _ _) _ = refl
+obs≈ lit≈ _ = refl
+obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
+obs≈ (inl≈ r) (T.inl v) = cong o-inl (obs≈ r v)
+obs≈ (inr≈ r) (T.inr v) = cong o-inr (obs≈ r v)
+obs≈ (fold≈ r) (T.fold v) = obs≈ r v
+obss≈ [] [] = refl
+obss≈ (r ∷ rs) (v ∷ vs) = cong₂ _∷_ (obs≈ r v) (obss≈ rs vs)
 
 out≈ : ∀ p n m → S.out {[]} p n m ≈ T.out p n m
 out≈ P.sub n m = lit≈
@@ -230,4 +224,4 @@ sims (r ∷ rs) = ans-∷ T.reds (λ _ _ → refl) value-red rs (sim r) (sims rs
 {- The end theorem -------------------------------------------------------------}
 
 enclose-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (T.sem (enclose M))
-enclose-correct M = red-equivalent value-red _≈_ sim (λ m _ _ → obs≈ m) (enc M)
+enclose-correct M = red-equivalent value-red _≈_ sim (λ m _ → obs≈ m) (enc M)
