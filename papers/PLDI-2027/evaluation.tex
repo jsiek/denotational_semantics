@@ -267,8 +267,7 @@ of each style.
 
 We measure the size of the proofs, which is only a proxy for the
 effort of writing them. Lines of Agda depend on layout; lexical tokens
-and non-whitespace characters do not, but they are proxies too. The
-three measures agree on the ranking: each style averages about 21 tokens per line, and the graph model's total is 1.22 times the interpreters' by tokens, against 1.20 times by lines. Size also says
+and non-whitespace characters do not, but they are proxies too. The three measures agree on the ranking: by tokens, the graph model's total is 1.22 times the interpreters', against 1.20 times by lines. Size also says
 little about difficulty, which depends heavily on whether a proof has precedent in the literature or its authors must invent it. Because experience carries over from one development to the next, we
 gave every development a final cleanup pass under the same rules
 (shorten and clarify, change no theorem statement, move nothing into
@@ -293,7 +292,4 @@ case analysis on tags, a twelfth of the Scott-domain proof of
 \pass{delay}, but would need a domain equation for each recursive type
 and would leave the stage-indexed relations in place.
 
-The sizes also depend on the proof assistant. Agda offers little proof
-automation apart from normalization: it unfolds definitions
-aggressively during type checking, which probably favors the interpreters, whose results Agda can compute directly. In Rocq or Lean,
-the sizes would depend heavily on the tactics used, and the relative sizes of the five styles could be quite different.
+The sizes also depend on the proof assistant. Agda's main automation is normalization, which probably favors the interpreters, whose results it computes directly; with the tactics of Rocq or Lean, the relative sizes of the five styles could be quite different.
