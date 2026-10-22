@@ -1015,3 +1015,22 @@ D$:
 The second step, a commuting conversion, needs $\den{M}_T\,\sigma$ to be
 consistent and the body to be monotone. The $\kw{case}$ case follows
 the same pattern.
+
+\section{An Example of the Approximant Logical Relation}
+\label{app:alr-example}
+
+Return to the example of Section~\ref{sec:approx-lr}, $\lambda y.\, x + y$ with $x$ bound to $9$, whose source
+meaning $D$ contains $[1] \mapsto 10$. Take the one-element list
+$V = [\pairv{u}{9}]$ with $u = [9] \mapsto ([1] \mapsto 10)$. The
+environment $[9]$ of the code entry is in $\cdr(V)$, so
+$\entryin{[1]}{10}{V}$ is a usable entry, and $\callsto{V}{[1]}{[10]}$
+is a batch of calls. Clause~3 then asks that $D \app E \ALR [10]$ for
+every consistent $E$ related to $[1]$, that is, every $E$ that
+contains $1$. It holds: $D$ has the entry $[1] \mapsto 10$ and
+$[1] \subseteq E$, so $10 \in D \app E$, which is clause~1 for
+$[10]$. Now take $V' = [\pairv{u'}{9}]$ with the junk entry
+$u' = [2] \mapsto ([1] \mapsto 3)$. Its environment $[2]$ is not in
+$\cdr(V') = \{9\}$, so $V'$ has no usable entry, clause~3 asks
+nothing, and $D \ALR V'$ holds although $3 \notin D \app E$. Both
+$V$ and $V'$ are lists of elements of the target closure, which pairs
+every entry of the code with the environment $9$.

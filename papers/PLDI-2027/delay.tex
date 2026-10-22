@@ -226,11 +226,9 @@ junk. The finite list also makes the relation well founded.
   D \ALR V & \iff & D \ALR_{1 + \depth(V)} V
 \end{array}
 \]
-\noindent Here $V, U, U_a, U_e, W$ are finite lists of target elements
-and $D, E \subseteq \Elem$ are sets of source elements.
 \caption{The approximant logical relation $D \ALR V$ between a set $D$
   of source (EnvClos) elements and a finite list $V$ of target (FlatClos)
-  elements. A finite list stands for the set of its elements. Here $c$
+  elements. Here $c$
   ranges over constants and $\pi$ over the projections of tuple
     components and sum injections; $\car$ and $\cdr$ are as in
   Figure~\ref{fig:graph-ops}, $\mathsf{con}$ is consistency
@@ -275,25 +273,9 @@ at the recursive occurrences:
   \item every sublist of a projection of $V$ is related to the same
     projection of $D$.
 \end{enumerate}
+Appendix~\ref{app:alr-example} works clause~3 through an example.
 
 
-\paragraph{An example}
-
-Return to $\lambda y.\, x + y$ with $x$ bound to $9$, whose source
-meaning $D$ contains $[1] \mapsto 10$. Take the one-element list
-$V = [\pairv{u}{9}]$ with $u = [9] \mapsto ([1] \mapsto 10)$. The
-environment $[9]$ of the code entry is in $\cdr(V)$, so
-$\entryin{[1]}{10}{V}$ is a usable entry, and $\callsto{V}{[1]}{[10]}$
-is a batch of calls. Clause~3 then asks that $D \app E \ALR [10]$ for
-every consistent $E$ related to $[1]$, that is, every $E$ that
-contains $1$. It holds: $D$ has the entry $[1] \mapsto 10$ and
-$[1] \subseteq E$, so $10 \in D \app E$, which is clause~1 for
-$[10]$. Now take $V' = [\pairv{u'}{9}]$ with the junk entry
-$u' = [2] \mapsto ([1] \mapsto 3)$. Its environment $[2]$ is not in
-$\cdr(V') = \{9\}$, so $V'$ has no usable entry, clause~3 asks
-nothing, and $D \ALR V'$ holds although $3 \notin D \app E$. Both
-$V$ and $V'$ are lists of elements of the target closure, which pairs
-every entry of the code with the environment $9$.
 
 \paragraph{Termination of the Approximant Logical Relation}
 
