@@ -94,7 +94,7 @@ source.
 \cmidrule(lr){2-3}\cmidrule(l){4-6}
  & graph model & Scott domains & machines & interpreters & reduction\\
 \midrule
-semantics of the languages & 393 & 395 & 511 & \textbf{374} & 961\\
+semantics of the languages & 427 & 395 & 529 & \textbf{391} & 980\\
 lemmas shared by the passes & --- & 132 & 38 & --- & ---\\
 \pass{simplify} & \textbf{349} & 441 & 560 & 508 & 697\\
 \pass{enclose} & 37 & 50 & 71 & \textbf{33} & 147\\
@@ -107,8 +107,6 @@ lemmas shared by the passes & --- & 132 & 38 & --- & ---\\
 \pass{explicate control} & \textbf{64} & 92 & 105 & 75 & 105\\
 \pass{select instructions} & 76 & 204 & 107 & \textbf{48} & 107\\
 composition & 28 & 32 & 20 & 22 & \textbf{18}\\
-shared modules not used by all & --- & --- & 15 & 15 & 15\\
-modules reused from an earlier pipeline & 34 & --- & 3 & \textbf{2} & 4\\
 \midrule
 total & 1806 & 3450 & 2103 & \textbf{1504} & 3093\\
 \bottomrule
@@ -235,7 +233,7 @@ much longer to check: about 50 minutes, against 3 for the graph model.
 
 \paragraph{The graph-model semantics is about as small as the interpreters', but it needs more infrastructure.}
 
-The graph-model semantics of the ten languages is 393 lines, slightly more than the interpreters' 374. The machines need 511 lines and the reduction semantics 961. The language-independent
+The graph-model semantics of the ten languages is 427 lines, somewhat more than the interpreters' 391. The machines need 529 lines and the reduction semantics 980. The language-independent
 infrastructure, which the totals exclude, differs more. The graph model
 relies on 1,544 lines of it, mostly the graph model itself and its
 operators, against 447 for the machines, 413 for the interpreters, and
@@ -279,6 +277,16 @@ differently. The sizes also depend on choices of semantics, for
 example the continuation-passing semantics of Imp, which makes
 \pass{explicate control} an equation, and on proof engineering that
 could still shrink any of the four developments.
+We built the Scott-domain semantics on one universal domain of tagged
+values, as \citet{Milner:1978kh} did for ML and \citet{MacQueen:1986aa}
+did for recursive and existential types. Our graph model makes the
+same choice, so the two denotational columns are like for like. For
+typed languages, a domain for each type is more usual
+\citep{Benton:2009ab,Dockins:2014aa}. It would avoid the case analysis
+on tags, about an eighth of the Scott-domain proof of \pass{delay}, but
+it would need a domain equation for each recursive type, and the
+existential types of closures fit it less directly. The stage-indexed
+relations would remain.
 
 The sizes also depend on the proof assistant. Agda offers little proof
 automation apart from normalization: it unfolds definitions
