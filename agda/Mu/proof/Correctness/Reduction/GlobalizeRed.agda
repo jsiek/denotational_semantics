@@ -230,11 +230,10 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   ... | false = inr≈ (tuple≈ [])
 
   ≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → N ≈ N' → V ≈ V' → (N S.[ V ]) ≈ (N' T.[ V' ])
-  ≈-[] n m = Trav.≈-trav tmKR n λ { Z → m ; (S ()) }
+  ≈-[] n m = Trav.≈-trav tmKR n λ { Z → m }
 
   sim : ∀ {A} {M : Tm [] A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
   sims : ∀ {Δ} {Ms : All (Tm []) Δ} {Ms'} → All₂ _≈_ Ms Ms' → Ans (T.reds ds) (Each Value) (All₂ _≈_) Ms (S.reds Ms) Ms'
-  sim (var≈ {x = ()})
   sim (code≈ r) = val ε T.fun-ref (code≈ r)
   sim (pack≈ r s) =
     ans-in (frame _ λ _ → refl) (λ m → pack≈ m s) (sim r)

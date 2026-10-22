@@ -728,7 +728,6 @@ let-val {N' = N'} {V'} {M = M} v r a = subst (λ x → Ans′ (let′ V' N') x M
 
 sim : ∀ {A} {M M' : Tm [] A} → M ≽ M' → Ans′ M' (S.red M') M
 sims : ∀ {Δ} {Ms Ms' : All (Tm []) Δ} → All₂ R˘ Ms' Ms → Ans S.reds (Each SV) (All₂ R˘) Ms' (S.reds Ms') Ms
-sim (var≽ {x = ()})
 sim (lam≽ r) = val ε P.lam (lam≽ r)
 sim (app≽ {M = M} {M'} r s) = ans-in (frame _ (λ _ → refl)) (λ r' → app≽ r' s) (sim r) app-sim
   where

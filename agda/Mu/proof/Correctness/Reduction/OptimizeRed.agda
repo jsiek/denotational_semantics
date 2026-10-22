@@ -210,7 +210,6 @@ Ans′ = Ans T.red Value R
 
 {- a closed variable or value is a value -}
 vv-value : ∀ {A} {V : Tm [] A} → VV V → Value V
-vv-value (var ())
 vv-value (val v) = v
 
 {- the source of a value is a value -}
@@ -240,7 +239,6 @@ caps-lookup {fl = fl} cs m (S i) e with ρsq fl i in eq | e
         go (keep r cs) Z refl = r
         go {fl = true ∷ fl} (keep r cs) (S i) e with ρsq fl i in eq | e
         ... | just y | refl = go cs i eq
-        go (drop vv cs) Z ()
         go (drop vv cs) (S i) e = go cs i e
 
 obs≈ : ∀ {A} {V : Tm [] A} {V'} → R V V' → Value V' → T.obs V ≡ T.obs V'
@@ -267,7 +265,6 @@ out≈ P.eq n m with does (n Z.≟ m)
 sim : ∀ {A} {M M' : Tm [] A} → R M M' → Ans′ M (T.red M) M'
 sims : ∀ {Δ} {Ms Ms' : All (Tm []) Δ} → All₂ R Ms Ms' → Ans T.reds (Each Value) (All₂ R) Ms (T.reds Ms) Ms'
 caps-sim : ∀ {Δ} {fl : Flags Δ} {Ms Ms'} → Caps ρ₀ fl Ms Ms' → Ans T.reds (Each Value) (Caps ρ₀ fl) Ms (T.reds Ms) Ms'
-sim (var≈ {x = ()} _)
 sim (clos≈ fl n cs) = ans-in (frame _ λ _ → refl) (clos≈ fl n) (caps-sim cs) λ vs ms → val ε (T.clos vs) (clos≈ fl n ms)
 sim (app≈ r s) =
   ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)

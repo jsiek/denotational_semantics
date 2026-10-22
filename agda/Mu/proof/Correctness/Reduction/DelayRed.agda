@@ -149,11 +149,10 @@ module _ {ρ₀ : Ren [] []} where
   ... | false = inr≈ (tuple≈ [])
 
   ≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → ext ρ₀ ⊢ N ≈ N' → R V V' → R (N S.[ V ]) (N' T.[ V' ])
-  ≈-[] n m = Trav.≈-trav tmKR n λ { Z → m ; (S ()) }
+  ≈-[] n m = Trav.≈-trav tmKR n λ { Z → m }
 
   sim : ∀ {A} {M M'} → R {A} M M' → Ans′ M (S.red M) M'
   sims : ∀ {Θ} {Ms : All _ Θ} {Ms'} → All₂ R Ms Ms' → Ans T.reds (Each Value) (All₂ R) Ms (S.reds Ms) Ms'
-  sim (var≈ {x = ()} _)
   sim (clos≈ {N' = N'} n rs) =
     ans-in (frame-∘ {redU = T.red} {h = C.tuple} {f = C.pack (C.code N')} (frame _ λ _ → refl) (frame _ λ _ → refl))
       (clos≈ n) (sims rs) λ vs ms → val ε (T.pack T.code (T.tuple vs)) (clos≈ n ms)

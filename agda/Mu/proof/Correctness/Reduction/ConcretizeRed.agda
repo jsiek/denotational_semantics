@@ -181,7 +181,6 @@ module _ {φ₀ : Refs [] []} where
 
  sim : ∀ {A} {M M'} → R {A} M M' → Ans′ M (S.red M) M'
  sims : ∀ {Δ} {Ms : All _ Δ} {Ms'} → All₂ R Ms Ms' → Ans T.reds (Each Value) (All₂ R) Ms (S.reds Ms) Ms'
- sim (var≈ {x = ()} _)
  sim (get≈ {V = V} {Vs'} {i} v r vs) =
    subst (λ x → Ans′ V x (C.get i (C.tuple Vs'))) (sym (S.value-red v))
          (val (val-in (T.value-red (T.tuple vs)) ◅ ε) (each-lookup vs i) r)

@@ -167,7 +167,6 @@ Ans′ = Ans T.red Value _≈_
 
 vvs-values : ∀ {Δ} {Fs : All (C.Tm []) Δ} → Each VV Fs → Each Value Fs
 vvs-values [] = []
-vvs-values (var () ∷ vv)
 vvs-values (val v ∷ vv) = v ∷ vvs-values vv
 
 obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → Value V' → S.obs V ≡ T.obs V'
@@ -189,7 +188,6 @@ out≈ P.eq n m with does (n Z.≟ m)
 
 sim : ∀ {A} {M : Tm [] A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
 sims : ∀ {Δ} {Ms : All (Tm []) Δ} {Ms'} → All₂ _≈_ Ms Ms' → Ans T.reds (Each Value) (All₂ _≈_) Ms (S.reds Ms) Ms'
-sim (var≈ {x = ()})
 sim m@(lam≈ _ _ vv) = val ε (T.clos (vvs-values vv)) m
 sim (app≈ r s) =
   ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
