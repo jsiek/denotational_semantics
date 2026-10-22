@@ -373,112 +373,97 @@ case-eq f E I M N with branch (known I) Eq.refl
 
 {- The main lemma ------------------------------------------------------------------}
 
-simp-ok : ∀ {Δ Γ A} fl (M : Tm Δ A) {E : Facts Δ Γ} (γ γ' : ⟨ Env ⟩) → Ok E γ γ' → defined-env γ'
-  → Desc (⟦ M ⟧ · γ) (simp fl E M) γ'
-simps-ok : ∀ {Δ Γ Δ'} fl (Ms : All (Tm Δ) Δ') {E : Facts Δ Γ} (γ γ' : ⟨ Env ⟩) → Ok E γ γ' → defined-env γ'
+simp-ok : ∀ {Δ Γ A} fl (M : Tm Δ A) {E : Facts Δ Γ} {γ γ'} → Ok E γ γ' → defined-env γ' → Desc (⟦ M ⟧ · γ) (simp fl E M) γ'
+simps-ok : ∀ {Δ Γ Δ'} fl (Ms : All (Tm Δ) Δ') {E : Facts Δ Γ} {γ γ'} → Ok E γ γ' → defined-env γ'
   → ∀ i → (⟦ Ms ⟧s · γ) i ＝ (⟦ simps fl E Ms ⟧s · γ') i
-under-ok : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} (γ γ' : ⟨ Env ⟩) → Ok E γ γ' → defined-env γ'
+under-ok : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {γ γ'} → Ok E γ γ' → defined-env γ'
   → (d : ⟨ 𝔻 ⟩) → defined d → ⟦ N ⟧ · (d • γ) ＝ ⟦ term (simp fl (under E) N) ⟧ · (d • γ')
-app-ok : ∀ {Δ Γ A B} fl (L : Tm Δ (A ⇒ B)) (M : Tm Δ A) {E : Facts Δ Γ} (γ γ' : ⟨ Env ⟩) {I} → Ok E γ γ' → defined-env γ'
+app-ok : ∀ {Δ Γ A B} fl (L : Tm Δ (A ⇒ B)) (M : Tm Δ A) {E : Facts Δ Γ} {γ γ' I} → Ok E γ γ' → defined-env γ'
   → Desc (⟦ M ⟧ · γ) I γ' → (l : Lam? L) → Desc (⟦ app L M ⟧ · γ) (app-res fl E L I l) γ'
-call-ok : ∀ {Γ A B} fl (J : Info Γ (A ⇒ B)) I (γ' : ⟨ Env ⟩) (F D : ⟨ 𝔻 ⟩) → defined-env γ' → Desc F J γ' → Desc D I γ'
+call-ok : ∀ {Γ A B} fl (J : Info Γ (A ⇒ B)) I {γ' F D} → defined-env γ' → Desc F J γ' → Desc D I γ'
   → Desc (appᵈ · F · D) (simp-call fl J I) γ'
-call-ok-aux : ∀ {Δ Γ A B} fl T (N : Tm (A ∷ Δ) B) (E : Facts Δ Γ) I (γ' : ⟨ Env ⟩) (F D : ⟨ 𝔻 ⟩) → defined-env γ'
-  → Desc F (T ∣ just (fun N E)) γ' → Desc D I γ' → (b : Bool) → KDesc F (fun N E) γ'
-  → Desc (appᵈ · F · D) (call-res fl T N E I b) γ'
-let-ok : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} (γ γ' : ⟨ Env ⟩) {I} (D : ⟨ 𝔻 ⟩) → Ok E γ γ' → defined-env γ'
+call-ok-aux : ∀ {Δ Γ A B} fl T (N : Tm (A ∷ Δ) B) (E : Facts Δ Γ) I {γ' F D} → defined-env γ'
+  → Desc F (T ∣ just (fun N E)) γ' → Desc D I γ' → (b : Bool) → KDesc F (fun N E) γ' → Desc (appᵈ · F · D) (call-res fl T N E I b) γ'
+let-ok : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {γ γ' I D} → Ok E γ γ' → defined-env γ'
   → Desc D I γ' → Desc (appᵈ · (⟦ lam N ⟧ · γ) · D) (simp-let fl E N I) γ'
-let-ok-aux : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} (γ γ' : ⟨ Env ⟩) {I} (D : ⟨ 𝔻 ⟩) → Ok E γ γ' → defined-env γ'
+let-ok-aux : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {γ γ' I D} → Ok E γ γ' → defined-env γ'
   → Desc D I γ' → (b₁ b₂ : Bool) → small (term I) ≡ b₁ → value (term I) ≡ b₂
   → Desc (appᵈ · (⟦ lam N ⟧ · γ) · D) (let-res fl E N I b₁ b₂) γ'
-case-ok : ∀ {Δ Γ A B C} fl (L : Tm Δ (A ⊹ B)) (M : Tm (A ∷ Δ) C) N {E : Facts Δ Γ} (γ γ' : ⟨ Env ⟩) {I} → Ok E γ γ'
+case-ok : ∀ {Δ Γ A B C} fl (L : Tm Δ (A ⊹ B)) (M : Tm (A ∷ Δ) C) N {E : Facts Δ Γ} {γ γ' I} → Ok E γ γ'
   → defined-env γ' → Desc (⟦ L ⟧ · γ) I γ' → (b : Maybe (Tm Γ A ⊎ Tm Γ B)) → branch (known I) Eq.refl ≡ b
   → Desc (⟦ case L M N ⟧ · γ) (case-res fl E I M N b) γ'
 
-under-ok fl N γ γ' ok ne d p = tm (simp-ok fl N (d • γ) (d • γ') (ok-under d ok) (•-defined d γ' p ne))
+under-ok fl N {γ' = γ'} ok ne d p = tm (simp-ok fl N (ok-under d ok) (•-defined d γ' p ne))
 
-simp-ok fl (` x) γ γ' ok ne = ok x
-simp-ok fl (lam N) {E} γ γ' ok ne =
-  desc (lamᶜ-cong ⟦ N ⟧ ⟦ term (simp fl (under E) N) ⟧ γ γ' (under-ok fl N γ γ' ok ne)) (λ { Eq.refl → kfun γ (lam N) Eq.refl ok refl })
-simp-ok fl (app L M) {E} γ γ' ok ne =
-  Eq.subst (λ J → Desc (⟦ app L M ⟧ · γ) J γ') (Eq.sym (app-eq fl E L (simp fl E M)))
-    (app-ok fl L M γ γ' ok ne (simp-ok fl M γ γ' ok ne) (lam? L))
-simp-ok fl (lit B c) γ γ' ok ne = desc-self P.lit refl
-simp-ok fl (tuple {Δ'} Ms) γ γ' ok ne = desc-info (ap (tupleᵈ (length Δ') ·_) (dfunext fe (simps-ok fl Ms γ γ' ok ne)))
-simp-ok fl (get i L) {E} γ γ' ok ne = get-ok i (simp fl E L) γ' (⟦ L ⟧ · γ) ne (simp-ok fl L γ γ' ok ne)
-simp-ok fl (inl M) γ γ' ok ne = desc-info (ap (inlᵈ ·_) (tm (simp-ok fl M γ γ' ok ne)))
-simp-ok fl (inr M) γ γ' ok ne = desc-info (ap (inrᵈ ·_) (tm (simp-ok fl M γ γ' ok ne)))
-simp-ok fl (case L M N) {E} γ γ' ok ne =
+simp-ok fl (` x) ok ne = ok x
+simp-ok fl (lam N) {E} {γ} {γ'} ok ne =
+  desc (lamᶜ-cong ⟦ N ⟧ ⟦ term (simp fl (under E) N) ⟧ γ γ' (under-ok fl N ok ne)) (λ { Eq.refl → kfun γ (lam N) Eq.refl ok refl })
+simp-ok fl (app L M) {E} {γ} {γ'} ok ne =
+  Eq.subst (λ J → Desc (⟦ app L M ⟧ · γ) J γ') (Eq.sym (app-eq fl E L (simp fl E M))) (app-ok fl L M ok ne (simp-ok fl M ok ne) (lam? L))
+simp-ok fl (lit B c) ok ne = desc-self P.lit refl
+simp-ok fl (tuple {Δ'} Ms) ok ne = desc-info (ap (tupleᵈ (length Δ') ·_) (dfunext fe (simps-ok fl Ms ok ne)))
+simp-ok fl (get i L) {E} {γ} {γ'} ok ne = get-ok i (simp fl E L) γ' (⟦ L ⟧ · γ) ne (simp-ok fl L ok ne)
+simp-ok fl (inl M) ok ne = desc-info (ap (inlᵈ ·_) (tm (simp-ok fl M ok ne)))
+simp-ok fl (inr M) ok ne = desc-info (ap (inrᵈ ·_) (tm (simp-ok fl M ok ne)))
+simp-ok fl (case L M N) {E} {γ} {γ'} ok ne =
   Eq.subst (λ J → Desc (⟦ case L M N ⟧ · γ) J γ') (Eq.sym (case-eq fl E (simp fl E L) M N))
-    (case-ok fl L M N γ γ' ok ne (simp-ok fl L γ γ' ok ne) (branch (known (simp fl E L)) Eq.refl) Eq.refl)
-simp-ok fl (prim p L M) {E} γ γ' ok ne =
-  prim-ok p (simp fl E L) (simp fl E M) γ' (⟦ L ⟧ · γ) (⟦ M ⟧ · γ) (simp-ok fl L γ γ' ok ne) (simp-ok fl M γ γ' ok ne)
-simp-ok fl (let′ M N) γ γ' ok ne = let-ok fl N γ γ' (⟦ M ⟧ · γ) ok ne (simp-ok fl M γ γ' ok ne)
-simp-ok fl (fold M) γ γ' ok ne = desc-info (tm (simp-ok fl M γ γ' ok ne))
-simp-ok fl (unfold L) {E} γ γ' ok ne = unfold-ok (simp fl E L) γ' (⟦ L ⟧ · γ) (simp-ok fl L γ γ' ok ne)
+    (case-ok fl L M N ok ne (simp-ok fl L ok ne) (branch (known (simp fl E L)) Eq.refl) Eq.refl)
+simp-ok fl (prim p L M) {E} {γ} {γ'} ok ne =
+  prim-ok p (simp fl E L) (simp fl E M) γ' (⟦ L ⟧ · γ) (⟦ M ⟧ · γ) (simp-ok fl L ok ne) (simp-ok fl M ok ne)
+simp-ok fl (let′ M N) ok ne = let-ok fl N ok ne (simp-ok fl M ok ne)
+simp-ok fl (fold M) ok ne = desc-info (tm (simp-ok fl M ok ne))
+simp-ok fl (unfold L) {E} {γ} {γ'} ok ne = unfold-ok (simp fl E L) γ' (⟦ L ⟧ · γ) (simp-ok fl L ok ne)
 
-simps-ok fl (M ∷ Ms) γ γ' ok ne zero = tm (simp-ok fl M γ γ' ok ne)
-simps-ok fl (M ∷ Ms) γ γ' ok ne (suc i) = simps-ok fl Ms γ γ' ok ne i
+simps-ok fl (M ∷ Ms) ok ne zero = tm (simp-ok fl M ok ne)
+simps-ok fl (M ∷ Ms) ok ne (suc i) = simps-ok fl Ms ok ne i
 
 {- an application: β if the operator is a function, and otherwise a call -}
-app-ok fl (lam N) M γ γ' ok ne d (is-lam .N) = let-ok fl N γ γ' (⟦ M ⟧ · γ) ok ne d
-app-ok fl L M {E} γ γ' ok ne d other =
-  call-ok fl (simp fl E L) _ γ' (⟦ L ⟧ · γ) (⟦ M ⟧ · γ) ne (simp-ok fl L γ γ' ok ne) d
+app-ok fl (lam N) M ok ne d (is-lam .N) = let-ok fl N ok ne d
+app-ok fl L M {E} ok ne d other = call-ok fl (simp fl E L) _ ne (simp-ok fl L ok ne) d
 
 {- a call of a known function: its body, bound to the operand -}
-call-ok zero J I γ' F D ne dJ dI = desc (ap₂ (λ a b → appᵈ · a · b) (tm dJ) (tm dI)) (λ ())
-call-ok (succ fl) (T ∣ nothing) I γ' F D ne dJ dI = desc (ap₂ (λ a b → appᵈ · a · b) (tm dJ) (tm dI)) (λ ())
-call-ok (succ fl) (T ∣ just (val K)) I γ' F D ne dJ dI = desc (ap₂ (λ a b → appᵈ · a · b) (tm dJ) (tm dI)) (λ ())
-call-ok (succ fl) (T ∣ just (fun N E)) I γ' F D ne dJ dI =
+call-ok zero J I ne dJ dI = desc (ap₂ (λ a b → appᵈ · a · b) (tm dJ) (tm dI)) (λ ())
+call-ok (succ fl) (T ∣ nothing) I ne dJ dI = desc (ap₂ (λ a b → appᵈ · a · b) (tm dJ) (tm dI)) (λ ())
+call-ok (succ fl) (T ∣ just (val K)) I ne dJ dI = desc (ap₂ (λ a b → appᵈ · a · b) (tm dJ) (tm dI)) (λ ())
+call-ok (succ fl) (T ∣ just (fun N E)) I {γ'} {F} {D} ne dJ dI =
   Eq.subst (λ J → Desc (appᵈ · F · D) J γ') (Eq.sym (call-eq fl T N E I))
-    (call-ok-aux fl T N E I γ' F D ne dJ dI (size (term (simp-let fl E N I)) ≤ᵇ inline-size) (kn dJ Eq.refl))
+    (call-ok-aux fl T N E I ne dJ dI (size (term (simp-let fl E N I)) ≤ᵇ inline-size) (kn dJ Eq.refl))
 
-call-ok-aux fl T N E I γ' F D ne dJ dI true (kfun γ L Eq.refl ok F＝) =
-  desc-＝ (let-ok fl N γ γ' D ok ne dI) (ap (λ a → appᵈ · a · D) F＝)
-call-ok-aux fl T N E I γ' F D ne dJ dI false k = desc (ap₂ (λ a b → appᵈ · a · b) (tm dJ) (tm dI)) (λ ())
+call-ok-aux fl T N E I {D = D} ne dJ dI true (kfun γ L Eq.refl ok F＝) = desc-＝ (let-ok fl N ok ne dI) (ap (λ a → appᵈ · a · D) F＝)
+call-ok-aux fl T N E I ne dJ dI false k = desc (ap₂ (λ a b → appᵈ · a · b) (tm dJ) (tm dI)) (λ ())
 
 {- the body N of a function, bound to the operand: a small value is
    substituted, another value stays bound and known, anything else stays
    bound -}
-let-ok fl N {E} γ γ' {I} D ok ne d =
+let-ok fl N {E} {γ} {γ'} {I} {D} ok ne d =
   Eq.subst (λ J → Desc (appᵈ · (⟦ lam N ⟧ · γ) · D) J γ') (Eq.sym (let-eq fl E N I))
-    (let-ok-aux fl N γ γ' D ok ne d (small (term I)) (value (term I)) Eq.refl Eq.refl)
+    (let-ok-aux fl N ok ne d (small (term I)) (value (term I)) Eq.refl Eq.refl)
 
-let-ok-aux fl N γ γ' {I} D ok ne d true _ s v =
-  desc-＝ (simp-ok fl N (D • γ) γ' (ok-• d ok) ne) (let-β ⟦ N ⟧ γ D pD)
-  where
-  pD = transport defined (tm d ⁻¹) (sv-defined (small-sv (term I) s) ne)
-let-ok-aux fl N {E} γ γ' {I} D ok ne d false true s v =
-  desc (let-β ⟦ N ⟧ γ D pD
-        ∙ tm (simp-ok fl N (D • γ) (V • γ') (ok-known-as I V (tm d) d ok) (•-defined V γ' pV ne))
+let-ok-aux fl N {γ = γ} {I = I} {D} ok ne d true _ s v =
+  desc-＝ (simp-ok fl N (ok-• d ok) ne) (let-β ⟦ N ⟧ γ D (transport defined (tm d ⁻¹) (sv-defined (small-sv (term I) s) ne)))
+let-ok-aux fl N {E} {γ} {γ'} {I} {D} ok ne d false true s v =
+  desc (let-β ⟦ N ⟧ γ D (transport defined (tm d ⁻¹) pV)
+        ∙ tm (simp-ok fl N (ok-known-as I V (tm d) d ok) (•-defined V γ' pV ne))
         ∙ (let-β ⟦ term (simp fl (known-as I E) N) ⟧ γ' V pV ⁻¹))
        (λ ())
   where
   V = ⟦ term I ⟧ · γ'
   pV = sv-defined (value-sv (term I) v) ne
-  pD = transport defined (tm d ⁻¹) pV
-let-ok-aux fl N {E} γ γ' {I} D ok ne d false false s v =
-  desc (ap₂ (λ a b → appᵈ · a · b) (lamᶜ-cong ⟦ N ⟧ ⟦ term (simp fl (under E) N) ⟧ γ γ' (under-ok fl N γ γ' ok ne)) (tm d))
-       (λ ())
+let-ok-aux fl N {E} {γ} {γ'} ok ne d false false s v =
+  desc (ap₂ (λ a b → appᵈ · a · b) (lamᶜ-cong ⟦ N ⟧ ⟦ term (simp fl (under E) N) ⟧ γ γ' (under-ok fl N ok ne)) (tm d)) (λ ())
 
 {- a case on a known injection takes its branch -}
-case-ok fl L M N {E} γ γ' {I} ok ne d nothing e =
+case-ok fl L M N {E} {γ} {γ'} {I} ok ne d nothing e =
   desc (caseᶜ-cong ⟦ L ⟧ ⟦ term I ⟧ ⟦ M ⟧ ⟦ term (simp fl (under E) M) ⟧ ⟦ N ⟧ ⟦ term (simp fl (under E) N) ⟧ γ γ'
-          (tm d) (under-ok fl M γ γ' ok ne) (under-ok fl N γ γ' ok ne))
+          (tm d) (under-ok fl M ok ne) (under-ok fl N ok ne))
        (λ ())
-case-ok fl L M N γ γ' {I} ok ne d (just (inj₁ K)) e =
-  desc-＝ (simp-ok fl M (VK • γ) γ' (ok-• (desc-self (pr₁ h) refl) ok) ne)
-         (caseᶜ-inl ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ γ VK (pr₂ h) (sv-defined (pr₁ h) ne))
-  where
-  VK = ⟦ K ⟧ · γ'
-  h = branch-inl-ok I γ' (⟦ L ⟧ · γ) e d
-case-ok fl L M N γ γ' {I} ok ne d (just (inj₂ K)) e =
-  desc-＝ (simp-ok fl N (VK • γ) γ' (ok-• (desc-self (pr₁ h) refl) ok) ne)
-         (caseᶜ-inr ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ γ VK (pr₂ h) (sv-defined (pr₁ h) ne))
-  where
-  VK = ⟦ K ⟧ · γ'
-  h = branch-inr-ok I γ' (⟦ L ⟧ · γ) e d
+case-ok fl L M N {γ = γ} {γ'} {I} ok ne d (just (inj₁ K)) e =
+  desc-＝ (simp-ok fl M (ok-• (desc-self (pr₁ h) refl) ok) ne) (caseᶜ-inl ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ γ (⟦ K ⟧ · γ') (pr₂ h) (sv-defined (pr₁ h) ne))
+  where h = branch-inl-ok I γ' (⟦ L ⟧ · γ) e d
+case-ok fl L M N {γ = γ} {γ'} {I} ok ne d (just (inj₂ K)) e =
+  desc-＝ (simp-ok fl N (ok-• (desc-self (pr₁ h) refl) ok) ne) (caseᶜ-inr ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ γ (⟦ K ⟧ · γ') (pr₂ h) (sv-defined (pr₁ h) ne))
+  where h = branch-inr-ok I γ' (⟦ L ⟧ · γ) e d
 
 {- The end theorem: every closed program -}
 simplify-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ · ρ₀ ＝ ⟦ simplify M ⟧ · ρ₀
-simplify-correct M = tm (simp-ok inline-fuel M ρ₀ ρ₀ (λ ()) ρ₀-defined)
+simplify-correct M = tm (simp-ok inline-fuel M (λ ()) ρ₀-defined)
