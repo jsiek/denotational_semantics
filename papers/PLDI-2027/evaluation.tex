@@ -44,11 +44,11 @@ the languages and passes, and each is our best effort in its style.
   reduction semantics, using substitution for function application,
   and each pass is proved by a simulation between reductions.
 \end{itemize}
-The three operational correctness theorems say that the compiled
-program terminates with the same observation as the source, and that
-one diverges exactly when the other does. Our adequacy results show
-that the denotational correctness theorem is equivalent
-(Section~\ref{sec:adequacy}).
+Appendix~\ref{app:other} states the theorem of each style, with its
+semantics of \iswim\ and x86$\mu$. The operational theorems say that
+the compiled program terminates with the same observation as the
+source, and diverges exactly when the source does; by adequacy
+(Section~\ref{sec:adequacy}), the denotational theorem is equivalent.
 
 We measure each proof by its lines of Agda, not counting comments,
 blank lines, or imports. The counts include the semantics of the
