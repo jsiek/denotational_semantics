@@ -52,7 +52,7 @@ infix 4 _≈_ _≈k_ _~_
 data _≈_ : ∀ {A} → C.Val A → C.Val A → Set where
   clo≈ : ∀ {Δ A B} {N : Tm (A ∷ Δ) B} {fl : Flags Δ} {V W} → Thin _≈_ fl V W
     → (cov : ∀ {C} (x : (A ∷ Δ) ∋ C) → T (uses N x) → Kept fl x)
-    → C.clos N V ≈ C.clos (opt N λ x t → squeeze fl x (cov x t)) W
+    → C.pack (C.code N) (C.tup V) ≈ C.pack (C.code (opt N λ x t → squeeze fl x (cov x t))) (C.tup W)
   const≈ : ∀ {B c} → C.const {B} c ≈ C.const c
   tup≈ : ∀ {Δ} {vs ws : All _ Δ} → All₂ _≈_ vs ws → C.tup vs ≈ C.tup ws
   inl≈ : ∀ {A B v w} → v ≈ w → C.inl {A} {B} v ≈ C.inl w
@@ -70,7 +70,8 @@ ext-agree vw ag (S x) t = ag x t
 {- the rest us, us' of the free variables give related closures -}
 Done : ∀ {Δv Δw Δ A B} {fl : Flags Δ} → Tm (A ∷ (Δv <>< Δ)) B → Tm (A ∷ (Δw <>< kept fl)) B
   → All C.Val Δv → All C.Val Δw → Set
-Done {fl = fl} N N' vs ws = ∀ {us us'} → Thin _≈_ fl us us' → C.clos N (vs <><ᵃ us) ≈ C.clos N' (ws <><ᵃ us')
+Done {fl = fl} N N' vs ws = ∀ {us us'} → Thin _≈_ fl us us'
+  → C.pack (C.code N) (C.tup (vs <><ᵃ us)) ≈ C.pack (C.code N') (C.tup (ws <><ᵃ us'))
 
 data _≈k_ : ∀ {A} → C.Cont A → C.Cont A → Set where
   halt : ∀ {A} → C.halt {A} ≈k C.halt
@@ -107,7 +108,7 @@ data _~_ : C.State → C.State → Set where
     → C.eval M ρ₁ κ₁ ~ C.eval (opt M r) ρ₂ κ₂
   ret~ : ∀ {A} {v w : C.Val A} {κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → C.ret v κ₁ ~ C.ret w κ₂
   {- a closure's free variables are collected -}
-  close~ : ∀ {Δ Δ' A B N N'} {V : All _ Δ} {W : All _ Δ'} {κ₁ κ₂} → C.clos {A = A} {B} N V ≈ C.clos N' W → κ₁ ≈k κ₂
+  close~ : ∀ {Δ Δ' A B N N'} {V : All _ Δ} {W : All _ Δ'} {κ₁ κ₂} → C.pack (C.code {A = A} {B} N) (C.tup V) ≈ C.pack (C.code N') (C.tup W) → κ₁ ≈k κ₂
     → C.ret (C.tup V) (C.closK N κ₁) ~ C.ret (C.tup W) (C.closK N' κ₂)
 
 {- Related values are observed alike, and primitives give related values -}

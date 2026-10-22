@@ -10,9 +10,9 @@
   in the typed machines, the read cannot fail, and needs no special
   state.
 
-  Values are related (_≈_) when they agree, except that a Clos2μ closure
-  of N and vs is related to a Clos3μ closure of concretize fv-ref N and
-  values related to vs (as a tuple, in the same order). Environments are
+  Values are related (_≈_, proof/Semantics/CEK/Rel.agda) when they
+  agree, except that a Clos2μ closure of N and vs is related to a Clos3μ
+  closure of concretize fv-ref N and values related to vs. Environments are
   related through the map φ that concretize carries (EnvRel): Clos2μ
   variable x holds a value related to the one at φ x (ref-val), a
   variable or a component of a tuple. Neither machine stops with an
@@ -27,31 +27,19 @@ open import Mu.Language.Clos2
 import Mu.Language.Clos3 as C3
 open import Mu.Compiler.Concretize
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
-open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 import Mu.Semantics.CEK.Clos2 as Src
 import Mu.Semantics.CEK.Clos3 as Tgt
 
-open import Data.Bool using (true; false)
-open import Data.Integer using (_≟_)
 open import Data.List using ([]; _∷_)
-open import Language.Prim using (sub; eq)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
-open import Relation.Nullary using (does)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
+
+open import Mu.proof.Semantics.CEK.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C3.Tm (A ∷ tup Δ ∷ []) B} (concretize fv-ref)
 
 {- The simulation relation -----------------------------------------------------}
 
-infix 4 _≈_ _≈k_ _~_
-
-data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
-  clos≈ : ∀ {Δ A B} {N : Tm (A ∷ Δ) B} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws
-    → Src.clos N vs ≈ Tgt.clos (concretize fv-ref N) ws
-  const≈ : ∀ {B c} → Src.const {B} c ≈ Tgt.const c
-  tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
-  inl≈ : ∀ {A B v w} → v ≈ w → Src.inl {A} {B} v ≈ Tgt.inl w
-  inr≈ : ∀ {A B v w} → v ≈ w → Src.inr {A} {B} v ≈ Tgt.inr w
-  fold≈ : ∀ {A v w} → v ≈ w → Src.fold {A} v ≈ Tgt.fold w
+infix 4 _≈k_ _~_
 
 {- the value at a Ref -}
 get-val : ∀ {Δ A} → Δ ∋ A → Tgt.Val (tup Δ) → Tgt.Val A
@@ -90,24 +78,6 @@ data _~_ : Src.State → Tgt.State → Set where
   eval~ : ∀ {Γ Γ' A} {φ : Refs Γ Γ'} {M : Tm Γ A} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.eval M ρ₁ κ₁ ~ Tgt.eval (concretize φ M) ρ₂ κ₂
   ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
-
-{- Related values are observed alike, and primitives give related values -}
-obs≈ : ∀ {A} {v : Src.Val A} {w} → v ≈ w → Src.obs v ≡ Tgt.obs w
-obs≈* : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Src.obs-all vs ≡ Tgt.obs-all ws
-obs≈ (clos≈ _) = refl
-obs≈ const≈ = refl
-obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)
-obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈ (fold≈ r) = obs≈ r
-obs≈* [] = refl
-obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
-
-δ≈ : ∀ p n m → Src.δᵀ p n m ≈ Tgt.δᵀ p n m
-δ≈ sub n m = const≈
-δ≈ eq n m with does (n ≟ m)
-... | true = inl≈ (tup≈ [])
-... | false = inr≈ (tup≈ [])
 
 {- Related environments --------------------------------------------------------}
 

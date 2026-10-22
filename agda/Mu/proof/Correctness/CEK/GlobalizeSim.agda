@@ -40,7 +40,7 @@ import Mu.Semantics.CEK.Clos5 as Tₘ
 open import Data.Bool using (true; false)
 open import Data.Integer using (_≟_)
 open import Data.List using (List; []; _∷_)
-open import Data.Product using (_×_; _,_; proj₁; proj₂)
+open import Data.Product using (_×_; _,_; proj₁; proj₂; uncurry′)
 open import Data.Unit using (⊤; tt)
 open import Language.Prim using (sub; eq)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
@@ -158,8 +158,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
 
   glob-⇝ (S.` x) D F = var
   glob-⇝ (S.code N) D (h , F) = code (h N (glob-⇝ N D F))
-  glob-⇝ (S.pack L M) D F = pack (proj₁ (two L M D F)) (proj₂ (two L M D F))
-  glob-⇝ (S.callc L M) D F = callc (proj₁ (two L M D F)) (proj₂ (two L M D F))
+  glob-⇝ (S.pack L M) D F = uncurry′ pack (two L M D F)
+  glob-⇝ (S.callc L M) D F = uncurry′ callc (two L M D F)
   glob-⇝ (S.lit B c) D F = lit
   glob-⇝ (S.tuple Ms) D F = tuple (globs-⇝ Ms D F)
   glob-⇝ (S.get i M) D F = get (glob-⇝ M D F)
@@ -168,8 +168,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
   glob-⇝ (S.case L M N) D F =
     case (lift (glob-⇝ L D (faithful-ext (mext-trans (glob-grows M _) (glob-grows N _)) F)))
          (lift (glob-⇝ M _ (faithful-ext (glob-grows N _) F))) (glob-⇝ N _ F)
-  glob-⇝ (S.prim p L M) D F = prim (proj₁ (two L M D F)) (proj₂ (two L M D F))
-  glob-⇝ (S.let′ M N) D F = let′ (proj₁ (two M N D F)) (proj₂ (two M N D F))
+  glob-⇝ (S.prim p L M) D F = uncurry′ prim (two L M D F)
+  glob-⇝ (S.let′ M N) D F = uncurry′ let′ (two M N D F)
   glob-⇝ (S.fold M) D F = fold (glob-⇝ M D F)
   glob-⇝ (S.unfold M) D F = unfold (glob-⇝ M D F)
   globs-⇝ [] D F = []

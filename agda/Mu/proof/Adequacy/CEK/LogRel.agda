@@ -70,7 +70,7 @@ _⊢_⇓_ : ∀ {Γ A} → Env Γ → Tm Γ A → Val A → Set
 
 𝕍 d (fold v) = 𝕍 d v
 𝕍 (dconst k) (const k') = dconst k ≡ dconst k'
-𝕍 (V ↦ w) (clo {B = B} N γ) = ∀ v → 𝕍s V v → Σ[ v' ∈ Val B ] (v ∷ γ) ⊢ N ⇓ v' × 𝕍 w v'
+𝕍 (V ↦ w) (pack {B = B} (code N) (tup γ)) = ∀ v → 𝕍s V v → Σ[ v' ∈ Val B ] (v ∷ γ) ⊢ N ⇓ v' × 𝕍 w v'
 𝕍 ν (clo N γ) = ⊤
 𝕍 ⟨⟩ (tup []) = ⊤
 𝕍 (tup[ i ] d) (tup vs) = 𝕍At i d vs

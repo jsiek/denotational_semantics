@@ -78,6 +78,8 @@ private
 𝒱s : ∀ {Δ} → All Val Δ → List (𝒫 Value)
 𝓔 : ∀ {Γ} → Env Γ → E.Env Value
 
+{- no ISWIMμ program has a value of a code type -}
+𝒱 (code N) = ⌈ ⟨⟩ ⌉
 𝒱 (clo N γ) = Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩
 𝒱 (const {B} k) = ℬ B k ptt
 𝒱 (tup vs) = 𝒯L (𝒱s vs)
@@ -150,6 +152,7 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 
 𝒱-ne : ∀ {A} (v : Val A) → nonempty (𝒱 v)
 𝒱s-ne : ∀ {Δ} (vs : All Val Δ) → AllNE (𝒱s vs)
+𝒱-ne (code N) = ⟨ ⟨⟩ , refl ⟩
 𝒱-ne (clo N γ) = ⟨ ν , tt ⟩
 𝒱-ne (const k) = ⟨ dconst k , ⟨ refl , refl ⟩ ⟩
 𝒱-ne (tup []) = ⟨ ⟨⟩ , tt ⟩
@@ -169,6 +172,7 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝒱-con : ∀ {A} (v : Val A) → Con (𝒱 v)
 𝒱s-con : ∀ {Δ} (vs : All Val Δ) → AllCon (𝒱s vs)
 𝓔-con : ∀ {Γ} (γ : Env Γ) → Con-env (𝓔 γ)
+𝒱-con (code N) = Con-⌈⌉ ⟨⟩
 𝒱-con (clo N γ) = lower (Λ-consis _ _ ⟨ (λ X X' X~ → lift (proj₂ (proj₂ (ok N)) (E.•-~ (Every _~_) (𝓔-con γ) X~))) , ptt ⟩)
 𝒱-con (const {B} k) = lower (ℬ-consis B k ptt ptt ptt)
 𝒱-con (tup vs) = 𝒯L-con (𝒱s vs) (𝒱s-con vs)

@@ -9,29 +9,16 @@
 
 module Mu.Semantics.CEK.Clos2 where
 
-open import Framework.Primitives using (Base; base-rep; Int)
-open import Language.Prim using (Prim; sub; eq)
+open import Framework.Primitives using (Int)
 open import Mu.Language.Type
 open import Mu.Language.Clos2
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 
-open import Data.Bool using (if_then_else_)
-open import Data.Integer using (ℤ; _-_; _≟_)
-open import Data.List using (List; []; _∷_)
-open import Relation.Nullary using (does)
+open import Data.Integer using (ℤ)
+open import Data.List using ([]; _∷_)
 
-data Val : Type → Set where
-  clos : ∀ {Δ A B} → Tm (A ∷ Δ) B → All Val Δ → Val (A ⇒ B)
-  const : ∀ {B} → base-rep B → Val (base B)
-  tup : ∀ {Δ} → All Val Δ → Val (tup Δ)
-  inl : ∀ {A B} → Val A → Val (A ⊹ B)
-  inr : ∀ {A B} → Val B → Val (A ⊹ B)
-  fold : ∀ {A} → Val (unroll A) → Val (μ A)
-
-Env : Ctx → Set
-Env = All Val
+open import Mu.Semantics.CEK.Values (λ Δ A B → Tm (A ∷ Δ) B) public
 
 data Cont : Type → Set where
   halt : ∀ {A} → Cont A
@@ -54,22 +41,6 @@ data State : Set where
   eval : ∀ {Γ A} → Tm Γ A → Env Γ → Cont A → State
   ret : ∀ {A} → Val A → Cont A → State
 
-obs : ∀ {A} → Val A → Obs
-obs-all : ∀ {Δ} → All Val Δ → List Obs
-obs (clos _ _) = o-fun
-obs (const {B} c) = o-const B c
-obs (tup vs) = o-tuple (obs-all vs)
-obs (inl v) = o-inl (obs v)
-obs (inr v) = o-inr (obs v)
-obs (fold v) = obs v
-obs-all [] = []
-obs-all (v ∷ vs) = obs v ∷ obs-all vs
-
-{- a primitive on two integers: eq gives inl ⟨⟩ for true -}
-δᵀ : ∀ p → ℤ → ℤ → Val (out-ty p)
-δᵀ sub n m = const (n - m)
-δᵀ eq n m = if does (n ≟ m) then inl (tup []) else inr (tup [])
-
 {- evaluate the rest of a tuple's components, or build it -}
 tuple-next : ∀ {Γ Δ' Δ} → All Val Δ' → All (Tm Γ) Δ → Env Γ → Cont (tup (Δ' <>< Δ)) → State
 tuple-next vs [] ρ κ = ret (tup (vs <><ᵃ [])) κ
@@ -91,9 +62,9 @@ step (eval (fold M) ρ κ) = next (eval M ρ (foldK κ))
 step (eval (unfold M) ρ κ) = next (eval M ρ (unfoldK κ))
 step (ret v halt) = stop (obs v)
 step (ret f (appL M ρ κ)) = next (eval M ρ (appR f κ))
-step (ret w (appR (clos N vs) κ)) = next (eval N (w ∷ vs) κ)
+step (ret w (appR (pack (code N) (tup vs)) κ)) = next (eval N (w ∷ vs) κ)
 step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
-step (ret (tup vs) (closK N κ)) = next (ret (clos N vs) κ)
+step (ret e (closK N κ)) = next (ret (pack (code N) e) κ)
 step (ret (tup vs) (getK i κ)) = next (ret (lookup vs i) κ)
 step (ret v (inlK κ)) = next (ret (inl v) κ)
 step (ret v (inrK κ)) = next (ret (inr v) κ)

@@ -10,30 +10,16 @@
 
 module Mu.Semantics.CEK.Clos4 where
 
-open import Framework.Primitives using (Base; base-rep; Int)
-open import Language.Prim using (Prim; sub; eq)
+open import Framework.Primitives using (Int)
 open import Mu.Language.Type
 open import Mu.Language.Clos4
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 
-open import Data.Bool using (if_then_else_)
-open import Data.Integer using (ℤ; _-_; _≟_)
-open import Data.List using (List; []; _∷_)
-open import Relation.Nullary using (does)
+open import Data.Integer using (ℤ)
+open import Data.List using ([]; _∷_)
 
-data Val : Type → Set where
-  code : ∀ {Δ A B} → Tm (A ∷ tup Δ ∷ []) B → Val (code Δ A B)
-  pack : ∀ {Δ A B} → Val (code Δ A B) → Val (tup Δ) → Val (A ⇒ B)
-  const : ∀ {B} → base-rep B → Val (base B)
-  tup : ∀ {Δ} → All Val Δ → Val (tup Δ)
-  inl : ∀ {A B} → Val A → Val (A ⊹ B)
-  inr : ∀ {A B} → Val B → Val (A ⊹ B)
-  fold : ∀ {A} → Val (unroll A) → Val (μ A)
-
-Env : Ctx → Set
-Env = All Val
+open import Mu.Semantics.CEK.Values (λ Δ A B → Tm (A ∷ tup Δ ∷ []) B) public
 
 data Cont : Type → Set where
   halt : ∀ {A} → Cont A
@@ -56,23 +42,6 @@ data Cont : Type → Set where
 data State : Set where
   eval : ∀ {Γ A} → Tm Γ A → Env Γ → Cont A → State
   ret : ∀ {A} → Val A → Cont A → State
-
-obs : ∀ {A} → Val A → Obs
-obs-all : ∀ {Δ} → All Val Δ → List Obs
-obs (code _) = o-fun
-obs (pack _ _) = o-fun
-obs (const {B} c) = o-const B c
-obs (tup vs) = o-tuple (obs-all vs)
-obs (inl v) = o-inl (obs v)
-obs (inr v) = o-inr (obs v)
-obs (fold v) = obs v
-obs-all [] = []
-obs-all (v ∷ vs) = obs v ∷ obs-all vs
-
-{- a primitive on two integers: eq gives inl ⟨⟩ for true -}
-δᵀ : ∀ p → ℤ → ℤ → Val (out-ty p)
-δᵀ sub n m = const (n - m)
-δᵀ eq n m = if does (n ≟ m) then inl (tup []) else inr (tup [])
 
 {- evaluate the rest of a tuple's components, or build it -}
 tuple-next : ∀ {Γ Δ' Δ} → All Val Δ' → All (Tm Γ) Δ → Env Γ → Cont (tup (Δ' <>< Δ)) → State

@@ -8,9 +8,9 @@
   three more Clos4μ steps (the code, then the tuple of free variables,
   under pack). Neither machine stops with an error.
 
-  Values are related (_≈_) when they agree, except that a Clos3μ closure
-  of N and vs is related to the pack of code (delay N) and a tuple of
-  values related to vs. Environments are related through the renaming r
+  Values are related (_≈_, proof/Semantics/CEK/Rel.agda) when they
+  agree, except that a Clos3μ closure of N and vs is related to the pack
+  of code (delay N) and a tuple of values related to vs. Environments are related through the renaming r
   that delay carries (EnvRel): variable x of ρ₁ and variable r x of ρ₂
   hold related values. Continuations are related frame by frame: appL
   to callL, appR to callR, and closK to packR.
@@ -24,31 +24,19 @@ open import Mu.Language.Clos3
 import Mu.Language.Clos4 as C4
 open import Mu.Compiler.Delay
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
-open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 import Mu.Semantics.CEK.Clos3 as Src
 import Mu.Semantics.CEK.Clos4 as Tgt
 
-open import Data.Bool using (true; false)
-open import Data.Integer using (_≟_)
 open import Data.List using ([]; _∷_)
-open import Language.Prim using (sub; eq)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
-open import Relation.Nullary using (does)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
+
+open import Mu.proof.Semantics.CEK.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B} (delay (λ x → x))
 
 {- The simulation relation -----------------------------------------------------}
 
-infix 4 _≈_ _≈k_ _~_
-
-data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
-  clos≈ : ∀ {Δ A B} {N : Tm (A ∷ tup Δ ∷ []) B} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws
-    → Src.clos N vs ≈ Tgt.pack (Tgt.code (delay (λ x → x) N)) (Tgt.tup ws)
-  const≈ : ∀ {B c} → Src.const {B} c ≈ Tgt.const c
-  tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
-  inl≈ : ∀ {A B v w} → v ≈ w → Src.inl {A} {B} v ≈ Tgt.inl w
-  inr≈ : ∀ {A B v w} → v ≈ w → Src.inr {A} {B} v ≈ Tgt.inr w
-  fold≈ : ∀ {A v w} → v ≈ w → Src.fold {A} v ≈ Tgt.fold w
+infix 4 _≈k_ _~_
 
 EnvRel : ∀ {Γ Δ} → Ren Γ Δ → Src.Env Γ → Tgt.Env Δ → Set
 EnvRel r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ lookup ρ₂ (r x)
@@ -80,24 +68,6 @@ data _~_ : Src.State → Tgt.State → Set where
   eval~ : ∀ {Γ Δ A} {r : Ren Γ Δ} {M : Tm Γ A} {ρ₁} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.eval M ρ₁ κ₁ ~ Tgt.eval (delay r M) ρ₂ κ₂
   ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
-
-{- Related values are observed alike, and primitives give related values -}
-obs≈ : ∀ {A} {v : Src.Val A} {w} → v ≈ w → Src.obs v ≡ Tgt.obs w
-obs≈* : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Src.obs-all vs ≡ Tgt.obs-all ws
-obs≈ (clos≈ _) = refl
-obs≈ const≈ = refl
-obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)
-obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈ (fold≈ r) = obs≈ r
-obs≈* [] = refl
-obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
-
-δ≈ : ∀ p n m → Src.δᵀ p n m ≈ Tgt.δᵀ p n m
-δ≈ sub n m = const≈
-δ≈ eq n m with does (n ≟ m)
-... | true = inl≈ (tup≈ [])
-... | false = inr≈ (tup≈ [])
 
 env-ext : ∀ {Γ Δ B} {r : Ren Γ Δ} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {v : Src.Val B} {w} → v ≈ w → EnvRel r ρ₁ ρ₂
   → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
