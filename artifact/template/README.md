@@ -127,16 +127,8 @@ and no module of the audit surface imports a proof module. Its output:
 
 TABLES_OUTPUT
 
-Table 2's reduction column is 1126 here, against 1191 in the paper (and
-its total 4219, against 4284). The difference, 65 lines, is
-`proof/Framework/Syntax/Scope.agda` (21 lines) and
-`Framework/Syntax/Uses.agda` with its proof half (44 lines), which the
-reduction proof does not import. The script counts a module and its
-`proof/` half as one unit, and the reduction proof imports
-`Framework/Syntax/Scope.agda`, so on the full development it also
-charges the proof half of that unit and what that half imports; the
-artifact holds only the modules that are imported, so those 65 lines are
-not here. Every other number is the paper's.
+The script on the full development (`loc.py --tables`) prints the same
+two tables.
 
 ## The audit surface
 

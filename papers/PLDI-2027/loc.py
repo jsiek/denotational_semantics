@@ -19,6 +19,7 @@ errors).  Further tables:
                 the other passes by the interpreters, joined by a bridge
   --scott       the fifth ISWIMμ column, denotational: Scott domains,
                 against the graph model, row by row
+  --tables      Tables 1 and 2 of the paper, as the paper shows them
   --artifact    Tables 1 and 2 of the paper only (the five proofs, and the
                 infrastructure each relies on), for the exported artifact
                 (artifact/export.py), which has only the import closure of
@@ -927,7 +928,25 @@ class Count:
         self.own = {s: {un for un, (side, _) in group_of.items() if s in sides_of(side)} for s in allsides}
         self.infra = {un for un, (side, _) in group_of.items() if side == 'infra'}
         self.reach = {s: reachable(self.own[s], self.graph) for s in allsides}
+        # the import closure of each proof, file by file: the infrastructure
+        # it is charged for is the files of it that it imports, so a proof
+        # that imports only the definitions half of a split module is not
+        # charged for its proof/ half, nor for what that half imports
+        self.freach = {s: self.closure(f for un in self.own[s] for f in files_of_unit[un])
+                       for s in allsides}
         self.check()
+
+    def closure(self, files):
+        """The files reachable from files through imports (files included)."""
+        return reachable(set(files), {f: self.fgraph[f] & self.every for f in self.every})
+
+    def ilines(self, us, files):
+        """The lines of the files of units us that are in the set files."""
+        return sum(code_lines(f) for un in us for f in self.files_of_unit[un] if f in files)
+
+    def uses(self, un, files):
+        """Some file of unit un is in the set files."""
+        return any(f in files for f in self.files_of_unit[un])
 
     def ulines(self, un):
         return sum(code_lines(f) for f in self.files_of_unit[un])
@@ -1086,7 +1105,7 @@ class Count:
         print('| **total** | ' + ' | '.join(bold_min([total[s] for s in mcols])) + ' |')
         print()
 
-        reach, infra = self.reach, self.infra
+        reach, infra, fr = self.reach, self.infra, self.freach
         print(f'| language-independent infrastructure{tag(P)} (not in the totals) | lines | '
               + ' | '.join(f'used by {label(s)}' for s in mcols) + ' |')
         print('|---|---:|' + '---:|' * len(mcols))
@@ -1096,14 +1115,14 @@ class Count:
                 us = {unit(f) for f in self.files_of[(side, gname)]}
                 row = []
                 for s in mcols:
-                    n = self.lines(un for un in us if un in reach[s])
+                    n = self.ilines(us, fr[s])
                     itotal[s] += n
                     row.append(str(n) if n else '—')
                 print(f'| {gname} | {self.counts[(side, gname)]} | ' + ' | '.join(row) + ' |')
         print(f'| **total** | {self.lines(infra)} | ' + ' | '.join(str(itotal[s]) for s in mcols) + ' |')
         print()
-        print(f"Adequacy uses {self.lines(infra & reach[adeq])} lines of the infrastructure, "
-              f"{self.lines(infra & reach[adeq] - reach[sides[0]])} of them not used by the denotational proof.")
+        print(f"Adequacy uses {self.ilines(infra, fr[adeq])} lines of the infrastructure, "
+              f"{self.ilines(infra, fr[adeq] - fr[sides[0]])} of them not used by the denotational proof.")
         print()
         print(f'| adequacy{tag(P)} (denotational side only) | graph model | graph model with errors |')
         print('|---|---:|---:|')
@@ -1202,7 +1221,7 @@ class Count:
         print(f'| infrastructure module{tag(P)} | lines | used by |')
         print('|---|---:|---|')
         for un in sorted(self.infra, key=lambda x: self.display(x)):
-            users = [name(s) for s in users_of if un in reach[s]]
+            users = [name(s) for s in users_of if self.uses(un, self.freach[s])]
             print(f'| {self.display(un)} | {self.ulines(un)} | {", ".join(users) or "no proof"} |')
         print()
 
@@ -1228,7 +1247,7 @@ class Count:
         """The infrastructure each graph model reaches, by group, and what they
         share: the semantics and the correctness proofs (without adequacy), and
         then what adequacy adds, in each model."""
-        reach = self.reach
+        reach = self.freach
         den, gerr, adeq, gadeq = P['sides'][0], P['gerr'], P['adeq'], P['gadeq']
         rd = reach[adeq] - reach[den]
         ra = reach[gadeq] - reach[gerr]
@@ -1240,17 +1259,17 @@ class Count:
             if side == 'infra':
                 us = {unit(f) for f in self.files_of[(side, gname)]}
                 row = [self.lines(us),
-                       self.lines(un for un in us if un in reach[den]),
-                       self.lines(un for un in us if un in reach[gerr]),
-                       self.lines(un for un in us if un in reach[den] and un in reach[gerr]),
-                       self.lines(un for un in us if un in rd),
-                       self.lines(un for un in us if un in ra)]
+                       self.ilines(us, reach[den]),
+                       self.ilines(us, reach[gerr]),
+                       self.ilines(us, reach[den] & reach[gerr]),
+                       self.ilines(us, rd),
+                       self.ilines(us, ra)]
                 if any(row[1:]):
                     tot = [t + r for t, r in zip(tot, row)]
                     print(f'| {gname} | {row[0]} | ' + ' | '.join(str(r) if r else '—' for r in row[1:]) + ' |')
         print('| **total** | ' + ' | '.join(str(t) for t in tot) + ' |')
         ops = {unit(f) for f in self.files_of[('infra', 'graph model: its operators')]}
-        used = sorted(ops & (reach[gerr] | reach[gadeq]))
+        used = sorted(un for un in ops if self.uses(un, reach[gerr] | reach[gadeq]))
         print()
         print("The graph model with errors reuses these modules of the graph model's operators: "
               + ', '.join(f'`{modname(un)}` ({self.ulines(un)})' for un in used) + '.')
@@ -1641,8 +1660,9 @@ def mu_analyze(c):
         rows = ROWS if s not in MU_ADEQ else [g for _, g, _ in GROUPS]
         total[s] = (sum(c.counts.get((s, r)) or 0 for r in dict.fromkeys(rows))
                     + c.lines(extra[s]) + c.lines(borrowed[s]))
-    return dict(own=own, reach=reach, extra=extra, borrowed=borrowed, total=total, by_all=by_all,
-                minfra=minfra)
+    freach = {s: c.closure(f for un in own[s] for f in c.files_of_unit[un]) for s in cols}
+    return dict(own=own, reach=reach, freach=freach, extra=extra, borrowed=borrowed, total=total,
+                by_all=by_all, minfra=minfra)
 
 
 def mu_main(c, T, M):
@@ -1728,7 +1748,7 @@ def mu_main(c, T, M):
             us = {unit(f) for f in c.files_of[(side, gname)]}
             row = []
             for s in cols:
-                n = c.lines(un for un in us if un in M['reach'][s] and (s != 'mu-adeq' or un not in M['reach']['mu-den']))
+                n = c.ilines(us, M['freach'][s] - (M['freach']['mu-den'] if s == 'mu-adeq' else set()))
                 itotal[s] += n
                 row.append(str(n) if n else '—')
             if any(r != '—' for r in row):
@@ -1773,7 +1793,7 @@ def mu_modules(c, M):
     print('| infrastructure module (ISWIMμ) | lines | used by |')
     print('|---|---:|---|')
     for un in sorted(c.infra | M['minfra'], key=lambda x: c.display(x)):
-        users = [any_name(s) for s in cols if un in reach[s]]
+        users = [any_name(s) for s in cols if c.uses(un, M['freach'][s])]
         if users:
             print(f'| {c.display(un)} | {c.ulines(un)} | {", ".join(users)} |')
     print()
@@ -1830,8 +1850,9 @@ def mixed_analyze(c, M):
     borrowed = {un for un in reach if not c.group_of[un][0].startswith('mu-')
                 and un not in c.infra and un not in shared}
     total = sum(rows.values()) + c.lines(extra) + c.lines(borrowed)
-    infra = c.lines(un for un in reach if un in c.infra | M['minfra'])
-    pure_infra = {s: c.lines(un for un in M['reach'][s] if un in c.infra | M['minfra']) for s in ('mu-den', 'mu-ck')}
+    fmix = c.closure(f for un in reach if c.group_of[un][0] == 'mu-mix' for f in c.files_of_unit[un])
+    infra = c.ilines(c.infra | M['minfra'], fmix)
+    pure_infra = {s: c.ilines(c.infra | M['minfra'], M['freach'][s]) for s in ('mu-den', 'mu-ck')}
     # the estimated splits
     core = c.lines(un for un in reach if c.group_of[un] == ('mu-adeq', 'ISWIM'))
 
@@ -2109,11 +2130,18 @@ def typetopology_counts():
         if f in seen:
             continue
         seen[f] = code_of(f)
-        for m in re.findall(r'^\s*(?:open\s+)?import\s+([\w.]+)', seen[f], re.M):
+        for m in re.findall(r'^\s*(?:open\s+)?import\s+([^\s;(){}]+)', seen[f], re.M):
             q = find(m)
             if q and q not in seen:
                 todo.append(q)
     mods, lines_ = {}, {}
+    if ARTIFACT:
+        # the artifact vendors exactly the modules the Scott column imports
+        vendored = {os.path.join(r, n) for r, _, ns in os.walk(TT_SOURCE) for n in ns}
+        found = {f for f in seen if f.startswith(TT_SOURCE)}
+        if vendored != found:
+            sys.exit('the vendored TypeTopology is not the closure of agda/AllScott.agda:\n  '
+                     + '\n  '.join(sorted(vendored ^ found)))
     for f, t in seen.items():
         if f.startswith(TT_SOURCE):
             top = f[len(TT_SOURCE) + 1:].split('/')[0]
@@ -2180,7 +2208,7 @@ def artifact_tables(c, M):
             seen_groups.append((side, gname))
             us = {unit(f) for f in c.files_of[(side, gname)]}
             for s in MU_SIDES:
-                infra[s] += c.lines(un for un in us if un in M['reach'][s])
+                infra[s] += c.ilines(us, M['freach'][s])
     tt = typetopology_counts()
     if tt is None:
         sys.exit(f'TypeTopology not found at {TT_SOURCE}')
@@ -2243,6 +2271,9 @@ def main():
         assurance(c)
         return
     M = mu_analyze(c)
+    if '--tables' in args:
+        artifact_tables(c, M)
+        return
     if '--scott' in args:
         print('## ISWIMμ in Scott domains, against the graph model')
         print()
