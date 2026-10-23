@@ -379,27 +379,28 @@ of value it is, and the payload holds its contents:
 where $\mathbf{1}$ is the one-point domain and $[\mathbb{D} \to \mathbb{D}]$
 the domain of continuous functions. The least element $\bot$ of $\mathbb{D}$ means divergence;
 a value $d$ is \emph{defined} when $d \neq \bot$. We write $t(x)$ for the
-value with tag $t$ and payload $x$. As in the graph model, the operators are strict; they are also continuous:
-\begin{itemize}
-\item $\Lambda(g) = \mathit{fun}(g')$, where $g'$ agrees with $g$ on
-  defined values and maps $\bot$ to $\bot$; and $\mathsf{app}(d, e) =
-  h(e)$ if $d = \mathit{fun}(h)$ and $e$ is defined, and $\bot$
-  otherwise;
-\item $\mathcal{T}(d_1, \ldots, d_n) = \mathit{tup}_n(d_1, \ldots,
-  d_n)$ if every $d_i$ is defined, and $\bot$ otherwise; and
-  $\pi_{\mathsf{tup}_i}(d) = d_i$ if $d = \mathit{tup}_n(d_1, \ldots,
-  d_n)$, and $\bot$ otherwise;
-\item $\mathsf{pair}$, $\car$, and $\cdr$ likewise, with the tag
-  $\mathit{pr}$;
-\item $\mathsf{inl}(d) = \mathit{left}(d)$ and $\mathsf{inr}(d) =
-  \mathit{right}(d)$ if $d$ is defined, and $\bot$ otherwise; and
-  $\mathsf{cases}(d, f, g)$ is $f(e)$ if $d = \mathit{left}(e)$, $g(e)$
-  if $d = \mathit{right}(e)$, and $\bot$ otherwise;
-\item $\mathsf{prim}_p(d, e) = \delta_p(n, m)$ if $d = n$ and $e = m$
-  are integers, and $\bot$ otherwise, where the Boolean results are
-  $\mathsf{inl}(\mathit{tup}_0())$ and $\mathsf{inr}(\mathit{tup}_0())$;
-\item $\mathsf{seq}(d, e) = e$ if $d$ is defined, and $\bot$ otherwise.
-\end{itemize}
+value with tag $t$ and payload $x$. As in the graph model, the operators are
+strict, and each of them is also continuous. We define them as follows,
+where $g'$ is the strict function that agrees with $g$ on defined
+values and maps $\bot$ to $\bot$.
+\begin{align*}
+  \Lambda(g) &= \mathit{fun}(g') \\
+  \mathsf{app}(d, e) &= h(e) &&\text{if } d = \mathit{fun}(h) \text{ and } e \text{ is defined} \\
+  \mathcal{T}(d_1, \ldots, d_n) &= \mathit{tup}_n(d_1, \ldots, d_n) &&\text{if every } d_i \text{ is defined} \\
+  \pi_{\mathsf{tup}_i}(d) &= d_i &&\text{if } d = \mathit{tup}_n(d_1, \ldots, d_n) \\
+  \mathsf{pair}(d, e) &= \mathit{pr}(d, e) &&\text{if } d \text{ and } e \text{ are defined} \\
+  \car(d) &= d_1 &&\text{if } d = \mathit{pr}(d_1, d_2) \\
+  \cdr(d) &= d_2 &&\text{if } d = \mathit{pr}(d_1, d_2) \\
+  \mathsf{inl}(d) &= \mathit{left}(d) &&\text{if } d \text{ is defined} \\
+  \mathsf{inr}(d) &= \mathit{right}(d) &&\text{if } d \text{ is defined} \\
+  \mathsf{cases}(d, f, g) &= f(e) &&\text{if } d = \mathit{left}(e) \\
+   &= g(e) &&\text{if } d = \mathit{right}(e) \\
+  \mathsf{prim}_p(d, e) &= \delta_p(n, m) &&\text{if } d = n \text{ and } e = m \text{ are integers} \\
+  \mathsf{seq}(d, e) &= e &&\text{if } d \text{ is defined}
+\end{align*}
+In every case that the equations do not cover, the result is $\bot$.
+The Boolean results of $\delta_{\kw{eq}}$ are
+$\mathsf{inl}(\mathit{tup}_0())$ and $\mathsf{inr}(\mathit{tup}_0())$.
 An environment maps variables to values, and the environment $\rho_0$
 of a closed program maps every variable to the empty tuple
 $\mathit{tup}_0()$.
