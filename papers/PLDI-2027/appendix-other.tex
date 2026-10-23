@@ -60,10 +60,7 @@ $\kw{inr}\,\kw{tup}()$ otherwise.
 \paragraph{Machines}
 
 A machine is a set of states, a start state, and a step function that
-maps each state $s$ either to a next state, written $s \longrightarrow
-s'$, or to a final observation, written $s \Downarrow o$. A machine
-\emph{terminates with} $o$ when a sequence of steps leads from the start
-state to a state $s$ with $s \Downarrow o$, and it \emph{diverges} when
+maps each state $s$ either to a next state, written $s \longrightarrow s'$, or to a final observation $o$, written $s \longrightarrow \mathsf{stop}(o)$. A machine \emph{terminates with} $o$ when a sequence of steps leads from the start state to a state $s$ with $s \longrightarrow \mathsf{stop}(o)$, and it \emph{diverges} when
 for every $n$ there is a sequence of $n$ steps from the start state.
 
 \paragraph{Clocked interpreters}
@@ -210,7 +207,7 @@ The machine steps by:
   \mathit{eval}(\kw{case}\;L\;(x.\,M)\;(y.\,N), \rho, \kappa) &\longrightarrow \mathit{eval}(L, \rho, \mathit{caseK}(x.\,M, y.\,N, \rho, \kappa)) \\
   \mathit{eval}(\kw{prim}_p\;L\;M, \rho, \kappa) &\longrightarrow \mathit{eval}(L, \rho, \mathit{primL}_p(M, \rho, \kappa)) \\
   \mathit{eval}(\kw{let}\;x = M\;\kw{in}\;N, \rho, \kappa) &\longrightarrow \mathit{eval}(M, \rho, \mathit{letK}(x.\,N, \rho, \kappa)) \\[4pt]
-  \mathit{ret}(v, \mathit{halt}) &\Downarrow \mathit{obs}(v) \\
+  \mathit{ret}(v, \mathit{halt}) &\longrightarrow \mathsf{stop}(\mathit{obs}(v)) \\
   \mathit{ret}(f, \mathit{appL}(M, \rho, \kappa)) &\longrightarrow \mathit{eval}(M, \rho, \mathit{appR}(f, \kappa)) \\
   \mathit{ret}(w, \mathit{appR}(\langle \lambda x.\,N, \rho\rangle, \kappa)) &\longrightarrow \mathit{eval}(N, \rho[x{:=}w], \kappa) \\
   \mathit{ret}(v, \mathit{tupK}(\vec{v}, (), \rho, \kappa)) &\longrightarrow \mathit{ret}(\kw{tup}(\vec{v}, v), \kappa) \\
@@ -240,7 +237,7 @@ sequence, its blocks, and its frame. In the notation of Appendix~\ref{app:interp
     \qquad\text{for $i$ not $\kw{callq}$} \\
   \mathit{run}(\kw{callq}\; a;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s_f, B_f, (\mathit{retK}(s, B, \sigma), \Sigma), m_{e,w}) \\
  & \quad\text{where } \mathit{arg}(a, m) = \kw{code}\,f,\ e = m(\kw{rdi}),\ w = m(\kw{rsi}) \\
-  \mathit{run}(\kw{retq}, B, \mathit{halt}, m) &\Downarrow \mathit{obs}(m(\kw{rax})) \\
+  \mathit{run}(\kw{retq}, B, \mathit{halt}, m) &\longrightarrow \mathsf{stop}(\mathit{obs}(m(\kw{rax}))) \\
   \mathit{run}(\kw{retq}, B, (\mathit{retK}(s, B', \sigma'), \Sigma), m) &\longrightarrow \mathit{run}(s, B', \Sigma, m') \\
  & \quad\text{where $m'$ has the frame $\sigma'$ and only $\kw{rax}$ set, to $m(\kw{rax})$} \\
   \mathit{run}(\kw{jmp}\;l, B, \Sigma, m) &\longrightarrow \mathit{run}(s_l, B_l, \Sigma, m_\sigma) \\
@@ -302,8 +299,7 @@ reduction to the whole term. The equations above are that definition
 with the combinator unfolded.} The reduction semantics of a closed
 program $M$ is the machine whose states are closed terms, which starts
 at $M$, steps $M \longrightarrow M'$ when $\mathit{red}(M) =
-\mathsf{to}\,M'$, and stops with $M \Downarrow \mathit{obs}(M)$ when
-$M$ is a value.
+\mathsf{to}\,M'$, and steps $M \longrightarrow \mathsf{stop}(\mathit{obs}(M))$ when $M$ is a value.
 
 The first-order languages Imp, CFG, and x86$\mu$ have no binders, so
 the reduction-semantics development uses the machines of
