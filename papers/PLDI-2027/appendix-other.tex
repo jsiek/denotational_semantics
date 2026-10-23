@@ -61,7 +61,11 @@ $\kw{inr}\,\kw{tup}()$ otherwise.
 
 A machine is a set of states, a start state, and a step function that
 maps each state $s$ either to a next state, written $s \longrightarrow s'$, or to a final observation $o$, written $s \longrightarrow \mathsf{stop}(o)$. A machine \emph{terminates with} $o$ when a sequence of steps leads from the start state to a state $s$ with $s \longrightarrow \mathsf{stop}(o)$, and it \emph{diverges} when
-for every $n$ there is a sequence of $n$ steps from the start state.
+for every $n$ there is a sequence of $n$ steps from the start state. We use the same notation for each machine; the CEK
+machines of \iswim\ and x86$\mu$ (Appendix~\ref{app:machines}) and
+the reduction semantics of \iswim\ (Appendix~\ref{app:reduction})
+each define their own $\longrightarrow$ and $\longrightarrow
+\mathsf{stop}$.
 
 \paragraph{Clocked interpreters}
 
@@ -89,7 +93,8 @@ equivalent.
 \paragraph{\iswim}
 
 The interpreter $\mathit{eval}_k(\rho, M)$ evaluates a term $M$ in an
-environment $\rho$ of values at clock $k$. The clock ticks at each call:
+environment $\rho$ of values at clock $k$. The clock ticks at each call.
+\defhead{The interpreter of \iswim}{\mathit{eval}_k(\rho, M) \qquad \mathit{call}_k(f, w)}
 \begin{align*}
   \mathit{eval}_k(\rho, x) &= \mathsf{ret}\,\rho(x) \\
   \mathit{eval}_k(\rho, \lambda x.\,N) &= \mathsf{ret}\,\langle \lambda x.\,N, \rho\rangle \\
@@ -131,7 +136,8 @@ $\mathit{obj}(\kw{pair}(a_1, a_2), m) = \kw{pack}(\mathit{arg}(a_1, m),
 $\mathit{put}(d, v, m)$ sets a register, or, for a slot $x$, extends
 the frame cut at $x$ with $v$, $\sigma|_x[x{:=}v]$, and closes the open
 closure, as in the graph-model semantics. The instructions update the
-state:
+state.
+\defhead{The effect of an instruction}{\mathit{instr}(i, m)}
 \begin{align*}
   \kw{movq}\; a, d &: \mathit{put}(d, \mathit{arg}(a, m), m) \\
   \kw{subq}\; a, \%r &: \mathit{put}(\%r, \delta_{\kw{sub}}(m(r), \mathit{arg}(a, m)), m) \\
@@ -147,7 +153,8 @@ where $\kw{fst}$ also unsets the registers that held the code or the
 environment of an earlier open closure. Write $\mathit{instr}(i, m)$
 for the state that an instruction $i$ other than $\kw{callq}$ leaves.
 The interpreter $\mathit{run}_k(B, m, s)$ runs a sequence $s$ with
-blocks $B$ in the state $m$:
+blocks $B$ in the state $m$.
+\defhead{The interpreter of x86$\mu$}{\mathit{run}_k(B, m, s) \qquad \mathit{jump}_k(B, l, \sigma) \qquad \mathit{call}_k(c, e, w)}
 \begin{align*}
   \mathit{run}_k(B, m, i;\; s) &= \mathit{run}_k(B, \mathit{instr}(i, m), s)
     \qquad\text{for $i$ not $\kw{callq}$} \\
@@ -185,7 +192,8 @@ The CEK machine of \iswim\ evaluates a term $M$ in an environment $\rho$
 with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or
 returns a value $v$ to a continuation, $\mathit{ret}(v, \kappa)$. A
 continuation is a stack of frames, each of which says what to do with
-the value of a subterm:
+the value of a subterm.
+\defhead{Continuations}{\kappa}
 \begin{align*}
   \kappa &::= \mathit{halt} \mid \mathit{appL}(M, \rho, \kappa) \mid \mathit{appR}(f, \kappa)
     \mid \mathit{tupK}(\vec{v}, \vec{M}, \rho, \kappa) \mid \mathit{getK}_i(\kappa)
@@ -194,7 +202,7 @@ the value of a subterm:
     \mid \mathit{primR}_p(n, \kappa) \\
  &\mid \mathit{letK}(x.\,N, \rho, \kappa) \mid \mathit{foldK}(\kappa) \mid \mathit{unfoldK}(\kappa)
 \end{align*}
-The machine steps by:
+\defhead{Steps of the CEK machine of \iswim}{s \longrightarrow s'}
 \begin{align*}
   \mathit{eval}(x, \rho, \kappa) &\longrightarrow \mathit{ret}(\rho(x), \kappa) \\
   \mathit{eval}(\lambda x.\,N, \rho, \kappa) &\longrightarrow \mathit{ret}(\langle \lambda x.\,N, \rho\rangle, \kappa) \\
@@ -207,7 +215,6 @@ The machine steps by:
   \mathit{eval}(\kw{case}\;L\;(x.\,M)\;(y.\,N), \rho, \kappa) &\longrightarrow \mathit{eval}(L, \rho, \mathit{caseK}(x.\,M, y.\,N, \rho, \kappa)) \\
   \mathit{eval}(\kw{prim}_p\;L\;M, \rho, \kappa) &\longrightarrow \mathit{eval}(L, \rho, \mathit{primL}_p(M, \rho, \kappa)) \\
   \mathit{eval}(\kw{let}\;x = M\;\kw{in}\;N, \rho, \kappa) &\longrightarrow \mathit{eval}(M, \rho, \mathit{letK}(x.\,N, \rho, \kappa)) \\[4pt]
-  \mathit{ret}(v, \mathit{halt}) &\longrightarrow \mathsf{stop}(\mathit{obs}(v)) \\
   \mathit{ret}(f, \mathit{appL}(M, \rho, \kappa)) &\longrightarrow \mathit{eval}(M, \rho, \mathit{appR}(f, \kappa)) \\
   \mathit{ret}(w, \mathit{appR}(\langle \lambda x.\,N, \rho\rangle, \kappa)) &\longrightarrow \mathit{eval}(N, \rho[x{:=}w], \kappa) \\
   \mathit{ret}(v, \mathit{tupK}(\vec{v}, (), \rho, \kappa)) &\longrightarrow \mathit{ret}(\kw{tup}(\vec{v}, v), \kappa) \\
@@ -222,6 +229,10 @@ The machine steps by:
   \mathit{ret}(v, \mathit{letK}(x.\,N, \rho, \kappa)) &\longrightarrow \mathit{eval}(N, \rho[x{:=}v], \kappa) \\
   \mathit{ret}(\kw{fold}\,v, \mathit{unfoldK}(\kappa)) &\longrightarrow \mathit{ret}(v, \kappa)
 \end{align*}
+\defhead{Final observation of the CEK machine of \iswim}{s \longrightarrow \mathsf{stop}(o)}
+\[
+  \mathit{ret}(v, \mathit{halt}) \longrightarrow \mathsf{stop}(\mathit{obs}(v))
+\]
 The machine of a closed program $M$ starts in
 $\mathit{eval}(M, \emptyset, \mathit{halt})$.
 
@@ -231,13 +242,14 @@ The machine of x86$\mu$ runs a sequence $s$ with blocks $B$, a stack
 $\Sigma$ of the callers' return points, and a machine state $m$ as in
 Appendix~\ref{app:interp}, $\mathit{run}(s, B, \Sigma, m)$. A return
 point $\mathit{retK}(s, B, \sigma)$ holds the rest $s$ of the caller's
-sequence, its blocks, and its frame. In the notation of Appendix~\ref{app:interp}, its steps are:
+sequence, its blocks, and its frame. The steps use the notation of
+Appendix~\ref{app:interp}.
+\defhead{Steps of the machine of x86$\mu$}{s \longrightarrow s'}
 \begin{align*}
   \mathit{run}(i;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s, B, \Sigma, \mathit{instr}(i, m))
     \qquad\text{for $i$ not $\kw{callq}$} \\
   \mathit{run}(\kw{callq}\; a;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s_f, B_f, (\mathit{retK}(s, B, \sigma), \Sigma), m_{e,w}) \\
  & \quad\text{where } \mathit{arg}(a, m) = \kw{code}\,f,\ e = m(\kw{rdi}),\ w = m(\kw{rsi}) \\
-  \mathit{run}(\kw{retq}, B, \mathit{halt}, m) &\longrightarrow \mathsf{stop}(\mathit{obs}(m(\kw{rax}))) \\
   \mathit{run}(\kw{retq}, B, (\mathit{retK}(s, B', \sigma'), \Sigma), m) &\longrightarrow \mathit{run}(s, B', \Sigma, m') \\
  & \quad\text{where $m'$ has the frame $\sigma'$ and only $\kw{rax}$ set, to $m(\kw{rax})$} \\
   \mathit{run}(\kw{jmp}\;l, B, \Sigma, m) &\longrightarrow \mathit{run}(s_l, B_l, \Sigma, m_\sigma) \\
@@ -245,6 +257,10 @@ sequence, its blocks, and its frame. In the notation of Appendix~\ref{app:interp
  & \quad\text{if } \sigma(x) = \kw{inl}\,v \\
  & \text{(and likewise for $\kw{inr}$ and $l_2$)}
 \end{align*}
+\defhead{Final observation of the machine of x86$\mu$}{s \longrightarrow \mathsf{stop}(o)}
+\[
+  \mathit{run}(\kw{retq}, B, \mathit{halt}, m) \longrightarrow \mathsf{stop}(\mathit{obs}(m(\kw{rax})))
+\]
 The machine of a program starts in $\mathit{run}(s, B, \mathit{halt},
 m_0)$ for the main function body $s$ with blocks $B$.
 
@@ -265,7 +281,8 @@ The function $\mathit{red}(M)$ says whether a closed term $M$ is a
 value ($\mathsf{val}$) or reduces to a term $M'$ ($\mathsf{to}\,M'$).
 In each case below, the subterms are reduced left to right. A subterm
 that reduces makes the whole term reduce in the same position, and once
-the subterms are values the term takes its own step:
+the subterms are values the term takes its own step.
+\defhead{One reduction of a closed term}{\mathit{red}(M)}
 \begin{align*}
   \mathit{red}(V) &= \mathsf{val} \\
   \mathit{red}(L\;M) &= \mathsf{to}\,(L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
@@ -297,9 +314,14 @@ term is, and it writes the cases that reduce a subterm with one
 combinator, $\mathit{step\text{-}in}$, that propagates a subterm's
 reduction to the whole term. The equations above are that definition
 with the combinator unfolded.} The reduction semantics of a closed
-program $M$ is the machine whose states are closed terms, which starts
-at $M$, steps $M \longrightarrow M'$ when $\mathit{red}(M) =
-\mathsf{to}\,M'$, and steps $M \longrightarrow \mathsf{stop}(\mathit{obs}(M))$ when $M$ is a value.
+program $M$ is the machine whose states are closed terms and which
+starts at $M$.
+\defhead{Steps and final observation of the reduction semantics}{M \longrightarrow M' \qquad M \longrightarrow \mathsf{stop}(o)}
+\[
+  M \longrightarrow M' \ \text{ if } \mathit{red}(M) = \mathsf{to}\,M'
+  \qquad\qquad
+  M \longrightarrow \mathsf{stop}(\mathit{obs}(M)) \ \text{ if } \mathit{red}(M) = \mathsf{val}
+\]
 
 The first-order languages Imp, CFG, and x86$\mu$ have no binders, so
 the reduction-semantics development uses the machines of
