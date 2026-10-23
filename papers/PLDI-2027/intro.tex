@@ -8,31 +8,36 @@
 \label{sec:intro}
 
 
-Denotational semantics offers an account of compiler
-correctness: the meaning of a program is a mathematical object, so a
-compiler pass is correct when the meaning of a program before the pass
-equals its meaning afterward, and the proof is equational reasoning.
-This recipe guided early denotational proofs of compiler correctness
+Denotational semantics offers an account of compiler correctness: the
+meaning of a program is a mathematical object, so a compiler pass is
+correct when the meaning of a program before the pass equals its
+meaning afterward, and the proof is equational reasoning.  This recipe
+guided early denotational proofs of compiler correctness
 \citep{Polak:1981aa,Clinger:1984aa}, but becomes difficult when
-compilation changes the representation of program values. For example, compiling first-class, lexically scoped functions to a first-order target language, such as assembly, requires \emph{closure conversion}, which replaces each function with a
-pair of a code pointer and the values of its free variables, and
-replaces each call with code that takes the pair apart and jumps to
-the code pointer. It therefore turns functions into data, and a
-correctness proof must relate two different views of what a function
-is.
+compilation changes the representation of program values. For example,
+compiling first-class, lexically scoped functions to a first-order
+target language, such as assembly, requires \emph{closure conversion},
+which replaces each function with a pair of a code pointer and the
+values of its free variables, and replaces each call with code that
+takes the pair apart and jumps to the code pointer. It therefore turns
+functions into data, and a correctness proof must relate the two
+different representations.
 
-A correct compiler must keep every answer of the source program and
-produce only those answers. \emph{Semantic preservation} says that whatever the source
-program computes, the compiled program computes; \emph{semantic
-reflection} says the converse. By contraposition, reflection
-guarantees that a diverging source program compiles to a diverging
-target program.  Establishing this guarantee denotationally for
-closure conversion is the hard part.  After closure conversion, the
-meaning of a function's code describes its behavior on every
-environment, not just the environment with which the compiled program
-pairs it. The target denotation therefore contains code--environment
-combinations that correspond to no source function, and a reflection
-proof must show that these combinations never contribute an answer.
+A correct compiler must both preserve the behavior of the source
+program and reflect the behavior of the compiled program. To be
+precise, \emph{semantic preservation} says that if the source program
+produces output, the target program produces the same output;
+\emph{semantic reflection} says that if the target program produces
+output, the source programs produces the same output. By
+contraposition, reflection guarantees that a diverging source program
+compiles to a diverging target program.  Establishing semantic
+reflection denotationally for closure conversion is the hard part.
+After closure conversion, the meaning of a function's code describes
+its behavior on every environment, not just the environment with which
+the compiled program pairs it. The target denotation therefore
+contains code--environment combinations that correspond to no source
+function, and a reflection proof must show that these combinations
+never contribute an answer.
 
 These challenges motivate five research questions:
 \begin{description}
@@ -66,7 +71,7 @@ elements (a finite approximation), which contains both halves of each
 call it describes, to the whole source denotation, and define the
 relation by recursion on the depth of the elements in the finite set.
 This definition is well founded without recursion on types or an index
-that counts steps of computation. To our knowledge, this is the first relation between two denotational semantics indexed by finite approximations of one side only.
+that counts steps of computation.
 
 We use this closure-conversion result in the correctness proof of a
 ten-pass compiler from a call-by-value $\lambda$-calculus with
@@ -78,7 +83,8 @@ modeled on the cp0 pass of Chez Scheme \citep{Waddell:1997fk}, then
 performs closure conversion in four passes, and finally uses five
 passes to make functions global, remove complex operands, lift locals,
 make control flow explicit, and select instructions. Every language in
-the compiler has a denotational semantics. We prove most passes correct by an equation between the denotations before and after the
+the compiler has a denotational semantics. We prove most passes
+correct by an equation between the denotations before and after the
 pass. RQ3 nevertheless has a negative answer. The pass that lowers
 closures to code and environment pairs, which we call \pass{delay},
 does not yield to equational reasoning; its reflection proof uses the
@@ -86,9 +92,11 @@ approximant logical relation discussed above.
 
 The whole-compiler correctness theorem states that the source and
 target denotations contain the same constants and are nonempty
-together. We also prove that the denotational semantics of
-\iswim\ and of the assembly language are adequate with respect to
-the interpreters for those languages. Our correctness theorem is therefore equivalent to the usual operational one.  We mechanize all of these results in Agda.
+together. We also prove that the denotational semantics of \iswim\ and
+of the assembly language are adequate with respect to the interpreters
+for those languages. Our correctness theorem is therefore equivalent
+to the usual operational one.  We mechanize all of these results in
+Agda.
 
 In a graph model, each graph element is a finite piece of evidence
 about a program's behavior, the meaning of a function is a set of
@@ -120,19 +128,27 @@ of correctness (that is, both directions) for ordinary or CFA-based
 defunctionalization in the presence of recursion.''
 
 Other denotational compiler proofs for source languages that admit
-divergence avoid closure conversion. Some concern compilers for first-order languages. \citet{Polak:1981aa} considers a subset of Pascal,
-\citet{Xia:2019aa} use interaction trees for a compiler from an
-imperative language to assembly, and \citet{Cheng:2026aa} use sets of
-behaviors for the front end of CompCert. Others concern compilers whose target languages support closures directly, such as those of \citet{Clinger:1984aa}, Guttman, Ramsdell, and Wand \citeyearpar{Guttman:1995aa}, and \citet{Benton:2009aa}.
+divergence avoid closure conversion. Some of those proofs are about
+compilers for first-order languages. \citet{Polak:1981aa} considers a
+subset of Pascal, \citet{Xia:2019aa} use interaction trees for a
+compiler from an imperative language to assembly, and
+\citet{Cheng:2026aa} use sets of behaviors for the front end of
+CompCert. Other proofs are about compilers whose target languages
+support closures directly, such as those of \citet{Clinger:1984aa}
+and \citet{Benton:2009aa}.
 
-Operational proofs handle closure conversion with recursion,
-with simulations (CompCert \citep{Leroy:2009aa}), clocked big-step
-semantics (CakeML \citep{Kumar:2014aa}), or step-indexed logical
-relations (CertiCoq \citep{Paraskevopoulou:2019aa}). When
-\citet{Chlipala:2010aa} built a compiler for an untyped language with
-general recursion, he switched to operational semantics, explaining
-that the approach of his 2007 compiler ``cannot be applied directly to
-Turing-complete programming languages.'' We know of no prior denotational proof of closure conversion for a language with general recursion that both preserves and reflects divergence.
+On the operational side, we now have many proofs of compiler
+correctness that handle closure conversion in languages with
+recursion~\citep{Dargaye:2009aa}. The now standard proof techniques
+include using simulations (CompCert \citep{Leroy:2009aa}), relations
+on values and states (CakeML \citep{Kumar:2014aa}), or step-indexed
+logical relations (CertiCoq \citep{Paraskevopoulou:2019aa}). When
+\citet{Chlipala:2010aa} proved correctness of a compiler for a
+language with general recursion, he switched to operational semantics,
+explaining that the approach of his 2007 compiler ``cannot be applied
+directly to Turing-complete programming languages.'' We know of no
+prior denotational proof of closure conversion for a language with
+general recursion that both preserves and reflects divergence.
 
 Finally, to answer RQ2, RQ4, and RQ5, which depend on comparing the
 graph-model proof with other styles, we prove the same compiler
