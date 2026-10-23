@@ -3,11 +3,11 @@
 
 Denotational semantics promises compositional, equational reasoning
 about programs, and compiler correctness was among its first
-applications, yet most verified compilers today are proved with
-respect to operational semantics. The denotational compiler proofs in
-the literature either (1) are limited to source languages that are
-first-order or strongly normalizing, (2) compile to target languages
-that treat closures as primitive values and so avoid closure
+applications, yet most verified compilers today are proved correct
+with respect to operational semantics. The denotational compiler
+proofs in the literature either (1) are limited to source languages
+that are first-order or strongly normalizing, (2) compile to target
+languages that treat closures as primitive values and so avoid closure
 conversion, or (3) prove only semantic preservation and not
 reflection, which does not rule out a diverging program compiling to
 one that terminates. We use a denotational semantics based on a graph
