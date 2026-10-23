@@ -2,21 +2,46 @@
 
   ISWIMμ: a typed ISWIM with iso-recursive types (no recursion
   construct, no errors) and its compiler to the typed assembly language
-  X86μ, proved correct in four styles, in parallel with the typed
-  pipeline's proofs (agda/All.agda); the main experiment of the size
-  comparison (papers/PLDI-2027/loc.md, and the design note,
-  papers/PLDI-2027/notes/iswim-mu-design.md).
+  X86μ, proved correct in five styles: the development of the PLDI 2027
+  paper. Mu/README.md is the road map from the paper to this code.
 
-    ISWIMμ --simplify--> ISWIMμ --enclose--> Clos2μ --optimize--> Clos2μ
-           --concretize--> Clos3μ --delay--> Clos4μ --globalize--> Clos5μ --rco--> Monμ
-           --lift locals--> Impμ --explicate control--> CFGμ
-           --select instructions--> X86μ
+    ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
+           --concretize--> EnvClosμ --delay--> FlatClosμ
+           --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
+           --explicate control--> CFGμ --select instructions--> X86μ
 
-  The public theorem statements are in Mu/Theorems/ (Denotational,
-  Simulation, Interpreter, Reduction, Adequacy), each with its type
-  written out and defined as the corresponding theorem of Mu/proof/; they
-  and the definitions they use (everything in Mu/ outside Mu/proof/) are
-  ISWIMμ's audit surface.
+  The theorem statements are in Mu/Theorems/, one file per style, each
+  theorem with its type written out and defined as the corresponding
+  theorem of Mu/proof/; they and the definitions they use (modules
+  outside Mu/proof/) are ISWIMμ's audit surface.
+
+  * graph model: Mu/Theorems/GraphModel.agda (Theorems 4.1 and 4.4),
+    proved in Mu/proof/Correctness/GraphModel/, with delay by the
+    approximant logical relation (DelayRel.agda);
+  * abstract machines + simulation: Mu/Theorems/AbstractMachines.agda
+    (Theorem F.2), Mu/proof/Correctness/AbstractMachines/;
+  * clocked interpreters + value relations:
+    Mu/Theorems/ClockedInterpreters.agda (Theorem F.1),
+    Mu/proof/Correctness/ClockedInterpreters/;
+  * reduction semantics + simulation:
+    Mu/Theorems/ReductionSemantics.agda (Theorem F.3),
+    Mu/proof/Correctness/ReductionSemantics/;
+  * Scott domains: Mu/Theorems/ScottDomains.agda (Theorem F.4),
+    Mu/proof/Correctness/ScottDomains/; it needs TypeTopology, so it is
+    checked from agda/AllScott.agda (make check-scott), not from here;
+  * adequacy of the graph model for the clocked interpreters of ISWIMμ
+    and X86μ: Mu/Theorems/Adequacy.agda (Theorem 4.5),
+    Mu/proof/Adequacy/; an alternative, reported separately, against the
+    abstract machines instead: Mu/proof/Adequacy/AbstractMachines/;
+  * the two Agda checks of the paper's §4.2 ("Which sides to relate"):
+    a finite source side cannot satisfy the function clause of delay's
+    relation (Mu/proof/Correctness/GraphModel/DelayDesignFiniteSource.agda),
+    and delay's relation on target sets of bounded depth is the
+    relation on their finite sublists
+    (Mu/proof/Correctness/GraphModel/DelayDesignBoundedSets.agda).
+
+  The experiment of mixing semantics is not part of the paper; it is
+  checked from Mu/Experiments.agda.
 
   agda/Mu/ mirrors agda/: Mu/X.agda corresponds to X.agda (with
   Language/Typed/ as Mu/Language/ and Semantics/<style>/Typed/ as
@@ -25,56 +50,26 @@
   (with Mu/proof/Framework/AllProp.agda) adds heterogeneous vectors
   (All), which the lists of types of ISWIMμ's contexts and tuples need.
 
-  * graph model: Mu/proof/Correctness/Graph/CompilerCorrect.agda
-    (compile-x86-same, and compile-x86-int for main : Int), with delay
-    by the approximant logical relation
-    (Mu/proof/Correctness/Graph/DelayRel.agda);
-  * CEK machine + simulation: Mu/proof/Correctness/CEK/PipelineSim.agda
-    (compile-x86-correct, and compile-x86-const and
-    compile-x86-diverges for main : Int);
-  * clocked interpreter + value relations:
-    Mu/proof/Correctness/Interp/CompilerFuel.agda (compile-x86-correct,
-    and compile-x86-const and compile-x86-diverges for main : Int);
-  * reduction semantics + simulation:
-    Mu/proof/Correctness/Reduction/PipelineRed.agda (likewise);
-  * adequacy of the graph model for the clocked interpreters of ISWIMμ
-    and X86μ: Mu/proof/Adequacy/EndToEnd.agda (the graph model's
-    end-to-end theorem, observed through the interpreters: the
-    operational styles' statement for main : Int); an alternative,
-    reported separately, against the CEK machines instead:
-    Mu/proof/Adequacy/CEK/EndToEnd.agda;
-  * mixing semantics (an experiment): simplify in the graph model and
-    the other passes by the interpreters, joined at ISWIMμ by the
-    adequacy of its graph semantics for its interpreter
-    (Mu/proof/Adequacy/ISWIM.agda): Mu/proof/Mixed/CompilerMixed.agda
-    (the interpreter column's compile-x86-const and
-    compile-x86-diverges for main : Int);
-  * a design experiment, in no proof's total: delay's relation on
-    target sets of bounded depth, which is the relation on their finite
-    sublists (Mu/proof/Correctness/Graph/DelayDesignBoundedSets.agda).
-
 -}
 
 module Mu.All where
 
-import Mu.Theorems.Denotational
-import Mu.Theorems.Simulation
-import Mu.Theorems.Interpreter
-import Mu.Theorems.Reduction
+import Mu.Theorems.GraphModel
+import Mu.Theorems.AbstractMachines
+import Mu.Theorems.ClockedInterpreters
+import Mu.Theorems.ReductionSemantics
 import Mu.Theorems.Adequacy
-import Mu.proof.Correctness.Graph.CompilerCorrect
-import Mu.proof.Correctness.CEK.PipelineSim
-import Mu.proof.Correctness.Interp.CompilerFuel
-import Mu.proof.Correctness.Reduction.PipelineRed
+import Mu.proof.Correctness.GraphModel.CompilerCorrect
+import Mu.proof.Correctness.AbstractMachines.PipelineSim
+import Mu.proof.Correctness.ClockedInterpreters.CompilerFuel
+import Mu.proof.Correctness.ReductionSemantics.PipelineRed
 import Mu.proof.Adequacy.EndToEnd
-import Mu.proof.Adequacy.CEK.EndToEnd
-import Mu.proof.Mixed.CompilerMixed
-{- a design experiment, in no proof's total: a finite source side cannot
-   satisfy the function clause of delay's relation -}
-import Mu.proof.Correctness.Graph.DelayDesignFiniteSource
-import Mu.proof.Semantics.CEK.NoError
-import Mu.proof.Semantics.Interp.NoError
-import Mu.proof.Semantics.Reduction.NoError
+import Mu.proof.Adequacy.AbstractMachines.EndToEnd
+{- the Agda checks of §4.2, in no proof's total -}
+import Mu.proof.Correctness.GraphModel.DelayDesignFiniteSource
+import Mu.proof.Correctness.GraphModel.DelayDesignBoundedSets
+import Mu.proof.Semantics.AbstractMachines.NoError
+import Mu.proof.Semantics.ClockedInterpreters.NoError
+import Mu.proof.Semantics.ReductionSemantics.NoError
 import Mu.proof.Compiler.Examples.RecursionExample
 import Mu.proof.Compiler.Examples.RecursionInterp
-import Mu.proof.Correctness.Graph.DelayDesignBoundedSets

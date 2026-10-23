@@ -66,7 +66,7 @@ Line counts of the proofs, and their comparison, are in
 `--untyped` for the preserved pipeline).
 
 The denotational: Scott domains column (`agda/AllScott.agda`,
-`agda/Mu/Theorems/Scott.agda`) also needs TypeTopology; check it with
+`agda/Mu/Theorems/ScottDomains.agda`) also needs TypeTopology; check it with
 
     make check-scott
 
@@ -89,12 +89,19 @@ The paper's compiler is ISWIMμ (`agda/Mu/`): a call-by-value
   `--safe` (about three more minutes). Its theorems take propositional
   truncation, function extensionality and propositional extensionality
   as module parameters.
-* Theorem statements: `agda/Mu/Theorems/Denotational.agda` (graph
-  model), `Scott.agda`, `Simulation.agda` (abstract machines),
-  `Interpreter.agda`, `Reduction.agda`, and `Adequacy.agda`.
-* Table 1: `python3 papers/PLDI-2027/loc.py --mu` (the four columns,
-  infrastructure and adequacy) and `--scott` (the Scott-domain column);
-  add `--tokens` or `--chars` for the other measures.
+* Theorem statements, one file per style, named as in the paper:
+  `agda/Mu/Theorems/GraphModel.agda` (Theorems 4.1 and 4.4),
+  `ScottDomains.agda` (Theorem F.4), `AbstractMachines.agda` (Theorem
+  F.2), `ClockedInterpreters.agda` (Theorem F.1),
+  `ReductionSemantics.agda` (Theorem F.3), and `Adequacy.agda` (Theorem
+  4.5).
+* `agda/Mu/README.md` maps each theorem, lemma, definition and appendix
+  section of the paper to its Agda file and name, and lists the audit
+  surface.
+* Tables 1 and 2: `python3 papers/PLDI-2027/loc.py --mu` (the four
+  columns, infrastructure and adequacy) and `--scott` (the Scott-domain
+  column, its infrastructure and TypeTopology's); add `--tokens` or
+  `--chars` for the other measures.
 
 ## Other developments
 

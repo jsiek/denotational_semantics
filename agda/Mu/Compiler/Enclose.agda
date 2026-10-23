@@ -1,6 +1,6 @@
 {-
 
-  Enclose (ISWIMμ → Clos2μ), as typed enclose (Compiler/Enclose.agda):
+  Enclose (ISWIMμ → Closμ), as typed enclose (Compiler/Enclose.agda):
   each function becomes a closure that captures every variable of its
   context, in order, so its body is unchanged: variable S x of the
   closure's code is the free variable x.
@@ -11,7 +11,7 @@ module Mu.Compiler.Enclose where
 
 open import Mu.Language.Type
 open import Mu.Language.ISWIM
-import Mu.Language.Clos2 as T
+import Mu.Language.Clos as T
 open import Mu.Framework.AllUtil using (All; []; _∷_; tab)
 
 enclose : ∀ {Γ A} → Tm Γ A → T.Tm Γ A

@@ -1,6 +1,6 @@
 {-
 
-  Optimize (Clos2μ → Clos2μ), as typed optimize (Compiler/Optimize.agda):
+  Optimize (Closμ → Closμ), as typed optimize (Compiler/Optimize.agda):
   a closure stops capturing the free variables that its code does not
   use, provided that they are variables (closures are strict, so a free
   variable that is not a variable could err or diverge; enclose
@@ -21,7 +21,7 @@
 module Mu.Compiler.Optimize where
 
 open import Mu.Language.Type
-open import Mu.Language.Clos2
+open import Mu.Language.Clos
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; Flags; kept; select; Kept; squeeze; ∨-l; ∨-r)
 
 open import Data.Bool using (Bool; true; false; T; _∨_)

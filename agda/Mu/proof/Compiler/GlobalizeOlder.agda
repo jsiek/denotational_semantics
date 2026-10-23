@@ -4,7 +4,7 @@
   (agda/Mu/), as for the typed pipeline (proof/Compiler/GlobalizeOlder.agda);
   X86μ adequacy needs it (Mu/proof/Adequacy/X86Compiled.agda).
 
-  A Clos5μ definition is typed over the whole table, but a graph
+  A GlobalFunμ definition is typed over the whole table, but a graph
   semantics gives each definition the meanings of the older ones only
   (as Untyped/Semantics/Graph/Clos5Iswim.agda does), so it needs that a
   definition refers only to older ones. Older k M: every reference f in
@@ -19,7 +19,7 @@ module Mu.proof.Compiler.GlobalizeOlder where
 
 open import Mu.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import Mu.Language.Clos5
+open import Mu.Language.GlobalFun
 open import Mu.Compiler.Globalize using (Made; []; _▷_; out; glob; close; globalize)
 
 open import Data.List using (List; []; _∷_; length)
@@ -28,7 +28,7 @@ open import Data.Nat using (ℕ; _<_)
 open import proof.Framework.Lookup using (lvl-<)
 open import Data.Product using (_×_; _,_)
 open import Data.Unit using (⊤; tt)
-import Mu.Language.Clos4 as S
+import Mu.Language.FlatClos as S
 
 Older : ∀ {Σ Γ A} → ℕ → Tm Σ Γ A → Set
 Olders : ∀ {Σ Γ Δ} → ℕ → All (Tm Σ Γ) Δ → Set

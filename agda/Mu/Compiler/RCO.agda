@@ -1,6 +1,6 @@
 {-
 
-  Remove complex operands (Clos5μ → Monμ), as typed rco
+  Remove complex operands (GlobalFunμ → Monμ), as typed rco
   (Compiler/RCO.agda): every complex operand is bound to a fresh
   variable by a let, left to right, so the operands of every operation
   become atoms.
@@ -18,7 +18,7 @@
 module Mu.Compiler.RCO where
 
 open import Mu.Language.Type
-open import Mu.Language.Clos5
+open import Mu.Language.GlobalFun
 import Mu.Language.Mon as M
 open M using (Atm; Exp; var; lit; ref; atm; ren)
 open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)

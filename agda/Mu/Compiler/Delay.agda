@@ -1,6 +1,6 @@
 {-
 
-  Delay (Clos3μ → Clos4μ), as typed delay (Compiler/Delay.agda): a
+  Delay (EnvClosμ → FlatClosμ), as typed delay (Compiler/Delay.agda): a
   closure becomes a packed pair of its code and the tuple of its free
   variables, and an application opens the closure and calls its code
   with its environment:
@@ -15,8 +15,8 @@
 module Mu.Compiler.Delay where
 
 open import Mu.Language.Type
-open import Mu.Language.Clos3
-import Mu.Language.Clos4 as T
+open import Mu.Language.EnvClos
+import Mu.Language.FlatClos as T
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 
 open import Data.List using ([]; _∷_)

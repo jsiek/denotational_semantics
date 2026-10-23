@@ -4,7 +4,7 @@
   traversal with a kit (Framework/Syntax/Kit.agda), over contexts that
   are lists of types, as for Clos4ᵀ (Semantics/Reduction/Typed/Clos4.agda).
   The simplify pass (Mu/Compiler/Simplify.agda) renames, and the
-  reduction semantics (Mu/Semantics/Reduction/ISWIM.agda) substitutes.
+  reduction semantics (Mu/Semantics/ReductionSemantics/ISWIM.agda) substitutes.
 
 -}
 

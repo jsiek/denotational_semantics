@@ -4,7 +4,7 @@
   every element of the denotation of a closed program is witnessed by
   the value the interpreter returns from some clock on.
 
-  As for the ISWIMμ machine (Mu/proof/Adequacy/CEK/LogRel.agda): a logical
+  As for the ISWIMμ machine (Mu/proof/Adequacy/AbstractMachines/LogRel.agda): a logical
   relation 𝕍 d v, by recursion on the denotational value d (and on the
   folds of v), relates a constant to itself, a function entry V ↦ w to
   closures that, run on a value related to every element of V, return a
@@ -31,9 +31,9 @@ import proof.Framework.GraphModel.Env as E
 open import proof.Semantics.Interp.Clock using (Result; ret; Stable; st-now; st-bind; stable-unique)
 open import Mu.Language.Type
 open import Mu.Language.ISWIM
-open import Mu.Semantics.Graph.ISWIM using (⟦_⟧; ⟦_⟧s)
+open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧; ⟦_⟧s)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos; All₂)
-open import Mu.Semantics.Interp.ISWIM
+open import Mu.Semantics.ClockedInterpreters.ISWIM
 open import Semantics.Observation using (o-const)
 
 open import Data.Bool using (true; false)

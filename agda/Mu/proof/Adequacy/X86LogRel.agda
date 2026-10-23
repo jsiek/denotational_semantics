@@ -1,11 +1,11 @@
 {-
 
-  Adequacy of the graph model of X86μ (Mu/Semantics/Graph/X86.agda) for
-  the X86μ interpreter (Mu/Semantics/Interp/X86.agda): every element of
+  Adequacy of the graph model of X86μ (Mu/Semantics/GraphModel/X86.agda) for
+  the X86μ interpreter (Mu/Semantics/ClockedInterpreters/X86.agda): every element of
   the denotation of a program is witnessed by the value the interpreter
   returns from some clock on. As for the X86μ machine
-  (Mu/proof/Adequacy/CEK/X86LogRel.agda), with the logical relation 𝕍
-  of the Clos5μ values (Mu/proof/Adequacy/Clos5Values.agda), code f
+  (Mu/proof/Adequacy/AbstractMachines/X86LogRel.agda), with the logical relation 𝕍
+  of the GlobalFunμ values (Mu/proof/Adequacy/GlobalFunValues.agda), code f
   being related to Λ X. Λ Y. w when a call of definition f on values
   related to X and Y returns a value related to w (Run). "Returns" is
   Stable, as for the ISWIMμ interpreter (Mu/proof/Adequacy/LogRel.agda):
@@ -38,18 +38,18 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; _↦_; ν; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _•_) renaming (const to dconst)
 open import proof.Framework.GraphModel.Ops using (nthD; ⋆) renaming (car to carD)
 open import proof.Semantics.Graph.Prim using (primD)
-open import Mu.proof.Semantics.Graph.Ops using (Table; tables; init)
-open import Mu.Semantics.Graph.CFG using (drop)
-open import Mu.Semantics.Graph.X86 using (⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs; RegsD)
+open import Mu.proof.Semantics.GraphModel.Ops using (Table; tables; init)
+open import Mu.Semantics.GraphModel.CFG using (drop)
+open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs; RegsD)
   renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ)
-open import Mu.Semantics.Interp.Clos5 using (module Vals)
-open import Mu.Semantics.Interp.X86
+open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import Mu.Semantics.ClockedInterpreters.X86
 open import proof.Semantics.Interp.Clock using (Result; ret; Stable; st-now; st-bind; stable-unique)
 open import Framework.Lookup using (forget)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import Mu.Framework.AllUtil using ([]; _∷_; lookup; pos)
 open import Mu.proof.Adequacy.X86Common using (OpR; none; agree)
-open import Mu.proof.Adequacy.Clos5Values using (module Rel; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv)
+open import Mu.proof.Adequacy.GlobalFunValues using (module Rel; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥-elim)
@@ -75,7 +75,7 @@ st-call ⟨ c , h ⟩ = ⟨ suc c , (λ { (suc ck) (s≤s le) → h ck le }) ⟩
 ret-inj : ∀ {X : Set} {u v : X} → Result.ret u ≡ ret v → u ≡ v
 ret-inj refl = refl
 
-{- The logical relation (Clos5Values.agda): code f runs definition f ------------------}
+{- The logical relation (GlobalFunValues.agda): code f runs definition f ------------------}
 
 Run : ∀ {Δ A B} → Σ ∋ sig Δ A B → Val (tup Δ) → Val A → (Val B → Set) → Set
 Run f e a P = Σ[ v ∈ Val _ ] Stable (λ ck → call ds ck (code f) e a) (ret v) × P v

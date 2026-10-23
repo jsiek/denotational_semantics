@@ -118,20 +118,23 @@ other than `--without-K`, failing if it finds any.
   ISWIM with iso-recursive types (no recursion construct, no errors)
   and its compiler to the typed assembly language X86μ,
 
-      ISWIMμ --simplify--> ISWIMμ --CC: enclose--> Clos2μ --CC: optimize--> Clos2μ
-             --CC: concretize--> Clos3μ --CC: delay--> Clos4μ
-             --CC: globalize--> Clos5μ --rco--> Monμ --lift locals--> Impμ
+      ISWIMμ --simplify--> ISWIMμ --CC: enclose--> Closμ --CC: optimize--> Closμ
+             --CC: concretize--> EnvClosμ --CC: delay--> FlatClosμ
+             --CC: globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
              --explicate control--> CFGμ --select instructions--> X86μ
 
-  proved in the graph model (with its adequacy for the machines of
-  ISWIMμ and X86μ), the CEK machines, the clocked interpreters and the
-  reduction semantics (`papers/PLDI-2027/notes/iswim-mu-design.md`).
+  proved in the graph model (with its adequacy for the clocked
+  interpreters of ISWIMμ and X86μ), the CEK machines, the clocked
+  interpreters, the reduction semantics and Scott domains
+  (`papers/PLDI-2027/notes/iswim-mu-design.md`); `Mu/README.md` is
+  its road map from the PLDI 2027 paper.
   `Mu/` mirrors this directory as `Untyped/` does (module prefix `Mu.`,
   with `Language/Typed/` as `Mu/Language/` and
   `Semantics/<style>/Typed/` as `Mu/Semantics/<style>/`), and uses
   `Framework/` unchanged; its theorem statements are in
   `Mu/Theorems/`, its proofs in `Mu/proof/`. `Mu/All.agda` imports it,
-  and `All.agda` imports that.
+  and `All.agda` imports that and `Mu/Experiments.agda` (the
+  mixed-semantics experiment).
 
 ## The audit surface
 
@@ -142,45 +145,45 @@ it, except the theorem files, which cite the proofs, and nothing outside
 `Untyped/` imports a module of `Untyped/` (`papers/PLDI-2027/loc.py`
 checks these, and that every module outside the `proof/` directories is
 used by a theorem statement: those of `Mu/` by ISWIMμ's, in
-`Mu/Theorems/`).
+`Mu/Theorems/`, but for the semantics of ISWIMμ's intermediate
+languages, which only the proofs use).
 
-* ISWIMμ's theorem statements (`Mu/Theorems/`), each with its type
-  written out and defined as the corresponding theorem of `Mu/proof/`;
-  a program is a closed term of any type, and the end-to-end theorem is
-  stated for a main program of type Int, the same in every style:
-  * `Mu/Theorems/Denotational.agda`: each pass preserves the meaning of
-    a program in the graph model (delay: its constants and whether it
-    has any), and the whole compiler, into Clos5μ, Monμ, Impμ, CFGμ and
-    X86μ, preserves the constants a program produces and whether it
-    produces anything;
-  * `Mu/Theorems/Simulation.agda`, `Interpreter.agda`, `Reduction.agda`:
-    each pass, and the compiler into each of Clos5μ, Monμ, Impμ, CFGμ
-    and X86μ, produces an equivalent machine (interpreter, reduction
-    semantics: the same observations on termination, and divergence
-    exactly when the source diverges); for a main of type Int, the
-    source and X86μ stop with the same constant, or both diverge
-    (`compile-x86-const`, `compile-x86-diverges`);
-  * `Mu/Theorems/Scott.agda` (checked by `make check-scott`, not `make
-    check`; see below): the same as `Denotational.agda`, in Scott
-    domains: a term means an element of the domain of values 𝔻, a
-    solution of 𝔻 ≅ 𝓛 (Σ t , Payload t 𝔻), and each pass but delay
-    preserves the meaning of a program exactly (delay: its constants and
-    whether it is defined), and so does the whole compiler, assuming
-    propositional truncations, function extensionality and
-    propositional extensionality (the parameters of the module);
-  * `Mu/Theorems/Adequacy.agda`: the graph model is sound and adequate
-    for the ISWIMμ machine, and for the X86μ machine running compiled
-    programs, and neither machine stops with an error; so the compiler,
-    observed through the machines only, preserves the constants a
-    program computes and whether it terminates, and for a main of type
-    Int states the operational styles' end-to-end theorem
+* ISWIMμ's theorem statements (`Mu/Theorems/`), one file per style,
+  named and numbered as in the PLDI 2027 paper, each theorem with its
+  type written out and defined as the corresponding theorem of
+  `Mu/proof/`; `Mu/README.md` maps every theorem, lemma and definition
+  of the paper to the code. Each states the end-to-end theorem for a
+  closed main program of type Int, and its version for closed terms of
+  every type:
+  * `Mu/Theorems/GraphModel.agda`: Theorem 4.1, the compiled program
+    produces the same constants as the source and produces something
+    exactly when the source does; and Theorem 4.4, the same for delay;
+  * `Mu/Theorems/AbstractMachines.agda`, `ClockedInterpreters.agda`,
+    `ReductionSemantics.agda`: Theorems F.2, F.1 and F.3, the source and
+    X86μ stop with the same integer, or both diverge
+    (`compile-const`, `compile-diverges`), and are equivalent at
+    every type (`compile-correct`);
+  * `Mu/Theorems/ScottDomains.agda` (checked by `make check-scott`, not
+    `make check`; see below): Theorem F.4, the same as Theorem 4.1 in
+    Scott domains (a term means an element of the domain of values 𝔻, a
+    solution of 𝔻 ≅ 𝓛 (Σ t , Payload t 𝔻)), assuming propositional
+    truncations, function extensionality and propositional
+    extensionality (the parameters of the module);
+  * `Mu/Theorems/Adequacy.agda`: Theorem 4.5, the graph model is sound
+    and adequate for the ISWIMμ interpreter, and for the X86μ
+    interpreter running compiled programs; with Theorem 4.1, for a main
+    of type Int, the operational styles' end-to-end theorem
     (`end-to-end-x86-const`, `end-to-end-x86-diverges`).
-  The definitions they use are those of `Mu/` outside `Mu/proof/` (its
-  languages, passes, semantics in each style, and heterogeneous vectors,
-  `Mu/Framework/`), and of `Framework/`, `Semantics/Observation.agda`
-  and the instances of the frameworks at the observations
-  (`Semantics/CEK/Smallstep.agda`, `Semantics/Interp/Clock.agda`,
-  `Semantics/Reduction/Smallstep.agda`) here.
+  The per-pass theorems and the compiler's prefixes are proved in
+  `Mu/proof/` but not restated. The definitions the statements use are
+  those of `Mu/` outside `Mu/proof/` that they reach (its languages,
+  passes, the semantics of ISWIMμ and X86μ in each style and what they
+  use, and heterogeneous vectors, `Mu/Framework/`), and of
+  `Framework/`, `Semantics/Observation.agda` and the instances of the
+  frameworks at the observations (`Semantics/CEK/Smallstep.agda`,
+  `Semantics/Interp/Clock.agda`, `Semantics/Reduction/Smallstep.agda`)
+  here. The semantics of the intermediate languages, in
+  `Mu/Semantics/`, are used only by the proofs.
 
 * Theorem statements (`Theorems/`), each with its type written out and
   defined as the corresponding theorem of `proof/`:
@@ -240,7 +243,7 @@ used by a theorem statement: those of `Mu/` by ISWIMμ's, in
     values), Impᵀ, CFGᵀ and X86ᵀ (`Semantics/CEK/Typed/{Clos5,Imp,CFG,X86}.agda`),
     shared with the CEK machine + simulation style;
   * adequacy: those of the denotational and simulation theorems;
-  * denotational: Scott domains (ISWIMμ only): `Mu/Semantics/Scott/`
+  * denotational: Scott domains (ISWIMμ only): `Mu/Semantics/ScottDomains/`
     (the semantics of each language, built with the combinators of
     `Framework/Scott/Semantics.agda`), `Semantics/Scott/Prim.agda` (the
     meaning of the primitives) and `Framework/Scott/` (on Tom de Jong's
@@ -303,24 +306,27 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   control proved against it, and a direct backward simulation for delay.
 * `Mu/proof/`: the same for ISWIMμ (its reduction column shares the
   CEK column's proofs of explicate control and select instructions; its
-  adequacy, `Mu/proof/Adequacy/`, is direct for the X86μ machine, and
+  adequacy, `Mu/proof/Adequacy/`, is direct for the X86μ interpreter;
+  its alternative for the machines, `Mu/proof/Adequacy/AbstractMachines/`,
   uses that neither machine stops with an error,
-  `Mu/proof/Semantics/CEK/NoError.agda`; its Scott-domain column is
-  `Mu/proof/Correctness/Scott/`, with lemmas shared by passes in
-  `Mu/proof/Semantics/Scott/`, and the language-independent lemmas in
+  `Mu/proof/Semantics/AbstractMachines/NoError.agda`; its Scott-domain
+  column is `Mu/proof/Correctness/ScottDomains/`, with lemmas shared by
+  passes in `Mu/proof/Semantics/ScottDomains/`, and the
+  language-independent lemmas in
   `proof/Framework/Scott/`: the solution of the domain equation, the
   operators, the stages of the bilimit (approximations by depth) and the
   calls of approximated closures, which delay's logical relations use).
 
 `All.agda` imports the theorem files, every module of `proof/`,
-`Untyped/All.agda` and `Mu/All.agda` (which imports `Mu/Theorems/` and
-`Mu/proof/`), so that `make check` checks everything. `old/` holds
+`Untyped/All.agda`, `Mu/All.agda` (which imports `Mu/Theorems/` and
+`Mu/proof/`) and `Mu/Experiments.agda`, so that `make check` checks
+everything. `old/` holds
 earlier developments, not checked by `make check` (see the top-level
 README).
 
 The denotational: Scott domains column needs TypeTopology, so it is not
 part of `All.agda`: `AllScott.agda` imports its theorem file
-(`Mu/Theorems/Scott.agda`) and proofs, and `make check-scott` fetches
+(`Mu/Theorems/ScottDomains.agda`) and proofs, and `make check-scott` fetches
 TypeTopology at a pinned commit into `_deps/` (not tracked;
 `scott/fetch-typetopology.sh`, which applies
 `scott/typetopology-builtin-alias.patch` so that TypeTopology and the

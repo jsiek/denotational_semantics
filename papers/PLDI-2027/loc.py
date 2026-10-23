@@ -155,7 +155,7 @@ may use), and its infrastructure must import only infrastructure.
 ISWIMμ's adequacy ('mu-adeq') is for the clocked interpreters of ISWIMμ
 and X86μ (Mu/proof/Adequacy/), and its end theorem is the interpreter
 column's.  The adequacy for the CEK machines that preceded it
-('mu-adeq-cek', Mu/proof/Adequacy/CEK/, in no total) is kept as an
+('mu-adeq-cek', Mu/proof/Adequacy/AbstractMachines/, in no total) is kept as an
 alternative and shown beside it, row by row: the modules both use (the
 tuples of sets, the tables' lemmas, the well-formedness of compiled
 programs) are in groups of both sides ('mu-adeq+mu-adeq-cek'), counted
@@ -199,8 +199,12 @@ lines of the audit surface that its statements reach: the shared part
 and the statements.  The script fails if a module of an audit surface
 imports a proof module (the theorem files do, by design), or if a module
 outside the proof/ directories is not reached from the theorem files:
-those of agda/Mu/ from ISWIMμ's (agda/Mu/Theorems/), the others from the
-ISWIM pipelines'.
+those of agda/ from the ISWIM pipelines'.  ISWIMμ's theorem files
+(agda/Mu/Theorems/) state only the paper's end-to-end theorems (and
+delay's), so the semantics of its intermediate languages
+(agda/Mu/Semantics/), which only the proofs use, are reached by no
+statement; they are listed as not on the audit surface, and must import
+no proof module either.
 """
 import glob, os, re, sys
 
@@ -217,12 +221,21 @@ AP, GEA = A + 'proof/Adequacy/', A + 'proof/Adequacy/GraphErr/'
 W, WP = A + 'Framework/', A + 'proof/Framework/'
 MU = A + 'Mu/'
 MUP = MU + 'proof/'
+# ISWIMμ's names of the languages that the ISWIM pipeline calls Clos2–Clos5
+# (the names of the paper)
+MU_LANG = {'Clos2': 'Clos', 'Clos3': 'EnvClos', 'Clos4': 'FlatClos', 'Clos5': 'GlobalFun'}
+
+
+def ml(x):
+    """ISWIMμ's name of the ISWIM pipeline's language x."""
+    return MU_LANG.get(x, x)
+
 
 
 # the Scott-domain column (needs TypeTopology; see --scott)
 SCOTT = [A + 'AllScott.agda', W + 'Scott/*.agda', WP + 'Scott/*.agda', A + 'Semantics/Scott/*.agda',
-         MU + 'Semantics/Scott/*.agda', MU + 'proof/Semantics/Scott/*.agda',
-         MU + 'proof/Correctness/Scott/*.agda', MU + 'Theorems/Scott.agda']
+         MU + 'Semantics/ScottDomains/*.agda', MU + 'proof/Semantics/ScottDomains/*.agda',
+         MU + 'proof/Correctness/ScottDomains/*.agda', MU + 'Theorems/ScottDomains.agda']
 
 
 def scott_files():
@@ -567,81 +580,82 @@ GROUPS = [
     # simplify's syntactic lemmas are used by its four proofs: counted in the
     # simplify row of each column, as in the main table
     ('mu-den+mu-op+mu-ck+mu-red', 'simplify', [MUP + 'Compiler/SimplifyFacts.agda']),
-    ('mu-den', 'semantics of the languages', [MU + 'Semantics/Graph/*.agda', MUP + 'Semantics/Graph/*.agda']),
-    ('mu-den', 'simplify', [MUP + 'Correctness/Graph/SimplifyCorrect.agda']),
-    ('mu-den', 'CC: enclose', [MUP + 'Correctness/Graph/EncloseCorrect.agda']),
-    ('mu-den', 'CC: optimize', [MUP + 'Correctness/Graph/OptimizeCorrect.agda']),
-    ('mu-den', 'CC: concretize', [MUP + 'Correctness/Graph/ConcretizeCorrect.agda']),
-    ('mu-den', 'CC: delay', [MUP + 'Correctness/Graph/Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')]),
-    ('mu-den', 'CC: globalize', [MUP + 'Correctness/Graph/GlobalizeCorrect.agda']),
-    ('mu-den', 'rco', [MUP + 'Correctness/Graph/RCOCorrect.agda']),
-    ('mu-den', 'lift locals', [MUP + 'Correctness/Graph/LiftLocalsCorrect.agda']),
-    ('mu-den', 'explicate control', [MUP + 'Correctness/Graph/ExplicateCorrect.agda']),
-    ('mu-den', 'select instructions', [MUP + 'Correctness/Graph/SelectCorrect.agda']),
-    ('mu-den', 'composition', [MUP + 'Correctness/Graph/CompilerCorrect.agda']),
-    # the machines of ISWIMμ and Clos2μ–Clos4μ; those of Clos5μ, Impμ, CFGμ
+    ('mu-den', 'semantics of the languages', [MU + 'Semantics/GraphModel/*.agda', MUP + 'Semantics/GraphModel/*.agda']),
+    ('mu-den', 'simplify', [MUP + 'Correctness/GraphModel/SimplifyCorrect.agda']),
+    ('mu-den', 'CC: enclose', [MUP + 'Correctness/GraphModel/EncloseCorrect.agda']),
+    ('mu-den', 'CC: optimize', [MUP + 'Correctness/GraphModel/OptimizeCorrect.agda']),
+    ('mu-den', 'CC: concretize', [MUP + 'Correctness/GraphModel/ConcretizeCorrect.agda']),
+    ('mu-den', 'CC: delay', [MUP + 'Correctness/GraphModel/ApproxLR.agda']
+     + [MUP + 'Correctness/GraphModel/Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')]),
+    ('mu-den', 'CC: globalize', [MUP + 'Correctness/GraphModel/GlobalizeCorrect.agda']),
+    ('mu-den', 'rco', [MUP + 'Correctness/GraphModel/RCOCorrect.agda']),
+    ('mu-den', 'lift locals', [MUP + 'Correctness/GraphModel/LiftLocalsCorrect.agda']),
+    ('mu-den', 'explicate control', [MUP + 'Correctness/GraphModel/ExplicateCorrect.agda']),
+    ('mu-den', 'select instructions', [MUP + 'Correctness/GraphModel/SelectCorrect.agda']),
+    ('mu-den', 'composition', [MUP + 'Correctness/GraphModel/CompilerCorrect.agda']),
+    # the machines of ISWIMμ and Closμ–FlatClosμ; those of GlobalFunμ, Impμ, CFGμ
     # and X86μ, with the proofs of explicate control and select
     # instructions, are shared with the reduction column ('mu-op+mu-red'),
     # as the typed pipeline's are ('op+red')
-    ('mu-op', 'semantics of the languages', [MU + 'Semantics/CEK/' + x + '.agda' for x in ('Values', 'ISWIM', 'Clos2', 'Clos3', 'Clos4')]),
-    ('mu-op+mu-red', 'semantics of the languages', [MU + 'Semantics/CEK/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')]),
-    ('mu-op', 'simplify', [MUP + 'Correctness/CEK/SimplifySim.agda']),
-    ('mu-op', 'CC: enclose', [MUP + 'Correctness/CEK/EncloseSim.agda']),
-    ('mu-op', 'CC: optimize', [MUP + 'Correctness/CEK/OptimizeSim.agda']),
-    ('mu-op', 'CC: concretize', [MUP + 'Correctness/CEK/ConcretizeSim.agda']),
-    ('mu-op', 'CC: delay', [MUP + 'Correctness/CEK/DelaySim.agda']),
-    ('mu-op', 'lemmas shared by the passes', [MUP + 'Correctness/CEK/Clos5Common.agda', MUP + 'Semantics/CEK/Rel.agda']),
-    ('mu-op', 'CC: globalize', [MUP + 'Correctness/CEK/GlobalizeSim.agda']),
-    ('mu-op', 'rco', [MUP + 'Correctness/CEK/RCOSim.agda']),
-    ('mu-op', 'lift locals', [MUP + 'Correctness/CEK/LiftLocalsSim.agda']),
-    ('mu-op+mu-red', 'explicate control', [MUP + 'Correctness/CEK/ExplicateSim.agda']),
-    ('mu-op+mu-red', 'select instructions', [MUP + 'Correctness/CEK/SelectSim.agda']),
-    ('mu-op', 'composition', [MUP + 'Correctness/CEK/PipelineSim.agda']),
-    ('mu-ck', 'semantics of the languages', [MU + 'Semantics/Interp/*.agda', MUP + 'Semantics/Interp/*.agda']),
-    ('mu-ck', 'simplify', [MUP + 'Correctness/Interp/SimplifyFuel.agda']),
-    ('mu-ck', 'CC: enclose', [MUP + 'Correctness/Interp/EncloseFuel.agda']),
-    ('mu-ck', 'CC: optimize', [MUP + 'Correctness/Interp/OptimizeFuel.agda']),
-    ('mu-ck', 'CC: concretize', [MUP + 'Correctness/Interp/ConcretizeFuel.agda']),
-    ('mu-ck', 'CC: delay', [MUP + 'Correctness/Interp/DelayFuel.agda']),
-    ('mu-ck', 'CC: globalize', [MUP + 'Correctness/Interp/GlobalizeFuel.agda']),
-    ('mu-ck', 'rco', [MUP + 'Correctness/Interp/RCOFuel.agda']),
-    ('mu-ck', 'lift locals', [MUP + 'Correctness/Interp/LiftLocalsFuel.agda']),
-    ('mu-ck', 'explicate control', [MUP + 'Correctness/Interp/ExplicateFuel.agda']),
-    ('mu-ck', 'select instructions', [MUP + 'Correctness/Interp/SelectFuel.agda']),
-    ('mu-ck', 'composition', [MUP + 'Correctness/Interp/CompilerFuel.agda']),
+    ('mu-op', 'semantics of the languages', [MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('Values', 'ISWIM', 'Clos', 'EnvClos', 'FlatClos')]),
+    ('mu-op+mu-red', 'semantics of the languages', [MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('GlobalFun', 'Imp', 'CFG', 'X86')]),
+    ('mu-op', 'simplify', [MUP + 'Correctness/AbstractMachines/SimplifySim.agda']),
+    ('mu-op', 'CC: enclose', [MUP + 'Correctness/AbstractMachines/EncloseSim.agda']),
+    ('mu-op', 'CC: optimize', [MUP + 'Correctness/AbstractMachines/OptimizeSim.agda']),
+    ('mu-op', 'CC: concretize', [MUP + 'Correctness/AbstractMachines/ConcretizeSim.agda']),
+    ('mu-op', 'CC: delay', [MUP + 'Correctness/AbstractMachines/DelaySim.agda']),
+    ('mu-op', 'lemmas shared by the passes', [MUP + 'Correctness/AbstractMachines/GlobalFunCommon.agda', MUP + 'Semantics/AbstractMachines/Rel.agda']),
+    ('mu-op', 'CC: globalize', [MUP + 'Correctness/AbstractMachines/GlobalizeSim.agda']),
+    ('mu-op', 'rco', [MUP + 'Correctness/AbstractMachines/RCOSim.agda']),
+    ('mu-op', 'lift locals', [MUP + 'Correctness/AbstractMachines/LiftLocalsSim.agda']),
+    ('mu-op+mu-red', 'explicate control', [MUP + 'Correctness/AbstractMachines/ExplicateSim.agda']),
+    ('mu-op+mu-red', 'select instructions', [MUP + 'Correctness/AbstractMachines/SelectSim.agda']),
+    ('mu-op', 'composition', [MUP + 'Correctness/AbstractMachines/PipelineSim.agda']),
+    ('mu-ck', 'semantics of the languages', [MU + 'Semantics/ClockedInterpreters/*.agda', MUP + 'Semantics/ClockedInterpreters/*.agda']),
+    ('mu-ck', 'simplify', [MUP + 'Correctness/ClockedInterpreters/SimplifyFuel.agda']),
+    ('mu-ck', 'CC: enclose', [MUP + 'Correctness/ClockedInterpreters/EncloseFuel.agda']),
+    ('mu-ck', 'CC: optimize', [MUP + 'Correctness/ClockedInterpreters/OptimizeFuel.agda']),
+    ('mu-ck', 'CC: concretize', [MUP + 'Correctness/ClockedInterpreters/ConcretizeFuel.agda']),
+    ('mu-ck', 'CC: delay', [MUP + 'Correctness/ClockedInterpreters/DelayFuel.agda']),
+    ('mu-ck', 'CC: globalize', [MUP + 'Correctness/ClockedInterpreters/GlobalizeFuel.agda']),
+    ('mu-ck', 'rco', [MUP + 'Correctness/ClockedInterpreters/RCOFuel.agda']),
+    ('mu-ck', 'lift locals', [MUP + 'Correctness/ClockedInterpreters/LiftLocalsFuel.agda']),
+    ('mu-ck', 'explicate control', [MUP + 'Correctness/ClockedInterpreters/ExplicateFuel.agda']),
+    ('mu-ck', 'select instructions', [MUP + 'Correctness/ClockedInterpreters/SelectFuel.agda']),
+    ('mu-ck', 'composition', [MUP + 'Correctness/ClockedInterpreters/CompilerFuel.agda']),
     # P2: that no semantics of ISWIMμ or X86μ stops with an error (only
     # the alternative adequacy for the CEK machines needs the machines';
     # the others are stated for completeness), in no column
     ('mu-noerr', 'CEK machines of ISWIMμ and X86μ (X86μ\'s is also the reduction column\'s)',
-     [MUP + 'Semantics/CEK/NoError.agda']),
-    ('mu-noerr', 'clocked interpreters of ISWIMμ and X86μ', [MUP + 'Semantics/Interp/NoError.agda']),
-    ('mu-noerr', 'reduction semantics of ISWIMμ', [MUP + 'Semantics/Reduction/NoError.agda']),
+     [MUP + 'Semantics/AbstractMachines/NoError.agda']),
+    ('mu-noerr', 'clocked interpreters of ISWIMμ and X86μ', [MUP + 'Semantics/ClockedInterpreters/NoError.agda']),
+    ('mu-noerr', 'reduction semantics of ISWIMμ', [MUP + 'Semantics/ReductionSemantics/NoError.agda']),
     # P2: adequacy of the graph model, for the clocked interpreters of
     # ISWIMμ and X86μ (direct), with the interpreter column's end theorem;
-    # no Clos5μ adequacy, which the end-to-end theorem into X86μ does not
+    # no GlobalFunμ adequacy, which the end-to-end theorem into X86μ does not
     # need.  The ISWIM row is also the bridge of the mixed proof.  The
     # alternative for the CEK machines ('mu-adeq-cek', in no total) shares
     # the tuples of sets, the tables' lemmas and the well-formedness of
     # compiled programs ('mu-adeq+mu-adeq-cek', counted in both)
     ('mu-adeq+mu-adeq-cek', 'ISWIM', [MUP + 'Adequacy/Tuples.agda']),
     ('mu-adeq', 'ISWIM', [MUP + 'Adequacy/' + x + '.agda' for x in ('Soundness', 'LogRel', 'ISWIM')]),
-    # the values of the Clos5μ interpreter in the graph model and the
+    # the values of the GlobalFunμ interpreter in the graph model and the
     # tables' lemmas, which X86μ adequacy uses (as X86ᵀ's uses Clos5ᵀ's)
-    ('mu-adeq+mu-adeq-cek', 'Clos5', [MUP + 'Adequacy/Clos5Common.agda']),
-    ('mu-adeq', 'Clos5', [MUP + 'Adequacy/Clos5Values.agda']),
+    ('mu-adeq+mu-adeq-cek', 'Clos5', [MUP + 'Adequacy/GlobalFunCommon.agda']),
+    ('mu-adeq', 'Clos5', [MUP + 'Adequacy/GlobalFunValues.agda']),
     ('mu-adeq', 'X86', [MUP + 'Adequacy/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
     ('mu-adeq+mu-adeq-cek', 'well-formedness of compiled programs', [MUP + 'Adequacy/X86Compiled.agda']),
     ('mu-adeq', 'end to end', [MUP + 'Adequacy/EndToEnd.agda']),
     # the alternative: adequacy for the CEK machines of ISWIMμ and X86μ
-    ('mu-adeq-cek', 'ISWIM', [MUP + 'Adequacy/CEK/' + x + '.agda' for x in ('Soundness', 'LogRel', 'ISWIM')]),
-    ('mu-adeq-cek', 'Clos5', [MUP + 'Adequacy/CEK/Clos5Values.agda']),
-    ('mu-adeq-cek', 'X86', [MUP + 'Adequacy/CEK/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
-    ('mu-adeq-cek', 'end to end', [MUP + 'Adequacy/CEK/EndToEnd.agda']),
+    ('mu-adeq-cek', 'ISWIM', [MUP + 'Adequacy/AbstractMachines/' + x + '.agda' for x in ('Soundness', 'LogRel', 'ISWIM')]),
+    ('mu-adeq-cek', 'Clos5', [MUP + 'Adequacy/AbstractMachines/GlobalFunValues.agda']),
+    ('mu-adeq-cek', 'X86', [MUP + 'Adequacy/AbstractMachines/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
+    ('mu-adeq-cek', 'end to end', [MUP + 'Adequacy/AbstractMachines/EndToEnd.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
     # design experiments, in no total: the delay relation on target sets of
     # bounded depth (the paper's design space for reflection, §4.2)
     ('mu-exp', 'delay: design experiments (target sets of bounded depth; a finite source side)',
-     [MUP + 'Correctness/Graph/DelayDesign*.agda']),
+     [MUP + 'Correctness/GraphModel/DelayDesign*.agda']),
     # mixing semantics (--mixed): simplify in the graph model and the other
     # passes by the interpreters, joined by the bridge at ISWIMμ (its graph
     # semantics against its interpreter: the ISWIM row of adequacy); it
@@ -653,16 +667,16 @@ GROUPS = [
     # shares the CEK column's machines of the first-order languages and its
     # proofs of explicate control and select instructions (MU_RED_SHARED), as
     # the typed pipeline's reduction column does ('op+red')
-    ('mu-red', 'semantics of the languages', [MU + 'Semantics/Reduction/*.agda', MUP + 'Semantics/Reduction/*.agda']),
-    ('mu-red', 'simplify', [MUP + 'Correctness/Reduction/SimplifyRed.agda']),
-    ('mu-red', 'CC: enclose', [MUP + 'Correctness/Reduction/EncloseRed.agda']),
-    ('mu-red', 'CC: optimize', [MUP + 'Correctness/Reduction/OptimizeRed.agda']),
-    ('mu-red', 'CC: concretize', [MUP + 'Correctness/Reduction/ConcretizeRed.agda']),
-    ('mu-red', 'CC: delay', [MUP + 'Correctness/Reduction/DelayRed.agda']),
-    ('mu-red', 'CC: globalize', [MUP + 'Correctness/Reduction/GlobalizeRed.agda']),
-    ('mu-red', 'rco', [MUP + 'Correctness/Reduction/RCORed.agda']),
-    ('mu-red', 'lift locals', [MUP + 'Correctness/Reduction/LiftLocalsRed.agda']),
-    ('mu-red', 'composition', [MUP + 'Correctness/Reduction/PipelineRed.agda']),
+    ('mu-red', 'semantics of the languages', [MU + 'Semantics/ReductionSemantics/*.agda', MUP + 'Semantics/ReductionSemantics/*.agda']),
+    ('mu-red', 'simplify', [MUP + 'Correctness/ReductionSemantics/SimplifyRed.agda']),
+    ('mu-red', 'CC: enclose', [MUP + 'Correctness/ReductionSemantics/EncloseRed.agda']),
+    ('mu-red', 'CC: optimize', [MUP + 'Correctness/ReductionSemantics/OptimizeRed.agda']),
+    ('mu-red', 'CC: concretize', [MUP + 'Correctness/ReductionSemantics/ConcretizeRed.agda']),
+    ('mu-red', 'CC: delay', [MUP + 'Correctness/ReductionSemantics/DelayRed.agda']),
+    ('mu-red', 'CC: globalize', [MUP + 'Correctness/ReductionSemantics/GlobalizeRed.agda']),
+    ('mu-red', 'rco', [MUP + 'Correctness/ReductionSemantics/RCORed.agda']),
+    ('mu-red', 'lift locals', [MUP + 'Correctness/ReductionSemantics/LiftLocalsRed.agda']),
+    ('mu-red', 'composition', [MUP + 'Correctness/ReductionSemantics/PipelineRed.agda']),
     ('mu-rinfra', 'reduction of heterogeneous vectors',
      [MU + 'Framework/ReductionAll.agda', MUP + 'Framework/ReductionAll.agda']),
     # not in the totals: ISWIMμ's public theorem statements (see its
@@ -871,7 +885,7 @@ class Count:
             for s in sides_of(side):
                 counts[(s, gname)] = counts.get((s, gname), 0) + sum(code_lines(f) for f in files)
         every = {f for f in glob.glob('agda/**/*.agda', recursive=True)
-                 if not f.startswith('agda/old/') and f not in ('agda/All.agda', U + 'All.agda', MU + 'All.agda')
+                 if not f.startswith('agda/old/') and f not in ('agda/All.agda', U + 'All.agda', MU + 'All.agda', MU + 'Experiments.agda')
                  and f not in BUNDLES and f not in scott_files() and not f.startswith('agda/Scratch/')}
         missing = sorted(every - set(seen))
         if missing:
@@ -967,10 +981,16 @@ class Count:
         if unreached:
             sys.exit('outside the proof/ directories but not reached from the theorem files:\n  '
                      + '\n  '.join(unreached))
-        unreached = sorted(msurface - reachable(mthm, self.sgraph))
-        if unreached:
-            sys.exit('in agda/Mu/, outside Mu/proof/, but not reached from the theorem files of ISWIMμ:\n  '
-                     + '\n  '.join(unreached))
+        # ISWIMμ's theorem files state only the end-to-end theorems (and
+        # delay's), so the semantics of the intermediate languages, which
+        # only the proofs use, are definitions outside Mu/proof/ that no
+        # statement reaches; they must be semantics, and import no proof
+        # module (checked above)
+        self.munreached = sorted(msurface - reachable(mthm, self.sgraph))
+        bad = [f for f in self.munreached if not f.startswith(MU + 'Semantics/')]
+        if bad:
+            sys.exit('in agda/Mu/, outside Mu/proof/ and Mu/Semantics/, but not reached from the theorem '
+                     'files of ISWIMμ:\n  ' + '\n  '.join(bad))
         self.thm, self.mthm = thm, mthm
 
     def analyze(self, P):
@@ -1275,17 +1295,26 @@ def mu_sem(x, typed_graph_lemmas=False, mu_graph_lemmas=False):
     return (f'semantics: {x}',
             [G + f'Typed/{x}.agda'] + ([GP + f'Typed/{x}.agda'] if typed_graph_lemmas else []),
             [O + f'Typed/{x}.agda'],
-            [MU + f'Semantics/Graph/{x}.agda'] + ([MUP + f'Semantics/Graph/{x}.agda'] if mu_graph_lemmas else []),
-            [MU + f'Semantics/CEK/{x}.agda'])
+            [MU + f'Semantics/GraphModel/{ml(x)}.agda'] + ([MUP + f'Semantics/GraphModel/{ml(x)}.agda'] if mu_graph_lemmas else []),
+            [MU + f'Semantics/AbstractMachines/{ml(x)}.agda'])
 
 
 def mu_pass(row, graph, cek):
     """The row of a pass, whose proofs have the same names in both pipelines."""
     return (row, [GC + g for g in graph], [OC + o for o in cek],
-            [MUP + 'Correctness/Graph/' + g for g in graph], [MUP + 'Correctness/CEK/' + o for o in cek])
+            [MUP + 'Correctness/GraphModel/' + g for g in graph], [MUP + 'Correctness/AbstractMachines/' + o for o in cek])
 
 
 MU_DELAY = ['Rel', 'Preserve', 'Reflect', 'Correct']
+
+
+def mu_delay(x):
+    """ISWIMμ's files of delay's graph-model module x: its relation, Rel, is
+    split into the approximant logical relation (ApproxLR) and DelayRel."""
+    return ([MUP + 'Correctness/GraphModel/ApproxLR.agda'] if x == 'Rel' else []) \
+        + [MUP + 'Correctness/GraphModel/Delay' + x + '.agda']
+
+
 MU_ROWS = [
     mu_sem('ISWIM'),
     mu_sem('Clos2', True, True),
@@ -1297,13 +1326,14 @@ MU_ROWS = [
     mu_sem('X86'),
     ('what the languages share: project (typed only), tables (`Ops`), the values of the μ machines',
      [G + 'Typed/Ops.agda', GP + 'Typed/Ops.agda'], [],
-     [MU + 'Semantics/Graph/Ops.agda', MUP + 'Semantics/Graph/Ops.agda'], [MU + 'Semantics/CEK/Values.agda']),
+     [MU + 'Semantics/GraphModel/Ops.agda', MUP + 'Semantics/GraphModel/Ops.agda'], [MU + 'Semantics/AbstractMachines/Values.agda']),
     ('lemmas shared by the passes (`Common`, `Clos5Common`)', [], [OC + 'Common.agda', OC + 'Clos5Common.agda'],
-     [], [MUP + 'Correctness/CEK/Clos5Common.agda', MUP + 'Semantics/CEK/Rel.agda']),
+     [], [MUP + 'Correctness/AbstractMachines/GlobalFunCommon.agda', MUP + 'Semantics/AbstractMachines/Rel.agda']),
     mu_pass('CC: enclose', ['EncloseCorrect.agda'], ['EncloseSim.agda']),
     mu_pass('CC: optimize', ['OptimizeCorrect.agda'], ['OptimizeSim.agda']),
     mu_pass('CC: concretize', ['ConcretizeCorrect.agda'], ['ConcretizeSim.agda']),
-    mu_pass('CC: delay', ['Delay' + x + '.agda' for x in MU_DELAY], ['DelaySim.agda']),
+    ('CC: delay', [GC + 'Delay' + x + '.agda' for x in MU_DELAY], [OC + 'DelaySim.agda'],
+     [f for x in MU_DELAY for f in mu_delay(x)], [MUP + 'Correctness/AbstractMachines/DelaySim.agda']),
     mu_pass('CC: globalize', ['GlobalizeCorrect.agda'], ['GlobalizeSim.agda']),
     mu_pass('rco', ['RCOCorrect.agda'], ['RCOSim.agda']),
     mu_pass('lift locals', ['LiftLocalsCorrect.agda'], ['LiftLocalsSim.agda']),
@@ -1377,7 +1407,7 @@ def mu_report(c, T):
     print('|---|---:|---:|')
     for x in MU_DELAY:
         print(f'| `Delay{x}` | {code_lines(GC + "Delay" + x + ".agda")} '
-              f'| {code_lines(MUP + "Correctness/Graph/Delay" + x + ".agda")} |')
+              f'| {sum(code_lines(f) for f in mu_delay(x))} |')
     print()
     print('| not counted in the rows | typed | μ |')
     print('|---|---:|---:|')
@@ -1397,26 +1427,26 @@ def mu_report(c, T):
 # they share and the value relations, and each pass.  The typed column is
 # without simplify and cast insertion, which ISWIMμ does not have.
 MU_CK_ROWS = [
-    ('semantics: ISWIM', [F + 'Typed/ISWIM.agda'], [MU + 'Semantics/Interp/ISWIM.agda']),
-    ('semantics: Clos2', [F + 'Typed/Clos2.agda'], [MU + 'Semantics/Interp/Clos2.agda']),
-    ('semantics: Clos3', [F + 'Typed/Clos3.agda'], [MU + 'Semantics/Interp/Clos3.agda']),
-    ('semantics: Clos4', [F + 'Typed/Clos4.agda'], [MU + 'Semantics/Interp/Clos4.agda']),
+    ('semantics: ISWIM', [F + 'Typed/ISWIM.agda'], [MU + 'Semantics/ClockedInterpreters/ISWIM.agda']),
+    ('semantics: Clos2', [F + 'Typed/Clos2.agda'], [MU + 'Semantics/ClockedInterpreters/Clos.agda']),
+    ('semantics: Clos3', [F + 'Typed/Clos3.agda'], [MU + 'Semantics/ClockedInterpreters/EnvClos.agda']),
+    ('semantics: Clos4', [F + 'Typed/Clos4.agda'], [MU + 'Semantics/ClockedInterpreters/FlatClos.agda']),
     ('semantics: Clos5 (with the lemmas about Mon\'s embedding)', [F + 'Typed/Clos5.agda', FP + 'Typed/Clos5.agda'],
-     [MU + 'Semantics/Interp/Clos5.agda', MUP + 'Semantics/Interp/Clos5.agda']),
-    ('semantics: Imp', [F + 'Typed/Imp.agda'], [MU + 'Semantics/Interp/Imp.agda']),
-    ('semantics: CFG', [F + 'Typed/CFG.agda'], [MU + 'Semantics/Interp/CFG.agda']),
-    ('semantics: X86', [F + 'Typed/X86.agda'], [MU + 'Semantics/Interp/X86.agda']),
-    ('semantics: values (`Values`)', [F + 'Typed/Values.agda'], [MU + 'Semantics/Interp/Values.agda']),
-    ('semantics: value relations (`Rel`)', [FP + 'Typed/Rel.agda'], [MUP + 'Semantics/Interp/Rel.agda']),
-    ('CC: enclose', [FC + 'EncloseFuel.agda'], [MUP + 'Correctness/Interp/EncloseFuel.agda']),
-    ('CC: optimize', [FC + 'OptimizeFuel.agda'], [MUP + 'Correctness/Interp/OptimizeFuel.agda']),
-    ('CC: concretize', [FC + 'ConcretizeFuel.agda'], [MUP + 'Correctness/Interp/ConcretizeFuel.agda']),
-    ('CC: delay', [FC + 'DelayFuel.agda'], [MUP + 'Correctness/Interp/DelayFuel.agda']),
-    ('CC: globalize', [FC + 'GlobalizeFuel.agda'], [MUP + 'Correctness/Interp/GlobalizeFuel.agda']),
-    ('rco', [FC + 'RCOFuel.agda'], [MUP + 'Correctness/Interp/RCOFuel.agda']),
-    ('lift locals', [FC + 'LiftLocalsFuel.agda'], [MUP + 'Correctness/Interp/LiftLocalsFuel.agda']),
-    ('explicate control', [FC + 'ExplicateFuel.agda'], [MUP + 'Correctness/Interp/ExplicateFuel.agda']),
-    ('select instructions', [FC + 'SelectFuel.agda'], [MUP + 'Correctness/Interp/SelectFuel.agda']),
+     [MU + 'Semantics/ClockedInterpreters/GlobalFun.agda', MUP + 'Semantics/ClockedInterpreters/GlobalFun.agda']),
+    ('semantics: Imp', [F + 'Typed/Imp.agda'], [MU + 'Semantics/ClockedInterpreters/Imp.agda']),
+    ('semantics: CFG', [F + 'Typed/CFG.agda'], [MU + 'Semantics/ClockedInterpreters/CFG.agda']),
+    ('semantics: X86', [F + 'Typed/X86.agda'], [MU + 'Semantics/ClockedInterpreters/X86.agda']),
+    ('semantics: values (`Values`)', [F + 'Typed/Values.agda'], [MU + 'Semantics/ClockedInterpreters/Values.agda']),
+    ('semantics: value relations (`Rel`)', [FP + 'Typed/Rel.agda'], [MUP + 'Semantics/ClockedInterpreters/Rel.agda']),
+    ('CC: enclose', [FC + 'EncloseFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/EncloseFuel.agda']),
+    ('CC: optimize', [FC + 'OptimizeFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/OptimizeFuel.agda']),
+    ('CC: concretize', [FC + 'ConcretizeFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/ConcretizeFuel.agda']),
+    ('CC: delay', [FC + 'DelayFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/DelayFuel.agda']),
+    ('CC: globalize', [FC + 'GlobalizeFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/GlobalizeFuel.agda']),
+    ('rco', [FC + 'RCOFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/RCOFuel.agda']),
+    ('lift locals', [FC + 'LiftLocalsFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/LiftLocalsFuel.agda']),
+    ('explicate control', [FC + 'ExplicateFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/ExplicateFuel.agda']),
+    ('select instructions', [FC + 'SelectFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/SelectFuel.agda']),
 ]
 
 
@@ -1436,7 +1466,7 @@ def mu_ck_report(c):
         tot = [t + (x or 0) for t, x in zip(tot, ns)]
         print(f'| {row} | ' + ' | '.join(cell(x) for x in ns) + ' |')
     print('| **total** | ' + ' | '.join(str(t) for t in tot) + ' |')
-    comp = [n([FC + 'CompilerFuel.agda']), n([MUP + 'Correctness/Interp/CompilerFuel.agda'])]
+    comp = [n([FC + 'CompilerFuel.agda']), n([MUP + 'Correctness/ClockedInterpreters/CompilerFuel.agda'])]
     tot = [t + x for t, x in zip(tot, comp)]
     print('| composition | ' + ' | '.join(cell(x) for x in comp) + ' |')
     print('| **total with the composition** | ' + ' | '.join(str(t) for t in tot) + ' |')
@@ -1453,30 +1483,30 @@ def mu_ck_report(c):
 # reduction semantics)
 MU_RED_ROWS = [
     ('semantics: ' + x, [RD + 'Typed/' + x + '.agda', RP + 'Typed/' + x + '.agda'],
-     [MU + 'Semantics/Reduction/' + x + '.agda', MUP + 'Semantics/Reduction/' + x + '.agda']
+     [MU + 'Semantics/ReductionSemantics/' + ml(x) + '.agda', MUP + 'Semantics/ReductionSemantics/' + ml(x) + '.agda']
      + ([MU + 'Language/ISWIMSubst.agda'] if x == 'ISWIM' else []))
     for x in ('ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5')] + [
     ('semantics: transition systems (shared)', [RD + 'Smallstep.agda'], [RD + 'Smallstep.agda']),
     ('semantics: machines of Clos5, Imp, CFG, X86 (the CEK column\'s)',
      [O + 'Typed/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')],
-     [MU + 'Semantics/CEK/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')]),
+     [MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('GlobalFun', 'Imp', 'CFG', 'X86')]),
     ('semantics: the CEK framework at this compiler\'s observations (shared)',
      [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda'],
      [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
-    ('CC: enclose', [RC + 'EncloseRed.agda'], [MUP + 'Correctness/Reduction/EncloseRed.agda']),
-    ('CC: optimize', [RC + 'OptimizeRed.agda'], [MUP + 'Correctness/Reduction/OptimizeRed.agda']),
-    ('CC: concretize', [RC + 'ConcretizeRed.agda'], [MUP + 'Correctness/Reduction/ConcretizeRed.agda']),
-    ('CC: delay', [RC + 'DelayRed.agda'], [MUP + 'Correctness/Reduction/DelayRed.agda']),
-    ('CC: globalize', [RC + 'GlobalizeRed.agda'], [MUP + 'Correctness/Reduction/GlobalizeRed.agda']),
-    ('rco', [RC + 'RCORed.agda'], [MUP + 'Correctness/Reduction/RCORed.agda']),
-    ('lift locals', [RC + 'LiftLocalsRed.agda'], [MUP + 'Correctness/Reduction/LiftLocalsRed.agda']),
-    ('explicate control (the CEK column\'s)', [OC + 'ExplicateSim.agda'], [MUP + 'Correctness/CEK/ExplicateSim.agda']),
-    ('select instructions (the CEK column\'s)', [OC + 'SelectSim.agda'], [MUP + 'Correctness/CEK/SelectSim.agda']),
+    ('CC: enclose', [RC + 'EncloseRed.agda'], [MUP + 'Correctness/ReductionSemantics/EncloseRed.agda']),
+    ('CC: optimize', [RC + 'OptimizeRed.agda'], [MUP + 'Correctness/ReductionSemantics/OptimizeRed.agda']),
+    ('CC: concretize', [RC + 'ConcretizeRed.agda'], [MUP + 'Correctness/ReductionSemantics/ConcretizeRed.agda']),
+    ('CC: delay', [RC + 'DelayRed.agda'], [MUP + 'Correctness/ReductionSemantics/DelayRed.agda']),
+    ('CC: globalize', [RC + 'GlobalizeRed.agda'], [MUP + 'Correctness/ReductionSemantics/GlobalizeRed.agda']),
+    ('rco', [RC + 'RCORed.agda'], [MUP + 'Correctness/ReductionSemantics/RCORed.agda']),
+    ('lift locals', [RC + 'LiftLocalsRed.agda'], [MUP + 'Correctness/ReductionSemantics/LiftLocalsRed.agda']),
+    ('explicate control (the CEK column\'s)', [OC + 'ExplicateSim.agda'], [MUP + 'Correctness/AbstractMachines/ExplicateSim.agda']),
+    ('select instructions (the CEK column\'s)', [OC + 'SelectSim.agda'], [MUP + 'Correctness/AbstractMachines/SelectSim.agda']),
 ]
-MU_RED_COMP = ([RC + 'PipelineRed.agda'], [MUP + 'Correctness/Reduction/PipelineRed.agda'])
+MU_RED_COMP = ([RC + 'PipelineRed.agda'], [MUP + 'Correctness/ReductionSemantics/PipelineRed.agda'])
 # what ISWIMμ's reduction column shares with its CEK column
-MU_RED_SHARED = ([MU + 'Semantics/CEK/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')]
-                 + [MUP + 'Correctness/CEK/' + x + 'Sim.agda' for x in ('Explicate', 'Select')])
+MU_RED_SHARED = ([MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('GlobalFun', 'Imp', 'CFG', 'X86')]
+                 + [MUP + 'Correctness/AbstractMachines/' + x + 'Sim.agda' for x in ('Explicate', 'Select')])
 
 
 def mu_red_check(c):
@@ -1551,8 +1581,8 @@ MU_BORROWED = "the ISWIM pipeline's modules it reuses (meaning of the primitives
 # ISWIMμ as a pipeline, for the audit-surface table (it has no graph model
 # with errors)
 MU_P = dict(sides=MU_SIDES, gerr=None, adeq='mu-adeq',
-            thm={'mu-den': MU + 'Theorems/Denotational.agda', 'mu-op': MU + 'Theorems/Simulation.agda',
-                 'mu-ck': MU + 'Theorems/Interpreter.agda', 'mu-red': MU + 'Theorems/Reduction.agda',
+            thm={'mu-den': MU + 'Theorems/GraphModel.agda', 'mu-op': MU + 'Theorems/AbstractMachines.agda',
+                 'mu-ck': MU + 'Theorems/ClockedInterpreters.agda', 'mu-red': MU + 'Theorems/ReductionSemantics.agda',
                  'mu-adeq': MU + 'Theorems/Adequacy.agda'},
             name='ISWIMμ')
 
@@ -1685,6 +1715,11 @@ def mu_main(c, T, M):
     print()
 
     c.print_audit(MU_P)
+    if c.munreached:
+        print('Not on the audit surface: the semantics of the intermediate languages, outside Mu/proof/ '
+              'but reached by no theorem statement (only the proofs use them): '
+              f'{len(c.munreached)} modules, {sum(code_lines(f) for f in c.munreached)} lines.')
+        print()
     mu_modules(c, M)
 
 
@@ -1777,7 +1812,7 @@ def mixed_analyze(c, M):
 
     def gsem(langs):
         return sum(code_lines(f) for x in langs
-                   for f in (MU + f'Semantics/Graph/{x}.agda', MUP + f'Semantics/Graph/{x}.agda')
+                   for f in (MU + f'Semantics/GraphModel/{ml(x)}.agda', MUP + f'Semantics/GraphModel/{ml(x)}.agda')
                    if os.path.exists(f))
     splits = [('(a) simplify in the graph model', ['simplify'], total, True)]
     for name_, more in (('(b) also globalize', ['CC: globalize']),
@@ -1854,7 +1889,7 @@ def mixed_report(c, M, X):
     print('|---|---:|---:|')
     for label_, x in (('soundness', 'Soundness'), ('logical relation, fundamental lemma', 'LogRel'),
                       ('statements (constants, convergence or divergence)', 'ISWIM')):
-        print(f'| {label_} | {code_lines(MUP + "Adequacy/CEK/" + x + ".agda")} | {code_lines(MUP + "Adequacy/" + x + ".agda")} |')
+        print(f'| {label_} | {code_lines(MUP + "Adequacy/AbstractMachines/" + x + ".agda")} | {code_lines(MUP + "Adequacy/" + x + ".agda")} |')
     t = code_lines(MUP + 'Adequacy/Tuples.agda')
     print(f'| tuples of sets (`Mu.proof.Adequacy.Tuples`, the same module) | {t} | {t} |')
     print(f"| **total** | {c.counts[('mu-adeq-cek', 'ISWIM')]} | **{X['rows']['bridge']}** |")
@@ -1886,15 +1921,15 @@ def iswim_brief(c, T, M):
     print('|---|---:|---:|')
     for x in MU_DELAY:
         print(f'| `Delay{x}` | {code_lines(GC + "Delay" + x + ".agda")} '
-              f'| {code_lines(MUP + "Correctness/Graph/Delay" + x + ".agda")} |')
+              f'| {sum(code_lines(f) for f in mu_delay(x))} |')
     print(f'| **total** | {sum(code_lines(GC + "Delay" + x + ".agda") for x in MU_DELAY)} '
-          f'| {sum(code_lines(MUP + "Correctness/Graph/Delay" + x + ".agda") for x in MU_DELAY)} |')
+          f'| {sum(code_lines(f) for x in MU_DELAY for f in mu_delay(x))} |')
     print()
 
 
-SC, SCP = MU + 'proof/Correctness/Scott/', MU + 'proof/Semantics/Scott/'
+SC, SCP = MU + 'proof/Correctness/ScottDomains/', MU + 'proof/Semantics/ScottDomains/'
 SCOTT_ROWS = [
-    ('semantics of the languages', [MU + 'Semantics/Scott/*.agda', A + 'Semantics/Scott/*.agda']),
+    ('semantics of the languages', [MU + 'Semantics/ScottDomains/*.agda', A + 'Semantics/Scott/*.agda']),
     ('lemmas shared by the passes', [SCP + '*.agda']),
     ('simplify', [SC + 'SimplifyCorrect.agda', MUP + 'Compiler/SimplifyFacts.agda']),
     ('CC: enclose', [SC + 'EncloseCorrect.agda']),
@@ -1930,7 +1965,7 @@ def scott_report(c, M):
     sf = scott_files()
     rows = [(r, files(ps)) for r, ps in SCOTT_ROWS]
     infra = [(r, files(ps)) for r, ps in SCOTT_INFRA]
-    thm = [MU + 'Theorems/Scott.agda']
+    thm = [MU + 'Theorems/ScottDomains.agda']
     covered = {f for _, fs in rows + infra for f in fs} | set(thm) | {A + 'AllScott.agda'}
     missing = sorted(sf - covered)
     if missing:
@@ -1987,7 +2022,7 @@ def scott_report(c, M):
         print(f'| {r} | {n} |')
     print(f'| **total** | {itotal} |')
     print()
-    print(f'Theorem statements (Mu/Theorems/Scott.agda): {sum(code_lines(f) for f in thm)} lines.')
+    print(f'Theorem statements (Mu/Theorems/ScottDomains.agda): {sum(code_lines(f) for f in thm)} lines.')
     print()
     typetopology_report()
 

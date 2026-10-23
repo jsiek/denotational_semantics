@@ -1,13 +1,13 @@
 {-
 
-  Monμ: monadic normal form of Clos5μ, intrinsically. The output of
+  Monμ: monadic normal form of GlobalFunμ, intrinsically. The output of
   remove complex operands (Mu/Compiler/RCO.agda); as Monᵀ
-  (Language/Typed/Mon.agda), with the types of Clos5μ.
+  (Language/Typed/Mon.agda), with the types of GlobalFunμ.
 
   An atom is a variable, a literal or a reference to a definition. The
   operands of every operation, and the scrutinee of case, are atoms; the
   right-hand side and body of let and the branches of case are
-  expressions. Its meaning is that of its embedding into Clos5μ (⌜_⌝).
+  expressions. Its meaning is that of its embedding into GlobalFunμ (⌜_⌝).
 
 -}
 
@@ -16,8 +16,8 @@ module Mu.Language.Mon where
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
 open import Mu.Language.Type
-open import Mu.Language.Clos5 using (DSig; sig; Args) public
-import Mu.Language.Clos5 as C
+open import Mu.Language.GlobalFun using (DSig; sig; Args) public
+import Mu.Language.GlobalFun as C
 open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 
 open import Data.List using (List; []; _∷_)
@@ -54,7 +54,7 @@ ren r (var x) = var (r x)
 ren r (lit B c) = lit B c
 ren r (ref f) = ref f
 
-{- The embedding into Clos5μ: the meaning of a Monμ program -}
+{- The embedding into GlobalFunμ: the meaning of a Monμ program -}
 
 ⌜_⌝ᵃ : ∀ {Σ Γ A} → Atm Σ Γ A → C.Tm Σ Γ A
 ⌜ var x ⌝ᵃ = C.` x

@@ -11,8 +11,8 @@
   * countdown = fix (λc. λn. if n = 0 then 0 else c (n - 1)), and
     countdown 3.
 
-  Each is compiled with compile₄ (Mu/Compiler/Pipeline.agda) and run on
-  the ISWIMμ and Clos4μ machines, by computation.
+  Each is compiled with compile-to-FlatClos (Mu/Compiler/Pipeline.agda) and run on
+  the ISWIMμ and FlatClosμ machines, by computation.
 
 -}
 
@@ -22,11 +22,11 @@ open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
 open import Mu.Language.Type
 open import Mu.Language.ISWIM
-open import Mu.Compiler.Pipeline using (compile₄)
+open import Mu.Compiler.Pipeline using (compile-to-FlatClos)
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.CEK.Smallstep using (Machine; next; stop)
-import Mu.Semantics.CEK.ISWIM as ISWIMμₘ
-import Mu.Semantics.CEK.Clos4 as Clos4μₘ
+import Mu.Semantics.AbstractMachines.ISWIM as ISWIMμₘ
+import Mu.Semantics.AbstractMachines.FlatClos as FlatClosμₘ
 
 open import Data.Fin using (zero)
 open import Data.Integer using (+_)
@@ -78,12 +78,12 @@ run n L = go n (Machine.start L)
 three-iswim : run 200 (ISWIMμₘ.sem three) ≡ just (o-const Int (+ 0))
 three-iswim = refl
 
-three-clos4 : run 400 (Clos4μₘ.sem (compile₄ three)) ≡ just (o-const Int (+ 0))
+three-clos4 : run 400 (FlatClosμₘ.sem (compile-to-FlatClos three)) ≡ just (o-const Int (+ 0))
 three-clos4 = refl
 
 {- Ω runs on, on both machines -}
 Ω-iswim : run 200 (ISWIMμₘ.sem Ω) ≡ nothing
 Ω-iswim = refl
 
-Ω-clos4 : run 400 (Clos4μₘ.sem (compile₄ Ω)) ≡ nothing
+Ω-clos4 : run 400 (FlatClosμₘ.sem (compile-to-FlatClos Ω)) ≡ nothing
 Ω-clos4 = refl

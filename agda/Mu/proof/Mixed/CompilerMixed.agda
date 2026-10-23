@@ -1,8 +1,8 @@
 {-
 
   The ISWIMμ compiler proved by mixing semantics: simplify in the graph
-  model (Mu/proof/Correctness/Graph/SimplifyCorrect.agda), every other
-  pass by the clocked interpreters (Mu/proof/Correctness/Interp/, as in
+  model (Mu/proof/Correctness/GraphModel/SimplifyCorrect.agda), every other
+  pass by the clocked interpreters (Mu/proof/Correctness/ClockedInterpreters/, as in
   CompilerFuel.agda), joined at ISWIMμ by the bridge between its graph
   semantics and its interpreter (Mu/proof/Adequacy/ISWIM.agda, the
   graph model's adequacy for the ISWIMμ interpreter), used for
@@ -11,11 +11,11 @@
     ISWIMμ interpreter, M  ⇔  ⟦ M ⟧ ρ₀              (bridge)
                            ⇔  ⟦ simplify M ⟧ ρ₀     (simplify, graph model)
                            ⇔  ISWIMμ interpreter, simplify M   (bridge)
-                           ⇔  X86μ interpreter, compile-x86 M  (the other passes, interpreters)
+                           ⇔  X86μ interpreter, compile M  (the other passes, interpreters)
 
   for constants, and for divergence through the emptiness of the
   denotations. The end theorem is the interpreter column's
-  (Mu/proof/Correctness/Interp/CompilerFuel.agda): for a main of type
+  (Mu/proof/Correctness/ClockedInterpreters/CompilerFuel.agda): for a main of type
   Int, the interpreters of ISWIMμ and X86μ stop with the same constant,
   or both diverge.
 
@@ -26,30 +26,30 @@ module Mu.proof.Mixed.CompilerMixed where
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
-open import Mu.Semantics.Graph.Closed using (ρ₀)
+open import Mu.Semantics.GraphModel.Closed using (ρ₀)
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
-open import Mu.Semantics.Graph.ISWIM using (⟦_⟧)
+open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
 open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Enclose using (enclose)
 open import Mu.Compiler.Optimize using (optimize-program)
 open import Mu.Compiler.Concretize using (concretize-program)
-open import Mu.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import Mu.Compiler.Pipeline using (compile-to-FlatClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.Interp.ISWIM as ISWIMμᵢ
-import Mu.Semantics.Interp.X86 as X86μᵢ
+import Mu.Semantics.ClockedInterpreters.ISWIM as ISWIMμᵢ
+import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
-open import Mu.proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
-open import Mu.proof.Correctness.Interp.EncloseFuel using (enclose-correct)
-open import Mu.proof.Correctness.Interp.OptimizeFuel using (optimize-correct)
-open import Mu.proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
-open import Mu.proof.Correctness.Interp.DelayFuel using (delay-correct)
-open import Mu.proof.Correctness.Interp.GlobalizeFuel using (globalize-correct)
-open import Mu.proof.Correctness.Interp.RCOFuel using (rco-correct)
-open import Mu.proof.Correctness.Interp.LiftLocalsFuel using (lift-locals-correct)
-open import Mu.proof.Correctness.Interp.ExplicateFuel using (explicate-correct)
-open import Mu.proof.Correctness.Interp.SelectFuel using (select-correct)
+open import Mu.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.EncloseFuel using (enclose-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.OptimizeFuel using (optimize-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.ConcretizeFuel using (concretize-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.DelayFuel using (delay-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.GlobalizeFuel using (globalize-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.RCOFuel using (rco-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.LiftLocalsFuel using (lift-locals-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.ExplicateFuel using (explicate-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.SelectFuel using (select-correct)
 open import Mu.proof.Adequacy.ISWIM using (const-iff; diverges-iff)
 
 open import Data.Integer using (ℤ)
@@ -65,27 +65,27 @@ private
   ⇔-sym (f , g) = g , f
 
 {- the passes after simplify, by the interpreters -}
-after-simplify : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem (simplify M)) (X86μᵢ.sem (compile-x86 M))
+after-simplify : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem (simplify M)) (X86μᵢ.sem (compile M))
 after-simplify M =
   equiv-trans (enclose-correct (simplify M)) (equiv-trans (optimize-correct M₁)
     (equiv-trans (concretize-correct M₂) (equiv-trans (delay-correct (concretize-program M₂))
-      (equiv-trans (globalize-correct (compile₄ M)) (equiv-trans (rco-correct (compile M))
-        (equiv-trans (lift-locals-correct (compile-mon M)) (equiv-trans (explicate-correct (compile-imp M))
-          (select-correct (compile-cfg M)))))))))
+      (equiv-trans (globalize-correct (compile-to-FlatClos M)) (equiv-trans (rco-correct (compile-to-GlobalFun M))
+        (equiv-trans (lift-locals-correct (compile-to-Mon M)) (equiv-trans (explicate-correct (compile-to-Imp M))
+          (select-correct (compile-to-CFG M)))))))))
   where M₁ = enclose (simplify M)
         M₂ = optimize-program M₁
 
 {- for a main of type Int, as the other columns state it -}
 
-compile-x86-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
-  → Terminates (ISWIMμᵢ.sem M) (o-const Int k) ⇔ Terminates (X86μᵢ.sem (compile-x86 M)) (o-const Int k)
-compile-x86-const M k =
+compile-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
+  → Terminates (ISWIMμᵢ.sem M) (o-const Int k) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int k)
+compile-const M k =
   ⇔-sym (const-iff M) ∘⇔ ((proj₁ S _ , proj₂ S _) ∘⇔ (const-iff (simplify M)
     ∘⇔ Equivalent.terminates (after-simplify M) (o-const Int k)))
   where S = simplify-correct M
 
-compile-x86-diverges : ∀ (M : Tm [] (base Int)) → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (X86μᵢ.sem (compile-x86 M))
-compile-x86-diverges M =
+compile-diverges : ∀ (M : Tm [] (base Int)) → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (X86μᵢ.sem (compile M))
+compile-diverges M =
   diverges-iff M ∘⇔ (empty ∘⇔ (⇔-sym (diverges-iff (simplify M)) ∘⇔ Equivalent.diverges (after-simplify M)))
   where
   S = simplify-correct M
