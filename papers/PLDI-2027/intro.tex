@@ -54,12 +54,17 @@ These challenges motivate five research questions:
 \item[RQ5] How does using Scott domains instead of a graph model affect the proof?
 \end{description}
 
-We answer RQ1 affirmatively. The final missing link is a new
-denotational result: closure conversion both preserves and reflects
-divergence for a higher-order language with general recursion. Our
-semantics is a graph model: a program's denotation is a set of
-inductively defined \emph{graph elements}. The key to the reflection
-direction is a new kind of relation between denotations, which we call
+We answer RQ1 affirmatively, in two denotational models. The final
+missing link is a new denotational result: closure conversion both
+preserves and reflects divergence for a higher-order language with
+general recursion. Our first model is a graph model, in which a
+program's denotation is a set of inductively defined \emph{graph
+elements}. Each graph element is a finite piece of evidence about the
+program's behavior, the meaning of a function is a set of
+input--output entries, and a program that diverges produces no
+evidence, so its meaning is the empty set
+\citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq}. The key to the
+reflection direction is a new kind of relation between denotations, which we call
 an \emph{approximant logical relation}. Relating one target graph
 element to one source graph element fails because a target call takes
 the code and environment of a closure apart, from different pairs.
@@ -71,7 +76,14 @@ elements (a finite approximation), which contains both halves of each
 call it describes, to the whole source denotation, and define the
 relation by recursion on the depth of the elements in the finite set.
 This definition is well founded without recursion on types or an index
-that counts steps of computation.
+that counts steps of computation. Our second model uses Scott domains:
+a program denotes an element of a universal domain of tagged values,
+and divergence is its least element. Scott values are infinite, so the
+relation cannot recurse on finite elements. We define it instead by
+recursion on the stages of the bilimit that constructs the domain, as
+\citet{Reynolds:1974aa} did, with one relation for each direction; in
+the reflection direction, the relation must relate calls across stages
+(Section~\ref{sec:scott-delay}).
 
 We use this closure-conversion result in the correctness proof of a
 ten-pass compiler from a call-by-value $\lambda$-calculus with
@@ -82,13 +94,14 @@ divergence. The compiler first applies a source-to-source optimizer
 modeled on the cp0 pass of Chez Scheme \citep{Waddell:1997fk}, then
 performs closure conversion in four passes, and finally uses five
 passes to make functions global, remove complex operands, lift locals,
-make control flow explicit, and select instructions. Every language in
-the compiler has a denotational semantics. We prove most passes
-correct by an equation between the denotations before and after the
-pass. RQ3 nevertheless has a negative answer. The pass that lowers
-closures to code and environment pairs, which we call \pass{delay},
-does not yield to equational reasoning; its reflection proof uses the
-approximant logical relation discussed above.
+make control flow explicit, and select instructions. Every language in the
+compiler has a denotational semantics in each model. In both, we prove
+most passes correct by an equation between the denotations before and
+after the pass. RQ3 nevertheless has a negative answer. The pass that
+lowers closures to code and environment pairs, which we call
+\pass{delay}, does not yield to equational reasoning; its reflection
+proof uses the approximant logical relation in the graph model and the
+stage relation in Scott domains.
 
 The whole-compiler correctness theorem states that the source and
 target denotations contain the same constants and are nonempty
@@ -97,15 +110,6 @@ of the assembly language are adequate with respect to the interpreters
 for those languages. Our correctness theorem is therefore equivalent
 to the usual operational one.  We mechanize all of these results in
 Agda.
-
-In a graph model, each graph element is a finite piece of evidence
-about a program's behavior, the meaning of a function is a set of
-input--output entries, and a program that diverges produces no
-evidence, so its meaning is the empty set
-\citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq}. We chose a graph
-model because it is elementary: a denotation is a set of inductively
-defined graph elements, so mechanizing the model takes a fraction of
-the size of traditional domain theory (Section~\ref{sec:graph-models}).
 
 The closest prior denotational proofs each stop short of this
 combination of closure conversion, general recursion, and semantic
@@ -150,13 +154,13 @@ programming languages.'' We know of no prior denotational proof of
 closure conversion for a language with general recursion that both
 preserves and reflects divergence.
 
-Finally, to answer RQ2, RQ4, and RQ5, which depend on comparing the
-graph-model proof with other styles, we prove the same compiler
-correct four more times: with abstract machines and simulations; with
-clocked interpreters and value relations; with standard reduction
-semantics and simulations; and, denotationally, with Scott domains.
-Each development covers the ten-pass pipeline and proves an analogous
-correctness property in its own semantics. Earlier comparisons of
+Finally, to answer RQ2, RQ4, and RQ5, we compare the sizes of the two
+denotational proofs with each other and with three operational proofs
+of the same compiler: with abstract machines and simulations; with
+clocked interpreters and value relations; and with standard reduction
+semantics and simulations. Each of the five developments covers the
+ten-pass pipeline and proves an analogous correctness property in its
+own semantics. Earlier comparisons of
 semantic styles for compiler proofs cover a single phase or pass
 \citep{Owens:2016aa,Kahn:2025aa}; ours is, to our knowledge, the first
 on a compiler for a higher-order language down to assembly that
@@ -164,23 +168,21 @@ includes a denotational style.
 
 The comparison answers RQ2 affirmatively and explains, pass by pass,
 the mixed answer to RQ4. Where a pass keeps the representation of
-values, equational reasoning is concise: the graph-model proof of the
-source optimizer, \pass{simplify}, takes 349 lines against 508 to 697
-for the operational proofs (Section~\ref{sec:equational}). Where a
-pass changes the representation of closures, the relation between
-denotations makes the proof larger, which quantifies the negative
-answer to RQ3: the proof of \pass{delay} takes 450 lines against 35 to
-126. The two effects nearly cancel. Counting each proof against its
+values, equational reasoning is concise: the proofs of the source
+optimizer, \pass{simplify}, take 349 lines in the graph model and 411
+with Scott domains, against 508 to 697 for the operational proofs
+(Section~\ref{sec:equational}). Where a pass changes the representation
+of closures, the relation between denotations makes the proof larger,
+which quantifies the negative answer to RQ3: the proofs of
+\pass{delay} take 450 and 723 lines against 35 to 126. The two effects nearly cancel. Counting each proof against its
 own semantics, the graph-model development ranks second of the five,
 behind clocked interpreters, and third once the language-independent
 infrastructure is counted.  For RQ5, the Scott-domain proof is 1.4
-times as large as the graph-model proof. The main reason is that Scott
-values are infinite: the relation for \pass{delay} cannot recurse on
-them, and because the method of \citet{Pitts:1996aa} does not apply
-directly, we built it stage by stage, using a technique of
-\citet{Reynolds:1974aa}. The result is a second denotational proof of
-closure conversion that preserves and reflects divergence
-(Section~\ref{sec:scott-delay}).
+times as large as the graph-model proof and larger for every pass. Much
+of the difference is in \pass{delay}: the stage relation must be shown
+admissible and preserved by the maps between stages, and the method of
+\citet{Pitts:1996aa}, which would avoid the stages, does not apply
+directly (Section~\ref{sec:evaluation}).
 
 
 Our contributions are:
@@ -190,12 +192,14 @@ Section~\ref{sec:compiler} presents the compiler and its languages, and
 Section~\ref{sec:graph-models} the graph model. Section~\ref{sec:compiler-proof}
 proves the compiler correct: the passes proved by an equation
 (Section~\ref{sec:equational}), \pass{delay} with the approximant
-logical relation (Section~\ref{sec:approx-lr}), and adequacy
+logical relation (Section~\ref{sec:approx-lr}) and with Scott domains
+(Section~\ref{sec:scott-delay}), and adequacy
 (Section~\ref{sec:adequacy}). Section~\ref{sec:evaluation} compares
 the proof with four other proofs of the same compiler,
 Section~\ref{sec:related} discusses related work, and
 Section~\ref{sec:conclusion} concludes. The appendices give the graph-model semantics of every language, the
-passes, the remaining calculations, and the other four semantics of
-the source and target languages.
+passes, the remaining calculations, the other four semantics of
+the source and target languages, and the Scott-domain proof of
+\pass{delay}.
 
 
