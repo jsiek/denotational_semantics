@@ -615,7 +615,11 @@ A syntactic value is \emph{small} when it is a variable, a constant,
 $\langle\rangle$, or $\kw{inl}\;a$ or $\kw{inr}\;a$ of one of those;
 only small values are duplicated. On a term, \pass{simplify} returns a
 pair $(T, K)$ of the simplified term $T$ and what it knows about
-the term's value, $K$: a syntactic value $V$ that the term is known to
+the term's value, $K$:
+\[
+  K ::= V \mid \langle \lambda x.\, N, E \rangle \mid \bot
+\]
+that is, a syntactic value $V$ that the term is known to
 equal, a function $\langle \lambda x.\, N, E \rangle$ (its body before
 simplification, with what was known where it was defined), or nothing,
 $\bot$. An environment $E$ maps each variable to such a pair: the term
@@ -894,28 +898,31 @@ a program.
 \agda{Mu/Compiler/Select.agda (select)}
 
 The code of a simple expression $r$ is selected in continuation-passing
-style, $\pass{sel}(r, o, k)$: its value goes to $o$, which is either
-$\kw{rax}$ (written $\kw{ret}$) or the next slot $x$ (written
-$\kw{to}\;x$), and then the instructions $k$ run. We write $\bar{o}$
+style, $\pass{sel}(r, \omega, k)$: its value goes to $\omega$, which is either
+$\kw{rax}$ or the next slot $x$,
+\[
+  \omega ::= \kw{ret} \mid \kw{to}\;x
+\]
+and then the instructions $k$ run. We write $\bar{\omega}$
 for the destination, $\%\kw{rax}$ or $x$. An operand of a function
 type or a sum type is a slot $x$, because no constant has those types,
 so $\kw{callc}$ and $\kw{case}$ take a slot.
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{sel}(a, o, k) & = & \kw{movq}\; a, \bar{o};\; k\\
-  \pass{sel}(\kw{pack}\;a_1\;a_2, o, k) & = & \kw{alloc}\; \kw{pair}(a_1, a_2), \bar{o};\; k\\
-  \pass{sel}(\kw{callc}\;x\;a, o, k) & = &
+  \pass{sel}(a, \omega, k) & = & \kw{movq}\; a, \bar{\omega};\; k\\
+  \pass{sel}(\kw{pack}\;a_1\;a_2, \omega, k) & = & \kw{alloc}\; \kw{pair}(a_1, a_2), \bar{\omega};\; k\\
+  \pass{sel}(\kw{callc}\;x\;a, \omega, k) & = &
     \kw{fst}\; x, \%\kw{rax};\; \kw{snd}\; x, \%\kw{rdi};\; \kw{movq}\; a, \%\kw{rsi};\\
-  & & \kw{callq}\; \%\kw{rax};\; \kw{movq}\; \%\kw{rax}, \bar{o};\; k\\
-  \pass{sel}(\kw{tuple}\;(a_1, \ldots, a_n), o, k) & = & \kw{alloc}\; \kw{tuple}(a_1, \ldots, a_n), \bar{o};\; k\\
-  \pass{sel}(\kw{get}_i\,a, o, k) & = & \kw{load}\; \kw{get}_i\; a, \bar{o};\; k\\
-  \pass{sel}(\kw{inl}\;a, o, k) & = & \kw{alloc}\; \kw{inl}(a), \bar{o};\; k
+  & & \kw{callq}\; \%\kw{rax};\; \kw{movq}\; \%\kw{rax}, \bar{\omega};\; k\\
+  \pass{sel}(\kw{tuple}\;(a_1, \ldots, a_n), \omega, k) & = & \kw{alloc}\; \kw{tuple}(a_1, \ldots, a_n), \bar{\omega};\; k\\
+  \pass{sel}(\kw{get}_i\,a, \omega, k) & = & \kw{load}\; \kw{get}_i\; a, \bar{\omega};\; k\\
+  \pass{sel}(\kw{inl}\;a, \omega, k) & = & \kw{alloc}\; \kw{inl}(a), \bar{\omega};\; k
     \qquad \text{and likewise for } \kw{inr}\\
-  \pass{sel}(\kw{prim}_{\kw{sub}}\;a_1\;a_2, o, k) & = &
-    \kw{movq}\; a_1, \%\kw{rax};\; \kw{subq}\; a_2, \%\kw{rax};\; \kw{movq}\; \%\kw{rax}, \bar{o};\; k\\
-  \pass{sel}(\kw{prim}_{\kw{eq}}\;a_1\;a_2, o, k) & = & \kw{cmpq}\; a_2, a_1;\; \kw{sete}\; \bar{o};\; k\\
-  \pass{sel}(\kw{fold}\;a, o, k) & = & \kw{movq}\; \kw{fold}\;a, \bar{o};\; k\\
-  \pass{sel}(\kw{unfold}\;a, o, k) & = & \kw{movq}\; \kw{unfold}\;a, \bar{o};\; k\\[4pt]
+  \pass{sel}(\kw{prim}_{\kw{sub}}\;a_1\;a_2, \omega, k) & = &
+    \kw{movq}\; a_1, \%\kw{rax};\; \kw{subq}\; a_2, \%\kw{rax};\; \kw{movq}\; \%\kw{rax}, \bar{\omega};\; k\\
+  \pass{sel}(\kw{prim}_{\kw{eq}}\;a_1\;a_2, \omega, k) & = & \kw{cmpq}\; a_2, a_1;\; \kw{sete}\; \bar{\omega};\; k\\
+  \pass{sel}(\kw{fold}\;a, \omega, k) & = & \kw{movq}\; \kw{fold}\;a, \bar{\omega};\; k\\
+  \pass{sel}(\kw{unfold}\;a, \omega, k) & = & \kw{movq}\; \kw{unfold}\;a, \bar{\omega};\; k\\[4pt]
   \pass{tail}(\kw{return}\;r) & = & \pass{sel}(r, \kw{ret}, \kw{retq})\\
   \pass{tail}(x \mathrel{:=} r;\; t) & = & \pass{sel}(r, \kw{to}\;x, \pass{tail}(t))\\
   \pass{tail}(\kw{goto}\;l) & = & \kw{jmp}\; l\\

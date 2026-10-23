@@ -42,7 +42,12 @@ $\rho$ of the $\lambda$-abstraction, a list of values; we write
 $\langle \lambda x.\,N, \rho\rangle$ for $\kw{pack}(\kw{code}\,N,
 \kw{tup}(\rho))$. In x86$\mu$, the code of a closure is the name $f$ of a
 definition. A run is observed through its final value, forgetting the
-code and environment inside closures:
+code and environment inside closures. An observation is one of
+\[
+  o ::= c \mid \mathit{fun} \mid \mathit{tuple}(o_1, \ldots, o_n)
+    \mid \mathit{left}(o) \mid \mathit{right}(o) \mid \mathit{error}
+\]
+and the observation of a value is
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
   \mathit{obs}(c) & = & c &
@@ -53,8 +58,8 @@ code and environment inside closures:
   \mathit{obs}(\kw{inr}\,v) & = & \mathit{right}(\mathit{obs}(v))
 \end{array}
 \]
-and $\mathit{obs}(\kw{code}\,f) = \mathit{fun}$. A run may also stop
-with the observation $\mathit{error}$, which no well-typed program
+and $\mathit{obs}(\kw{code}\,f) = \mathit{fun}$. A run stops
+with the observation $\mathit{error}$ when it gets stuck, which no well-typed program
 reaches. The primitives compute $\delta_{\kw{sub}}(n, m) = n - m$ and
 $\delta_{\kw{eq}}(n, m) = \kw{inl}\,\kw{tup}()$ if $n = m$ and
 $\kw{inr}\,\kw{tup}()$ otherwise.
@@ -72,7 +77,10 @@ each define their own $\longrightarrow$ and $\longrightarrow
 \paragraph{Clocked interpreters}
 
 A clocked interpreter maps a clock $k \in \mathbb{N}$ to a result,
-which is $\mathsf{timeout}$, $\mathsf{error}$, or $\mathsf{ret}\,v$
+which is one of
+\[
+  \mathsf{timeout} \mid \mathsf{error} \mid \mathsf{ret}\,v
+\]
 for a value $v$. We write $v \leftarrow e;\; e'$ for the result of $e'$
 when $e$ is $\mathsf{ret}\,v$, and for $e$ itself when $e$ is
 $\mathsf{timeout}$ or $\mathsf{error}$. An interpreter \emph{terminates
@@ -282,7 +290,11 @@ substitution, call by value and left to right. The values are
     \mid \kw{inr}\,V \mid \kw{fold}\,V
 \]
 The function $\mathit{red}(M)$ says whether a closed term $M$ is a
-value ($\mathsf{val}$) or reduces to a term $M'$ ($\mathsf{to}\,M'$).
+value ($\mathsf{val}$) or reduces to a term $M'$ ($\mathsf{to}\,M'$),
+so its result is one of
+\[
+  \mathsf{val} \mid \mathsf{to}\,M'
+\]
 In each case below, the subterms are reduced left to right. A subterm
 that reduces makes the whole term reduce in the same position, and once
 the subterms are values the term takes its own step.
