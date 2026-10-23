@@ -20,16 +20,15 @@ before and after the pass. The exception is the step of closure
 conversion that lowers closures to pairs of code and environment: its
 reflection direction needs a new kind of logical relation on
 denotations, which we call \emph{approximant logical relations}. We
-mechanize the proof in Agda.
+then prove the same compiler correct with Scott domains in place of the
+graph model, which gives a second denotational proof of closure
+conversion that preserves and reflects divergence. There, the lowering
+of closures needs a logical relation defined by recursion on the stages
+of the domain. We mechanize both proofs in Agda.
 
-To compare this graph-model approach with other styles, we prove
-correctness of the same compiler four more times, in three operational
-styles and with Scott domains, and compare the sizes of the proofs.
-The Scott-domain proof is a second denotational proof of closure
-conversion that preserves and reflects divergence; there, the lowering
-of closures needs a relation defined by recursion on the stages of the
-domain.  The
-graph-model development is smaller than the proofs using abstract
+To compare these denotational approaches with other styles, we also
+prove the same compiler correct in three operational styles and
+compare the sizes of the five proofs. The graph-model development is smaller than the proofs using abstract
 machines, reduction semantics, and Scott domains, but larger than the
 proof using clocked interpreters. Compared with the operational
 proofs, the graph-model proofs tend to be smaller for passes that
