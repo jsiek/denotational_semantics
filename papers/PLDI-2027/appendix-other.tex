@@ -379,32 +379,37 @@ of value it is, and the payload holds its contents:
 \]
 where $\mathbf{1}$ is the one-point domain and $[\mathbb{D} \to \mathbb{D}]$
 the domain of continuous functions. The least element $\bot$ of $\mathbb{D}$ means divergence;
-a value $d$ is \emph{defined} when $d \neq \bot$. We write $t(x)$ for the
-value with tag $t$ and payload $x$. As in the graph model, the operators are
+a value $d$ is \emph{defined} when $d \neq \bot$, that is, when
+$d = \up{(t, x)}$ for a tag $t$ and a payload $x$ in
+$\mathit{Payload}_t(\mathbb{D})$, where $\up{\cdot}$ is the injection of
+lifting. The empty tuple is $\langle\rangle = \up{(\mathit{tup}_0, ())}$,
+where $()$ is the element of $\mathbf{1}$ and of $\mathbb{D}^0$. As in the graph model, the operators are
 strict, and each of them is also continuous. We define them as follows,
 where $g'$ is the strict function that agrees with $g$ on defined
 values and maps $\bot$ to $\bot$.
 \begin{align*}
-  \Lambda(g) &= \mathit{fun}(g') \\
-  \mathsf{app}(d, e) &= h(e) &&\text{if } d = \mathit{fun}(h) \text{ and } e \text{ is defined} \\
-  \mathcal{T}(d_1, \ldots, d_n) &= \mathit{tup}_n(d_1, \ldots, d_n) &&\text{if every } d_i \text{ is defined} \\
-  \pi_{\mathsf{tup}_i}(d) &= d_i &&\text{if } d = \mathit{tup}_n(d_1, \ldots, d_n) \\
-  \mathsf{pair}(d, e) &= \mathit{pr}(d, e) &&\text{if } d \text{ and } e \text{ are defined} \\
-  \car(d) &= d_1 &&\text{if } d = \mathit{pr}(d_1, d_2) \\
-  \cdr(d) &= d_2 &&\text{if } d = \mathit{pr}(d_1, d_2) \\
-  \mathsf{inl}(d) &= \mathit{left}(d) &&\text{if } d \text{ is defined} \\
-  \mathsf{inr}(d) &= \mathit{right}(d) &&\text{if } d \text{ is defined} \\
-  \mathsf{cases}(d, f, g) &= f(e) &&\text{if } d = \mathit{left}(e) \\
-   &= g(e) &&\text{if } d = \mathit{right}(e) \\
-  \mathsf{prim}_p(d, e) &= \delta_p(n, m) &&\text{if } d = n \text{ and } e = m \text{ are integers} \\
+  \Lambda(g) &= \up{(\mathit{fun}, g')} \\
+  \mathsf{app}(d, e) &= h(e) &&\text{if } d = \up{(\mathit{fun}, h)} \text{ and } e \text{ is defined} \\
+  \mathcal{T}(d_1, \ldots, d_n) &= \up{(\mathit{tup}_n, (d_1, \ldots, d_n))} &&\text{if every } d_i \text{ is defined} \\
+  \pi_{\mathit{tup}_i}(d) &= d_i &&\text{if } d = \up{(\mathit{tup}_n, (d_1, \ldots, d_n))} \\
+  \mathsf{pair}(d, e) &= \up{(\mathit{pr}, (d, e))} &&\text{if } d \text{ and } e \text{ are defined} \\
+  \car(d) &= d_1 &&\text{if } d = \up{(\mathit{pr}, (d_1, d_2))} \\
+  \cdr(d) &= d_2 &&\text{if } d = \up{(\mathit{pr}, (d_1, d_2))} \\
+  \mathsf{inl}(d) &= \up{(\mathit{left}, d)} &&\text{if } d \text{ is defined} \\
+  \mathsf{inr}(d) &= \up{(\mathit{right}, d)} &&\text{if } d \text{ is defined} \\
+  \mathsf{cases}(d, f, g) &= f(e) &&\text{if } d = \up{(\mathit{left}, e)} \\
+   &= g(e) &&\text{if } d = \up{(\mathit{right}, e)} \\
+  \mathsf{prim}_p(d, e) &= \mathit{out}(\delta(p, n, m)) &&\text{if } d = \up{(n, ())} \text{ and } e = \up{(m, ())} \text{ for integers } n, m \\
   \mathsf{seq}(d, e) &= e &&\text{if } d \text{ is defined}
 \end{align*}
 In every case that the equations do not cover, the result is $\bot$.
-The Boolean results of $\delta_{\kw{eq}}$ are
-$\mathsf{inl}(\mathit{tup}_0())$ and $\mathsf{inr}(\mathit{tup}_0())$.
+As in the graph model (Appendix~\ref{app:operators}), $\mathit{out}$ turns
+the result of a primitive into a value: $\mathit{out}(k) = \up{(k, ())}$
+for an integer $k$, $\mathit{out}(\mathsf{true}) = \up{(\mathit{left}, \langle\rangle)}$,
+and $\mathit{out}(\mathsf{false}) = \up{(\mathit{right}, \langle\rangle)}$.
 An environment maps variables to values, and the environment $\rho_0$
 of a closed program maps every variable to the empty tuple
-$\mathit{tup}_0()$.
+$\langle\rangle$.
 
 \paragraph{Semantics of \iswim}
 
@@ -413,11 +418,11 @@ The semantics of \iswim\ has the equations of the graph-model semantics
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
   \den{x}\rho & = & \rho(x) &
-  \den{c}\rho & = & c()\\
+  \den{c}\rho & = & \up{(c, ())}\\
   \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{d} \den{N}\rho[x{:=}d]) &
   \den{L\;M}\rho & = & \mathsf{app}(\den{L}\rho, \den{M}\rho)\\
   \den{\kw{tuple}\;(M_1, \ldots, M_n)}\rho & = & \mathcal{T}(\den{M_1}\rho, \ldots, \den{M_n}\rho) &
-  \den{\kw{get}_i\,M}\rho & = & \pi_{\mathsf{tup}_i}(\den{M}\rho)\\
+  \den{\kw{get}_i\,M}\rho & = & \pi_{\mathit{tup}_i}(\den{M}\rho)\\
   \den{\kw{inl}\;M}\rho & = & \mathsf{inl}(\den{M}\rho) &
   \den{\kw{inr}\;M}\rho & = & \mathsf{inr}(\den{M}\rho)\\
   \den{\kw{prim}_p\;L\;M}\rho & = & \mathsf{prim}_p(\den{L}\rho, \den{M}\rho) &
@@ -439,12 +444,12 @@ The semantics of x86$\mu$ has the equations of the graph-model
 semantics of x86$\mu$ (Appendix~\ref{app:languages}), with the
 operators of $\mathbb{D}$ in place of those of the graph model,
 $\mathsf{seq}$ in place of $\mathsf{guard}$ in the meaning of
-$\kw{callq}$, and the empty tuple $\mathit{tup}_0()$ in place of
+$\kw{callq}$, and the empty tuple $\langle\rangle$ in place of
 $\{\langle\rangle\}$ as the content of an unset register and an unset
 flag. A sequence means a continuous function of the frame, the
 registers, and the flag.
 
-\begin{theorem}[Correctness, Scott domains]\label{thm:scott} Assume propositional truncation, function extensionality, and propositional extensionality. Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every constant $c$, $\den{M}\rho_0 = c()$ if and only if $\den{\pass{compile}(M)} = c()$.
+\begin{theorem}[Correctness, Scott domains]\label{thm:scott} Assume propositional truncation, function extensionality, and propositional extensionality. Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every constant $c$, $\den{M}\rho_0 = \up{(c, ())}$ if and only if $\den{\pass{compile}(M)} = \up{(c, ())}$.
 Moreover, $\den{M}\rho_0$ is defined if and only if
 $\den{\pass{compile}(M)}$ is defined. More generally, the same holds
 for every closed term $M$.
