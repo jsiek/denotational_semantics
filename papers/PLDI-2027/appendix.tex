@@ -5,7 +5,7 @@
 
 \appendix
 
-The appendices completes the definitions of the language semantics and
+The appendices complete the definitions of the language semantics and
 compiler passes used in the paper. Appendix~\ref{app:graph-model}
 completes the graph model of Section~\ref{sec:graph-models};
 Appendix~\ref{app:languages} gives the type system and graph-model
@@ -17,7 +17,9 @@ Appendix~\ref{app:alr-example} works through an example of the
 approximant logical relation of Section~\ref{sec:approx-lr}; and
 Appendix~\ref{app:other} gives the semantics of the source and target
 languages in the four other semantic styles of
-Section~\ref{sec:evaluation}, with their correctness theorems.
+Section~\ref{sec:evaluation}, with their correctness theorems. Each section begins with a line, marked ``Agda:'', that names the
+modules of the artifact that define or prove what the section shows,
+with paths relative to its \texttt{agda/} directory.
 
 \section{The Graph Model}
 \label{app:graph-model}
@@ -31,6 +33,7 @@ Figure~\ref{fig:graph-ops}.
 
 \subsection{Consistency}
 \label{app:consistency}
+\agda{Framework/GraphModel/Domain.agda, proof/Framework/GraphModel/Domain.agda}
 
 Consistency is defined on elements, and from it on sets and lists
 (Section~\ref{sec:graph-models}).  Two constants are consistent when
@@ -74,6 +77,7 @@ consistent with every element of the other.
 
 \subsection{Depth}
 \label{app:depth}
+\agda{proof/Framework/GraphModel/DomainUtilBase.agda}
 
 The approximant logical relation of Section~\ref{sec:approx-lr} is defined by recursion on the depth of a list of elements. The depth of an element is the height of its syntax tree, not counting constants, $\nu$ and $\langle\rangle$; the depth of a finite list is the largest depth of its
 elements (zero for the empty list):
@@ -91,6 +95,7 @@ elements (zero for the empty list):
 
 \subsection{Further Operators}
 \label{app:operators}
+\agda{Framework/GraphModel/Ops.agda, Semantics/Graph/Prim.agda}
 
 %% Framework/GraphModel/Ops.agda (𝒞, guard-n, strict), OpsBase.agda (ℬ),
 %% Semantics/Graph/Prim.agda (primD, out), Language/Prim.agda (δ).
@@ -134,7 +139,7 @@ likewise for $\mathsf{right}$. A guard makes a set strict in other sets:
 \label{app:types}
 
 %% Typing: definitions.tex (Types and Languages) and
-%% agda/Mu/Language/*.agda. Semantics: agda/Mu/Semantics/Graph/*.agda.
+%% agda/Mu/Language/*.agda. Semantics: agda/Mu/Semantics/GraphModel/*.agda.
 This appendix gives, for each language of Section~\ref{sec:compiler} in the order of the pipeline, its type system and its semantics in the graph model. The type systems are those of our intrinsically typed Agda definitions, so every pass maps well-typed terms to well-typed terms; the semantics are the ones that Theorem~\ref{thm:compiler} and the proofs of Section~\ref{sec:compiler-proof} speak of. The base types
 are $\kw{Nat}$, $\kw{Int}$, $\kw{Bool}$, $\kw{Unit}$, and $\kw{Void}$.
 The result type $\mathit{out}(p)$ of a primitive is $\kw{Int}$ for
@@ -150,6 +155,7 @@ $\den{M} = \den{M}\rho_0$. The operators are those of
 Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 
 \subsection{The \iswim\ Language}
+\agda{Mu/Language/ISWIM.agda, Mu/Semantics/GraphModel/ISWIM.agda}
 
 \iswim\ is the source language, and the first pass, \pass{simplify}, maps it to itself. A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of variable types.
 \defhead{Typing of \iswim}{\Gamma \vdash M : A}
@@ -211,6 +217,7 @@ The semantics follows Section~\ref{sec:graph-models}, with the operators of Figu
 \]
 
 \subsection{The Clos and EnvClos Languages}
+\agda{Mu/Language/Clos.agda, Mu/Language/EnvClos.agda, Mu/Semantics/GraphModel/Clos.agda, Mu/Semantics/GraphModel/EnvClos.agda}
 
 Clos is the language of closures that \pass{enclose} produces and \pass{optimize} improves, and EnvClos, produced by \pass{concretize}, stores the captured values of a closure in one tuple; EnvClos is the source of \pass{delay}. Both type and interpret their other forms as \iswim\ does.
 A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
@@ -246,6 +253,7 @@ curried meaning of its code to the tuple of the captured values
 \]
 
 \subsection{The FlatClos Language}
+\agda{Mu/Language/FlatClos.agda, Mu/Semantics/GraphModel/FlatClos.agda}
 
 FlatClos, the target of \pass{delay}, replaces closures and application with code, packing, and calls, and types and interprets its other forms as \iswim\ does.
 \defhead{Typing of FlatClos}{\Gamma \vdash M : A}
@@ -272,6 +280,7 @@ FlatClos, the target of \pass{delay}, replaces closures and application with cod
 \]
 
 \subsection{The GlobalFun and Mon Languages}
+\agda{Mu/Language/GlobalFun.agda, Mu/Language/Mon.agda, Mu/Semantics/GraphModel/GlobalFun.agda}
 
 GlobalFun, the target of \pass{globalize}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
 of the signatures $\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
@@ -304,6 +313,7 @@ and has the meaning of its embedding into GlobalFun: an atom and an
 operation on atoms are GlobalFun terms already.
 
 \subsection{The Imp Language}
+\agda{Mu/Language/Imp.agda, Mu/Semantics/GraphModel/Imp.agda}
 
 Imp, the target of \pass{lift locals}, replaces variables by slots of a stack frame. A body runs in a frame of slots, typed by the list
 $\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
@@ -353,6 +363,7 @@ it assigns, like a $\kw{let}$.
 \]
 
 \subsection{The CFG Language}
+\agda{Mu/Language/CFG.agda, Mu/Semantics/GraphModel/CFG.agda}
 
 CFG, the target of \pass{explicate control}, organizes each function body as a control-flow graph: a function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the type $R$ of the function body's result, the list
 $\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
@@ -407,6 +418,7 @@ programs are given meaning as in Imp, with the function body in place of the
 expression and no continuation.
 
 \subsection{The x86$\mu$ Language}
+\agda{Mu/Language/X86.agda, Mu/Semantics/GraphModel/X86.agda}
 
 x86$\mu$ is the target language, produced by \pass{select instructions}; Section~\ref{sec:compiler} describes its instructions informally. An instruction is typed by the type of the machine state it starts in
 and the one it leaves. A state type
@@ -570,6 +582,7 @@ $\{\langle\rangle\}$.
 
 \section{The Compiler Passes}
 \label{app:passes}
+\agda{Mu/Compiler/Pipeline.agda (compile)}
 
 %% From definitions.tex (Compilation) and agda/Mu/Compiler/*.agda.
 This appendix defines each pass of Section~\ref{sec:compiler} as a
@@ -588,6 +601,7 @@ with one operand. The subsections follow the order of the pipeline; Sections~\re
 \]
 
 \subsection{\pass{simplify} (\iswim\ to \iswim)}
+\agda{Mu/Compiler/Simplify.agda (simplify)}
 
 %% agda/Mu/Compiler/Simplify.agda: Info, Known, self, info, under,
 %% known-as, value, small, simp, simp-app, simp-call, simp-let, simp-get,
@@ -708,6 +722,7 @@ that is not a syntactic value is never substituted but stays bound by a
 $\kw{let}$.
 
 \subsection{\pass{enclose} (\iswim\ to Clos)}
+\agda{Mu/Compiler/Enclose.agda (enclose)}
 
 \pass{enclose} makes each function a closure that captures the variables in scope, in order:
 \[
@@ -717,6 +732,7 @@ $\kw{let}$.
 where $x_1, \ldots, x_k$ are the variables in scope.
 
 \subsection{\pass{optimize} (Clos to Clos)}
+\agda{Mu/Compiler/Optimize.agda (optimize-program)}
 
 \pass{optimize} removes the captured values that the code does not use.
 Closures are strict, so a captured term is dropped only when the code
@@ -733,6 +749,7 @@ does not use its name and the term is a variable, which is all that
 \]
 
 \subsection{\pass{concretize} (Clos to EnvClos)}
+\agda{Mu/Compiler/Concretize.agda (concretize-program)}
 
 Each closure stores its captured values in one tuple, bound to $z$ in
 its code, and the code reads the name $x_i$ as $\kw{get}_i\,z$. The map
@@ -752,6 +769,7 @@ Under a $\kw{let}$ or $\kw{case}$ the bound variable maps to itself,
 and a program starts with the empty map.
 
 \subsection{\pass{delay} (EnvClos to FlatClos)}
+\agda{Mu/Compiler/Delay.agda (delay-program)}
 
 A closure becomes a pair of its code and the tuple of its captured
 values, and an application opens the closure and calls its code:
@@ -764,6 +782,7 @@ values, and an application opens the closure and calls its code:
 \]
 
 \subsection{\pass{globalize} (FlatClos to GlobalFun)}
+\agda{Mu/Compiler/Globalize.agda (globalize)}
 
 The code of every function becomes a global definition, and the code
 itself a reference to it. The pass threads the list $\vec{d}$ of the
@@ -787,6 +806,7 @@ A_n$ (each under its binders $\bar{x}_i$):
 Each definition refers only to the definitions made before it.
 
 \subsection{\pass{remove complex operands} (GlobalFun to Mon)}
+\agda{Mu/Compiler/RCO.agda (rco-program)}
 
 Every complex operand is bound to a fresh variable by a $\kw{let}$,
 from left to right, so the operands of every operation become atoms. A
@@ -817,6 +837,7 @@ fresh variable:
 where $o$ ranges over the operations of Mon (Figure~\ref{fig:grammars}).
 
 \subsection{\pass{lift locals} (Mon to Imp)}
+\agda{Mu/Compiler/LiftLocals.agda (lift-program)}
 
 A $\kw{let}$ becomes an assignment to the next slot of the frame, and
 the variable a $\kw{case}$ binds becomes the slot its payload is
@@ -839,6 +860,7 @@ the variables in scope:
 and every other form is a simple expression, unchanged.
 
 \subsection{\pass{explicate control} (Imp to CFG)}
+\agda{Mu/Compiler/Explicate.agda (explicate)}
 
 $\pass{tail}(e)$ translates $e$ in tail position, and
 $\pass{assign}(e, x, k)$ translates ``write $e$ to slot $x$, then run
@@ -869,6 +891,7 @@ and $\pass{explicate}$ maps over the definitions and main expression of
 a program.
 
 \subsection{\pass{select instructions} (CFG to x86$\mu$)}
+\agda{Mu/Compiler/Select.agda (select)}
 
 The code of a simple expression $r$ is selected in continuation-passing
 style, $\pass{sel}(r, o, k)$: its value goes to $o$, which is either
@@ -921,6 +944,7 @@ environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
 
 \section{Calculations for the Other Equational Passes}
 \label{app:calculations}
+\agda{Mu/proof/Correctness/GraphModel/, one file per pass (EncloseCorrect.agda, ...)}
 
 This appendix gives the key case of the proofs of the six equational passes that Section~\ref{sec:equational} does not show, in the order of the pipeline. As there, each proof generalizes the equation to open terms under related environments, the other cases are congruences, and where a step needs a set to be nonempty we show the nonempty case.
 
@@ -1047,6 +1071,7 @@ of a label made earlier.
 
 \section{An Example of the Approximant Logical Relation}
 \label{app:alr-example}
+\agda{Mu/proof/Correctness/GraphModel/ApproxLR.agda (the definitions; the example itself is not mechanized)}
 
 This appendix works clause~3 of the approximant logical relation (Figure~\ref{fig:alr}) through the example of Section~\ref{sec:approx-lr}: $\lambda y.\, x + y$ with $x$ bound to $9$, whose source meaning $D$ contains $[1] \mapsto 10$. Take the one-element list
 $V = [\pairv{u}{9}]$ with $u = [9] \mapsto ([1] \mapsto 10)$. The
