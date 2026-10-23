@@ -30,4 +30,10 @@ scott-deps:
 
 check-all: check check-scott
 
-.PHONY: check agda pragma-check check-scott scott-deps check-all
+# The anonymized artifact of the PLDI 2027 paper (ISWIMμ only), written to
+# $(OUT): see artifact/export.py.
+OUT ?= _artifact
+artifact: scott-deps
+	python3 artifact/export.py $(OUT)
+
+.PHONY: check agda pragma-check check-scott scott-deps check-all artifact

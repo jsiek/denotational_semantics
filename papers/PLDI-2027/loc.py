@@ -19,6 +19,14 @@ errors).  Further tables:
                 the other passes by the interpreters, joined by a bridge
   --scott       the fifth ISWIMμ column, denotational: Scott domains,
                 against the graph model, row by row
+  --tables      Tables 1 and 2 of the paper, as the paper shows them
+  --artifact    Tables 1 and 2 of the paper only (the five proofs, and the
+                infrastructure each relies on), for the exported artifact
+                (artifact/export.py), which has only the import closure of
+                agda/Mu/All.agda and agda/AllScott.agda and vendors
+                TypeTopology in vendor/TypeTopology: the groups of the other
+                pipelines are empty there, and the checks that concern only
+                them are skipped
 
 A code line is a line that is not blank, not a comment ({- -} blocks,
 -- line comments) and not part of an import statement (`import` or
@@ -207,6 +215,9 @@ statement; they are listed as not on the audit surface, and must import
 no proof module either.
 """
 import glob, os, re, sys
+
+# --artifact: run on the exported artifact (see the usage above)
+ARTIFACT = '--artifact' in sys.argv[1:]
 
 A = 'agda/'
 U = 'agda/Untyped/'
@@ -869,6 +880,8 @@ class Count:
         # a file named explicitly by a group is not matched by another's wildcard
         explicit = {p for _, _, pats in GROUPS for p in pats if '*' not in p}
         for b in sorted(BUNDLES):
+            if ARTIFACT and not os.path.exists(b):
+                continue
             # a bundle has only its module header and imports
             if code_lines(b, 'lines') != 1:
                 sys.exit(f'{b}, an import bundle, has lines other than imports')
@@ -876,6 +889,10 @@ class Count:
             files = sorted({f for p in pats for f in glob.glob(p)
                             if ('*' not in p or f not in explicit) and f not in BUNDLES and f not in SCOTT_FILES})
             if not files:
+                if ARTIFACT:
+                    # a group of a pipeline that the artifact leaves out
+                    files_of.setdefault((side, gname), [])
+                    continue
                 sys.exit(f'no files for group {side}/{gname}')
             for f in files:
                 if f in seen:
@@ -911,7 +928,25 @@ class Count:
         self.own = {s: {un for un, (side, _) in group_of.items() if s in sides_of(side)} for s in allsides}
         self.infra = {un for un, (side, _) in group_of.items() if side == 'infra'}
         self.reach = {s: reachable(self.own[s], self.graph) for s in allsides}
+        # the import closure of each proof, file by file: the infrastructure
+        # it is charged for is the files of it that it imports, so a proof
+        # that imports only the definitions half of a split module is not
+        # charged for its proof/ half, nor for what that half imports
+        self.freach = {s: self.closure(f for un in self.own[s] for f in files_of_unit[un])
+                       for s in allsides}
         self.check()
+
+    def closure(self, files):
+        """The files reachable from files through imports (files included)."""
+        return reachable(set(files), {f: self.fgraph[f] & self.every for f in self.every})
+
+    def ilines(self, us, files):
+        """The lines of the files of units us that are in the set files."""
+        return sum(code_lines(f) for un in us for f in self.files_of_unit[un] if f in files)
+
+    def uses(self, un, files):
+        """Some file of unit un is in the set files."""
+        return any(f in files for f in self.files_of_unit[un])
 
     def ulines(self, un):
         return sum(code_lines(f) for f in self.files_of_unit[un])
@@ -962,7 +997,11 @@ class Count:
         # importing none of them (but the theorem files, which cite the
         # proofs).
         thm = set(TYPED['thm'].values()) | set(UNTYPED['thm'].values()) | {ASSURE_THM}
-        if thm != {f for f, (side, _) in self.seen.items() if side in ('thm', 'uthm')}:
+        if ARTIFACT:
+            # no theorem files of the other pipelines: the modules of agda/
+            # outside proof/ must be reached from ISWIMμ's
+            thm = set()
+        elif thm != {f for f, (side, _) in self.seen.items() if side in ('thm', 'uthm')}:
             sys.exit('the theorem files are not ' + ', '.join(sorted(thm)))
         # ISWIMμ's audit surface is that of agda/Mu/, reached from its own
         # theorem files (agda/Mu/Theorems/), with the modules of agda/ they
@@ -977,7 +1016,12 @@ class Count:
             bad = sorted(g for g in self.fgraph[f] if is_proof(g))
             if bad:
                 sys.exit(f'{f}, on the audit surface, imports proof modules:\n  ' + '\n  '.join(bad))
-        unreached = sorted(surface - reachable(thm, self.sgraph))
+        unreached = sorted(surface - reachable(thm | (mthm if ARTIFACT else set()), self.sgraph))
+        if ARTIFACT:
+            # in the artifact, the infrastructure that only ISWIMμ's proofs use
+            # (the syntax lemmas of the reduction column) is reached from no
+            # theorem file; outside the artifact the ISWIM pipeline's reach it
+            unreached = [f for f in unreached if self.seen[f][0] != 'infra']
         if unreached:
             sys.exit('outside the proof/ directories but not reached from the theorem files:\n  '
                      + '\n  '.join(unreached))
@@ -1061,7 +1105,7 @@ class Count:
         print('| **total** | ' + ' | '.join(bold_min([total[s] for s in mcols])) + ' |')
         print()
 
-        reach, infra = self.reach, self.infra
+        reach, infra, fr = self.reach, self.infra, self.freach
         print(f'| language-independent infrastructure{tag(P)} (not in the totals) | lines | '
               + ' | '.join(f'used by {label(s)}' for s in mcols) + ' |')
         print('|---|---:|' + '---:|' * len(mcols))
@@ -1071,14 +1115,14 @@ class Count:
                 us = {unit(f) for f in self.files_of[(side, gname)]}
                 row = []
                 for s in mcols:
-                    n = self.lines(un for un in us if un in reach[s])
+                    n = self.ilines(us, fr[s])
                     itotal[s] += n
                     row.append(str(n) if n else '—')
                 print(f'| {gname} | {self.counts[(side, gname)]} | ' + ' | '.join(row) + ' |')
         print(f'| **total** | {self.lines(infra)} | ' + ' | '.join(str(itotal[s]) for s in mcols) + ' |')
         print()
-        print(f"Adequacy uses {self.lines(infra & reach[adeq])} lines of the infrastructure, "
-              f"{self.lines(infra & reach[adeq] - reach[sides[0]])} of them not used by the denotational proof.")
+        print(f"Adequacy uses {self.ilines(infra, fr[adeq])} lines of the infrastructure, "
+              f"{self.ilines(infra, fr[adeq] - fr[sides[0]])} of them not used by the denotational proof.")
         print()
         print(f'| adequacy{tag(P)} (denotational side only) | graph model | graph model with errors |')
         print('|---|---:|---:|')
@@ -1177,7 +1221,7 @@ class Count:
         print(f'| infrastructure module{tag(P)} | lines | used by |')
         print('|---|---:|---|')
         for un in sorted(self.infra, key=lambda x: self.display(x)):
-            users = [name(s) for s in users_of if un in reach[s]]
+            users = [name(s) for s in users_of if self.uses(un, self.freach[s])]
             print(f'| {self.display(un)} | {self.ulines(un)} | {", ".join(users) or "no proof"} |')
         print()
 
@@ -1203,7 +1247,7 @@ class Count:
         """The infrastructure each graph model reaches, by group, and what they
         share: the semantics and the correctness proofs (without adequacy), and
         then what adequacy adds, in each model."""
-        reach = self.reach
+        reach = self.freach
         den, gerr, adeq, gadeq = P['sides'][0], P['gerr'], P['adeq'], P['gadeq']
         rd = reach[adeq] - reach[den]
         ra = reach[gadeq] - reach[gerr]
@@ -1215,17 +1259,17 @@ class Count:
             if side == 'infra':
                 us = {unit(f) for f in self.files_of[(side, gname)]}
                 row = [self.lines(us),
-                       self.lines(un for un in us if un in reach[den]),
-                       self.lines(un for un in us if un in reach[gerr]),
-                       self.lines(un for un in us if un in reach[den] and un in reach[gerr]),
-                       self.lines(un for un in us if un in rd),
-                       self.lines(un for un in us if un in ra)]
+                       self.ilines(us, reach[den]),
+                       self.ilines(us, reach[gerr]),
+                       self.ilines(us, reach[den] & reach[gerr]),
+                       self.ilines(us, rd),
+                       self.ilines(us, ra)]
                 if any(row[1:]):
                     tot = [t + r for t, r in zip(tot, row)]
                     print(f'| {gname} | {row[0]} | ' + ' | '.join(str(r) if r else '—' for r in row[1:]) + ' |')
         print('| **total** | ' + ' | '.join(str(t) for t in tot) + ' |')
         ops = {unit(f) for f in self.files_of[('infra', 'graph model: its operators')]}
-        used = sorted(ops & (reach[gerr] | reach[gadeq]))
+        used = sorted(un for un in ops if self.uses(un, reach[gerr] | reach[gadeq]))
         print()
         print("The graph model with errors reuses these modules of the graph model's operators: "
               + ', '.join(f'`{modname(un)}` ({self.ulines(un)})' for un in used) + '.')
@@ -1616,8 +1660,9 @@ def mu_analyze(c):
         rows = ROWS if s not in MU_ADEQ else [g for _, g, _ in GROUPS]
         total[s] = (sum(c.counts.get((s, r)) or 0 for r in dict.fromkeys(rows))
                     + c.lines(extra[s]) + c.lines(borrowed[s]))
-    return dict(own=own, reach=reach, extra=extra, borrowed=borrowed, total=total, by_all=by_all,
-                minfra=minfra)
+    freach = {s: c.closure(f for un in own[s] for f in c.files_of_unit[un]) for s in cols}
+    return dict(own=own, reach=reach, freach=freach, extra=extra, borrowed=borrowed, total=total,
+                by_all=by_all, minfra=minfra)
 
 
 def mu_main(c, T, M):
@@ -1703,7 +1748,7 @@ def mu_main(c, T, M):
             us = {unit(f) for f in c.files_of[(side, gname)]}
             row = []
             for s in cols:
-                n = c.lines(un for un in us if un in M['reach'][s] and (s != 'mu-adeq' or un not in M['reach']['mu-den']))
+                n = c.ilines(us, M['freach'][s] - (M['freach']['mu-den'] if s == 'mu-adeq' else set()))
                 itotal[s] += n
                 row.append(str(n) if n else '—')
             if any(r != '—' for r in row):
@@ -1748,7 +1793,7 @@ def mu_modules(c, M):
     print('| infrastructure module (ISWIMμ) | lines | used by |')
     print('|---|---:|---|')
     for un in sorted(c.infra | M['minfra'], key=lambda x: c.display(x)):
-        users = [any_name(s) for s in cols if un in reach[s]]
+        users = [any_name(s) for s in cols if c.uses(un, M['freach'][s])]
         if users:
             print(f'| {c.display(un)} | {c.ulines(un)} | {", ".join(users)} |')
     print()
@@ -1805,8 +1850,9 @@ def mixed_analyze(c, M):
     borrowed = {un for un in reach if not c.group_of[un][0].startswith('mu-')
                 and un not in c.infra and un not in shared}
     total = sum(rows.values()) + c.lines(extra) + c.lines(borrowed)
-    infra = c.lines(un for un in reach if un in c.infra | M['minfra'])
-    pure_infra = {s: c.lines(un for un in M['reach'][s] if un in c.infra | M['minfra']) for s in ('mu-den', 'mu-ck')}
+    fmix = c.closure(f for un in reach if c.group_of[un][0] == 'mu-mix' for f in c.files_of_unit[un])
+    infra = c.ilines(c.infra | M['minfra'], fmix)
+    pure_infra = {s: c.ilines(c.infra | M['minfra'], M['freach'][s]) for s in ('mu-den', 'mu-ck')}
     # the estimated splits
     core = c.lines(un for un in reach if c.group_of[un] == ('mu-adeq', 'ISWIM'))
 
@@ -1957,9 +2003,10 @@ SCOTT_INFRA = [
 ]
 
 
-def scott_report(c, M):
-    """The Scott-domain column against the graph model, row by row; then its
-    infrastructure and its theorem statements."""
+def scott_analyze(c, M):
+    """The Scott-domain column's counts: per row, the graph model's and the
+    Scott column's lines; the modules counted in the semantics rows; the
+    infrastructure, row by row; the theorem statements."""
     def files(pats):
         return sorted({f for p in pats for f in glob.glob(p)})
     sf = scott_files()
@@ -1984,20 +2031,33 @@ def scott_report(c, M):
     extra = (shared & outside) - M['by_all'] - counted
     borrowed = {un for un in outside if not c.group_of[un][0].startswith('mu-')
                 and un not in c.infra and un not in shared}
-    print('| component (ISWIMμ) | denotational: graph model | denotational: Scott domains |')
-    print('|---|---:|---:|')
     # as in mu_main, modules reached outside the rows count in the semantics row
     nx, nb = c.lines(extra), c.lines(borrowed)
     gx = c.lines(M['extra']['mu-den']) + c.lines(M['borrowed']['mu-den'])
     stotal = nx + nb
+    cells = []
     for r, fs in rows:
         n = sum(code_lines(f) for f in fs)
         stotal += n
         g = c.counts.get(('mu-den', r))
         if r == SEM:
             n, g = n + nx + nb, (g or 0) + gx
-        print(f'| {r} | ' + ' | '.join(bold_min([g, n or None])) + ' |')
-    print('| **total** | ' + ' | '.join(bold_min([M['total']['mu-den'], stotal])) + ' |')
+        cells.append((r, g, n or None))
+    icells = [(r, sum(code_lines(f) for f in fs)) for r, fs in infra]
+    return dict(cells=cells, total=stotal, extra=extra, borrowed=borrowed, infra=icells,
+                itotal=sum(n for _, n in icells), thm=sum(code_lines(f) for f in thm))
+
+
+def scott_report(c, M):
+    """The Scott-domain column against the graph model, row by row; then its
+    infrastructure and its theorem statements."""
+    S = scott_analyze(c, M)
+    extra, borrowed = S['extra'], S['borrowed']
+    print('| component (ISWIMμ) | denotational: graph model | denotational: Scott domains |')
+    print('|---|---:|---:|')
+    for r, g, n in S['cells']:
+        print(f'| {r} | ' + ' | '.join(bold_min([g, n])) + ' |')
+    print('| **total** | ' + ' | '.join(bold_min([M['total']['mu-den'], S['total']])) + ' |')
     print()
     if M['extra']['mu-den'] | M['borrowed']['mu-den']:
         print('Counted in the graph model\'s semantics row: '
@@ -2015,19 +2075,16 @@ def scott_report(c, M):
     print()
     print('| infrastructure of the Scott column (not in the total) | lines |')
     print('|---|---:|')
-    itotal = 0
-    for r, fs in infra:
-        n = sum(code_lines(f) for f in fs)
-        itotal += n
+    for r, n in S['infra']:
         print(f'| {r} | {n} |')
-    print(f'| **total** | {itotal} |')
+    print(f"| **total** | {S['itotal']} |")
     print()
-    print(f'Theorem statements (Mu/Theorems/ScottDomains.agda): {sum(code_lines(f) for f in thm)} lines.')
+    print(f"Theorem statements (Mu/Theorems/ScottDomains.agda): {S['thm']} lines.")
     print()
     typetopology_report()
 
 
-TT_SOURCE = '_deps/TypeTopology/source'
+TT_SOURCE = 'vendor/TypeTopology/source' if ARTIFACT else '_deps/TypeTopology/source'
 # TypeTopology's domain theory and the lifting monad (the mathematics the
 # graph model's own infrastructure plays the role of), against its general
 # foundations (univalent foundations, MLTT, naturals, ...), which play the
@@ -2035,14 +2092,13 @@ TT_SOURCE = '_deps/TypeTopology/source'
 TT_DOMAIN = ('DomainTheory', 'Lifting')
 
 
-def typetopology_report():
+def typetopology_counts():
     """The TypeTopology modules that the Scott column imports, transitively
-    from agda/AllScott.agda, by top-level directory: code lines (the code
-    blocks of .lagda files, without comments, blank lines or imports)."""
+    from agda/AllScott.agda, by top-level directory: the number of modules
+    and their code lines (the code blocks of .lagda files, without comments,
+    blank lines or imports); None when TypeTopology is not there."""
     if not os.path.isdir(TT_SOURCE):
-        print('TypeTopology not fetched (run `make scott-deps`): no breakdown of the imported library.')
-        print()
-        return
+        return None
 
     def find(mod):
         rel = mod.replace('.', '/')
@@ -2074,16 +2130,35 @@ def typetopology_report():
         if f in seen:
             continue
         seen[f] = code_of(f)
-        for m in re.findall(r'^\s*(?:open\s+)?import\s+([\w.]+)', seen[f], re.M):
+        for m in re.findall(r'^\s*(?:open\s+)?import\s+([^\s;(){}]+)', seen[f], re.M):
             q = find(m)
             if q and q not in seen:
                 todo.append(q)
     mods, lines_ = {}, {}
+    if ARTIFACT:
+        # the artifact vendors exactly the modules the Scott column imports
+        vendored = {os.path.join(r, n) for r, _, ns in os.walk(TT_SOURCE) for n in ns}
+        found = {f for f in seen if f.startswith(TT_SOURCE)}
+        if vendored != found:
+            sys.exit('the vendored TypeTopology is not the closure of agda/AllScott.agda:\n  '
+                     + '\n  '.join(sorted(vendored ^ found)))
     for f, t in seen.items():
         if f.startswith(TT_SOURCE):
             top = f[len(TT_SOURCE) + 1:].split('/')[0]
             mods[top] = mods.get(top, 0) + 1
             lines_[top] = lines_.get(top, 0) + count(t)
+    return mods, lines_
+
+
+def typetopology_report():
+    """The TypeTopology modules that the Scott column imports (see
+    typetopology_counts), domain theory against foundations."""
+    counts = typetopology_counts()
+    if counts is None:
+        print('TypeTopology not fetched (run `make scott-deps`): no breakdown of the imported library.')
+        print()
+        return
+    mods, lines_ = counts
     dom = sum(lines_.get(k, 0) for k in TT_DOMAIN)
     found = sum(lines_.values()) - dom
     print('| TypeTopology imported by the Scott column (not in any total) | modules | lines |')
@@ -2094,6 +2169,65 @@ def typetopology_report():
     print(f'| **total** | {sum(mods.values())} | {sum(lines_.values())} |')
     print()
     print()
+
+
+def artifact_tables(c, M):
+    """Tables 1 and 2 of the paper: the five correctness proofs, row by row,
+    and the infrastructure each relies on (--artifact)."""
+    S = scott_analyze(c, M)
+    cols = ['graph model', 'Scott domains', 'machines', 'interpreters', 'reduction']
+    order = ['mu-den', 'scott', 'mu-op', 'mu-ck', 'mu-red']
+    scott = {r: n for r, _, n in S['cells']}
+    names = {'CC: enclose': 'enclose', 'CC: optimize': 'optimize', 'CC: concretize': 'concretize',
+             'CC: delay': 'delay', 'CC: globalize': 'globalize', 'rco': 'remove complex operands'}
+    print('## Table 1: lines of Agda in the five correctness proofs')
+    print()
+    print('| | ' + ' | '.join(cols) + ' |')
+    print('|---|' + '---:|' * len(cols))
+    for r in ROWS:
+        ns = []
+        for s in order:
+            if s == 'scott':
+                ns.append(scott.get(r))
+                continue
+            n = c.counts.get((s, r))
+            if r == SEM:
+                n = (n or 0) + c.lines(M['extra'][s]) + c.lines(M['borrowed'][s]) or None
+            ns.append(n)
+        if any(n is not None for n in ns):
+            print(f'| {names.get(r, r)} | ' + ' | '.join(bold_min(ns)) + ' |')
+    totals = [S['total'] if s == 'scott' else M['total'][s] for s in order]
+    print('| **total** | ' + ' | '.join(bold_min(totals)) + ' |')
+    print()
+    # the infrastructure that each column reaches (as in mu_main), and the
+    # Scott column's (scott_report), with TypeTopology's domain theory
+    infra = {s: 0 for s in MU_SIDES}
+    seen_groups = []
+    for side, gname, _ in GROUPS:
+        if side in ('infra', 'mu-infra', 'mu-rinfra') and (side, gname) not in seen_groups:
+            seen_groups.append((side, gname))
+            us = {unit(f) for f in c.files_of[(side, gname)]}
+            for s in MU_SIDES:
+                infra[s] += c.ilines(us, M['freach'][s])
+    tt = typetopology_counts()
+    if tt is None:
+        sys.exit(f'TypeTopology not found at {TT_SOURCE}')
+    mods, lines_ = tt
+    dom = sum(lines_.get(k, 0) for k in TT_DOMAIN)
+    found = sum(lines_.values()) - dom
+    ours = [S['itotal'] if s == 'scott' else infra[s] for s in order]
+    ttd = [dom if s == 'scott' else None for s in order]
+    print('## Table 2: lines of Agda in the infrastructure that each proof relies on')
+    print()
+    print('| | ' + ' | '.join(cols) + ' |')
+    print('|---|' + '---:|' * len(cols))
+    print('| our infrastructure | ' + ' | '.join(bold_min(ours)) + ' |')
+    print("| TypeTopology's domain theory | " + ' | '.join('—' if n is None else str(n) for n in ttd) + ' |')
+    print('| **total with Table 1** | '
+          + ' | '.join(bold_min([t + o + (d or 0) for t, o, d in zip(totals, ours, ttd)])) + ' |')
+    print()
+    print("Not counted for any column: the Agda standard library and TypeTopology's general "
+          f"foundations ({found} lines).")
 
 
 def main():
@@ -2110,8 +2244,11 @@ def main():
     c = Count()
     mu_check(c)
     mu_red_check(c)
-    T, Un = c.analyze(TYPED), c.analyze(UNTYPED)
     args = sys.argv[1:]
+    if ARTIFACT:
+        artifact_tables(c, mu_analyze(c))
+        return
+    T, Un = c.analyze(TYPED), c.analyze(UNTYPED)
     if '--mu-detail' in args:
         print('## ISWIMμ against the ISWIM pipeline, row by row')
         print()
@@ -2134,6 +2271,9 @@ def main():
         assurance(c)
         return
     M = mu_analyze(c)
+    if '--tables' in args:
+        artifact_tables(c, M)
+        return
     if '--scott' in args:
         print('## ISWIMμ in Scott domains, against the graph model')
         print()
