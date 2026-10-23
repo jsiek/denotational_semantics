@@ -29,6 +29,13 @@
 \newcommand{\pass}[1]{\textsf{\bfseries #1}}          % the name of a compiler pass
 %% A pointer from an appendix section to the Agda modules that define or
 %% prove what it shows (paths relative to agda/ in the artifact).
+%% The stage relations of the Scott-domain proof of delay (Appendix G):
+%% s \SR{+}{n} w approximates the source at stage n (preservation),
+%% s \SR{-}{n} w the target (reflection); \SRel{+} is the relation on
+%% whole values, and \SameTag{+} relates the tags of related values.
+\newcommand{\SR}[2]{\mathrel{\mathcal{R}^{#1}_{#2}}}
+\newcommand{\SRel}[1]{\mathrel{\trianglelefteq^{#1}}}
+\newcommand{\SameTag}[1]{\mathrel{\asymp^{#1}}}
 %% The injection of lifting (Winskel's notation): a defined value of a
 %% lifted domain, in the Scott-domain appendix.
 \newcommand{\up}[1]{\lfloor #1 \rfloor}

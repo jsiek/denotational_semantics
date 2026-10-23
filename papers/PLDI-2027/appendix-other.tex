@@ -454,3 +454,218 @@ Moreover, $\den{M}\rho_0$ is defined if and only if
 $\den{\pass{compile}(M)}$ is defined. More generally, the same holds
 for every closed term $M$.
 \end{theorem}
+
+\section{The Scott-Domain Proof of \pass{delay}}
+\label{app:scott-delay}
+\agda{Mu/proof/Correctness/ScottDomains/DelayRel.agda, DelayPreserve.agda, DelayReflect.agda, DelayTerms.agda, DelayCorrect.agda; proof/Framework/Scott/Stages.agda, StageCall.agda}
+
+As in the graph model (Section~\ref{sec:approx-lr}), \pass{delay}
+changes the representation of closures, so the Scott-domain proof
+relates the meaning of a program to the meaning of its translation by
+a logical relation, one for each direction. The universal domain
+$\mathbb{D}$ (Appendix~\ref{app:scott}) rules out the two usual ways
+of defining such a relation. Recursion on types does not terminate,
+because the types include recursive types, and recursion on values is
+not well founded, because values are infinite. We instead define the
+relations by recursion on the stages of the bilimit that constructs
+$\mathbb{D}$, as \citet{Reynolds:1974aa} did. Each relation relates an
+approximation of one value at a stage to the whole other value, so,
+like the approximant logical relation, it approximates only one side.
+The preservation relation approximates the source, and the reflection
+relation approximates the target.
+
+\paragraph{Stages}
+
+The stages of $\mathbb{D}$ are the domains
+\[
+  \mathbb{D}_0 = \mathbf{1}
+  \qquad
+  \mathbb{D}_{n+1} = \mathcal{L}(\Sigma_{t \in \mathit{Tag}}\, \mathit{Payload}_t(\mathbb{D}_n))
+\]
+with the maps $\pi_n : \mathbb{D}_{n+1} \to \mathbb{D}_n$ and
+$\varepsilon_n : \mathbb{D}_n \to \mathbb{D}_{n+1}$ between consecutive
+stages, and the maps $\pi^\infty_n : \mathbb{D} \to \mathbb{D}_n$ and
+$\varepsilon^\infty_n : \mathbb{D}_n \to \mathbb{D}$ between a stage and
+the limit. Every value $d$ is the supremum of its approximations
+$\varepsilon^\infty_n(\pi^\infty_n(d))$. At stage $n + 1$, the payload of a
+function is in $[\mathbb{D}_n \to \mathbb{D}_n]$ and the payload of a
+pair is in $\mathbb{D}_n^2$.
+
+A target closure is a pair $(c, e)$ of code and environment, and the
+meaning of $\kw{callc}$ calls it on an argument $a$ by
+$\mathit{call}(c, e, a) = \mathsf{app}(\mathsf{app}(c, e), a)$. The
+code is a curried function that the call applies twice, and applying a
+function of stage $k + 1$ gives a result of stage $k$. A call of a
+pair of stage $m + 2$ therefore gives its result at stage $m$:
+\[
+  \mathit{call}_m((c, e), v) =
+    \pi^\infty_m(\mathit{call}(\varepsilon^\infty_{m+2}(c),\;
+      \varepsilon^\infty_{m+1}(\pi_{m+1}(e)),\;
+      \varepsilon^\infty_m(v)))
+  \qquad \text{for } c, e \in \mathbb{D}_{m+2} \text{ and } v \in \mathbb{D}_m.
+\]
+
+\begin{figure}[h]
+\small\figdefs
+\defhead{Related tags}{t \SameTag{+} t' \qquad t \SameTag{-} t'}
+\[
+  t \SameTag{\pm} t \text{ for } t \notin \{\mathit{fun}, \mathit{pr}\}
+  \qquad
+  \mathit{fun} \SameTag{+} \mathit{pr}
+  \qquad
+  \mathit{pr} \SameTag{-} \mathit{fun}
+\]
+\defhead{The stage relations}{s \SR{\pm}{n} w \quad (s \in \mathbb{D}_n,\ w \in \mathbb{D})}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  s \SR{\pm}{0} w & \iff & \mathsf{true}\\
+  s \SR{\pm}{n+1} w & \iff &
+    \forall t, x.\; s = \up{(t, x)} \Rightarrow
+    \exists t', y.\; w = \up{(t', y)} \land t \SameTag{\pm} t'
+    \land (t, x) \mathrel{\mathcal{M}^{\pm}_n} (t', y)
+\end{array}
+\]
+\defhead{Related payloads}{(t, x) \mathrel{\mathcal{M}^{\pm}_n} (t', y) \quad (x \in \mathit{Payload}_t(\mathbb{D}_n),\ y \in \mathit{Payload}_{t'}(\mathbb{D}))}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  (c, ()) \mathrel{\mathcal{M}^{\pm}_n} (c, ()) & \iff & \mathsf{true}\\
+  (\mathit{tup}_k, (x_1, \ldots, x_k)) \mathrel{\mathcal{M}^{\pm}_n} (\mathit{tup}_k, (y_1, \ldots, y_k))
+    & \iff & \forall i.\; x_i \SR{\pm}{n} y_i\\
+  (\mathit{left}, x) \mathrel{\mathcal{M}^{\pm}_n} (\mathit{left}, y)
+    & \iff & x \SR{\pm}{n} y
+    \qquad \text{(likewise $\mathit{right}$)}\\
+  (\mathit{fun}, h) \mathrel{\mathcal{M}^{+}_n} (\mathit{pr}, (c, e))
+    & \iff & \forall v \in \mathbb{D}_n,\, a \in \mathbb{D}.\;
+      v \SR{+}{n} a \Rightarrow h(v) \SR{+}{n} \mathit{call}(c, e, a)\\
+  (\mathit{pr}, (c, e)) \mathrel{\mathcal{M}^{-}_{m+2}} (\mathit{fun}, g)
+    & \iff & \forall v \in \mathbb{D}_m,\, a \in \mathbb{D}.\;
+      v \SR{-}{m} a \Rightarrow \mathit{call}_m((c, e), v) \SR{-}{m} g'(a)\\
+  (\mathit{pr}, (c, e)) \mathrel{\mathcal{M}^{-}_n} (\mathit{fun}, g)
+    & \iff & \mathsf{true} \qquad \text{for } n < 2
+\end{array}
+\]
+\defhead{Related values}{d \SRel{\pm} w \qquad \mathit{Pres}(d, d') \qquad \mathit{Refl}(d, d')}
+\[
+  d \SRel{\pm} w \iff \forall n.\; \pi^\infty_n(d) \SR{\pm}{n} w
+  \qquad
+  \mathit{Pres}(d, d') \iff d \SRel{+} d'
+  \qquad
+  \mathit{Refl}(d, d') \iff d' \SRel{-} d
+\]
+\caption{The relations of the Scott-domain proof of \pass{delay},
+  between a source (EnvClos) value $d$ and a target (FlatClos) value
+  $d'$. The superscript $\pm$ stands for either direction. Here $g'$ is
+  the strict function that agrees with $g$ on defined values.}
+\label{fig:scott-delay}
+\end{figure}
+
+\paragraph{The relations}
+
+Figure~\ref{fig:scott-delay} defines the relations. At stage $n + 1$,
+a defined approximated value $s$ is related to $w$ when $w$ is defined
+too, the two have related tags, and their payloads are related at
+stage $n$; an undefined approximated value is related to every value.
+Related values have the same tag, except for closures. Under
+preservation, a source function is related to a target pair when the
+function and calls of the pair, on related arguments, give related
+results; this clause has the shape of the relation of
+\citet{Nielsen:2000aa} for defunctionalization. Under reflection, the
+approximated value is the target pair, and its calls show their
+results two stages down. The clause for a pair at stage $m + 2$
+therefore speaks of stage $m$, and it says nothing at stages $0$ and
+$1$. Two values are related when every approximation of the
+approximated one is related to the other.
+
+\paragraph{Properties of the stages}
+
+The proof needs four properties of each stage relation, which hold by
+induction on the stage.
+
+\begin{lemma}[Stages]\label{lem:scott-stages}
+For both directions and every $n$:
+\begin{enumerate}
+\item $s \SR{\pm}{n} w$ is a proposition;
+\item it is downward closed in $s$: if $s' \sqsubseteq s$ and
+  $s \SR{\pm}{n} w$, then $s' \SR{\pm}{n} w$;
+\item it is admissible in $s$: if $s_i \SR{\pm}{n} w$ for every $i$
+  of a directed family, then $\bigsqcup_i s_i \SR{\pm}{n} w$;
+\item it survives moving between stages: $s \SR{\pm}{n+1} w$ implies
+  $\pi_n(s) \SR{\pm}{n} w$, and $s \SR{\pm}{n} w$ implies
+  $\varepsilon_n(s) \SR{\pm}{n+1} w$.
+\end{enumerate}
+Consequently, $s \SR{\pm}{n} w$ implies
+$\varepsilon^\infty_n(s) \SRel{\pm} w$.
+\end{lemma}
+
+The closure clauses make parts~3 and~4 the hard ones. For part~3 under
+reflection, $\mathit{call}_m$ is continuous in the pair, so the call of
+a supremum of pairs is the supremum of their calls. For part~4,
+$\mathit{call}_m$ commutes with $\pi$ and $\varepsilon$ up to the order
+of $\mathbb{D}_m$, and part~2 absorbs the difference.
+
+\paragraph{The fundamental lemma}
+
+Write $\sim$ for either $\mathit{Pres}$ or $\mathit{Refl}$. Both relate
+$\bot$ to every value in the approximated position, and the operators
+that EnvClos and FlatClos share preserve both.
+
+\begin{lemma}[Operators]\label{lem:scott-ops}
+If $d_i \sim d'_i$ for each $i$, then $\mathcal{T}(d_1, \ldots, d_n)
+\sim \mathcal{T}(d'_1, \ldots, d'_n)$, and likewise for
+$\pi_{\mathit{tup}_i}$, $\mathsf{inl}$, $\mathsf{inr}$,
+$\mathsf{prim}_p$, and $\mathsf{seq}$; constants and $\langle\rangle$
+are related to themselves; and $\mathsf{cases}$ preserves $\sim$ when
+its branches map related values to related values.
+\end{lemma}
+
+The two languages differ only in closures and calls.
+
+\begin{lemma}[Closures and calls]\label{lem:scott-clos}
+Let $t \sim t'$, and let the bodies $B$ and $B'$ map related
+environments and arguments to related values. Then
+\[
+  \mathsf{app}(\Lambda(\mlam{X} \Lambda(\mlam{Y} B(X, Y))), t)
+  \sim
+  \mathsf{pair}(\Lambda(\mlam{X} \Lambda(\mlam{Y} B'(X, Y))), t').
+\]
+If $l \sim l'$ and $a \sim a'$, then
+$\mathsf{app}(l, a) \sim \mathsf{app}(\mathsf{app}(\car(l'), \cdr(l')), a')$.
+\end{lemma}
+
+Under preservation, both parts follow from the clause for functions
+and part~4 of Lemma~\ref{lem:scott-stages}. Under reflection, the
+closure case uses the clause for pairs: a call of the approximation at
+stage $m + 2$ of the target pair is below the approximation at stage
+$m$ of the call of the pair itself, and part~2 of
+Lemma~\ref{lem:scott-stages} applies. In the call case, the
+approximation at stage $n$ of the result of a call is the supremum of
+the calls of the approximations of the code, the environment and the
+argument, so part~3 reduces the call to the calls of approximations,
+and each of those is below an approximation of a call at a larger
+stage, of which the clause for pairs speaks.
+
+\begin{lemma}[Fundamental lemma]\label{lem:scott-fundamental}
+For each direction, let $M$ be a term of EnvClos and let $\rho$ and
+$\rho'$ be environments related at every variable of $M$. Then
+$\den{M}\rho \sim \den{\pass{delay}(M)}\rho'$.
+\end{lemma}
+
+The proof is by induction on $M$, with the same induction for both
+directions: Lemma~\ref{lem:scott-ops} covers the shared operators and
+Lemma~\ref{lem:scott-clos} the closures and calls.
+
+\begin{theorem}[Correctness of \pass{delay}, Scott domains]\label{thm:scott-delay}
+Let $M$ be a closed term of EnvClos. For every constant $c$,
+$\den{M}\rho_0 = \up{(c, ())}$ if and only if
+$\den{\pass{delay}(M)}\rho_0 = \up{(c, ())}$. Moreover,
+$\den{M}\rho_0$ is defined if and only if
+$\den{\pass{delay}(M)}\rho_0$ is defined.
+\end{theorem}
+
+The empty environments are related, so Lemma~\ref{lem:scott-fundamental}
+gives $\mathit{Pres}(\den{M}\rho_0, \den{\pass{delay}(M)}\rho_0)$ and
+$\mathit{Refl}(\den{M}\rho_0, \den{\pass{delay}(M)}\rho_0)$. In either
+relation, a defined approximated value has a defined partner, and a
+defined value related to a constant is that constant. Preservation
+gives the forward implications and reflection the backward ones.
+

@@ -383,3 +383,47 @@ $c \in D'$, and $v \sqsubseteq D'$ implies that $D'$ is nonempty.
 
 Theorem~\ref{thm:delay} is the result announced in the introduction: closure conversion preserves and reflects the meaning of programs, divergence included. Section~\ref{sec:evaluation} compares the size of this proof with the operational proofs of \pass{delay}.
 
+\subsection{The Same Proof with Scott Domains}
+\label{sec:scott-delay}
+
+We also proved the compiler correct with Scott domains
+(Section~\ref{sec:evaluation}). There a value is an element of a
+universal domain $\mathbb{D}$ of tagged values, divergence is its least
+element $\bot$ (Appendix~\ref{app:scott}), and \pass{delay} is again
+the only pass that needs a relation. Scott values are infinite, so the
+relation cannot recurse on finite elements. We define it instead by
+recursion on the stages $\mathbb{D}_0, \mathbb{D}_1, \ldots$ of the
+bilimit that constructs $\mathbb{D}$, as \citet{Reynolds:1974aa} did.
+The stage relation $s \SR{\pm}{n} w$ relates an approximation
+$s \in \mathbb{D}_n$ of one value to the whole other value $w$, and two
+values are related when every approximation of the approximated one is
+related to the other (Figure~\ref{fig:scott-delay} in
+Appendix~\ref{app:scott-delay}). Like the approximant logical relation,
+it approximates only one side. Unlike it, the proof needs one relation
+for each direction: preservation ($+$) approximates the source, and
+reflection ($-$) approximates the target. The clauses for closures are
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  (\mathit{fun}, h) \mathrel{\mathcal{M}^{+}_n} (\mathit{pr}, (c, e))
+    & \iff & \forall v, a.\;
+      v \SR{+}{n} a \Rightarrow h(v) \SR{+}{n} \mathit{call}(c, e, a)\\
+  (\mathit{pr}, (c, e)) \mathrel{\mathcal{M}^{-}_{m+2}} (\mathit{fun}, g)
+    & \iff & \forall v, a.\;
+      v \SR{-}{m} a \Rightarrow \mathit{call}_m((c, e), v) \SR{-}{m} g'(a)
+\end{array}
+\]
+where $\mathit{call}(c, e, a)$ applies the code $c$ to the environment
+$e$ and then to the argument $a$. The preservation clause has the
+shape of the relation that \citet{Nielsen:2000aa} used for
+defunctionalization. The reflection clause relates calls across
+stages: a call of a pair at stage $m + 2$ applies its code twice and
+shows its result only at stage $m$ ($\mathit{call}_m$). The junk of
+Section~\ref{sec:approx-lr} does not arise, because a Scott closure is
+a single pair, and a call takes the code and the environment from the
+same pair. In exchange, the proof must show that every stage relation
+is a proposition, downward closed, admissible, and preserved by the
+maps between stages (Lemma~\ref{lem:scott-stages}). The result,
+Theorem~\ref{thm:scott-delay}, is the counterpart of
+Theorem~\ref{thm:delay}: a second denotational proof that closure
+conversion preserves and reflects divergence.
+

@@ -68,13 +68,16 @@ inverse-limit construction of the domains
 both domains, and his relation is the intersection over all stages.
 Our index bounds only the depth of the finite target side, and depth
 irrelevance (Lemma~\ref{lem:depth-irrelevant}) makes an intersection
-unnecessary. Later work related two semantics with inclusive predicates
+unnecessary. Our Scott-domain relation for \pass{delay}
+(Section~\ref{sec:scott-delay}) also recurses on stages, but on the
+stages of one side only, and it relates the approximation to the
+whole other value. Later work related two semantics with inclusive predicates
 \citep{Milne:1976aa,Stoy:1977aa}, finitary projections
 \citep{Mulmuley:1987aa}, or types \citep{Meyer:1985aa,Filinski:2007aa}.
 \citet{Pitts:1996aa} showed that a relation specified by a
 mixed-variance equation over a recursively defined domain exists and
 is unique, because the domain is the minimal invariant of its defining
-functor. His method did not apply directly to \pass{delay} in our Scott-domain proof (Section~\ref{sec:evaluation}). Indexing a relation by
+functor. His method did not apply directly to \pass{delay} in our Scott-domain proof (Section~\ref{sec:scott-delay}). Indexing a relation by
 finite elements is common in adequacy proofs, which relate a
 denotation to syntax: \citet{Winskel:1993aa} indexes by the size of
 tokens of an information system, \citet{Abramsky:1990vv} by formulas of

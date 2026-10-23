@@ -13,11 +13,12 @@
 %% exist.
 
 \begin{itemize}
-\item A proof that closure conversion preserves and reflects a
-  denotational semantics for a call-by-value $\lambda$-calculus with
-  iso-recursive types. We extend this proof to the whole compiler,
-  targeting typed assembly language, and we mechanize the proof in
-  Agda (\S\ref{sec:compiler-proof}).
+\item Two proofs, one in a graph model and one in Scott domains, that
+  closure conversion preserves and reflects a denotational semantics
+  for a call-by-value $\lambda$-calculus with iso-recursive types. We
+  extend both proofs to the whole compiler, targeting typed assembly
+  language, and we mechanize them in Agda (\S\ref{sec:compiler-proof},
+  \S\ref{sec:scott-delay}).
 \item Approximant logical relations relate two denotations by
   recursion on the depth of a finite set of graph elements, which lets
   us prove semantic reflection for lowering closures to their flat
