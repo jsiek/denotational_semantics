@@ -585,7 +585,8 @@ GROUPS = [
     ('mu-den', 'CC: enclose', [MUP + 'Correctness/GraphModel/EncloseCorrect.agda']),
     ('mu-den', 'CC: optimize', [MUP + 'Correctness/GraphModel/OptimizeCorrect.agda']),
     ('mu-den', 'CC: concretize', [MUP + 'Correctness/GraphModel/ConcretizeCorrect.agda']),
-    ('mu-den', 'CC: delay', [MUP + 'Correctness/GraphModel/Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')]),
+    ('mu-den', 'CC: delay', [MUP + 'Correctness/GraphModel/ApproxLR.agda']
+     + [MUP + 'Correctness/GraphModel/Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')]),
     ('mu-den', 'CC: globalize', [MUP + 'Correctness/GraphModel/GlobalizeCorrect.agda']),
     ('mu-den', 'rco', [MUP + 'Correctness/GraphModel/RCOCorrect.agda']),
     ('mu-den', 'lift locals', [MUP + 'Correctness/GraphModel/LiftLocalsCorrect.agda']),
@@ -1305,6 +1306,15 @@ def mu_pass(row, graph, cek):
 
 
 MU_DELAY = ['Rel', 'Preserve', 'Reflect', 'Correct']
+
+
+def mu_delay(x):
+    """ISWIMμ's files of delay's graph-model module x: its relation, Rel, is
+    split into the approximant logical relation (ApproxLR) and DelayRel."""
+    return ([MUP + 'Correctness/GraphModel/ApproxLR.agda'] if x == 'Rel' else []) \
+        + [MUP + 'Correctness/GraphModel/Delay' + x + '.agda']
+
+
 MU_ROWS = [
     mu_sem('ISWIM'),
     mu_sem('Clos2', True, True),
@@ -1322,7 +1332,8 @@ MU_ROWS = [
     mu_pass('CC: enclose', ['EncloseCorrect.agda'], ['EncloseSim.agda']),
     mu_pass('CC: optimize', ['OptimizeCorrect.agda'], ['OptimizeSim.agda']),
     mu_pass('CC: concretize', ['ConcretizeCorrect.agda'], ['ConcretizeSim.agda']),
-    mu_pass('CC: delay', ['Delay' + x + '.agda' for x in MU_DELAY], ['DelaySim.agda']),
+    ('CC: delay', [GC + 'Delay' + x + '.agda' for x in MU_DELAY], [OC + 'DelaySim.agda'],
+     [f for x in MU_DELAY for f in mu_delay(x)], [MUP + 'Correctness/AbstractMachines/DelaySim.agda']),
     mu_pass('CC: globalize', ['GlobalizeCorrect.agda'], ['GlobalizeSim.agda']),
     mu_pass('rco', ['RCOCorrect.agda'], ['RCOSim.agda']),
     mu_pass('lift locals', ['LiftLocalsCorrect.agda'], ['LiftLocalsSim.agda']),
@@ -1396,7 +1407,7 @@ def mu_report(c, T):
     print('|---|---:|---:|')
     for x in MU_DELAY:
         print(f'| `Delay{x}` | {code_lines(GC + "Delay" + x + ".agda")} '
-              f'| {code_lines(MUP + "Correctness/GraphModel/Delay" + x + ".agda")} |')
+              f'| {sum(code_lines(f) for f in mu_delay(x))} |')
     print()
     print('| not counted in the rows | typed | μ |')
     print('|---|---:|---:|')
@@ -1910,9 +1921,9 @@ def iswim_brief(c, T, M):
     print('|---|---:|---:|')
     for x in MU_DELAY:
         print(f'| `Delay{x}` | {code_lines(GC + "Delay" + x + ".agda")} '
-              f'| {code_lines(MUP + "Correctness/GraphModel/Delay" + x + ".agda")} |')
+              f'| {sum(code_lines(f) for f in mu_delay(x))} |')
     print(f'| **total** | {sum(code_lines(GC + "Delay" + x + ".agda") for x in MU_DELAY)} '
-          f'| {sum(code_lines(MUP + "Correctness/GraphModel/Delay" + x + ".agda") for x in MU_DELAY)} |')
+          f'| {sum(code_lines(f) for x in MU_DELAY for f in mu_delay(x))} |')
     print()
 
 

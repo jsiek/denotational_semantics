@@ -73,9 +73,9 @@ and the small-step, reduction and clocked frameworks.
 | Lemma 3.1 (β), part 2 | `../proof/Framework/GraphModel/Ops.agda` | `ΛΛ-β` |
 | Theorem 4.1 (Compiler correctness) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `compile-int-const`, `compile-int-nonempty`; every type: `compile-correct-const`, `compile-correct-nonempty` |
 | Theorem 4.1, proof (composition of the passes) | `proof/Correctness/GraphModel/CompilerCorrect.agda` | `compile-int`, `compile-same` |
-| Lemma 4.2 (Depth irrelevance and unfolding), part 1 | `proof/Correctness/GraphModel/DelayRel.agda` | `ApproxLR-depth-irrelevant` (one direction; with k and j swapped, the other) |
-| Lemma 4.2, part 2 | `proof/Correctness/GraphModel/DelayRel.agda` | `unfold`, `fold` |
-| monotone in D, antitone in V (after Lemma 4.2) | `proof/Correctness/GraphModel/DelayRel.agda` | `ApproxLR-mono`, `ApproxLR-⊆` |
+| Lemma 4.2 (Depth irrelevance and unfolding), part 1 | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-depth-irrelevant` (one direction; with k and j swapped, the other) |
+| Lemma 4.2, part 2 | `proof/Correctness/GraphModel/ApproxLR.agda` | `unfold`, `fold` |
+| monotone in D, antitone in V (after Lemma 4.2) | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-mono`, `ApproxLR-⊆` |
 | Lemma 4.3 (Fundamental lemma) | `proof/Correctness/GraphModel/DelayReflect.agda` | `delay-reflect` (related environments: `Envs`; the case of a call: `collect`; of a closure: `clos-app`) |
 | Theorem 4.4 (Correctness of delay) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `delay-correct-const`, `delay-correct-nonempty` |
 | Theorem 4.4, proof | `proof/Correctness/GraphModel/DelayCorrect.agda` (reflection: `proof/Correctness/GraphModel/DelayReflect.agda`, `reflect-const`, `reflect-nonempty`; preservation: `proof/Correctness/GraphModel/DelayPreserve.agda`, `preserve-const`, `preserve-nonempty`) | `delay-correct-const`, `delay-correct-nonempty` |
@@ -168,7 +168,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 |---|---|---|
 | elements u, v, w (Figure 2) | `../Framework/GraphModel/Domain.agda` | `Value`: `const`, `_↦_`, `ν`, `⦅_,_⦆`, `tup[_]_`, `left`, `right`, `⟨⟩` (and `ω`, used only by the other pipelines' errors) |
 | sets of elements, D ⊆ E, D = E | `../Framework/GraphModel/SetsAsPredicates.agda` | `𝒫`, `_∈_`, `_⊆_`, `_≃_`, `nonempty` |
-| D • E (application) | `../Framework/GraphModel/Ops.agda` | `⋆` (written `_●_` in `proof/Correctness/GraphModel/DelayRel.agda`) |
+| D • E (application) | `../Framework/GraphModel/Ops.agda` | `⋆` (written `_●_` in `proof/Correctness/GraphModel/ApproxLR.agda`) |
 | Λ(F) | `../Framework/GraphModel/Ops.agda` | `Λ` (the curried form of Lemma 3.1, part 2: `ΛΛ`, `../proof/Framework/GraphModel/Ops.agda`) |
 | pair, car, cdr | `../Framework/GraphModel/Ops.agda` | `pair`, `car`, `cdr` |
 | D ⊙ E (call a closure) | `Semantics/GraphModel/FlatClos.agda` (the meaning of `callc`), `proof/Correctness/GraphModel/DelayRel.agda` | `⟦ callc L M ⟧`, `_⊙_` |
@@ -186,10 +186,10 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | Paper | File | Agda |
 |---|---|---|
 | v ⊑ D′ and U ⊑* E′ (Figure 3) | `proof/Correctness/GraphModel/DelayPreserve.agda` | `_⊑_`, `_⊑*_`; preservation: `preserve` |
-| usable entry U_a ↦ w ∈ V (Figure 4) | `proof/Correctness/GraphModel/DelayRel.agda` | `UsableEntry` (constructor `usable-entry`) |
-| args(V) and a batch of calls (Figure 4) | `proof/Correctness/GraphModel/DelayRel.agda` | `Batch` (fields `results` and `args`) |
-| D ≼ₖ V and D ≼ V (Figure 4) | `proof/Correctness/GraphModel/DelayRel.agda` | `ApproxLR≤` (private), `ApproxLR` |
-| its four clauses | `proof/Correctness/GraphModel/DelayRel.agda` | `ApproxLRLayer`: `const-obs`, `nonempty-obs`, `app-obs`, `tag-obs` |
+| usable entry U_a ↦ w ∈ V (Figure 4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `UsableEntry` (constructor `usable-entry`) |
+| args(V) and a batch of calls (Figure 4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `Batch` (fields `results` and `args`) |
+| D ≼ₖ V and D ≼ V (Figure 4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR≤`, `ApproxLR` |
+| its four clauses | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLRLayer`: `const-obs`, `nonempty-obs`, `app-obs`, `tag-obs` |
 | D related to every finite V ⊆ D′ | `proof/Correctness/GraphModel/DelayRel.agda` | `Approx` |
 | related environments (before Lemma 4.3) | `proof/Correctness/GraphModel/DelayReflect.agda` | `Envs` |
 
@@ -225,7 +225,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | D, Remove complex operands | calculation | `proof/Correctness/GraphModel/RCOCorrect.agda` (`rco-correct`) |
 | D, Lift locals | calculation | `proof/Correctness/GraphModel/LiftLocalsCorrect.agda` (`lift-locals-correct`) |
 | D, Explicate control | calculation | `proof/Correctness/GraphModel/ExplicateCorrect.agda` (`explicate-correct`) |
-| E An Example of the Approximant Logical Relation | clause 3 on λy. x + y (the example itself is not mechanized) | `proof/Correctness/GraphModel/DelayRel.agda` (`UsableEntry`, `Batch`, `ApproxLRLayer.app-obs`) |
+| E An Example of the Approximant Logical Relation | clause 3 on λy. x + y (the example itself is not mechanized) | `proof/Correctness/GraphModel/ApproxLR.agda` (`UsableEntry`, `Batch`, `ApproxLRLayer.app-obs`) |
 | F.1 Values and Observations | values, obs, observations, machines, clocked interpreters, equivalence | `Semantics/AbstractMachines/Values.agda` and `Semantics/ClockedInterpreters/Values.agda` (`Val`, `obs`), `../Semantics/Observation.agda` (`Obs`), `../Framework/Smallstep.agda` (`Machine`, `Terminates`, `Diverges`, `Equivalent`), `../Framework/Clocked.agda` (`Result`, `Terminates`, `Diverges`, `Equivalent`) |
 | F.2 Clocked Interpreters | ISWIMμ and x86μ; Theorem F.1 | `Semantics/ClockedInterpreters/ISWIM.agda`, `Semantics/ClockedInterpreters/X86.agda`; `Theorems/ClockedInterpreters.agda` |
 | F.3 Abstract Machines | ISWIMμ and x86μ; Theorem F.2 | `Semantics/AbstractMachines/ISWIM.agda`, `Semantics/AbstractMachines/X86.agda`; `Theorems/AbstractMachines.agda` |
