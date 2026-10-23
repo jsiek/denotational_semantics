@@ -9,9 +9,11 @@
   recursion on the depth of V', since a target closure is a set of pairs
   whose calls combine the codes and environments of several pairs (Batch).
   ApproxLRLayer is one unfolding of the relation, with the recursive call
-  left open (Q). The fuel index of ApproxLR≤ is only a termination
-  device: ApproxLR-depth-irrelevant shows that any fuel bounding the
-  depth gives the same relation (unfold, fold). Approx D D' says that D
+  left open (Q); ApproxLR≤ k is the paper's ≼ₖ (private: the proofs use
+  only ApproxLR). The fuel index of ApproxLR≤ is only a termination
+  device: ApproxLR-depth-irrelevant (Lemma 4.2, part 1) shows that any
+  fuel bounding the depth gives the same relation (part 2: unfold,
+  fold). Approx D D' says that D
   is related to every finite part of a target set D', the form of the
   fundamental lemma; Approx-fold proves it from the four clauses.
 
@@ -179,10 +181,13 @@ private
     }
     where open ApproxLRLayer r
 
-  ApproxLR-depth-irrelevant : ∀ {k j D V} → Bnd k V → Bnd j V → ApproxLR≤ k D V → ApproxLR≤ j D V
-  ApproxLR-depth-irrelevant {j = zero} _ _ _ = ptt
-  ApproxLR-depth-irrelevant {zero} {suc j} bk _ _ = ApproxLR≤-data (suc j) (λ v v∈ → ⊥-elim (n≮0 (bk v v∈)))
-  ApproxLR-depth-irrelevant {suc k} {suc j} bk bj = ApproxLRLayer-map bk bj ApproxLR-depth-irrelevant ApproxLR-depth-irrelevant
+{- Lemma 4.2 (Depth irrelevance), part 1, of the paper: any two indices k
+   and j that bound the depth of V give the same relation (this direction,
+   with k and j swapped, gives the other); part 2 is unfold and fold -}
+ApproxLR-depth-irrelevant : ∀ {k j D V} → Bnd k V → Bnd j V → ApproxLR≤ k D V → ApproxLR≤ j D V
+ApproxLR-depth-irrelevant {j = zero} _ _ _ = ptt
+ApproxLR-depth-irrelevant {zero} {suc j} bk _ _ = ApproxLR≤-data (suc j) (λ v v∈ → ⊥-elim (n≮0 (bk v v∈)))
+ApproxLR-depth-irrelevant {suc k} {suc j} bk bj = ApproxLRLayer-map bk bj ApproxLR-depth-irrelevant ApproxLR-depth-irrelevant
 
 unfold : ∀ {D V} → ApproxLR D V → ApproxLRLayer ApproxLR D V
 unfold {V = V} = ApproxLRLayer-map bV bV (λ b _ → ApproxLR-depth-irrelevant b (Bnd-depths _)) (λ _ → ApproxLR-depth-irrelevant (Bnd-depths _))
