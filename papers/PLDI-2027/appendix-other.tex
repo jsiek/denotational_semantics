@@ -89,10 +89,11 @@ equivalent.
 \subsection{Clocked Interpreters}
 \label{app:interp}
 
-\paragraph{\iswim}
+\paragraph{Interpreter for \iswim}
 
 The interpreter $\mathit{eval}_k(\rho, M)$ evaluates a term $M$ in an
-environment $\rho$ of values at clock $k$. The clock ticks at each call:
+environment $\rho$ of values at clock $k$. The clock ticks at each call
+of the interpreted program:
 \begin{align*}
   \mathit{eval}_k(\rho, x) &= \mathsf{ret}\,\rho(x) \\
   \mathit{eval}_k(\rho, \lambda x.\,N) &= \mathsf{ret}\,\langle \lambda x.\,N, \rho\rangle \\
@@ -118,7 +119,7 @@ A pattern on the left of $\leftarrow$ always matches, because the
 interpreter is defined on well-typed terms and values. The interpreter
 of a closed program $M$ is $k \mapsto \mathit{eval}_k(\emptyset, M)$.
 
-\paragraph{x86$\mu$}
+\paragraph{Interpreter for x86$\mu$}
 
 A machine state $m$ of x86$\mu$ has the registers $\kw{rax}$,
 $\kw{rdi}$, and $\kw{rsi}$, each holding a value or unset; the frame
