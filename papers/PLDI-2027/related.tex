@@ -71,7 +71,13 @@ irrelevance (Lemma~\ref{lem:depth-irrelevant}) makes an intersection
 unnecessary. Our Scott-domain relation for \pass{delay}
 (Section~\ref{sec:scott-delay}) also recurses on stages, but on the
 stages of one side only, and it relates the approximation to the
-whole other value. Later work related two semantics with inclusive predicates
+whole other value. \citet{Nielsen:2000aa} relates the domain-theoretic meanings of a
+program and its defunctionalization with a type-indexed relation. As in
+our preservation relation, his function clause relates a function to a
+closure whose calls give related results, and $\bot$ is related to every
+value. His source has no recursive types, so recursion on types
+suffices, and he proves only preservation; our reflection relation, with
+its calls across stages, has no counterpart in his proof. Later work related two semantics with inclusive predicates
 \citep{Milne:1976aa,Stoy:1977aa}, finitary projections
 \citep{Mulmuley:1987aa}, or types \citep{Meyer:1985aa,Filinski:2007aa}.
 \citet{Pitts:1996aa} showed that a relation specified by a
