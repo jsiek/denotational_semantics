@@ -194,7 +194,7 @@ Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 \end{array}
 \]
 The semantics follows Section~\ref{sec:graph-models}, with the operators of Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
-\defhead{Semantics of \iswim}{\den{M}\rho}
+\defhead{Semantics of \iswim}{\den{M}\rho = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
   \den{x}\rho & = & \rho(x) &
@@ -238,7 +238,7 @@ with the captured values for $x_1, \ldots, x_n$; closures are strict, so
 it is guarded by the captured values. An EnvClos closure applies the
 curried meaning of its code to the tuple of the captured values
 (Section~\ref{sec:approx-lr}).
-\defhead{Semantics of closures}{\den{M}\rho}
+\defhead{Semantics of closures}{\den{M}\rho = D}
 \[
 \begin{array}{@{}l@{}}
     \den{\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}}\rho =
@@ -269,7 +269,7 @@ FlatClos, the target of \pass{delay}, replaces closures and application with cod
   \dfrac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}
         {\Gamma \vdash \kw{callc}\;L\;M : C}
 \]
-\defhead{Semantics of FlatClos}{\den{M}\rho}
+\defhead{Semantics of FlatClos}{\den{M}\rho = D}
 \[
   \den{\kw{code}\;(z, y.\,N)}\rho =  \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y]))
   \qquad
@@ -299,7 +299,7 @@ meaning, $\den{M}_T\rho$; the other forms are interpreted as in
 FlatClos, passing $T$ along. A definition means the curried function
 of its code, given the table $T_k$ of the definitions older than it
 ($T_k(j) = T(j)$ for $j < k$, and $T_k(j) = \emptyset$ otherwise).
-\defhead{Semantics of GlobalFun}{\den{M}_T\rho \qquad T(k)}
+\defhead{Semantics of GlobalFun}{\den{M}_T\rho = D \qquad T(k) = D}
 \[
   \den{f_k}_T\rho = T(k)
   \qquad
@@ -346,7 +346,7 @@ $\mathcal{A}\den{f_k}\sigma = T(k)$, and a simple expression
 $\mathcal{S}\den{o\;\vec{a}}\sigma$ applies the GlobalFun operator of
 $o$ to the meanings of its atoms. An assignment is strict in the value
 it assigns, like a $\kw{let}$.
-\defhead{Semantics of Imp}{\den{e}_T\sigma\kappa}
+\defhead{Semantics of Imp}{\den{e}_T\sigma\kappa = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \den{r}_T\sigma\kappa & = & \kappa(\mathcal{S}\den{r}\sigma)\\
@@ -398,7 +398,7 @@ result type $C_k$, and the main function body in the empty frame. A tail means a
 set, given its frame $\sigma$ and the meanings $B$ of the blocks it can
 see. Writing slot $x$ cuts the frame to the slots before $x$, written
 $\sigma|_x$, and then assigns $x$.
-\defhead{Semantics of CFG}{\den{t}_{T,B}\sigma}
+\defhead{Semantics of CFG}{\den{t}_{T,B}\sigma = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \den{\kw{return}\;r}_{T,B}\sigma & = & \mathcal{S}\den{r}\sigma\\
@@ -530,14 +530,14 @@ kind on the meanings of its operands ($\mathsf{pair}$, $\mathcal{T}$,
 $\mathsf{inl}$, $\mathsf{inr}$). A write to a destination, written
 $\mathit{put}$, updates a register, or binds a slot as an assignment in
 CFG does.
-\defhead{Writing a destination}{\mathit{put}(d, D)\,\kappa\,\sigma R F}
+\defhead{Writing a destination}{\mathit{put}(d, D)\,\kappa\,\sigma R F = E}
 \[
   \mathit{put}(\%r, D)\,\kappa\,\sigma R F = \kappa\,\sigma\,R[r{:=}D]\,F
   \qquad
   \mathit{put}(x, D)\,\kappa\,\sigma R F =
     \Lambda(\mlam{X} \kappa\,(\sigma|_x[x{:=}X])\,R\,F) \app D
 \]
-\defhead{Semantics of instructions}{\den{i}\kappa\,\sigma R F}
+\defhead{Semantics of instructions}{\den{i}\kappa\,\sigma R F = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \den{\kw{movq}\; a, d}\kappa\,\sigma R F & = & \mathit{put}(d, \mathcal{O}\den{a}\sigma R)\,\kappa\,\sigma R F\\
@@ -558,7 +558,7 @@ CFG does.
 \]
 Here $R_C$ maps $\kw{rax}$ to $C$ and the other registers to
 $\{\langle\rangle\}$; only a call can diverge, so only it is strict.
-\defhead{Semantics of sequences}{\den{s}_B\,\sigma R F}
+\defhead{Semantics of sequences}{\den{s}_B\,\sigma R F = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \den{i;\; s}_B & = & \den{i}\,\den{s}_B\\
