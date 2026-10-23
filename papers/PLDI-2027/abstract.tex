@@ -28,13 +28,14 @@ of the domain. We mechanize both proofs in Agda.
 
 To compare these denotational approaches with operational ones, we
 prove the same compiler correct three more times and compare the sizes
-of the five proofs. The proof that uses clocked interpreters is the
-smallest, followed by the graph-model, abstract machines, Scott
-domains, and finally the proofs based on reduction semantics.  The
-graph model yields smaller correctness proofs than the Scott domains
-on all the passes and tends to be smaller than the clocked interpreter
+of the five proofs. Ranking the proof from smallest to largest based
+on the style of semantics, and not counting language-independent
+infrastructure, yields (1) clocked interpreters, (2) graph-model, (3)
+abstract machines, (4) Scott domains, and (4) reduction semantics. The
+graph model enables smaller correctness proofs than the Scott domains
+on all the passes and tends to be smaller than the operational proofs
 on passes that do not change the representation of values, where
 equational reasoning suffices. However, the graph model yields much
-larger proofs than clocked interpreters for passes that change the
+larger proofs than the operational ones for passes that change the
 representation of values, such as the lowering of closures.
 
