@@ -26,13 +26,15 @@ conversion that preserves and reflects divergence. There, the lowering
 of closures needs a logical relation defined by recursion on the stages
 of the domain. We mechanize both proofs in Agda.
 
-To compare these denotational approaches with other styles, we also
-prove the same compiler correct in three operational styles and
-compare the sizes of the five proofs. The graph-model development is smaller than the proofs using abstract
-machines, reduction semantics, and Scott domains, but larger than the
-proof using clocked interpreters. Compared with the operational
-proofs, the graph-model proofs tend to be smaller for passes that
-retain the representation of program values, where equational
-reasoning suffices, and larger for passes that change it, such as the
-lowering of closures.
+To compare these denotational approaches with operational ones, we
+prove the same compiler correct three more times and compare the sizes
+of the five proofs. The proof that uses clocked interpreters is the
+smallest, followed by the graph-model, abstract machines, Scott
+domains, and finally the proofs based on reduction semantics.  The
+graph model yields smaller correctness proofs than the Scott domains
+on all the passes and tends to be smaller than the clocked interpreter
+on passes that do not change the representation of values, where
+equational reasoning suffices. However, the graph model yields much
+larger proofs than clocked interpreters for passes that change the
+representation of values, such as the lowering of closures.
 
