@@ -161,8 +161,8 @@ languages, which only the proofs use).
   * `Mu/Theorems/AbstractMachines.agda`, `ClockedInterpreters.agda`,
     `ReductionSemantics.agda`: Theorems F.2, F.1 and F.3, the source and
     X86μ stop with the same integer, or both diverge
-    (`compile-x86-const`, `compile-x86-diverges`), and are equivalent at
-    every type (`compile-x86-correct`);
+    (`compile-const`, `compile-diverges`), and are equivalent at
+    every type (`compile-correct`);
   * `Mu/Theorems/ScottDomains.agda` (checked by `make check-scott`, not
     `make check`; see below): Theorem F.4, the same as Theorem 4.1 in
     Scott domains (a term means an element of the domain of values 𝔻, a

@@ -71,9 +71,9 @@ and the small-step, reduction and clocked frameworks.
 |---|---|---|
 | Lemma 3.1 (β), part 1 | `../proof/Framework/GraphModel/Ops.agda` | `Λ-β` (Λ(F) • D is `letD`) |
 | Lemma 3.1 (β), part 2 | `../proof/Framework/GraphModel/Ops.agda` | `ΛΛ-β` |
-| Theorem 4.1 (Compiler correctness) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `compile-x86-int-const`, `compile-x86-int-nonempty`; every type: `compile-x86-correct-const`, `compile-x86-correct-nonempty` |
-| Theorem 4.1, proof (composition of the passes) | `proof/Correctness/GraphModel/CompilerCorrect.agda` | `compile-x86-int`, `compile-x86-same` |
-| Lemma 4.2 (Depth irrelevance and unfolding), part 1 | `proof/Correctness/GraphModel/DelayRel.agda` | `ApproxLR-depth-irrelevant` (private to the module) |
+| Theorem 4.1 (Compiler correctness) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `compile-int-const`, `compile-int-nonempty`; every type: `compile-correct-const`, `compile-correct-nonempty` |
+| Theorem 4.1, proof (composition of the passes) | `proof/Correctness/GraphModel/CompilerCorrect.agda` | `compile-int`, `compile-same` |
+| Lemma 4.2 (Depth irrelevance and unfolding), part 1 | `proof/Correctness/GraphModel/DelayRel.agda` | `ApproxLR-depth-irrelevant` (one direction; with k and j swapped, the other) |
 | Lemma 4.2, part 2 | `proof/Correctness/GraphModel/DelayRel.agda` | `unfold`, `fold` |
 | monotone in D, antitone in V (after Lemma 4.2) | `proof/Correctness/GraphModel/DelayRel.agda` | `ApproxLR-mono`, `ApproxLR-⊆` |
 | Lemma 4.3 (Fundamental lemma) | `proof/Correctness/GraphModel/DelayReflect.agda` | `delay-reflect` (related environments: `Envs`; the case of a call: `collect`; of a closure: `clos-app`) |
@@ -84,15 +84,13 @@ and the small-step, reduction and clocked frameworks.
 | Theorems 4.1 and 4.5 together: the operational theorem (§4.3) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda); proof `proof/Adequacy/EndToEnd.agda` | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
 | §4.2, "Which sides to relate": a finite source side fails the function clause (the Agda check) | `proof/Correctness/GraphModel/DelayDesignFiniteSource.agda` | example 3 of its header, the paper's (λf.f, the singletons of [n] ↦ n): `no-finite-source-ApproxLR′`, `finite-source′`; example 1: `no-finite-source-ApproxLR`; any such relation: `no-finite-source` |
 | §4.2, "Which sides to relate": a target set of bounded depth is related exactly when each finite sublist is (the Agda check) | `proof/Correctness/GraphModel/DelayDesignBoundedSets.agda` | `ApproxLRSet⇔` (from `ApproxLRSet⇒`, `ApproxLRSet⇐`) |
-| Theorem F.1 (Correctness, clocked interpreters) | [`Theorems/ClockedInterpreters.agda`](Theorems/ClockedInterpreters.agda); proof `proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-x86-const`, `compile-x86-diverges`; every type: `compile-x86-correct` |
-| Theorem F.2 (Correctness, abstract machines) | [`Theorems/AbstractMachines.agda`](Theorems/AbstractMachines.agda); proof `proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-x86-const`, `compile-x86-diverges`; every type: `compile-x86-correct` |
-| Theorem F.3 (Correctness, reduction semantics) | [`Theorems/ReductionSemantics.agda`](Theorems/ReductionSemantics.agda); proof `proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-x86-const`, `compile-x86-diverges`; every type: `compile-x86-correct` |
-| Theorem F.4 (Correctness, Scott domains) | [`Theorems/ScottDomains.agda`](Theorems/ScottDomains.agda); proof `proof/Correctness/ScottDomains/CompilerCorrect.agda` | `compile-x86-int-const`, `compile-x86-int-defined`; every type: `compile-x86-correct-const`, `compile-x86-correct-defined` |
+| Theorem F.1 (Correctness, clocked interpreters) | [`Theorems/ClockedInterpreters.agda`](Theorems/ClockedInterpreters.agda); proof `proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
+| Theorem F.2 (Correctness, abstract machines) | [`Theorems/AbstractMachines.agda`](Theorems/AbstractMachines.agda); proof `proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
+| Theorem F.3 (Correctness, reduction semantics) | [`Theorems/ReductionSemantics.agda`](Theorems/ReductionSemantics.agda); proof `proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
+| Theorem F.4 (Correctness, Scott domains) | [`Theorems/ScottDomains.agda`](Theorems/ScottDomains.agda); proof `proof/Correctness/ScottDomains/CompilerCorrect.agda` | `compile-int-const`, `compile-int-defined`; every type: `compile-correct-const`, `compile-correct-defined` |
 | Table 1 (lines of the five proofs) | `../../papers/PLDI-2027/loc.py` | `python3 papers/PLDI-2027/loc.py --mu` (four columns), `--scott` (the Scott column) |
 | Table 2 (infrastructure) | `../../papers/PLDI-2027/loc.py` | `--mu` (its infrastructure table), `--scott` (the Scott infrastructure and TypeTopology; needs `make scott-deps`) |
 
-The paper's `compile` is `compile-x86` (`Compiler/Pipeline.agda`), the
-composition of all ten passes; the Agda `compile` stops at GlobalFunμ.
 A closed term is `Tm [] A`; `base Int` is the type Int. In the graph
 model, c ∈ D is `const c ∈ D`, D ≠ ∅ is `nonempty D`, and the empty
 environment ρ₀ is `ρ₀` of `Semantics/GraphModel/Closed.agda`.
@@ -139,7 +137,7 @@ pipelines.
 | lift locals (Mon to Imp) | [`Compiler/LiftLocals.agda`](Compiler/LiftLocals.agda) | `lift-program` |
 | explicate control (Imp to CFG) | [`Compiler/Explicate.agda`](Compiler/Explicate.agda) | `explicate` |
 | select instructions (CFG to x86μ) | [`Compiler/Select.agda`](Compiler/Select.agda) | `select` (the frame's slots: `depth`) |
-| the compiler, `compile` | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `compile-x86` (prefixes: `compile₄`, `compile`, `compile-mon`, `compile-imp`, `compile-cfg`) |
+| the compiler, `compile` | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `compile` (prefixes: `compile-to-FlatClos`, `compile-to-GlobalFun`, `compile-to-Mon`, `compile-to-Imp`, `compile-to-CFG`) |
 
 ### Semantics, in each of the five styles
 
@@ -210,7 +208,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | B.5 The Imp Language | typing, graph semantics | `Language/Imp.agda`, `Semantics/GraphModel/Imp.agda` |
 | B.6 The CFG Language | typing, graph semantics | `Language/CFG.agda`, `Semantics/GraphModel/CFG.agda` |
 | B.7 The x86μ Language | typing, graph semantics | `Language/X86.agda`, `Semantics/GraphModel/X86.agda` |
-| C (opening) | the composition `compile` | `Compiler/Pipeline.agda` (`compile-x86`) |
+| C (opening) | the composition `compile` | `Compiler/Pipeline.agda` (`compile`) |
 | C.1 simplify | | `Compiler/Simplify.agda` (`simplify`) |
 | C.2 enclose | | `Compiler/Enclose.agda` (`enclose`) |
 | C.3 optimize | | `Compiler/Optimize.agda` (`optimize-program`) |

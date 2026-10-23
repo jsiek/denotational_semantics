@@ -11,8 +11,8 @@
            --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 
-  The paper's compile is compile-x86 (Mu/Compiler/Pipeline.agda), the
-  composition of the ten passes. A denotation is a set of graph elements
+  compile (Mu/Compiler/Pipeline.agda) is the composition of the ten
+  passes. A denotation is a set of graph elements
   (Framework/GraphModel/Domain.agda): c ∈ D is const c ∈ D, D ≠ ∅ is
   nonempty D, and the empty environment of a closed term is ρ₀
   (Mu/Semantics/GraphModel/Closed.agda: every variable denotes {⟨⟩}).
@@ -35,7 +35,7 @@ import Mu.Language.ISWIM as ISWIMμ
 import Mu.Language.EnvClos as EnvClosμ
 
 open import Mu.Compiler.Delay using (delay-program)
-open import Mu.Compiler.Pipeline using (compile-x86)
+open import Mu.Compiler.Pipeline using (compile)
 
 open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
 open import Mu.Semantics.GraphModel.EnvClos using () renaming (⟦_⟧ to ⟦_⟧ᵉ)
@@ -53,29 +53,29 @@ open import Data.Product using (_×_; proj₁; proj₂)
 
 {- for a closed ISWIMμ term M of type Int, and every constant c:
    c ∈ ⟦ M ⟧ if and only if c ∈ ⟦ compile M ⟧ -}
-compile-x86-int-const : ∀ (M : ISWIMμ.Tm [] (base Int)) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₜ)
-  × (const c ∈ ⟦ compile-x86 M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
-compile-x86-int-const M = proj₁ (Compiler.compile-x86-int M)
+compile-int-const : ∀ (M : ISWIMμ.Tm [] (base Int)) → ∀ {B} (c : base-rep B)
+  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧ₜ)
+  × (const c ∈ ⟦ compile M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
+compile-int-const M = proj₁ (Compiler.compile-int M)
 
 {- moreover, ⟦ M ⟧ ≠ ∅ if and only if ⟦ compile M ⟧ ≠ ∅ -}
-compile-x86-int-nonempty : ∀ (M : ISWIMμ.Tm [] (base Int))
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₜ)
-  × (nonempty ⟦ compile-x86 M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
-compile-x86-int-nonempty M = proj₂ (Compiler.compile-x86-int M)
+compile-int-nonempty : ∀ (M : ISWIMμ.Tm [] (base Int))
+  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧ₜ)
+  × (nonempty ⟦ compile M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
+compile-int-nonempty M = proj₂ (Compiler.compile-int M)
 
 {- Theorem 4.1, for closed terms of every type (the paper: "The same
    statement holds for closed terms of every type") -}
 
-compile-x86-correct-const : ∀ {A} (M : ISWIMμ.Tm [] A) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₜ)
-  × (const c ∈ ⟦ compile-x86 M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
-compile-x86-correct-const M = proj₁ (Compiler.compile-x86-same M)
+compile-correct-const : ∀ {A} (M : ISWIMμ.Tm [] A) → ∀ {B} (c : base-rep B)
+  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧ₜ)
+  × (const c ∈ ⟦ compile M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
+compile-correct-const M = proj₁ (Compiler.compile-same M)
 
-compile-x86-correct-nonempty : ∀ {A} (M : ISWIMμ.Tm [] A)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₜ)
-  × (nonempty ⟦ compile-x86 M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
-compile-x86-correct-nonempty M = proj₂ (Compiler.compile-x86-same M)
+compile-correct-nonempty : ∀ {A} (M : ISWIMμ.Tm [] A)
+  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧ₜ)
+  × (nonempty ⟦ compile M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
+compile-correct-nonempty M = proj₂ (Compiler.compile-same M)
 
 {- Theorem 4.4 (Correctness of delay) -----------------------------------------}
 

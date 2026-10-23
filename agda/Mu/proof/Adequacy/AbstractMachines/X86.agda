@@ -28,7 +28,7 @@ open import proof.Framework.GraphModel.Domain using () renaming (const to dconst
 open import Mu.proof.Semantics.GraphModel.Ops using (ConT; tables)
 open import Mu.Language.X86 using (Program; program)
 open import Mu.Language.ISWIM using (Tm)
-open import Mu.Compiler.Pipeline using (compile-x86)
+open import Mu.Compiler.Pipeline using (compile)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
@@ -59,8 +59,8 @@ module _ {A} (P : Program A) (cT : ConT (tables codeₜ (Program.defs P))) (cl :
 
 {- the programs that the compiler produces -}
 x86-const-iff : ∀ {A} (M : Tm [] A) {B} {k : base-rep B}
-  → (dconst k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (sem (compile-x86 M)) (o-const B k)
-x86-const-iff M = const-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))
+  → (dconst k ∈ ⟦ compile M ⟧ₜ) ⇔ Terminates (sem (compile M)) (o-const B k)
+x86-const-iff M = const-iff (compile M) (proj₁ (compiled M)) (proj₂ (compiled M))
 
-x86-nonempty-iff : ∀ {A} (M : Tm [] A) → nonempty ⟦ compile-x86 M ⟧ₜ ⇔ Converges (Terminates (sem (compile-x86 M)))
-x86-nonempty-iff M = nonempty-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))
+x86-nonempty-iff : ∀ {A} (M : Tm [] A) → nonempty ⟦ compile M ⟧ₜ ⇔ Converges (Terminates (sem (compile M)))
+x86-nonempty-iff M = nonempty-iff (compile M) (proj₁ (compiled M)) (proj₂ (compiled M))

@@ -9,7 +9,7 @@
   Every pass but delay preserves the meaning exactly (≃); delay
   preserves and reflects constants and nonemptiness. The end-to-end
   theorem is stated for a main program of type Int, the observation of
-  ISWIMμ (compile-x86-int); the others hold at any type.
+  ISWIMμ (compile-int); the others hold at any type.
 
 -}
 
@@ -63,29 +63,29 @@ then ⟨ c , n ⟩ ⟨ c' , n' ⟩ = ⟨ (λ k → ⇔∘ (c k) (c' k)) , ⇔∘
 same : ∀ {D E} → D ≃ E → Same D E
 same D≃@(⟨ D⊆ , E⊆ ⟩) = ⟨ (λ k → ⟨ D⊆ _ , E⊆ _ ⟩) , ⟨ ne-≃ D≃ , ne-≃ (≃-sym D≃) ⟩ ⟩
 
-compile₄-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) (⟦ compile₄ M ⟧₄ ρ₀)
-compile₄-same M =
+compile-to-FlatClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) (⟦ compile-to-FlatClos M ⟧₄ ρ₀)
+compile-to-FlatClos-same M =
   then (same (≃-trans (simplify-correct M) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂)))))
        ⟨ delay-correct-const (concretize-program M₂) , delay-correct-nonempty (concretize-program M₂) ⟩
   where
   M₁ = simplify M
   M₂ = optimize-program (enclose M₁)
 
-compile-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
-compile-same M = then (compile₄-same M) (same (globalize-correct (compile₄ M)))
+compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
+compile-to-GlobalFun-same M = then (compile-to-FlatClos-same M) (same (globalize-correct (compile-to-FlatClos M)))
 
-compile-mon-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
-compile-mon-same M = then (compile-same M) (same (rco-correct (compile M)))
+compile-to-Mon-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅
+compile-to-Mon-same M = then (compile-to-GlobalFun-same M) (same (rco-correct (compile-to-GlobalFun M)))
 
-compile-imp-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
-compile-imp-same M = then (compile-mon-same M) (same (lift-locals-correct (compile-mon M)))
+compile-to-Imp-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-to-Imp M ⟧ᵢ
+compile-to-Imp-same M = then (compile-to-Mon-same M) (same (lift-locals-correct (compile-to-Mon M)))
 
-compile-cfg-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
-compile-cfg-same M = then (compile-imp-same M) (same (explicate-correct (compile-imp M)))
+compile-to-CFG-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-to-CFG M ⟧ᶜ
+compile-to-CFG-same M = then (compile-to-Imp-same M) (same (explicate-correct (compile-to-Imp M)))
 
-compile-x86-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
-compile-x86-same M = then (compile-cfg-same M) (same (select-correct (compile-cfg M)))
+compile-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧ₜ
+compile-same M = then (compile-to-CFG-same M) (same (select-correct (compile-to-CFG M)))
 
 {- the end-to-end theorem, for a main program of type Int -}
-compile-x86-int : ∀ (M : Tm [] (base Int)) → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
-compile-x86-int = compile-x86-same
+compile-int : ∀ (M : Tm [] (base Int)) → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧ₜ
+compile-int = compile-same

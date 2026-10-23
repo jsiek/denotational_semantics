@@ -8,7 +8,7 @@
     by the clocked interpreters, joined at ISWIMμ by the adequacy of its
     graph semantics for its interpreter (Mu/proof/Adequacy/ISWIM.agda):
     Mu/proof/Mixed/CompilerMixed.agda (the interpreter column's
-    compile-x86-const and compile-x86-diverges for main : Int); its
+    compile-const and compile-diverges for main : Int); its
     sizes are printed by `python3 papers/PLDI-2027/loc.py --mixed`.
 
 -}

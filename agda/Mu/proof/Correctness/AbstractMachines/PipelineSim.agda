@@ -16,7 +16,7 @@ open import Framework.Primitives using (Int)
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
-open import Mu.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import Mu.Compiler.Pipeline using (compile-to-FlatClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equiv-trans)
 open import Mu.proof.Correctness.AbstractMachines.SimplifySim using (simplify-correct)
 open import Mu.proof.Correctness.AbstractMachines.EncloseSim using (enclose-correct)
@@ -40,31 +40,31 @@ open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 
-compile₄-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (FlatClosμₘ.sem (compile₄ M))
-compile₄-correct M =
+compile-to-FlatClos-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (FlatClosμₘ.sem (compile-to-FlatClos M))
+compile-to-FlatClos-correct M =
   equiv-trans (simplify-correct M)
     (equiv-trans (enclose-correct _) (equiv-trans (optimize-correct _) (equiv-trans (concretize-correct _) (delay-correct _))))
 
-compile-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (GlobalFunμₘ.sem (compile M))
-compile-correct M = equiv-trans (compile₄-correct M) (globalize-correct _)
+compile-to-GlobalFun-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (GlobalFunμₘ.sem (compile-to-GlobalFun M))
+compile-to-GlobalFun-correct M = equiv-trans (compile-to-FlatClos-correct M) (globalize-correct _)
 
-compile-mon-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (GlobalFunμₘ.sem ⌜ compile-mon M ⌝ₚ)
-compile-mon-correct M = equiv-trans (compile-correct M) (rco-correct _)
+compile-to-Mon-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (GlobalFunμₘ.sem ⌜ compile-to-Mon M ⌝ₚ)
+compile-to-Mon-correct M = equiv-trans (compile-to-GlobalFun-correct M) (rco-correct _)
 
-compile-imp-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (Impμₘ.sem (compile-imp M))
-compile-imp-correct M = equiv-trans (compile-mon-correct M) (lift-locals-correct _)
+compile-to-Imp-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (Impμₘ.sem (compile-to-Imp M))
+compile-to-Imp-correct M = equiv-trans (compile-to-Mon-correct M) (lift-locals-correct _)
 
-compile-cfg-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (CFGμₘ.sem (compile-cfg M))
-compile-cfg-correct M = equiv-trans (compile-imp-correct M) (explicate-correct _)
+compile-to-CFG-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (CFGμₘ.sem (compile-to-CFG M))
+compile-to-CFG-correct M = equiv-trans (compile-to-Imp-correct M) (explicate-correct _)
 
-compile-x86-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (X86μₘ.sem (compile-x86 M))
-compile-x86-correct M = equiv-trans (compile-cfg-correct M) (select-correct _)
+compile-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (X86μₘ.sem (compile M))
+compile-correct M = equiv-trans (compile-to-CFG-correct M) (select-correct _)
 
 {- in particular, for a main of type Int -}
 
-compile-x86-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
-  → Terminates (ISWIMμₘ.sem M) (o-const Int k) ⇔ Terminates (X86μₘ.sem (compile-x86 M)) (o-const Int k)
-compile-x86-const M k = Equivalent.terminates (compile-x86-correct M) (o-const Int k)
+compile-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
+  → Terminates (ISWIMμₘ.sem M) (o-const Int k) ⇔ Terminates (X86μₘ.sem (compile M)) (o-const Int k)
+compile-const M k = Equivalent.terminates (compile-correct M) (o-const Int k)
 
-compile-x86-diverges : ∀ (M : Tm [] (base Int)) → Diverges (ISWIMμₘ.sem M) ⇔ Diverges (X86μₘ.sem (compile-x86 M))
-compile-x86-diverges M = Equivalent.diverges (compile-x86-correct M)
+compile-diverges : ∀ (M : Tm [] (base Int)) → Diverges (ISWIMμₘ.sem M) ⇔ Diverges (X86μₘ.sem (compile M))
+compile-diverges M = Equivalent.diverges (compile-correct M)

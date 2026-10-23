@@ -11,7 +11,7 @@
     ISWIMμ interpreter, M  ⇔  ⟦ M ⟧ ρ₀              (bridge)
                            ⇔  ⟦ simplify M ⟧ ρ₀     (simplify, graph model)
                            ⇔  ISWIMμ interpreter, simplify M   (bridge)
-                           ⇔  X86μ interpreter, compile-x86 M  (the other passes, interpreters)
+                           ⇔  X86μ interpreter, compile M  (the other passes, interpreters)
 
   for constants, and for divergence through the emptiness of the
   denotations. The end theorem is the interpreter column's
@@ -34,7 +34,7 @@ open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Enclose using (enclose)
 open import Mu.Compiler.Optimize using (optimize-program)
 open import Mu.Compiler.Concretize using (concretize-program)
-open import Mu.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import Mu.Compiler.Pipeline using (compile-to-FlatClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
 import Mu.Semantics.ClockedInterpreters.ISWIM as ISWIMμᵢ
@@ -65,27 +65,27 @@ private
   ⇔-sym (f , g) = g , f
 
 {- the passes after simplify, by the interpreters -}
-after-simplify : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem (simplify M)) (X86μᵢ.sem (compile-x86 M))
+after-simplify : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem (simplify M)) (X86μᵢ.sem (compile M))
 after-simplify M =
   equiv-trans (enclose-correct (simplify M)) (equiv-trans (optimize-correct M₁)
     (equiv-trans (concretize-correct M₂) (equiv-trans (delay-correct (concretize-program M₂))
-      (equiv-trans (globalize-correct (compile₄ M)) (equiv-trans (rco-correct (compile M))
-        (equiv-trans (lift-locals-correct (compile-mon M)) (equiv-trans (explicate-correct (compile-imp M))
-          (select-correct (compile-cfg M)))))))))
+      (equiv-trans (globalize-correct (compile-to-FlatClos M)) (equiv-trans (rco-correct (compile-to-GlobalFun M))
+        (equiv-trans (lift-locals-correct (compile-to-Mon M)) (equiv-trans (explicate-correct (compile-to-Imp M))
+          (select-correct (compile-to-CFG M)))))))))
   where M₁ = enclose (simplify M)
         M₂ = optimize-program M₁
 
 {- for a main of type Int, as the other columns state it -}
 
-compile-x86-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
-  → Terminates (ISWIMμᵢ.sem M) (o-const Int k) ⇔ Terminates (X86μᵢ.sem (compile-x86 M)) (o-const Int k)
-compile-x86-const M k =
+compile-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
+  → Terminates (ISWIMμᵢ.sem M) (o-const Int k) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int k)
+compile-const M k =
   ⇔-sym (const-iff M) ∘⇔ ((proj₁ S _ , proj₂ S _) ∘⇔ (const-iff (simplify M)
     ∘⇔ Equivalent.terminates (after-simplify M) (o-const Int k)))
   where S = simplify-correct M
 
-compile-x86-diverges : ∀ (M : Tm [] (base Int)) → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (X86μᵢ.sem (compile-x86 M))
-compile-x86-diverges M =
+compile-diverges : ∀ (M : Tm [] (base Int)) → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (X86μᵢ.sem (compile M))
+compile-diverges M =
   diverges-iff M ∘⇔ (empty ∘⇔ (⇔-sym (diverges-iff (simplify M)) ∘⇔ Equivalent.diverges (after-simplify M)))
   where
   S = simplify-correct M

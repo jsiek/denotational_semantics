@@ -5,7 +5,7 @@
   a closed ISWIMμ program M,
 
     ISWIMμ machine  ⇔  ⟦ M ⟧ ρ₀                (Adequacy/AbstractMachines/ISWIM.agda)
-                    ⇔  ⟦ compile-x86 M ⟧ₜ       (Correctness/GraphModel/CompilerCorrect.agda)
+                    ⇔  ⟦ compile M ⟧ₜ       (Correctness/GraphModel/CompilerCorrect.agda)
                     ⇔  X86μ machine             (Adequacy/AbstractMachines/X86.agda)
 
   for constants and for convergence. Since neither machine stops with
@@ -29,7 +29,7 @@ open import Framework.Primitives using (base-rep; Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
-open import Mu.Compiler.Pipeline using (compile-x86)
+open import Mu.Compiler.Pipeline using (compile)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Machine; Terminates; Diverges; Star; Final; start; never-final-diverges; diverges-not-terminates)
@@ -37,7 +37,7 @@ import Mu.Semantics.AbstractMachines.ISWIM as I
 import Mu.Semantics.AbstractMachines.X86 as X
 import Mu.proof.Adequacy.AbstractMachines.ISWIM as AI
 import Mu.proof.Adequacy.AbstractMachines.X86 as AX
-open import Mu.proof.Correctness.GraphModel.CompilerCorrect using (compile-x86-same)
+open import Mu.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
 open import Mu.proof.Semantics.AbstractMachines.NoError using () renaming (iswim-no-error to iswim-ok; x86-no-error to x86-ok)
 
 open import Data.Empty using (⊥-elim)
@@ -48,16 +48,16 @@ open import Relation.Binary.PropositionalEquality using (refl)
 open import Relation.Nullary using (¬_)
 
 end-to-end-x86-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
-  → Terminates (I.sem M) (o-const Int k) ⇔ Terminates (X.sem (compile-x86 M)) (o-const Int k)
+  → Terminates (I.sem M) (o-const Int k) ⇔ Terminates (X.sem (compile M)) (o-const Int k)
 end-to-end-x86-const M k =
-  ⟨ (λ t → proj₁ (AX.x86-const-iff M) (proj₁ (proj₁ (compile-x86-same M) k) (AI.sound-const M t)))
-  , (λ t → AI.adequacy-const M (proj₂ (proj₁ (compile-x86-same M) k) (proj₂ (AX.x86-const-iff M) t))) ⟩
+  ⟨ (λ t → proj₁ (AX.x86-const-iff M) (proj₁ (proj₁ (compile-same M) k) (AI.sound-const M t)))
+  , (λ t → AI.adequacy-const M (proj₂ (proj₁ (compile-same M) k) (proj₂ (AX.x86-const-iff M) t))) ⟩
 
 end-to-end-x86-converges : ∀ {A} (M : Tm [] A)
-  → Converges (Terminates (I.sem M)) ⇔ Converges (Terminates (X.sem (compile-x86 M)))
+  → Converges (Terminates (I.sem M)) ⇔ Converges (Terminates (X.sem (compile M)))
 end-to-end-x86-converges M =
-  ⟨ (λ t → proj₁ (AX.x86-nonempty-iff M) (proj₁ (proj₂ (compile-x86-same M)) (AI.sound-nonempty M t)))
-  , (λ t → AI.adequacy-converges M (proj₂ (proj₂ (compile-x86-same M)) (proj₂ (AX.x86-nonempty-iff M) t))) ⟩
+  ⟨ (λ t → proj₁ (AX.x86-nonempty-iff M) (proj₁ (proj₂ (compile-same M)) (AI.sound-nonempty M t)))
+  , (λ t → AI.adequacy-converges M (proj₂ (proj₂ (compile-same M)) (proj₂ (AX.x86-nonempty-iff M) t))) ⟩
 
 {- a machine that never stops with an error, and does not converge,
    diverges -}
@@ -70,7 +70,7 @@ private
   not-converges div ⟨ o , ⟨ _ , t ⟩ ⟩ = diverges-not-terminates div t
 
 end-to-end-x86-diverges : ∀ (M : Tm [] (base Int))
-  → Diverges (I.sem M) ⇔ Diverges (X.sem (compile-x86 M))
+  → Diverges (I.sem M) ⇔ Diverges (X.sem (compile M))
 end-to-end-x86-diverges M =
-  ⟨ (λ div → diverges _ (x86-ok (compile-x86 M)) λ c → not-converges div (proj₂ (end-to-end-x86-converges M) c))
+  ⟨ (λ div → diverges _ (x86-ok (compile M)) λ c → not-converges div (proj₂ (end-to-end-x86-converges M) c))
   , (λ div → diverges _ (iswim-ok M) λ c → not-converges div (proj₁ (end-to-end-x86-converges M) c)) ⟩

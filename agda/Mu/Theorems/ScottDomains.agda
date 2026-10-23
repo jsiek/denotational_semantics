@@ -6,8 +6,8 @@
   them, with its type written out, as Mu/Theorems/GraphModel.agda does
   for the graph model.
 
-  The paper's compile is compile-x86 (Mu/Compiler/Pipeline.agda), the
-  composition of the ten passes. A term means an element of the domain
+  compile (Mu/Compiler/Pipeline.agda) is the composition of the ten
+  passes. A term means an element of the domain
   of values 𝔻, a solution of 𝔻 ≅ 𝓛 (Σ t , Payload t 𝔻)
   (Framework/Scott/Domain.agda), whose least element means divergence;
   const B c is the paper's c(), and defined d is d ≠ ⊥. The domain
@@ -32,7 +32,7 @@ open import UF.Subsingletons using (propext)
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Mu.Language.Type using (base)
 import Mu.Language.ISWIM as ISWIMμ
-open import Mu.Compiler.Pipeline using (compile-x86)
+open import Mu.Compiler.Pipeline using (compile)
 
 open import Data.List using ([])
 
@@ -59,25 +59,25 @@ open import Mu.Semantics.ScottDomains.Closed pt fe pe public using (ρ₀)
 
 {- for a closed ISWIMμ term M of type Int, and every constant c:
    ⟦ M ⟧ ρ₀ = c() if and only if ⟦ compile M ⟧ = c() -}
-compile-x86-int-const : ∀ (M : ISWIMμ.Tm [] (base Int)) (B : Base) (c : base-rep B)
-  → (⟦ M ⟧ · ρ₀ ＝ const B c → ⟦ compile-x86 M ⟧ₜ ＝ const B c)
-  × (⟦ compile-x86 M ⟧ₜ ＝ const B c → ⟦ M ⟧ · ρ₀ ＝ const B c)
-compile-x86-int-const M = pr₁ (Compiler.compile-x86-int M)
+compile-int-const : ∀ (M : ISWIMμ.Tm [] (base Int)) (B : Base) (c : base-rep B)
+  → (⟦ M ⟧ · ρ₀ ＝ const B c → ⟦ compile M ⟧ₜ ＝ const B c)
+  × (⟦ compile M ⟧ₜ ＝ const B c → ⟦ M ⟧ · ρ₀ ＝ const B c)
+compile-int-const M = pr₁ (Compiler.compile-int M)
 
 {- moreover, ⟦ M ⟧ ρ₀ is defined if and only if ⟦ compile M ⟧ is -}
-compile-x86-int-defined : ∀ (M : ISWIMμ.Tm [] (base Int))
-  → (defined (⟦ M ⟧ · ρ₀) → defined ⟦ compile-x86 M ⟧ₜ)
-  × (defined ⟦ compile-x86 M ⟧ₜ → defined (⟦ M ⟧ · ρ₀))
-compile-x86-int-defined M = pr₂ (Compiler.compile-x86-int M)
+compile-int-defined : ∀ (M : ISWIMμ.Tm [] (base Int))
+  → (defined (⟦ M ⟧ · ρ₀) → defined ⟦ compile M ⟧ₜ)
+  × (defined ⟦ compile M ⟧ₜ → defined (⟦ M ⟧ · ρ₀))
+compile-int-defined M = pr₂ (Compiler.compile-int M)
 
 {- more generally, the same holds for every closed term M -}
 
-compile-x86-correct-const : ∀ {A} (M : ISWIMμ.Tm [] A) (B : Base) (c : base-rep B)
-  → (⟦ M ⟧ · ρ₀ ＝ const B c → ⟦ compile-x86 M ⟧ₜ ＝ const B c)
-  × (⟦ compile-x86 M ⟧ₜ ＝ const B c → ⟦ M ⟧ · ρ₀ ＝ const B c)
-compile-x86-correct-const M = pr₁ (Compiler.compile-x86-same M)
+compile-correct-const : ∀ {A} (M : ISWIMμ.Tm [] A) (B : Base) (c : base-rep B)
+  → (⟦ M ⟧ · ρ₀ ＝ const B c → ⟦ compile M ⟧ₜ ＝ const B c)
+  × (⟦ compile M ⟧ₜ ＝ const B c → ⟦ M ⟧ · ρ₀ ＝ const B c)
+compile-correct-const M = pr₁ (Compiler.compile-same M)
 
-compile-x86-correct-defined : ∀ {A} (M : ISWIMμ.Tm [] A)
-  → (defined (⟦ M ⟧ · ρ₀) → defined ⟦ compile-x86 M ⟧ₜ)
-  × (defined ⟦ compile-x86 M ⟧ₜ → defined (⟦ M ⟧ · ρ₀))
-compile-x86-correct-defined M = pr₂ (Compiler.compile-x86-same M)
+compile-correct-defined : ∀ {A} (M : ISWIMμ.Tm [] A)
+  → (defined (⟦ M ⟧ · ρ₀) → defined ⟦ compile M ⟧ₜ)
+  × (defined ⟦ compile M ⟧ₜ → defined (⟦ M ⟧ · ρ₀))
+compile-correct-defined M = pr₂ (Compiler.compile-same M)

@@ -10,7 +10,7 @@
 module Mu.proof.Compiler.Examples.RecursionInterp where
 
 open import Framework.Primitives using (Int)
-open import Mu.Compiler.Pipeline using (compile₄; compile-x86)
+open import Mu.Compiler.Pipeline using (compile-to-FlatClos; compile)
 open import Mu.proof.Compiler.Examples.RecursionExample using (three; Ω)
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.Interp.Clock using (Semantics; outcome)
@@ -30,17 +30,17 @@ run ck P = outcome (Semantics.obs P) (Semantics.run P ck)
 three-iswim : run 10 (ISWIMμᵢ.sem three) ≡ just (o-const Int (+ 0))
 three-iswim = refl
 
-three-clos4 : run 10 (FlatClosμᵢ.sem (compile₄ three)) ≡ just (o-const Int (+ 0))
+three-clos4 : run 10 (FlatClosμᵢ.sem (compile-to-FlatClos three)) ≡ just (o-const Int (+ 0))
 three-clos4 = refl
 
-three-x86 : run 10 (X86μᵢ.sem (compile-x86 three)) ≡ just (o-const Int (+ 0))
+three-x86 : run 10 (X86μᵢ.sem (compile three)) ≡ just (o-const Int (+ 0))
 three-x86 = refl
 
 Ω-iswim : run 50 (ISWIMμᵢ.sem Ω) ≡ nothing
 Ω-iswim = refl
 
-Ω-clos4 : run 50 (FlatClosμᵢ.sem (compile₄ Ω)) ≡ nothing
+Ω-clos4 : run 50 (FlatClosμᵢ.sem (compile-to-FlatClos Ω)) ≡ nothing
 Ω-clos4 = refl
 
-Ω-x86 : run 50 (X86μᵢ.sem (compile-x86 Ω)) ≡ nothing
+Ω-x86 : run 50 (X86μᵢ.sem (compile Ω)) ≡ nothing
 Ω-x86 = refl

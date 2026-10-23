@@ -18,7 +18,7 @@ open import Framework.Primitives using (Int)
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
-open import Mu.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import Mu.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import Semantics.Observation using (Obs; o-const; _⇔_)
 open import Semantics.Reduction.Smallstep using (Equivalent; Terminates; Diverges)
 open import proof.Framework.Simulation Obs using (equiv-trans)
@@ -41,28 +41,28 @@ import Mu.Semantics.AbstractMachines.X86 as X86μₘ
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 
-compile-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (GlobalFunᵣ.sem (compile M))
-compile-correct M =
+compile-to-GlobalFun-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (GlobalFunᵣ.sem (compile-to-GlobalFun M))
+compile-to-GlobalFun-correct M =
   equiv-trans (simplify-correct M) (equiv-trans (enclose-correct _) (equiv-trans (optimize-correct _)
     (equiv-trans (concretize-correct _) (equiv-trans (delay-correct _) (globalize-correct _)))))
 
-compile-mon-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (GlobalFunᵣ.sem ⌜ compile-mon M ⌝ₚ)
-compile-mon-correct M = equiv-trans (compile-correct M) (rco-correct _)
+compile-to-Mon-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (GlobalFunᵣ.sem ⌜ compile-to-Mon M ⌝ₚ)
+compile-to-Mon-correct M = equiv-trans (compile-to-GlobalFun-correct M) (rco-correct _)
 
-compile-imp-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (Impμₘ.sem (compile-imp M))
-compile-imp-correct M = equiv-trans (compile-mon-correct M) (lift-locals-correct _)
+compile-to-Imp-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (Impμₘ.sem (compile-to-Imp M))
+compile-to-Imp-correct M = equiv-trans (compile-to-Mon-correct M) (lift-locals-correct _)
 
-compile-cfg-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (CFGμₘ.sem (compile-cfg M))
-compile-cfg-correct M = equiv-trans (compile-imp-correct M) (explicate-correct _)
+compile-to-CFG-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (CFGμₘ.sem (compile-to-CFG M))
+compile-to-CFG-correct M = equiv-trans (compile-to-Imp-correct M) (explicate-correct _)
 
-compile-x86-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (X86μₘ.sem (compile-x86 M))
-compile-x86-correct M = equiv-trans (compile-cfg-correct M) (select-correct _)
+compile-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (X86μₘ.sem (compile M))
+compile-correct M = equiv-trans (compile-to-CFG-correct M) (select-correct _)
 
 {- in particular, for a main of type Int -}
 
-compile-x86-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
-  → Terminates (S.sem M) (o-const Int k) ⇔ Terminates (X86μₘ.sem (compile-x86 M)) (o-const Int k)
-compile-x86-const M k = Equivalent.terminates (compile-x86-correct M) (o-const Int k)
+compile-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
+  → Terminates (S.sem M) (o-const Int k) ⇔ Terminates (X86μₘ.sem (compile M)) (o-const Int k)
+compile-const M k = Equivalent.terminates (compile-correct M) (o-const Int k)
 
-compile-x86-diverges : ∀ (M : Tm [] (base Int)) → Diverges (S.sem M) ⇔ Diverges (X86μₘ.sem (compile-x86 M))
-compile-x86-diverges M = Equivalent.diverges (compile-x86-correct M)
+compile-diverges : ∀ (M : Tm [] (base Int)) → Diverges (S.sem M) ⇔ Diverges (X86μₘ.sem (compile M))
+compile-diverges M = Equivalent.diverges (compile-correct M)

@@ -8,9 +8,10 @@
            --select instructions--> X86μ
 
   as the typed pipeline's (Compiler/Pipeline.agda), without cast insertion:
-  compile₄ goes to FlatClosμ, compile to GlobalFunμ, and compile-mon,
-  compile-imp, compile-cfg and compile-x86 continue. A program is a
-  closed term of any type, and each compiled program has its type.
+  compile is the whole compiler, into X86μ; its prefixes compile-to-FlatClos,
+  compile-to-GlobalFun, compile-to-Mon, compile-to-Imp and compile-to-CFG
+  stop at those languages. A program is a closed term of any type, and
+  each compiled program has its type.
 
 -}
 
@@ -37,20 +38,20 @@ open import Mu.Compiler.Select using (select)
 
 open import Data.List using ([])
 
-compile₄ : ∀ {A : Type} → ISWIMμ.Tm [] A → FlatClosμ.Tm [] A
-compile₄ M = delay-program (concretize-program (optimize-program (enclose (simplify M))))
+compile-to-FlatClos : ∀ {A : Type} → ISWIMμ.Tm [] A → FlatClosμ.Tm [] A
+compile-to-FlatClos M = delay-program (concretize-program (optimize-program (enclose (simplify M))))
 
-compile : ∀ {A : Type} → ISWIMμ.Tm [] A → GlobalFunμ.Program A
-compile M = globalize (compile₄ M)
+compile-to-GlobalFun : ∀ {A : Type} → ISWIMμ.Tm [] A → GlobalFunμ.Program A
+compile-to-GlobalFun M = globalize (compile-to-FlatClos M)
 
-compile-mon : ∀ {A : Type} → ISWIMμ.Tm [] A → Monμ.Program A
-compile-mon M = rco-program (compile M)
+compile-to-Mon : ∀ {A : Type} → ISWIMμ.Tm [] A → Monμ.Program A
+compile-to-Mon M = rco-program (compile-to-GlobalFun M)
 
-compile-imp : ∀ {A : Type} → ISWIMμ.Tm [] A → Impμ.Program A
-compile-imp M = lift-program (compile-mon M)
+compile-to-Imp : ∀ {A : Type} → ISWIMμ.Tm [] A → Impμ.Program A
+compile-to-Imp M = lift-program (compile-to-Mon M)
 
-compile-cfg : ∀ {A : Type} → ISWIMμ.Tm [] A → CFGμ.Program A
-compile-cfg M = explicate (compile-imp M)
+compile-to-CFG : ∀ {A : Type} → ISWIMμ.Tm [] A → CFGμ.Program A
+compile-to-CFG M = explicate (compile-to-Imp M)
 
-compile-x86 : ∀ {A : Type} → ISWIMμ.Tm [] A → X86μ.Program A
-compile-x86 M = select (compile-cfg M)
+compile : ∀ {A : Type} → ISWIMμ.Tm [] A → X86μ.Program A
+compile M = select (compile-to-CFG M)

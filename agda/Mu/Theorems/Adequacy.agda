@@ -6,7 +6,7 @@
   theorem the operational proofs state. The proofs are in
   Mu/proof/Adequacy/.
 
-  The paper's compile is compile-x86 (Mu/Compiler/Pipeline.agda). The
+  compile is Mu/Compiler/Pipeline.agda's. The
   X86μ statements are for the programs the compiler produces, so that
   their preconditions (in Mu/proof/) need not be audited.
 
@@ -27,7 +27,7 @@ open import Semantics.Observation using (o-const; _⇔_)
 open import Semantics.Interp.Clock using (Terminates; Diverges)
 open import Mu.Language.Type using (base)
 import Mu.Language.ISWIM as ISWIMμ
-open import Mu.Compiler.Pipeline using (compile-x86)
+open import Mu.Compiler.Pipeline using (compile)
 open import Mu.Semantics.GraphModel.Closed using (ρ₀)
 open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
@@ -59,11 +59,11 @@ iswim-diverges-iff = AdequacyISWIM.diverges-iff
 {- the same holds for X86μ and compile M -}
 
 x86-const-iff : ∀ {A} (M : ISWIMμ.Tm [] A) {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86μᵢ.sem (compile-x86 M)) (o-const B k)
+  → (const k ∈ ⟦ compile M ⟧ₜ) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const B k)
 x86-const-iff = AdequacyX86.x86-const-iff
 
 x86-diverges-iff : ∀ {A} (M : ISWIMμ.Tm [] A)
-  → Diverges (X86μᵢ.sem (compile-x86 M)) ⇔ (¬ nonempty ⟦ compile-x86 M ⟧ₜ)
+  → Diverges (X86μᵢ.sem (compile M)) ⇔ (¬ nonempty ⟦ compile M ⟧ₜ)
 x86-diverges-iff = AdequacyX86.x86-diverges-iff
 
 {- With Theorem 4.1: the compiler, observed through the interpreters ---------}
@@ -73,9 +73,9 @@ x86-diverges-iff = AdequacyX86.x86-diverges-iff
    same integer, or both diverge -}
 
 end-to-end-x86-const : ∀ (M : ISWIMμ.Tm [] (base Int)) (n : ℤ)
-  → Terminates (ISWIMμᵢ.sem M) (o-const Int n) ⇔ Terminates (X86μᵢ.sem (compile-x86 M)) (o-const Int n)
-end-to-end-x86-const = EndToEnd.compile-x86-const
+  → Terminates (ISWIMμᵢ.sem M) (o-const Int n) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int n)
+end-to-end-x86-const = EndToEnd.compile-const
 
 end-to-end-x86-diverges : ∀ (M : ISWIMμ.Tm [] (base Int))
-  → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (X86μᵢ.sem (compile-x86 M))
-end-to-end-x86-diverges = EndToEnd.compile-x86-diverges
+  → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (X86μᵢ.sem (compile M))
+end-to-end-x86-diverges = EndToEnd.compile-diverges

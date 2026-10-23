@@ -64,8 +64,8 @@ Same d e = ((B : Base) (c : base-rep B) → (d ＝ const B c) ⇔ (e ＝ const B
 then : (d e e' : ⟨ 𝔻 ⟩) → Same d e → e ＝ e' → Same d e'
 then d e .e s refl = s
 
-compile₄-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) (⟦ compile₄ M ⟧₄ · ρ₀)
-compile₄-same M =
+compile-to-FlatClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) (⟦ compile-to-FlatClos M ⟧₄ · ρ₀)
+compile-to-FlatClos-same M =
   (λ B c → (λ h → pr₁ (delay-correct-const M₃ B c) (eq ⁻¹ ∙ h)) , (λ h → eq ∙ pr₂ (delay-correct-const M₃ B c) h)) ,
   (λ h → pr₁ (delay-correct-defined M₃) (transport defined eq h)) , (λ h → transport defined (eq ⁻¹) (pr₂ (delay-correct-defined M₃) h))
  where
@@ -74,21 +74,21 @@ compile₄-same M =
   M₃ = concretize-program M₂
   eq = simplify-correct M ∙ enclose-correct M₁ ∙ optimize-correct (enclose M₁) ∙ concretize-correct M₂
 
-compile-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile M ⟧₅
-compile-same M = then (⟦ M ⟧ · ρ₀) (⟦ compile₄ M ⟧₄ · ρ₀) ⟦ compile M ⟧₅ (compile₄-same M) (globalize-correct (compile₄ M))
+compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
+compile-to-GlobalFun-same M = then (⟦ M ⟧ · ρ₀) (⟦ compile-to-FlatClos M ⟧₄ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅ (compile-to-FlatClos-same M) (globalize-correct (compile-to-FlatClos M))
 
-compile-mon-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
-compile-mon-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile M ⟧₅ ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅ (compile-same M) (rco-correct (compile M))
+compile-to-Mon-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅
+compile-to-Mon-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅ ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅ (compile-to-GlobalFun-same M) (rco-correct (compile-to-GlobalFun M))
 
-compile-imp-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-imp M ⟧ᵢ
-compile-imp-same M = then (⟦ M ⟧ · ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅ ⟦ compile-imp M ⟧ᵢ (compile-mon-same M) (lift-locals-correct (compile-mon M))
+compile-to-Imp-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-Imp M ⟧ᵢ
+compile-to-Imp-same M = then (⟦ M ⟧ · ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅ ⟦ compile-to-Imp M ⟧ᵢ (compile-to-Mon-same M) (lift-locals-correct (compile-to-Mon M))
 
-compile-cfg-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-cfg M ⟧ᶜ
-compile-cfg-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile-imp M ⟧ᵢ ⟦ compile-cfg M ⟧ᶜ (compile-imp-same M) (explicate-correct (compile-imp M))
+compile-to-CFG-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-CFG M ⟧ᶜ
+compile-to-CFG-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile-to-Imp M ⟧ᵢ ⟦ compile-to-CFG M ⟧ᶜ (compile-to-Imp-same M) (explicate-correct (compile-to-Imp M))
 
-compile-x86-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-x86 M ⟧ₜ
-compile-x86-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile-cfg M ⟧ᶜ ⟦ compile-x86 M ⟧ₜ (compile-cfg-same M) (select-correct (compile-cfg M))
+compile-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile M ⟧ₜ
+compile-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile-to-CFG M ⟧ᶜ ⟦ compile M ⟧ₜ (compile-to-CFG-same M) (select-correct (compile-to-CFG M))
 
 {- the end-to-end theorem, for a main program of type Int -}
-compile-x86-int : ∀ (M : Tm [] (base Int)) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-x86 M ⟧ₜ
-compile-x86-int = compile-x86-same
+compile-int : ∀ (M : Tm [] (base Int)) → Same (⟦ M ⟧ · ρ₀) ⟦ compile M ⟧ₜ
+compile-int = compile-same
