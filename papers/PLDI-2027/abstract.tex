@@ -12,11 +12,11 @@ conversion, or (3) prove only semantic preservation and not
 reflection, which does not rule out a diverging program compiling to
 one that terminates. We use a denotational semantics based on a graph
 model to prove a compiler correct, from a call-by-value
-$\lambda$-calculus with iso-recursive types, through closure
-conversion, to a typed assembly language. The proof is total: the
-compiler preserves and reflects divergence. We prove most passes
-correct by an equation between the denotations before and after the
-pass. The exception is the step of closure conversion that lowers
+$\lambda$-calculus with iso-recursive types (so it admits divergence),
+through closure conversion, to a typed assembly language. The proof is
+total: the compiler preserves and reflects divergence. We prove most
+passes correct by an equation between the denotations before and after
+the pass. The exception is the step of closure conversion that lowers
 closures to pairs of code and environment: its reflection direction
 needs a new kind of logical relation on denotations, which we
 call \emph{approximant logical relations}. We then prove the same
