@@ -2,3 +2,4 @@ _build/
 *.agdai
 __pycache__/
 _deps/
+_artifact/
