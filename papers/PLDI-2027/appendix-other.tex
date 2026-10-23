@@ -358,12 +358,26 @@ The domain of values is the solution of
 \[
   \mathbb{D} \cong \mathcal{L}(\Sigma_{t \in \mathit{Tag}}\, \mathit{Payload}_t(\mathbb{D}))
 \]
-where $\mathcal{L}$ is lifting, and a tag $t$ is a constant $c$, with
-payload the one-point domain; $\mathit{tup}_n$, with payload
-$\mathbb{D}^n$; $\mathit{left}$ or $\mathit{right}$, with payload
-$\mathbb{D}$; $\mathit{fun}$, with payload the continuous functions
-$[\mathbb{D} \to \mathbb{D}]$; or $\mathit{pr}$, with payload
-$\mathbb{D}^2$. The least element $\bot$ of $\mathbb{D}$ means divergence;
+where $\mathcal{L}$ is lifting. The tag $t$ of a value says what kind
+of value it is, and the payload holds its contents:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  t & ::= & c \mid \mathit{tup}_n \mid \mathit{left} \mid \mathit{right}
+    \mid \mathit{fun} \mid \mathit{pr}
+\end{array}
+\]
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
+  \mathit{Payload}_c(\mathbb{D}) & = & \mathbf{1} &
+  \mathit{Payload}_{\mathit{fun}}(\mathbb{D}) & = & [\mathbb{D} \to \mathbb{D}]\\
+  \mathit{Payload}_{\mathit{tup}_n}(\mathbb{D}) & = & \mathbb{D}^n &
+  \mathit{Payload}_{\mathit{pr}}(\mathbb{D}) & = & \mathbb{D}^2\\
+  \mathit{Payload}_{\mathit{left}}(\mathbb{D}) & = & \mathbb{D} &
+  \mathit{Payload}_{\mathit{right}}(\mathbb{D}) & = & \mathbb{D}
+\end{array}
+\]
+where $\mathbf{1}$ is the one-point domain and $[\mathbb{D} \to \mathbb{D}]$
+the domain of continuous functions. The least element $\bot$ of $\mathbb{D}$ means divergence;
 a value $d$ is \emph{defined} when $d \neq \bot$. We write $t(x)$ for the
 value with tag $t$ and payload $x$. As in the graph model, the operators are strict; they are also continuous:
 \begin{itemize}
