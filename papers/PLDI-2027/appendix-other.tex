@@ -60,7 +60,7 @@ $\kw{inr}\,\kw{tup}()$ otherwise.
 \paragraph{Machines}
 
 A machine is a set of states, a start state, and a step function that
-maps each state $s$ either to a next state, written $s \longrightarrow s'$, or to a final observation $o$, written $s \longrightarrow \mathsf{stop}(o)$. A machine \emph{terminates with} $o$ when a sequence of steps leads from the start state to a state $s$ with $s \longrightarrow \mathsf{stop}(o)$, and it \emph{diverges} when
+maps each state $\varsigma$ either to a next state, written $\varsigma \longrightarrow \varsigma'$, or to a final observation $o$, written $\varsigma \longrightarrow \mathsf{stop}(o)$. A machine \emph{terminates with} $o$ when a sequence of steps leads from the start state to a state $\varsigma$ with $\varsigma \longrightarrow \mathsf{stop}(o)$, and it \emph{diverges} when
 for every $n$ there is a sequence of $n$ steps from the start state. We use the same notation for each machine; the CEK
 machines of \iswim\ and x86$\mu$ (Appendix~\ref{app:machines}) and
 the reduction semantics of \iswim\ (Appendix~\ref{app:reduction})
@@ -190,13 +190,10 @@ Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, t
 
 \paragraph{Machine for \iswim}
 
-The CEK machine of \iswim\ evaluates a term $M$ in an environment $\rho$
-with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or
-returns a value $v$ to a continuation, $\mathit{ret}(v, \kappa)$. A
-continuation is a stack of frames, each of which says what to do with
-the value of a subterm.
-\defhead{Continuations}{\kappa}
+A state of the CEK machine of \iswim\ either evaluates a term $M$ in an environment $\rho$ with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or returns a value $v$ to a continuation, $\mathit{ret}(v, \kappa)$. A continuation is a stack of frames, each of which says what to do with the value of a subterm.
+\defhead{States and continuations}{\varsigma \qquad \kappa}
 \begin{align*}
+  \varsigma &::= \mathit{eval}(M, \rho, \kappa) \mid \mathit{ret}(v, \kappa) \\
   \kappa &::= \mathit{halt} \mid \mathit{appL}(M, \rho, \kappa) \mid \mathit{appR}(f, \kappa)
     \mid \mathit{tupK}(\vec{v}, \vec{M}, \rho, \kappa) \mid \mathit{getK}_i(\kappa)
     \mid \mathit{inlK}(\kappa) \mid \mathit{inrK}(\kappa) \\
@@ -204,7 +201,7 @@ the value of a subterm.
     \mid \mathit{primR}_p(n, \kappa) \\
  &\mid \mathit{letK}(x.\,N, \rho, \kappa) \mid \mathit{foldK}(\kappa) \mid \mathit{unfoldK}(\kappa)
 \end{align*}
-\defhead{Steps of the CEK machine of \iswim}{s \longrightarrow s'}
+\defhead{Steps of the CEK machine of \iswim}{\varsigma \longrightarrow \varsigma'}
 \begin{align*}
   \mathit{eval}(x, \rho, \kappa) &\longrightarrow \mathit{ret}(\rho(x), \kappa) \\
   \mathit{eval}(\lambda x.\,N, \rho, \kappa) &\longrightarrow \mathit{ret}(\langle \lambda x.\,N, \rho\rangle, \kappa) \\
@@ -231,7 +228,7 @@ the value of a subterm.
   \mathit{ret}(v, \mathit{letK}(x.\,N, \rho, \kappa)) &\longrightarrow \mathit{eval}(N, \rho[x{:=}v], \kappa) \\
   \mathit{ret}(\kw{fold}\,v, \mathit{unfoldK}(\kappa)) &\longrightarrow \mathit{ret}(v, \kappa)
 \end{align*}
-\defhead{Final observation of the CEK machine of \iswim}{s \longrightarrow \mathsf{stop}(o)}
+\defhead{Final observation of the CEK machine of \iswim}{\varsigma \longrightarrow \mathsf{stop}(o)}
 \[
   \mathit{ret}(v, \mathit{halt}) \longrightarrow \mathsf{stop}(\mathit{obs}(v))
 \]
@@ -240,24 +237,26 @@ $\mathit{eval}(M, \emptyset, \mathit{halt})$.
 
 \paragraph{Machine for x86$\mu$}
 
-In the notation of Appendix~\ref{app:interp}, the machine of x86$\mu$ runs a sequence $s$ with blocks $B$, a stack
-$\Sigma$ of the callers' return points, and a machine state $m$, $\mathit{run}(s, B, \Sigma, m)$. A return
-point $\mathit{retK}(s, B, \sigma)$ holds the rest $s$ of the caller's sequence, its blocks, and its
-frame, which the callee's $\kw{retq}$ restores.
-\defhead{Steps of the machine of x86$\mu$}{s \longrightarrow s'}
+In the notation of Appendix~\ref{app:interp}, a state of the machine of x86$\mu$, $\mathit{run}(s, B, \Sigma, m)$, runs a sequence $s$ with blocks $B$, a stack $\Sigma$ of the callers' return points, and registers, frame, open closure and flag $m$. A return point $\mathit{retK}(s, B, \sigma)$ holds the rest $s$ of the caller's sequence, its blocks, and its frame, which the callee's $\kw{retq}$ restores.
+\defhead{States and stacks}{\varsigma \qquad \Sigma}
+\begin{align*}
+  \varsigma &::= \mathit{run}(s, B, \Sigma, m) \\
+  \Sigma &::= \mathit{halt} \mid \mathit{retK}(s, B, \sigma) :: \Sigma
+\end{align*}
+\defhead{Steps of the machine of x86$\mu$}{\varsigma \longrightarrow \varsigma'}
 \begin{align*}
   \mathit{run}(i;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s, B, \Sigma, \mathit{instr}(i, m))
     \qquad\text{for $i$ not $\kw{callq}$} \\
-  \mathit{run}(\kw{callq}\; a;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s_f, B_f, (\mathit{retK}(s, B, \sigma), \Sigma), m_{e,w}) \\
+  \mathit{run}(\kw{callq}\; a;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s_f, B_f, \mathit{retK}(s, B, \sigma) :: \Sigma, m_{e,w}) \\
  & \quad\text{where } \mathit{arg}(a, m) = \kw{code}\,f,\ e = m(\kw{rdi}),\ w = m(\kw{rsi}) \\
-  \mathit{run}(\kw{retq}, B, (\mathit{retK}(s, B', \sigma'), \Sigma), m) &\longrightarrow \mathit{run}(s, B', \Sigma, m') \\
+  \mathit{run}(\kw{retq}, B, \mathit{retK}(s, B', \sigma') :: \Sigma, m) &\longrightarrow \mathit{run}(s, B', \Sigma, m') \\
  & \quad\text{where $m'$ has the frame $\sigma'$ and only $\kw{rax}$ set, to $m(\kw{rax})$} \\
   \mathit{run}(\kw{jmp}\;l, B, \Sigma, m) &\longrightarrow \mathit{run}(s_l, B_l, \Sigma, m_\sigma) \\
   \mathit{run}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2), B, \Sigma, m) &\longrightarrow \mathit{run}(s_{l_1}, B_{l_1}, \Sigma, m_{\sigma|_y[y{:=}v]}) \\
  & \quad\text{if } \sigma(x) = \kw{inl}\,v \\
  & \text{(and likewise for $\kw{inr}$ and $l_2$)}
 \end{align*}
-\defhead{Final observation of the machine of x86$\mu$}{s \longrightarrow \mathsf{stop}(o)}
+\defhead{Final observation of the machine of x86$\mu$}{\varsigma \longrightarrow \mathsf{stop}(o)}
 \[
   \mathit{run}(\kw{retq}, B, \mathit{halt}, m) \longrightarrow \mathsf{stop}(\mathit{obs}(m(\kw{rax})))
 \]
