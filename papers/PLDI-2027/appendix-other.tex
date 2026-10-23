@@ -354,7 +354,10 @@ Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, t
 \label{app:scott}
 \agda{Framework/Scott/Lift.agda, Framework/Scott/Domain.agda, Framework/Scott/Ops.agda, Mu/Semantics/ScottDomains/ISWIM.agda, Mu/Semantics/ScottDomains/X86.agda}
 
-The domain of values is the solution of
+Our Agda development builds the domain of values with the constructive
+domain theory of TypeTopology \citep{deJong:2023aa}, in which domains
+are directed-complete partial orders, as the bilimit of
+Appendix~\ref{app:scott-delay}. The domain of values is the solution of
 \[
   \mathbb{D} \cong \mathcal{L}(\Sigma_{t \in \mathit{Tag}}\, \mathit{Payload}_t(\mathbb{D}))
 \]
