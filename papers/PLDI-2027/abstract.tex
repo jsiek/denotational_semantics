@@ -24,7 +24,11 @@ mechanize the proof in Agda.
 
 To compare this graph-model approach with other styles, we prove
 correctness of the same compiler four more times, in three operational
-styles and one denotational, and compare the sizes of the proofs.  The
+styles and with Scott domains, and compare the sizes of the proofs.
+The Scott-domain proof is a second denotational proof of closure
+conversion that preserves and reflects divergence; there, the lowering
+of closures needs a relation defined by recursion on the stages of the
+domain.  The
 graph-model development is smaller than the proofs using abstract
 machines, reduction semantics, and Scott domains, but larger than the
 proof using clocked interpreters. Compared with the operational
