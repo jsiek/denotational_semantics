@@ -10,9 +10,8 @@
 \section{Evaluation: Comparison with Other Proof Styles}
 \label{sec:evaluation}
 
-To measure how concise the denotational proofs are (RQ2), how the
-graph-model proof compares with operational ones (RQ4), and how it
-compares with Scott domains (RQ5), we
+To measure how concise the denotational proofs are (RQ2), how the denotational proofs compare with operational ones (RQ4), and
+how the graph model compares with Scott domains (RQ5), we
 proved the same compiler correct four more times: once in a second denotational style, with Scott domains, and three times in operational styles. This section describes the five developments, compares the
 sizes of their proofs pass by pass, and explains the differences.
 
@@ -141,8 +140,7 @@ smallest, at 1,356 lines against 1,469 for the interpreters. The second denotati
 Two factors seem to drive the sizes in Table~\ref{tab:loc}. The size of
 a denotational proof tends to depend most on whether the pass preserves
 the meaning of a program exactly. When it does, the proof is an
-induction whose cases are congruences and a few laws of the graph
-model (Section~\ref{sec:equational}), largely independent of how the
+induction whose cases are congruences and a few laws of the model (Section~\ref{sec:equational}), largely independent of how the
 pass changes the way the program runs. The size of an operational
 proof tends to depend instead on how closely the run of the target
 follows the run of the source. On the denotational side, the correctness of nine
@@ -153,14 +151,16 @@ closely for most passes, including \pass{delay}, but differ more for
 \pass{simplify} and, to a lesser degree, \pass{globalize}. Combining
 the two factors gives three groups of passes, which we discuss in turn.
 
-\paragraph{Equal meanings, similar runs: the interpreter proofs tend to be slightly smaller.}
+\paragraph{Equal meanings, similar runs: the interpreter proofs tend to be smaller.}
 
 For \pass{enclose}, \pass{optimize}, \pass{concretize}, \pass{remove
   complex operands}, \pass{lift locals}, \pass{explicate control}, and
-\pass{select instructions}, both the denotational and the interpreter
+\pass{select instructions}, both the graph-model and the interpreter
 proofs are short. The interpreter proofs are smaller by 1 to 28 lines,
 except for \pass{explicate control}, where the two are about the same
-size. The difference is not in the congruence cases, which take one
+size. The Scott-domain proofs of these passes are 1.2 to 2.8 times the
+interpreter proofs, for the reasons given at the end of this
+section. The difference is not in the congruence cases, which take one
 line per construct in both styles. In the graph model, a term denotes
 a set of values and several operators place conditions on these sets:
 strict closures, $\kw{let}$s, and writes require their sets to be
@@ -180,17 +180,18 @@ interpreters only. The reduction semantics, which works by
 substitution, is often several times larger even for these passes, as for
 \pass{optimize} and \pass{lift locals}.
 
-\paragraph{Equal meanings, different runs: the denotational proof tends to be smallest.}
+\paragraph{Equal meanings, different runs: the denotational proofs tend to be smallest.}
 
-\pass{simplify} is the clearest case, at 349 lines against 508 to 697.
+\pass{simplify} is the clearest case, at 349 lines in the graph model
+and 411 with Scott domains, against 508 to 697.
 It reduces programs under binders and removes calls, so the target
 takes fewer steps than the source. Each operational proof must replay
 those reductions as steps of the source program: on open terms in the
 reduction semantics, or as a run-ahead of the source machine or
 interpreter, with stuttering where the target does more. For the
 interpreters, the target needs fewer clock ticks than the source,
-which breaks the usual clock-for-clock argument. \pass{globalize} fits the pattern less
-cleanly. Its interpreter proof is still clock for clock; the runs
+which breaks the usual clock-for-clock argument. \pass{globalize} fits the pattern less cleanly, at 115 and 147 lines
+against 175 to 213. Its interpreter proof is still clock for clock; the runs
 differ only in where the code of a function lives, since in the target
 it is a reference into a table of definitions. The interpreter proof
 relates the two tables value by value, while the denotational proof
@@ -200,9 +201,10 @@ shows that a reference means what the code it replaced means.
 
 \pass{Delay} changes the representation of closures, so its correctness
 is not an equation, yet the run of the target follows the run of the
-source closely. Its denotational proof takes 450 lines of Agda,
-against 35 to 126 lines in the three operational styles. Most of the
-difference has three sources. First, the denotational proof needs two
+source closely. Its denotational proofs take 450 lines of Agda in the
+graph model and 723 with Scott domains, against 35 to 126 lines in the
+three operational styles. For the graph model, most of the difference
+has three sources. First, the denotational proof needs two
 directions, while a simulation proof gets the backward direction for
 free from forward simulation and the determinism of the target. The
 graph model has an analogue of determinism, the consistency of
@@ -217,7 +219,9 @@ needs the finite lists, the batches of calls, and the lemma that
 extracts them from a target call. Third, the $\beta$-law of
 Lemma~\ref{lem:beta} holds only under side conditions of nonemptiness,
 consistency, and continuity, whereas a machine does not have such side
-conditions.
+conditions. The Scott-domain proof shares the first source, and its
+stage relations replace the other two with the costs discussed
+next.
 
 \paragraph{The graph model is smaller than Scott domains.}
 
@@ -253,10 +257,13 @@ values, the graph-model proof is the smallest of the five for
 \pass{simplify}, \pass{globalize}, and \pass{explicate control}, and
 within 30 lines of the smallest for the others (RQ2). Where a pass
 changes that representation, as \pass{delay} does, the operational
-proofs are several times smaller. The totals, by contrast, depend on
-the accounting. Counting each proof against its own semantics, the
-graph model ranks second, and with the language-independent
-infrastructure it ranks third (RQ4). Under both accountings, the graph
+proofs are several times smaller than both denotational proofs. The totals, by contrast, depend on
+the accounting. Counting each proof against its own semantics, the graph model ranks
+second and Scott domains fourth, and with the language-independent
+infrastructure they rank third and fifth (RQ4). Among the passes that
+keep the representation of values, the Scott-domain proof is smaller
+than every operational proof only for \pass{simplify} and
+\pass{globalize}. Under both accountings, the graph
 model gives a smaller proof than Scott domains (RQ5). All five
 developments are ours, written with the same AI assistant, so the
 totals measure these developments rather than the inherent difficulty

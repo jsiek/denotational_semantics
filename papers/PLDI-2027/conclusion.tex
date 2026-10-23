@@ -3,16 +3,19 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-Our main result is a denotational proof that closure conversion
-preserves and reflects the meaning of programs, divergence included,
-for a language with general recursion. For reflection, we introduced
+Our main result is a denotational proof, in two models, that closure
+conversion preserves and reflects the meaning of programs, divergence
+included, for a language with general recursion. For reflection in the
+graph model, we introduced
 the approximant logical relation, which relates a finite list of target
 elements to the whole source denotation and recurses on the depth of
 that list. With it, the graph-model proof of a ten-pass compiler,
 mechanized in Agda, consists of short equational calculations for the
 nine passes that keep the representation of values and one relational
 proof for the step of closure conversion that lowers closures to pairs
-of code and environment, which is several times the size of the
-operational proofs of that step. In future work we plan to report on a
+of code and environment, which is several times the size of the operational proofs of that
+step. With Scott domains, the same compiler proof needs a relation
+defined by recursion on the stages of the domain, and it is 1.4 times
+the size of the graph-model proof. In future work we plan to report on a
 dynamically typed variant of the compiler and to repeat the comparison
 in Rocq or Lean.

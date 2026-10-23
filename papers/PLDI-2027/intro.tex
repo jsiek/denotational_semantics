@@ -175,10 +175,11 @@ with Scott domains, against 508 to 697 for the operational proofs
 (Section~\ref{sec:equational}). Where a pass changes the representation
 of closures, the relation between denotations makes the proof larger,
 which quantifies the negative answer to RQ3: the proofs of
-\pass{delay} take 450 and 723 lines against 35 to 126. The two effects nearly cancel. Counting each proof against its
-own semantics, the graph-model development ranks second of the five,
-behind clocked interpreters, and third once the language-independent
-infrastructure is counted.  For RQ5, the Scott-domain proof is 1.4
+\pass{delay} take 450 and 723 lines against 35 to 126. The two effects nearly cancel. Counting each proof against its own semantics, the graph-model
+development ranks second of the five, behind clocked interpreters, and
+the Scott-domain development fourth, ahead of reduction semantics;
+once the language-independent infrastructure is counted, they rank
+third and fifth.  For RQ5, the Scott-domain proof is 1.4
 times as large as the graph-model proof and larger for every pass. Much
 of the difference is in \pass{delay}: the stage relation must be shown
 admissible and preserved by the maps between stages, and the method of
