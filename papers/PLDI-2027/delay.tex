@@ -390,7 +390,9 @@ We also proved the compiler correct with Scott domains
 (Section~\ref{sec:evaluation}). There a value is an element of a
 universal domain $\mathbb{D}$ of tagged values, divergence is its least
 element $\bot$ (Appendix~\ref{app:scott}), and \pass{delay} is again
-the only pass that needs a relation. Scott values are infinite, so the
+the only pass that needs a relation. For space, this section only
+summarizes that proof; Appendix~\ref{app:scott-delay} gives it in
+full. Scott values are infinite, so the
 relation cannot recurse on finite elements. We define it instead by
 recursion on the stages $\mathbb{D}_0, \mathbb{D}_1, \ldots$ of the
 bilimit that constructs $\mathbb{D}$, as \citet{Reynolds:1974aa} did.

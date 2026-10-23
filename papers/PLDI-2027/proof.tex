@@ -8,7 +8,12 @@
 \section{Proving the Compiler Correct}
 \label{sec:compiler-proof}
 
-This section proves the following theorem about the whole compiler.
+This section proves the following theorem about the whole compiler,
+in the graph model. For space, it presents the Scott-domain proof of
+the same compiler only briefly: Section~\ref{sec:scott-delay}
+summarizes its proof of \pass{delay}, Appendix~\ref{app:scott} states
+its theorem (Theorem~\ref{thm:scott}), and
+Appendix~\ref{app:scott-delay} gives the proof of \pass{delay} in full.
 
 
 
@@ -25,7 +30,7 @@ Theorem~\ref{thm:delay}.
 
 This section first shows how we prove the passes other than \pass{delay} (Section~\ref{sec:equational}). These proofs answer whether the
 compositionality and equational reasoning of denotational semantics
-yield concise correctness proofs for some compiler passes (RQ2). The section then shows why \pass{delay} needs more (Section~\ref{sec:approx-lr}), and ends with the adequacy of the graph-model semantics, which connects Theorem~\ref{thm:compiler} to running code (Section~\ref{sec:adequacy}).
+yield concise correctness proofs for some compiler passes (RQ2). The section then shows why \pass{delay} needs more (Section~\ref{sec:approx-lr}), summarizes the Scott-domain proof of \pass{delay} (Section~\ref{sec:scott-delay}), and ends with the adequacy of the graph-model semantics, which connects Theorem~\ref{thm:compiler} to running code (Section~\ref{sec:adequacy}).
 
 \subsection{Passes Proved by an Equation}
 \label{sec:equational}
