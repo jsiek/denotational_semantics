@@ -152,6 +152,7 @@ Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 \subsection{The \iswim\ Language}
 
 \iswim\ is the source language, and the first pass, \pass{simplify}, maps it to itself. A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of variable types.
+\defhead{Typing of \iswim}{\Gamma \vdash M : A}
 \[
 \begin{array}{@{}c@{}}
   \dfrac{x{:}A \in \Gamma}{\Gamma \vdash x : A}
@@ -186,7 +187,8 @@ Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
   \dfrac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \end{array}
 \]
-The semantics follows Section~\ref{sec:graph-models}, with the operators of Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}:
+The semantics follows Section~\ref{sec:graph-models}, with the operators of Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
+\defhead{Semantics of \iswim}{\den{M}\rho}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
   \den{x}\rho & = & \rho(x) &
@@ -213,6 +215,7 @@ The semantics follows Section~\ref{sec:graph-models}, with the operators of Figu
 Clos is the language of closures that \pass{enclose} produces and \pass{optimize} improves, and EnvClos, produced by \pass{concretize}, stores the captured values of a closure in one tuple; EnvClos is the source of \pass{delay}. Both type and interpret their other forms as \iswim\ does.
 A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
 its captured values.
+\defhead{Typing of closures}{\Gamma \vdash M : A}
 \[
   \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
          x_1{:}A_1, \ldots, x_n{:}A_n, y{:}A \vdash N : C}
@@ -228,6 +231,7 @@ with the captured values for $x_1, \ldots, x_n$; closures are strict, so
 it is guarded by the captured values. An EnvClos closure applies the
 curried meaning of its code to the tuple of the captured values
 (Section~\ref{sec:approx-lr}).
+\defhead{Semantics of closures}{\den{M}\rho}
 \[
 \begin{array}{@{}l@{}}
     \den{\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}}\rho =
@@ -243,7 +247,8 @@ curried meaning of its code to the tuple of the captured values
 
 \subsection{The FlatClos Language}
 
-FlatClos, the target of \pass{delay}, replaces closures and application with code, packing, and calls, and types and interprets its other forms as \iswim\ does:
+FlatClos, the target of \pass{delay}, replaces closures and application with code, packing, and calls, and types and interprets its other forms as \iswim\ does.
+\defhead{Typing of FlatClos}{\Gamma \vdash M : A}
 \[
   \dfrac{z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
         {\Gamma \vdash \kw{code}\;(z, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
@@ -256,6 +261,7 @@ FlatClos, the target of \pass{delay}, replaces closures and application with cod
   \dfrac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}
         {\Gamma \vdash \kw{callc}\;L\;M : C}
 \]
+\defhead{Semantics of FlatClos}{\den{M}\rho}
 \[
   \den{\kw{code}\;(z, y.\,N)}\rho =  \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y]))
   \qquad
@@ -271,6 +277,7 @@ GlobalFun, the target of \pass{globalize}, makes the code of every function a gl
 of the signatures $\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
 definitions, and a term is typed by the table and its context,
 $\Sigma; \Gamma \vdash M : A$. The other forms are typed as in FlatClos.
+\defhead{Typing of GlobalFun}{\Sigma; \Gamma \vdash M : A \qquad \vdash P : A}
 \[
   \dfrac{k < m}{\Sigma; \Gamma \vdash f_k : \kw{code}(\Delta_k; A_k \rightarrow C_k)}
   \qquad
@@ -282,7 +289,8 @@ where $d_k = \kw{code}\;(z, y.\,N_k)$. A term means a set given a table $T$ that
 meaning, $\den{M}_T\rho$; the other forms are interpreted as in
 FlatClos, passing $T$ along. A definition means the curried function
 of its code, given the table $T_k$ of the definitions older than it
-($T_k(j) = T(j)$ for $j < k$, and $T_k(j) = \emptyset$ otherwise):
+($T_k(j) = T(j)$ for $j < k$, and $T_k(j) = \emptyset$ otherwise).
+\defhead{Semantics of GlobalFun}{\den{M}_T\rho \qquad T(k)}
 \[
   \den{f_k}_T\rho = T(k)
   \qquad
@@ -302,6 +310,7 @@ $\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
 far; slot $x < j$ has type $A_x$. An assignment and a $\kw{case}$ write
 the next slot, $|\Delta|$. Atoms and simple expressions are typed as
 in Mon, over slots.
+\defhead{Typing of Imp}{\Sigma; \Delta \vdash e : C}
 \[
   \dfrac{x < |\Delta|}{\Sigma; \Delta \vdash x : A_x}
   \qquad
@@ -326,7 +335,8 @@ the meaning of the expression. An atom means $\mathcal{A}\den{x}\sigma =
 $\mathcal{A}\den{f_k}\sigma = T(k)$, and a simple expression
 $\mathcal{S}\den{o\;\vec{a}}\sigma$ applies the GlobalFun operator of
 $o$ to the meanings of its atoms. An assignment is strict in the value
-it assigns, like a $\kw{let}$:
+it assigns, like a $\kw{let}$.
+\defhead{Semantics of Imp}{\den{e}_T\sigma\kappa}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \den{r}_T\sigma\kappa & = & \kappa(\mathcal{S}\den{r}\sigma)\\
@@ -351,6 +361,7 @@ index into $\vec{\Delta}$. Block $t_l$ is typed over the blocks older
 than it, so control flow is acyclic. Here $\Delta' \sqsubseteq \Delta$
 says that $\Delta'$ is a prefix of $\Delta$; an assignment to slot
 $|\Delta'|$ forgets the slots from $|\Delta'|$ on.
+\defhead{Typing of CFG}{\Sigma; R; \vec{\Delta}; \Delta \vdash t}
 \[
   \dfrac{\Sigma; \Delta \vdash r : R}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{return}\;r}
   \qquad
@@ -375,7 +386,8 @@ A definition's function body starts in the frame $\kw{tup}(\Delta_k), A_k$ with
 result type $C_k$, and the main function body in the empty frame. A tail means a
 set, given its frame $\sigma$ and the meanings $B$ of the blocks it can
 see. Writing slot $x$ cuts the frame to the slots before $x$, written
-$\sigma|_x$, and then assigns $x$:
+$\sigma|_x$, and then assigns $x$.
+\defhead{Semantics of CFG}{\den{t}_{T,B}\sigma}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \den{\kw{return}\;r}_{T,B}\sigma & = & \mathcal{S}\den{r}\sigma\\
@@ -407,7 +419,8 @@ environment $\kw{tup}(\alpha)$ of the open closure, or nothing; the
 type variable $\alpha$ stands for the hidden types of the environment
 of the open closure. A function body declares the size $n$ of its frame. The
 operands are typed by these rules, with the atoms typed as in Imp in
-the frame of the state:
+the frame of the state.
+\defhead{Typing of operands}{\Sigma; \psi \vdash a : \tau}
 \[
   \dfrac{\Sigma; \Delta \vdash a : A}{\Sigma; \langle \Theta; \Delta; O; F \rangle \vdash a : A}
   \qquad
@@ -420,7 +433,8 @@ the frame of the state:
 \]
 A destination is written at a type $\tau$ and leaves a new state,
 $n \vdash d : \psi \Rightarrow_\tau \psi'$. A write to a slot cuts the
-frame and closes the open closure:
+frame and closes the open closure.
+\defhead{Typing of destinations}{n \vdash d : \psi \Rightarrow_\tau \psi'}
 \[
   n \vdash \%r : \langle \Theta; \Delta; O; F \rangle \Rightarrow_\tau \langle \Theta[r{:}\tau]; \Delta; O; F \rangle
   \qquad
@@ -431,7 +445,8 @@ An object $\kw{pair}(a_1, a_2)$ has type $A \rightarrow C$ when
 $a_1 : \kw{code}(\Delta; A \rightarrow C)$ and $a_2 : \kw{tup}(\Delta)$;
 tuples and injections of operands are typed as in \iswim. With
 $\psi = \langle \Theta; \Delta; O; F \rangle$ and operands typed in
-$\psi$, the instructions are typed by:
+$\psi$, the instructions are typed by.
+\defhead{Typing of instructions}{\Sigma; n \vdash i : \psi \Rightarrow \psi'}
 \[
 \begin{array}{@{}c@{}}
   \dfrac{a : \tau \quad n \vdash d : \psi \Rightarrow_\tau \psi'}
@@ -468,7 +483,8 @@ Here $\mathit{wipe}(\Theta)$ unsets the registers that hold the code or
 the environment of an earlier open closure, so $\alpha$ always stands
 for the environment of one closure. A sequence $s$ is typed by the result
 type $R$, the frames $\vec{\Delta}$ of the blocks it may jump to, and
-its starting state:
+its starting state.
+\defhead{Typing of sequences}{\Sigma; n; R; \vec{\Delta} \vdash s : \psi}
 \[
   \dfrac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; R; \vec{\Delta} \vdash s : \psi'}
         {\Sigma; n; R; \vec{\Delta} \vdash i;\; s : \psi}
@@ -501,13 +517,15 @@ $\kw{fold}\;a$ and $\kw{unfold}\;a$. An object means the operator of its
 kind on the meanings of its operands ($\mathsf{pair}$, $\mathcal{T}$,
 $\mathsf{inl}$, $\mathsf{inr}$). A write to a destination, written
 $\mathit{put}$, updates a register, or binds a slot as an assignment in
-CFG does:
+CFG does.
+\defhead{Writing a destination}{\mathit{put}(d, D)\,\kappa\,\sigma R F}
 \[
   \mathit{put}(\%r, D)\,\kappa\,\sigma R F = \kappa\,\sigma\,R[r{:=}D]\,F
   \qquad
   \mathit{put}(x, D)\,\kappa\,\sigma R F =
     \Lambda(\mlam{X} \kappa\,(\sigma|_x[x{:=}X])\,R\,F) \app D
 \]
+\defhead{Semantics of instructions}{\den{i}\kappa\,\sigma R F}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \den{\kw{movq}\; a, d}\kappa\,\sigma R F & = & \mathit{put}(d, \mathcal{O}\den{a}\sigma R)\,\kappa\,\sigma R F\\
@@ -527,8 +545,8 @@ CFG does:
 \end{array}
 \]
 Here $R_C$ maps $\kw{rax}$ to $C$ and the other registers to
-$\{\langle\rangle\}$; only a call can diverge, so only it is strict in
-its result. The sequences mean
+$\{\langle\rangle\}$; only a call can diverge, so only it is strict.
+\defhead{Semantics of sequences}{\den{s}_B\,\sigma R F}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \den{i;\; s}_B & = & \den{i}\,\den{s}_B\\

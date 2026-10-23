@@ -94,7 +94,7 @@ equivalent.
 
 The interpreter $\mathit{eval}_k(\rho, M)$ evaluates a term $M$ in an
 environment $\rho$ of values at clock $k$. The clock ticks at each call
-of the interpreted program:
+of the interpreted program.
 
 \defhead{The interpreter of \iswim}{\mathit{eval}_k(\rho, M) \qquad \mathit{call}_k(f, w)}
 \begin{align*}
@@ -188,7 +188,7 @@ Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, t
 \subsection{Abstract Machines}
 \label{app:machines}
 
-\paragraph{\iswim}
+\paragraph{Machine for \iswim}
 
 The CEK machine of \iswim\ evaluates a term $M$ in an environment $\rho$
 with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or
@@ -238,14 +238,12 @@ the value of a subterm.
 The machine of a closed program $M$ starts in
 $\mathit{eval}(M, \emptyset, \mathit{halt})$.
 
-\paragraph{x86$\mu$}
+\paragraph{Machine for x86$\mu$}
 
-The machine of x86$\mu$ runs a sequence $s$ with blocks $B$, a stack
-$\Sigma$ of the callers' return points, and a machine state $m$ as in
-Appendix~\ref{app:interp}, $\mathit{run}(s, B, \Sigma, m)$. A return
-point $\mathit{retK}(s, B, \sigma)$ holds the rest $s$ of the caller's
-sequence, its blocks, and its frame. The steps use the notation of
-Appendix~\ref{app:interp}.
+In the notation of Appendix~\ref{app:interp}, the machine of x86$\mu$ runs a sequence $s$ with blocks $B$, a stack
+$\Sigma$ of the callers' return points, and a machine state $m$, $\mathit{run}(s, B, \Sigma, m)$. A return
+point $\mathit{retK}(s, B, \sigma)$ holds the rest $s$ of the caller's sequence, its blocks, and its
+frame, which the callee's $\kw{retq}$ restores.
 \defhead{Steps of the machine of x86$\mu$}{s \longrightarrow s'}
 \begin{align*}
   \mathit{run}(i;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s, B, \Sigma, \mathit{instr}(i, m))
@@ -374,7 +372,7 @@ An environment maps variables to values, and the environment $\rho_0$
 of a closed program maps every variable to the empty tuple
 $\mathit{tup}_0()$.
 
-\paragraph{\iswim}
+\paragraph{Semantics of \iswim}
 
 The semantics of \iswim\ has the equations of the graph-model semantics
 (Appendix~\ref{app:languages}), with the operators of $\mathbb{D}$:
@@ -401,7 +399,7 @@ The semantics of \iswim\ has the equations of the graph-model semantics
 where $g'$ is the strict function that agrees with $g$ on defined
 values, as in $\Lambda$.
 
-\paragraph{x86$\mu$}
+\paragraph{Semantics of x86$\mu$}
 
 The semantics of x86$\mu$ has the equations of the graph-model
 semantics of x86$\mu$ (Appendix~\ref{app:languages}), with the
