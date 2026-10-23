@@ -72,7 +72,7 @@ abstract-binding-tree extract. `make check-scott` writes
 ## How long it takes
 
 From scratch in Docker (no interface files, the standard library
-included), on a recent x86-64 laptop:
+included), on a desktop workstation (Intel Core Ultra 9 285K, 64 GB):
 
 | Target | Time |
 |---|---|

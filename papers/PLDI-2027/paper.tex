@@ -83,11 +83,11 @@ compiler, the adequacy of the graph-model semantics, the shared
 definitions of the languages and passes, and the script that computes
 the proof sizes of Section~\ref{sec:evaluation}. It checks with Agda
 2.8 and its standard library 2.4 in safe mode, with no postulates, in
-about three minutes on a desktop workstation (Intel Core Ultra 9 285K,
-64\,GB). The Scott-domain proof also needs a pinned, lightly patched version of TypeTopology, likewise checked in safe mode, and about three more minutes; its theorems take propositional truncation, function extensionality, and propositional extensionality as hypotheses. The README of the artifact
+about two minutes from scratch on a desktop workstation (Intel Core Ultra 9 285K,
+64\,GB). The Scott-domain proof also needs the modules of TypeTopology that it imports, which the artifact includes, lightly patched, from a pinned commit. With them, the Scott-domain proof checks in safe mode in about two and a half more minutes, and its theorems take propositional truncation, function extensionality, and propositional extensionality as hypotheses. A Dockerfile builds and checks everything. The README of the artifact
 lists the commands that check each development and regenerate
-Table~\ref{tab:loc}, the pinned TypeTopology commit and patch, and the
-files that hold the theorem statements. An anonymized version is provided as
+Tables~\ref{tab:loc} and~\ref{tab:infra}, and it maps each claim of the paper
+to the file that states it. An anonymized version is provided as
 supplementary material, and we will submit it for Artifact Evaluation.
 
 \bibliographystyle{ACM-Reference-Format}
