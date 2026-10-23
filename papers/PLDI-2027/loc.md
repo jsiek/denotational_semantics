@@ -164,7 +164,7 @@ Language-independent infrastructure by use, not in any total (see [[#Language-in
 | language-independent infrastructure (ISWIMμ, not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations | used by reduction semantics + simulation | used by adequacy |
 |---|---:|---:|---:|---:|---:|---:|
 | abstract binding trees | 190 | 170 | — | — | 61 | — |
-| syntax lemmas (renaming, scoping, uses, substitution), list lookups | 519 | 9 | 9 | 9 | 397 | — |
+| syntax lemmas (renaming, scoping, uses, substitution), list lookups | 519 | 9 | 9 | 9 | 332 | — |
 | base types, logical equivalence | 58 | 20 | 20 | 20 | 20 | — |
 | typed indices, lookup in typed lists, vectors (collecting, selecting, projecting) | 130 | 57 | 57 | 57 | 57 | — |
 | denotational framework | 375 | 200 | — | — | — | — |
@@ -176,7 +176,7 @@ Language-independent infrastructure by use, not in any total (see [[#Language-in
 | clocked big-step framework | 249 | — | — | 249 | — | 249 |
 | heterogeneous vectors: lookup, collecting, selecting, relating (ISWIMμ's) | 88 | 78 | 88 | 78 | 88 | 10 |
 | reduction of heterogeneous vectors (ISWIMμ's) | 41 | — | — | — | 41 | — |
-| **total** | — | 1544 | 447 | 413 | 1191 | 259 |
+| **total** | — | 1544 | 447 | 413 | 1126 | 259 |
 
 ISWIMμ's own infrastructure is heterogeneous vectors (`Mu/Framework/AllUtil.agda` and its lemma `Mu/proof/Framework/AllProp.agda`) and the reduction of their operands (`Mu/Framework/ReductionAll.agda` and its `proof/` half), as `Framework/VecUtil.agda`, `VecSelect.agda` and `ReductionVec.agda` are for vectors.
 
@@ -326,7 +326,7 @@ The Scott column counts the meaning of the primitives (`Semantics.Scott.Prim`) i
 
 Theorem statements (Mu/Theorems/ScottDomains.agda): 21 lines.
 
-TypeTopology itself (not counted anywhere): the Scott column imports, transitively from `agda/AllScott.agda`, 80 TypeTopology modules with about 18,600 lines of code (the `code` blocks of the `.lagda` files, without comments, blank lines or imports; counted 2026-10-22 at the pinned commit). `loc.py --scott` prints the breakdown: domain theory and lifting (`DomainTheory`, `Lifting`), 19 modules, 6,176 lines, which the paper's Table 2 counts for the Scott column; the general foundations (`UF`, `MLTT`, …), 61 modules, 12,448 lines, which play the role of the standard library and are counted for no column.
+TypeTopology itself (not counted anywhere): the Scott column imports, transitively from `agda/AllScott.agda`, 120 TypeTopology modules with about 25,900 lines of code (the `code` blocks of the `.lagda` files, without comments, blank lines or imports; counted 2026-10-23 at the pinned commit, following hyphenated module names, which the count of 2026-10-22 missed). `loc.py --scott` prints the breakdown: domain theory and lifting (`DomainTheory`, `Lifting`), 20 modules, 6,327 lines, which the paper's Table 2 counts for the Scott column; the general foundations (`UF`, `MLTT`, …), 100 modules, 19,590 lines, which play the role of the standard library and are counted for no column.
 
 * **Total:** 2485, 1.4 times the graph model (1.3 by tokens), larger in every row but the semantics.
 * **Delay (723 against 450):** one stage-indexed relation `R δ n s w` over a direction δ serves both halves (`DelayRel.agda`). By category, out of 838 comment-stripped lines with imports: the relation's definitions, is-prop, monotonicity, admissibility and the moves between stages 174; calls 101 and `StageCall` 198 (299, the largest share: a call of a pair seen at stage m + 2 shows its result only at stage m); primitives and tagged values 71 (about a twelfth); closures 43, other operators 62, terms and top level 66, header and imports 123.
@@ -500,10 +500,10 @@ Language-independent infrastructure, not in any total (see [[#Language-independe
 
 | language-independent infrastructure (not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations | used by reduction semantics + simulation | used by graph model with errors |
 |---|---:|---:|---:|---:|---:|---:|
-| abstract binding trees | 190 | 190 | 190 | 190 | 190 | 190 |
+| abstract binding trees | 190 | 190 | 90 | 90 | 90 | 190 |
 | syntax lemmas (renaming, scoping, uses, substitution), list lookups | 519 | 418 | 418 | 418 | 504 | 418 |
 | base types, logical equivalence | 58 | 58 | 58 | 58 | 58 | 58 |
-| typed indices, lookup in typed lists, vectors (collecting, selecting, projecting) | 130 | 98 | 110 | 118 | 110 | 98 |
+| typed indices, lookup in typed lists, vectors (collecting, selecting, projecting) | 130 | 98 | 110 | 118 | 105 | 98 |
 | denotational framework | 375 | 350 | — | — | — | 375 |
 | graph model: values, consistency, machinery for any operators | 364 | 364 | — | — | — | 364 |
 | graph model: its operators | 623 | 623 | — | — | — | 474 |
@@ -513,9 +513,9 @@ Language-independent infrastructure, not in any total (see [[#Language-independe
 | reduction framework: reduction semantics, simulations between them | 254 | — | — | — | 254 | — |
 | clocked big-step framework | 249 | — | — | 249 | — | — |
 | runs of a step function from any state | 29 | — | — | — | — | — |
-| **total** | 4236 | 2240 | 1049 | 1033 | 1389 | 3102 |
+| **total** | 4236 | 2240 | 949 | 933 | 1284 | 3102 |
 
-Adequacy uses 2408 lines of the infrastructure, 168 of them not used by the denotational proof.
+Adequacy uses 2403 lines of the infrastructure, 163 of them not used by the denotational proof.
 
 Adequacy relates the denotational semantics of ISWIM, Clos5ᵀ and X86ᵀ to their machines. It turns `CompilerCorrect`, and the end-to-end theorem for the whole compiler, `compile-x86`, into statements about running programs (`proof/Adequacy/EndToEnd.agda`, `proof/Adequacy/GraphErr/EndToEnd.agda`). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed; its sizes are internal information, not part of the comparison. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations and `GlobalizeOlder`, that globalize refers only to older definitions); the denotational total plus the adequacy total is then standalone, except for the infrastructure and for the machines, which adequacy reuses from the simulation proof and which are not counted again. The ISWIM rows are the untyped pipeline's proofs, unchanged; Clos5 is the Clos5ᵀ machine's, and X86ᵀ the X86ᵀ machine's, both direct in the graph model. The last column is the adequacy of the graph model with errors (for ISWIM, Clos5ᵀ and X86ᵀ, on errors, constants, answers and divergence), counted the same way against its own proof: the shared modules it uses that the errors column does not count, and the graph model's modules it reuses (`Adequacy.Common`).
 
@@ -544,7 +544,7 @@ Infrastructure reached by each graph model, and what adequacy adds:
 | abstract binding trees | 190 | 190 | 190 | 190 | — | — |
 | syntax lemmas (renaming, scoping, uses, substitution), list lookups | 519 | 418 | 418 | 418 | — | — |
 | base types, logical equivalence | 58 | 58 | 58 | 58 | — | — |
-| typed indices, lookup in typed lists, vectors (collecting, selecting, projecting) | 130 | 98 | 98 | 98 | 12 | 12 |
+| typed indices, lookup in typed lists, vectors (collecting, selecting, projecting) | 130 | 98 | 98 | 98 | 7 | 12 |
 | denotational framework | 375 | 350 | 375 | 350 | — | — |
 | graph model: values, consistency, machinery for any operators | 364 | 364 | 364 | 364 | — | — |
 | graph model: its operators | 623 | 623 | 474 | 474 | — | — |
@@ -552,7 +552,7 @@ Infrastructure reached by each graph model, and what adequacy adds:
 | graph model: semantics of intrinsically typed syntax | 237 | 139 | 190 | 92 | — | — |
 | small-step framework: transition systems, simulations | 273 | — | — | — | 127 | 273 |
 | runs of a step function from any state | 29 | — | — | — | 29 | 29 |
-| **total** | 3733 | 2240 | 3102 | 2044 | 168 | 314 |
+| **total** | 3733 | 2240 | 3102 | 2044 | 163 | 314 |
 
 The graph model with errors reuses these modules of the graph model's operators: `Framework.GraphModel.Continuity` (135), `Framework.GraphModel.DomainUtil` (15), `Framework.GraphModel.Ops` (324).
 
