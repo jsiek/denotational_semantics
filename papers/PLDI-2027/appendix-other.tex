@@ -352,13 +352,18 @@ Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, t
 
 \subsection{Scott Domains}
 \label{app:scott}
-\agda{Framework/Scott/Domain.agda, Framework/Scott/Ops.agda, Mu/Semantics/ScottDomains/ISWIM.agda, Mu/Semantics/ScottDomains/X86.agda}
+\agda{Framework/Scott/Lift.agda, Framework/Scott/Domain.agda, Framework/Scott/Ops.agda, Mu/Semantics/ScottDomains/ISWIM.agda, Mu/Semantics/ScottDomains/X86.agda}
 
 The domain of values is the solution of
 \[
   \mathbb{D} \cong \mathcal{L}(\Sigma_{t \in \mathit{Tag}}\, \mathit{Payload}_t(\mathbb{D}))
 \]
-where $\mathcal{L}$ is lifting. The tag $t$ of a value says what kind
+where $\mathcal{L}$ is lifting, the standard construction that adds a
+least element $\bot$ below a domain \citep[Section~8.3.4]{Winskel:1993aa}.
+The Agda development uses the constructive lifting of the TypeTopology
+library \citep{Escardo:2017ab}, in which a lifted element is a
+proposition, that the element is defined, together with a value under
+that proposition; \texttt{Framework/Scott/Lift.agda} imports it. The tag $t$ of a value says what kind
 of value it is, and the payload holds its contents:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
