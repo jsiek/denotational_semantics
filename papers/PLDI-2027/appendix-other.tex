@@ -76,12 +76,13 @@ each define their own $\longrightarrow$ and $\longrightarrow
 
 \paragraph{Clocked interpreters}
 
-A clocked interpreter maps a clock $k \in \mathbb{N}$ to a result,
-which is one of
+A clocked interpreter maps a clock $k \in \mathbb{N}$ to a
+\emph{result}, ranged over by $e$, which times out, reports an error,
+or returns a value $v$:
 \[
-  \mathsf{timeout} \mid \mathsf{error} \mid \mathsf{ret}\,v
+  e ::= \mathsf{timeout} \mid \mathsf{error} \mid \mathsf{ret}\,v
 \]
-for a value $v$. We write $v \leftarrow e;\; e'$ for the result of $e'$
+We write $v \leftarrow e;\; e'$ for the result of $e'$
 when $e$ is $\mathsf{ret}\,v$, and for $e$ itself when $e$ is
 $\mathsf{timeout}$ or $\mathsf{error}$. An interpreter \emph{terminates
 with} $o$ when for some clock $k$ its result is $\mathsf{ret}\,v$ with
@@ -107,7 +108,7 @@ The interpreter $\mathit{eval}_k(\rho, M)$ evaluates a term $M$ in an
 environment $\rho$ of values at clock $k$. The clock ticks at each call
 of the interpreted program.
 
-\defhead{The interpreter of \iswim}{\mathit{eval}_k(\rho, M) \qquad \mathit{call}_k(f, w)}
+\defhead{The interpreter of \iswim}{\mathit{eval}_k(\rho, M) = e \qquad \mathit{call}_k(f, w) = e}
 \begin{align*}
   \mathit{eval}_k(\rho, x) &= \mathsf{ret}\,\rho(x) \\
   \mathit{eval}_k(\rho, \lambda x.\,N) &= \mathsf{ret}\,\langle \lambda x.\,N, \rho\rangle \\
@@ -150,7 +151,7 @@ $\mathit{put}(d, v, m)$ sets a register, or, for a slot $x$, extends
 the frame cut at $x$ with $v$, $\sigma|_x[x{:=}v]$, and closes the open
 closure, as in the graph-model semantics. The instructions update the
 state.
-\defhead{The effect of an instruction}{\mathit{instr}(i, m)}
+\defhead{The effect of an instruction}{\mathit{instr}(i, m) = m'}
 \begin{align*}
   \kw{movq}\; a, d &: \mathit{put}(d, \mathit{arg}(a, m), m) \\
   \kw{subq}\; a, \%r &: \mathit{put}(\%r, \delta_{\kw{sub}}(m(r), \mathit{arg}(a, m)), m) \\
@@ -158,8 +159,8 @@ state.
   \kw{sete}\; d &: \mathit{put}(d, \kw{inl}\,\kw{tup}() \text{ if the flag is true, else } \kw{inr}\,\kw{tup}(), m) \\
   \kw{alloc}\; o, d &: \mathit{put}(d, \mathit{obj}(o, m), m) \\
   \kw{load}\; \kw{get}_i\; a, d &: \mathit{put}(d, v_i, m) \text{ where } \mathit{arg}(a, m) = \kw{tup}(v_1, \ldots, v_n) \\
-  \kw{fst}\; x, \%r &: m \text{ with } r \text{ set to } c \text{ and the open closure } e,
-    \text{ where } \sigma(x) = \kw{pack}(c, e) \\
+  \kw{fst}\; x, \%r &: m \text{ with } r \text{ set to } c \text{ and the open closure } u,
+    \text{ where } \sigma(x) = \kw{pack}(c, u) \\
   \kw{snd}\; x, \%r &: m \text{ with } r \text{ set to the environment of the open closure}
 \end{align*}
 where $\kw{fst}$ also unsets the registers that held the code or the
@@ -167,7 +168,7 @@ environment of an earlier open closure. Write $\mathit{instr}(i, m)$
 for the state that an instruction $i$ other than $\kw{callq}$ leaves.
 The interpreter $\mathit{run}_k(B, m, s)$ runs a sequence $s$ with
 blocks $B$ in the state $m$.
-\defhead{The interpreter of x86$\mu$}{\mathit{run}_k(B, m, s) \qquad \mathit{jump}_k(B, l, \sigma) \qquad \mathit{call}_k(c, e, w)}
+\defhead{The interpreter of x86$\mu$}{\mathit{run}_k(B, m, s) = e \qquad \mathit{jump}_k(B, l, \sigma) = e \qquad \mathit{call}_k(c, u, w) = e}
 \begin{align*}
   \mathit{run}_k(B, m, i;\; s) &= \mathit{run}_k(B, \mathit{instr}(i, m), s)
     \qquad\text{for $i$ not $\kw{callq}$} \\
@@ -180,14 +181,14 @@ blocks $B$ in the state $m$.
       \mathit{jump}_k(B, l_2, \sigma|_y[y{:=}v]) & \text{if } \sigma(x) = \kw{inr}\,v
     \end{cases} \\[4pt]
   \mathit{jump}_k(B, l, \sigma) &= \mathit{run}_k(B_l, m_\sigma, s_l) \\
-  \mathit{call}_0(\kw{code}\,f, e, w) &= \mathsf{timeout} \\
-  \mathit{call}_{k+1}(\kw{code}\,f, e, w) &= \mathit{run}_k(B_f, m_{e,w}, s_f)
+  \mathit{call}_0(\kw{code}\,f, u, w) &= \mathsf{timeout} \\
+  \mathit{call}_{k+1}(\kw{code}\,f, u, w) &= \mathit{run}_k(B_f, m_{u,w}, s_f)
 \end{align*}
 Here $\sigma$ is the frame of $m$; $m_v$ has the frame of $m$, $v$ in
 $\kw{rax}$, and nothing else set; $s_l$ is block $l$ and $B_l$ the
 blocks older than it; $m_\sigma$ has the frame $\sigma$ and nothing else
 set; $s_f$ is the start of the function body of definition $f$, with
-blocks $B_f$; and $m_{e,w}$ has $e$ in $\kw{rdi}$, $w$ in $\kw{rsi}$, an
+blocks $B_f$; and $m_{u,w}$ has $u$ in $\kw{rdi}$, $w$ in $\kw{rsi}$, an
 empty frame, and nothing else set. The interpreter of a program is $k
 \mapsto \mathit{run}_k(B, m_0, s)$ for the main function body $s$ with
 blocks $B$, where $m_0$ has an empty frame and nothing set.
@@ -259,8 +260,8 @@ In the notation of Appendix~\ref{app:interp}, a state of the machine of x86$\mu$
 \begin{align*}
   \mathit{run}(i;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s, B, \Sigma, \mathit{instr}(i, m))
     \qquad\text{for $i$ not $\kw{callq}$} \\
-  \mathit{run}(\kw{callq}\; a;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s_f, B_f, \mathit{retK}(s, B, \sigma) :: \Sigma, m_{e,w}) \\
- & \quad\text{where } \mathit{arg}(a, m) = \kw{code}\,f,\ e = m(\kw{rdi}),\ w = m(\kw{rsi}) \\
+  \mathit{run}(\kw{callq}\; a;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s_f, B_f, \mathit{retK}(s, B, \sigma) :: \Sigma, m_{u,w}) \\
+ & \quad\text{where } \mathit{arg}(a, m) = \kw{code}\,f,\ u = m(\kw{rdi}),\ w = m(\kw{rsi}) \\
   \mathit{run}(\kw{retq}, B, \mathit{retK}(s, B', \sigma') :: \Sigma, m) &\longrightarrow \mathit{run}(s, B', \Sigma, m') \\
  & \quad\text{where $m'$ has the frame $\sigma'$ and only $\kw{rax}$ set, to $m(\kw{rax})$} \\
   \mathit{run}(\kw{jmp}\;l, B, \Sigma, m) &\longrightarrow \mathit{run}(s_l, B_l, \Sigma, m_\sigma) \\
@@ -289,16 +290,16 @@ substitution, call by value and left to right. The values are
   V, W ::= \lambda x.\,N \mid c \mid \kw{tuple}\,(V_1, \ldots, V_n) \mid \kw{inl}\,V
     \mid \kw{inr}\,V \mid \kw{fold}\,V
 \]
-The function $\mathit{red}(M)$ says whether a closed term $M$ is a
-value ($\mathsf{val}$) or reduces to a term $M'$ ($\mathsf{to}\,M'$),
-so its result is one of
+The function $\mathit{red}$ maps a closed term $M$ to a \emph{result},
+ranged over by $r$, which says whether $M$ is a value ($\mathsf{val}$)
+or reduces to a term $M'$ ($\mathsf{to}\,M'$):
 \[
-  \mathsf{val} \mid \mathsf{to}\,M'
+  r ::= \mathsf{val} \mid \mathsf{to}\,M'
 \]
 In each case below, the subterms are reduced left to right. A subterm
 that reduces makes the whole term reduce in the same position, and once
 the subterms are values the term takes its own step.
-\defhead{One reduction of a closed term}{\mathit{red}(M)}
+\defhead{One reduction of a closed term}{\mathit{red}(M) = r}
 \begin{align*}
   \mathit{red}(V) &= \mathsf{val} \\
   \mathit{red}(L\;M) &= \mathsf{to}\,(L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
