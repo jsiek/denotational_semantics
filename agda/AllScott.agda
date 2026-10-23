@@ -18,7 +18,7 @@
 module AllScott where
 
 {- the theorem statements -}
-import Mu.Theorems.Scott
+import Mu.Theorems.ScottDomains
 
 {- the language-independent lemmas: dcpos, the solution of the domain
    equation, the domain of values and its operators, the combinators for
@@ -34,22 +34,22 @@ import proof.Framework.Scott.Stages
 import proof.Framework.Scott.StageCall
 
 {- lemmas shared by the passes -}
-import Mu.proof.Semantics.Scott.OptimizeLemmas
-import Mu.proof.Semantics.Scott.BackEndLemmas
+import Mu.proof.Semantics.ScottDomains.OptimizeLemmas
+import Mu.proof.Semantics.ScottDomains.BackEndLemmas
 
 {- the passes, and the whole compiler -}
-import Mu.proof.Correctness.Scott.SimplifyCorrect
-import Mu.proof.Correctness.Scott.EncloseCorrect
-import Mu.proof.Correctness.Scott.OptimizeCorrect
-import Mu.proof.Correctness.Scott.ConcretizeCorrect
-import Mu.proof.Correctness.Scott.DelayRel
-import Mu.proof.Correctness.Scott.DelayPreserve
-import Mu.proof.Correctness.Scott.DelayReflect
-import Mu.proof.Correctness.Scott.DelayTerms
-import Mu.proof.Correctness.Scott.DelayCorrect
-import Mu.proof.Correctness.Scott.GlobalizeCorrect
-import Mu.proof.Correctness.Scott.RCOCorrect
-import Mu.proof.Correctness.Scott.LiftLocalsCorrect
-import Mu.proof.Correctness.Scott.ExplicateCorrect
-import Mu.proof.Correctness.Scott.SelectCorrect
-import Mu.proof.Correctness.Scott.CompilerCorrect
+import Mu.proof.Correctness.ScottDomains.SimplifyCorrect
+import Mu.proof.Correctness.ScottDomains.EncloseCorrect
+import Mu.proof.Correctness.ScottDomains.OptimizeCorrect
+import Mu.proof.Correctness.ScottDomains.ConcretizeCorrect
+import Mu.proof.Correctness.ScottDomains.DelayRel
+import Mu.proof.Correctness.ScottDomains.DelayPreserve
+import Mu.proof.Correctness.ScottDomains.DelayReflect
+import Mu.proof.Correctness.ScottDomains.DelayTerms
+import Mu.proof.Correctness.ScottDomains.DelayCorrect
+import Mu.proof.Correctness.ScottDomains.GlobalizeCorrect
+import Mu.proof.Correctness.ScottDomains.RCOCorrect
+import Mu.proof.Correctness.ScottDomains.LiftLocalsCorrect
+import Mu.proof.Correctness.ScottDomains.ExplicateCorrect
+import Mu.proof.Correctness.ScottDomains.SelectCorrect
+import Mu.proof.Correctness.ScottDomains.CompilerCorrect

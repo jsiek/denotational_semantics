@@ -58,10 +58,12 @@ import Untyped.All
    The ISWIMμ compiler (the main experiment of the size comparison): a
    typed ISWIM with iso-recursive types and its compiler to X86μ, in the
    four styles, with its theorem statements in Mu/Theorems/ (see
-   Mu/All.agda)
+   Mu/All.agda and Mu/README.md), and the experiments on it that are not
+   part of the paper (Mu/Experiments.agda)
    --------------------------------------------------------------------------- -}
 
 import Mu.All
+import Mu.Experiments
 
 {- ---------------------------------------------------------------------------
    proof/: language-independent lemmas: about tuples of the abt extract,
