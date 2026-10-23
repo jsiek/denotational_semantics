@@ -4,7 +4,7 @@
   interpreters: for a closed ISWIMμ program M,
 
     ISWIMμ interpreter  ⇔  ⟦ M ⟧ ρ₀                (Adequacy/ISWIM.agda)
-                        ⇔  ⟦ compile-x86 M ⟧ₜ       (Correctness/Graph/CompilerCorrect.agda)
+                        ⇔  ⟦ compile-x86 M ⟧ₜ       (Correctness/GraphModel/CompilerCorrect.agda)
                         ⇔  X86μ interpreter         (Adequacy/X86.agda)
 
   for constants, and for divergence through the emptiness of the
@@ -12,7 +12,7 @@
   (soundness shows that neither interpreter errs), no no-error lemma is
   needed. So the graph model states, for a main of type Int, the
   theorem of the interpreter column
-  (Correctness/Interp/CompilerFuel.agda: compile-x86-const and
+  (Correctness/ClockedInterpreters/CompilerFuel.agda: compile-x86-const and
   compile-x86-diverges): the two interpreters stop with the same
   constant, or both diverge.
 
@@ -22,19 +22,19 @@ module Mu.proof.Adequacy.EndToEnd where
 
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import Mu.Semantics.Graph.Closed using (ρ₀)
+open import Mu.Semantics.GraphModel.Closed using (ρ₀)
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
-open import Mu.Semantics.Graph.ISWIM using (⟦_⟧)
-open import Mu.Semantics.Graph.X86 using (⟦_⟧ₜ)
+open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
+open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
 open import Mu.Compiler.Pipeline using (compile-x86)
 open import Semantics.Observation using (o-const; _⇔_)
 open import proof.Semantics.Interp.Clock using (Terminates; Diverges)
-import Mu.Semantics.Interp.ISWIM as I
-import Mu.Semantics.Interp.X86 as X
+import Mu.Semantics.ClockedInterpreters.ISWIM as I
+import Mu.Semantics.ClockedInterpreters.X86 as X
 import Mu.proof.Adequacy.ISWIM as AI
 import Mu.proof.Adequacy.X86 as AX
-open import Mu.proof.Correctness.Graph.CompilerCorrect using (compile-x86-same)
+open import Mu.proof.Correctness.GraphModel.CompilerCorrect using (compile-x86-same)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

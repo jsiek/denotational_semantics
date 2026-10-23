@@ -7,7 +7,7 @@
   (Contains), not only with the table of the older ones, as the
   semantics interprets it.
 
-  Both hold of the Clos5μ program that globalize produces, whose
+  Both hold of the GlobalFunμ program that globalize produces, whose
   definitions refer only to older ones
   (Mu/proof/Compiler/GlobalizeOlder.agda), and pass to X86μ through the
   lemmas of the denotational proofs of remove complex operands, lift
@@ -23,14 +23,14 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ⟨⟩; Con-⊆; Con-•; Con-⌈⌉; ≈⇒Con; _•_)
 open import proof.Framework.GraphModel.Ops using (Λ-≃; ΛΛ-≃; ΛΛ-mono)
 open import proof.Framework.GraphModel.Env using (extend-nonempty-env; •-~)
-open import Mu.proof.Semantics.Graph.Ops using (Table; ConT; tables; tables-con; init)
-open import Mu.proof.Semantics.Graph.Clos5 using (ok; code-con; table-con)
-open import Mu.Semantics.Graph.Clos5 using (code′; table)
-open import Mu.Semantics.Graph.Imp using () renaming (code′ to codeᵢ)
-open import Mu.Semantics.Graph.X86 using (codeₜ)
+open import Mu.proof.Semantics.GraphModel.Ops using (Table; ConT; tables; tables-con; init)
+open import Mu.proof.Semantics.GraphModel.GlobalFun using (ok; code-con; table-con)
+open import Mu.Semantics.GraphModel.GlobalFun using (code′; table)
+open import Mu.Semantics.GraphModel.Imp using () renaming (code′ to codeᵢ)
+open import Mu.Semantics.GraphModel.X86 using (codeₜ)
 open import Mu.Language.Type
-open import Mu.Language.Clos5 using (DSig; Code; program)
-import Mu.Language.Clos5 as Clos5
+open import Mu.Language.GlobalFun using (DSig; Code; program)
+import Mu.Language.GlobalFun as GlobalFun
 open import Mu.Language.X86 using (Program)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝)
@@ -42,11 +42,11 @@ open import Mu.Compiler.LiftLocals using () renaming (lift to liftₗ)
 open import Mu.Compiler.Explicate using (explicate-body)
 open import Mu.Compiler.Select using (def-body)
 open import Mu.proof.Compiler.GlobalizeOlder using (OlderDefs; globalize-older)
-open import Mu.proof.Adequacy.Clos5Common using (table-at; agree; tbl-mono; olderAt)
-open import Mu.proof.Correctness.Graph.RCOCorrect using (code-rco; table-rco)
-open import Mu.proof.Correctness.Graph.LiftLocalsCorrect using (code-lift; table-lift)
-open import Mu.proof.Correctness.Graph.ExplicateCorrect using (body-≃; table-explicate)
-open import Mu.proof.Correctness.Graph.SelectCorrect using (code-≃; table-≃)
+open import Mu.proof.Adequacy.GlobalFunCommon using (table-at; agree; tbl-mono; olderAt)
+open import Mu.proof.Correctness.GraphModel.RCOCorrect using (code-rco; table-rco)
+open import Mu.proof.Correctness.GraphModel.LiftLocalsCorrect using (code-lift; table-lift)
+open import Mu.proof.Correctness.GraphModel.ExplicateCorrect using (body-≃; table-explicate)
+open import Mu.proof.Correctness.GraphModel.SelectCorrect using (code-≃; table-≃)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Maybe using (nothing)
@@ -66,11 +66,11 @@ clos5-closed ds od f d d∈ =
       tbl-mono (lookup ds f) (table-con ds) (olderAt od f) (λ g g< x x∈ → subst (x ∈_) (agree code′ ds f g g<) x∈) _ w
         (proj₁ (ok (table-con ds) (lookup ds f)) (•-~ _⊆_ (•-~ _⊆_ (λ _ _ z → z) X⊆) Y⊆) w w∈)) , ptt ⟩) d d∈)
 
-{- the X86μ program that the compiler produces, from its Clos5μ one -}
+{- the X86μ program that the compiler produces, from its GlobalFunμ one -}
 compiled : ∀ {A} (M : Tm [] A) → let ds = Program.defs (compile-x86 M) in ConT (tables codeₜ ds) × Contains codeₜ ds
 compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , closed ⟩
   where
-  ds₅ = Clos5.Program.defs (compile M)
+  ds₅ = GlobalFun.Program.defs (compile M)
   dsₘ = All-map (λ D → rco D (λ x → x)) ds₅
   dsᵢ = All-map liftₗ dsₘ
   ds꜀ = All-map explicate-body dsᵢ

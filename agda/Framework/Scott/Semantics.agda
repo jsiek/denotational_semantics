@@ -13,10 +13,10 @@
   * code₂ B: the curried function value Λ X. Λ Y. B (X , Y) of a closed
     body B of two arguments (the code of a closure), and env₂ X Y, the
     environment Y • X • init in which such a body runs;
-  * closureᶜ n B: the closure of Clos2μ, strict in its n free variables.
+  * closureᶜ n B: the closure of Closμ, strict in its n free variables.
 
   init, the meaning of a variable that is never bound (as in the graph
-  model, Mu/Semantics/Graph/Closed.agda), is the empty tuple.
+  model, Mu/Semantics/GraphModel/Closed.agda), is the empty tuple.
 
 -}
 
@@ -141,7 +141,7 @@ code₂ B = Λ · ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B
 codeᶜ : Den Env → ⟨ 𝔻 ⟩
 codeᶜ N = code₂ (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N)
 
-{- the environment of the code of a Clos2μ closure: the argument, then
+{- the environment of the code of a Closμ closure: the argument, then
    its n free variables, then init -}
 fv-env : (n : ℕ) → (Fin n → ⟨ 𝔻 ⟩) → ⟨ 𝔻 ⟩ → ⟨ Env ⟩
 fv-env n xs Y zero = Y

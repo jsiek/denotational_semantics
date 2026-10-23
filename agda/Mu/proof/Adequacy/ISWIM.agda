@@ -1,10 +1,10 @@
 {-
 
   Soundness and adequacy of the graph model of ISWIMμ
-  (Mu/Semantics/Graph/ISWIM.agda) with respect to its clocked
-  interpreter (Mu/Semantics/Interp/ISWIM.agda), for closed programs of
+  (Mu/Semantics/GraphModel/ISWIM.agda) with respect to its clocked
+  interpreter (Mu/Semantics/ClockedInterpreters/ISWIM.agda), for closed programs of
   any type, started in ρ₀ on the denotational side and in the empty
-  environment on the interpreter's, as Mu/proof/Adequacy/CEK/ISWIM.agda
+  environment on the interpreter's, as Mu/proof/Adequacy/AbstractMachines/ISWIM.agda
   is for the ISWIMμ machine:
 
     soundness (Mu/proof/Adequacy/Soundness.agda): what the interpreter
@@ -28,11 +28,11 @@ module Mu.proof.Adequacy.ISWIM where
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
-open import Mu.Semantics.Graph.Closed using (ρ₀)
+open import Mu.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome; Terminates; Diverges)
 open import Mu.Language.ISWIM using (Tm)
-open import Mu.Semantics.Graph.ISWIM using (⟦_⟧)
-open import Mu.Semantics.Interp.ISWIM using (Val; eval; sem; obs)
+open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
+open import Mu.Semantics.ClockedInterpreters.ISWIM using (Val; eval; sem; obs)
 open import Semantics.Observation using (o-const; _⇔_)
 open import Mu.proof.Adequacy.Soundness using (timeout; ret; Sound; sound; 𝒱-const; 𝒱-ne)
 open import Mu.proof.Adequacy.LogRel using (𝕍; adequate; 𝕍-const)

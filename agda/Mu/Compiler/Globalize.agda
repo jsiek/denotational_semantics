@@ -1,6 +1,6 @@
 {-
 
-  Globalize (Clos4μ → Clos5μ): the code of every function becomes a
+  Globalize (FlatClosμ → GlobalFunμ): the code of every function becomes a
   global definition, and the code itself a reference to it, as typed
   globalize (Compiler/Globalize.agda) does.
 
@@ -17,8 +17,8 @@ module Mu.Compiler.Globalize where
 
 open import Mu.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.Clos4 as S
-open import Mu.Language.Clos5
+import Mu.Language.FlatClos as S
+open import Mu.Language.GlobalFun
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 
 open import Data.List using (List; []; _∷_)

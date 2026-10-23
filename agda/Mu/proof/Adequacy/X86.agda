@@ -1,10 +1,10 @@
 {-
 
   Soundness and adequacy of the graph model of X86μ
-  (Mu/Semantics/Graph/X86.agda, ⟦_⟧ₜ) with respect to the X86μ clocked
-  interpreter (Mu/Semantics/Interp/X86.agda), direct, as
+  (Mu/Semantics/GraphModel/X86.agda, ⟦_⟧ₜ) with respect to the X86μ clocked
+  interpreter (Mu/Semantics/ClockedInterpreters/X86.agda), direct, as
   Mu/proof/Adequacy/ISWIM.agda is for ISWIMμ (and
-  Mu/proof/Adequacy/CEK/X86.agda for the X86μ machine):
+  Mu/proof/Adequacy/AbstractMachines/X86.agda for the X86μ machine):
 
     adequacy (X86LogRel.agda), for every program: every d ∈ ⟦ P ⟧ₜ is
       related to the value that the interpreter returns from some clock
@@ -27,16 +27,16 @@ module Mu.proof.Adequacy.X86 where
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
-open import Mu.proof.Semantics.Graph.Ops using (ConT; tables)
+open import Mu.proof.Semantics.GraphModel.Ops using (ConT; tables)
 open import Mu.Language.Type using (Type)
 open import Mu.Language.X86 using (DSig; Body; called; entry; Program; program; body)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Compiler.Pipeline using (compile-x86)
-open import Mu.Semantics.Graph.X86 using (⟦_⟧ₜ; codeₜ)
+open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation using (o-const; _⇔_)
 open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome; Terminates; Diverges)
-open import Mu.Semantics.Interp.Clos5 using (module Vals)
-open import Mu.Semantics.Interp.X86 using (sem)
+open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import Mu.Semantics.ClockedInterpreters.X86 using (sem)
 open import Mu.Framework.AllUtil using (All)
 open import Mu.proof.Adequacy.X86Compiled using (Contains; compiled)
 open import Mu.proof.Adequacy.Soundness using (Holds; timeout; ret)

@@ -2,13 +2,13 @@
 
   The passes of the ISWIMμ compiler, composed: from ISWIMμ to X86μ,
 
-    ISWIMμ --simplify--> ISWIMμ --enclose--> Clos2μ --optimize--> Clos2μ
-           --concretize--> Clos3μ --delay--> Clos4μ --globalize--> Clos5μ --rco--> Monμ
+    ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
+           --concretize--> EnvClosμ --delay--> FlatClosμ --globalize--> GlobalFunμ --rco--> Monμ
            --lift locals--> Impμ --explicate control--> CFGμ
            --select instructions--> X86μ
 
   as the typed pipeline's (Compiler/Pipeline.agda), without cast insertion:
-  compile₄ goes to Clos4μ, compile to Clos5μ, and compile-mon,
+  compile₄ goes to FlatClosμ, compile to GlobalFunμ, and compile-mon,
   compile-imp, compile-cfg and compile-x86 continue. A program is a
   closed term of any type, and each compiled program has its type.
 
@@ -18,8 +18,8 @@ module Mu.Compiler.Pipeline where
 
 open import Mu.Language.Type using (Type)
 import Mu.Language.ISWIM as ISWIMμ
-import Mu.Language.Clos4 as Clos4μ
-import Mu.Language.Clos5 as Clos5μ
+import Mu.Language.FlatClos as FlatClosμ
+import Mu.Language.GlobalFun as GlobalFunμ
 import Mu.Language.Mon as Monμ
 import Mu.Language.Imp as Impμ
 import Mu.Language.CFG as CFGμ
@@ -37,10 +37,10 @@ open import Mu.Compiler.Select using (select)
 
 open import Data.List using ([])
 
-compile₄ : ∀ {A : Type} → ISWIMμ.Tm [] A → Clos4μ.Tm [] A
+compile₄ : ∀ {A : Type} → ISWIMμ.Tm [] A → FlatClosμ.Tm [] A
 compile₄ M = delay-program (concretize-program (optimize-program (enclose (simplify M))))
 
-compile : ∀ {A : Type} → ISWIMμ.Tm [] A → Clos5μ.Program A
+compile : ∀ {A : Type} → ISWIMμ.Tm [] A → GlobalFunμ.Program A
 compile M = globalize (compile₄ M)
 
 compile-mon : ∀ {A : Type} → ISWIMμ.Tm [] A → Monμ.Program A

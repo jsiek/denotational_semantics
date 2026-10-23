@@ -1,11 +1,11 @@
 {-
 
-  Concretize (Clos2μ → Clos3μ), as typed concretize
+  Concretize (Closμ → EnvClosμ), as typed concretize
   (Compiler/Concretize.agda): each closure stores its free variables in
   one tuple, and inside its code the free variable i becomes get i of
   that tuple (variable S Z of the code).
 
-  The pass maps each Clos2μ variable to where it lives in Clos3μ (Ref):
+  The pass maps each Closμ variable to where it lives in EnvClosμ (Ref):
   a variable, or a component of a tuple held in a variable.
 
 -}
@@ -13,8 +13,8 @@
 module Mu.Compiler.Concretize where
 
 open import Mu.Language.Type
-open import Mu.Language.Clos2
-import Mu.Language.Clos3 as T
+open import Mu.Language.Clos
+import Mu.Language.EnvClos as T
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 
 open import Data.List using ([]; _∷_)

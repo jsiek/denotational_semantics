@@ -1,7 +1,7 @@
 {-
 
-  Soundness of the X86μ interpreter (Mu/Semantics/Interp/X86.agda)
-  with respect to the graph model (Mu/Semantics/Graph/X86.agda): what
+  Soundness of the X86μ interpreter (Mu/Semantics/ClockedInterpreters/X86.agda)
+  with respect to the graph model (Mu/Semantics/GraphModel/X86.agda): what
   the interpreter returns, at any clock, is in the denotation of the
   program, for a table that is consistent (cT) and contains the code of
   each definition interpreted with the whole table (closed), as the
@@ -9,9 +9,9 @@
   runs a definition with the whole table, the semantics with the table
   of the older ones. And the interpreter never errs.
 
-  As for the X86μ machine (Mu/proof/Adequacy/CEK/X86Soundness.agda), a
+  As for the X86μ machine (Mu/proof/Adequacy/AbstractMachines/X86Soundness.agda), a
   location (a register or a slot, numbered as in 𝓛) denotes not the
-  whole meaning 𝒱 v of the value v it holds (Clos5Values.agda) but a
+  whole meaning 𝒱 v of the value v it holds (GlobalFunValues.agda) but a
   finite part of it (an approximation, Apx), as the semantics binds a
   slot to a finite set and calls code on finite parts of %rdi and %rsi.
   But the proof is by induction on the clock, the blocks and the
@@ -41,8 +41,8 @@ open import Mu.Language.X86
 open import Mu.Framework.AllUtil using (All; lookup)
 open import Framework.Membership using (_∋_)
 open import proof.Framework.GraphModel.SetsAsPredicates using (_⊆_)
-open import Mu.proof.Semantics.Graph.Ops using (ConT; tables)
-open import Mu.Semantics.Graph.X86 using (codeₜ)
+open import Mu.proof.Semantics.GraphModel.Ops using (ConT; tables)
+open import Mu.Semantics.GraphModel.X86 using (codeₜ)
 
 module Mu.proof.Adequacy.X86Soundness {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ)
   (cT : ConT (tables codeₜ ds)) (closed : ∀ {s} (f : Σ ∋ s) → codeₜ (tables codeₜ ds) (lookup ds f) ⊆ tables codeₜ ds f) where
@@ -59,18 +59,18 @@ open import proof.Framework.GraphModel.Ops
   renaming (car to carD; cdr to cdrD; proj to projD)
 open import proof.Framework.GraphModel.Env using (Env; _⊆ₑ_; •-~)
 open import proof.Semantics.Graph.Prim using (primD; primD-mono)
-open import Mu.proof.Semantics.Graph.Ops using (Table; init)
-open import Mu.proof.Semantics.Graph.CFG using (Meanings; drop; drop-mono; 𝒜-mono)
-open import Mu.Semantics.Graph.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs; RegsD; Kont)
+open import Mu.proof.Semantics.GraphModel.Ops using (Table; init)
+open import Mu.proof.Semantics.GraphModel.CFG using (Meanings; drop; drop-mono; 𝒜-mono)
+open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs; RegsD; Kont)
   renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to runₛ)
-open import Mu.Semantics.Interp.Clos5 using (module Vals)
-open import Mu.Semantics.Interp.X86
+open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import Mu.Semantics.ClockedInterpreters.X86
 open import proof.Semantics.Interp.Clock using (Result)
 open import Framework.Lookup using (forget)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import Mu.Framework.AllUtil using ([]; _∷_; pos)
 open import Mu.proof.Adequacy.X86Common using (OpR; none; agree)
-open import Mu.proof.Adequacy.Clos5Values using (module Den; pair-inv; inl-inv; inr-inv; 𝒯L[]-inv)
+open import Mu.proof.Adequacy.GlobalFunValues using (module Den; pair-inv; inl-inv; inr-inv; 𝒯L[]-inv)
 open import Mu.proof.Adequacy.Tuples using (At; 𝒯L; At-length)
 open import Mu.proof.Adequacy.Soundness using (Holds; timeout; ret; bind-holds; holds-map)
 
