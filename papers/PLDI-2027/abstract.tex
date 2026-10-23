@@ -3,8 +3,8 @@
 
 Denotational semantics promises compositional, equational reasoning
 about programs, and compiler correctness was among its first
-applications, yet verified compilers today are almost entirely
-operational. The denotational compiler proofs in the literature either
+applications, yet verified compilers today use operational
+semantics. The denotational compiler proofs in the literature either
 (1) are limited to source languages that are first-order or strongly
 normalizing, (2) compile to target languages that treat closures as
 primitive values and so avoid closure conversion, or (3) prove only
@@ -12,19 +12,18 @@ semantic preservation and not reflection, which does not rule out a
 diverging program compiling to one that terminates. We use a
 denotational semantics based on a graph model to prove a compiler
 correct, from a call-by-value $\lambda$-calculus with iso-recursive
-types (so it supports general recursion and admits divergence),
-through closure conversion, to a typed assembly language. The proof is
-total: the compiler preserves and reflects divergence. We prove most
-passes correct by an equation between the denotations of a program
+types, through closure conversion, to a typed assembly language. The
+proof is total: the compiler preserves and reflects divergence. We
+prove most passes correct by an equation between the denotations
 before and after the pass. The exception is the step of closure
 conversion that lowers closures to pairs of code and environment: its
 reflection direction needs a new kind of logical relation on
 denotations, which we call \emph{approximant logical relations}. We
-then prove the same compiler correct with Scott domains in place of the
-graph model, which gives a second denotational proof of closure
+then prove the same compiler correct with Scott domains in place of
+the graph model, which gives a second denotational proof of closure
 conversion that preserves and reflects divergence. There, the lowering
-of closures needs a logical relation defined by recursion on the stages
-of the domain. We mechanize both proofs in Agda.
+of closures needs a logical relation defined by recursion on the
+stages of the domain. We mechanize both proofs in Agda.
 
 To compare these denotational approaches with operational ones, we
 prove the same compiler correct three more times and compare the sizes
