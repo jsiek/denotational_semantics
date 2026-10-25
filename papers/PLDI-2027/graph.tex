@@ -66,8 +66,7 @@ functions, then how it handles recursion and divergence, and then why
 we require consistency, which rules out sets of elements that cannot
 all describe the same value.  Figure~\ref{fig:graph-ops} defines the elements and the operators on sets of elements from which we build the semantics of all our languages.  We end
 this section with the properties of the semantics that our proofs rely
-on, including a $\beta$-law, and with our reasons for choosing a graph
-model over traditional domain theory.
+on, including a $\beta$-law.
 
 \paragraph{Functions as tables}
 
@@ -186,19 +185,3 @@ similarly for a function of two sets.
   $F(T, E) \subseteq (\Lambda(\mlam{X} \Lambda(\mlam{Y} F(X, Y))) \app T) \app E$.
 \end{enumerate}
 \end{lemma}
-
-\paragraph{Why a graph model}
-
-We originally chose a graph model to keep the mechanization small. The
-graph model, its operators, and the rest of the language-independent
-infrastructure we developed is 1,544 lines of Agda.  It imports only
-Agda's standard library and checks in safe mode.
-%
-The Scott-domain proof of the same compiler
-(Section~\ref{sec:evaluation}) uses 1,507 lines of infrastructure that we developed and imports 6,327 lines of domain theory, on dcpos and lifting, from the TypeTopology repository~\citep{Escardo:TypeTopology} (Table~\ref{tab:infra}), along with about 19,600 lines of its general foundations. The Scott-domain theorems assume propositional truncation and two
-extensionality principles.
-%
-\citet{Benton:2010aa} report around 4,400 lines of Coq for their
-domain theory.
-
-
