@@ -5,17 +5,18 @@
 
 Our main result is a denotational proof, in two models, that closure
 conversion preserves and reflects the meaning of programs, divergence
-included, for a language with general recursion. For reflection in the
-graph model, we introduced
-the approximant logical relation, which relates a finite list of target
-elements to the whole source denotation and recurses on the depth of
-that list. With it, the graph-model proof of a ten-pass compiler,
-mechanized in Agda, consists of short equational calculations for the
-nine passes that keep the representation of values and one relational
-proof for the step of closure conversion that lowers closures to pairs
-of code and environment, which is several times the size of the operational proofs of that
-step. With Scott domains, the same compiler proof needs a relation
-defined by recursion on the stages of the domain, and it is 1.4 times
-the size of the graph-model proof. In future work we plan to report on a
-dynamically typed variant of the compiler and to repeat the comparison
-in Rocq or Lean.
+included, for a language with general recursion; we extend it to a
+ten-pass compiler down to assembly and mechanize it in Agda.
+Comparing it with operational proofs of the same compiler shows a
+split by the kind of pass. Where a pass keeps the representation of
+values, its denotational proof is an equation between meanings, and
+the graph-model proofs tend to be smaller than or close to the
+operational ones; for the source optimizer, the graph-model proof is
+the smallest of the five. Where a pass changes that representation, as
+the lowering of closures does, reflection needs a relation between
+denotations, and the operational proofs, which follow the run of the
+target and get reflection from determinism, are several times smaller.
+Not counting infrastructure, the clocked interpreters give the smallest
+proof, the graph model the second, and Scott domains the fourth. In
+future work we plan to report on a dynamically typed variant of the
+compiler and to repeat the comparison in Rocq or Lean.
