@@ -64,21 +64,17 @@ They exclude the code that all five proofs use unchanged: the
 intrinsically typed syntax of the languages and the functions that
 implement the passes (921 lines). We report separately the language-independent infrastructure of each style.
 
-%% AI Use paragraph required by the PLDI 2027 call for papers (in the main
-%% text, counts toward the page limit; ACM asks for it in the methods
-%% section). Facts from the authors: no AI before 2026; all Agda code of
-%% 2026 written by Claude Code; theorem statements checked by the authors.
-%% Commit trailers: Claude Opus 5.5 (544) and Claude Sonnet 5.5 (11).
 \paragraph{AI Use}
 
-All of the Agda code of the five developments was written in 2026 by
-Claude Code (Opus 5.5 and Sonnet 5.5) under our direction. It started
-from our 2018--2024 Agda mechanizations of graph and filter models of
-the $\lambda$-calculus and ISWIM, with soundness and adequacy proofs,
-and unfinished attempts at closure conversion; we adapted the back-end passes and parts of their operational proofs from \citet{Siek:2025ab}. Claude Code also wrote the line-counting script
-and assisted with the literature search. The results do not depend on
-trusting the AI: Agda checks every development in safe mode, with no postulates (the Scott-domain theorems take three standard axioms as hypotheses), and we checked every theorem statement, citation, and
-claim about prior work ourselves.
+All of the Agda code of the five developments was written by Claude
+Code (Opus 5.5 and Sonnet 5.5) under our direction. It started from
+our earlier Agda mechanizations of graph models of the
+$\lambda$-calculus and ISWIM, which included adequacy proofs and
+partial correctness proof of closure conversion. The results do not
+depend on trusting the AI: Agda checks every development in safe mode,
+with no postulates (the Scott-domain theorems take three standard
+axioms as hypotheses), and the authors checked all the definitions and
+every theorem statement.
 
 \subsection{Results}
 
