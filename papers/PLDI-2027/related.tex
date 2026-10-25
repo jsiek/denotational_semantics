@@ -57,36 +57,32 @@ simulations.
 \paragraph{Relations between denotations}
 
 Relating two denotational semantics of one language is an old problem.
-The tower $\ALR_0, \ALR_1, \ldots$ of the approximant logical relation
-(Section~\ref{sec:approx-lr}) has the same shape as the one that
-\citet{Reynolds:1974aa} used to relate the direct and continuation
-semantics of a language. He built his relation stage by stage along the
-inverse-limit construction of the domains
-\citep{Scott:1971aa,Smyth:1982aa}. His index ranges over the stages of
+Our Scott-domain relation for \pass{delay}
+(Section~\ref{sec:scott-delay}) follows \citet{Reynolds:1974aa}, who
+related the direct and continuation semantics of a language by a
+relation built stage by stage along the inverse-limit construction of
+the domains \citep{Scott:1971aa}. His index ranges over the stages of
 both domains, and his relation is the intersection over all stages.
-Our index bounds only the depth of the finite target side, and depth
-irrelevance (Lemma~\ref{lem:depth-irrelevant}) makes an intersection
-unnecessary. Our Scott-domain relation for \pass{delay}
-(Section~\ref{sec:scott-delay}) also recurses on stages, but on the
-stages of one side only, and it relates the approximation to the
-whole other value. \citet{Nielsen:2000aa} relates the denotational meanings of a
-program and its defunctionalization with a type-indexed relation. As in
-our preservation relation, his function clause relates a function to a
-closure whose calls give related results, and $\bot$ is related to every
-value. His source has no recursive types, so recursion on types
-suffices, and he proves only preservation; our reflection relation, with
-its calls across stages, has no counterpart in his proof. Later work related two semantics with inclusive predicates
+Ours recurses on the stages of one side only and relates each
+approximation to the whole other value. The approximant logical
+relation (Section~\ref{sec:approx-lr}) has the same shape, but its
+index bounds the depth of finite elements of the target side, and
+depth irrelevance (Lemma~\ref{lem:depth-irrelevant}) makes an
+intersection unnecessary. \citet{Nielsen:2000aa} relates the
+denotational meanings of a program and its defunctionalization with a
+type-indexed relation whose function clause, like that of our
+preservation relation, relates a function to a closure whose calls
+give related results. His source has no recursive types, so recursion
+on types suffices, and he proves only preservation. Later work related
+two semantics with inclusive predicates
 \citep{Milne:1976aa,Stoy:1977aa}, finitary projections
 \citep{Mulmuley:1987aa}, or types \citep{Meyer:1985aa,Filinski:2007aa}.
 \citet{Pitts:1996aa} showed that a relation specified by a
 mixed-variance equation over a recursively defined domain exists and
-is unique, because the domain is the minimal invariant of its defining
-functor. His method did not apply directly to \pass{delay} in our Scott-domain proof (Section~\ref{sec:scott-delay}). Indexing a relation by
-finite elements is common in adequacy proofs, which relate a
-denotation to syntax: \citet{Winskel:1993aa} indexes by the size of
-tokens of an information system, \citet{Abramsky:1990vv} by formulas of
-a domain logic, and \citet{Siek:2017ab} and \citet{Wadler:2020aa} by
-finite elements of a graph or filter model. Step-indexed
+is unique, but his method does not apply directly to \pass{delay}
+(Section~\ref{sec:scott-delay}). Adequacy proofs, which relate a
+denotation to syntax, often index a relation by finite elements
+\citep{Winskel:1993aa,Abramsky:1990vv,Siek:2017ab}. Step-indexed
 \citep{Appel:2001aa,Ahmed:2006aa} and guarded
 \citep{Mogelberg:2016aa} relations are the operational and synthetic
 alternatives. To our knowledge, the approximant logical relation is
