@@ -130,44 +130,25 @@ with the environment of another.
 
 A relation for reflection relates a source side to a target side, and
 each side can be a single graph element, a finite list of elements, or
-a set that may be infinite. Of these nine combinations, we tried three. The following reasons rule out all but one.
+a set that may be infinite. Of these nine combinations, the following
+reasons rule out all but one (Appendix~\ref{app:alr-example} gives
+examples and the variants we tried in Agda).
 \begin{itemize}
 \item \emph{A single target element}, against any source side, fails
-  because of the mixing of $\car$ and $\cdr$: the result of a call
-  combines the code entry of one pair with the environment of another,
-  so no single pair accounts for it. A clause for one pair that
-  accepted environments from anywhere would instead have to account
-  for junk entries such as the one for $[2]$ above. We tried a single
-  element against a single element, and one target element inside its
-  whole target set, where the function case must relate the whole
-  argument set, which cannot shrink to match the index.
+  because a call combines the code entry of one pair with the
+  environment of another, so no single pair accounts for its result.
 \item \emph{A single source element or a finite source list}, against
-  any target side, fails in the function case. The relation must hold
-  for every source argument set $E$ that is related to the target
-  arguments, and there are infinitely many such sets with no element
-  in common, so a finite source side cannot have, for each of them, an
-  entry $V \mapsto w$ with $V \subseteq E$. For example, a target closure
-  that shows no usable code entry is related to every nonempty source
-  set, such as the singleton of $[n] \mapsto n$ for each $n$, and no
-  finite source side for $\lambda f.\,f$ serves them all; we check this
-  case in Agda.
-\item \emph{Whole denotations on both sides}, which we also tried,
-  handle the mixing. But the function case uses the relation in
-  negative position, and nothing decreases there, since a whole
-  denotation can have elements of every depth. A well-founded definition
-  would need a later modality, which a denotational semantics has no
-  step to discharge, or a construction by stages along a domain built
-  as a limit, which is what our Scott-domain proof does
-  (Section~\ref{sec:evaluation}).
-\item \emph{A target set of bounded depth}, possibly infinite, against
-  the source denotation, gives a well-founded definition by
-  recursion on the bound. But the target denotation is unbounded, and
-  the call case fails for a bounded piece of it: its
-  outputs can come from code entries whose arguments have any depth,
-  so the pairs that produce them have no bound. The argument succeeds
-  for finitely many outputs at a time, and we show in Agda, by
-  induction on the bound, that the relation holds on a bounded set
-  exactly when it holds on each finite sublist.
+  any target side, fails in the function case: infinitely many related
+  source argument sets have no element in common, so no finite source
+  side has an entry for each of them.
+\item \emph{Whole denotations on both sides} handle the mixing, but the
+  function case uses the relation in negative position, where nothing
+  decreases. A well-founded definition would need a later modality or
+  a construction by stages, which is what our Scott-domain proof does
+  (Section~\ref{sec:scott-delay}).
+\item \emph{A target set of bounded depth} against the source
+  denotation is well founded, but the target denotation is unbounded,
+  and the outputs of a call can come from code entries of any depth.
 \end{itemize}
 What remains is a finite list of target elements against the whole
 source denotation. Recursion on types, as in the proofs of

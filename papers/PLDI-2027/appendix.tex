@@ -1122,3 +1122,32 @@ $\cdr(V') = \{9\}$, so $V'$ has no usable entry, clause~3 asks
 nothing, and $D \ALR V'$ holds although $3 \notin D \app E$. Both
 $V$ and $V'$ are lists of elements of the target closure, which pairs
 every entry of the code with the environment $9$.
+
+\paragraph{The shapes that fail}
+
+Section~\ref{sec:approx-lr} rules out all but one of the nine
+combinations of a source side and a target side. The details follow.
+
+\emph{A single target element.} A clause for one pair that accepted
+environments from anywhere would have to account for junk entries such
+as the code entry for $[2]$ in the example above. We tried two
+variants in Agda: a single element against a single element, and one
+target element inside its whole target set. In the second, the
+function case must relate the whole argument set, which cannot shrink
+to match the index.
+
+\emph{A single source element or a finite source list.} A target
+closure that shows no usable code entry is related to every nonempty
+source set, such as the singleton of $[n] \mapsto n$ for each $n$, and
+no finite source side for $\lambda f.\,f$ has an entry for all of them;
+we check this case in Agda.
+
+\emph{Whole denotations on both sides.} A later modality would need a
+step to discharge, which a denotational semantics does not have; the
+Scott-domain proof instead builds its relation by stages along the
+bilimit (Appendix~\ref{app:scott-delay}).
+
+\emph{A target set of bounded depth.} The argument for a call succeeds
+for finitely many outputs at a time. We show in Agda, by induction on
+the bound, that the relation holds on a bounded set exactly when it
+holds on each finite sublist.
