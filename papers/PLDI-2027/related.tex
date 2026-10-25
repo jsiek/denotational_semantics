@@ -9,7 +9,10 @@
 \section{Related Work}
 \label{sec:related}
 
-We first place our proof among compiler-correctness proofs by their semantic style, then discuss operational proofs of closure conversion, relations between denotations, graph models and consistency, and comparisons of semantic styles.
+The introduction discusses the work closest to ours. This section adds
+compiler proofs grouped by semantic style, further operational proofs
+of closure conversion, relations between denotations, graph models,
+and comparisons of semantic styles.
 
 \paragraph{Semantic styles in compiler correctness}
 
@@ -41,20 +44,15 @@ first-order compiler.
 
 \paragraph{Operational proofs of closure conversion}
 
-The introduction discusses the denotational proofs of closure
-conversion and defunctionalization that come closest to ours; the
-proofs below are operational. Typed closure conversion represents a
-closure as a package of an existential type, as our FlatClos does, and
-\citet{Minamide:1996ys} prove it correct with logical relations between
-source and target terms. \citet{Ahmed:2008aa} show that it preserves
-observational equivalence, and \citet{Bowman:2018aa} extend it to the
-calculus of constructions. \citet{Pottier:2006aa} prove that defunctionalization preserves convergence and divergence with a simulation. Proofs of closure conversion for languages with
-recursion relate operational semantics in three ways.
-\citet{Wand:1994aa} prove the partial correctness of lightweight
-closure conversion, for terminating programs, with a simulation on
-paper, and \citet{Dargaye:2009aa} mechanizes a simulation proof;
-\citet{Hur:2011aa} use step-indexed Kripke logical relations; and
-\citet{Neis:2015aa} use parametric inter-language simulations.
+Typed closure conversion represents a closure as a package of an
+existential type, as our FlatClos does. \citet{Minamide:1996ys} prove
+it correct with logical relations between source and target terms,
+\citet{Ahmed:2008aa} show that it preserves observational equivalence,
+and \citet{Bowman:2018aa} extend it to the calculus of constructions.
+\citet{Pottier:2006aa} prove that defunctionalization preserves
+convergence and divergence with a simulation. The simulation proof of \citet{Wand:1994aa} covers only terminating
+programs, and \citet{Neis:2015aa} use parametric inter-language
+simulations.
 
 \paragraph{Relations between denotations}
 
