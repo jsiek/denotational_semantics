@@ -234,7 +234,7 @@ Scott value is infinite, so the relation for \pass{delay} cannot recurse
 on values. We built it stage by stage along the bilimit, as
 \citet{Reynolds:1974aa} did, with one relation, parameterized by the
 direction, for both halves. The proof must show that each stage is a proposition, downward closed, admissible, and preserved by the maps
-between stages: 174 of the 838 lines of the proof of \pass{delay}.
+between stages: 174 of the 723 lines of the proof of \pass{delay}.
 Second, the method of \citet{Pitts:1996aa} does not apply directly,
 because \pass{delay} turns a function into a pair of code and
 environment, so the closure clause looks three levels into the target
@@ -293,7 +293,7 @@ Like our graph model, the Scott-domain semantics uses one universal
 domain of tagged values, as \citet{Milner:1978kh} and
 \citet{MacQueen:1986aa} did. A domain for each type, more usual for
 typed languages \citep{Benton:2009ab,Dockins:2014aa}, would avoid the
-case analysis on tags, a twelfth of the Scott-domain proof of
+case analysis on tags, a tenth of the Scott-domain proof of
 \pass{delay}, but would need a domain equation for each recursive type
 and would leave the stage-indexed relations in place.
 
