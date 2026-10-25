@@ -8,25 +8,24 @@
 \label{sec:intro}
 
 
-Denotational semantics offers a recipe for compiler correctness: the
-meaning of a program is a mathematical object, so a compiler pass is
+Denotational semantics offers a crisp recipe for compiler correctness:
+the meaning of a program is a mathematical object, a compiler pass is
 correct when the meaning of a program before the pass equals its
-meaning afterward, and the proof is equational reasoning.  This recipe
-guided early denotational proofs of compiler correctness
+meaning afterward, and the proof is by equational reasoning.  This
+recipe was used in early denotational proofs of compiler correctness
 \citep{Polak:1981aa,Clinger:1984aa}, but becomes difficult when
 compilation changes the representation of program values. For example,
-compiling first-class, lexically scoped functions to a first-order
-target language, such as assembly, requires \emph{closure conversion},
-which replaces each function with a pair of a code pointer and the
-values of its free variables, and replaces each call with code that
-takes the pair apart and jumps to the code pointer. It therefore turns
-functions into data, and a correctness proof must relate the two
-different representations.
+compiling lexically scoped functions to a first-order target language,
+such as assembly, requires \emph{closure conversion}, which replaces
+each function with a pair of a code pointer and the values of its free
+variables, and replaces each call with code that takes the pair apart
+and jumps to the code pointer. It therefore turns functions into data,
+and a correctness proof must relate the two different representations.
 
 A correct compiler must both preserve the behavior of the source
-program and reflect the behavior of the compiled program. To be
-precise, \emph{semantic preservation} says that if the source program
-produces output, the target program produces the same output;
+program and reflect the behavior of the generated target program. To
+be precise, \emph{semantic preservation} says that if the source
+program produces output, the target program produces the same output;
 \emph{semantic reflection} says that if the target program produces
 output, the source programs produces the same output. By
 contraposition, reflection guarantees that a diverging source program
@@ -60,49 +59,44 @@ missing link is a new denotational result: closure conversion both
 preserves and reflects divergence for a higher-order language with
 general recursion. Our first model is a graph model, in which a
 program's denotation is a set of inductively defined \emph{graph
-elements}. Each graph element is a finite piece of evidence about the
+elements}. Each element is a finite piece of evidence about the
 program's behavior, the meaning of a function is a set of
 input--output entries, and a program that diverges produces no
 evidence, so its meaning is the empty set
-\citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq}. The key to the
-reflection direction is a new kind of relation between denotations, which we call
-an \emph{approximant logical relation}. Relating one target graph
-element to one source graph element fails because a target call takes
-the code and environment of a closure apart, from different pairs.
-Relating whole denotations on both sides instead leaves the function
-case, which uses the relation in negative position, with nothing to
-recurse on. Our key insight is that the target side should be finite
-and the source side should not: we relate a finite set of target graph
-elements (a finite approximation), which contains both halves of each
-call it describes, to the whole source denotation, and define the
-relation by recursion on the depth of the elements in the finite set.
-This definition is well founded without recursion on types or an index
-that counts steps of computation. Our second model uses Scott domains:
-a program denotes an element of a universal domain of tagged values,
-and divergence is its least element. Scott values are infinite, so the
-relation cannot recurse on finite elements. We define it instead by
-recursion on the stages of the bilimit that constructs the domain, as
-\citet{Reynolds:1974aa} did, with one relation for each direction; in
-the reflection direction, the relation must relate calls across stages
-(Section~\ref{sec:scott-delay}).
+\citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq}. The reflection
+direction uses a new kind of relation between denotations, which we
+call an \emph{approximant logical relation}.  Our key insight is to
+relate a finite set of target graph elements (a finite approximation)
+to a possibly infinite source denotation, and define the relation by
+recursion on the depth of the elements in the finite set
+(Section~\ref{sec:approx-lr}). Our second model uses Scott domains: a
+program denotes an element of a standard universal domain of tagged
+values, and divergence is its least element. Scott values are
+infinite, so a relation for the Scott domain cannot recurse on finite
+elements. We define the relation instead by recursion on the stages of
+the bilimit that constructs the domain
+(Section~\ref{sec:scott-delay}), an approach that
+\citet{Reynolds:1974aa} used to relate a direct sementics to a
+continuation semantics.
 
-We use this closure-conversion result in the correctness proof of a
-ten-pass compiler from a call-by-value $\lambda$-calculus with
-iso-recursive types, which we call \iswim, to a typed assembly
-language.  Recursive types let us write the call-by-value fixed-point
-combinator, so \iswim\ has general recursion and admits
-divergence. The compiler first applies a source-to-source optimizer
-modeled on the cp0 pass of Chez Scheme \citep{Waddell:1997fk}, then
-performs closure conversion in four passes, and finally uses five
-passes to make functions global, remove complex operands, lift locals,
-make control flow explicit, and select instructions. Every language in the
-compiler has a denotational semantics in each model. In both, we prove
-most passes correct by an equation between the denotations before and
-after the pass. RQ3 nevertheless has a negative answer. The pass that
-lowers closures to code and environment pairs, which we call
-\pass{delay}, does not yield to equational reasoning; its reflection
-proof uses the approximant logical relation in the graph model and the
-stage relation in Scott domains.
+We use these denotational closure-conversion results in two
+correctness proofs of a ten-pass compiler from a call-by-value
+$\lambda$-calculus with iso-recursive types, which we call \iswim, to
+a typed assembly language.  Recursive types let us write the
+call-by-value fixed-point combinator, so \iswim\ has general recursion
+and admits divergence. The compiler first applies a source-to-source
+optimizer modeled on the cp0 pass of Chez Scheme
+\citep{Waddell:1997fk}, then performs closure conversion in four
+passes, and finally uses five passes to make functions global, remove
+complex operands, lift locals, make control flow explicit, and select
+instructions. Every language in the compiler has a denotational
+semantics in each model. In both, we prove most passes correct by an
+equation between the denotations before and after the pass. RQ3
+nevertheless has a negative answer. The pass that lowers closures to
+code and environment pairs, which we call \pass{delay}, does not yield
+to equational reasoning; its reflection proof uses the approximant
+logical relation in the graph model and the stage relation in Scott
+domains.
 
 The whole-compiler correctness theorem states that the source and
 target denotations contain the same constants and are nonempty
@@ -161,11 +155,10 @@ of the same compiler: with abstract machines and simulations; with
 clocked interpreters and value relations; and with standard reduction
 semantics and simulations. Each of the five developments covers the
 ten-pass pipeline and proves an analogous correctness property in its
-own semantics. Earlier comparisons of
-semantic styles for compiler proofs cover a single phase or pass
-\citep{Owens:2016aa,Kahn:2025aa}; ours is, to our knowledge, the first
-on a compiler for a higher-order language down to assembly that
-includes a denotational style.
+own semantics. Earlier comparisons of semantic styles for compiler
+proofs cover a single phase or pass \citep{Owens:2016aa,Kahn:2025aa};
+ours is, to our knowledge, the first on a compiler for a higher-order
+language down to assembly.
 
 The comparison answers RQ2 affirmatively and explains, pass by pass,
 the mixed answer to RQ4. Where a pass keeps the representation of
@@ -191,19 +184,20 @@ Our contributions are:
 \input{contributions}
 
 Section~\ref{sec:compiler} presents the compiler and its languages.
-For space, the main text gives background only for the graph model
-(Section~\ref{sec:graph-models}) and presents only the graph-model
-proof in detail (Section~\ref{sec:compiler-proof}): the passes proved
-by an equation (Section~\ref{sec:equational}), \pass{delay} with the
+For space, the main text gives background for the graph model
+(Section~\ref{sec:graph-models}) and presents the graph-model proof in
+detail (Section~\ref{sec:compiler-proof}): the passes proved by an
+equation (Section~\ref{sec:equational}), \pass{delay} with the
 approximant logical relation (Section~\ref{sec:approx-lr}), and
 adequacy (Section~\ref{sec:adequacy}). Section~\ref{sec:scott-delay}
 summarizes the Scott-domain proof of \pass{delay}, and the appendices
-give its details. Section~\ref{sec:evaluation} compares the
-graph-model proof with four other proofs of the same compiler,
-Section~\ref{sec:related} discusses related work, and
-Section~\ref{sec:conclusion} concludes. The appendices give the
-graph-model semantics of every language, the passes, the remaining
-calculations, the other four semantics of the source and target
-languages, and the Scott-domain proof of \pass{delay}.
+give its details. Section~\ref{sec:evaluation} compares the five
+proofs of correctness for the same compiler, Section~\ref{sec:related}
+discusses related work, and Section~\ref{sec:conclusion}
+concludes. The appendices give the semantics of the source and target
+languages in each of the five semantics, it presents a graph-model
+semantics for all the intermediate languages, the defines every
+compiler pass, and gives the Scott-domain proof of correctness for the
+\pass{delay} pass.
 
 
