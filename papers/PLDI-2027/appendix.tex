@@ -955,7 +955,7 @@ environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
 \label{app:calculations}
 \agda{Mu/proof/Correctness/GraphModel/, one file per pass (EncloseCorrect.agda, ...)}
 
-This appendix gives the key case of the proofs of the six equational passes that Section~\ref{sec:equational} does not show, in the order of the pipeline. As there, each proof generalizes the equation to open terms under related environments, the other cases are congruences, and where a step needs a set to be nonempty we show the nonempty case.
+This appendix gives the key case of the proofs of the seven equational passes that Section~\ref{sec:equational} does not show, in the order of the pipeline. As there, each proof generalizes the equation to open terms under related environments, the other cases are congruences, and where a step needs a set to be nonempty we show the nonempty case.
 
 \paragraph{Enclose}
 
@@ -1077,6 +1077,32 @@ We show the first branch; the second is the same:
 \]}
 A further lemma says that blocks added later do not change the meaning
 of a label made earlier.
+
+\paragraph{Select instructions}
+
+The induction hypothesis says that a CFG tail $t$ means the same as
+its instructions $\pass{tail}(t)$, for any registers $R$ and flag $F$.
+A call $x \mathrel{:=} \kw{callc}\;y\;a;\; t$ writes the result
+$C = \sigma(y) \callop \mathcal{A}\den{a}\sigma$ to slot $x$. Let $s$ be
+the sequence $\kw{movq}\;\%\kw{rax}, x;\; \pass{tail}(t)$, let $R_C$
+hold $C$ in $\kw{rax}$, and let $R_1$ be $R$ with the code of the
+closure in $\kw{rax}$, its environment in $\kw{rdi}$, and the argument
+in $\kw{rsi}$:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{x \mathrel{:=} \kw{callc}\;y\;a;\; t}_{T,B}\,\sigma
+    & = & \Lambda(\mlam{X} \den{t}_{T,B}(\sigma|_x[x{:=}X])) \app C & \text{(meaning of assignment)}\\
+    & = & \Lambda(\mlam{X} \den{\pass{tail}(t)}(\sigma|_x[x{:=}X])\,R_C\,\{\langle\rangle\}) \app C & \text{(induction hypothesis for $t$)}\\
+    & = & \den{s}\,\sigma\,R_C\,\{\langle\rangle\} & \text{(meaning of a write to $x$)}\\
+    & = & \mathsf{guard}(C;\; \den{s}\,\sigma\,R_C\,\{\langle\rangle\}) & \text{(an application to $\emptyset$ is $\emptyset$)}\\
+    & = & \den{\kw{callq}\;\%\kw{rax};\; s}\,\sigma\,R_1\,F & \text{(meaning of $\kw{callq}$)}\\
+    & = & \den{\kw{fst}\;y,\%\kw{rax};\; \kw{snd}\;y,\%\kw{rdi};\; \kw{movq}\;a,\%\kw{rsi};\; s}\,\sigma\,R\,F & \text{(meaning of the loads)}
+\end{array}
+\]}
+The step for $\kw{callq}$ holds because $(\car(\sigma(y)) \app
+\cdr(\sigma(y))) \app \mathcal{A}\den{a}\sigma$ is the definition of
+$\sigma(y) \callop \mathcal{A}\den{a}\sigma$, which is $C$.
 
 \section{An Example of the Approximant Logical Relation}
 \label{app:alr-example}

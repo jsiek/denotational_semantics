@@ -48,10 +48,12 @@ translate most forms homomorphically, the case for such a form applies
 the same operator to equal arguments and is immediate. The real work
 is in the few cases that the pass changes, where an equation about the
 operators of the graph model replaces the source form with the target
-form. Below we show that case as a calculation for three representative
+form. Below we show that case as a calculation for two representative
 passes, with the justification of each step on the right;
 Appendix~\ref{app:calculations} gives the calculations for the other
-six. Where a step needs a set to
+seven, including \pass{select instructions}, whose key case turns a
+call into $\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and $\kw{callq}$
+instructions. Where a step needs a set to
 be nonempty, we show the nonempty case; otherwise both sides
 are empty.
 
@@ -101,32 +103,6 @@ $\kw{get}_i\,z$, and $\pi_{\mathsf{tup}_i}(\mathcal{T}(\vec{D}')) =
 D'_i = D_i$ when every $D'_i$ is nonempty.
 Lemma~\ref{lem:beta} needs the tuple $\mathcal{T}(\vec{D}')$ to be
 nonempty and consistent.
-
-\paragraph{Select instructions}
-
-The induction hypothesis says that a CFG tail $t$ means the same as
-its instructions $\pass{tail}(t)$, for any registers $R$ and flag $F$.
-A call $x \mathrel{:=} \kw{callc}\;y\;a;\; t$ writes the result
-$C = \sigma(y) \callop \mathcal{A}\den{a}\sigma$ to slot $x$. Let $s$ be
-the sequence $\kw{movq}\;\%\kw{rax}, x;\; \pass{tail}(t)$, let $R_C$
-hold $C$ in $\kw{rax}$, and let $R_1$ be $R$ with the code of the
-closure in $\kw{rax}$, its environment in $\kw{rdi}$, and the argument
-in $\kw{rsi}$:
-{\small
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \den{x \mathrel{:=} \kw{callc}\;y\;a;\; t}_{T,B}\,\sigma
-    & = & \Lambda(\mlam{X} \den{t}_{T,B}(\sigma|_x[x{:=}X])) \app C & \text{(meaning of assignment)}\\
-    & = & \Lambda(\mlam{X} \den{\pass{tail}(t)}(\sigma|_x[x{:=}X])\,R_C\,\{\langle\rangle\}) \app C & \text{(induction hypothesis for $t$)}\\
-    & = & \den{s}\,\sigma\,R_C\,\{\langle\rangle\} & \text{(meaning of a write to $x$)}\\
-    & = & \mathsf{guard}(C;\; \den{s}\,\sigma\,R_C\,\{\langle\rangle\}) & \text{(an application to $\emptyset$ is $\emptyset$)}\\
-    & = & \den{\kw{callq}\;\%\kw{rax};\; s}\,\sigma\,R_1\,F & \text{(meaning of $\kw{callq}$)}\\
-    & = & \den{\kw{fst}\;y,\%\kw{rax};\; \kw{snd}\;y,\%\kw{rdi};\; \kw{movq}\;a,\%\kw{rsi};\; s}\,\sigma\,R\,F & \text{(meaning of the loads)}
-\end{array}
-\]}
-The step for $\kw{callq}$ holds because $(\car(\sigma(y)) \app
-\cdr(\sigma(y))) \app \mathcal{A}\den{a}\sigma$ is the definition of
-$\sigma(y) \callop \mathcal{A}\den{a}\sigma$, which is $C$.
 
 \paragraph{The answer to RQ2}
 
