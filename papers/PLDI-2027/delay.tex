@@ -400,7 +400,10 @@ $e$ and then to the argument $a$. The preservation clause has the
 shape of the relation that \citet{Nielsen:2000aa} used for
 defunctionalization. The reflection clause relates calls across
 stages: a call of a pair at stage $m + 2$ applies its code twice and
-shows its result only at stage $m$ ($\mathit{call}_m$). The junk of
+shows its result only at stage $m$ ($\mathit{call}_m$). Because the
+closure clause looks three levels into the target domain but only one
+into the source, the method of \citet{Pitts:1996aa} does not apply
+directly. The junk of
 Section~\ref{sec:approx-lr} does not arise, because a Scott closure is
 a single pair, and a call takes the code and the environment from the
 same pair. In exchange, the proof must show that every stage relation
