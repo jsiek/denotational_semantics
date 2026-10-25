@@ -193,15 +193,16 @@ global definition $d_k$, and each occurrence of the code into a
 reference $f_k$ to it, so a GlobalFun program is a list of function
 definitions and a main term. The pass \pass{remove complex operands
   (RCO)} binds each operand that is not atomic to a variable with
-$\kw{let}$, so the operands of every operation in Mon are atomic.
-The atomic terms are variables, constants, and function names.
-The \pass{lift locals} pass gives each variable a fixed location in the
+$\kw{let}$, so the operands of every operation in Mon are atomic.  The
+atomic terms are variables, constants, and function names.  The
+\pass{lift locals} pass gives each variable a fixed location in the
 function's stack frame, called a \emph{slot}, numbered by how many
-variables are bound before it. We keep writing $x$ and $y$ for these
-variables, but from Imp on they stand for slots, and each $\kw{let}$
-becomes an assignment to the next slot. The
-\pass{explicate control} pass turns the nested $\kw{case}$s of Imp
-into a control-flow graph. A CFG program has a function body for each global definition and for the main program. A body consists of numbered blocks and a starting tail, and a block may jump only to blocks numbered before it, so control flow is acyclic.
+variables are bound before it. The \pass{explicate control} pass turns
+the nested $\kw{case}$s of Imp into a control-flow graph. A CFG
+program has a function body for each global definition and for the
+main program. A body consists of numbered blocks and a starting tail,
+and a block may jump only to blocks numbered before it, so control
+flow is acyclic.
 
 Finally, \pass{select instructions} produces x86$\mu$, a typed assembly
 language in the style of TAL \citep{Morrisett:1999fk} with the
@@ -212,13 +213,12 @@ names of definitions, and registers, and writes to a destination $d$,
 which is a register or a slot. The compiled code uses the registers to stage arithmetic and calls. The instruction $\kw{alloc}$ allocates an object
 $o$: a closure ($\kw{pair}$), a tuple, or an injection. A call
 $\kw{callc}\;x\;a$ of the closure in slot $x$ on the argument $a$
-becomes the following instructions:
-\[
-  \kw{fst}\;x, \%\kw{rax};\quad
-  \kw{snd}\;x, \%\kw{rdi};\quad
-  \kw{movq}\;a, \%\kw{rsi};\quad
-  \kw{callq}\;\%\kw{rax}
-\]
+becomes the instruction sequence 
+$\kw{fst}\;x, \%\kw{rax};\;\;
+ \kw{snd}\;x, \%\kw{rdi};\;\;
+ \kw{movq}\;a, \%\kw{rsi};\;\;
+ \kw{callq}\;\%\kw{rax}
+$.
 The first two instructions load the code and the environment of the
 closure, the third puts the argument in place, and the call leaves its
 result in $\kw{rax}$. The type system
