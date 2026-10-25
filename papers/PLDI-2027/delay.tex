@@ -25,7 +25,7 @@ with free variables $z$ for the environment and $y$ for the argument,
 and its meaning is a curried function of the environment $X$ and then
 the argument $Y$. The meaning of the closure is this function applied
 to the tuple of the captured values $\vec{M}$. An application $L\;M$
-means function application:
+applies a function:
 \[
 \begin{array}{rcl}
     \den{\kw{clos}\;(z, y.\,N)\;\vec{M}}\rho & = &
@@ -144,8 +144,8 @@ examples and the variants we tried in Agda).
 \item \emph{Whole denotations on both sides} handle the mixing, but the
   function case uses the relation in negative position, where nothing
   decreases. A well-founded definition would need a later modality or
-  a construction by stages, which is what our Scott-domain proof does
-  (Section~\ref{sec:scott-delay}).
+  a construction by stages, as in our Scott-domain proof
+(Section~\ref{sec:scott-delay}).
 \item \emph{A target set of bounded depth} against the source
   denotation is well founded, but the target denotation is unbounded,
   and the outputs of a call can come from code entries of any depth.
