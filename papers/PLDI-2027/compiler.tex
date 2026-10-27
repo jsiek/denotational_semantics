@@ -138,7 +138,7 @@ with $x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})$.
 
 \paragraph{The optimizer}
 
-The first pass, \pass{simplify}, is a simplified version of the
+The first pass, \pass{simplify} (\S\ref{app:pass-simplify}), is a simplified version of the
 optimizer cp0 of Chez Scheme \citep{Waddell:1997fk}. It propagates
 known values, folds constants, reduces a
 $\kw{case}$, projection, or $\kw{unfold}$ of a known value, and
@@ -147,15 +147,15 @@ inlines small known functions.
 \paragraph{Closure conversion}
 
 The next four passes perform closure conversion. The \pass{enclose}
-pass turns each $\lambda$-abstraction into a closure
+pass (\S\ref{app:pass-enclose}) turns each $\lambda$-abstraction into a closure
 $\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$ of Clos, which binds a name
 $x_i$ for each captured value $M_i$ and the parameter $y$ in its code
 $N$, so the code is closed. The \pass{enclose} pass captures every
-variable in scope, and the \pass{optimize} pass then drops the
-captured values that the code does not use. The \pass{concretize} pass
+variable in scope, and the \pass{optimize} pass (\S\ref{app:pass-optimize}) then drops the
+captured values that the code does not use. The \pass{concretize} pass (\S\ref{app:pass-concretize})
 stores the captured values of a closure in a single environment tuple,
 so an EnvClos closure $\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds two variables in its code, the environment $z$ and the parameter $y$, and
-the code reads $x_i$ as $\kw{get}_i\,z$. The \pass{delay} pass then
+the code reads $x_i$ as $\kw{get}_i\,z$. The \pass{delay} pass (\S\ref{app:pass-delay}) then
 separates a closure into its code and its environment, translating
 from EnvClos to FlatClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is
 closed code of type $\kw{code}(\Delta; A \rightarrow C)$, which
@@ -188,23 +188,23 @@ environment and the argument $M$.
 
 \paragraph{The back end}
 
-The \pass{globalize} pass turns the code of every function into a
+The \pass{globalize} pass (\S\ref{app:pass-globalize}) turns the code of every function into a
 global definition $d_k$, and each occurrence of the code into a
 reference $f_k$ to it, so a GlobalFun program is a list of function
-definitions and a main term. The pass \pass{remove complex operands
-  (RCO)} binds each operand that is not atomic to a variable with
+definitions and a main term. The pass \pass{remove complex operands}
+(\pass{RCO}, \S\ref{app:pass-rco}) binds each operand that is not atomic to a variable with
 $\kw{let}$, so the operands of every operation in Mon are atomic.  The
 atomic terms are variables, constants, and function names.  The
-\pass{lift locals} pass gives each variable a fixed location in the
+\pass{lift locals} pass (\S\ref{app:pass-lift-locals}) gives each variable a fixed location in the
 function's stack frame, called a \emph{slot}, numbered by how many
-variables are bound before it. The \pass{explicate control} pass turns
+variables are bound before it. The \pass{explicate control} pass (\S\ref{app:pass-explicate}) turns
 the nested $\kw{case}$s of Imp into a control-flow graph. A CFG
 program has a function body for each global definition and for the
 main program. A body consists of numbered blocks and a starting tail,
 and a block may jump only to blocks numbered before it, so control
 flow is acyclic.
 
-Finally, \pass{select instructions} produces x86$\mu$, a typed assembly
+Finally, \pass{select instructions} (\S\ref{app:pass-select}) produces x86$\mu$, a typed assembly
 language in the style of TAL \citep{Morrisett:1999fk} with the
 registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
 and an abstract heap. Programs have the same structure as in CFG, except that a function

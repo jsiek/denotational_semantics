@@ -603,6 +603,7 @@ with one operand. The subsections follow the order of the pipeline; Sections~\re
 \]
 
 \subsection{\pass{simplify} (\iswim\ to \iswim)}
+\label{app:pass-simplify}
 \agda{Mu/Compiler/Simplify.agda (simplify)}
 
 %% agda/Mu/Compiler/Simplify.agda: Info, Known, self, info, under,
@@ -728,6 +729,7 @@ that is not a syntactic value is never substituted but stays bound by a
 $\kw{let}$.
 
 \subsection{\pass{enclose} (\iswim\ to Clos)}
+\label{app:pass-enclose}
 \agda{Mu/Compiler/Enclose.agda (enclose)}
 
 \pass{enclose} makes each function a closure that captures the variables in scope, in order:
@@ -738,6 +740,7 @@ $\kw{let}$.
 where $x_1, \ldots, x_k$ are the variables in scope.
 
 \subsection{\pass{optimize} (Clos to Clos)}
+\label{app:pass-optimize}
 \agda{Mu/Compiler/Optimize.agda (optimize-program)}
 
 \pass{optimize} removes the captured values that the code does not use.
@@ -755,6 +758,7 @@ does not use its name and the term is a variable, which is all that
 \]
 
 \subsection{\pass{concretize} (Clos to EnvClos)}
+\label{app:pass-concretize}
 \agda{Mu/Compiler/Concretize.agda (concretize-program)}
 
 Each closure stores its captured values in one tuple, bound to $z$ in
@@ -775,6 +779,7 @@ Under a $\kw{let}$ or $\kw{case}$ the bound variable maps to itself,
 and a program starts with the empty map.
 
 \subsection{\pass{delay} (EnvClos to FlatClos)}
+\label{app:pass-delay}
 \agda{Mu/Compiler/Delay.agda (delay-program)}
 
 A closure becomes a pair of its code and the tuple of its captured
@@ -788,6 +793,7 @@ values, and an application opens the closure and calls its code:
 \]
 
 \subsection{\pass{globalize} (FlatClos to GlobalFun)}
+\label{app:pass-globalize}
 \agda{Mu/Compiler/Globalize.agda (globalize)}
 
 The code of every function becomes a global definition, and the code
@@ -812,6 +818,7 @@ A_n$ (each under its binders $\bar{x}_i$):
 Each definition refers only to the definitions made before it.
 
 \subsection{\pass{remove complex operands} (GlobalFun to Mon)}
+\label{app:pass-rco}
 \agda{Mu/Compiler/RCO.agda (rco-program)}
 
 Every complex operand is bound to a fresh variable by a $\kw{let}$,
@@ -843,6 +850,7 @@ fresh variable:
 where $o$ ranges over the operations of Mon (Figure~\ref{fig:grammars}).
 
 \subsection{\pass{lift locals} (Mon to Imp)}
+\label{app:pass-lift-locals}
 \agda{Mu/Compiler/LiftLocals.agda (lift-program)}
 
 A $\kw{let}$ becomes an assignment to the next slot of the frame, and
@@ -866,6 +874,7 @@ the variables in scope:
 and every other form is a simple expression, unchanged.
 
 \subsection{\pass{explicate control} (Imp to CFG)}
+\label{app:pass-explicate}
 \agda{Mu/Compiler/Explicate.agda (explicate)}
 
 $\pass{tail}(e)$ translates $e$ in tail position, and
@@ -897,6 +906,7 @@ and $\pass{explicate}$ maps over the definitions and main expression of
 a program.
 
 \subsection{\pass{select instructions} (CFG to x86$\mu$)}
+\label{app:pass-select}
 \agda{Mu/Compiler/Select.agda (select)}
 
 The code of a simple expression $r$ is selected in continuation-passing
