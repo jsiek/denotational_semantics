@@ -194,7 +194,7 @@ empty frame, and nothing else set. The interpreter of a program is $k
 blocks $B$, where $m_0$ has an empty frame and nothing set.
 
 \begin{theorem}[Correctness, clocked interpreters]\label{thm:interp}
-Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the interpreter of \iswim\ on $M$ terminates with $n$ if and only if the interpreter of x86$\mu$ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, the two interpreters are equivalent for every closed term $M$.
+Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the interpreter of \iswim\ on $M$ terminates with $n$ if and only if the interpreter of x86$\mu$ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two interpreters are equivalent.
 \end{theorem}
 
 \subsection{Abstract Machines}
@@ -277,7 +277,7 @@ The machine of a program starts in $\mathit{run}(s, B, \mathit{halt},
 m_0)$ for the main function body $s$ with blocks $B$.
 
 \begin{theorem}[Correctness, abstract machines]\label{thm:machines}
-Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the machine of \iswim\ on $M$ terminates with $n$ if and only if the machine of x86$\mu$ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, the two machines are equivalent for every closed term $M$.
+Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the machine of \iswim\ on $M$ terminates with $n$ if and only if the machine of x86$\mu$ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two machines are equivalent.
 \end{theorem}
 
 \subsection{Reduction Semantics}
@@ -347,7 +347,7 @@ Appendix~\ref{app:machines} for them, and shares the proofs of
 abstract-machine development.
 
 \begin{theorem}[Correctness, reduction semantics]\label{thm:reduction}
-Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the reduction semantics of \iswim\ on $M$ terminates with $n$ if and only if the machine of x86$\mu$ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, the two are equivalent for every closed term $M$.
+Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the reduction semantics of \iswim\ on $M$ terminates with $n$ if and only if the machine of x86$\mu$ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two are equivalent.
 \end{theorem}
 
 \subsection{Scott Domains}
@@ -454,8 +454,8 @@ registers, and the flag.
 
 \begin{theorem}[Correctness, Scott domains]\label{thm:scott} Assume propositional truncation, function extensionality, and propositional extensionality. Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every constant $c$, $\den{M}\rho_0 = \up{(c, ())}$ if and only if $\den{\pass{compile}(M)} = \up{(c, ())}$.
 Moreover, $\den{M}\rho_0$ is defined if and only if
-$\den{\pass{compile}(M)}$ is defined. More generally, the same holds
-for every closed term $M$.
+$\den{\pass{compile}(M)}$ is defined. More generally, for every closed
+term $M$, the same holds.
 \end{theorem}
 
 \section{The Scott-Domain Proof of \pass{delay}}
@@ -592,11 +592,11 @@ For both directions and every $n$:
   $s \SR{\pm}{n} w$, then $s' \SR{\pm}{n} w$;
 \item it is admissible in $s$: if $s_i \SR{\pm}{n} w$ for every $i$
   of a directed family, then $\bigsqcup_i s_i \SR{\pm}{n} w$;
-\item it survives moving between stages: $s \SR{\pm}{n+1} w$ implies
-  $\pi_n(s) \SR{\pm}{n} w$, and $s \SR{\pm}{n} w$ implies
+\item it survives moving between stages: if $s \SR{\pm}{n+1} w$, then
+  $\pi_n(s) \SR{\pm}{n} w$, and if $s \SR{\pm}{n} w$, then
   $\varepsilon_n(s) \SR{\pm}{n+1} w$.
 \end{enumerate}
-Consequently, $s \SR{\pm}{n} w$ implies
+Consequently, if $s \SR{\pm}{n} w$, then
 $\varepsilon^\infty_n(s) \SRel{\pm} w$.
 \end{lemma}
 
@@ -617,8 +617,9 @@ If $d_i \sim d'_i$ for each $i$, then $\mathcal{T}(d_1, \ldots, d_n)
 \sim \mathcal{T}(d'_1, \ldots, d'_n)$, and likewise for
 $\pi_{\mathit{tup}_i}$, $\mathsf{inl}$, $\mathsf{inr}$,
 $\mathsf{prim}_p$, and $\mathsf{seq}$; constants and $\langle\rangle$
-are related to themselves; and $\mathsf{cases}$ preserves $\sim$ when
-its branches map related values to related values.
+are related to themselves. If the branches of $\mathsf{cases}$ map
+related values to related values, then $\mathsf{cases}$ preserves
+$\sim$.
 \end{lemma}
 
 The two languages differ only in closures and calls.
