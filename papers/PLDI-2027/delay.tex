@@ -297,9 +297,9 @@ $V \subseteq \rho'(x)$. We also require that both environments be
 consistent and that $\rho$ map every variable to a nonempty set.
 
 \begin{lemma}[Fundamental lemma]\label{lem:delay-fundamental}
-If $\rho$ and $\rho'$ are related, then $\den{M}\rho \ALR V$ for every
-term $M$ of EnvClos and every finite
-$V \subseteq \den{\pass{delay}(M)}\rho'$.
+Let $M$ be a term of EnvClos. If $\rho$ and $\rho'$ are related and
+$V$ is a finite subset of $\den{\pass{delay}(M)}\rho'$, then
+$\den{M}\rho \ALR V$.
 \end{lemma}
 
 The proof is by induction on $M$. Throughout, the second part of
