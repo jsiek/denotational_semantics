@@ -617,10 +617,10 @@ The pass works with \emph{syntactic values}, the terms
 A syntactic value is \emph{small} when it is a variable, a constant,
 $\langle\rangle$, or $\kw{inl}\;a$ or $\kw{inr}\;a$ of one of those;
 only small values are duplicated. On a term, \pass{simplify} returns a
-pair $(T, K)$ of the simplified term $T$ and what it knows about
-the term's value, $K$:
+pair $(T, \theta)$ of the simplified term $T$ and what it knows about
+the term's value, $\theta$:
 \[
-  K ::= V \mid \langle \lambda x.\, N, E \rangle \mid \bot
+  \theta ::= V \mid \langle \lambda x.\, N, E \rangle \mid \bot
 \]
 that is, a syntactic value $V$ that the term is known to
 equal, a function $\langle \lambda x.\, N, E \rangle$ (its body before
@@ -639,15 +639,15 @@ which inlines with one less:
   \pass{simp}_E(x) & = & E(x)\\
   \pass{simp}_E(\lambda x.\, N) & = &
     (\lambda x.\, T, \langle \lambda x.\, N, E \rangle)\\
-  & & \quad \text{where } (T, K) = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)\\
+  & & \quad \text{where } (T, \theta) = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)\\
   \pass{simp}_E(L\;M) & = & \pass{app}_E(L, \pass{simp}_E(M))\\
   \pass{simp}_E(c) & = & \mathit{self}(c)\\
   \pass{simp}_E(\kw{tuple}\;(M_1, \ldots, M_n)) & = &
     \mathit{info}(\kw{tuple}\;(T_1, \ldots, T_n))\\
-  & & \quad \text{where } (T_i, K_i) = \pass{simp}_E(M_i)\\
+  & & \quad \text{where } (T_i, \theta_i) = \pass{simp}_E(M_i)\\
   \pass{simp}_E(\kw{get}_i\,L) & = & \pass{get}_i(\pass{simp}_E(L))\\
   \pass{simp}_E(\kw{inl}\;M) & = & \mathit{info}(\kw{inl}\;T)
-    \quad \text{where } (T, K) = \pass{simp}_E(M)\\
+    \quad \text{where } (T, \theta) = \pass{simp}_E(M)\\
   & & \quad \text{and likewise for } \kw{inr} \text{ and } \kw{fold}\\
   \pass{simp}_E(\kw{case}\;L\;(x.\,M)\;(y.\,N)) & = &
     \pass{case}_E(\pass{simp}_E(L), x.\,M, y.\,N)\\
@@ -667,8 +667,8 @@ fuel left and its body, simplified at the call, has at most 24 nodes:
   \pass{call}^{\phi+1}((T, \langle \lambda x.\, N, E_f \rangle), I) & = & P
     \quad \text{if } |P| \leq 24, \text{ where } P = \pass{let}^{\phi}_{E_f}(x.\,N, I)\\
   & = & (T\;T', \bot)
-    \quad \text{otherwise, where } I = (T', K')\\
-  \pass{call}^{\phi}((T, K), (T', K')) & = & (T\;T', \bot)
+    \quad \text{otherwise, where } I = (T', \theta')\\
+  \pass{call}^{\phi}((T, \theta), (T', \theta')) & = & (T\;T', \bot)
     \quad \text{in all other cases}
 \end{array}
 \]
@@ -677,41 +677,41 @@ operand, by $\kw{let}$, $\beta$, or inlining, substitutes the operand
 if it is small, and otherwise keeps it bound by a $\kw{let}$:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{let}_E(x.\,N, (T', K)) & = & \pass{simp}_{E[x:=(T', K)]}(N)
+  \pass{let}_E(x.\,N, (T', \theta)) & = & \pass{simp}_{E[x:=(T', \theta)]}(N)
     \quad \text{if } T' \text{ is a small syntactic value}\\
   & = & (\kw{let}\;x = T'\;\kw{in}\;T, \bot)
     \quad \text{if } T' \text{ is another syntactic value,}\\
-  & & \quad \text{where } (T, K'') = \pass{simp}_{E[x:=(x, K)]}(N)\\
+  & & \quad \text{where } (T, \theta'') = \pass{simp}_{E[x:=(x, \theta)]}(N)\\
   & = & (\kw{let}\;x = T'\;\kw{in}\;T, \bot)
     \quad \text{otherwise,}\\
-  & & \quad \text{where } (T, K'') = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)
+  & & \quad \text{where } (T, \theta'') = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)
 \end{array}
 \]
 A projection, $\kw{unfold}$, $\kw{case}$, or primitive on a known value
 reduces:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{get}_i((T, \kw{tuple}\;(K_1, \ldots, K_n))) & = & \mathit{self}(K_i)
-    \quad \text{if } K_i \text{ is small}\\
-  & = & (\kw{get}_i\,T, K_i) \quad \text{otherwise}\\
-  \pass{get}_i((T, K)) & = & (\kw{get}_i\,T, \bot)
-    \quad \text{if } K \text{ is not a tuple}\\
-  \pass{unfold}((T, \kw{fold}\;K)) & = & \mathit{self}(K)
-    \quad \text{if } K \text{ is small}\\
-  & = & (\kw{unfold}\;T, K) \quad \text{otherwise}\\
-  \pass{unfold}((T, K)) & = & (\kw{unfold}\;T, \bot)
-    \quad \text{if } K \text{ is not a } \kw{fold}\\
-  \pass{case}_E((T, \kw{inl}\;K), x.\,M, y.\,N) & = & \pass{simp}_{E[x:=\mathit{self}(K)]}(M)
-    \quad \text{if } K \text{ is small}\\
+  \pass{get}_i((T, \kw{tuple}\;(\theta_1, \ldots, \theta_n))) & = & \mathit{self}(\theta_i)
+    \quad \text{if } \theta_i \text{ is small}\\
+  & = & (\kw{get}_i\,T, \theta_i) \quad \text{otherwise}\\
+  \pass{get}_i((T, \theta)) & = & (\kw{get}_i\,T, \bot)
+    \quad \text{if } \theta \text{ is not a tuple}\\
+  \pass{unfold}((T, \kw{fold}\;\theta)) & = & \mathit{self}(\theta)
+    \quad \text{if } \theta \text{ is small}\\
+  & = & (\kw{unfold}\;T, \theta) \quad \text{otherwise}\\
+  \pass{unfold}((T, \theta)) & = & (\kw{unfold}\;T, \bot)
+    \quad \text{if } \theta \text{ is not a } \kw{fold}\\
+  \pass{case}_E((T, \kw{inl}\;\theta), x.\,M, y.\,N) & = & \pass{simp}_{E[x:=\mathit{self}(\theta)]}(M)
+    \quad \text{if } \theta \text{ is small}\\
   & & \quad \text{(and likewise for } \kw{inr}\text{)}\\
-  \pass{case}_E((T, K), x.\,M, y.\,N) & = &
+  \pass{case}_E((T, \theta), x.\,M, y.\,N) & = &
     (\kw{case}\;T\;(x.\,T_1)\;(y.\,T_2), \bot)
     \quad \text{otherwise,}\\
-  & & \quad \text{where } (T_1, K_1) = \pass{simp}_{E[x:=\mathit{self}(x)]}(M)\\
-  & & \quad \text{and } (T_2, K_2) = \pass{simp}_{E[y:=\mathit{self}(y)]}(N)\\
+  & & \quad \text{where } (T_1, \theta_1) = \pass{simp}_{E[x:=\mathit{self}(x)]}(M)\\
+  & & \quad \text{and } (T_2, \theta_2) = \pass{simp}_{E[y:=\mathit{self}(y)]}(N)\\
   \pass{prim}_p((T_1, n), (T_2, m)) & = & \mathit{self}(\mathit{res}(\delta(p, n, m)))
     \quad \text{if } n \text{ and } m \text{ are integers}\\
-  \pass{prim}_p((T_1, K_1), (T_2, K_2)) & = & (\kw{prim}_p\;T_1\;T_2, \bot)
+  \pass{prim}_p((T_1, \theta_1), (T_2, \theta_2)) & = & (\kw{prim}_p\;T_1\;T_2, \bot)
     \quad \text{otherwise}
 \end{array}
 \]
@@ -720,7 +720,7 @@ $\mathit{res}(\mathsf{true}) = \kw{inl}\;\langle\rangle$, and
 $\mathit{res}(\mathsf{false}) = \kw{inr}\;\langle\rangle$. Finally,
 \[
   \pass{simplify}(M) = T
-  \quad \text{where } (T, K) = \pass{simp}^{4}_{E_0}(M)
+  \quad \text{where } (T, \theta) = \pass{simp}^{4}_{E_0}(M)
   \text{ and } E_0(x) = \mathit{self}(x) \text{ for every } x.
 \]
 \pass{simplify} drops only evaluations whose value is known, which
