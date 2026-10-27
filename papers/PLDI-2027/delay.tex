@@ -292,19 +292,19 @@ the source set or taking a sublist of the target list preserves it.
 \paragraph{The fundamental lemma}
 
 A source environment $\rho$ and a target environment $\rho'$ are
-related when $\rho(x) \ALR V$ for every variable $x$ and every finite
-$V \subseteq \rho'(x)$. We also require that both environments be
+related, written $\rho \ALR \rho'$, when $\rho(x) \ALR V$ for every
+variable $x$ and every $V \subseteq \rho'(x)$. We also require that both environments be
 consistent and that $\rho$ map every variable to a nonempty set.
 
 \begin{lemma}[Fundamental lemma]\label{lem:delay-fundamental}
-Let $M$ be a term of EnvClos. If $\rho$ and $\rho'$ are related and
+Let $M$ be a term of EnvClos. If $\rho \ALR \rho'$ and
 $V \subseteq \den{\pass{delay}(M)}\rho'$, then
 $\den{M}\rho \ALR V$.
 \end{lemma}
 
 The proof is by induction on $M$. Throughout, the second part of
 Lemma~\ref{lem:depth-irrelevant} lets us pass between $D \ALR V$ and
-its four clauses, with ${\ALR}$ at the recursive occurrences. The case of a variable follows from the relation between $\rho$ and $\rho'$, and the cases of $\kw{fold}$, $\kw{unfold}$, tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the induction hypotheses for their subterms. Two cases carry the weight.
+its four clauses, with ${\ALR}$ at the recursive occurrences. The case of a variable follows from $\rho \ALR \rho'$, and the cases of $\kw{fold}$, $\kw{unfold}$, tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the induction hypotheses for their subterms. Two cases carry the weight.
 
 \emph{Case $M = L\;K$.} Then
 $\pass{delay}(M) = \kw{callc}\,\pass{delay}(L)\,\pass{delay}(K)$,
@@ -336,10 +336,10 @@ and $E \ALR U$. Each $w \in W$ comes from a code entry
 $U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
 and $U_a \subseteq U$. By monotonicity, $w$ is in the meaning of the
 target body $\pass{delay}(N)$ with $z$ bound to $\cdr(V)$ and $y$
-bound to $U$. This target environment is related to the source environment
-$(T, E)$. The environments are related by the induction hypothesis for
-$\vec{K}$, because $\cdr(V) \subseteq T'$, and the arguments are
-related by assumption. The induction hypothesis for the body $N$ then
+bound to $U$, and
+$[z{:=}T, y{:=}E] \ALR [z{:=}\cdr(V), y{:=}U]$: the environments are
+related by the induction hypothesis for $\vec{K}$, because
+$\cdr(V) \subseteq T'$, and the arguments are related by assumption. The induction hypothesis for the body $N$ then
 gives $\den{N}[z{:=}T, y{:=}E] \ALR W$. Finally, Lemma~\ref{lem:beta}
 gives $\den{N}[z{:=}T, y{:=}E] \subseteq D \app E$, and ${\ALR}$ is monotone in its
 source set, so $D \app E \ALR W$.
