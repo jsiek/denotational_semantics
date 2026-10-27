@@ -15,17 +15,17 @@
 \text{Types} & A, C & ::= & B \mid A \rightarrow C \mid \kw{tup}(A_1, \ldots, A_n)
   \mid A + C \mid \mu X.\, A \mid X \mid \kw{code}(\Delta; A \rightarrow C)\\
  & \Delta & ::= & A_1, \ldots, A_n\\[3pt]
-\iswim & L, M, N & ::= & x \mid \lambda x.\, N \mid L\;M \mid c
+\iswim & K, L, M, N & ::= & x \mid \lambda x.\, N \mid L\;M \mid c
   \mid \kw{tuple}\;\vec{M} \mid \kw{get}_i\,M \mid \kw{inl}\;M \mid \kw{inr}\;M
   \mid \kw{case}\;L\;(x.\,M)\;(y.\,N)\\
  & & \mid & \kw{prim}_p\;L\;M \mid \kw{let}\;x = M\;\kw{in}\;N
   \mid \kw{fold}\;M \mid \kw{unfold}\;M\\[3pt]
-\text{Clos} & L, M, N & ::= & \ldots \mid \kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}
+\text{Clos} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}
   \qquad (\text{in place of } \lambda x.\, N)\\
-\text{EnvClos} & L, M, N & ::= & \ldots \mid \kw{clos}\;(z, y.\,N)\;\vec{M}\\
-\text{FlatClos} & L, M, N & ::= & \ldots \mid \kw{code}\;(z, y.\,N) \mid \kw{pack}\;L\;M \mid \kw{callc}\;L\;M
+\text{EnvClos} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(z, y.\,N)\;\vec{M}\\
+\text{FlatClos} & K, L, M, N & ::= & \ldots \mid \kw{code}\;(z, y.\,N) \mid \kw{pack}\;L\;M \mid \kw{callc}\;L\;M
   \qquad (\text{in place of } \kw{clos} \text{ and } L\;M)\\
-\text{GlobalFun} & L, M, N & ::= & \ldots \mid f_k
+\text{GlobalFun} & K, L, M, N & ::= & \ldots \mid f_k
   \qquad (\text{in place of } \kw{code})\\
  & d & ::= & \kw{code}\;(z, y.\,N) \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
 \text{Mon} & a & ::= & x \mid c \mid f_k\\
