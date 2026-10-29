@@ -306,7 +306,7 @@ The proof is by induction on $M$. Throughout, the second part of
 Lemma~\ref{lem:depth-irrelevant} lets us pass between $D \ALR V$ and
 its four clauses, with ${\ALR}$ at the recursive occurrences. The case of a variable follows from $\rho \ALR \rho'$, and the cases of $\kw{fold}$, $\kw{unfold}$, tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the induction hypotheses for their subterms. Two cases carry the weight.
 
-\emph{Case $M = L\;K$.} Then
+\fbox{\emph{Case $M = L\;K$.}} Then
 $\pass{delay}(M) = \kw{callc}\,\pass{delay}(L)\,\pass{delay}(K)$,
 so $V \subseteq D' \callop E'$, where
 $D' = \den{\pass{delay}(L)}\rho'$ and
@@ -322,7 +322,7 @@ $\den{L}\rho \ALR W$, applied to this batch of calls with
 $E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
 $\den{M}\rho \ALR V$.
 
-\emph{Case $M = \kw{clos}\,(z, y.\,N)\,\vec{K}$.} Then
+\fbox{\emph{Case $M = \kw{clos}\,(z, y.\,N)\,\vec{K}$.}} Then
 $\pass{delay}(M) = \kw{pack}\,(\kw{code}\,(z, y.\,\pass{delay}(N)))\,(\kw{tuple}\,\pass{delay}(\vec{K}))$,
 so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\pass{delay}(\vec{K})}\rho')$. Let
@@ -330,16 +330,14 @@ $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
 four clauses of $D \ALR V$. Clauses 1 and 4 hold trivially
 because $V$ contains only pairs.
 
-For clause 2, suppose that $V$ contains a pair $\pairv{u}{t'}$. Then
-$t' \in T'$, so by the definition of $\mathcal{T}$ each
-$\den{\pass{delay}(K_i)}\rho'$ contains some $v_i$. The induction
-hypothesis for $K_i$, with $\rho \ALR \rho'$ and
+For clause 2, suppose $\pairv{u}{t'} \in V$. Then
+$t' \in T'$, so $v_i \in \den{\pass{delay}(K_i)}\rho'$ for some $v_i$ at each $i$.
+The induction hypothesis for $K_i$, with $\rho \ALR \rho'$ and
 $[v_i] \subseteq \den{\pass{delay}(K_i)}\rho'$, gives
-$\den{K_i}\rho \ALR [v_i]$, and clause 2 of that relation makes
-$\den{K_i}\rho$ nonempty. Hence $T$ contains some $t$. Every abstraction $\Lambda(F)$
+$\den{K_i}\rho \ALR [v_i]$, and clause 2 of the $\ALR$ relation makes
+$\den{K_i}\rho$ nonempty. Hence $t \in T$ for some $t$. Every $\Lambda(F)$
 contains $\nu$, so the code of the source closure contains the entry
-$[t] \mapsto \nu$, and applying the code to $T \ni t$ gives
-$\nu \in D$.
+$[t] \mapsto \nu$, and applying that to $t \in T$ gives $\nu \in D$.
 
 Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
 and $E \ALR U$. Each $w \in W$ comes from a code entry
