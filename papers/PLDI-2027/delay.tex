@@ -350,11 +350,12 @@ $U_e \subseteq \cdr(V)$ and $U_a \subseteq U$, so
 $w \in \den{\pass{delay}(N)}\rho_0[z{:=}U_e, y{:=}U_a]
 \subseteq \den{\pass{delay}(N)}\rho'_N$ by monotonicity
 (Lemma~\ref{lem:monotone}).
-Second, $\rho_N \ALR \rho'_N$: $T \ALR \cdr(V)$ by the induction
+Second, $\rho_N \ALR \rho'_N$. We have $T \ALR \cdr(V)$ by the induction
 hypothesis for $\vec{K}$, because $\cdr(V) \subseteq T'$, and
-$E \ALR U$ by assumption.
-The induction hypothesis for $N$ then gives $\den{N}\rho_N \ALR W$.
-Finally, Lemma~\ref{lem:beta} gives $\den{N}\rho_N \subseteq D \app E$,
+$E \ALR U$.
+With the two premises in hand, the induction hypothesis for $N$
+gives us $\den{N}\rho_N \ALR W$.
+Finally, Lemma~\ref{lem:beta} yields $\den{N}\rho_N \subseteq D \app E$,
 and ${\ALR}$ is monotone in its source set, so $D \app E \ALR W$.
 
 \begin{theorem}[Correctness of \pass{delay}]\label{thm:delay}
@@ -372,9 +373,12 @@ $\den{\pass{delay}(M)}$ contains an element $v$, the lemma applied
 to $[v]$ and clause~2 show that $\den{M}$ is nonempty. Preservation
 follows from the relation $\sqsubseteq$ of
 Figure~\ref{fig:preserve}. For a constant, $c \sqsubseteq D'$ means
-$c \in D'$, and $v \sqsubseteq D'$ implies that $D'$ is nonempty.
+$c \in D'$, and $v \sqsubseteq D'$ implies $D' \neq \emptyset$.
 
-Theorem~\ref{thm:delay} is the result announced in the introduction: closure conversion preserves and reflects the meaning of programs, divergence included. Section~\ref{sec:evaluation} compares the size of this proof with the operational proofs of \pass{delay}.
+Theorem~\ref{thm:delay} is the result announced in the introduction:
+closure conversion preserves and reflects the meaning of programs,
+divergence included. Section~\ref{sec:evaluation} compares the size of
+this proof with the operational proofs of \pass{delay}.
 
 \subsection{The Same Proof with Scott Domains}
 \label{sec:scott-delay}
