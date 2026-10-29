@@ -136,6 +136,18 @@ likewise for $\mathsf{right}$. A guard makes a set strict in other sets:
   \text{ if } D_1, \ldots, D_n \text{ are nonempty, and } \emptyset \text{ otherwise.}
 \]
 
+\subsection{Monotonicity}
+\label{app:monotone}
+\agda{Mu/proof/Semantics/GraphModel/\{ISWIM,EnvClos,FlatClos\}.agda}
+
+%% The first component of ok (Ok = Mono × Cont × consistency,
+%% proof/Framework/GraphModel/TypedOkBase.agda).
+\begin{lemma}[Monotonicity]\label{lem:monotone}
+Let $M$ be a term of \iswim, EnvClos, or FlatClos. If
+$\rho(x) \subseteq \rho'(x)$ for every variable $x$, then
+$\den{M}\rho \subseteq \den{M}\rho'$.
+\end{lemma}
+
 \section{The Languages}
 \label{app:languages}
 \label{app:types}

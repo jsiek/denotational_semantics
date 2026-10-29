@@ -168,7 +168,8 @@ environments of these pairs are consistent with each other.
 %% the curried form used in the delay proof).
 %% The finitary premise holds for term meanings by `ok` in
 %% agda/Mu/proof/Semantics/GraphModel/{ISWIM,EnvClos,FlatClos,GlobalFun}.agda (fin₁, fin₂).
-The meaning of a term is monotone in its environment, and it is
+The meaning of a term is monotone in its environment
+(Lemma~\ref{lem:monotone}), and it is
 continuous in the sense that each element of the meaning depends on
 only finitely many elements of the environment. These properties,
 together with consistency, give the graph model a $\beta$-law. Its

@@ -342,7 +342,8 @@ $[t] \mapsto \nu$, and applying that to $t \in T$ gives $\nu \in D$.
 Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
 and $E \ALR U$. Each $w \in W$ comes from a code entry
 $U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
-and $U_a \subseteq U$. By monotonicity,
+and $U_a \subseteq U$. By monotonicity
+(Lemma~\ref{lem:monotone}),
 $w \in \den{\pass{delay}(N)}\rho_0[z{:=}\cdr(V), y{:=}U]$, and
 $\rho_0[z{:=}T, y{:=}E] \ALR \rho_0[z{:=}\cdr(V), y{:=}U]$: the environments are
 related by the induction hypothesis for $\vec{K}$, because
