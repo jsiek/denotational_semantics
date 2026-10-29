@@ -328,8 +328,18 @@ so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\pass{delay}(\vec{K})}\rho')$. Let
 $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
 four clauses of $D \ALR V$. Clauses 1 and 4 hold trivially
-because $V$ contains only pairs. Clause 2 follows from the induction
-hypothesis for $\vec{K}$.
+because $V$ contains only pairs.
+
+For clause 2, suppose that $V$ contains a pair $\pairv{u}{t'}$. Then
+$t' \in T'$, so by the definition of $\mathcal{T}$ each
+$\den{\pass{delay}(K_i)}\rho'$ contains some $v_i$. The induction
+hypothesis for $K_i$, with $\rho \ALR \rho'$ and
+$[v_i] \subseteq \den{\pass{delay}(K_i)}\rho'$, gives
+$\den{K_i}\rho \ALR [v_i]$, and clause 2 of that relation makes
+$\den{K_i}\rho$ nonempty. Hence $T$ contains some $t$. Every abstraction $\Lambda(F)$
+contains $\nu$, so the code of the source closure contains the entry
+$[t] \mapsto \nu$, and applying the code to $T \ni t$ gives
+$\nu \in D$.
 
 Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
 and $E \ALR U$. Each $w \in W$ comes from a code entry
