@@ -342,9 +342,8 @@ $[t] \mapsto \nu$, and applying that to $t \in T$ gives $\nu \in D$.
 Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
 and $E \ALR U$. Each $w \in W$ comes from a code entry
 $U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
-and $U_a \subseteq U$. By monotonicity, $w$ is in the meaning of the
-target body $\pass{delay}(N)$ with $z$ bound to $\cdr(V)$ and $y$
-bound to $U$, and
+and $U_a \subseteq U$. By monotonicity,
+$w \in \den{\pass{delay}(N)}[z{:=}\cdr(V), y{:=}U]$, and
 $[z{:=}T, y{:=}E] \ALR [z{:=}\cdr(V), y{:=}U]$: the environments are
 related by the induction hypothesis for $\vec{K}$, because
 $\cdr(V) \subseteq T'$, and the arguments are related by assumption. The induction hypothesis for the body $N$ then
