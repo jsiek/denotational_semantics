@@ -32,9 +32,9 @@ the languages and passes, and each is our best effort in its style.
   \citep{Escardo:TypeTopology}.
 \item \emph{Abstract machines and simulations}, in the style of
   CompCert \citep{Leroy:2009aa}. Each language has a small-step CEK
-  machine (Appendix~\ref{app:machines}), and we prove each pass by a forward simulation. The
-  backward direction follows from forward simulation and the
-  determinism of the machines.
+  machine (Appendix~\ref{app:machines}), and we prove each pass by a
+  forward simulation. The backward direction follows from forward
+  simulation and determinism.
 \item \emph{Clocked interpreters and value relations}, in the style of
   CakeML \citep{Kumar:2014aa}. (Clocked interpreters go back to
   \citet{Boyer:1984aa}.) Each language has a total interpreter with a
@@ -51,18 +51,25 @@ the languages and passes, and each is our best effort in its style.
 Appendix~\ref{app:other} states each style's theorem, with its
 semantics of \iswim\ and x86$\mu$.
 
-\paragraph{What each theorem states}
+\paragraph{The correctness theorems and their proofs}
 
-Each development proves the compiler correct with respect to its own semantics, for closed programs of integer type. The denotational theorems state that a program and its compilation produce the same integer and that one has a meaning exactly when the other does; the operational theorems state that both terminate with the same integer or both diverge, for three different operational semantics. (The operational developments also prove that the observations agree at every type.) All five are whole-program theorems: they say nothing about compiled code linked with other code. We do not regard either kind of statement as the more
-fundamental: \citet{Scott:1971ab} proposed a mathematical semantics as
-``the standard against which to judge an implementation'', while
-\citet{Plotkin:1977oc} judged denotational semantics by their closeness
-to an operational one. Adequacy (Section~\ref{sec:adequacy}) makes the
-choice immaterial for our compiler: for programs of integer type, it
-makes the graph-model theorem and the interpreter theorem equivalent,
-and an alternative proof does the same for the abstract machines. We
-therefore count each development up to its own theorem and report
-adequacy, 1,529 lines, separately.
+Each development proves the compiler correct with respect to its own
+semantics, for closed programs of integer type. The denotational
+theorems state that a program and its compilation produce the same
+integer and that one has a meaning exactly when the other does; the
+operational theorems state that both terminate with the same integer
+or both diverge, for three different operational semantics. All five
+are whole-program theorems: they do not say anything about compiled
+code linked with other code. We do not regard the operational or
+denotational formulation of correctness as more fundamental than the
+other. \citet{Scott:1971ab} proposed a mathematical semantics as ``the
+standard against which to judge an implementation'', while
+\citet{Plotkin:1977oc} judged denotational semantics by their
+closeness to an operational one. Our adequacy proof
+(Section~\ref{sec:adequacy}) makes the choice immaterial. For programs
+of integer type, the graph-model theorem and the interpreter theorem
+are equivalent. We therefore count each development up to its own
+theorem and report adequacy, 1,529 lines, separately.
 
 We measure each proof by its lines of Agda, not counting comments,
 blank lines, or imports. The counts include the semantics of the
