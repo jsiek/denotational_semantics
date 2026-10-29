@@ -29,7 +29,7 @@ applies a function:
 \[
 \begin{array}{rcl}
     \den{\kw{clos}\;(z, y.\,N)\;\vec{M}}\rho & = &
-    \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}[z{:=}X, y{:=}Y])) \;\app\; \mathcal{T}(\den{\vec{M}}\rho)\\
+    \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y])) \;\app\; \mathcal{T}(\den{\vec{M}}\rho)\\
   \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
 \end{array}
 \]
@@ -44,7 +44,7 @@ to the argument, which is the operator $\callop$ of
 Figure~\ref{fig:graph-ops}:
 \[
 \begin{array}{rcl}
-    \den{\kw{code}\;(z, y.\,N)}\rho & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}[z{:=}X, y{:=}Y]))\\
+    \den{\kw{code}\;(z, y.\,N)}\rho & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y]))\\
   \den{\kw{pack}\;L\;M}\rho & = &
     \{\, \pairv{u}{v} \mid u \in \den{L}\rho,\; v \in \den{M}\rho \,\}\\
   \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
@@ -343,12 +343,12 @@ Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
 and $E \ALR U$. Each $w \in W$ comes from a code entry
 $U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
 and $U_a \subseteq U$. By monotonicity,
-$w \in \den{\pass{delay}(N)}[z{:=}\cdr(V), y{:=}U]$, and
-$[z{:=}T, y{:=}E] \ALR [z{:=}\cdr(V), y{:=}U]$: the environments are
+$w \in \den{\pass{delay}(N)}\rho_0[z{:=}\cdr(V), y{:=}U]$, and
+$\rho_0[z{:=}T, y{:=}E] \ALR \rho_0[z{:=}\cdr(V), y{:=}U]$: the environments are
 related by the induction hypothesis for $\vec{K}$, because
 $\cdr(V) \subseteq T'$, and the arguments are related by assumption. The induction hypothesis for the body $N$ then
-gives $\den{N}[z{:=}T, y{:=}E] \ALR W$. Finally, Lemma~\ref{lem:beta}
-gives $\den{N}[z{:=}T, y{:=}E] \subseteq D \app E$, and ${\ALR}$ is monotone in its
+gives $\den{N}\rho_0[z{:=}T, y{:=}E] \ALR W$. Finally, Lemma~\ref{lem:beta}
+gives $\den{N}\rho_0[z{:=}T, y{:=}E] \subseteq D \app E$, and ${\ALR}$ is monotone in its
 source set, so $D \app E \ALR W$.
 
 \begin{theorem}[Correctness of \pass{delay}]\label{thm:delay}
