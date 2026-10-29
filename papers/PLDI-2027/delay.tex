@@ -345,14 +345,13 @@ gives $\den{N}[z{:=}T, y{:=}E] \subseteq D \app E$, and ${\ALR}$ is monotone in 
 source set, so $D \app E \ALR W$.
 
 \begin{theorem}[Correctness of \pass{delay}]\label{thm:delay}
-Let $M$ be a closed term of EnvClos, and let $\den{\cdot}$ denote
-meaning in the empty environment. For every constant $c$,
+Let $M$ be a closed term of EnvClos. For every constant $c$,
 $c \in \den{M}$ if and only if $c \in \den{\pass{delay}(M)}$.
 Moreover, $\den{M} \neq \emptyset$ if and only if
 $\den{\pass{delay}(M)} \neq \emptyset$.
 \end{theorem}
 
-The empty environments are related, so reflection follows from
+Because $\rho_0 \ALR \rho_0$, reflection follows from
 Lemma~\ref{lem:delay-fundamental}. If $c \in \den{\pass{delay}(M)}$,
 the lemma applied to the one-element list $[c]$ gives
 $\den{M} \ALR [c]$, and clause~1 gives $c \in \den{M}$. If

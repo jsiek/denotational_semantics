@@ -124,8 +124,9 @@ uses for closures; a tuple element $\mathsf{tup}_i(v)$, which says that
 component $i$ of a tuple is described by $v$; the injections
 $\mathsf{left}(v)$ and $\mathsf{right}(v)$ of a sum; and the empty tuple
 $\langle\rangle$. The empty tuple also fills the positions of an
-environment that hold no variable, because the semantics requires every
-position of an environment to be nonempty.
+environment that hold no variable, because we represent environments
+as total functions: the environment $\rho_0$ of a closed program maps
+every variable to $\{\langle\rangle\}$, and $\den{M} = \den{M}\rho_0$.
 
 \paragraph{Recursion and divergence}
 
