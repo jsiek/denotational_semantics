@@ -340,17 +340,22 @@ contains $\nu$, so the code of the source closure contains the entry
 $[t] \mapsto \nu$, and applying that to $t \in T$ gives $\nu \in D$.
 
 Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
-and $E \ALR U$. Each $w \in W$ comes from a code entry
-$U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
-and $U_a \subseteq U$. By monotonicity
-(Lemma~\ref{lem:monotone}),
-$w \in \den{\pass{delay}(N)}\rho_0[z{:=}\cdr(V), y{:=}U]$, and
-$\rho_0[z{:=}T, y{:=}E] \ALR \rho_0[z{:=}\cdr(V), y{:=}U]$: $T \ALR \cdr(V)$
-by the induction hypothesis for $\vec{K}$, because
-$\cdr(V) \subseteq T'$, and $E \ALR U$ by assumption. The induction hypothesis for the body $N$ then
-gives $\den{N}\rho_0[z{:=}T, y{:=}E] \ALR W$. Finally, Lemma~\ref{lem:beta}
-gives $\den{N}\rho_0[z{:=}T, y{:=}E] \subseteq D \app E$, and ${\ALR}$ is monotone in its
-source set, so $D \app E \ALR W$.
+and $E \ALR U$. The bodies of the source and target closures run in
+the environments $\rho_N = \rho_0[z{:=}T, y{:=}E]$ and
+$\rho'_N = \rho_0[z{:=}\cdr(V), y{:=}U]$. We show the two premises of
+the induction hypothesis for the body $N$.
+First, $W \subseteq \den{\pass{delay}(N)}\rho'_N$. Each $w \in W$ comes
+from a code entry $U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with
+$U_e \subseteq \cdr(V)$ and $U_a \subseteq U$, so
+$w \in \den{\pass{delay}(N)}\rho_0[z{:=}U_e, y{:=}U_a]
+\subseteq \den{\pass{delay}(N)}\rho'_N$ by monotonicity
+(Lemma~\ref{lem:monotone}).
+Second, $\rho_N \ALR \rho'_N$: $T \ALR \cdr(V)$ by the induction
+hypothesis for $\vec{K}$, because $\cdr(V) \subseteq T'$, and
+$E \ALR U$ by assumption.
+The induction hypothesis for $N$ then gives $\den{N}\rho_N \ALR W$.
+Finally, Lemma~\ref{lem:beta} gives $\den{N}\rho_N \subseteq D \app E$,
+and ${\ALR}$ is monotone in its source set, so $D \app E \ALR W$.
 
 \begin{theorem}[Correctness of \pass{delay}]\label{thm:delay}
 Let $M$ be a closed term of EnvClos. For every constant $c$,
