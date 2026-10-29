@@ -126,28 +126,38 @@ total with Table~\ref{tab:loc} & 3350 & 10319 & 2550 & \textbf{1917} & 4219\\
 
 Table~\ref{tab:loc} gives the sizes. The proof with clocked
 interpreters is the smallest, at 1,504 lines, followed by the graph
-model at 1,806, abstract machines at 2,103, and reduction semantics at 3,093. One pass decides the graph model's place: \pass{delay} alone is
+model at 1,806, abstract machines at 2,103, and reduction semantics at
+3,093. One pass decides the graph model's place: \pass{delay} alone is
 450 lines, a quarter of the total, against 35 to 126 lines in the
 operational styles. Without \pass{delay}, the graph model would be the
-smallest, at 1,356 lines against 1,469 for the interpreters. The second denotational proof, with Scott domains, is 2,485 lines, between the abstract machines and reduction semantics: 1.4 times the graph model, and larger in every row but the semantics of the languages. Counting the infrastructure (Table~\ref{tab:infra}) changes the order: the interpreters remain the smallest at 1,917 lines, followed by the machines at 2,550, the graph model at 3,350, reduction semantics at 4,219, and Scott domains at 10,319. For
-comparison, \citet{Benton:2010aa} report around 4,400 lines of Coq for
-their domain theory.
+smallest, at 1,356 lines against 1,469 for the interpreters. The
+second denotational proof, with Scott domains, is 2,485 lines, between
+the abstract machines and reduction semantics: 1.4 times the graph
+model, and larger in every row but the semantics of the
+languages. Counting the infrastructure (Table~\ref{tab:infra}) changes
+the order: the interpreters remain the smallest at 1,917 lines,
+followed by the machines at 2,550, the graph model at 3,350, reduction
+semantics at 4,219, and Scott domains at 10,319. For comparison,
+\citet{Benton:2010aa} report around 4,400 lines of Coq for their
+domain theory.
 
 \subsection{Analysis}
 
-Two factors seem to drive the sizes in Table~\ref{tab:loc}. The size of
-a denotational proof tends to depend most on whether the pass preserves
-the meaning of a program exactly. When it does, the proof is an
-induction whose cases are congruences and a few laws of the model (Section~\ref{sec:equational}), largely independent of how the
-pass changes the way the program runs. The size of an operational
-proof tends to depend instead on how closely the run of the target
-follows the run of the source. On the denotational side, the correctness of nine
-of the ten passes is an equation between the meaning of a program and
-the meaning of its translation; only \pass{delay} is the exception. On
-the operational side, the runs of the source and target correspond
-closely for most passes, including \pass{delay}, but differ more for
-\pass{simplify} and, to a lesser degree, \pass{globalize}. Combining
-the two factors gives three groups of passes, which we discuss in turn.
+Two factors seem to drive the sizes in Table~\ref{tab:loc}. The size
+of a denotational proof tends to depend most on whether the pass
+preserves the meaning of a program exactly. When it does, the proof is
+an induction whose cases are congruences and a few laws of the model
+(Section~\ref{sec:equational}), largely independent of how the pass
+changes the way the program runs. The size of an operational proof
+tends to depend instead on how closely the run of the target follows
+the run of the source. On the denotational side, the correctness of
+nine of the ten passes is an equation between the meaning of a program
+and the meaning of its translation; only \pass{delay} is the
+exception. On the operational side, the runs of the source and target
+correspond closely for most passes, including \pass{delay}, but differ
+more for \pass{simplify} and, to a lesser degree,
+\pass{globalize}. Combining the two factors gives three groups of
+passes, which we discuss in turn.
 
 \paragraph{Equal meanings, similar runs: the interpreter proofs tend to be smaller.}
 
@@ -165,7 +175,8 @@ strict closures, $\kw{let}$s, and writes require their sets to be
 nonempty, and the binders require them to be consistent. The
 denotational proofs must establish these conditions, whereas they hold
 trivially for the single value that an interpreter computes. It must
-also apply laws of the graph model that have premises, where an interpreter runs: the $\beta$-law of Lemma~\ref{lem:beta}, and
+also apply laws of the graph model that have premises, where an
+interpreter runs: the $\beta$-law of Lemma~\ref{lem:beta}, and
 commuting conversions that move a $\kw{let}$ or $\kw{case}$ past a
 continuation. These costs are largest, relative to the interpreter
 proofs, for \pass{lift locals} and \pass{select instructions}. Their
@@ -175,25 +186,26 @@ semantics of Imp requires a commuting conversion.  In \pass{select
   instructions}, the prologue of a function body in x86$\mu$ requires
 two uses of Lemma~\ref{lem:beta}. The tendency concerns the
 interpreters only. The reduction semantics, which works by
-substitution, is often several times larger even for these passes, as for
-\pass{optimize} and \pass{lift locals}.
+substitution, is often several times larger even for these passes, as
+for \pass{optimize} and \pass{lift locals}.
 
 \paragraph{Equal meanings, different runs: the denotational proofs tend to be smallest.}
 
 \pass{simplify} is the clearest case, at 349 lines in the graph model
-and 411 with Scott domains, against 508 to 697.
-It reduces programs under binders and removes calls, so the target
-takes fewer steps than the source. Each operational proof must replay
-those reductions as steps of the source program: on open terms in the
-reduction semantics, or as a run-ahead of the source machine or
-interpreter, with stuttering where the target does more. For the
-interpreters, the target needs fewer clock ticks than the source,
-which breaks the usual clock-for-clock argument. \pass{globalize} fits the pattern less cleanly, at 115 and 147 lines
-against 175 to 213. Its interpreter proof is still clock for clock; the runs
-differ only in where the code of a function lives, since in the target
-it is a reference into a table of definitions. The interpreter proof
-relates the two tables value by value, while the denotational proof
-shows that a reference means what the code it replaced means.
+and 411 with Scott domains, against 508 to 697.  It reduces programs
+under binders and removes calls, so the target takes fewer steps than
+the source. Each operational proof must replay those reductions as
+steps of the source program: on open terms in the reduction semantics,
+or as a run-ahead of the source machine or interpreter, with
+stuttering where the target does more. For the interpreters, the
+target needs fewer clock ticks than the source, which breaks the usual
+clock-for-clock argument. \pass{globalize} fits the pattern less
+cleanly, at 115 and 147 lines against 175 to 213. Its interpreter
+proof is still clock for clock; the runs differ only in where the code
+of a function lives, since in the target it is a reference into a
+table of definitions. The interpreter proof relates the two tables
+value by value, while the denotational proof shows that a reference
+means what the code it replaced means.
 
 \paragraph{Changed representations: the operational proofs are several times smaller.}
 
@@ -228,17 +240,21 @@ Scott-domain proof is 1.4 times the graph model (1.3 by tokens),
 larger in every row but the semantics: 1.2 to 1.8 times for the
 equational passes, and 723 lines against 450 for \pass{delay}. Three
 properties of Scott domains explain much of the difference. First,
-Scott values are infinite, so the relation for \pass{delay} is built by
-stages (Section~\ref{sec:scott-delay}), and showing that each stage is
-a proposition, downward closed, admissible, and preserved by the maps
-between stages takes 174 of the 723 lines of its proof. Second,
-relating calls across stages takes 299 lines, the largest share. Third, the universal domain
-is a sum of tagged values: the primitives and tagged values take 71
-lines, and the 135 lines of shared lemmas are laws of strictness and
-definedness, which replace nonemptiness; in exchange, the proof needs no consistency. The graph-model relations recurse on finite elements, and neither of the first two costs arises. The infrastructure widens the gap further (Table~\ref{tab:infra}). The rest of the gap is a property of
-Agda: its \texttt{with}-abstraction is slow when a value of the
-domain is in scope, so six places in five passes use auxiliary lemmas,
-records, or an opaque definition instead.
+Scott values are infinite, so the relation for \pass{delay} is built
+by stages (Section~\ref{sec:scott-delay}), and showing that each stage
+is a proposition, downward closed, admissible, and preserved by the
+maps between stages takes 174 of the 723 lines of its proof. Second,
+relating calls across stages takes 299 lines, the largest
+share. Third, the universal domain is a sum of tagged values: the
+primitives and tagged values take 71 lines, and the 135 lines of
+shared lemmas are laws of strictness and definedness, which replace
+nonemptiness; in exchange, the proof needs no consistency. The
+graph-model relations recurse on finite elements, and neither of the
+first two costs arises. The infrastructure widens the gap further
+(Table~\ref{tab:infra}). The rest of the gap is a property of Agda:
+its \texttt{with}-abstraction is slow when a value of the domain is in
+scope, so six places in five passes use auxiliary lemmas, records, or
+an opaque definition instead.
 
 
 \subsection{What the Comparison Shows}
@@ -249,44 +265,51 @@ values, the graph-model proof is the smallest of the five for
 \pass{simplify}, \pass{globalize}, and \pass{explicate control}, and
 within 30 lines of the smallest for the others (RQ2). Where a pass
 changes that representation, as \pass{delay} does, the operational
-proofs are several times smaller than both denotational proofs. The totals, by contrast, depend on
-the accounting. Counting each proof against its own semantics, the graph model ranks
-second and Scott domains fourth, and with the language-independent
-infrastructure they rank third and fifth (RQ4). Among the passes that
-keep the representation of values, the Scott-domain proof is smaller
-than every operational proof only for \pass{simplify} and
-\pass{globalize}. Under both accountings, the graph
-model gives a smaller proof than Scott domains (RQ5). All five
-developments are ours, written with the same AI assistant, so the
-totals measure these developments rather than the inherent difficulty
-of each style.
+proofs are several times smaller than both denotational proofs. The
+totals, by contrast, depend on the accounting. Counting each proof
+against its own semantics, the graph model ranks second and Scott
+domains fourth, and with the language-independent infrastructure they
+rank third and fifth (RQ4). Among the passes that keep the
+representation of values, the Scott-domain proof is smaller than every
+operational proof only for \pass{simplify} and \pass{globalize}. Under
+both accountings, the graph model gives a smaller proof than Scott
+domains (RQ5). All five developments are ours, written with the same
+AI assistant, so the totals measure these developments rather than the
+inherent difficulty of each style.
 
 \subsection{Threats to Validity}
 
 We measure the size of the proofs, which is only a proxy for the
 effort of writing them. Lines of Agda depend on layout; lexical tokens
-and non-whitespace characters do not, but they are proxies too. The three measures agree on the ranking: by tokens, the graph model's total is 1.22 times the interpreters', against 1.20 times by lines. Size also says
-little about difficulty, which depends on whether a proof has precedent in the literature or its authors must invent it. Because experience carries over from one development to the next, we
-gave every development a final cleanup pass under the same rules
-(shorten and clarify, change no theorem statement, move nothing into
-the uncounted infrastructure). It did not change the order of the other four; the Scott-domain proof,
-written last, shrank from 3,457 to 2,485 lines, which moved it ahead
-of reduction semantics.
+and non-whitespace characters do not, but they are proxies too. The
+three measures agree on the ranking: by tokens, the graph model's
+total is 1.22 times the interpreters', against 1.20 times by
+lines. Size also says little about difficulty, which depends on
+whether a proof has precedent in the literature or its authors must
+invent it. Because experience carries over from one development to the
+next, we gave every development a final cleanup pass under the same
+rules (shorten and clarify, change no theorem statement, move nothing
+into the uncounted infrastructure). It did not change the order of the
+other four; the Scott-domain proof, written last, shrank from 3,457 to
+2,485 lines, which moved it ahead of reduction semantics.
 
 The comparison covers one compiler, and the totals depend on its
 selection of passes. The denotational proofs tend to be smaller for
-optimizations such as \pass{simplify} and several times larger for passes that change the representation of values such as \pass{delay}, so a
-compiler with more of one kind or the other could rank the styles
+optimizations such as \pass{simplify} and several times larger for
+passes that change the representation of values such as \pass{delay},
+so a compiler with more of one kind or the other could rank the styles
 differently. The sizes also depend on choices of semantics, for
 example the continuation-passing semantics of Imp, which makes
 \pass{explicate control} an equation, and on proof engineering that
-could still shrink any of the five developments.
-Like our graph model, the Scott-domain semantics uses one universal
-domain of tagged values, as \citet{Milner:1978kh} and
-\citet{MacQueen:1986aa} did. A domain for each type, more usual for
-typed languages \citep{Benton:2009ab,Dockins:2014aa}, would avoid the
-case analysis on tags, a tenth of the Scott-domain proof of
-\pass{delay}, but would need a domain equation for each recursive type
-and would leave the stage-indexed relations in place.
+could still shrink any of the five developments.  Like our graph
+model, the Scott-domain semantics uses one universal domain of tagged
+values, as \citet{Milner:1978kh} and \citet{MacQueen:1986aa} did. A
+domain for each type, more usual for typed languages
+\citep{Benton:2009ab,Dockins:2014aa}, would avoid the case analysis on
+tags, a tenth of the Scott-domain proof of \pass{delay}, but would
+need a domain equation for each recursive type.
 
-The sizes also depend on the proof assistant. Agda's main automation is normalization, which probably favors the interpreters, whose results it computes directly; with the tactics of Rocq or Lean, the relative sizes of the five styles could differ.
+The sizes also depend on the proof assistant. Agda's main automation
+is normalization, which probably favors the interpreters, whose
+results it computes directly; with the tactics of Rocq or Lean, the
+relative sizes of the five styles could differ.
