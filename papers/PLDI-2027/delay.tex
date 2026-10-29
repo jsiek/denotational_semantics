@@ -345,8 +345,8 @@ $U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
 and $U_a \subseteq U$. By monotonicity
 (Lemma~\ref{lem:monotone}),
 $w \in \den{\pass{delay}(N)}\rho_0[z{:=}\cdr(V), y{:=}U]$, and
-$\rho_0[z{:=}T, y{:=}E] \ALR \rho_0[z{:=}\cdr(V), y{:=}U]$: the environments are
-related by the induction hypothesis for $\vec{K}$, because
+$\rho_0[z{:=}T, y{:=}E] \ALR \rho_0[z{:=}\cdr(V), y{:=}U]$: $T \ALR \cdr(V)$
+by the induction hypothesis for $\vec{K}$, because
 $\cdr(V) \subseteq T'$, and the arguments are related by assumption. The induction hypothesis for the body $N$ then
 gives $\den{N}\rho_0[z{:=}T, y{:=}E] \ALR W$. Finally, Lemma~\ref{lem:beta}
 gives $\den{N}\rho_0[z{:=}T, y{:=}E] \subseteq D \app E$, and ${\ALR}$ is monotone in its
