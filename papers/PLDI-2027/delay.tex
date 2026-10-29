@@ -398,9 +398,10 @@ $s \in \mathbb{D}_n$ of one value to the whole other value $w$, and two
 values are related when every approximation of the approximated one is
 related to the other (Figure~\ref{fig:scott-delay} in
 Appendix~\ref{app:scott-delay}). Like the approximant logical relation,
-it approximates only one side. Unlike it, the proof needs one relation
-for each direction: preservation ($+$) approximates the source, and
-reflection ($-$) approximates the target. The clauses for closures are
+it approximates only one side. As in the graph-model proof, each
+direction has its own relation, but here both relations recurse on
+stages: preservation ($+$) approximates the source, and reflection
+($-$) approximates the target. The clauses for closures are
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   (\mathit{fun}, h) \mathrel{\mathcal{M}^{+}_n} (\mathit{pr}, (c, e))
