@@ -257,26 +257,6 @@ scope, so six places in five passes use auxiliary lemmas, records, or
 an opaque definition instead.
 
 
-\subsection{What the Comparison Shows}
-
-The rows for the passes support a conclusion that does not depend on
-how the totals are counted. Where a pass keeps the representation of
-values, the graph-model proof is the smallest of the five for
-\pass{simplify}, \pass{globalize}, and \pass{explicate control}, and
-within 30 lines of the smallest for the others (RQ2). Where a pass
-changes that representation, as \pass{delay} does, the operational
-proofs are several times smaller than both denotational proofs. The
-totals, by contrast, depend on the accounting. Counting each proof
-against its own semantics, the graph model ranks second and Scott
-domains fourth, and with the language-independent infrastructure they
-rank third and fifth (RQ4). Among the passes that keep the
-representation of values, the Scott-domain proof is smaller than every
-operational proof only for \pass{simplify} and \pass{globalize}. Under
-both accountings, the graph model gives a smaller proof than Scott
-domains (RQ5). All five developments are ours, written with the same
-AI assistant, so the totals measure these developments rather than the
-inherent difficulty of each style.
-
 \subsection{Threats to Validity}
 
 We measure the size of the proofs, which is only a proxy for the
