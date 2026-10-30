@@ -93,7 +93,7 @@ instructions. Every language in the compiler has a denotational
 semantics in each model. In both, we prove most passes correct by an
 equation between the denotations before and after the pass. RQ3
 nevertheless has a negative answer. The pass that separates the code of
-each closure from its environment, which we call \pass{delay}, does not yield
+each closure from its environment, which we call \pass{split closure}, does not yield
 to equational reasoning; its reflection proof uses the approximant
 logical relation in the graph model and the stage relation in Scott
 domains.
@@ -167,13 +167,13 @@ with Scott domains, against 508 to 697 for the operational proofs
 (Section~\ref{sec:equational}). Where a pass changes the representation
 of closures, the relation between denotations makes the proof larger,
 which quantifies the negative answer to RQ3: the proofs of
-\pass{delay} take 450 and 723 lines against 35 to 126. The two effects nearly cancel. Counting each proof against its own semantics, the graph-model
+\pass{split closure} take 450 and 723 lines against 35 to 126. The two effects nearly cancel. Counting each proof against its own semantics, the graph-model
 development ranks second of the five, behind clocked interpreters, and
 the Scott-domain development fourth, ahead of reduction semantics;
 once the language-independent infrastructure is counted, they rank
 third and fifth.  For RQ5, the Scott-domain proof is 1.4
 times as large as the graph-model proof and larger for every pass. Much
-of the difference is in \pass{delay}, where we must show that the stage
+of the difference is in \pass{split closure}, where we must show that the stage
 relation is admissible and preserved by the maps between stages, and
 where the method of
 \citet{Pitts:1996aa}, which would avoid the stages, does not apply
@@ -187,10 +187,10 @@ Section~\ref{sec:compiler} presents the compiler and its languages.
 For space, the main text gives background for the graph model
 (Section~\ref{sec:graph-models}) and presents the graph-model proof in
 detail (Section~\ref{sec:compiler-proof}): the passes proved by an
-equation (Section~\ref{sec:equational}), \pass{delay} with the
+equation (Section~\ref{sec:equational}), \pass{split closure} with the
 approximant logical relation (Section~\ref{sec:approx-lr}), and
 adequacy (Section~\ref{sec:adequacy}). Section~\ref{sec:scott-delay}
-summarizes the Scott-domain proof of \pass{delay}, and the appendices
+summarizes the Scott-domain proof of \pass{split closure}, and the appendices
 give its details. Section~\ref{sec:evaluation} compares the five
 proofs of correctness for the same compiler, Section~\ref{sec:related}
 discusses related work, and Section~\ref{sec:conclusion}
@@ -198,6 +198,6 @@ concludes. The appendices give the semantics of the source and target
 languages in each of the five semantics, it presents a graph-model
 semantics for all the intermediate languages, the defines every
 compiler pass, and gives the Scott-domain proof of correctness for the
-\pass{delay} pass.
+\pass{split closure} pass.
 
 

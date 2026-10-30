@@ -11,15 +11,15 @@
 %% The Agda module names match the paper's language names.
 
 
-\subsection{Correctness of \pass{delay} and the Approximant Logical Relation}
+\subsection{Correctness of \pass{split closure} and the Approximant Logical Relation}
 \label{sec:approx-lr}
 
-The \pass{delay} pass separates the code of each closure from its
+The \pass{split closure} pass separates the code of each closure from its
 environment, making the closure a pair. Its proof is the hardest part of the compiler proof. This section
-shows why semantic reflection for \pass{delay} resisted our earlier
+shows why semantic reflection for \pass{split closure} resisted our earlier
 attempts and how the approximant logical relation proves it.
 
-In EnvClos, the source language of \pass{delay}, a closure
+In EnvClos, the source language of \pass{split closure}, a closure
 $\kw{clos}\;(z, y.\,N)\;\vec{M}$ still means a function. Its code $N$ is closed,
 with free variables $z$ for the environment and $y$ for the argument,
 and its meaning is a curried function of the environment $X$ and then
@@ -50,15 +50,15 @@ Figure~\ref{fig:graph-ops}:
   \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
 \end{array}
 \]
-The \pass{delay} pass translates each closure into a pair and each
+The \pass{split closure} pass translates each closure into a pair and each
 application into a call. It translates every other construct
 homomorphically:
 \[
 \begin{array}{rcl}
-    \pass{delay}(\kw{clos}\;(z, y.\,N)\;\vec{M}) & = &
-    \kw{pair}\;(\kw{code}\;(z, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))\\
-  \pass{delay}(L\;M) & = &
-    \kw{callc}\;\pass{delay}(L)\;\pass{delay}(M)
+    \pass{split}(\kw{clos}\;(z, y.\,N)\;\vec{M}) & = &
+    \kw{pair}\;(\kw{code}\;(z, y.\,\pass{split}(N)))\;(\kw{tuple}\;\pass{split}(\vec{M}))\\
+  \pass{split}(L\;M) & = &
+    \kw{callc}\;\pass{split}(L)\;\pass{split}(M)
 \end{array}
 \]
 
@@ -89,7 +89,7 @@ homomorphically:
 \end{array}
 \]
 \caption{The relation $v \sqsubseteq D'$ (``$v$ is included in the
-  behavior of $D'$'') for the preservation half of \pass{delay}. It
+  behavior of $D'$'') for the preservation half of \pass{split closure}. It
   relates a source element $v$ (of EnvClos) to a set $D'$ of target
   elements (of PairClos) and is defined by recursion on $v$. The
   relation $U \sqsubseteq^* E'$ extends it to a finite list $U$.}
@@ -98,7 +98,7 @@ homomorphically:
 
 \paragraph{Why preservation is easy and reflection is not}
 
-The correctness of \pass{delay} is not an equation. Instead, a closed program
+The correctness of \pass{split closure} is not an equation. Instead, a closed program
 and its translation produce the same constants, and one produces
 something exactly when the other does (Theorem~\ref{thm:delay}). The forward half,
 preservation, requires only a relation between a \emph{single} source
@@ -113,7 +113,7 @@ every element that the target produces. Here the representation of
 closures gets in the way. To see how, consider the function
 $\lambda y.\, x + y$ in an environment where $x$ is $9$. In EnvClos,
 its meaning is a set of entries such as $[1] \mapsto 10$ and
-$[6] \mapsto 15$. After \pass{delay}, its code takes the environment as an
+$[6] \mapsto 15$. After \pass{split closure}, its code takes the environment as an
 extra parameter. The meaning of the code is then a table with entries
 for \emph{every} environment, such as the following two:
 \[
@@ -299,7 +299,7 @@ consistent and that $\rho$ map every variable to a nonempty set.
 
 \begin{lemma}[Fundamental lemma]\label{lem:delay-fundamental}
 Let $M$ be a term of EnvClos. If $\rho \ALR \rho'$ and
-$V \subseteq \den{\pass{delay}(M)}\rho'$, then
+$V \subseteq \den{\pass{split}(M)}\rho'$, then
 $\den{M}\rho \ALR V$.
 \end{lemma}
 
@@ -308,10 +308,10 @@ Lemma~\ref{lem:depth-irrelevant} lets us pass between $D \ALR V$ and
 its four clauses, with ${\ALR}$ at the recursive occurrences. The case of a variable follows from $\rho \ALR \rho'$, and the cases of $\kw{fold}$, $\kw{unfold}$, tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the induction hypotheses for their subterms. Two cases carry the weight.
 
 \fbox{\emph{Case $M = L\;K$.}} Then
-$\pass{delay}(M) = \kw{callc}\,\pass{delay}(L)\,\pass{delay}(K)$,
-so $V \subseteq D' \callop E'$, where
-$D' = \den{\pass{delay}(L)}\rho'$ and
-$E' = \den{\pass{delay}(K)}\rho'$. Each element of $V$ is produced by
+$\pass{split}(M) = \kw{callc}\,\pass{split}(L)\,\pass{split}(K)$,
+so $V \subseteq D' \callop E'$ for
+$D' = \den{\pass{split}(L)}\rho'$ and
+$E' = \den{\pass{split}(K)}\rho'$. Each element of $V$ is produced by
 a code entry from $\car(D')$, finitely many environments from
 $\cdr(D')$, and finitely many arguments from $E'$. We collect the pairs
 of $D'$ that supply these codes and environments into a finite list
@@ -324,17 +324,17 @@ $E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
 $\den{M}\rho \ALR V$.
 
 \fbox{\emph{Case $M = \kw{clos}\,(z, y.\,N)\,\vec{K}$.}} Then
-$\pass{delay}(M) = \kw{pair}\,(\kw{code}\,(z, y.\,\pass{delay}(N)))\,(\kw{tuple}\,\pass{delay}(\vec{K}))$,
+$\pass{split}(M) = \kw{pair}\,(\kw{code}\,(z, y.\,\pass{split}(N)))\,(\kw{tuple}\,\pass{split}(\vec{K}))$,
 so $V$ is a list of pairs whose environments lie in
-$T' = \mathcal{T}(\den{\pass{delay}(\vec{K})}\rho')$. Let
+$T' = \mathcal{T}(\den{\pass{split}(\vec{K})}\rho')$. Let
 $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
 four clauses of $D \ALR V$. Clauses 1 and 4 hold trivially
 because $V$ contains only pairs.
 
 For clause 2, suppose $\pairv{u}{t'} \in V$. Then
-$t' \in T'$, so $v_i \in \den{\pass{delay}(K_i)}\rho'$ for some $v_i$ at each $i$.
+$t' \in T'$, so $v_i \in \den{\pass{split}(K_i)}\rho'$ for some $v_i$ at each $i$.
 The induction hypothesis for $K_i$, with $\rho \ALR \rho'$ and
-$[v_i] \subseteq \den{\pass{delay}(K_i)}\rho'$, gives
+$[v_i] \subseteq \den{\pass{split}(K_i)}\rho'$, gives
 $\den{K_i}\rho \ALR [v_i]$, and clause 2 of the $\ALR$ relation makes
 $\den{K_i}\rho$ nonempty. Hence $t \in T$ for some $t$. Every $\Lambda(F)$
 contains $\nu$, so the code of the source closure contains the entry
@@ -345,11 +345,11 @@ and $E \ALR U$. The bodies of the source and target closures run in
 the environments $\rho_N = \rho_0[z{:=}T, y{:=}E]$ and
 $\rho'_N = \rho_0[z{:=}\cdr(V), y{:=}U]$. We show the two premises of
 the induction hypothesis for the body $N$.
-First, $W \subseteq \den{\pass{delay}(N)}\rho'_N$. Each $w \in W$ comes
+First, $W \subseteq \den{\pass{split}(N)}\rho'_N$. Each $w \in W$ comes
 from a code entry $U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with
 $U_e \subseteq \cdr(V)$ and $U_a \subseteq U$, so
-$w \in \den{\pass{delay}(N)}\rho_0[z{:=}U_e, y{:=}U_a]
-\subseteq \den{\pass{delay}(N)}\rho'_N$ by monotonicity
+$w \in \den{\pass{split}(N)}\rho_0[z{:=}U_e, y{:=}U_a]
+\subseteq \den{\pass{split}(N)}\rho'_N$ by monotonicity
 (Lemma~\ref{lem:monotone}).
 Second, $\rho_N \ALR \rho'_N$. We have $T \ALR \cdr(V)$ by the induction
 hypothesis for $\vec{K}$, because $\cdr(V) \subseteq T'$, and
@@ -359,18 +359,18 @@ gives us $\den{N}\rho_N \ALR W$.
 Finally, Lemma~\ref{lem:beta} yields $\den{N}\rho_N \subseteq D \app E$,
 and ${\ALR}$ is monotone in its source set, so $D \app E \ALR W$.
 
-\begin{theorem}[Correctness of \pass{delay}]\label{thm:delay}
+\begin{theorem}[Correctness of \pass{split closure}]\label{thm:delay}
 Let $M$ be a closed term of EnvClos. For every constant $c$,
-$c \in \den{M}$ if and only if $c \in \den{\pass{delay}(M)}$.
+$c \in \den{M}$ if and only if $c \in \den{\pass{split}(M)}$.
 Moreover, $\den{M} \neq \emptyset$ if and only if
-$\den{\pass{delay}(M)} \neq \emptyset$.
+$\den{\pass{split}(M)} \neq \emptyset$.
 \end{theorem}
 
 Because $\rho_0 \ALR \rho_0$, reflection follows from
-Lemma~\ref{lem:delay-fundamental}. If $c \in \den{\pass{delay}(M)}$,
+Lemma~\ref{lem:delay-fundamental}. If $c \in \den{\pass{split}(M)}$,
 the lemma applied to the one-element list $[c]$ gives
 $\den{M} \ALR [c]$, and clause~1 gives $c \in \den{M}$. If
-$\den{\pass{delay}(M)}$ contains an element $v$, the lemma applied
+$\den{\pass{split}(M)}$ contains an element $v$, the lemma applied
 to $[v]$ and clause~2 show that $\den{M}$ is nonempty. Preservation
 follows from the relation $\sqsubseteq$ of
 Figure~\ref{fig:preserve}. For a constant, $c \sqsubseteq D'$ means
@@ -379,7 +379,7 @@ $c \in D'$, and $v \sqsubseteq D'$ implies $D' \neq \emptyset$.
 Theorem~\ref{thm:delay} is the result announced in the introduction,
 that closure conversion preserves and reflects the meaning of programs,
 divergence included. Section~\ref{sec:evaluation} compares the size of
-this proof with the operational proofs of \pass{delay}.
+this proof with the operational proofs of \pass{split closure}.
 
 \subsection{Proof of Compiler Correctness with Scott Domains}
 \label{sec:scott-delay}
@@ -387,7 +387,7 @@ this proof with the operational proofs of \pass{delay}.
 We also proved the compiler correct with Scott domains
 (Appendix~\ref{app:scott}). There a value is an element of a
 universal domain $\mathbb{D}$ of tagged values, divergence is its least
-element $\bot$, and \pass{delay} is again
+element $\bot$, and \pass{split closure} is again
 the only pass that needs a relation. For space, this section only
 summarizes that proof; Appendix~\ref{app:scott-delay} gives it in
 full. We define the relation by

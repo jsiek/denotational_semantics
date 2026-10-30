@@ -155,7 +155,7 @@ $\Lambda$ builds only entries whose inputs are consistent, which rules
 out entries such as $[1, 2] \mapsto 3$ in the meaning of $\lambda x.\,
 x + 1$, whose input describes no single argument.
 %
-Our model requires consistency because the proof for the \pass{delay} pass needs it (Section~\ref{sec:approx-lr}). A call in PairClos takes
+Our model requires consistency because the proof for the \pass{split closure} pass needs it (Section~\ref{sec:approx-lr}). A call in PairClos takes
 the code from one pair and the environment from another, so a
 closure's meaning may combine the code of one pair with the
 environment of a different pair. Consistency ensures that the

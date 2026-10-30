@@ -458,11 +458,11 @@ $\den{\pass{compile}(M)}$ is defined. More generally, for every closed
 term $M$, the same holds.
 \end{theorem}
 
-\section{The Scott-Domain Proof of \pass{delay}}
+\section{The Scott-Domain Proof of \pass{split closure}}
 \label{app:scott-delay}
 \agda{Mu/proof/Correctness/ScottDomains/DelayRel.agda, DelayPreserve.agda, DelayReflect.agda, DelayTerms.agda, DelayCorrect.agda; proof/Framework/Scott/Stages.agda, StageCall.agda}
 
-As in the graph model (Section~\ref{sec:approx-lr}), \pass{delay}
+As in the graph model (Section~\ref{sec:approx-lr}), \pass{split closure}
 changes the representation of closures, so the Scott-domain proof
 relates the meaning of a program to the meaning of its translation by
 a logical relation, one for each direction. The universal domain
@@ -555,7 +555,7 @@ pair of stage $m + 2$ therefore gives its result at stage $m$:
   \qquad
   \mathit{Refl}(d, d') \iff d' \SRel{-} d
 \]
-\caption{The relations of the Scott-domain proof of \pass{delay},
+\caption{The relations of the Scott-domain proof of \pass{split closure},
   between a source (EnvClos) value $d$ and a target (PairClos) value
   $d'$. The superscript $\pm$ stands for either direction. Here $g'$ is
   the strict function that agrees with $g$ on defined values.}
@@ -652,24 +652,24 @@ stage, of which the clause for pairs speaks.
 \begin{lemma}[Fundamental lemma]\label{lem:scott-fundamental}
 For each direction, let $M$ be a term of EnvClos and let $\rho$ and
 $\rho'$ be environments related at every variable of $M$. Then
-$\den{M}\rho \sim \den{\pass{delay}(M)}\rho'$.
+$\den{M}\rho \sim \den{\pass{split}(M)}\rho'$.
 \end{lemma}
 
 The proof is by induction on $M$, with the same induction for both
 directions. Lemma~\ref{lem:scott-ops} covers the shared operators, and
 Lemma~\ref{lem:scott-clos} covers the closures and calls.
 
-\begin{theorem}[Correctness of \pass{delay}, Scott domains]\label{thm:scott-delay}
+\begin{theorem}[Correctness of \pass{split closure}, Scott domains]\label{thm:scott-delay}
 Let $M$ be a closed term of EnvClos. For every constant $c$,
 $\den{M}\rho_0 = \up{(c, ())}$ if and only if
-$\den{\pass{delay}(M)}\rho_0 = \up{(c, ())}$. Moreover,
+$\den{\pass{split}(M)}\rho_0 = \up{(c, ())}$. Moreover,
 $\den{M}\rho_0$ is defined if and only if
-$\den{\pass{delay}(M)}\rho_0$ is defined.
+$\den{\pass{split}(M)}\rho_0$ is defined.
 \end{theorem}
 
 The empty environments are related, so Lemma~\ref{lem:scott-fundamental}
-gives $\mathit{Pres}(\den{M}\rho_0, \den{\pass{delay}(M)}\rho_0)$ and
-$\mathit{Refl}(\den{M}\rho_0, \den{\pass{delay}(M)}\rho_0)$. In either
+gives that $\den{M}\rho_0$ and $\den{\pass{split}(M)}\rho_0$ are
+related by both $\mathit{Pres}$ and $\mathit{Refl}$. In either
 relation, a defined approximated value has a defined partner, and a
 defined value related to a constant is that constant. Preservation
 gives the forward implications and reflection the backward ones.

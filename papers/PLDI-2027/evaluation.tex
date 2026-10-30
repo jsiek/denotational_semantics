@@ -105,7 +105,7 @@ semantics of the languages & 427 & 395 & 529 & \textbf{391} & 980\\
 lemmas shared by the passes & --- & 135 & 38 & --- & ---\\
 \pass{simplify} & \textbf{349} & 411 & 560 & 508 & 697\\
 \pass{enclose} & 149 & 199 & 287 & \textbf{140} & 507\\
-\pass{delay} & 450 & 723 & 73 & \textbf{35} & 126\\
+\pass{split closure} & 450 & 723 & 73 & \textbf{35} & 126\\
 \pass{globalize} & \textbf{115} & 147 & 213 & 175 & 192\\
 \pass{remove complex operands} & 109 & 159 & 120 & \textbf{83} & 157\\
 \pass{lift locals} & 39 & 59 & 51 & \textbf{27} & 204\\
@@ -142,9 +142,9 @@ compiler, with one column per semantic style, with the totals in the
 last row. The proof with clocked interpreters is the smallest, at
 1,504 lines, followed by the graph model at 1,806, abstract machines
 at 2,103, and reduction semantics at 3,093. One pass decides the graph
-model's place. The proof of \pass{delay} alone is 450 lines, a quarter of the
+model's place. The proof of \pass{split closure} alone is 450 lines, a quarter of the
 total, against 35 to 126 lines in the operational styles. Without
-\pass{delay}, the graph model would be the smallest, at 1,356 lines
+\pass{split closure}, the graph model would be the smallest, at 1,356 lines
 against 1,469 for the interpreters. The second denotational proof,
 with Scott domains, is 2,485 lines, between the abstract machines and
 reduction semantics: 1.4 times the graph model, and larger in every
@@ -166,9 +166,9 @@ changes the way the program runs. The size of an operational proof
 tends to depend instead on how closely the run of the target follows
 the run of the source. On the denotational side, the correctness of
 seven of the eight passes is an equation between the meaning of a program
-and the meaning of its translation; only \pass{delay} is the
+and the meaning of its translation; only \pass{split closure} is the
 exception. On the operational side, the runs of the source and target
-correspond closely for most passes, including \pass{delay}, but differ
+correspond closely for most passes, including \pass{split closure}, but differ
 more for \pass{simplify} and, to a lesser degree,
 \pass{globalize}. Combining the two factors gives three groups of
 passes, which we discuss in turn.
@@ -220,7 +220,7 @@ code it replaces.
 
 \paragraph{Changed representations: the operational proofs are several times smaller.}
 
-\pass{Delay} changes the representation of closures, so its correctness
+\pass{Split closure} changes the representation of closures, so its correctness
 is not an equation, yet the run of the target follows the run of the
 source closely. Its denotational proofs take 450 lines of Agda in the
 graph model and 723 with Scott domains, against 35 to 126 lines in the
@@ -249,9 +249,9 @@ next.
 The two denotational proofs have the same structure, yet the
 Scott-domain proof is 1.4 times the graph model (1.3 by tokens),
 larger in every row but the semantics: 1.2 to 1.8 times for the
-equational passes, and 723 lines against 450 for \pass{delay}. Three
+equational passes, and 723 lines against 450 for \pass{split closure}. Three
 properties of Scott domains explain much of the difference. First,
-Scott values are infinite, so the relation for \pass{delay} is built
+Scott values are infinite, so the relation for \pass{split closure} is built
 by stages (Section~\ref{sec:scott-delay}), and showing that each stage
 is a proposition, downward closed, admissible, and preserved by the
 maps between stages takes 174 of the 723 lines of its proof. Second,
@@ -288,7 +288,7 @@ of reduction semantics.
 The comparison covers one compiler, and the totals depend on its
 selection of passes. The denotational proofs tend to be smaller for
 optimizations such as \pass{simplify} and several times larger for
-passes that change the representation of values such as \pass{delay},
+passes that change the representation of values such as \pass{split closure},
 so a compiler with more of one kind or the other could rank the styles
 differently. The sizes also depend on choices of semantics, for
 example the continuation-passing semantics of Imp, which makes
@@ -298,7 +298,7 @@ model, the Scott-domain semantics uses one universal domain of tagged
 values, as \citet{Milner:1978kh} and \citet{MacQueen:1986aa} did. A
 domain for each type, more usual for typed languages
 \citep{Benton:2009ab,Dockins:2014aa}, would avoid the case analysis on
-tags, a tenth of the Scott-domain proof of \pass{delay}, but would
+tags, a tenth of the Scott-domain proof of \pass{split closure}, but would
 need a domain equation for each recursive type.
 
 The sizes also depend on the proof assistant. Agda's main automation

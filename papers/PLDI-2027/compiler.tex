@@ -23,7 +23,7 @@
   \node (x86) at (2,-2) {x86$\mu$};
   \draw (s0) -- node[lbl,above] {\pass{simplify}} (s1);
   \draw (s1) -- node[lbl,above] {\pass{enclose}} (c3);
-  \draw (c3) -- node[lbl,right] {\pass{delay}} (c4);
+  \draw (c3) -- node[lbl,right] {\pass{split closure}} (c4);
   \draw (c4) -- node[lbl,above] {\pass{globalize}} (c5);
   \draw (c5) -- node[lbl,above] {\pass{RCO}} (mon);
   \draw (mon) -- node[lbl,left] {\pass{lift locals}} (imp);
@@ -155,7 +155,7 @@ Agda development implements \pass{enclose} as three passes, which
 capture every variable in scope, drop the captured values that the
 code does not use, and store the rest in a tuple. The proof of
 \pass{enclose} composes their proofs, and Table~\ref{tab:loc} reports
-the sum of their sizes.} The \pass{delay} pass (\S\ref{app:pass-delay}) then
+the sum of their sizes.} The \pass{split closure} pass (\S\ref{app:pass-delay}) then
 separates a closure into its code and its environment, translating
 from EnvClos to PairClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is
 closed code of type $\kw{code}(\Delta; A \rightarrow C)$, which

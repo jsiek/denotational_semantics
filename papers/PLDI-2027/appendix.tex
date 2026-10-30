@@ -19,7 +19,7 @@ Appendix~\ref{app:other} gives the semantics of the source and target
 languages in the four other semantic styles of
 Section~\ref{sec:evaluation}, with their correctness theorems; and
 Appendix~\ref{app:scott-delay} gives the Scott-domain proof of
-\pass{delay}. Each section begins with a line, marked ``Agda:'', that names the
+\pass{split closure}. Each section begins with a line, marked ``Agda:'', that names the
 modules of the artifact that contain the section's definitions and proofs,
 with paths relative to its \texttt{agda/} directory.
 
@@ -28,7 +28,7 @@ with paths relative to its \texttt{agda/} directory.
 
 This appendix completes the definition of the graph model of
 Section~\ref{sec:graph-models}: consistency, which $\Lambda$ and
-$\mathcal{C}$ require of their inputs and the proof of \pass{delay}
+$\mathcal{C}$ require of their inputs and the proof of \pass{split closure}
 relies on; the depth of an element, on which the approximant logical
 relation recurses; and the operators of the semantics not shown in
 Figure~\ref{fig:graph-ops}.
@@ -233,7 +233,7 @@ The semantics follows Section~\ref{sec:graph-models}, with the operators of Figu
 \subsection{The Clos and EnvClos Languages}
 \agda{Mu/Language/Clos.agda, Mu/Language/EnvClos.agda, Mu/Semantics/GraphModel/Clos.agda, Mu/Semantics/GraphModel/EnvClos.agda}
 
-Clos is the intermediate language between the steps of \pass{enclose}, whose closures bind a name for each captured value. EnvClos, the target of \pass{enclose} and the source of \pass{delay}, stores the captured values of a closure in one tuple. Both type and interpret their other forms as \iswim\ does.
+Clos is the intermediate language between the steps of \pass{enclose}, whose closures bind a name for each captured value. EnvClos, the target of \pass{enclose} and the source of \pass{split closure}, stores the captured values of a closure in one tuple. Both type and interpret their other forms as \iswim\ does.
 A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
 its captured values.
 \defhead{Typing of closures}{\Gamma \vdash M : A}
@@ -269,7 +269,7 @@ curried meaning of its code to the tuple of the captured values
 \subsection{The PairClos Language}
 \agda{Mu/Language/PairClos.agda, Mu/Semantics/GraphModel/PairClos.agda}
 
-PairClos, the target of \pass{delay}, replaces closures and application with code, pairs, and calls, and types and interprets its other forms as \iswim\ does.
+PairClos, the target of \pass{split closure}, replaces closures and application with code, pairs, and calls, and types and interprets its other forms as \iswim\ does.
 \defhead{Typing of PairClos}{\Gamma \vdash M : A}
 \[
   \dfrac{z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
@@ -609,7 +609,7 @@ with one operand. The subsections follow the order of the pipeline; Sections~\re
 \begin{array}{@{}l@{}}
   \pass{compile} = \pass{select} \circ \pass{explicate} \circ \pass{lift}
     \circ \pass{rco} \circ \pass{globalize}\\
-  \qquad\qquad {} \circ \pass{delay} \circ \pass{enclose} \circ \pass{simplify}
+  \qquad\qquad {} \circ \pass{split} \circ \pass{enclose} \circ \pass{simplify}
 \end{array}
 \]
 
@@ -793,18 +793,18 @@ $\kw{get}_i\,z$, in EnvClos:
 Under a $\kw{let}$ or $\kw{case}$ the bound variable maps to itself,
 and a program starts with the empty map.
 
-\subsection{\pass{delay} (EnvClos to PairClos)}
+\subsection{\pass{split closure} (EnvClos to PairClos)}
 \label{app:pass-delay}
 \agda{Mu/Compiler/Delay.agda (delay-program)}
 
 A closure becomes a pair of its code and the tuple of its captured
 values, and an application opens the closure and calls its code:
 \[
-  \pass{delay}(\kw{clos}\;(z, y.\,N)\;\vec{M}) =
-    \kw{pair}\;(\kw{code}\;(z, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))
+  \pass{split}(\kw{clos}\;(z, y.\,N)\;\vec{M}) =
+    \kw{pair}\;(\kw{code}\;(z, y.\,\pass{split}(N)))\;(\kw{tuple}\;\pass{split}(\vec{M}))
 \]
 \[
-  \pass{delay}(L\;M) = \kw{callc}\;\pass{delay}(L)\;\pass{delay}(M)
+  \pass{split}(L\;M) = \kw{callc}\;\pass{split}(L)\;\pass{split}(M)
 \]
 
 \subsection{\pass{globalize} (PairClos to GlobalFun)}

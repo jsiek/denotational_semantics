@@ -11,9 +11,9 @@
 This section proves the following theorem about the whole compiler,
 in the graph model. For space, it presents the Scott-domain proof of
 the same compiler only briefly: Section~\ref{sec:scott-delay}
-summarizes its proof of \pass{delay}, Appendix~\ref{app:scott} states
+summarizes its proof of \pass{split closure}, Appendix~\ref{app:scott} states
 its theorem (Theorem~\ref{thm:scott}), and
-Appendix~\ref{app:scott-delay} gives the proof of \pass{delay} in full.
+Appendix~\ref{app:scott-delay} gives the proof of \pass{split closure} in full.
 
 
 
@@ -25,12 +25,12 @@ $\den{\pass{compile}(M)} \neq \emptyset$.
 \end{theorem}
 
 Theorem~\ref{thm:compiler}, which we mechanize in Agda, answers RQ1 affirmatively; with adequacy (Section~\ref{sec:adequacy}), it says that the compiler preserves and reflects divergence. The same statement holds for closed terms of every type; we state it for $\kw{Int}$, the type of a whole program's result, to align it with the operational theorems (Section~\ref{sec:evaluation}). The proof composes one result per pass: an equation for every pass but
-\pass{delay}, and for \pass{delay} the weaker statement of
+\pass{split closure}, and for \pass{split closure} the weaker statement of
 Theorem~\ref{thm:delay}. 
 
-This section first shows how we prove the passes other than \pass{delay} (Section~\ref{sec:equational}). These proofs answer whether the
+This section first shows how we prove the passes other than \pass{split closure} (Section~\ref{sec:equational}). These proofs answer whether the
 compositionality and equational reasoning of denotational semantics
-yield concise correctness proofs for some compiler passes (RQ2). The section then shows why \pass{delay} needs more (Section~\ref{sec:approx-lr}), summarizes the Scott-domain proof of \pass{delay} (Section~\ref{sec:scott-delay}), and ends with adequacy (Section~\ref{sec:adequacy}), which connects
+yield concise correctness proofs for some compiler passes (RQ2). The section then shows why \pass{split closure} needs more (Section~\ref{sec:approx-lr}), summarizes the Scott-domain proof of \pass{split closure} (Section~\ref{sec:scott-delay}), and ends with adequacy (Section~\ref{sec:adequacy}), which connects
 Theorem~\ref{thm:compiler} to running code.
 
 \subsection{Passes Proved by an Equation}
@@ -119,7 +119,7 @@ model or the semantic equations, the induction hypothesis, and the
 meaning of the target form. The remaining cases are congruences. No
 proof mentions evaluation steps, machine states, or clocks.
 Section~\ref{sec:evaluation} measures how concise these proofs are by
-comparing them with proofs of the same passes in four other styles. The exception is \pass{delay}, the pass that changes the
+comparing them with proofs of the same passes in four other styles. The exception is \pass{split closure}, the pass that changes the
 meaning of a closure from a function to a set of pairs of code and
 environment. Its correctness is not an equation, so the answer to RQ3 is negative, and its proof is the subject of Section~\ref{sec:approx-lr}.
 
