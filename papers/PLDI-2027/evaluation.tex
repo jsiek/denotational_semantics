@@ -19,7 +19,7 @@ sizes of their proofs pass by pass, and explains the differences.
 
 \subsection{Setup}
 
-All five developments prove the correctness of the same ten-pass
+All five developments prove the correctness of the same eight-pass
 compiler (Section~\ref{sec:compiler}), from the same Agda definitions of
 the languages and passes, and each is our best effort in its style.
 \begin{itemize}
@@ -104,9 +104,7 @@ theorem statement.
 semantics of the languages & 427 & 395 & 529 & \textbf{391} & 980\\
 lemmas shared by the passes & --- & 135 & 38 & --- & ---\\
 \pass{simplify} & \textbf{349} & 411 & 560 & 508 & 697\\
-\pass{enclose} & 37 & 49 & 71 & \textbf{33} & 147\\
-\pass{optimize} & 66 & 92 & 128 & \textbf{65} & 212\\
-\pass{concretize} & 46 & 58 & 88 & \textbf{42} & 148\\
+\pass{enclose} & 149 & 199 & 287 & \textbf{140} & 507\\
 \pass{delay} & 450 & 723 & 73 & \textbf{35} & 126\\
 \pass{globalize} & \textbf{115} & 147 & 213 & 175 & 192\\
 \pass{remove complex operands} & 109 & 159 & 120 & \textbf{83} & 157\\
@@ -167,7 +165,7 @@ an induction whose cases are congruences and a few laws of the model
 changes the way the program runs. The size of an operational proof
 tends to depend instead on how closely the run of the target follows
 the run of the source. On the denotational side, the correctness of
-nine of the ten passes is an equation between the meaning of a program
+seven of the eight passes is an equation between the meaning of a program
 and the meaning of its translation; only \pass{delay} is the
 exception. On the operational side, the runs of the source and target
 correspond closely for most passes, including \pass{delay}, but differ
@@ -177,10 +175,10 @@ passes, which we discuss in turn.
 
 \paragraph{Equal meanings, similar runs: the interpreter proofs tend to be smaller.}
 
-For \pass{enclose}, \pass{optimize}, \pass{concretize}, \pass{remove
+For \pass{enclose}, \pass{remove
   complex operands}, \pass{lift locals}, \pass{explicate control}, and
 \pass{select instructions}, both the graph-model and the interpreter
-proofs are short. The interpreter proofs are smaller by 1 to 28 lines,
+proofs are short. The interpreter proofs are smaller by 9 to 28 lines,
 except for \pass{explicate control}, where the two are about the same
 size. The Scott-domain proofs of these passes are 1.2 to 2.8 times the
 interpreter proofs, for the reasons given at the end of this
@@ -197,7 +195,7 @@ semantics needs a commuting conversion, and for \pass{select
 Lemma~\ref{lem:beta}; these graph-model proofs are about 1.4 and 1.6
 times the interpreter proofs. The tendency concerns the interpreters
 only. The proofs in the reduction semantics, which works by
-substitution, are often several times larger even for these passes, as for \pass{optimize} and
+substitution, are often several times larger even for these passes, as for \pass{enclose} and
 \pass{lift locals}.
 
 \paragraph{Equal meanings, different runs: the denotational proofs tend to be smallest.}

@@ -10,13 +10,11 @@
 \begin{figure}[t]
 \centering
 \small
-\begin{tikzpicture}[x=3.6cm, y=1.0cm, every node/.style={inner sep=2pt},
+\begin{tikzpicture}[x=3.6cm, y=1.3cm, every node/.style={inner sep=2pt},
     lbl/.style={font=\scriptsize}, ->, >=stealth]
   \node (s0) at (0,0)  {\iswim};
   \node (s1) at (1,0)  {\iswim};
-  \node (c2) at (2,0)  {Clos};
-  \node (c2b) at (3,0) {Clos};
-  \node (c3) at (3,-1) {EnvClos};
+  \node (c3) at (2,0)  {EnvClos};
   \node (c4) at (2,-1) {PairClos};
   \node (c5) at (1,-1) {GlobalFun};
   \node (mon) at (0,-1) {Mon};
@@ -24,10 +22,8 @@
   \node (cfg) at (1,-2) {CFG};
   \node (x86) at (2,-2) {x86$\mu$};
   \draw (s0) -- node[lbl,above] {\pass{simplify}} (s1);
-  \draw (s1) -- node[lbl,above] {\pass{enclose}} (c2);
-  \draw (c2) -- node[lbl,above] {\pass{optimize}} (c2b);
-  \draw (c2b) -- node[lbl,right] {\pass{concretize}} (c3);
-  \draw (c3) -- node[lbl,above] {\pass{delay}} (c4);
+  \draw (s1) -- node[lbl,above] {\pass{enclose}} (c3);
+  \draw (c3) -- node[lbl,right] {\pass{delay}} (c4);
   \draw (c4) -- node[lbl,above] {\pass{globalize}} (c5);
   \draw (c5) -- node[lbl,above] {\pass{RCO}} (mon);
   \draw (mon) -- node[lbl,left] {\pass{lift locals}} (imp);
@@ -35,9 +31,9 @@
   \draw (cfg) -- node[lbl,above] {\pass{select instructions}} (x86);
   \begin{scope}[on background layer]
     \draw[-, rounded corners=6pt, fill=gray!12, draw=gray!60, dashed]
-      (1.25,0.42) rectangle (3.38,-1.3);
+      (1.25,0.42) rectangle (2.45,-1.3);
   \end{scope}
-  \node[font=\itshape, text=gray!70!black] at (2.45,-0.5){closure conversion};
+  \node[font=\itshape, text=gray!70!black] at (1.6,-0.5){closure conversion};
 \end{tikzpicture}
 \caption{The passes of the compiler and the languages between them.}
 \label{fig:pipeline}
@@ -56,9 +52,8 @@
   \mid \kw{case}\;L\;(x.\,M)\;(y.\,N)\\
  & & \mid & \kw{prim}_p\;L\;M \mid \kw{let}\;x = M\;\kw{in}\;N
   \mid \kw{fold}\;M \mid \kw{unfold}\;M\\[3pt]
-\text{Clos} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}
+\text{EnvClos} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(z, y.\,N)\;\vec{M}
   \qquad (\text{in place of } \lambda x.\, N)\\
-\text{EnvClos} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(z, y.\,N)\;\vec{M}\\
 \text{PairClos} & K, L, M, N & ::= & \ldots \mid \kw{code}\;(z, y.\,N) \mid \kw{pair}\;L\;M \mid \kw{callc}\;L\;M
   \qquad (\text{in place of } \kw{clos} \text{ and } L\;M)\\
 \text{GlobalFun} & K, L, M, N & ::= & \ldots \mid f_k
@@ -95,8 +90,8 @@
 \end{figure}
 
 Our compiler translates \iswim, a call-by-value $\lambda$-calculus
-with recursive types, to x86$\mu$, a typed assembly language, in ten
-passes through seven intermediate languages. Figure~\ref{fig:pipeline} shows the passes and languages, which this section defines and Section~\ref{sec:compiler-proof} proves correct.
+with recursive types, to x86$\mu$, a typed assembly language, in eight
+passes through six intermediate languages. Figure~\ref{fig:pipeline} shows the passes and languages, which this section defines and Section~\ref{sec:compiler-proof} proves correct.
 Figure~\ref{fig:grammars} presents the grammars of all the languages, and Appendix~\ref{app:types} gives their typing rules.\footnote{Every language is intrinsically
 typed in our Agda development, so every term is well typed by
 construction and no pass needs a precondition about scoping or
@@ -110,7 +105,7 @@ languages prior to Imp, $x$, $y$, and $z$ range over variables. From
 Imp on, they range over fixed locations in a function's stack frame,
 as we explain below. We write a binder as one or more names followed by a period, and the binder binds the names in the term after the period. For example, in
 $\lambda x.\,N$ and $\kw{case}\;L\;(x.\,M)\;(y.\,N)$, the name $x$ is
-bound in $N$ and $M$, and $\kw{clos}\;(\vec{x}, y.\,N)$ binds $\vec{x}$
+bound in $N$ and $M$, and $\kw{clos}\;(z, y.\,N)$ binds $z$
 and $y$ in $N$. Every language also has a graph-model semantics
 (Section~\ref{sec:graph-models}), given in full in
 Appendix~\ref{app:languages}.
@@ -149,16 +144,18 @@ inlines small known functions.
 
 \paragraph{Closure conversion}
 
-The next five passes perform closure conversion. The \pass{enclose}
+The next three passes perform closure conversion. The \pass{enclose}
 pass (\S\ref{app:pass-enclose}) turns each $\lambda$-abstraction into a closure
-$\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$ of Clos, which binds a name
-$x_i$ for each captured value $M_i$ and the parameter $y$ in its code
-$N$, so the code is closed. The \pass{enclose} pass captures every
-variable in scope, and the \pass{optimize} pass (\S\ref{app:pass-optimize}) then drops the
-captured values that the code does not use. The \pass{concretize} pass (\S\ref{app:pass-concretize})
-stores the captured values of a closure in a single environment tuple,
-so an EnvClos closure $\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds two variables in its code, the environment $z$ and the parameter $y$, and
-the code reads $x_i$ as $\kw{get}_i\,z$. The \pass{delay} pass (\S\ref{app:pass-delay}) then
+$\kw{clos}\;(z, y.\,N)\;\vec{M}$ of EnvClos, which captures the values
+$\vec{M}$ of the variables that the code $N$ uses. The closure binds
+two variables in its code, the environment $z$ and the parameter $y$,
+and the code, which has no other free variables, reads the $i$th
+captured value as $\kw{get}_i\,z$.\footnote{Our
+Agda development implements \pass{enclose} as three passes, which
+capture every variable in scope, drop the captured values that the
+code does not use, and store the rest in a tuple. The proof of
+\pass{enclose} composes their proofs, and Table~\ref{tab:loc} reports
+the sum of their sizes.} The \pass{delay} pass (\S\ref{app:pass-delay}) then
 separates a closure into its code and its environment, translating
 from EnvClos to PairClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is
 closed code of type $\kw{code}(\Delta; A \rightarrow C)$, which

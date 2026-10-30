@@ -233,7 +233,7 @@ The semantics follows Section~\ref{sec:graph-models}, with the operators of Figu
 \subsection{The Clos and EnvClos Languages}
 \agda{Mu/Language/Clos.agda, Mu/Language/EnvClos.agda, Mu/Semantics/GraphModel/Clos.agda, Mu/Semantics/GraphModel/EnvClos.agda}
 
-Clos is the language of closures that \pass{enclose} produces and \pass{optimize} improves, and EnvClos, produced by \pass{concretize}, stores the captured values of a closure in one tuple; EnvClos is the source of \pass{delay}. Both type and interpret their other forms as \iswim\ does.
+Clos is the intermediate language between the steps of \pass{enclose}, whose closures bind a name for each captured value. EnvClos, the target of \pass{enclose} and the source of \pass{delay}, stores the captured values of a closure in one tuple. Both type and interpret their other forms as \iswim\ does.
 A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
 its captured values.
 \defhead{Typing of closures}{\Gamma \vdash M : A}
@@ -609,8 +609,7 @@ with one operand. The subsections follow the order of the pipeline; Sections~\re
 \begin{array}{@{}l@{}}
   \pass{compile} = \pass{select} \circ \pass{explicate} \circ \pass{lift}
     \circ \pass{rco} \circ \pass{globalize}\\
-  \qquad\qquad {} \circ \pass{delay} \circ \pass{concretize}_\emptyset
-    \circ \pass{optimize} \circ \pass{enclose} \circ \pass{simplify}
+  \qquad\qquad {} \circ \pass{delay} \circ \pass{enclose} \circ \pass{simplify}
 \end{array}
 \]
 
@@ -740,49 +739,53 @@ have no effect, and otherwise keeps the order of evaluation. An operand
 that is not a syntactic value is never substituted but stays bound by a
 $\kw{let}$.
 
-\subsection{\pass{enclose} (\iswim\ to Clos)}
+\subsection{\pass{enclose} (\iswim\ to EnvClos)}
 \label{app:pass-enclose}
-\agda{Mu/Compiler/Enclose.agda (enclose)}
+\agda{Mu/Compiler/\{Enclose,Optimize,Concretize\}.agda (enclose, optimize-program, concretize-program)}
 
-\pass{enclose} makes each function a closure that captures the variables in scope, in order:
+\pass{enclose} works in three steps, which go through the intermediate
+language Clos:
 \[
-  \pass{enclose}(\lambda y.\, N) =
-    \kw{clos}\;(x_1, \ldots, x_k, y.\,\pass{enclose}(N))\;(x_1, \ldots, x_k)
+  \pass{enclose} = \mathit{concretize}_\emptyset \circ \mathit{prune} \circ \mathit{capture}
+\]
+
+\paragraph{Capture}
+
+The first step makes each function a closure that captures the variables in scope, in order:
+\[
+  \mathit{capture}(\lambda y.\, N) =
+    \kw{clos}\;(x_1, \ldots, x_k, y.\,\mathit{capture}(N))\;(x_1, \ldots, x_k)
 \]
 where $x_1, \ldots, x_k$ are the variables in scope.
 
-\subsection{\pass{optimize} (Clos to Clos)}
-\label{app:pass-optimize}
-\agda{Mu/Compiler/Optimize.agda (optimize-program)}
+\paragraph{Prune}
 
-\pass{optimize} removes the captured values that the code does not use.
+The second step removes the captured values that the code does not use.
 Closures are strict, so a captured term is dropped only when the code
 does not use its name and the term is a variable, which is all that
-\pass{enclose} captures:
+$\mathit{capture}$ captures:
 \[
 \begin{array}{@{}l@{}}
-  \pass{optimize}(\kw{clos}\;(x_1, \ldots, x_n, y.\,N)\;(M_1, \ldots, M_n)) =\\
-  \qquad \kw{clos}\;(x_{i_1}, \ldots, x_{i_k}, y.\,\pass{optimize}(N))\;
-    (\pass{optimize}(M_{i_1}), \ldots, \pass{optimize}(M_{i_k}))\\
+  \mathit{prune}(\kw{clos}\;(x_1, \ldots, x_n, y.\,N)\;(M_1, \ldots, M_n)) =\\
+  \qquad \kw{clos}\;(x_{i_1}, \ldots, x_{i_k}, y.\,\mathit{prune}(N))\;
+    (\mathit{prune}(M_{i_1}), \ldots, \mathit{prune}(M_{i_k}))\\
   \qquad \text{where } \{ i_1 < \cdots < i_k \} =
     \{ i \mid x_i \in \mathit{FV}(N) \text{ or } M_i \text{ is not a variable} \}
 \end{array}
 \]
 
-\subsection{\pass{concretize} (Clos to EnvClos)}
-\label{app:pass-concretize}
-\agda{Mu/Compiler/Concretize.agda (concretize-program)}
+\paragraph{Concretize}
 
-Each closure stores its captured values in one tuple, bound to $z$ in
+The last step stores the captured values of each closure in one tuple, bound to $z$ in
 its code, and the code reads the name $x_i$ as $\kw{get}_i\,z$. The map
 $\varphi$ sends each Clos variable to a reference, $x$ or
 $\kw{get}_i\,z$, in EnvClos:
 \[
 \begin{array}{@{}l@{}}
-  \pass{concretize}_\varphi(x) = \varphi(x)\\
-  \pass{concretize}_\varphi(\kw{clos}\;(x_1, \ldots, x_n, y.\,N)\;(M_1, \ldots, M_n)) =\\
-  \qquad \kw{clos}\;(z, y.\,\pass{concretize}_{\varphi'}(N))\;
-      (\pass{concretize}_\varphi(M_1), \ldots, \pass{concretize}_\varphi(M_n))\\
+  \mathit{concretize}_\varphi(x) = \varphi(x)\\
+  \mathit{concretize}_\varphi(\kw{clos}\;(x_1, \ldots, x_n, y.\,N)\;(M_1, \ldots, M_n)) =\\
+  \qquad \kw{clos}\;(z, y.\,\mathit{concretize}_{\varphi'}(N))\;
+      (\mathit{concretize}_\varphi(M_1), \ldots, \mathit{concretize}_\varphi(M_n))\\
   \qquad \text{where } \varphi' =
     \{ y \mapsto y,\; x_1 \mapsto \kw{get}_1\,z,\; \ldots,\; x_n \mapsto \kw{get}_n\,z \}
 \end{array}
@@ -978,14 +981,14 @@ environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
 \label{app:calculations}
 \agda{Mu/proof/Correctness/GraphModel/, one file per pass (EncloseCorrect.agda, ...)}
 
-This appendix gives the key case of the proofs of the seven equational passes that Section~\ref{sec:equational} does not show, in the order of the pipeline. As there, each proof generalizes the equation to open terms under related environments, the other cases are congruences, and where a step needs a set to be nonempty we show the nonempty case.
+This appendix gives the key case of the proofs of the first two steps of \pass{enclose} and of the five equational passes that Section~\ref{sec:equational} does not show, in the order of the pipeline. As there, each proof generalizes the equation to open terms under related environments, the other cases are congruences, and where a step needs a set to be nonempty we show the nonempty case.
 
-\paragraph{Enclose}
+\paragraph{Enclose: capture}
 
 The environments agree on the variables $\vec{x}$ in scope, and the
 target environment is nonempty on them. A $\lambda$-abstraction becomes
 a closure that captures all of $\vec{x}$. With $N' =
-\pass{enclose}(N)$ and $F = \mlam{Y} \den{N'}\rho_0[\vec{x}{:=}\rho'(\vec{x}),
+\mathit{capture}(N)$ and $F = \mlam{Y} \den{N'}\rho_0[\vec{x}{:=}\rho'(\vec{x}),
 y{:=}Y]$:
 {\small
 \[
@@ -997,12 +1000,12 @@ y{:=}Y]$:
 \end{array}
 \]}
 
-\paragraph{Optimize}
+\paragraph{Enclose: prune}
 
 The environments agree on the variables that a term uses, and the
 source environment is nonempty. Let $D_i = \den{M_i}\rho$ and $D'_i =
-\den{\pass{optimize}(M_i)}\rho'$, let $I$ be the indices of the kept
-captured values, and let $N' = \pass{optimize}(N)$:
+\den{\mathit{prune}(M_i)}\rho'$, let $I$ be the indices of the kept
+captured values, and let $N' = \mathit{prune}(N)$:
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}

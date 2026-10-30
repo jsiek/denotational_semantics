@@ -36,7 +36,7 @@ Theorem~\ref{thm:compiler} to running code.
 \subsection{Passes Proved by an Equation}
 \label{sec:equational}
 
-For nine of the ten passes, the theorem is an equation between the
+For seven of the eight passes, the theorem is an equation between the
 meaning of a program and the meaning of its translation, such as
 $\den{M} = \den{\pass{simplify}(M)}$ or
 $\den{M} = \den{\pass{globalize}(M)}$. To apply induction, each proof
@@ -50,10 +50,10 @@ translate most forms homomorphically, the case for such a form applies
 the same operator to equal arguments and is immediate. The real work
 is in the few cases that the pass changes, where an equation about the
 operators of the graph model replaces the source form with the target
-form. Below we show that case as a calculation for two representative
-passes, with the justification of each step on the right;
+form. Below we show that case as a calculation for \pass{simplify} and for
+the last step of \pass{enclose}, with the justification of each step on the right;
 Appendix~\ref{app:calculations} gives the calculations for the other
-seven, including \pass{select instructions}, whose key case turns a
+steps and passes, including \pass{select instructions}, whose key case turns a
 call into $\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and $\kw{callq}$
 instructions. Where a step needs a set to
 be nonempty, we show the nonempty case; otherwise both sides
@@ -83,12 +83,16 @@ consistent, which holds because $\rho$ is. A $\beta$-redex
 $(\lambda x.\, N)\;M$ is the same calculation without the second step.
 
 
-\paragraph{Concretize}
+\paragraph{Enclose}
 
-Each variable $x$ satisfies $\den{x}\rho = \den{\varphi(x)}\rho'$, where
+The \pass{enclose} pass works in three steps (\S\ref{app:pass-enclose}).
+The first two produce closures of an intermediate language, Clos,
+written $\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$, which bind a name
+$x_i$ for each captured value $M_i$. The last step, $\mathit{concretize}_\varphi$,
+stores the captured values in a tuple. Each variable $x$ satisfies $\den{x}\rho = \den{\varphi(x)}\rho'$, where
 its reference $\varphi(x)$ is either $x$ or $\kw{get}_i\,z$. Let $D_i = \den{M_i}\rho$ and
-$D'_i = \den{\pass{concretize}_\varphi(M_i)}\rho'$, so that $D_i = D'_i$,
-and let $N' = \pass{concretize}_{\varphi'}(N)$:
+$D'_i = \den{\mathit{concretize}_\varphi(M_i)}\rho'$, so that $D_i = D'_i$,
+and let $N' = \mathit{concretize}_{\varphi'}(N)$:
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
@@ -108,8 +112,8 @@ nonempty and consistent.
 
 \paragraph{The answer to RQ2}
 
-These calculations answer RQ2 affirmatively. For each of the nine
-passes, the interesting case is a short chain of equations between
+These calculations answer RQ2 affirmatively. For each of the seven
+passes, each interesting case is a short chain of equations between
 denotations: the meaning of the source form, a few laws of the graph
 model or the semantic equations, the induction hypothesis, and the
 meaning of the target form. The remaining cases are congruences. No

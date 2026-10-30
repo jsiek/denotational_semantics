@@ -81,13 +81,13 @@ approximation of one value to the whole other value
 (Section~\ref{sec:scott-delay}).
 
 We use these denotational closure-conversion results in two
-correctness proofs of a ten-pass compiler from a call-by-value
+correctness proofs of a eight-pass compiler from a call-by-value
 $\lambda$-calculus with iso-recursive types, which we call \iswim, to
 a typed assembly language.  Recursive types let us write the
 call-by-value fixed-point combinator, so \iswim\ has general recursion
 and admits divergence. The compiler first applies a source-to-source
 optimizer modeled on the cp0 pass of Chez Scheme
-\citep{Waddell:1997fk}, then performs closure conversion in five
+\citep{Waddell:1997fk}, then performs closure conversion in three
 passes, and finally uses four passes to remove complex operands, lift locals, make control flow explicit, and select
 instructions. Every language in the compiler has a denotational
 semantics in each model. In both, we prove most passes correct by an
@@ -153,7 +153,7 @@ denotational proofs with each other and with three operational proofs
 of the same compiler: with abstract machines and simulations; with
 clocked interpreters and value relations; and with standard reduction
 semantics and simulations. Each of the five developments covers the
-ten-pass pipeline and proves an analogous correctness property in its
+eight-pass pipeline and proves an analogous correctness property in its
 own semantics. Earlier comparisons of semantic styles for compiler
 proofs cover a single phase or pass \citep{Owens:2016aa,Kahn:2025aa};
 ours is, to our knowledge, the first on a compiler for a higher-order
