@@ -6,7 +6,7 @@ module Untyped.Semantics.Graph.Clos2Iswim where
    variable expressions, and the result is a function of the argument.
    Like tuples, closures are strict: a closure has no values unless each
    of its free variables has one.
- This semantics is after the 'enclose' pass,
+ This semantics is after the 'capture' pass,
    and before the 'concretize' pass.
 
 -}

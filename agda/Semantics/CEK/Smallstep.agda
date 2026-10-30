@@ -35,12 +35,12 @@
     (Equivalent): the program and its compilation terminate with the same
     observations (including o-error), and one diverges iff the other does.
     We never need "terminates or diverges", which is not constructive.
-    When no source step is matched by zero target steps (as for enclose),
+    When no source step is matched by zero target steps (as for capture),
     plus-simulation builds the forward simulation from one lemma,
       sim : s₁ ~ s₂ → Answers L₂ _~_ (step s₁) s₂
     (the target stops with the same observation, or takes a plus to a
     matching state), proved by cases on the match. When some source
-    steps are matched by no target step (as for optimize, where the
+    steps are matched by no target step (as for prune, where the
     source evaluates free variables that the target drops),
     the forward simulation is given directly: a match indexed by a
     natural number, which such a step must decrease. For simplify and

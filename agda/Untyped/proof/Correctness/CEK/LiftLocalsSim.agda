@@ -47,7 +47,7 @@ import Untyped.Semantics.CEK.Imp as I
 import Semantics.CEK.ISWIM as S
 open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
 open import Untyped.Compiler.RCO using (rco-program-mon)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Untyped.proof.Correctness.CEK.RCOSim using (compile-mon-correct)
 
 open import Data.Empty using (⊥-elim)

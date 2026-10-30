@@ -32,7 +32,7 @@ import Untyped.Language.CFG as C
 import Language.ISWIM as ISWIM
 open import Untyped.Compiler.Explicate
 open import Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Untyped.Semantics.GraphErr.ImpK
   using (Store; _[_↦_]; frameᵐ; Table; 𝒜; 𝒜s; 𝒮; zeros; frame; tables; Kont; halt; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ)
   renaming (code to codeᴷ)

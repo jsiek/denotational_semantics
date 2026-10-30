@@ -6,8 +6,8 @@
   them, with its type written out, so that it can be read without
   opening proof/.
 
-    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
-          --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
@@ -24,7 +24,7 @@
 
   To read them: the languages (Language/, Language/Typed/), the passes
   (Compiler/), the semantics, the observations, and the
-  precondition Closed (Compiler/EncloseScope.agda), for the untyped
+  precondition Closed (Compiler/CaptureScope.agda), for the untyped
   source only.
 
 -}
@@ -49,8 +49,8 @@ import Language.Typed.CFG as CFGᵀ
 
 open import Compiler.Simplify using (simplify)
 open import Compiler.Cast using (cast-closed)
-open import Compiler.Enclose using (enclose)
-open import Compiler.Optimize using (optimize-program)
+open import Compiler.Capture using (capture)
+open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Delay using (delay-program)
 open import Compiler.Globalize using (globalize)
@@ -60,7 +60,7 @@ open import Compiler.Explicate using (explicate)
 open import Compiler.Select using (select)
 open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 
 import Semantics.Reduction.ISWIM as ISWIMᵣ
 import Semantics.Reduction.Typed.ISWIM as ISWIMᵀᵣ
@@ -74,8 +74,8 @@ import Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 import proof.Correctness.Reduction.SimplifyRed as SimplifyRed
 import proof.Correctness.Reduction.CastRed as CastRed
-import proof.Correctness.Reduction.EncloseRed as EncloseRed
-import proof.Correctness.Reduction.OptimizeRed as OptimizeRed
+import proof.Correctness.Reduction.CaptureRed as CaptureRed
+import proof.Correctness.Reduction.PruneRed as PruneRed
 import proof.Correctness.Reduction.ConcretizeRed as ConcretizeRed
 import proof.Correctness.Reduction.DelayRed as DelayRed
 import proof.Correctness.Reduction.GlobalizeRed as GlobalizeRed
@@ -97,11 +97,11 @@ cast-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMᵣ.sem M) (ISWIMᵀᵣ.sem (cast-closed M))
 cast-correct = CastRed.cast-correct
 
-enclose-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀᵣ.sem M) (Clos2ᵀᵣ.sem (enclose M))
-enclose-correct = EncloseRed.enclose-correct
+capture-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀᵣ.sem M) (Clos2ᵀᵣ.sem (capture M))
+capture-correct = CaptureRed.capture-correct
 
-optimize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵣ.sem M) (Clos2ᵀᵣ.sem (optimize-program M))
-optimize-correct = OptimizeRed.optimize-correct
+prune-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵣ.sem M) (Clos2ᵀᵣ.sem (prune-program M))
+prune-correct = PruneRed.prune-correct
 
 concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵣ.sem M) (Clos3ᵀᵣ.sem (concretize-program M))
 concretize-correct = ConcretizeRed.concretize-correct

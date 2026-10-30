@@ -5,7 +5,7 @@
   each theorem here is one of them, with its type written out, so that it
   can be read without opening proof/.
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -35,8 +35,8 @@ import Untyped.Language.CFG as CFG
 import Language.X86 as X86
 
 open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Enclose using (enclose)
-open import Untyped.Compiler.Optimize using (optimize-program)
+open import Untyped.Compiler.Capture using (capture)
+open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
 open import Untyped.Compiler.Delay using (delay)
 open import Untyped.Compiler.Globalize using (globalize)
@@ -56,8 +56,8 @@ open import Untyped.Semantics.Graph.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧
 open import Untyped.Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
 import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
-import Untyped.proof.Correctness.Graph.EncloseCorrect as EncloseCorrect
-import Untyped.proof.Correctness.Graph.OptimizeCorrect as OptimizeCorrect
+import Untyped.proof.Correctness.Graph.CaptureCorrect as CaptureCorrect
+import Untyped.proof.Correctness.Graph.PruneCorrect as PruneCorrect
 import Untyped.proof.Correctness.Graph.ConcretizeCorrect as ConcretizeCorrect
 import Untyped.proof.Correctness.Graph.DelayPreserve as DelayCorrect
 import Untyped.proof.Correctness.Graph.GlobalizeCorrect as GlobalizeCorrect
@@ -85,11 +85,11 @@ open import Data.Product using (_×_)
 simplify-correct : ∀ (M : ISWIM.AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
 simplify-correct = SimplifyCorrect.simplify-correct
 
-enclose-correct : ∀ (M : ISWIM.AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ enclose M ⟧₂ ρ₀
-enclose-correct = EncloseCorrect.enclose-correct-closed
+capture-correct : ∀ (M : ISWIM.AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
+capture-correct = CaptureCorrect.capture-correct-closed
 
-optimize-correct : ∀ (M : Clos2.AST) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ optimize-program M ⟧₂ ρ₀
-optimize-correct = OptimizeCorrect.optimize-correct-closed
+prune-correct : ∀ (M : Clos2.AST) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ prune-program M ⟧₂ ρ₀
+prune-correct = PruneCorrect.prune-correct-closed
 
 concretize-correct : ∀ (M : Clos2.AST) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = ConcretizeCorrect.concretize-correct-closed

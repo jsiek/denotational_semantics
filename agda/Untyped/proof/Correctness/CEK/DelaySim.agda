@@ -32,7 +32,7 @@
   check, that the operator is code, comes at the call and always passes
   on delay's output.)
 
-  No precondition is needed: unlike enclose, delay does not depend on
+  No precondition is needed: unlike capture, delay does not depend on
   which variables a term uses, so the end theorem holds for every Clos3
   program, closed or not (a free variable errors in both).
 

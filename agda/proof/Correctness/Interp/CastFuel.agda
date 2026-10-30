@@ -25,7 +25,7 @@ open import Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import Language.Typed.Type
 import Language.Typed.ISWIM as I
 open import Compiler.Cast
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Compiler.SimplifyScope using (closed-ws)
 open import proof.Compiler.CastScope using (cast-closed-≡)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)

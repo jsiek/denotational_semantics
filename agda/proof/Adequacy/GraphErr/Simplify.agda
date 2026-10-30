@@ -17,7 +17,7 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
 open import Language.ISWIM using (AST)
 open import Compiler.Simplify using (simplify)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Compiler.SimplifyScope using (simplify-closed)
 open import proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
 open import Semantics.Observation

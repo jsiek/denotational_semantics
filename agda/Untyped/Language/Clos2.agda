@@ -5,7 +5,7 @@ module Untyped.Language.Clos2 where
    one at a time, around the function body:
    clos-op n ⦅ ∁ (x₁ ... xₙ y. N) , fv₁ , ... , fvₙ ⦆
    where N may refer only to the argument y and the free variables x₁ ... xₙ.
- This language is after the 'enclose' pass,
+ This language is after the 'capture' pass,
    and before the 'concretize' pass.
 -}
 

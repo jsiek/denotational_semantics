@@ -24,19 +24,19 @@ open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
 open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Enclose using (enclose)
-open import Mu.Compiler.Optimize using (optimize-program)
-open import Mu.Compiler.Concretize using (concretize-program)
+open import Mu.Compiler.Capture using (capture)
+open import Mu.Compiler.Prune using (prune-program)
 open import Mu.Compiler.Pipeline
 open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
+open import Mu.Semantics.GraphModel.EnvClos using () renaming (⟦_⟧ to ⟦_⟧₃)
 open import Mu.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧₄)
 open import Mu.Semantics.GraphModel.GlobalFun using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Mu.Semantics.GraphModel.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import Mu.Semantics.GraphModel.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
 open import Mu.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-correct)
-open import Mu.proof.Correctness.GraphModel.EncloseCorrect using (enclose-correct)
-open import Mu.proof.Correctness.GraphModel.OptimizeCorrect using (optimize-correct)
+open import Mu.proof.Correctness.GraphModel.CaptureCorrect using (capture-correct)
+open import Mu.proof.Correctness.GraphModel.PruneCorrect using (prune-correct)
 open import Mu.proof.Correctness.GraphModel.ConcretizeCorrect using (concretize-correct)
 open import Mu.proof.Correctness.GraphModel.DelayCorrect using (delay-correct-const; delay-correct-nonempty)
 open import Mu.proof.Correctness.GraphModel.GlobalizeCorrect using (globalize-correct)
@@ -63,13 +63,17 @@ then ⟨ c , n ⟩ ⟨ c' , n' ⟩ = ⟨ (λ k → ⇔∘ (c k) (c' k)) , ⇔∘
 same : ∀ {D E} → D ≃ E → Same D E
 same D≃@(⟨ D⊆ , E⊆ ⟩) = ⟨ (λ k → ⟨ D⊆ _ , E⊆ _ ⟩) , ⟨ ne-≃ D≃ , ne-≃ (≃-sym D≃) ⟩ ⟩
 
+{- closure conversion, enclose = concretize ∘ prune ∘ capture -}
+enclose-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ ρ₀ ≃ ⟦ enclose M ⟧₃ ρ₀
+enclose-correct M =
+  ≃-trans (capture-correct M) (≃-trans (prune-correct (capture M)) (concretize-correct (prune-program (capture M))))
+
 compile-to-PairClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) (⟦ compile-to-PairClos M ⟧₄ ρ₀)
 compile-to-PairClos-same M =
-  then (same (≃-trans (simplify-correct M) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂)))))
-       ⟨ delay-correct-const (concretize-program M₂) , delay-correct-nonempty (concretize-program M₂) ⟩
+  then (same (≃-trans (simplify-correct M) (enclose-correct M₁)))
+       ⟨ delay-correct-const (enclose M₁) , delay-correct-nonempty (enclose M₁) ⟩
   where
   M₁ = simplify M
-  M₂ = optimize-program (enclose M₁)
 
 compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
 compile-to-GlobalFun-same M = then (compile-to-PairClos-same M) (same (globalize-correct (compile-to-PairClos M)))

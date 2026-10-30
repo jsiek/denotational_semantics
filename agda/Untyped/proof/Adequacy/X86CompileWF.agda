@@ -36,7 +36,7 @@ open import Untyped.Compiler.LiftLocals renaming (lift to liftL)
 open import Untyped.Compiler.Explicate
 open import Untyped.Compiler.Select
 open import Untyped.Compiler.Pipeline using (compile; compile-x86)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Untyped.proof.Correctness.Graph.GlobalizeCorrect using (RB; RB-arg; RB-args)
 open import Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (table-con)
 open import Untyped.proof.Correctness.Graph.RCOCorrect using (table-rco)

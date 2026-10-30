@@ -11,7 +11,7 @@
 
 module proof.Correctness.Reduction.PipelineRed where
 
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.Simplify using (simplify)
 open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 open import Language.Typed.Mon using (⌜_⌝ₚ)
@@ -21,8 +21,8 @@ open import Semantics.Reduction.Smallstep using (Equivalent; Terminates; Diverge
 open import proof.Framework.Simulation Obs using (equiv-trans)
 open import proof.Correctness.Reduction.SimplifyRed using (simplify-correct)
 open import proof.Correctness.Reduction.CastRed using (cast-correct)
-open import proof.Correctness.Reduction.EncloseRed using (enclose-correct)
-open import proof.Correctness.Reduction.OptimizeRed using (optimize-correct)
+open import proof.Correctness.Reduction.CaptureRed using (capture-correct)
+open import proof.Correctness.Reduction.PruneRed using (prune-correct)
 open import proof.Correctness.Reduction.ConcretizeRed using (concretize-correct)
 open import proof.Correctness.Reduction.DelayRed using (delay-correct)
 open import proof.Correctness.Reduction.GlobalizeRed using (globalize-correct)
@@ -41,7 +41,7 @@ open import Data.Product using (_,_; proj₁; proj₂)
 compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (cast-correct (simplify M) (simplify-closed M c))
-    (equiv-trans (enclose-correct _) (equiv-trans (optimize-correct _) (equiv-trans (concretize-correct _)
+    (equiv-trans (capture-correct _) (equiv-trans (prune-correct _) (equiv-trans (concretize-correct _)
       (equiv-trans (delay-correct _) (globalize-correct _))))))
 
 compile-mon-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem ⌜ compile-mon M ⌝ₚ)

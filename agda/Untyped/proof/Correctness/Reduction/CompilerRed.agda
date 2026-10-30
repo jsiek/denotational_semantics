@@ -3,33 +3,33 @@
   Correctness of the whole closure-conversion compiler, by reduction
   semantics and forward simulations:
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5
 
   Each pass is proved by a forward simulation, which gives its end
   theorem (Equivalent); these compose (equiv-trans). The compiler is
   Untyped.Compiler.Pipeline.compile, the one of the other proofs. The
-  only precondition is that of enclose, a closed ISWIM program: enclose
-  then produces a well-scoped program, as optimize needs
-  (enclose-closed), and optimize keeps it well scoped, as concretize
-  needs (optimize-closed).
+  only precondition is that of capture, a closed ISWIM program: capture
+  then produces a well-scoped program, as prune needs
+  (capture-closed), and prune keeps it well scoped, as concretize
+  needs (prune-closed).
 
 -}
 
 module Untyped.proof.Correctness.Reduction.CompilerRed where
 
 open import Untyped.Compiler.Pipeline using (compile)
-open import Untyped.Compiler.Enclose using (enclose)
+open import Untyped.Compiler.Capture using (capture)
 open import Semantics.Observation
 open import Semantics.Reduction.Smallstep using (Equivalent; Terminates; Diverges)
 open import proof.Framework.Simulation Obs using (equiv-trans)
-open import Untyped.proof.Compiler.EncloseScope using (Closed; enclose-closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed; capture-closed)
 open import Untyped.proof.Compiler.PipelineScope using (module Opt)
 open import Compiler.Simplify using (simplify)
 open import proof.Compiler.SimplifyScope using (simplify-closed)
 open import proof.Correctness.Reduction.SimplifyRed using (simplify-correct)
-open import Untyped.proof.Correctness.Reduction.EncloseRed using (enclose-correct)
-open import Untyped.proof.Correctness.Reduction.OptimizeRed using (optimize-correct)
+open import Untyped.proof.Correctness.Reduction.CaptureRed using (capture-correct)
+open import Untyped.proof.Correctness.Reduction.PruneRed using (prune-correct)
 open import Untyped.proof.Correctness.Reduction.ConcretizeRed using (concretize-correct)
 open import Untyped.proof.Correctness.Reduction.DelayRed using (delay-correct)
 open import Untyped.proof.Correctness.Reduction.GlobalizeRed using (globalize-correct)
@@ -42,11 +42,11 @@ open import Data.Product using (_,_; proj₁; proj₂)
 
 compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
-  equiv-trans (simplify-correct M c) (equiv-trans (enclose-correct _ c') (equiv-trans (optimize-correct _ w)
-    (equiv-trans (concretize-correct _ (Opt.optimize-closed (enclose (simplify M)) w))
+  equiv-trans (simplify-correct M c) (equiv-trans (capture-correct _ c') (equiv-trans (prune-correct _ w)
+    (equiv-trans (concretize-correct _ (Opt.prune-closed (capture (simplify M)) w))
       (equiv-trans (delay-correct _) (globalize-correct _)))))
   where c' = simplify-closed M c
-        w = enclose-closed (simplify M) c'
+        w = capture-closed (simplify M) c'
 
 {- in particular -}
 

@@ -4,7 +4,7 @@
   insertion and the typed intermediate languages (PR #56), with its
   correctness proofs in the five styles.
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2
           --concretize--> Clos3 --delay--> Clos4 --globalize--> Clos5
           --rco--> Mon --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -38,12 +38,12 @@ import Untyped.Theorems.Adequacy
 import Untyped.Theorems.GraphErrors
 
 {- proof/: syntactic facts about the passes and examples of them -}
-import Untyped.proof.Compiler.EncloseScope
+import Untyped.proof.Compiler.CaptureScope
 import Untyped.proof.Compiler.Examples.ExplicateExample
 import Untyped.proof.Compiler.Examples.LiftLocalsExample
 import Untyped.proof.Compiler.Examples.RCOExample
 import Untyped.proof.Compiler.Examples.SelectExample
-import Untyped.proof.Compiler.Examples.SimplifyEncloseExample
+import Untyped.proof.Compiler.Examples.SimplifyCaptureExample
 import Untyped.proof.Compiler.GlobalizeTable
 import Untyped.proof.Compiler.PipelineScope
 
@@ -63,8 +63,8 @@ import Untyped.proof.Correctness.Graph.DelayFiniteCommon
 import Untyped.proof.Correctness.Graph.DelayFiniteRel
 import Untyped.proof.Correctness.Graph.DelayPreserve
 import Untyped.proof.Correctness.Graph.DelayReflectFinite
-import Untyped.proof.Correctness.Graph.EncloseCorrect
-import Untyped.proof.Correctness.Graph.EncloseExample
+import Untyped.proof.Correctness.Graph.CaptureCorrect
+import Untyped.proof.Correctness.Graph.CaptureExample
 import Untyped.proof.Correctness.Graph.ExplicateCommon
 import Untyped.proof.Correctness.Graph.ExplicateCorrect
 import Untyped.proof.Correctness.Graph.ExplicateCorrectK
@@ -72,7 +72,7 @@ import Untyped.proof.Correctness.Graph.GlobalizeCorrect
 import Untyped.proof.Correctness.Graph.LiftLocalsCommon
 import Untyped.proof.Correctness.Graph.LiftLocalsCorrect
 import Untyped.proof.Correctness.Graph.LiftLocalsCorrectK
-import Untyped.proof.Correctness.Graph.OptimizeCorrect
+import Untyped.proof.Correctness.Graph.PruneCorrect
 import Untyped.proof.Correctness.Graph.PipelineExample
 import Untyped.proof.Correctness.Graph.RCOCorrect
 import Untyped.proof.Correctness.Graph.SelectCorrect
@@ -85,11 +85,11 @@ import Untyped.proof.Correctness.CEK.CompilerX86Sim
 import Untyped.proof.Correctness.CEK.ConcretizeSim
 import Untyped.proof.Correctness.CEK.DelayBackSim
 import Untyped.proof.Correctness.CEK.DelaySim
-import Untyped.proof.Correctness.CEK.EncloseSim
+import Untyped.proof.Correctness.CEK.CaptureSim
 import Untyped.proof.Correctness.CEK.ExplicateSim
 import Untyped.proof.Correctness.CEK.GlobalizeSim
 import Untyped.proof.Correctness.CEK.LiftLocalsSim
-import Untyped.proof.Correctness.CEK.OptimizeSim
+import Untyped.proof.Correctness.CEK.PruneSim
 import Untyped.proof.Correctness.CEK.RCOSim
 import Untyped.proof.Correctness.CEK.SelectSim
 
@@ -97,11 +97,11 @@ import Untyped.proof.Correctness.CEK.SelectSim
 import Untyped.proof.Correctness.Interp.CompilerFuel
 import Untyped.proof.Correctness.Interp.ConcretizeFuel
 import Untyped.proof.Correctness.Interp.DelayFuel
-import Untyped.proof.Correctness.Interp.EncloseFuel
+import Untyped.proof.Correctness.Interp.CaptureFuel
 import Untyped.proof.Correctness.Interp.ExplicateFuel
 import Untyped.proof.Correctness.Interp.GlobalizeFuel
 import Untyped.proof.Correctness.Interp.LiftLocalsFuel
-import Untyped.proof.Correctness.Interp.OptimizeFuel
+import Untyped.proof.Correctness.Interp.PruneFuel
 import Untyped.proof.Correctness.Interp.RCOFuel
 import Untyped.proof.Correctness.Interp.SelectFuel
 
@@ -114,10 +114,10 @@ import Untyped.proof.Correctness.Reduction.CompilerRed
 import Untyped.proof.Correctness.Reduction.CompilerX86Red
 import Untyped.proof.Correctness.Reduction.ConcretizeRed
 import Untyped.proof.Correctness.Reduction.DelayRed
-import Untyped.proof.Correctness.Reduction.EncloseRed
+import Untyped.proof.Correctness.Reduction.CaptureRed
 import Untyped.proof.Correctness.Reduction.GlobalizeRed
 import Untyped.proof.Correctness.Reduction.LiftLocalsRed
-import Untyped.proof.Correctness.Reduction.OptimizeRed
+import Untyped.proof.Correctness.Reduction.PruneRed
 import Untyped.proof.Correctness.Reduction.RCORed
 
 {- proof/: the graph model with errors -}
@@ -131,11 +131,11 @@ import Untyped.proof.Correctness.GraphErr.DelayApp
 import Untyped.proof.Correctness.GraphErr.DelayPreserve
 import Untyped.proof.Correctness.GraphErr.DelayReflect
 import Untyped.proof.Correctness.GraphErr.DelayRel
-import Untyped.proof.Correctness.GraphErr.EncloseCorrect
+import Untyped.proof.Correctness.GraphErr.CaptureCorrect
 import Untyped.proof.Correctness.GraphErr.ExplicateCorrect
 import Untyped.proof.Correctness.GraphErr.GlobalizeCorrect
 import Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect
-import Untyped.proof.Correctness.GraphErr.OptimizeCorrect
+import Untyped.proof.Correctness.GraphErr.PruneCorrect
 import Untyped.proof.Correctness.GraphErr.RCOCorrect
 import Untyped.proof.Correctness.GraphErr.SelectCorrect
 

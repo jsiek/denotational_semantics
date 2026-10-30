@@ -10,7 +10,7 @@ source language: a call-by-value λ-calculus with base types, n-ary
 tuples, sums and iso-recursive types μX.A, with no recursion construct
 and no errors.
 
-    ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
+    ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --delay--> PairClosμ
            --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
@@ -97,10 +97,13 @@ environment ρ₀ is `ρ₀` of `Semantics/GraphModel/Closed.agda`.
 
 The per-pass results of §4.1 and Appendix D are proved in
 `proof/Correctness/GraphModel/<Pass>Correct.agda` (`simplify-correct`,
-`enclose-correct`, `optimize-correct`, `concretize-correct`,
+`capture-correct`, `prune-correct`, `concretize-correct`,
 `globalize-correct`, `rco-correct`, `lift-locals-correct`,
 `explicate-correct`, `select-correct`), and those of the other styles
 in `proof/Correctness/<style>/`. They are not restated in `Theorems/`.
+The graph-model correctness of enclose, `enclose-correct`, composes
+those of capture, prune and concretize in
+`proof/Correctness/GraphModel/CompilerCorrect.agda`.
 
 ## The paper's definitions
 
@@ -128,9 +131,10 @@ pipelines.
 | Pass | File | Agda |
 |---|---|---|
 | simplify (ISWIMμ to ISWIMμ) | [`Compiler/Simplify.agda`](Compiler/Simplify.agda) | `simplify` |
-| enclose (ISWIMμ to Clos) | [`Compiler/Enclose.agda`](Compiler/Enclose.agda) | `enclose` |
-| optimize (Clos to Clos) | [`Compiler/Optimize.agda`](Compiler/Optimize.agda) | `optimize-program` |
+| capture (ISWIMμ to Clos) | [`Compiler/Capture.agda`](Compiler/Capture.agda) | `capture` |
+| prune (Clos to Clos) | [`Compiler/Prune.agda`](Compiler/Prune.agda) | `prune-program` |
 | concretize (Clos to EnvClos) | [`Compiler/Concretize.agda`](Compiler/Concretize.agda) | `concretize-program` (`concretize` with references φ: `Ref`, `Refs`) |
+| enclose (ISWIMμ to EnvClos), the closure-conversion pass: concretize ∘ prune ∘ capture | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `enclose` |
 | delay (EnvClos to PairClos) | [`Compiler/Delay.agda`](Compiler/Delay.agda) | `delay-program` (`delay`) |
 | globalize (PairClos to GlobalFun) | [`Compiler/Globalize.agda`](Compiler/Globalize.agda) | `globalize` |
 | remove complex operands (GlobalFun to Mon) | [`Compiler/RCO.agda`](Compiler/RCO.agda) | `rco-program` |
@@ -210,8 +214,8 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | B.7 The x86μ Language | typing, graph semantics | `Language/X86.agda`, `Semantics/GraphModel/X86.agda` |
 | C (opening) | the composition `compile` | `Compiler/Pipeline.agda` (`compile`) |
 | C.1 simplify | | `Compiler/Simplify.agda` (`simplify`) |
-| C.2 enclose | | `Compiler/Enclose.agda` (`enclose`) |
-| C.3 optimize | | `Compiler/Optimize.agda` (`optimize-program`) |
+| C.2 capture | | `Compiler/Capture.agda` (`capture`) |
+| C.3 prune | | `Compiler/Prune.agda` (`prune-program`) |
 | C.4 concretize | | `Compiler/Concretize.agda` (`concretize-program`) |
 | C.5 delay | | `Compiler/Delay.agda` (`delay-program`) |
 | C.6 globalize | | `Compiler/Globalize.agda` (`globalize`) |
@@ -219,8 +223,8 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | C.8 lift locals | | `Compiler/LiftLocals.agda` (`lift-program`) |
 | C.9 explicate control | | `Compiler/Explicate.agda` (`explicate`) |
 | C.10 select instructions | | `Compiler/Select.agda` (`select`) |
-| D, Enclose | calculation | `proof/Correctness/GraphModel/EncloseCorrect.agda` (`enclose-correct`) |
-| D, Optimize | calculation | `proof/Correctness/GraphModel/OptimizeCorrect.agda` (`optimize-correct`) |
+| D, Capture | calculation | `proof/Correctness/GraphModel/CaptureCorrect.agda` (`capture-correct`) |
+| D, Prune | calculation | `proof/Correctness/GraphModel/PruneCorrect.agda` (`prune-correct`) |
 | D, Globalize | calculation | `proof/Correctness/GraphModel/GlobalizeCorrect.agda` (`globalize-correct`) |
 | D, Remove complex operands | calculation | `proof/Correctness/GraphModel/RCOCorrect.agda` (`rco-correct`) |
 | D, Lift locals | calculation | `proof/Correctness/GraphModel/LiftLocalsCorrect.agda` (`lift-locals-correct`) |

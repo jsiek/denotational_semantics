@@ -41,7 +41,7 @@ open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
 import Semantics.CEK.ISWIM as I
 import Untyped.Semantics.CEK.Clos5 as C5
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 import proof.Adequacy.ISWIM as AI
 import Untyped.proof.Adequacy.ISWIMCompile as AIC
 import Untyped.proof.Adequacy.Clos5 as A5

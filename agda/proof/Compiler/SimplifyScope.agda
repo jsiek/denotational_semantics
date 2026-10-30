@@ -1,7 +1,7 @@
 {-
 
   simplify keeps programs closed (simplify-closed), which the operational
-  proofs of the compiler need for enclose (Closed) and for the scoping of
+  proofs of the compiler need for capture (Closed) and for the scoping of
   its output (compile-scoped). By induction on the term, simp keeps
   terms well scoped (WS) when what it knows of the variables is (Fits).
 
@@ -13,7 +13,7 @@ open import Language.ISWIM
 import Language.Prim
 open import Language.Prim using (int; bool)
 open import Compiler.Simplify
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Compiler.SimplifyFacts using (comp-inv; branch-inl; branch-inr)
 open import Framework.Syntax.Uses Op sig using (bound; bound-args)
 open import Data.Nat using (_≤_; _⊔_; _∸_)

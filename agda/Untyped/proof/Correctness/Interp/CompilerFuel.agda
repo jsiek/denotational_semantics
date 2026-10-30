@@ -3,7 +3,7 @@
   Correctness of the whole closure-conversion compiler, by clocked
   interpreters:
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5
 
   Each pass is proved clock for clock, which gives its end theorem
@@ -15,7 +15,7 @@
   denotational end-to-end theorem (CompilerCorrect) and of the
   simulation one (CompilerSim), and it is definitionally the
   composition of the passes as the per-pass theorems state them. The
-  only precondition is that of enclose: the ISWIM program is closed.
+  only precondition is that of capture: the ISWIM program is closed.
 
 -}
 
@@ -23,16 +23,16 @@ module Untyped.proof.Correctness.Interp.CompilerFuel where
 
 open import Untyped.Compiler.Pipeline using (compile)
 open import Semantics.Observation
-open import Untyped.Compiler.Enclose using (enclose)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
-open import Untyped.Compiler.Optimize using (optimize-program)
+open import Untyped.Compiler.Capture using (capture)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
+open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
 open import Untyped.Compiler.Delay using (delay)
 open import proof.Semantics.Interp.Clock
 open import Compiler.Simplify using (simplify)
 open import proof.Compiler.SimplifyScope using (simplify-closed)
 open import proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
-open import Untyped.proof.Correctness.Interp.OptimizeFuel using (enclose-optimize-correct)
+open import Untyped.proof.Correctness.Interp.PruneFuel using (capture-prune-correct)
 open import Untyped.proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
 open import Untyped.proof.Correctness.Interp.DelayFuel using (delay-correct)
 open import Untyped.proof.Correctness.Interp.GlobalizeFuel using (globalize-correct)
@@ -45,9 +45,9 @@ open import Data.Product using (_,_; proj₁; proj₂)
 
 compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
-  equiv-trans (simplify-correct M c) (equiv-trans (enclose-optimize-correct (simplify M) (simplify-closed M c))
+  equiv-trans (simplify-correct M c) (equiv-trans (capture-prune-correct (simplify M) (simplify-closed M c))
     (equiv-trans (concretize-correct M₂) (equiv-trans (delay-correct M₃) (globalize-correct M₄))))
-  where M₂ = optimize-program (enclose (simplify M))
+  where M₂ = prune-program (capture (simplify M))
         M₃ = concretize-program M₂
         M₄ = delay M₃
 

@@ -16,10 +16,10 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
 open import Framework.GraphModel.ErrorMonad using (val∈)
 open import Language.ISWIM using (AST)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Enclose using (enclose)
-open import Untyped.Compiler.Optimize using (optimize-program)
+open import Untyped.Compiler.Capture using (capture)
+open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
 open import Untyped.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 open import Framework.Iff using (_⇔_)
@@ -32,9 +32,9 @@ open import Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_
 open import Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
 open import proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
-open import Untyped.proof.Correctness.GraphErr.EncloseCorrect using (enclose-correct)
+open import Untyped.proof.Correctness.GraphErr.CaptureCorrect using (capture-correct)
 open import proof.Compiler.SimplifyScope using (simplify-closed)
-open import Untyped.proof.Correctness.GraphErr.OptimizeCorrect using (optimize-correct-compile)
+open import Untyped.proof.Correctness.GraphErr.PruneCorrect using (prune-correct-compile)
 open import Untyped.proof.Correctness.GraphErr.ConcretizeCorrect using (concretize-correct-closed)
 open import Untyped.proof.Correctness.GraphErr.DelayPreserve
   using (delay-correct-error; delay-correct-const; delay-correct-val)
@@ -70,11 +70,11 @@ Same-trans ⟨ e₁ , ⟨ c₁ , v₁ ⟩ ⟩ ⟨ e₂ , ⟨ c₂ , v₂ ⟩ ⟩
 compile₄-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) (S4.⟦ compile₄ M ⟧ ρ₀)
 compile₄-same M c =
   Same-trans (≃→Same (≃-trans (simplify-correct M c)
-               (≃-trans (enclose-correct (simplify M) (simplify-closed M c))
-                 (≃-trans (optimize-correct-compile M c)
-                   (concretize-correct-closed (optimize-program (enclose (simplify M))))))))
+               (≃-trans (capture-correct (simplify M) (simplify-closed M c))
+                 (≃-trans (prune-correct-compile M c)
+                   (concretize-correct-closed (prune-program (capture (simplify M))))))))
     ⟨ delay-correct-error C₃ , ⟨ delay-correct-const C₃ , delay-correct-val C₃ ⟩ ⟩
-  where C₃ = concretize-program (optimize-program (enclose (simplify M)))
+  where C₃ = concretize-program (prune-program (capture (simplify M)))
 
 compile-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
 compile-same M c = Same-trans (compile₄-same M c) (≃→Same (globalize-correct-compile M c))

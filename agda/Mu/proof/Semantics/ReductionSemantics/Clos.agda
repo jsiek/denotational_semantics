@@ -53,8 +53,8 @@ lookup-travs : ∀ {𝒦 Γ Δ Δ' A} (σ : Sub 𝒦 Γ Δ) (Ms : All (Tm Γ) Δ
 lookup-travs σ (M ∷ Ms) Z = refl
 lookup-travs σ (M ∷ Ms) (S i) = lookup-travs σ Ms i
 
-{- a variable or a value: what a closure captures, in enclose's and
-   optimize's relations; renaming keeps it, and closed it is a value -}
+{- a variable or a value: what a closure captures, in capture's and
+   prune's relations; renaming keeps it, and closed it is a value -}
 data VV {Γ} : ∀ {A} → Tm Γ A → Set where
   var : ∀ {A} (x : Γ ∋ A) → VV (` x)
   val : ∀ {A} {V : Tm Γ A} → Value V → VV V

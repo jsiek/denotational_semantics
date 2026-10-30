@@ -6,7 +6,7 @@
   here is one of them, with its type written out, so that it can be read
   without opening proof/.
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -58,8 +58,8 @@ import Untyped.Language.Imp as Imp
 import Untyped.Language.CFG as CFG
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
 open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Enclose using (enclose)
-open import Untyped.Compiler.Optimize using (optimize-program)
+open import Untyped.Compiler.Capture using (capture)
+open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
 open import Untyped.Compiler.Delay using (delay)
 open import Untyped.Compiler.Globalize using (globalize)
@@ -69,7 +69,7 @@ open import Untyped.Compiler.Explicate using (explicate)
 open import Untyped.Compiler.Select using (select)
 open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 open import Untyped.Compiler.PipelineScope using (Scoped)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Framework.GraphModel.ErrorMonad using (val∈)
 
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
@@ -82,8 +82,8 @@ open import Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_
 open import Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
 import proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
-import Untyped.proof.Correctness.GraphErr.EncloseCorrect as EncloseCorrect
-import Untyped.proof.Correctness.GraphErr.OptimizeCorrect as OptimizeCorrect
+import Untyped.proof.Correctness.GraphErr.CaptureCorrect as CaptureCorrect
+import Untyped.proof.Correctness.GraphErr.PruneCorrect as PruneCorrect
 import Untyped.proof.Correctness.GraphErr.ConcretizeCorrect as ConcretizeCorrect
 import Untyped.proof.Correctness.GraphErr.DelayPreserve as DelayCorrect
 import Untyped.proof.Correctness.GraphErr.GlobalizeCorrect as GlobalizeCorrect
@@ -115,12 +115,12 @@ open import Relation.Nullary using (¬_)
 simplify-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
 simplify-correct = SimplifyCorrect.simplify-correct
 
-enclose-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ enclose M ⟧₂ ρ₀
-enclose-correct = EncloseCorrect.enclose-correct
+capture-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
+capture-correct = CaptureCorrect.capture-correct
 
-{- optimize, for well-scoped programs (enclose produces them) -}
-optimize-correct : ∀ (M : Clos2.AST) → WS 0 M → ⟦ M ⟧₂ ρ₀ ≃ ⟦ optimize-program M ⟧₂ ρ₀
-optimize-correct = OptimizeCorrect.optimize-correct
+{- prune, for well-scoped programs (capture produces them) -}
+prune-correct : ∀ (M : Clos2.AST) → WS 0 M → ⟦ M ⟧₂ ρ₀ ≃ ⟦ prune-program M ⟧₂ ρ₀
+prune-correct = PruneCorrect.prune-correct
 
 concretize-correct : ∀ (M : Clos2.AST) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = ConcretizeCorrect.concretize-correct-closed

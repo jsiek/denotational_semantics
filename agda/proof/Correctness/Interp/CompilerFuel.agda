@@ -13,11 +13,11 @@ module proof.Correctness.Interp.CompilerFuel where
 
 open import Language.ISWIM using (AST)
 open import Language.Typed.Mon using (⌜_⌝ₚ)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.Simplify using (simplify)
 open import Compiler.Cast using (cast-closed)
-open import Compiler.Enclose using (enclose)
-open import Compiler.Optimize using (optimize-program)
+open import Compiler.Capture using (capture)
+open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Delay using (delay-program)
 open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
@@ -33,8 +33,8 @@ import Semantics.Interp.Typed.X86 as X86ᵀᵢ
 
 open import proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
 open import proof.Correctness.Interp.CastFuel using (cast-correct)
-open import proof.Correctness.Interp.EncloseFuel using (enclose-correct)
-open import proof.Correctness.Interp.OptimizeFuel using (optimize-correct)
+open import proof.Correctness.Interp.CaptureFuel using (capture-correct)
+open import proof.Correctness.Interp.PruneFuel using (prune-correct)
 open import proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
 open import proof.Correctness.Interp.DelayFuel using (delay-correct)
 open import proof.Correctness.Interp.GlobalizeFuel using (globalize-correct)
@@ -48,11 +48,11 @@ open import Data.Product using (_,_; proj₁; proj₂)
 compile₄-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (Clos4ᵀᵢ.sem (compile₄ M))
 compile₄-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (cast-correct (simplify M) (simplify-closed M c))
-    (equiv-trans (enclose-correct M₁) (equiv-trans (optimize-correct M₂)
+    (equiv-trans (capture-correct M₁) (equiv-trans (prune-correct M₂)
       (equiv-trans (concretize-correct M₃) (delay-correct (concretize-program M₃))))))
   where M₁ = cast-closed (simplify M)
-        M₂ = enclose M₁
-        M₃ = optimize-program M₂
+        M₂ = capture M₁
+        M₃ = prune-program M₂
 
 compile-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem (compile M))
 compile-correct M c = equiv-trans (compile₄-correct M c) (globalize-correct (compile₄ M))

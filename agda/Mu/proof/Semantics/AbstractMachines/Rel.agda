@@ -2,7 +2,7 @@
 
   The relation between the values of two CEK machines
   (Mu/Semantics/AbstractMachines/Values.agda, with codes C₁ and C₂) for a pass that
-  maps the code of each closure by f (enclose, concretize, delay), as
+  maps the code of each closure by f (capture, concretize, delay), as
   proof/Semantics/ClockedInterpreters/Rel.agda for the interpreters: values are
   related (_≈_) when they have the same shape, except that a closure of
   code c is related to one of code f c, with related environments.

@@ -6,7 +6,7 @@
   Mu/proof/Correctness/GraphModel/; each theorem here is one of them,
   with its type written out.
 
-    ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
+    ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --delay--> PairClosμ
            --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ

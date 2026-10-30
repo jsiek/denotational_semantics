@@ -19,7 +19,7 @@ open import Untyped.proof.Correctness.Graph.CompilerCorrect
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
 open import Semantics.CEK.ISWIM using (sem)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Adequacy.ISWIM using (sound-const; sound-nonempty; adequacy-const; adequacy-converges)
 
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)

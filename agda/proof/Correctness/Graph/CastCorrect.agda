@@ -25,7 +25,7 @@ open import proof.Semantics.Graph.Prim using (primD; primD-≃; primD-mono)
 open import Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import proof.Semantics.Graph.ISWIM
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Compiler.SimplifyScope using (closed-ws)
 open import proof.Compiler.CastScope using (cast-closed-≡)
 open import Language.Typed.Type using (tfun; tint; tsum; ttup)

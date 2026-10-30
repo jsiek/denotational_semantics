@@ -2,13 +2,15 @@
 
   The passes of the ISWIMμ compiler, composed: from ISWIMμ to X86μ,
 
-    ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
+    ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --delay--> PairClosμ --globalize--> GlobalFunμ --rco--> Monμ
            --lift locals--> Impμ --explicate control--> CFGμ
            --select instructions--> X86μ
 
   as the typed pipeline's (Compiler/Pipeline.agda), without cast insertion:
-  compile is the whole compiler, into X86μ; its prefixes compile-to-PairClos,
+  enclose (ISWIMμ → EnvClosμ), the closure-conversion pass, is made of
+  three steps, enclose = concretize ∘ prune ∘ capture. compile is the
+  whole compiler, into X86μ; its prefixes compile-to-PairClos,
   compile-to-GlobalFun, compile-to-Mon, compile-to-Imp and compile-to-CFG
   stop at those languages. A program is a closed term of any type, and
   each compiled program has its type.
@@ -19,6 +21,7 @@ module Mu.Compiler.Pipeline where
 
 open import Mu.Language.Type using (Type)
 import Mu.Language.ISWIM as ISWIMμ
+import Mu.Language.EnvClos as EnvClosμ
 import Mu.Language.PairClos as PairClosμ
 import Mu.Language.GlobalFun as GlobalFunμ
 import Mu.Language.Mon as Monμ
@@ -26,8 +29,8 @@ import Mu.Language.Imp as Impμ
 import Mu.Language.CFG as CFGμ
 import Mu.Language.X86 as X86μ
 open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Enclose using (enclose)
-open import Mu.Compiler.Optimize using (optimize-program)
+open import Mu.Compiler.Capture using (capture)
+open import Mu.Compiler.Prune using (prune-program)
 open import Mu.Compiler.Concretize using (concretize-program)
 open import Mu.Compiler.Delay using (delay-program)
 open import Mu.Compiler.Globalize using (globalize)
@@ -38,8 +41,11 @@ open import Mu.Compiler.Select using (select)
 
 open import Data.List using ([])
 
+enclose : ∀ {A : Type} → ISWIMμ.Tm [] A → EnvClosμ.Tm [] A
+enclose M = concretize-program (prune-program (capture M))
+
 compile-to-PairClos : ∀ {A : Type} → ISWIMμ.Tm [] A → PairClosμ.Tm [] A
-compile-to-PairClos M = delay-program (concretize-program (optimize-program (enclose (simplify M))))
+compile-to-PairClos M = delay-program (enclose (simplify M))
 
 compile-to-GlobalFun : ∀ {A : Type} → ISWIMμ.Tm [] A → GlobalFunμ.Program A
 compile-to-GlobalFun M = globalize (compile-to-PairClos M)

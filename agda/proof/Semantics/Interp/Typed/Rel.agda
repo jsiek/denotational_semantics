@@ -7,7 +7,7 @@
   a closure of code c and environment vs is related to one of code c'
   and environment ws when vs is related pointwise to some vs' and Clo
   relates c, vs', c' and ws (Same Code: c and c' are related by Code
-  and ws is vs'; optimize also drops some of vs'). Related values are
+  and ws is vs'; prune also drops some of vs'). Related values are
   observed alike, and the operations on them give related results.
 
 -}

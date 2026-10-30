@@ -40,7 +40,7 @@ open import Untyped.Language.Mon
 import Untyped.Language.Imp as I
 import Language.ISWIM as ISWIM
 open import Untyped.Compiler.LiftLocals using (lift; height; lift-atom; lift-atoms; lift-defs; lift-program)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
 open import Untyped.Compiler.RCO using (rco-program-mon)
 open import Untyped.proof.Semantics.GraphErr.Clos5

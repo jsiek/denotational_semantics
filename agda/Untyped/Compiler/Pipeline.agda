@@ -2,7 +2,7 @@
 
   The whole closure-conversion compiler:
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5
 
   All three correctness proofs (CompilerCorrect, CompilerSim,
@@ -20,8 +20,8 @@ open import Language.ISWIM using (AST)
 import Untyped.Language.Clos4 as L4
 import Untyped.Language.Clos5 as L5
 open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Enclose using (enclose)
-open import Untyped.Compiler.Optimize using (optimize-program)
+open import Untyped.Compiler.Capture using (capture)
+open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
 open import Untyped.Compiler.Delay using (delay)
 open import Untyped.Compiler.Globalize using (globalize)
@@ -36,7 +36,7 @@ open import Untyped.Compiler.Select using (select)
 module Untyped.Compiler.Pipeline where
 
 compile₄ : AST → L4.AST
-compile₄ M = delay (concretize-program (optimize-program (enclose (simplify M))))
+compile₄ M = delay (concretize-program (prune-program (capture (simplify M))))
 
 compile : AST → L5.Program
 compile M = globalize (compile₄ M)

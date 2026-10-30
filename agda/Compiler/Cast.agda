@@ -15,7 +15,7 @@
                      inject (out-flat p) (prim p (project tint x) (project tint y)).
 
   The pass is defined on well-scoped terms (WS k M: a closed program is
-  WS 0, Compiler/EncloseScope.agda), so every variable becomes a typed
+  WS 0, Compiler/CaptureScope.agda), so every variable becomes a typed
   one. It carries a renaming r of the variables, for the variable that
   the let of a primitive adds around its second operand.
 

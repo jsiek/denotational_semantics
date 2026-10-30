@@ -49,7 +49,7 @@ open import Untyped.Semantics.Interp.Clos5
 import Untyped.Semantics.Interp.Clos5 as T
 import Semantics.Interp.ISWIM as ISWIM
 open import Untyped.Compiler.Pipeline using (compile; compile-mon)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Untyped.proof.Correctness.Interp.CompilerFuel using (compile-correct)
 open import Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
 

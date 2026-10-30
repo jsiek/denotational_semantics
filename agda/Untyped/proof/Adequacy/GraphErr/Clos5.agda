@@ -45,7 +45,7 @@ open import proof.Semantics.CEK.Smallstep
 import Untyped.Semantics.CEK.Clos5 as Clos5ₘ
 open import Untyped.Semantics.CEK.Clos5 using (ret; halt; obs)
 open import Untyped.Compiler.Pipeline using (compile)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Untyped.proof.Compiler.GlobalizeTable using (⊑-refl)
 open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
 open import proof.Adequacy.GraphErr.Soundness using (shape-ω)

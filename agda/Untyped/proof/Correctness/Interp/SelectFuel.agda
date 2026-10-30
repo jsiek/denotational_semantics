@@ -29,7 +29,7 @@ open import Untyped.Language.CFG as CFG using (return; seq; goto; case)
 open import Language.X86 using (Block; Body; var; reg; rax; retq)
 open import Untyped.Compiler.Select
 open import Untyped.Compiler.Pipeline using (compile-cfg; compile-x86)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Semantics.Observation using (o-const; δ?)
 open import proof.Framework.ListUtil using (_‼_; ‼-pw)
 open import proof.Semantics.Interp.Clock

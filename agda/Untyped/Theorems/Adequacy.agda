@@ -32,7 +32,7 @@ open import Semantics.CEK.Smallstep using (Terminates; Diverges)
 
 import Language.ISWIM as ISWIM
 open import Untyped.Compiler.Pipeline using (compile; compile-x86)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 
 open import Untyped.Theorems.Denotational using (ρ₀)
 open import Semantics.Graph.ISWIM using (⟦_⟧)

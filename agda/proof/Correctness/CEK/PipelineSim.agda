@@ -11,7 +11,7 @@
 module proof.Correctness.CEK.PipelineSim where
 
 open import Language.ISWIM using (AST)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.Simplify using (simplify)
 open import Compiler.Cast using (cast-closed)
 open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
@@ -21,8 +21,8 @@ open import proof.Compiler.CastScope using (cast-closed-≡)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equiv-trans)
 open import proof.Correctness.CEK.SimplifySim using (simplify-correct)
 open import proof.Correctness.CEK.CastSim renaming (cast-correct to cast-ws-correct)
-open import proof.Correctness.CEK.EncloseSim using (enclose-correct)
-open import proof.Correctness.CEK.OptimizeSim using (optimize-correct)
+open import proof.Correctness.CEK.CaptureSim using (capture-correct)
+open import proof.Correctness.CEK.PruneSim using (prune-correct)
 open import proof.Correctness.CEK.ConcretizeSim using (concretize-correct)
 open import proof.Correctness.CEK.DelaySim using (delay-correct)
 open import proof.Correctness.CEK.GlobalizeSim using (globalize-correct)
@@ -51,7 +51,7 @@ cast-correct M c = subst (λ T → Equivalent _ (ISWIMᵀₘ.sem T)) (sym (cast-
 compile₄-correct : ∀ M → Closed M → Equivalent (ISWIMₘ.sem M) (Clos4ᵀₘ.sem (compile₄ M))
 compile₄-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (cast-correct (simplify M) (simplify-closed M c))
-    (equiv-trans (enclose-correct _) (equiv-trans (optimize-correct _) (equiv-trans (concretize-correct _) (delay-correct _)))))
+    (equiv-trans (capture-correct _) (equiv-trans (prune-correct _) (equiv-trans (concretize-correct _) (delay-correct _)))))
 
 compile-correct : ∀ M → Closed M → Equivalent (ISWIMₘ.sem M) (Clos5ᵀₘ.sem (compile M))
 compile-correct M c = equiv-trans (compile₄-correct M c) (globalize-correct _)

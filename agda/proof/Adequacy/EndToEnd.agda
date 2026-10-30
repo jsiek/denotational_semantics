@@ -20,7 +20,7 @@ open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
 open import Language.ISWIM using (AST)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.Pipeline using (compile; compile₄; compile-x86)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)

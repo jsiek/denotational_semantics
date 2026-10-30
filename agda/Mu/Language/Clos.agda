@@ -1,7 +1,7 @@
 {-
 
   Closμ: Clos, intrinsically typed, with recursive types. The output
-  of enclose (Mu/Compiler/Enclose.agda).
+  of capture (Mu/Compiler/Capture.agda).
 
   A closure clos N Ms, with Ms : All (Tm Γ) Δ its free variables, has
   closed code N in the context A ∷ Δ: variable Z is the argument and

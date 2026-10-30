@@ -27,7 +27,7 @@ open import Untyped.Semantics.GraphErr.Clos5
   using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ) renaming (init to init₅)
 open import Untyped.Compiler.Globalize
 open import Untyped.Compiler.Pipeline using (compile₄; compile)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Framework.GraphModel.Env using (Env; •-~)
 
 

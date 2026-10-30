@@ -1,0 +1,79 @@
+{-
+
+  Correctness of capture (ISWIMμ → Closμ) in the graph model
+  (Mu/Semantics/GraphModel/{ISWIM,Clos}.agda), as for typed capture
+  (proof/Correctness/Graph/CaptureCorrect.agda).
+
+  ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ' when the environments agree on the
+  variables in scope and ρ' is nonempty there (Rel). Every case but the
+  function is a congruence (fold and unfold are the identity). A
+  function becomes a closure that captures all variables of its
+  context: they are nonempty, so its guard holds, and the code's
+  environment fv-env agrees with ρ' on them.
+
+-}
+
+module Mu.proof.Correctness.GraphModel.CaptureCorrect where
+
+open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
+open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import proof.Framework.GraphModel.Ops
+open import proof.Semantics.Graph.Prim using (primD-≃)
+open import Mu.Language.Type
+open import Mu.Language.ISWIM
+import Mu.Language.Clos as T
+open import Mu.Semantics.GraphModel.ISWIM
+open import Mu.proof.Semantics.GraphModel.Clos using (fv-env) renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
+open import Mu.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; guard-yes)
+open import Mu.Framework.AllUtil using (All; []; _∷_; tab; pos)
+open import Mu.Compiler.Capture
+
+open import Data.Fin using (Fin; zero; suc)
+open import Data.List using (List; []; _∷_; length)
+open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
+
+Rel : Ctx → Env Value → Env Value → Set
+Rel Γ ρ ρ' = ∀ {C} (x : Γ ∋ C) → ρ (idx x) ≃ ρ' (idx x) × nonempty (ρ' (idx x))
+
+ext : ∀ {Γ A ρ ρ' X} → nonempty X → Rel Γ ρ ρ' → Rel (A ∷ Γ) (X • ρ) (X • ρ')
+ext ne r Z = ⟨ ≃-refl , ne ⟩
+ext ne r (S x) = r x
+
+{- the free variables of a closure built by tab -}
+tab-fv : ∀ {Γ Δ C} (f : ∀ {A} → Δ ∋ A → T.Tm Γ A) ρ (x : Δ ∋ C)
+  → fv-env (length Δ) (⟦ tab f ⟧s₂ ρ) (idx x) ≡ ⟦ f x ⟧₂ ρ
+tab-fv f ρ Z = refl
+tab-fv f ρ (S x) = tab-fv (λ y → f (S y)) ρ x
+
+tab-ne : ∀ {Γ Δ} (f : ∀ {A} → Δ ∋ A → T.Tm Γ A) ρ → (∀ {A} (x : Δ ∋ A) → nonempty (⟦ f x ⟧₂ ρ))
+  → ∀ i → nonempty (nthD (⟦ tab f ⟧s₂ ρ) i)
+tab-ne {Δ = A ∷ Δ} f ρ ne zero = ne Z
+tab-ne {Δ = A ∷ Δ} f ρ ne (suc i) = tab-ne (λ y → f (S y)) ρ (λ x → ne (S x)) i
+
+enc : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'} → Rel Γ ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ'
+encs-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Rel Γ ρ ρ'
+  → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ encs Ms ⟧s₂ ρ') i
+
+enc (` x) r = proj₁ (r x)
+enc (lam N) {ρ} {ρ'} r =
+  ≃-trans (lam-≃ λ X ne _ → enc N (ext ne λ x → subst (λ D → _ ≃ D × nonempty D) (sym (tab-fv T.`_ ρ' x)) (r x)))
+    (≃-sym (guard-yes (tab-ne T.`_ ρ' (λ x → proj₂ (r x)))))
+enc (app L M) r = ⋆-≃ (enc L r) (enc M r)
+enc (lit B c) r = ≃-refl
+enc (tuple {Δ} Ms) r = 𝒯-≃ (length Δ) (encs-nth Ms r)
+enc (get i M) r = proj-≃ (pos i) (enc M r)
+enc (inl M) r = inl-≃ (enc M r)
+enc (inr M) r = inr-≃ (enc M r)
+enc (case L M N) {ρ} {ρ'} r =
+  case-≃ (enc L r) (λ X ne _ → enc M {X • ρ} {X • ρ'} (ext ne r)) (λ X ne _ → enc N {X • ρ} {X • ρ'} (ext ne r))
+enc (prim p L M) r = primD-≃ p (enc L r) (enc M r)
+enc (let′ M N) {ρ} {ρ'} r = let-≃ (enc M r) λ X ne _ → enc N {X • ρ} {X • ρ'} (ext ne r)
+enc (fold M) r = enc M r
+enc (unfold M) r = enc M r
+
+encs-nth (M ∷ Ms) r zero = enc M r
+encs-nth (M ∷ Ms) r (suc i) = encs-nth Ms r i
+
+capture-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
+capture-correct M = enc M (λ ())

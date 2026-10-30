@@ -5,8 +5,8 @@
   The proofs (clock for clock) are in proof/Correctness/Interp/;
   each theorem here is one of them, with its type written out.
 
-    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
-          --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
@@ -24,7 +24,7 @@
 
   To read them: the languages (Language/, Language/Typed/), the passes
   (Compiler/), the interpreters, the observations, and
-  the precondition Closed (Compiler/EncloseScope.agda).
+  the precondition Closed (Compiler/CaptureScope.agda).
 
 -}
 
@@ -48,8 +48,8 @@ open import Data.List using ([])
 
 open import Compiler.Simplify using (simplify)
 open import Compiler.Cast using (cast-closed)
-open import Compiler.Enclose using (enclose)
-open import Compiler.Optimize using (optimize-program)
+open import Compiler.Capture using (capture)
+open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Delay using (delay-program)
 open import Compiler.Globalize using (globalize)
@@ -58,7 +58,7 @@ open import Compiler.LiftLocals using (lift-program)
 open import Compiler.Explicate using (explicate)
 open import Compiler.Select using (select)
 open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 
 import Semantics.Interp.ISWIM as ISWIMᵢ
 import Semantics.Interp.Typed.ISWIM as ISWIMᵀᵢ
@@ -72,8 +72,8 @@ import Semantics.Interp.Typed.X86 as X86ᵀᵢ
 
 import proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
 import proof.Correctness.Interp.CastFuel as CastFuel
-import proof.Correctness.Interp.EncloseFuel as EncloseFuel
-import proof.Correctness.Interp.OptimizeFuel as OptimizeFuel
+import proof.Correctness.Interp.CaptureFuel as CaptureFuel
+import proof.Correctness.Interp.PruneFuel as PruneFuel
 import proof.Correctness.Interp.ConcretizeFuel as ConcretizeFuel
 import proof.Correctness.Interp.DelayFuel as DelayFuel
 import proof.Correctness.Interp.GlobalizeFuel as GlobalizeFuel
@@ -93,11 +93,11 @@ simplify-correct = SimplifyFuel.simplify-correct
 cast-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMᵢ.sem M) (ISWIMᵀᵢ.sem (cast-closed M))
 cast-correct = CastFuel.cast-correct
 
-enclose-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀᵢ.sem M) (Clos2ᵀᵢ.sem (enclose M))
-enclose-correct = EncloseFuel.enclose-correct
+capture-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀᵢ.sem M) (Clos2ᵀᵢ.sem (capture M))
+capture-correct = CaptureFuel.capture-correct
 
-optimize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵢ.sem M) (Clos2ᵀᵢ.sem (optimize-program M))
-optimize-correct = OptimizeFuel.optimize-correct
+prune-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵢ.sem M) (Clos2ᵀᵢ.sem (prune-program M))
+prune-correct = PruneFuel.prune-correct
 
 concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵢ.sem M) (Clos3ᵀᵢ.sem (concretize-program M))
 concretize-correct = ConcretizeFuel.concretize-correct

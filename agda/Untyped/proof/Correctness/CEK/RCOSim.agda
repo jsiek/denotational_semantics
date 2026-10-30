@@ -59,7 +59,7 @@ open import proof.Semantics.CEK.Simulation
 import Untyped.Semantics.CEK.Clos5 as T
 import Semantics.CEK.ISWIM as S
 open import Untyped.Compiler.Pipeline using (compile; compile-mon)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Untyped.proof.Correctness.CEK.CompilerSim using (compile-correct)
 open import Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
 
