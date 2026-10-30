@@ -70,7 +70,7 @@ on, including a $\beta$-law.
 
 \paragraph{Functions as tables}
 
-One can describe a function by tabulating it: each row of the table
+One can describe a function by tabulating it. Each row of the table
 pairs an input with the corresponding output, and applying the
 function means looking up a row. Two problems arise. First, a function
 on an infinite domain (such as the integers) needs an infinite
@@ -91,7 +91,7 @@ of elements where a set of elements is expected, and assume the
 natural conversion takes place.} and whose output $w$ is an
 element. (The input of an entry could instead be a single element, as
 in filter models \citep{Barendregt:1983aa}, but a list makes the
-metatheory cleaner: the argument of a function is often itself a
+metatheory cleaner because the argument of a function is often itself a
 function, and $V$ can then contain one entry for each call to it.)
 The meaning of a function, given by operator $\Lambda$
 (Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
@@ -125,7 +125,7 @@ component $i$ of a tuple is described by $v$; the injections
 $\mathsf{left}(v)$ and $\mathsf{right}(v)$ of a sum; and the empty tuple
 $\langle\rangle$. The empty tuple also fills the positions of an
 environment that hold no variable, because we represent environments
-as total functions whose positions are nonempty: the environment $\rho_0$ of a closed program maps
+as total functions whose positions are nonempty. The environment $\rho_0$ of a closed program maps
 every variable to $\{\langle\rangle\}$, and $\den{M} = \den{M}\rho_0$.
 
 \paragraph{Recursion and divergence}
@@ -140,7 +140,7 @@ like a set of nested dolls \citep{Siek:2017ab}.
 
 A program that diverges produces no evidence, so its meaning is the
 empty set. For example, $\Omega = \Delta\;(\kw{fold}\;\Delta)$ with
-$\Delta = \lambda x.\, (\kw{unfold}\;x)\; x$ denotes $\emptyset$: an
+$\Delta = \lambda x.\, (\kw{unfold}\;x)\; x$ denotes $\emptyset$, because an
 output of $\Omega$ would need an entry of $\den{\Delta}$ whose input
 contains a strictly smaller entry of $\den{\Delta}$ with the same
 output, and so on forever, which is impossible for finite elements.

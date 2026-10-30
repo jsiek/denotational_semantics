@@ -323,7 +323,7 @@ of its code, given the table $T_k$ of the definitions older than it
   \den{(d_0, \ldots, d_{m-1};\; M)} = \den{M}_T\rho_0
 \]
 Mon, the target of \pass{remove complex operands}, has the syntax of Figure~\ref{fig:grammars}, is typed as GlobalFun,
-and has the meaning of its embedding into GlobalFun: an atom and an
+and has the meaning of its embedding into GlobalFun, because an atom and an
 operation on atoms are GlobalFun terms already.
 
 \subsection{The Imp Language}
@@ -352,7 +352,7 @@ in Mon, over slots.
         {\vdash (e_0, \ldots, e_{m-1};\; e) : A}
 \]
 A definition starts with its environment in slot 0 and its argument in
-slot 1. The semantics is in continuation-passing style: the frame
+slot 1. The semantics is in continuation-passing style. The frame
 $\sigma$ maps each slot to a set, and the continuation $\kappa$ takes
 the meaning of the expression. An atom means $\mathcal{A}\den{x}\sigma =
 \sigma(x)$, $\mathcal{A}\den{c}\sigma = \{c\}$, or
@@ -379,7 +379,7 @@ it assigns, like a $\kw{let}$.
 \subsection{The CFG Language}
 \agda{Mu/Language/CFG.agda, Mu/Semantics/GraphModel/CFG.agda}
 
-CFG, the target of \pass{explicate control}, organizes each function body as a control-flow graph: a function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the type $R$ of the function body's result, the list
+CFG, the target of \pass{explicate control}, organizes each function body as a control-flow graph. A function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the type $R$ of the function body's result, the list
 $\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
 blocks it may jump to, and its own frame $\Delta$. A label $l$ is an
 index into $\vec{\Delta}$. Block $t_l$ is typed over the blocks older
@@ -601,7 +601,7 @@ $\{\langle\rangle\}$.
 %% From definitions.tex (Compilation) and agda/Mu/Compiler/*.agda.
 This appendix defines each pass of Section~\ref{sec:compiler} as a
 recursive function on the syntax of Figure~\ref{fig:grammars}. In each
-pass, the clauses not shown are homomorphic: they translate the
+pass, the clauses not shown are homomorphic. They translate the
 subterms and rebuild the same form. No pass inspects a recursive type;
 $\kw{fold}$ and $\kw{unfold}$ pass through every pass as operations
 with one operand. The subsections follow the order of the pipeline; Sections~\ref{sec:equational} and~\ref{sec:approx-lr} and Appendix~\ref{app:calculations} prove each definition correct. The compiler is the composition of the passes:
@@ -736,7 +736,7 @@ $\mathit{res}(\mathsf{false}) = \kw{inr}\;\langle\rangle$. Finally,
   \text{ and } E_0(x) = \mathit{self}(x) \text{ for every } x.
 \]
 \pass{simplify} drops only evaluations whose value is known, which
-have no effect, and otherwise keeps the order of evaluation: an operand
+have no effect, and otherwise keeps the order of evaluation. An operand
 that is not a syntactic value is never substituted but stays bound by a
 $\kw{let}$.
 
@@ -922,7 +922,8 @@ a program.
 \agda{Mu/Compiler/Select.agda (select)}
 
 The code of a simple expression $r$ is selected in continuation-passing
-style, $\pass{sel}(r, \omega, k)$: its value goes to $\omega$, which is either
+style. The code $\pass{sel}(r, \omega, k)$ sends the value of $r$ to
+$\omega$, which is either
 $\kw{rax}$ or the next slot $x$,
 \[
   \omega ::= \kw{ret} \mid \kw{to}\;x
@@ -1032,7 +1033,7 @@ adds the definition $d_k = \kw{code}\;(z, y.\,N')$:
     & = & \den{f_k}_T\,\rho & \text{(meaning of $f_k$)}
 \end{array}
 \]}
-The other cases also use a weakening lemma: a term means the same under
+The other cases also use a weakening lemma, which says that a term means the same under
 a larger table that agrees on the definitions the term refers to.
 
 \paragraph{Remove complex operands}
@@ -1136,7 +1137,7 @@ environment $[9]$ of the code entry is in $\cdr(V)$, so
 $\entryin{[1]}{10}{V}$ is a usable entry, and $\callsto{V}{[1]}{[10]}$
 is a batch of calls. Clause~3 then asks that $D \app E \ALR [10]$ for
 every consistent $E$ related to $[1]$, that is, every $E$ that
-contains $1$. It holds: $D$ has the entry $[1] \mapsto 10$ and
+contains $1$. It holds because $D$ has the entry $[1] \mapsto 10$ and
 $[1] \subseteq E$, so $10 \in D \app E$, which is clause~1 for
 $[10]$. Now take $V' = [\pairv{u'}{9}]$ with the junk entry
 $u' = [2] \mapsto ([1] \mapsto 3)$. Its environment $[2]$ is not in

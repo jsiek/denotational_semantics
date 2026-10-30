@@ -588,11 +588,11 @@ induction on the stage.
 For both directions and every $n$:
 \begin{enumerate}
 \item $s \SR{\pm}{n} w$ is a proposition;
-\item it is downward closed in $s$: if $s' \sqsubseteq s$ and
+\item it is downward closed in $s$, that is, if $s' \sqsubseteq s$ and
   $s \SR{\pm}{n} w$, then $s' \SR{\pm}{n} w$;
-\item it is admissible in $s$: if $s_i \SR{\pm}{n} w$ for every $i$
+\item it is admissible in $s$, that is, if $s_i \SR{\pm}{n} w$ for every $i$
   of a directed family, then $\bigsqcup_i s_i \SR{\pm}{n} w$;
-\item it survives moving between stages: if $s \SR{\pm}{n+1} w$, then
+\item it survives moving between stages, that is, if $s \SR{\pm}{n+1} w$, then
   $\pi_n(s) \SR{\pm}{n} w$, and if $s \SR{\pm}{n} w$, then
   $\varepsilon_n(s) \SR{\pm}{n+1} w$.
 \end{enumerate}
@@ -638,7 +638,7 @@ $\mathsf{app}(l, a) \sim \mathsf{app}(\mathsf{app}(\car(l'), \cdr(l')), a')$.
 
 Under preservation, both parts follow from the clause for functions
 and part~4 of Lemma~\ref{lem:scott-stages}. Under reflection, the
-closure case uses the clause for pairs: a call of the approximation at
+closure case uses the clause for pairs. A call of the approximation at
 stage $m + 2$ of the target pair is below the approximation at stage
 $m$ of the call of the pair itself, and part~2 of
 Lemma~\ref{lem:scott-stages} applies. In the call case, the

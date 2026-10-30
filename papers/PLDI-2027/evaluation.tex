@@ -59,8 +59,8 @@ theorems state that a program and its compilation produce the same
 integer and that one has a meaning exactly when the other does; the
 operational theorems state that both terminate with the same integer
 or both diverge, for three different operational semantics. All five
-are whole-program theorems: they do not say anything about compiled
-code linked with other code. We do not regard the operational or
+are whole-program theorems, which say nothing about compiled code
+linked with other code. We do not regard the operational or
 denotational formulation of correctness as more fundamental than the
 other. \citet{Scott:1971ab} proposed a mathematical semantics as ``the
 standard against which to judge an implementation'', while
@@ -144,7 +144,7 @@ compiler, with one column per semantic style, with the totals in the
 last row. The proof with clocked interpreters is the smallest, at
 1,504 lines, followed by the graph model at 1,806, abstract machines
 at 2,103, and reduction semantics at 3,093. One pass decides the graph
-model's place: \pass{delay} alone is 450 lines, a quarter of the
+model's place. The proof of \pass{delay} alone is 450 lines, a quarter of the
 total, against 35 to 126 lines in the operational styles. Without
 \pass{delay}, the graph model would be the smallest, at 1,356 lines
 against 1,469 for the interpreters. The second denotational proof,
@@ -196,8 +196,8 @@ semantics needs a commuting conversion, and for \pass{select
   instructions}, whose function prologue needs two uses of
 Lemma~\ref{lem:beta}; these graph-model proofs are about 1.4 and 1.6
 times the interpreter proofs. The tendency concerns the interpreters
-only: the reduction semantics, which works by substitution, is often
-several times larger even for these passes, as for \pass{optimize} and
+only. The proofs in the reduction semantics, which works by
+substitution, are often several times larger even for these passes, as for \pass{optimize} and
 \pass{lift locals}.
 
 \paragraph{Equal meanings, different runs: the denotational proofs tend to be smallest.}
@@ -231,7 +231,7 @@ has three sources. First, the denotational proof needs two
 directions, while a simulation proof gets the backward direction for
 free from forward simulation and the determinism of the target. The
 graph model has an analogue of determinism, the consistency of
-denotations, and it does part of the job: if the source produces a
+denotations, and it does part of the job. If the source produces a
 constant, the forward direction puts that constant in the target, and
 consistency rules out any other. But the graph model represents
 divergence as the empty set, the absence of evidence, and a forward
@@ -258,7 +258,7 @@ by stages (Section~\ref{sec:scott-delay}), and showing that each stage
 is a proposition, downward closed, admissible, and preserved by the
 maps between stages takes 174 of the 723 lines of its proof. Second,
 relating calls across stages takes 299 lines, the largest
-share. Third, the universal domain is a sum of tagged values: the
+share. Third, the universal domain is a sum of tagged values. The
 primitives and tagged values take 71 lines, and the 135 lines of
 shared lemmas are laws of strictness and definedness, which replace
 nonemptiness; in exchange, the proof needs no consistency. The
@@ -275,7 +275,7 @@ an opaque definition instead.
 We measure the size of the proofs, which is only a proxy for the
 effort of writing them. Lines of Agda depend on layout; lexical tokens
 and non-whitespace characters do not, but they are proxies too. The
-three measures agree on the ranking: by tokens, the graph model's
+three measures agree on the ranking. For example, by tokens the graph model's
 total is 1.22 times the interpreters', against 1.20 times by
 lines. Size also says little about difficulty, which depends on
 whether a proof has precedent in the literature or its authors must

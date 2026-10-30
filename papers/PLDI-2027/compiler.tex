@@ -105,7 +105,7 @@ block labels, and $f_k$ over the names of a program's global
 definitions, where $f_k$ refers to the definition $d_k$. In the
 languages prior to Imp, $x$, $y$, and $z$ range over variables. From
 Imp on, they range over fixed locations in a function's stack frame,
-as we explain below. We write a binder as one or more names followed by a period, and the binder binds the names in the term after the period: in
+as we explain below. We write a binder as one or more names followed by a period, and the binder binds the names in the term after the period. For example, in
 $\lambda x.\,N$ and $\kw{case}\;L\;(x.\,M)\;(y.\,N)$, the name $x$ is
 bound in $N$ and $M$, and $\kw{clos}\;(\vec{x}, y.\,N)$ binds $\vec{x}$
 and $y$ in $N$. Every language also has a semantics in the graph
@@ -232,6 +232,6 @@ three registers and no register allocation; control flow within a
 function is acyclic, so loops are recursive calls; and $\kw{case}$ is a
 pseudo-instruction that stands for a test, a load, and a conditional
 jump. None of these abstractions concerns closure
-conversion: in x86$\mu$, as in machine code, a closure is a heap object
+conversion, because in x86$\mu$, as in machine code, a closure is a heap object
 that pairs the name of a function with a tuple of captured values, and
 a call loads both before it jumps.

@@ -61,8 +61,8 @@ are empty.
 
 \paragraph{Simplify}
 
-The main lemma for \pass{simplify} carries an invariant: whatever
-\pass{simplify} knows about each variable is true of the source
+The main lemma for \pass{simplify} carries the invariant that
+the static information of \pass{simplify} about each variable is true of the source
 environment $\rho$ and the target environment $\rho'$. If \pass{simplify} replaces a variable by the term $T$, the variable means $\den{T}\rho'$, and if \pass{simplify} knows it to be a function $\langle \lambda x.\, N, E_f \rangle$, it means
 $\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ of which
 $E_f$ is true. The key case is inlining. Suppose \pass{simplify} knows $L$ to be

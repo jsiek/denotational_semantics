@@ -55,8 +55,7 @@ These challenges motivate five research questions:
 \end{description}
 
 We answer RQ1 affirmatively, in two denotational models. The final
-missing link is a new denotational result: closure conversion both
-preserves and reflects divergence for a higher-order language with
+missing link is a new denotational proof that closure conversion both preserves and reflects divergence for a higher-order language with
 general recursion. Our first model is a graph model, in which a
 program's denotation is a set of inductively defined \emph{graph
 elements}. Each element is a finite piece of evidence about the
@@ -109,9 +108,8 @@ The closest prior denotational proofs each stop short of this
 combination of closure conversion, general recursion, and semantic
 reflection. \citet{Chlipala:2007fk} proved correct a compiler from the
 simply typed $\lambda$-calculus to assembly, including closure
-conversion.  However, the simply typed $\lambda$-calculus has no
-recursion: every program terminates, so there is no divergence to
-preserve. For a language with recursive
+conversion.  However, the simply typed $\lambda$-calculus has no recursion, so every program terminates and there is no
+divergence to preserve. For a language with recursive
 functions, \citet{Nielsen:2000aa} used a domain-theoretic semantics to
 prove that defunctionalization, a close cousin of closure conversion,
 preserves the meaning of terminating programs. His type-indexed
@@ -161,7 +159,7 @@ language down to assembly.
 
 The comparison answers RQ2 affirmatively and explains, pass by pass,
 the mixed answer to RQ4. Where a pass keeps the representation of
-values, equational reasoning is concise: the proofs of the source
+values, equational reasoning is concise. For example, the proofs of the source
 optimizer, \pass{simplify}, take 349 lines in the graph model and 411
 with Scott domains, against 508 to 697 for the operational proofs
 (Section~\ref{sec:equational}). Where a pass changes the representation
@@ -173,8 +171,9 @@ the Scott-domain development fourth, ahead of reduction semantics;
 once the language-independent infrastructure is counted, they rank
 third and fifth.  For RQ5, the Scott-domain proof is 1.4
 times as large as the graph-model proof and larger for every pass. Much
-of the difference is in \pass{delay}: the stage relation must be shown
-admissible and preserved by the maps between stages, and the method of
+of the difference is in \pass{delay}, where we must show that the stage
+relation is admissible and preserved by the maps between stages, and
+where the method of
 \citet{Pitts:1996aa}, which would avoid the stages, does not apply
 directly (Section~\ref{sec:evaluation}).
 

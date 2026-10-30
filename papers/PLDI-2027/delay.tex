@@ -98,7 +98,7 @@ homomorphically:
 
 \paragraph{Why preservation is easy and reflection is not}
 
-The correctness of \pass{delay} is not an equation: a closed program
+The correctness of \pass{delay} is not an equation. Instead, a closed program
 and its translation produce the same constants, and one produces
 something exactly when the other does (Theorem~\ref{thm:delay}). The forward half,
 preservation, requires only a relation between a \emph{single} source
@@ -121,7 +121,8 @@ for \emph{every} environment, such as the following two:
   [2] \mapsto ([1] \mapsto 3)  \qquad \ldots
 \]
 The program pairs this code only with the environment $[9]$, so the
-entry for $[2]$ is junk: it corresponds to no source function. Worse, a
+entry for $[2]$ is junk, an entry that corresponds to no source
+function. Worse, a
 call takes the code from $\car$ and the environment from $\cdr$
 \emph{separately}, so a result may combine the code entry of one pair
 with the environment of another. 
@@ -138,7 +139,7 @@ examples and the variants we tried in Agda).
   because a call combines the code entry of one pair with the
   environment of another, so no single pair accounts for its result.
 \item \emph{A single source element or a finite source list}, against
-  any target side, fails in the function case: infinitely many related
+  any target side, fails in the function case, because infinitely many related
   source argument sets have no element in common, so no finite source
   side has an entry for each of them.
 \item \emph{Whole denotations on both sides} handle the mixing, but the
@@ -152,14 +153,14 @@ examples and the variants we tried in Agda).
 \end{itemize}
 The remaining combination relates a finite list of target elements to
 the whole source denotation. Recursion on types, as in the proofs of
-\citet{Chlipala:2007fk} and \citet{Nielsen:2000aa}, is not an option:
-because $\kw{fold}$ and $\kw{unfold}$ mean the identity, the relation at
+\citet{Chlipala:2007fk} and \citet{Nielsen:2000aa}, is not an option.
+Because $\kw{fold}$ and $\kw{unfold}$ mean the identity, the relation at
 $\mu X.\,A$ would be the relation at $A[\mu X.\,A/X]$, which is not a smaller type. The relation does not depend on types.
 
 \paragraph{The key insight}
 
 When a call $D' \callop E'$ produces a result $w$, it uses only
-finitely many pairs of $D'$: one supplies a code entry
+finitely many pairs of $D'$. One supplies a code entry
 $U_e \mapsto (U_a \mapsto w)$, and others supply the environments in
 $U_e$. These pairs form a finite list $V \subseteq D'$ that contains
 both halves of the call, so the relation matches the code and the environments \emph{inside} $V$. The relation lets a call use exactly the code
@@ -224,7 +225,7 @@ $D \ALR V$, which relates a finite list $V$ of target elements to a
 source set $D$. Its building block is the \emph{usable entry} of a
 list. A target closure is a set of pairs $\pairv{u}{t}$ of code and
 environment. The code $u$ is a curried function, so its entries have
-the form $U_e \mapsto (U_a \mapsto w)$: it maps the environment $U_e$
+the form $U_e \mapsto (U_a \mapsto w)$, which maps the environment $U_e$
 to a function that maps the arguments $U_a$ to $w$. We write
 $\entryin{U_a}{w}{V}$ when such an entry is among the codes $\car(V)$
 \emph{and} the environments $U_e$ are among the environments
@@ -260,7 +261,7 @@ Appendix~\ref{app:alr-example} works clause~3 through an example.
 \paragraph{Termination of the Approximant Logical Relation}
 
 The relation $D \ALR V$ is defined by recursion on the depth of
-$V$: every recursive occurrence, including the negative one at the
+$V$. Every recursive occurrence, including the negative one at the
 arguments of a call, is at a list shallower than $V$. The arguments $U$ are shallower than $V$
 because the first conjunct of a batch of calls requires $U \subseteq
 \mathsf{args}(V)$; without that conjunct, $U$ could contain elements
@@ -286,8 +287,8 @@ the index.
 \end{enumerate}
 \end{lemma}
 
-The relation is also monotone in $D$ and antitone in $V$: enlarging
-the source set or taking a sublist of the target list preserves it.
+The relation is also monotone in $D$ and antitone in $V$, that is,
+enlarging the source set or taking a sublist of the target list preserves it.
 
 \paragraph{The fundamental lemma}
 
@@ -400,7 +401,7 @@ related to the other (Figure~\ref{fig:scott-delay} in
 Appendix~\ref{app:scott-delay}). Like the approximant logical relation,
 it approximates only one side. As in the graph-model proof, each
 direction has its own relation, but here both relations recurse on
-stages: preservation ($+$) approximates the source, and reflection
+stages. Preservation ($+$) approximates the source, and reflection
 ($-$) approximates the target. The clauses for closures are
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
@@ -416,7 +417,7 @@ where $\mathit{call}(c, e, a)$ applies the code $c$ to the environment
 $e$ and then to the argument $a$. The preservation clause has the
 shape of the relation that \citet{Nielsen:2000aa} used for
 defunctionalization. The reflection clause relates calls across
-stages: a call of a pair at stage $m + 2$ applies its code twice and
+stages, because a call of a pair at stage $m + 2$ applies its code twice and
 shows its result only at stage $m$ ($\mathit{call}_m$). Because the
 closure clause looks three levels into the target domain but only one
 into the source, the method of \citet{Pitts:1996aa} does not apply
