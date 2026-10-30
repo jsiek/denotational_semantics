@@ -203,7 +203,7 @@ Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, t
 
 \paragraph{Machine for \iswim}
 
-A state of the CEK machine of \iswim\ either evaluates a term $M$ in an environment $\rho$ with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or returns a value $v$ to a continuation, $\mathit{ret}(v, \kappa)$. A continuation is a stack of frames, each of which says how to continue with the value of a subterm.
+A state of the CEK machine of \iswim\ either evaluates a term $M$ in an environment $\rho$ with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or returns a value $v$ to a continuation, $\mathit{ret}(v, \kappa)$. A continuation is a stack of frames, and each frame holds the work that remains after a subterm returns its value; for example, $\mathit{appL}(M, \rho, \kappa)$ holds the argument $M$ that the machine evaluates next.
 \defhead{States and continuations}{\varsigma \qquad \kappa}
 \begin{align*}
   \varsigma &::= \mathit{eval}(M, \rho, \kappa) \mid \mathit{ret}(v, \kappa) \\
@@ -362,7 +362,8 @@ Appendix~\ref{app:scott-delay}. The domain of values is the solution of
   \mathbb{D} \cong \mathcal{L}(\Sigma_{t \in \mathit{Tag}}\, \mathit{Payload}_t(\mathbb{D}))
 \]
 where $\mathcal{L}$ is lifting, the standard construction that adds a
-least element $\bot$ below a domain \citep{Winskel:1993aa,Escardo:2017ab}. The tag $t$ of a value gives its kind, and the payload holds its contents:
+least element $\bot$ below a domain \citep{Winskel:1993aa,Escardo:2017ab}. The tag $t$ of a value distinguishes constants, tuples of each arity,
+injections, functions, and pairs, and the payload holds its contents:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   t & ::= & c \mid \mathit{tup}_n \mid \mathit{left} \mid \mathit{right}

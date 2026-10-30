@@ -42,9 +42,9 @@ $\den{M} = \den{\pass{simplify}(M)}$ or
 $\den{M} = \den{\pass{globalize}(M)}$. To apply induction, each proof
 generalizes the equation from closed programs to open terms. The
 generalized statement says that a term, in a source environment, means
-the same as its translation, in a related target environment. The relation on environments states the pass's assumptions
-about the variables in scope, and most cases of the induction need
-nothing else. Because every semantics is compositional and the passes
+the same as its translation, in a related target environment. In most passes, the relation on environments requires each variable
+to mean the same as its translation, and most cases of the induction
+need nothing else. Because every semantics is compositional and the passes
 translate most forms homomorphically, the case for such a form applies
 the same operator to equal arguments and is immediate. The real work
 is in the few cases that the pass changes, where an equation about the

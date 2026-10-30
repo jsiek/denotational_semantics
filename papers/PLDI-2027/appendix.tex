@@ -629,8 +629,8 @@ The pass works with \emph{syntactic values}, the terms
 A syntactic value is \emph{small} when it is a variable, a constant,
 $\langle\rangle$, or $\kw{inl}\;a$ or $\kw{inr}\;a$ of one of those;
 only small values are duplicated. On a term, \pass{simplify} returns a
-pair $(T, \theta)$ of the simplified term $T$ and its knowledge $\theta$
-about the term's value:
+pair $(T, \theta)$ of the simplified term $T$ and the static information
+$\theta$ about the term's value:
 \[
   \theta ::= V \mid \langle \lambda x.\, N, E \rangle \mid \bot
 \]
@@ -638,7 +638,7 @@ that is, a syntactic value $V$ that the term is known to
 equal, a function $\langle \lambda x.\, N, E \rangle$ (its body before
 simplification, with the environment $E$ where it was defined), or nothing,
 $\bot$. An environment $E$ maps each variable to such a pair: the term
-that replaces the variable and the knowledge about the variable. We
+that replaces the variable and the static information about its value. We
 write $\mathit{self}(V) = (V, V)$, and $\mathit{info}(M) = (M, M)$ if $M$ is a syntactic value and $(M, \bot)$ otherwise. Under a binder $x$
 that stays, $x$ is itself and is known only as itself:
 $E' = E[x{:=}\mathit{self}(x)]$.
