@@ -42,7 +42,7 @@ These challenges motivate five research questions:
 \begin{description}
 \item[RQ1] Is it possible to prove correctness of a whole compiler
   using denotational semantics, i.e., from a higher-order language
-  with general recursion down to an assembly language?
+  with general recursion down to a typed assembly language?
 \item[RQ2] Does the compositionality and equational reasoning afforded
   by denotational semantics yield concise correctness proofs for some
   compiler passes?
@@ -50,12 +50,13 @@ These challenges motivate five research questions:
   compiler correct?
 \item[RQ4] How do denotational approaches compare overall with
   operational approaches to proving correctness of a whole compiler?
-\item[RQ5] How does using Scott domains instead of a graph model
-  affect the proof?
+\item[RQ5] Does the choice of denotatonal model (Scott domains or
+  graph model) affect the proof?
 \end{description}
 
 We answer RQ1 affirmatively, in two denotational models. The final
-missing link is a new denotational proof that closure conversion both preserves and reflects divergence for a higher-order language with
+missing link is a new denotational proof that closure conversion both
+preserves and reflects divergence for a higher-order language with
 general recursion. Our first model is a graph model, in which a
 program's denotation is a set of inductively defined \emph{graph
 elements}. Each element is a finite piece of evidence about the
@@ -74,8 +75,8 @@ values, and divergence is its least element. Scott values are
 infinite, so a relation for the Scott domain cannot recurse on finite
 elements. We define the relation instead by recursion on the stages of
 the bilimit that constructs the domain
-(Section~\ref{sec:scott-delay}), as \citet{Reynolds:1974aa} did to relate direct and continuation
-semantics.
+(Section~\ref{sec:scott-delay}), as \citet{Reynolds:1974aa} did to
+relate direct and continuation semantics.
 
 We use these denotational closure-conversion results in two
 correctness proofs of a ten-pass compiler from a call-by-value
