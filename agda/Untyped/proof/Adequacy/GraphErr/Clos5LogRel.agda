@@ -48,7 +48,7 @@ open import proof.Framework.ListUtil
 open import Semantics.Observation
 open import Untyped.Semantics.CEK.Clos5
 open import proof.Semantics.CEK.Smallstep using (next; stop)
-open import Untyped.proof.Compiler.GlobalizeTable using (_⊑_; ∷-⊑; global-⊑)
+open import Untyped.proof.Compiler.HoistTable using (_⊑_; ∷-⊑; global-⊑)
 open import proof.Adequacy.Common using (ShapeOf; ShapeAt; has-length→length; length→has-length)
 open import proof.Adequacy.GraphErr.LogRel using (δ?-nothing₁; δ?-nothing₂)
 open import Untyped.proof.Adequacy.GraphErr.Clos5Soundness using (vkind)

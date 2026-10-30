@@ -6,8 +6,8 @@
   (Contains), not only with the table of the older ones, as the semantics
   interprets it.
 
-  Both hold of the Clos5ᵀ program that globalize produces, whose
-  definitions refer only to older ones (globalize-older, as in Clos5ᵀ
+  Both hold of the Clos5ᵀ program that hoist produces, whose
+  definitions refer only to older ones (hoist-older, as in Clos5ᵀ
   adequacy), and pass to X86ᵀ through the lemmas of the denotational
   proofs of remove complex operands, lift locals, explicate control and
   select instructions: the tables of the two programs agree, and so does
@@ -37,7 +37,7 @@ open import Compiler.RCO using (rco)
 open import Compiler.LiftLocals using () renaming (lift to liftₗ)
 open import Compiler.Explicate using (explicate-body)
 open import Compiler.Select using (def-body)
-open import proof.Compiler.GlobalizeOlder using (OlderDefs; globalize-older)
+open import proof.Compiler.HoistOlder using (OlderDefs; hoist-older)
 import proof.Adequacy.Clos5Common as C5
 import proof.Adequacy.Clos5Soundness as S5
 open import proof.Correctness.Graph.RCOCorrect using (rco-sem; table-rco)
@@ -81,7 +81,7 @@ compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , close
   TT : ∀ {n} (f : _ ∋ n) → table ds₅ f ≃ tables codeₜ (All-map def-body ds꜀) f
   TT f = ≃-trans (table-rco ds₅ f) (≃-trans (table-lift dsₘ f) (≃-trans (table-explicate dsᵢ f) (table-≃ ds꜀ f)))
   closed : Contains codeₜ (All-map def-body ds꜀)
-  closed f d d∈ = proj₁ (TT f) d (clos5-closed ds₅ (globalize-older (compile₄ M)) f d (proj₂ code≃ d (subst (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
+  closed f d d∈ = proj₁ (TT f) d (clos5-closed ds₅ (hoist-older (compile₄ M)) f d (proj₂ code≃ d (subst (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
     where
     eq : All-map def-body ds꜀ ! f ≡ def-body (explicate-body (liftₗ (rco (ds₅ ! f) (λ x → x))))
     eq = trans (map-! def-body ds꜀ f) (cong def-body (trans (map-! explicate-body dsᵢ f)

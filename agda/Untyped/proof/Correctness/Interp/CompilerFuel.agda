@@ -4,7 +4,7 @@
   interpreters:
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5
+          --split--> Clos4 --hoist--> Clos5
 
   Each pass is proved clock for clock, which gives its end theorem
   (Equivalent). These end theorems compose (equiv-trans): the compiled
@@ -27,15 +27,15 @@ open import Untyped.Compiler.Capture using (capture)
 open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Delay using (delay)
+open import Untyped.Compiler.Split using (split)
 open import proof.Semantics.Interp.Clock
 open import Compiler.Simplify using (simplify)
 open import proof.Compiler.SimplifyScope using (simplify-closed)
 open import proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
 open import Untyped.proof.Correctness.Interp.PruneFuel using (capture-prune-correct)
 open import Untyped.proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
-open import Untyped.proof.Correctness.Interp.DelayFuel using (delay-correct)
-open import Untyped.proof.Correctness.Interp.GlobalizeFuel using (globalize-correct)
+open import Untyped.proof.Correctness.Interp.SplitFuel using (split-correct)
+open import Untyped.proof.Correctness.Interp.HoistFuel using (hoist-correct)
 import Semantics.Interp.ISWIM as S
 import Untyped.Semantics.Interp.Clos5 as T
 
@@ -46,10 +46,10 @@ open import Data.Product using (_,_; proj₁; proj₂)
 compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (capture-prune-correct (simplify M) (simplify-closed M c))
-    (equiv-trans (concretize-correct M₂) (equiv-trans (delay-correct M₃) (globalize-correct M₄))))
+    (equiv-trans (concretize-correct M₂) (equiv-trans (split-correct M₃) (hoist-correct M₄))))
   where M₂ = prune-program (capture (simplify M))
         M₃ = concretize-program M₂
-        M₄ = delay M₃
+        M₄ = split M₃
 
 {- in particular -}
 

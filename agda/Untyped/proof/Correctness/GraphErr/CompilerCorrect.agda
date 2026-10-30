@@ -4,7 +4,7 @@
   program, the compiled program (into Clos5, monadic Clos5, Imp, CFG and
   X86) errs exactly when the source does, produces the same constants,
   and produces a value exactly when the source does (Same). Every pass but
-  delay preserves the meaning exactly (≃); delay preserves and reflects
+  split preserves the meaning exactly (≃); split preserves and reflects
   these three facts.
 
 -}
@@ -36,9 +36,9 @@ open import Untyped.proof.Correctness.GraphErr.CaptureCorrect using (capture-cor
 open import proof.Compiler.SimplifyScope using (simplify-closed)
 open import Untyped.proof.Correctness.GraphErr.PruneCorrect using (prune-correct-compile)
 open import Untyped.proof.Correctness.GraphErr.ConcretizeCorrect using (concretize-correct-closed)
-open import Untyped.proof.Correctness.GraphErr.DelayPreserve
-  using (delay-correct-error; delay-correct-const; delay-correct-val)
-open import Untyped.proof.Correctness.GraphErr.GlobalizeCorrect using (globalize-correct-compile)
+open import Untyped.proof.Correctness.GraphErr.SplitPreserve
+  using (split-correct-error; split-correct-const; split-correct-val)
+open import Untyped.proof.Correctness.GraphErr.HoistCorrect using (hoist-correct-compile)
 open import Untyped.proof.Correctness.GraphErr.RCOCorrect using (rco-correct-compile)
 open import Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-correct-compile)
 open import Untyped.proof.Correctness.GraphErr.ExplicateCorrect using (explicate-correct-compile)
@@ -66,18 +66,18 @@ Same-trans ⟨ e₁ , ⟨ c₁ , v₁ ⟩ ⟩ ⟨ e₂ , ⟨ c₂ , v₂ ⟩ ⟩
 ≃-sym′ : ∀ {D E : 𝒫 Value} → D ≃ E → E ≃ D
 ≃-sym′ ⟨ a , b ⟩ = ⟨ b , a ⟩
 
-{- into Clos4, before globalize -}
+{- into Clos4, before hoist -}
 compile₄-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) (S4.⟦ compile₄ M ⟧ ρ₀)
 compile₄-same M c =
   Same-trans (≃→Same (≃-trans (simplify-correct M c)
                (≃-trans (capture-correct (simplify M) (simplify-closed M c))
                  (≃-trans (prune-correct-compile M c)
                    (concretize-correct-closed (prune-program (capture (simplify M))))))))
-    ⟨ delay-correct-error C₃ , ⟨ delay-correct-const C₃ , delay-correct-val C₃ ⟩ ⟩
+    ⟨ split-correct-error C₃ , ⟨ split-correct-const C₃ , split-correct-val C₃ ⟩ ⟩
   where C₃ = concretize-program (prune-program (capture (simplify M)))
 
 compile-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
-compile-same M c = Same-trans (compile₄-same M c) (≃→Same (globalize-correct-compile M c))
+compile-same M c = Same-trans (compile₄-same M c) (≃→Same (hoist-correct-compile M c))
 
 compile-mon-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-mon M ⟧₅
 compile-mon-same M c = Same-trans (compile-same M c) (≃→Same (≃-sym′ (rco-correct-compile M c)))

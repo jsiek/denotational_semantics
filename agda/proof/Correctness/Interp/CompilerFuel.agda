@@ -19,7 +19,7 @@ open import Compiler.Cast using (cast-closed)
 open import Compiler.Capture using (capture)
 open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
-open import Compiler.Delay using (delay-program)
+open import Compiler.Split using (split-program)
 open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 open import proof.Compiler.SimplifyScope using (simplify-closed)
 open import Semantics.Observation
@@ -36,8 +36,8 @@ open import proof.Correctness.Interp.CastFuel using (cast-correct)
 open import proof.Correctness.Interp.CaptureFuel using (capture-correct)
 open import proof.Correctness.Interp.PruneFuel using (prune-correct)
 open import proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
-open import proof.Correctness.Interp.DelayFuel using (delay-correct)
-open import proof.Correctness.Interp.GlobalizeFuel using (globalize-correct)
+open import proof.Correctness.Interp.SplitFuel using (split-correct)
+open import proof.Correctness.Interp.HoistFuel using (hoist-correct)
 open import proof.Correctness.Interp.RCOFuel using (rco-correct)
 open import proof.Correctness.Interp.LiftLocalsFuel using (lift-locals-correct)
 open import proof.Correctness.Interp.ExplicateFuel using (explicate-correct)
@@ -49,13 +49,13 @@ compile₄-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (Clos4�
 compile₄-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (cast-correct (simplify M) (simplify-closed M c))
     (equiv-trans (capture-correct M₁) (equiv-trans (prune-correct M₂)
-      (equiv-trans (concretize-correct M₃) (delay-correct (concretize-program M₃))))))
+      (equiv-trans (concretize-correct M₃) (split-correct (concretize-program M₃))))))
   where M₁ = cast-closed (simplify M)
         M₂ = capture M₁
         M₃ = prune-program M₂
 
 compile-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem (compile M))
-compile-correct M c = equiv-trans (compile₄-correct M c) (globalize-correct (compile₄ M))
+compile-correct M c = equiv-trans (compile₄-correct M c) (hoist-correct (compile₄ M))
 
 compile-mon-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem ⌜ compile-mon M ⌝ₚ)
 compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct (compile M))

@@ -34,7 +34,7 @@ open import Untyped.proof.Semantics.Graph.Clos2Iswim as S2
 open import Untyped.proof.Semantics.Graph.Clos3Iswim as S3 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
 open import Untyped.Compiler.Concretize
-open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (Env; Init; ρ₀; single⊆; ne-mem)
+open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; Init; ρ₀; single⊆; ne-mem)
 open import proof.Framework.GraphModel.Env using (nonempty-env; •-~)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _<_; _<?_)

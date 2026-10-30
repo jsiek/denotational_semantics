@@ -10,8 +10,8 @@
   * the code of each definition depends only on the older ones: it means
     the code of the Clos5ᵀ definition it comes from, under any table of
     sets of values, consistent (x86-code: select, explicate control, lift
-    locals and rco preserve the meaning of code), and globalize makes
-    only references to older definitions (proof/Compiler/GlobalizeOlder.agda);
+    locals and rco preserve the meaning of code), and hoist makes
+    only references to older definitions (proof/Compiler/HoistOlder.agda);
   * the table is consistent, as that of CFGᵀ is (select's table-≃).
   The ISWIM machine on M and the X86ᵀ machine on compile-x86 M agree on
   every outcome (end-to-end-x86): the denotations of M and compile-x86 M
@@ -63,7 +63,7 @@ open import proof.Semantics.GraphErr.Typed.Clos5 using (callc-≃; tbl-con)
 open import proof.Semantics.GraphErr.Typed.Clos2 using (getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃)
 open import proof.Semantics.GraphErr.Typed.CFG using (codeᶜ-con)
 open import proof.Correctness.CEK.PipelineSim using (compile-error; compile-const; compile-converges; compile-diverges)
-open import proof.Compiler.GlobalizeOlder using (Older; Olders; OlderDefs; globalize-older)
+open import proof.Compiler.HoistOlder using (Older; Olders; OlderDefs; hoist-older)
 import proof.Adequacy.GraphErr.ISWIM as A
 import proof.Adequacy.GraphErr.X86 as X
 import proof.Adequacy.GraphErr.X86Common as C
@@ -152,7 +152,7 @@ compile-ok M = ⟨ (λ k → Con-⊆ (tbl-con (λ TC d → codeᶜ-con TC d) cds
   cds = CFG.Program.defs (compile-cfg M)
   ind : C.Indep (X86ᵀ.Program.defs (compile-x86 M))
   ind f {T} {T'} gT gT' ag rewrite pipe-! ds f =
-    ≃-trans (≃-sym (x86-code gT (ds ! f))) (≃-trans (ΛΛᵐ-≃ λ X Y → old-≃ ag (ds ! f) (older-at (globalize-older (compile₄ M)) f) (λ _ → ≃-refl))
+    ≃-trans (≃-sym (x86-code gT (ds ! f))) (≃-trans (ΛΛᵐ-≃ λ X Y → old-≃ ag (ds ! f) (older-at (hoist-older (compile₄ M)) f) (λ _ → ≃-refl))
       (x86-code gT' (ds ! f)))
 
 {- The X86ᵀ machine --------------------------------------------------------------------}

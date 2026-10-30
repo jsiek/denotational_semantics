@@ -1,7 +1,7 @@
 {-
 
   PairClosμ: PairClos, intrinsically typed, with recursive types. The output
-  of delay (Mu/Compiler/Delay.agda).
+  of split (Mu/Compiler/Split.agda).
 
   A closure is a pair of closed code and the tuple of its free
   variables, packed so that its type A ⇒ B hides the types Δ of the

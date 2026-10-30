@@ -10,7 +10,7 @@
     (table-at), and the older definitions mean the same in the table
     of all of them as in their own (agree);
   * the semantics in a table depends only on the references a term
-    makes (tbl-mono), and a definition of a program that globalize
+    makes (tbl-mono), and a definition of a program that hoist
     produces refers only to older ones (olderAt).
 
 -}
@@ -29,7 +29,7 @@ open import Mu.Language.Type
 open import Mu.Language.GlobalFun
 open import Mu.proof.Semantics.GraphModel.Ops using (Table; tables; ConT; callc-good)
 open import Mu.proof.Semantics.GraphModel.GlobalFun using (⟦_⟧[_]; ⟦_⟧s[_]; ok)
-open import Mu.proof.Compiler.GlobalizeOlder using (Older; Olders; OlderDefs)
+open import Mu.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 
 open import Data.Empty using (⊥-elim)

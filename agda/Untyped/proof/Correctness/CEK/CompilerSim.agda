@@ -4,7 +4,7 @@
   forward simulations:
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5
+          --split--> Clos4 --hoist--> Clos5
 
   Each pass is proved by a forward simulation, which, since all the
   machines are deterministic and total, gives its end theorem
@@ -34,8 +34,8 @@ open import proof.Correctness.CEK.SimplifySim using (simplify-correct)
 open import Untyped.proof.Correctness.CEK.CaptureSim using (capture-correct)
 open import Untyped.proof.Correctness.CEK.PruneSim using (prune-correct)
 open import Untyped.proof.Correctness.CEK.ConcretizeSim using (concretize-correct)
-open import Untyped.proof.Correctness.CEK.DelaySim using (delay-correct)
-open import Untyped.proof.Correctness.CEK.GlobalizeSim using (globalize-correct)
+open import Untyped.proof.Correctness.CEK.SplitSim using (split-correct)
+open import Untyped.proof.Correctness.CEK.HoistSim using (hoist-correct)
 import Semantics.CEK.ISWIM as S
 import Untyped.Semantics.CEK.Clos5 as T
 
@@ -47,7 +47,7 @@ compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M)
 compile-correct M c =
   equiv-trans (simplify-correct M c)
     (equiv-trans (capture-correct _ c') (equiv-trans (prune-correct _ (capture-closed (simplify M) c'))
-      (equiv-trans (concretize-correct _) (equiv-trans (delay-correct _) (globalize-correct _)))))
+      (equiv-trans (concretize-correct _) (equiv-trans (split-correct _) (hoist-correct _)))))
   where c' = simplify-closed M c
 
 {- in particular -}

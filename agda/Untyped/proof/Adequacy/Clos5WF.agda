@@ -1,7 +1,7 @@
 {-
 
   Well-formed Clos5 programs, the precondition of soundness and adequacy
-  for the Clos5 machine (Adequacy/Clos5.agda); globalize produces them
+  for the Clos5 machine (Adequacy/Clos5.agda); hoist produces them
   from closed ISWIM programs (Adequacy/CompileWF.agda).
 
   * The main expression is closed (WS 0), and the code of each global
@@ -10,7 +10,7 @@
     which errors in the machine, denotes init = {ω}.
 
   * Each reference refers to an existing definition, and the code of a
-    definition only to older ones (RB, from GlobalizeCorrect.agda): the
+    definition only to older ones (RB, from HoistCorrect.agda): the
     semantics interprets each definition with the table of the older ones
     only, while the machine looks references up in the whole table.
 
@@ -19,7 +19,7 @@
 module Untyped.proof.Adequacy.Clos5WF where
 
 open import Untyped.Language.Clos5
-open import Untyped.proof.Correctness.Graph.GlobalizeCorrect using (RB) public
+open import Untyped.proof.Correctness.Graph.HoistCorrect using (RB) public
 open import proof.Framework.Syntax.ScopeRename Op sig public
 
 open import Data.List using (List; []; _∷_; length)

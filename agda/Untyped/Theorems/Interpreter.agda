@@ -8,7 +8,7 @@
   proof/.
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
+          --split--> Clos4 --hoist--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
@@ -46,8 +46,8 @@ open import Compiler.Simplify using (simplify)
 open import Untyped.Compiler.Capture using (capture)
 open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Delay using (delay)
-open import Untyped.Compiler.Globalize using (globalize)
+open import Untyped.Compiler.Split using (split)
+open import Untyped.Compiler.Hoist using (hoist)
 open import Untyped.Compiler.RCO using (rco-program)
 open import Untyped.Compiler.LiftLocals using (lift-program)
 open import Untyped.Compiler.Explicate using (explicate)
@@ -71,8 +71,8 @@ import proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
 import Untyped.proof.Correctness.Interp.CaptureFuel as CaptureFuel
 import Untyped.proof.Correctness.Interp.PruneFuel as PruneFuel
 import Untyped.proof.Correctness.Interp.ConcretizeFuel as ConcretizeFuel
-import Untyped.proof.Correctness.Interp.DelayFuel as DelayFuel
-import Untyped.proof.Correctness.Interp.GlobalizeFuel as GlobalizeFuel
+import Untyped.proof.Correctness.Interp.SplitFuel as SplitFuel
+import Untyped.proof.Correctness.Interp.HoistFuel as HoistFuel
 import Untyped.proof.Correctness.Interp.RCOFuel as RCOFuel
 import Untyped.proof.Correctness.Interp.LiftLocalsFuel as LiftLocalsFuel
 import Untyped.proof.Correctness.Interp.ExplicateFuel as ExplicateFuel
@@ -103,11 +103,11 @@ concretize-correct : ∀ (M : Clos2.AST)
   → Equivalent (Clos2ᵢ.sem M) (Clos3ᵢ.sem (concretize-program M))
 concretize-correct = ConcretizeFuel.concretize-correct
 
-delay-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ᵢ.sem M) (Clos4ᵢ.sem (delay M))
-delay-correct = DelayFuel.delay-correct
+split-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ᵢ.sem M) (Clos4ᵢ.sem (split M))
+split-correct = SplitFuel.split-correct
 
-globalize-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ᵢ.sem M) (Clos5ᵢ.sem (globalize M))
-globalize-correct = GlobalizeFuel.globalize-correct
+hoist-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ᵢ.sem M) (Clos5ᵢ.sem (hoist M))
+hoist-correct = HoistFuel.hoist-correct
 
 {- remove complex operands, for well-scoped programs (which the compiler
    produces) -}

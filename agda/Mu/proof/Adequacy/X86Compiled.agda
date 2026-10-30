@@ -7,9 +7,9 @@
   (Contains), not only with the table of the older ones, as the
   semantics interprets it.
 
-  Both hold of the GlobalFunμ program that globalize produces, whose
+  Both hold of the GlobalFunμ program that hoist produces, whose
   definitions refer only to older ones
-  (Mu/proof/Compiler/GlobalizeOlder.agda), and pass to X86μ through the
+  (Mu/proof/Compiler/HoistOlder.agda), and pass to X86μ through the
   lemmas of the denotational proofs of remove complex operands, lift
   locals, explicate control and select instructions: the tables of the
   two programs agree, and so does the code of each definition,
@@ -41,7 +41,7 @@ open import Mu.Compiler.RCO using (rco)
 open import Mu.Compiler.LiftLocals using () renaming (lift to liftₗ)
 open import Mu.Compiler.Explicate using (explicate-body)
 open import Mu.Compiler.Select using (def-body)
-open import Mu.proof.Compiler.GlobalizeOlder using (OlderDefs; globalize-older)
+open import Mu.proof.Compiler.HoistOlder using (OlderDefs; hoist-older)
 open import Mu.proof.Adequacy.GlobalFunCommon using (table-at; agree; tbl-mono; olderAt)
 open import Mu.proof.Correctness.GraphModel.RCOCorrect using (code-rco; table-rco)
 open import Mu.proof.Correctness.GraphModel.LiftLocalsCorrect using (code-lift; table-lift)
@@ -78,7 +78,7 @@ compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , close
   TT : ∀ {s} (f : _ ∋ s) → table ds₅ f ≃ tables codeₜ (All-map def-body ds꜀) f
   TT f = ≃-trans (table-rco ds₅ f) (≃-trans (table-lift dsₘ f) (≃-trans (table-explicate dsᵢ f) (table-≃ ds꜀ f)))
   closed : Contains codeₜ (All-map def-body ds꜀)
-  closed f d d∈ = proj₁ (TT f) d (clos5-closed ds₅ (globalize-older (compile-to-PairClos M)) f d (proj₂ code≃ d (subst (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
+  closed f d d∈ = proj₁ (TT f) d (clos5-closed ds₅ (hoist-older (compile-to-PairClos M)) f d (proj₂ code≃ d (subst (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
     where
     eq : lookup (All-map def-body ds꜀) f ≡ def-body (explicate-body (liftₗ (rco (lookup ds₅ f) (λ x → x))))
     eq = trans (lookup-map def-body ds꜀ f) (cong def-body (trans (lookup-map explicate-body dsᵢ f)

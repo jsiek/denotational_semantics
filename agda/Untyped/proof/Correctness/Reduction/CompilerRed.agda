@@ -4,7 +4,7 @@
   semantics and forward simulations:
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5
+          --split--> Clos4 --hoist--> Clos5
 
   Each pass is proved by a forward simulation, which gives its end
   theorem (Equivalent); these compose (equiv-trans). The compiler is
@@ -31,8 +31,8 @@ open import proof.Correctness.Reduction.SimplifyRed using (simplify-correct)
 open import Untyped.proof.Correctness.Reduction.CaptureRed using (capture-correct)
 open import Untyped.proof.Correctness.Reduction.PruneRed using (prune-correct)
 open import Untyped.proof.Correctness.Reduction.ConcretizeRed using (concretize-correct)
-open import Untyped.proof.Correctness.Reduction.DelayRed using (delay-correct)
-open import Untyped.proof.Correctness.Reduction.GlobalizeRed using (globalize-correct)
+open import Untyped.proof.Correctness.Reduction.SplitRed using (split-correct)
+open import Untyped.proof.Correctness.Reduction.HoistRed using (hoist-correct)
 import Semantics.Reduction.ISWIM as S
 import Untyped.Semantics.Reduction.Clos5 as T
 
@@ -44,7 +44,7 @@ compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M)
 compile-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (capture-correct _ c') (equiv-trans (prune-correct _ w)
     (equiv-trans (concretize-correct _ (Opt.prune-closed (capture (simplify M)) w))
-      (equiv-trans (delay-correct _) (globalize-correct _)))))
+      (equiv-trans (split-correct _) (hoist-correct _)))))
   where c' = simplify-closed M c
         w = capture-closed (simplify M) c'
 

@@ -5,7 +5,7 @@
   correctness proofs in the five styles.
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2
-          --concretize--> Clos3 --delay--> Clos4 --globalize--> Clos5
+          --concretize--> Clos3 --split--> Clos4 --hoist--> Clos5
           --rco--> Mon --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
@@ -44,7 +44,7 @@ import Untyped.proof.Compiler.Examples.LiftLocalsExample
 import Untyped.proof.Compiler.Examples.RCOExample
 import Untyped.proof.Compiler.Examples.SelectExample
 import Untyped.proof.Compiler.Examples.SimplifyCaptureExample
-import Untyped.proof.Compiler.GlobalizeTable
+import Untyped.proof.Compiler.HoistTable
 import Untyped.proof.Compiler.PipelineScope
 
 {- proof/: the graph model: the semantics of each language and each pass, and the experiment of a direct semantics of Imp -}
@@ -57,18 +57,18 @@ import Untyped.proof.Correctness.Graph.CompilerCorrect
 import Untyped.proof.Correctness.Graph.CompilerExample
 import Untyped.proof.Correctness.Graph.ConcretizeCorrect
 import Untyped.proof.Correctness.Graph.ConcretizeExample
-import Untyped.proof.Correctness.Graph.DelayApp
-import Untyped.proof.Correctness.Graph.DelayClosedClosureExample
-import Untyped.proof.Correctness.Graph.DelayFiniteCommon
-import Untyped.proof.Correctness.Graph.DelayFiniteRel
-import Untyped.proof.Correctness.Graph.DelayPreserve
-import Untyped.proof.Correctness.Graph.DelayReflectFinite
+import Untyped.proof.Correctness.Graph.SplitApp
+import Untyped.proof.Correctness.Graph.SplitClosedClosureExample
+import Untyped.proof.Correctness.Graph.SplitFiniteCommon
+import Untyped.proof.Correctness.Graph.SplitFiniteRel
+import Untyped.proof.Correctness.Graph.SplitPreserve
+import Untyped.proof.Correctness.Graph.SplitReflectFinite
 import Untyped.proof.Correctness.Graph.CaptureCorrect
 import Untyped.proof.Correctness.Graph.CaptureExample
 import Untyped.proof.Correctness.Graph.ExplicateCommon
 import Untyped.proof.Correctness.Graph.ExplicateCorrect
 import Untyped.proof.Correctness.Graph.ExplicateCorrectK
-import Untyped.proof.Correctness.Graph.GlobalizeCorrect
+import Untyped.proof.Correctness.Graph.HoistCorrect
 import Untyped.proof.Correctness.Graph.LiftLocalsCommon
 import Untyped.proof.Correctness.Graph.LiftLocalsCorrect
 import Untyped.proof.Correctness.Graph.LiftLocalsCorrectK
@@ -78,16 +78,16 @@ import Untyped.proof.Correctness.Graph.RCOCorrect
 import Untyped.proof.Correctness.Graph.SelectCorrect
 import Untyped.proof.Semantics.Graph.X86
 
-{- proof/: the CEK machines + simulations (and the experiment of a direct backward simulation for delay) -}
+{- proof/: the CEK machines + simulations (and the experiment of a direct backward simulation for split) -}
 import Untyped.proof.Semantics.CEK.Backward
 import Untyped.proof.Correctness.CEK.CompilerSim
 import Untyped.proof.Correctness.CEK.CompilerX86Sim
 import Untyped.proof.Correctness.CEK.ConcretizeSim
-import Untyped.proof.Correctness.CEK.DelayBackSim
-import Untyped.proof.Correctness.CEK.DelaySim
+import Untyped.proof.Correctness.CEK.SplitBackSim
+import Untyped.proof.Correctness.CEK.SplitSim
 import Untyped.proof.Correctness.CEK.CaptureSim
 import Untyped.proof.Correctness.CEK.ExplicateSim
-import Untyped.proof.Correctness.CEK.GlobalizeSim
+import Untyped.proof.Correctness.CEK.HoistSim
 import Untyped.proof.Correctness.CEK.LiftLocalsSim
 import Untyped.proof.Correctness.CEK.PruneSim
 import Untyped.proof.Correctness.CEK.RCOSim
@@ -96,10 +96,10 @@ import Untyped.proof.Correctness.CEK.SelectSim
 {- proof/: the clocked interpreters + value relations -}
 import Untyped.proof.Correctness.Interp.CompilerFuel
 import Untyped.proof.Correctness.Interp.ConcretizeFuel
-import Untyped.proof.Correctness.Interp.DelayFuel
+import Untyped.proof.Correctness.Interp.SplitFuel
 import Untyped.proof.Correctness.Interp.CaptureFuel
 import Untyped.proof.Correctness.Interp.ExplicateFuel
-import Untyped.proof.Correctness.Interp.GlobalizeFuel
+import Untyped.proof.Correctness.Interp.HoistFuel
 import Untyped.proof.Correctness.Interp.LiftLocalsFuel
 import Untyped.proof.Correctness.Interp.PruneFuel
 import Untyped.proof.Correctness.Interp.RCOFuel
@@ -113,9 +113,9 @@ import Untyped.proof.Semantics.Reduction.Clos5
 import Untyped.proof.Correctness.Reduction.CompilerRed
 import Untyped.proof.Correctness.Reduction.CompilerX86Red
 import Untyped.proof.Correctness.Reduction.ConcretizeRed
-import Untyped.proof.Correctness.Reduction.DelayRed
+import Untyped.proof.Correctness.Reduction.SplitRed
 import Untyped.proof.Correctness.Reduction.CaptureRed
-import Untyped.proof.Correctness.Reduction.GlobalizeRed
+import Untyped.proof.Correctness.Reduction.HoistRed
 import Untyped.proof.Correctness.Reduction.LiftLocalsRed
 import Untyped.proof.Correctness.Reduction.PruneRed
 import Untyped.proof.Correctness.Reduction.RCORed
@@ -127,13 +127,13 @@ import Untyped.proof.Semantics.GraphErr.Clos4
 import Untyped.proof.Semantics.GraphErr.Clos5
 import Untyped.proof.Correctness.GraphErr.CompilerCorrect
 import Untyped.proof.Correctness.GraphErr.ConcretizeCorrect
-import Untyped.proof.Correctness.GraphErr.DelayApp
-import Untyped.proof.Correctness.GraphErr.DelayPreserve
-import Untyped.proof.Correctness.GraphErr.DelayReflect
-import Untyped.proof.Correctness.GraphErr.DelayRel
+import Untyped.proof.Correctness.GraphErr.SplitApp
+import Untyped.proof.Correctness.GraphErr.SplitPreserve
+import Untyped.proof.Correctness.GraphErr.SplitReflect
+import Untyped.proof.Correctness.GraphErr.SplitRel
 import Untyped.proof.Correctness.GraphErr.CaptureCorrect
 import Untyped.proof.Correctness.GraphErr.ExplicateCorrect
-import Untyped.proof.Correctness.GraphErr.GlobalizeCorrect
+import Untyped.proof.Correctness.GraphErr.HoistCorrect
 import Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect
 import Untyped.proof.Correctness.GraphErr.PruneCorrect
 import Untyped.proof.Correctness.GraphErr.RCOCorrect

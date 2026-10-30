@@ -36,8 +36,8 @@ open import Mu.proof.Correctness.ClockedInterpreters.SimplifyFuel using (simplif
 open import Mu.proof.Correctness.ClockedInterpreters.CaptureFuel using (capture-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.PruneFuel using (prune-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.ConcretizeFuel using (concretize-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.DelayFuel using (delay-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.GlobalizeFuel using (globalize-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.SplitFuel using (split-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.HoistFuel using (hoist-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.RCOFuel using (rco-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.LiftLocalsFuel using (lift-locals-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.ExplicateFuel using (explicate-correct)
@@ -49,12 +49,12 @@ open import Data.List using ([])
 compile-to-PairClos-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem M) (PairClosμᵢ.sem (compile-to-PairClos M))
 compile-to-PairClos-correct M =
   equiv-trans (simplify-correct M) (equiv-trans (capture-correct (simplify M)) (equiv-trans (prune-correct M₁)
-    (equiv-trans (concretize-correct M₂) (delay-correct (concretize-program M₂)))))
+    (equiv-trans (concretize-correct M₂) (split-correct (concretize-program M₂)))))
   where M₁ = capture (simplify M)
         M₂ = prune-program M₁
 
 compile-to-GlobalFun-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem M) (GlobalFunμᵢ.sem (compile-to-GlobalFun M))
-compile-to-GlobalFun-correct M = equiv-trans (compile-to-PairClos-correct M) (globalize-correct (compile-to-PairClos M))
+compile-to-GlobalFun-correct M = equiv-trans (compile-to-PairClos-correct M) (hoist-correct (compile-to-PairClos M))
 
 compile-to-Mon-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem M) (GlobalFunμᵢ.sem ⌜ compile-to-Mon M ⌝ₚ)
 compile-to-Mon-correct M = equiv-trans (compile-to-GlobalFun-correct M) (rco-correct (compile-to-GlobalFun M))

@@ -7,8 +7,8 @@
   opening proof/.
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
-          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
-          --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --split--> Clos4ᵀ
+          --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   Each language with binders has a reduction semantics by substitution
@@ -52,8 +52,8 @@ open import Compiler.Cast using (cast-closed)
 open import Compiler.Capture using (capture)
 open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
-open import Compiler.Delay using (delay-program)
-open import Compiler.Globalize using (globalize)
+open import Compiler.Split using (split-program)
+open import Compiler.Hoist using (hoist)
 open import Compiler.RCO using (rco-program)
 open import Compiler.LiftLocals using (lift-program)
 open import Compiler.Explicate using (explicate)
@@ -77,8 +77,8 @@ import proof.Correctness.Reduction.CastRed as CastRed
 import proof.Correctness.Reduction.CaptureRed as CaptureRed
 import proof.Correctness.Reduction.PruneRed as PruneRed
 import proof.Correctness.Reduction.ConcretizeRed as ConcretizeRed
-import proof.Correctness.Reduction.DelayRed as DelayRed
-import proof.Correctness.Reduction.GlobalizeRed as GlobalizeRed
+import proof.Correctness.Reduction.SplitRed as SplitRed
+import proof.Correctness.Reduction.HoistRed as HoistRed
 import proof.Correctness.Reduction.RCORed as RCORed
 import proof.Correctness.Reduction.LiftLocalsRed as LiftLocalsRed
 import proof.Correctness.CEK.ExplicateSim as ExplicateSim
@@ -106,11 +106,11 @@ prune-correct = PruneRed.prune-correct
 concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵣ.sem M) (Clos3ᵀᵣ.sem (concretize-program M))
 concretize-correct = ConcretizeRed.concretize-correct
 
-delay-correct : ∀ (M : Clos3ᵀ.Tm [] Any) → Equivalent (Clos3ᵀᵣ.sem M) (Clos4ᵀᵣ.sem (delay-program M))
-delay-correct = DelayRed.delay-correct
+split-correct : ∀ (M : Clos3ᵀ.Tm [] Any) → Equivalent (Clos3ᵀᵣ.sem M) (Clos4ᵀᵣ.sem (split-program M))
+split-correct = SplitRed.split-correct
 
-globalize-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → Equivalent (Clos4ᵀᵣ.sem M) (Clos5ᵀᵣ.sem (globalize M))
-globalize-correct = GlobalizeRed.globalize-correct
+hoist-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → Equivalent (Clos4ᵀᵣ.sem M) (Clos5ᵀᵣ.sem (hoist M))
+hoist-correct = HoistRed.hoist-correct
 
 rco-correct : ∀ (P : Clos5ᵀ.Program) → Equivalent (Clos5ᵀᵣ.sem P) (Clos5ᵀᵣ.sem ⌜ rco-program P ⌝ₚ)
 rco-correct = RCORed.rco-correct

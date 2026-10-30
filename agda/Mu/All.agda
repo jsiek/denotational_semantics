@@ -6,8 +6,8 @@
   paper. Mu/README.md is the road map from the paper to this code.
 
     ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
-           --concretize--> EnvClosμ --delay--> PairClosμ
-           --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
+           --concretize--> EnvClosμ --split--> PairClosμ
+           --hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 
   The theorem statements are in Mu/Theorems/, one file per style, each
@@ -16,8 +16,8 @@
   outside Mu/proof/) are ISWIMμ's audit surface.
 
   * graph model: Mu/Theorems/GraphModel.agda (Theorems 4.1 and 4.4),
-    proved in Mu/proof/Correctness/GraphModel/, with delay by the
-    approximant logical relation (DelayRel.agda);
+    proved in Mu/proof/Correctness/GraphModel/, with split by the
+    approximant logical relation (SplitRel.agda);
   * abstract machines + simulation: Mu/Theorems/AbstractMachines.agda
     (Theorem F.2), Mu/proof/Correctness/AbstractMachines/;
   * clocked interpreters + value relations:
@@ -34,11 +34,11 @@
     Mu/proof/Adequacy/; an alternative, reported separately, against the
     abstract machines instead: Mu/proof/Adequacy/AbstractMachines/;
   * the two Agda checks of the paper's §4.2 ("Which sides to relate"):
-    a finite source side cannot satisfy the function clause of delay's
-    relation (Mu/proof/Correctness/GraphModel/DelayDesignFiniteSource.agda),
-    and delay's relation on target sets of bounded depth is the
+    a finite source side cannot satisfy the function clause of split's
+    relation (Mu/proof/Correctness/GraphModel/SplitDesignFiniteSource.agda),
+    and split's relation on target sets of bounded depth is the
     relation on their finite sublists
-    (Mu/proof/Correctness/GraphModel/DelayDesignBoundedSets.agda).
+    (Mu/proof/Correctness/GraphModel/SplitDesignBoundedSets.agda).
 
   The experiment of mixing semantics is not part of the paper; it is
   checked from Mu/Experiments.agda.
@@ -66,8 +66,8 @@ import Mu.proof.Correctness.ReductionSemantics.PipelineRed
 import Mu.proof.Adequacy.EndToEnd
 import Mu.proof.Adequacy.AbstractMachines.EndToEnd
 {- the Agda checks of §4.2, in no proof's total -}
-import Mu.proof.Correctness.GraphModel.DelayDesignFiniteSource
-import Mu.proof.Correctness.GraphModel.DelayDesignBoundedSets
+import Mu.proof.Correctness.GraphModel.SplitDesignFiniteSource
+import Mu.proof.Correctness.GraphModel.SplitDesignBoundedSets
 import Mu.proof.Semantics.AbstractMachines.NoError
 import Mu.proof.Semantics.ClockedInterpreters.NoError
 import Mu.proof.Semantics.ReductionSemantics.NoError

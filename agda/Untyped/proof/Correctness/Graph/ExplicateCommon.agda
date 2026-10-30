@@ -28,7 +28,7 @@ open import Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
 open import Untyped.Semantics.Graph.Imp using (Store; checked; 𝒜; 𝒜s; 𝒮; Table)
 open import Untyped.Semantics.Graph.CFG using (Blocks; blocks; ⟦_⟧ₚ) renaming (⟦_⟧[_] to ⟪_⟫[_])
 open import Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
-open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
+open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
 open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
 import Language.ISWIM as ISWIM
 open import Framework.Primitives using (base-rep)

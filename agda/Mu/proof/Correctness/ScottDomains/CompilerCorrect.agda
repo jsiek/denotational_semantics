@@ -5,7 +5,7 @@
   for a closed ISWIMμ program, the compiled program, in PairClosμ, GlobalFunμ,
   Monμ (by its embedding), Impμ, CFGμ and X86μ, produces the same
   constants as the source, and is defined exactly when the source is
-  (Same). Every pass but delay preserves the meaning exactly (＝); delay
+  (Same). Every pass but split preserves the meaning exactly (＝); split
   preserves and reflects constants and definedness.
 
 -}
@@ -44,8 +44,8 @@ open import Mu.proof.Correctness.ScottDomains.SimplifyCorrect pt fe pe using (si
 open import Mu.proof.Correctness.ScottDomains.CaptureCorrect pt fe pe using (capture-correct)
 open import Mu.proof.Correctness.ScottDomains.PruneCorrect pt fe pe using (prune-correct)
 open import Mu.proof.Correctness.ScottDomains.ConcretizeCorrect pt fe pe using (concretize-correct)
-open import Mu.proof.Correctness.ScottDomains.DelayCorrect pt fe pe using (delay-correct-const; delay-correct-defined)
-open import Mu.proof.Correctness.ScottDomains.GlobalizeCorrect pt fe pe using (globalize-correct)
+open import Mu.proof.Correctness.ScottDomains.SplitCorrect pt fe pe using (split-correct-const; split-correct-defined)
+open import Mu.proof.Correctness.ScottDomains.HoistCorrect pt fe pe using (hoist-correct)
 open import Mu.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using (rco-correct)
 open import Mu.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using (lift-locals-correct)
 open import Mu.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using (explicate-correct)
@@ -66,8 +66,8 @@ then d e .e s refl = s
 
 compile-to-PairClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) (⟦ compile-to-PairClos M ⟧₄ · ρ₀)
 compile-to-PairClos-same M =
-  (λ B c → (λ h → pr₁ (delay-correct-const M₃ B c) (eq ⁻¹ ∙ h)) , (λ h → eq ∙ pr₂ (delay-correct-const M₃ B c) h)) ,
-  (λ h → pr₁ (delay-correct-defined M₃) (transport defined eq h)) , (λ h → transport defined (eq ⁻¹) (pr₂ (delay-correct-defined M₃) h))
+  (λ B c → (λ h → pr₁ (split-correct-const M₃ B c) (eq ⁻¹ ∙ h)) , (λ h → eq ∙ pr₂ (split-correct-const M₃ B c) h)) ,
+  (λ h → pr₁ (split-correct-defined M₃) (transport defined eq h)) , (λ h → transport defined (eq ⁻¹) (pr₂ (split-correct-defined M₃) h))
  where
   M₁ = simplify M
   M₂ = prune-program (capture M₁)
@@ -75,7 +75,7 @@ compile-to-PairClos-same M =
   eq = simplify-correct M ∙ capture-correct M₁ ∙ prune-correct (capture M₁) ∙ concretize-correct M₂
 
 compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
-compile-to-GlobalFun-same M = then (⟦ M ⟧ · ρ₀) (⟦ compile-to-PairClos M ⟧₄ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅ (compile-to-PairClos-same M) (globalize-correct (compile-to-PairClos M))
+compile-to-GlobalFun-same M = then (⟦ M ⟧ · ρ₀) (⟦ compile-to-PairClos M ⟧₄ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅ (compile-to-PairClos-same M) (hoist-correct (compile-to-PairClos M))
 
 compile-to-Mon-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅
 compile-to-Mon-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅ ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅ (compile-to-GlobalFun-same M) (rco-correct (compile-to-GlobalFun M))

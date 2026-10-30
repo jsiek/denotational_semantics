@@ -3,7 +3,7 @@
   Soundness of the Clos5ᵀ machine with respect to the graph model: what
   the machine computes is in the denotation of the program, for a
   program whose definitions refer only to older ones (OlderDefs,
-  proof/Compiler/GlobalizeOlder.agda).
+  proof/Compiler/HoistOlder.agda).
 
   As for untyped Clos5 (Untyped/proof/Adequacy/Clos5Soundness.agda), each state
   denotes a set of values (𝒮) that a step can only shrink (step-⊆), a
@@ -22,7 +22,7 @@ open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc; _<_)
 open import Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Language.Typed.Clos5
-open import proof.Compiler.GlobalizeOlder using (Older; Olders; OlderDefs)
+open import proof.Compiler.HoistOlder using (Older; Olders; OlderDefs)
 
 module proof.Adequacy.Clos5Soundness {Σ : List ℕ} (ds : All (Code Σ) Σ) (od : OlderDefs ds) where
 

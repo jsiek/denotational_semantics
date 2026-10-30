@@ -3,7 +3,7 @@
   The whole closure-conversion compiler:
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5
+          --split--> Clos4 --hoist--> Clos5
 
   All three correctness proofs (CompilerCorrect, CompilerSim,
   CompilerFuel) are about this compile.
@@ -23,8 +23,8 @@ open import Compiler.Simplify using (simplify)
 open import Untyped.Compiler.Capture using (capture)
 open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Delay using (delay)
-open import Untyped.Compiler.Globalize using (globalize)
+open import Untyped.Compiler.Split using (split)
+open import Untyped.Compiler.Hoist using (hoist)
 open import Untyped.Compiler.RCO using (rco-program; rco-program-mon)
 open import Untyped.Compiler.LiftLocals using (lift-program)
 import Untyped.Language.Imp as Imp
@@ -36,10 +36,10 @@ open import Untyped.Compiler.Select using (select)
 module Untyped.Compiler.Pipeline where
 
 compile₄ : AST → L4.AST
-compile₄ M = delay (concretize-program (prune-program (capture (simplify M))))
+compile₄ M = split (concretize-program (prune-program (capture (simplify M))))
 
 compile : AST → L5.Program
-compile M = globalize (compile₄ M)
+compile M = hoist (compile₄ M)
 
 compile-mon : AST → L5.Program
 compile-mon M = rco-program (compile M)
