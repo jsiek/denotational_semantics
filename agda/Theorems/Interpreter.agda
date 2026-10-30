@@ -6,8 +6,8 @@
   each theorem here is one of them, with its type written out.
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
-          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
-          --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --split--> Clos4ᵀ
+          --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   Each language has an interpreter with a clock (Semantics/Interp/ for
@@ -51,8 +51,8 @@ open import Compiler.Cast using (cast-closed)
 open import Compiler.Capture using (capture)
 open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
-open import Compiler.Delay using (delay-program)
-open import Compiler.Globalize using (globalize)
+open import Compiler.Split using (split-program)
+open import Compiler.Hoist using (hoist)
 open import Compiler.RCO using (rco-program)
 open import Compiler.LiftLocals using (lift-program)
 open import Compiler.Explicate using (explicate)
@@ -75,8 +75,8 @@ import proof.Correctness.Interp.CastFuel as CastFuel
 import proof.Correctness.Interp.CaptureFuel as CaptureFuel
 import proof.Correctness.Interp.PruneFuel as PruneFuel
 import proof.Correctness.Interp.ConcretizeFuel as ConcretizeFuel
-import proof.Correctness.Interp.DelayFuel as DelayFuel
-import proof.Correctness.Interp.GlobalizeFuel as GlobalizeFuel
+import proof.Correctness.Interp.SplitFuel as SplitFuel
+import proof.Correctness.Interp.HoistFuel as HoistFuel
 import proof.Correctness.Interp.RCOFuel as RCOFuel
 import proof.Correctness.Interp.LiftLocalsFuel as LiftLocalsFuel
 import proof.Correctness.Interp.ExplicateFuel as ExplicateFuel
@@ -102,11 +102,11 @@ prune-correct = PruneFuel.prune-correct
 concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵢ.sem M) (Clos3ᵀᵢ.sem (concretize-program M))
 concretize-correct = ConcretizeFuel.concretize-correct
 
-delay-correct : ∀ (M : Clos3ᵀ.Tm [] Any) → Equivalent (Clos3ᵀᵢ.sem M) (Clos4ᵀᵢ.sem (delay-program M))
-delay-correct = DelayFuel.delay-correct
+split-correct : ∀ (M : Clos3ᵀ.Tm [] Any) → Equivalent (Clos3ᵀᵢ.sem M) (Clos4ᵀᵢ.sem (split-program M))
+split-correct = SplitFuel.split-correct
 
-globalize-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → Equivalent (Clos4ᵀᵢ.sem M) (Clos5ᵀᵢ.sem (globalize M))
-globalize-correct = GlobalizeFuel.globalize-correct
+hoist-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → Equivalent (Clos4ᵀᵢ.sem M) (Clos5ᵀᵢ.sem (hoist M))
+hoist-correct = HoistFuel.hoist-correct
 
 rco-correct : ∀ (P : Clos5ᵀ.Program) → Equivalent (Clos5ᵀᵢ.sem P) (Clos5ᵀᵢ.sem ⌜ rco-program P ⌝ₚ)
 rco-correct = RCOFuel.rco-correct

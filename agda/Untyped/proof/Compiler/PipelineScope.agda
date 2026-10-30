@@ -15,9 +15,9 @@
   * concretize: a variable becomes a variable or a projection from a
     variable in scope (RefOK); in the code of a closure, the argument and
     the tuple of free variables (fv-ref-fits);
-  * delay: the operand of an application goes under one more binder
+  * split: the operand of an application goes under one more binder
     (ws-shift);
-  * globalize: the code of each function, closed in Clos4, becomes a
+  * hoist: the code of each function, closed in Clos4, becomes a
     definition.
 
 -}
@@ -250,41 +250,41 @@ module Conc where
   concretize-closed : ∀ M → WS 0 M → W3.WS 0 (concretize-program M)
   concretize-closed M w = conc-ws var M w (λ x ())
 
-{- delay ---------------------------------------------------------------------------}
+{- split ---------------------------------------------------------------------------}
 
 module Del where
   open C3
-  open import Untyped.Compiler.Delay
+  open import Untyped.Compiler.Split
   open W3
 
-  delay-ws : ∀ {k} M → WS k M → W4.WS k (delay M)
+  split-ws : ∀ {k} M → WS k M → W4.WS k (split M)
   del-args-ws : ∀ {n k} (args : Args (replicate n ■)) → WS-args k args
     → W4.WS-args k (del-map-args args)
 
-  delay-ws (` x) w = w
-  delay-ws (clos-op n ⦅ ! (clear (bind (bind (ast N)))) ,, FVs ⦆) (wN , ws) =
-    (delay-ws N wN , tt) , del-args-ws FVs ws , tt
-  delay-ws (app ⦅ M ,, N ,, Nil ⦆) (wM , wN , _) =
-    delay-ws M wM
-    , ((s≤s z≤n , tt) , (s≤s z≤n , tt) , W4.ws-shift (delay N) (delay-ws N wN) , tt) , tt
-  delay-ws (lit B k ⦅ Nil ⦆) w = tt
-  delay-ws (tuple n ⦅ Ms ⦆) w = del-args-ws Ms w
-  delay-ws (get i ⦅ M ,, Nil ⦆) (w , _) = delay-ws M w , tt
-  delay-ws (inl-op ⦅ M ,, Nil ⦆) (w , _) = delay-ws M w , tt
-  delay-ws (inr-op ⦅ M ,, Nil ⦆) (w , _) = delay-ws M w , tt
-  delay-ws (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) =
-    delay-ws L wL , delay-ws M wM , delay-ws N wN , tt
-  delay-ws (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) = delay-ws L wL , delay-ws M wM , tt
-  delay-ws (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) (wM , wN , _) = delay-ws M wM , delay-ws N wN , tt
+  split-ws (` x) w = w
+  split-ws (clos-op n ⦅ ! (clear (bind (bind (ast N)))) ,, FVs ⦆) (wN , ws) =
+    (split-ws N wN , tt) , del-args-ws FVs ws , tt
+  split-ws (app ⦅ M ,, N ,, Nil ⦆) (wM , wN , _) =
+    split-ws M wM
+    , ((s≤s z≤n , tt) , (s≤s z≤n , tt) , W4.ws-shift (split N) (split-ws N wN) , tt) , tt
+  split-ws (lit B k ⦅ Nil ⦆) w = tt
+  split-ws (tuple n ⦅ Ms ⦆) w = del-args-ws Ms w
+  split-ws (get i ⦅ M ,, Nil ⦆) (w , _) = split-ws M w , tt
+  split-ws (inl-op ⦅ M ,, Nil ⦆) (w , _) = split-ws M w , tt
+  split-ws (inr-op ⦅ M ,, Nil ⦆) (w , _) = split-ws M w , tt
+  split-ws (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) =
+    split-ws L wL , split-ws M wM , split-ws N wN , tt
+  split-ws (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) = split-ws L wL , split-ws M wM , tt
+  split-ws (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) (wM , wN , _) = split-ws M wM , split-ws N wN , tt
 
   del-args-ws {zero} Nil w = tt
-  del-args-ws {suc n} (M ,, args) (w , ws) = delay-ws M w , del-args-ws args ws
+  del-args-ws {suc n} (M ,, args) (w , ws) = split-ws M w , del-args-ws args ws
 
-{- globalize -----------------------------------------------------------------------}
+{- hoist -----------------------------------------------------------------------}
 
 module Glob where
   open C4
-  open import Untyped.Compiler.Globalize
+  open import Untyped.Compiler.Hoist
   open W4
 
   glob-ws : ∀ {k} M ds → WS k M → All (W5.WS 2) ds
@@ -324,10 +324,10 @@ module Glob where
 
 {- The compiler ----------------------------------------------------------------------}
 
-{- the Clos4 program before globalize is closed -}
+{- the Clos4 program before hoist is closed -}
 compile₄-closed : ∀ M → Closed M → W4.WS 0 (compile₄ M)
 compile₄-closed M c =
-  Del.delay-ws M₃ (Conc.concretize-closed M₂' (Opt.prune-closed M₂ (ES.capture-closed (simplify M) (simplify-closed M c))))
+  Del.split-ws M₃ (Conc.concretize-closed M₂' (Opt.prune-closed M₂ (ES.capture-closed (simplify M) (simplify-closed M c))))
   where
   M₂ = capture (simplify M)
   M₂' = Untyped.Compiler.Prune.prune-program M₂

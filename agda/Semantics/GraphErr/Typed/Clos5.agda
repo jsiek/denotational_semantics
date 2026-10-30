@@ -9,7 +9,7 @@
 
   The table of a program (tbl) gives each definition the meanings of
   the older ones only, and errcode at any other position, so that it is
-  well founded; globalize makes only references to older definitions.
+  well founded; hoist makes only references to older definitions.
   tbl is generic in what the definitions are, for Impᵀ and CFGᵀ too.
 
 -}

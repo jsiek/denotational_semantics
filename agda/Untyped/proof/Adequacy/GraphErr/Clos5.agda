@@ -46,7 +46,7 @@ import Untyped.Semantics.CEK.Clos5 as Clos5ₘ
 open import Untyped.Semantics.CEK.Clos5 using (ret; halt; obs)
 open import Untyped.Compiler.Pipeline using (compile)
 open import Compiler.CaptureScope using (Closed)
-open import Untyped.proof.Compiler.GlobalizeTable using (⊑-refl)
+open import Untyped.proof.Compiler.HoistTable using (⊑-refl)
 open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
 open import proof.Adequacy.GraphErr.Soundness using (shape-ω)
 open import Untyped.proof.Adequacy.GraphErr.Clos5WF using (WF; compile-wf) public

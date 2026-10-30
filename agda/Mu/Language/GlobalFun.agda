@@ -1,7 +1,7 @@
 {-
 
   GlobalFunμ: GlobalFun, intrinsically typed, with recursive types. The output
-  of globalize (Mu/Compiler/Globalize.agda); as Clos5ᵀ
+  of hoist (Mu/Compiler/Hoist.agda); as Clos5ᵀ
   (Language/Typed/Clos5.agda), with the types of PairClosμ.
 
   The code of every function is a global definition. A program has a
@@ -11,7 +11,7 @@
   definition has type code Δ A B. A term is indexed by the table as
   well as by its context: fun-ref f, for f : Σ ∋ sig Δ A B, is the code
   of definition f. Every definition is typed over the whole table
-  (globalize makes only references to older ones). A program has the
+  (hoist makes only references to older ones). A program has the
   type of its main term.
 
 -}

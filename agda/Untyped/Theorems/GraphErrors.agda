@@ -7,7 +7,7 @@
   without opening proof/.
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
+          --split--> Clos4 --hoist--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
@@ -61,8 +61,8 @@ open import Compiler.Simplify using (simplify)
 open import Untyped.Compiler.Capture using (capture)
 open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Delay using (delay)
-open import Untyped.Compiler.Globalize using (globalize)
+open import Untyped.Compiler.Split using (split)
+open import Untyped.Compiler.Hoist using (hoist)
 open import Untyped.Compiler.RCO using (rco-program)
 open import Untyped.Compiler.LiftLocals using (lift-program)
 open import Untyped.Compiler.Explicate using (explicate)
@@ -85,8 +85,8 @@ import proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
 import Untyped.proof.Correctness.GraphErr.CaptureCorrect as CaptureCorrect
 import Untyped.proof.Correctness.GraphErr.PruneCorrect as PruneCorrect
 import Untyped.proof.Correctness.GraphErr.ConcretizeCorrect as ConcretizeCorrect
-import Untyped.proof.Correctness.GraphErr.DelayPreserve as DelayCorrect
-import Untyped.proof.Correctness.GraphErr.GlobalizeCorrect as GlobalizeCorrect
+import Untyped.proof.Correctness.GraphErr.SplitPreserve as SplitCorrect
+import Untyped.proof.Correctness.GraphErr.HoistCorrect as HoistCorrect
 import Untyped.proof.Correctness.GraphErr.RCOCorrect as RCOCorrect
 import Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect as LiftLocalsCorrect
 import Untyped.proof.Correctness.GraphErr.ExplicateCorrect as ExplicateCorrect
@@ -109,7 +109,7 @@ open import Relation.Nullary using (¬_)
 
 {- Each pass ------------------------------------------------------------------}
 
-{- every pass but delay preserves the meaning of a program exactly (≃),
+{- every pass but split preserves the meaning of a program exactly (≃),
    errors included -}
 
 simplify-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
@@ -125,26 +125,26 @@ prune-correct = PruneCorrect.prune-correct
 concretize-correct : ∀ (M : Clos2.AST) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = ConcretizeCorrect.concretize-correct-closed
 
-{- delay changes how closures are represented, so it is not an equation:
+{- split changes how closures are represented, so it is not an equation:
    it preserves and reflects an error, the constants a program produces,
    and whether it produces a value (an element other than ω) -}
-delay-correct-error : ∀ (M : Clos3.AST)
-  → (ω ∈ ⟦ M ⟧₃ ρ₀ → ω ∈ ⟦ delay M ⟧₄ ρ₀) × (ω ∈ ⟦ delay M ⟧₄ ρ₀ → ω ∈ ⟦ M ⟧₃ ρ₀)
-delay-correct-error = DelayCorrect.delay-correct-error
+split-correct-error : ∀ (M : Clos3.AST)
+  → (ω ∈ ⟦ M ⟧₃ ρ₀ → ω ∈ ⟦ split M ⟧₄ ρ₀) × (ω ∈ ⟦ split M ⟧₄ ρ₀ → ω ∈ ⟦ M ⟧₃ ρ₀)
+split-correct-error = SplitCorrect.split-correct-error
 
-delay-correct-const : ∀ (M : Clos3.AST) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ delay M ⟧₄ ρ₀)
-  × (const c ∈ ⟦ delay M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
-delay-correct-const = DelayCorrect.delay-correct-const
+split-correct-const : ∀ (M : Clos3.AST) {B} (c : base-rep B)
+  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ split M ⟧₄ ρ₀)
+  × (const c ∈ ⟦ split M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
+split-correct-const = SplitCorrect.split-correct-const
 
-delay-correct-val : ∀ (M : Clos3.AST)
-  → (val∈ (⟦ M ⟧₃ ρ₀) → val∈ (⟦ delay M ⟧₄ ρ₀)) × (val∈ (⟦ delay M ⟧₄ ρ₀) → val∈ (⟦ M ⟧₃ ρ₀))
-delay-correct-val = DelayCorrect.delay-correct-val
+split-correct-val : ∀ (M : Clos3.AST)
+  → (val∈ (⟦ M ⟧₃ ρ₀) → val∈ (⟦ split M ⟧₄ ρ₀)) × (val∈ (⟦ split M ⟧₄ ρ₀) → val∈ (⟦ M ⟧₃ ρ₀))
+split-correct-val = SplitCorrect.split-correct-val
 
-globalize-correct : ∀ (M : Clos4.AST) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ globalize M ⟧₅
-globalize-correct = GlobalizeCorrect.globalize-correct
+hoist-correct : ∀ (M : Clos4.AST) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ hoist M ⟧₅
+hoist-correct = HoistCorrect.hoist-correct
 
-{- rco, for well-scoped programs (globalize produces them) -}
+{- rco, for well-scoped programs (hoist produces them) -}
 rco-correct : ∀ (P : Clos5.Program) → Scoped P → ⟦ rco-program P ⟧₅ ≃ ⟦ P ⟧₅
 rco-correct = RCOCorrect.rco-correct
 

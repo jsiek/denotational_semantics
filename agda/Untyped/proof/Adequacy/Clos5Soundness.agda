@@ -11,7 +11,7 @@
     table of definitions. The machine looks every reference up in the
     whole table, while the semantics interprets each definition with the
     table of the older ones; since a definition refers only to older ones
-    (RB, part of DefsWF), the two agree (stab, from GlobalizeCorrect).
+    (RB, part of DefsWF), the two agree (stab, from HoistCorrect).
     Calling code k on an environment e and an argument w (two β steps at
     once) needs the continuity of the Clos5 semantics in the two
     parameters (Semantics/Graph/Clos5IswimContinuous.agda).
@@ -39,7 +39,7 @@ open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
 open import Untyped.Language.Clos5
 open import Untyped.Semantics.Graph.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; table; init) renaming (code to codeD)
-open import Untyped.proof.Correctness.Graph.GlobalizeCorrect using (stab; Agree)
+open import Untyped.proof.Correctness.Graph.HoistCorrect using (stab; Agree)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Semantics.Observation
@@ -47,7 +47,7 @@ open import proof.Semantics.CEK.Smallstep using (Star; Terminates; next; stop)
 open import proof.Framework.ListUtil
 open import Untyped.Semantics.CEK.Clos5 hiding (inl; inr)
 import Untyped.Semantics.CEK.Clos5 as T using (inl; inr)
-open import Untyped.proof.Compiler.GlobalizeTable using (_⊑_; ∷-⊑)
+open import Untyped.proof.Compiler.HoistTable using (_⊑_; ∷-⊑)
 open import proof.Adequacy.Common using (ShapeOf)
 open import proof.Adequacy.Soundness
   using (At; AllNE; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆)

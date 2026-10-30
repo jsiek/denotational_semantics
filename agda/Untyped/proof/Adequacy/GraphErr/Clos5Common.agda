@@ -32,7 +32,7 @@ open import proof.Framework.GraphModel.DOpSig using (result-rel-pres; results-re
 open import proof.Framework.GraphModel.Env using (Env; •-~)
 open import proof.Framework.ListUtil using (reverse-‼-split; _‼_)
 open import Untyped.Semantics.CEK.Clos5 using (step)
-open import Untyped.proof.Compiler.GlobalizeTable using (_⊑_)
+open import Untyped.proof.Compiler.HoistTable using (_⊑_)
 open import Untyped.proof.Adequacy.GraphErr.Clos5WF using (DefsWF; RB; RB-arg; RB-args)
 open import proof.Framework.Runs using (module Runs)
 

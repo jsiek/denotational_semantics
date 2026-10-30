@@ -18,7 +18,7 @@ module Untyped.proof.Compiler.Examples.RCOExample where
 one : AST
 one = lit Int (+ 1) ⦅ Nil ⦆
 
-{- an application as delay makes it, in a context with y as variable 0:
+{- an application as split makes it, in a context with y as variable 0:
      let c = y in app (fst c) (snd c) (y - 1) -}
 call : AST
 call = let-op ⦅ ` 0 ,,

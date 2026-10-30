@@ -24,7 +24,7 @@ open import proof.Semantics.Graph.Prim
 open import Untyped.Language.Clos2
 open import Untyped.proof.Semantics.Graph.Clos2Iswim
 open import Untyped.Compiler.Prune
-open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (Env; Init; ρ₀)
+open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; Init; ρ₀)
 open import Untyped.proof.Correctness.Graph.ConcretizeCorrect
   using (init₀; push; apply-push)
 open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)

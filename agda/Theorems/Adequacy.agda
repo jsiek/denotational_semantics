@@ -37,7 +37,7 @@ import Semantics.CEK.Typed.X86 as X86ᵀₘ
 import proof.Adequacy.ISWIM as AdequacyISWIM
 import proof.Adequacy.Clos5 as AdequacyClos5
 import proof.Adequacy.X86 as AdequacyX86
-open import proof.Compiler.GlobalizeOlder using (globalize-older)
+open import proof.Compiler.HoistOlder using (hoist-older)
 import proof.Adequacy.EndToEnd as EndToEnd
 
 open import Data.Product using (_,_)
@@ -76,19 +76,19 @@ compile-correct-machine-converges = EndToEnd.compile-correct-machine-converges
 
 clos5-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
   → (const k ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
-clos5-const-iff M c = AdequacyClos5.const-iff (compile M) (globalize-older (compile₄ M))
+clos5-const-iff M c = AdequacyClos5.const-iff (compile M) (hoist-older (compile₄ M))
 
 clos5-nonempty-iff : ∀ (M : ISWIM.AST) → Closed M
   → nonempty ⟦ compile M ⟧₅ ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
-clos5-nonempty-iff M c = AdequacyClos5.nonempty-iff (compile M) (globalize-older (compile₄ M))
+clos5-nonempty-iff M c = AdequacyClos5.nonempty-iff (compile M) (hoist-older (compile₄ M))
 
 clos5-error-empty : ∀ (M : ISWIM.AST) → Closed M → Terminates (Clos5ᵀₘ.sem (compile M)) o-error
   → ∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅)
-clos5-error-empty M c = AdequacyClos5.error-empty (compile M) (globalize-older (compile₄ M))
+clos5-error-empty M c = AdequacyClos5.error-empty (compile M) (hoist-older (compile₄ M))
 
 clos5-diverges-empty : ∀ (M : ISWIM.AST) → Closed M → Diverges (Clos5ᵀₘ.sem (compile M))
   → ∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅)
-clos5-diverges-empty M c = AdequacyClos5.diverges-empty (compile M) (globalize-older (compile₄ M))
+clos5-diverges-empty M c = AdequacyClos5.diverges-empty (compile M) (hoist-older (compile₄ M))
 
 {- The X86ᵀ machine, for the programs compile-x86 produces -------------------}
 

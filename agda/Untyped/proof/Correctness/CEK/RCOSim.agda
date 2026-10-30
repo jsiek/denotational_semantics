@@ -27,7 +27,7 @@
     which have the source's values, up to the same final frame (fin).
 
   When the last operand returns its value, the target runs ahead to that
-  final frame (retT, as in DelaySim), so that both machines take the
+  final frame (retT, as in SplitSim), so that both machines take the
   construct's own step (a call, a projection, ...) together and error
   together.
 

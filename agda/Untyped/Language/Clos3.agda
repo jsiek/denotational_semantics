@@ -5,7 +5,7 @@ module Untyped.Language.Clos3 where
    we perform early application of functions 
    on a tuple that captures the local enviroment.
  This language is after the 'uncurry' pass,
-   and before the 'delay' pass.
+   and before the 'split' pass.
 -}
 
 open import Framework.Primitives

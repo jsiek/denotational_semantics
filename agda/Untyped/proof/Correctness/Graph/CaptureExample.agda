@@ -21,7 +21,7 @@ open import proof.Semantics.Graph.ISWIM
 import Untyped.proof.Semantics.Graph.Clos2Iswim as S2
 import Untyped.Language.Clos2 as L2
 open import Untyped.Compiler.Capture using (capture)
-open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
+open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
 open import Untyped.proof.Correctness.Graph.CaptureCorrect using (capture-correct-closed)
 
 open import Data.Nat using (ℕ)

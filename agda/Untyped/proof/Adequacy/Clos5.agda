@@ -39,7 +39,7 @@ open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; terminates-det)
 open import Untyped.Semantics.CEK.Clos5
-open import Untyped.proof.Compiler.GlobalizeTable using (⊑-refl)
+open import Untyped.proof.Compiler.HoistTable using (⊑-refl)
 open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
 open import Untyped.proof.Adequacy.Clos5WF using (WF) public
 open import Untyped.proof.Adequacy.Clos5Soundness using (soundness) public

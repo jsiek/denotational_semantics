@@ -6,8 +6,8 @@
   them, with its type written out.
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
-          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
-          --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --split--> Clos4ᵀ
+          --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   To read them: the typed languages (Language/Typed/), the passes
@@ -19,7 +19,7 @@
   element ω; in the typed semantics only project (a cast from Any)
   checks kinds and errs.
 
-  Every pass but delay is an equation (≃), select instructions
+  Every pass but split is an equation (≃), select instructions
   included: X86ᵀ, like CFGᵀ, checks kinds only at project (chk).
 
   Adequacy: for X86ᵀ, direct, that of its semantics for its machine
@@ -61,8 +61,8 @@ open import Compiler.Cast using (cast-closed)
 open import Compiler.Capture using (capture)
 open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
-open import Compiler.Delay using (delay-program)
-open import Compiler.Globalize using (globalize)
+open import Compiler.Split using (split-program)
+open import Compiler.Hoist using (hoist)
 open import Compiler.RCO using (rco-program)
 open import Compiler.LiftLocals using (lift-program)
 open import Compiler.Explicate using (explicate)
@@ -83,8 +83,8 @@ import proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.GraphErr.CaptureCorrect as Capture
 import proof.Correctness.GraphErr.PruneCorrect as Prune
 import proof.Correctness.GraphErr.ConcretizeCorrect as Concretize
-import proof.Correctness.GraphErr.DelayCorrect as Delay
-import proof.Correctness.GraphErr.GlobalizeCorrect as Globalize
+import proof.Correctness.GraphErr.SplitCorrect as Split
+import proof.Correctness.GraphErr.HoistCorrect as Hoist
 import proof.Correctness.GraphErr.RCOCorrect as RCO
 import proof.Correctness.GraphErr.LiftLocalsCorrect as LiftLocals
 import proof.Correctness.GraphErr.ExplicateCorrect as Explicate
@@ -107,7 +107,7 @@ open import Relation.Nullary using (¬_)
 
 {- Each pass ------------------------------------------------------------------}
 
-{- every pass but delay preserves the meaning of a program exactly (≃),
+{- every pass but split preserves the meaning of a program exactly (≃),
    errors included -}
 
 simplify-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
@@ -125,23 +125,23 @@ prune-correct = Prune.prune-correct
 concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = Concretize.concretize-correct
 
-{- delay preserves and reflects an error, the constants a program
+{- split preserves and reflects an error, the constants a program
    produces, and whether it produces a value -}
-delay-correct-error : ∀ (M : Clos3ᵀ.Tm [] Any)
-  → (ω ∈ ⟦ M ⟧₃ ρ₀ → ω ∈ ⟦ delay-program M ⟧₄ ρ₀) × (ω ∈ ⟦ delay-program M ⟧₄ ρ₀ → ω ∈ ⟦ M ⟧₃ ρ₀)
-delay-correct-error = Delay.delay-correct-error
+split-correct-error : ∀ (M : Clos3ᵀ.Tm [] Any)
+  → (ω ∈ ⟦ M ⟧₃ ρ₀ → ω ∈ ⟦ split-program M ⟧₄ ρ₀) × (ω ∈ ⟦ split-program M ⟧₄ ρ₀ → ω ∈ ⟦ M ⟧₃ ρ₀)
+split-correct-error = Split.split-correct-error
 
-delay-correct-const : ∀ (M : Clos3ᵀ.Tm [] Any) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ delay-program M ⟧₄ ρ₀)
-  × (const c ∈ ⟦ delay-program M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
-delay-correct-const = Delay.delay-correct-const
+split-correct-const : ∀ (M : Clos3ᵀ.Tm [] Any) {B} (c : base-rep B)
+  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ split-program M ⟧₄ ρ₀)
+  × (const c ∈ ⟦ split-program M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
+split-correct-const = Split.split-correct-const
 
-delay-correct-val : ∀ (M : Clos3ᵀ.Tm [] Any)
-  → (val∈ (⟦ M ⟧₃ ρ₀) → val∈ (⟦ delay-program M ⟧₄ ρ₀)) × (val∈ (⟦ delay-program M ⟧₄ ρ₀) → val∈ (⟦ M ⟧₃ ρ₀))
-delay-correct-val = Delay.delay-correct-val
+split-correct-val : ∀ (M : Clos3ᵀ.Tm [] Any)
+  → (val∈ (⟦ M ⟧₃ ρ₀) → val∈ (⟦ split-program M ⟧₄ ρ₀)) × (val∈ (⟦ split-program M ⟧₄ ρ₀) → val∈ (⟦ M ⟧₃ ρ₀))
+split-correct-val = Split.split-correct-val
 
-globalize-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ globalize M ⟧₅
-globalize-correct = Globalize.globalize-correct
+hoist-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ hoist M ⟧₅
+hoist-correct = Hoist.hoist-correct
 
 rco-correct : ∀ (P : Clos5ᵀ.Program) → ⟦ P ⟧₅ ≃ ⟦ ⌜ rco-program P ⌝ₚ ⟧₅
 rco-correct = RCO.rco-correct

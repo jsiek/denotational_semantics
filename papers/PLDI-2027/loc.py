@@ -183,7 +183,7 @@ columns it reaches (by row), the ISWIM row of adequacy (as the bridge),
 the shared modules it reaches that the four do not all reach, and the
 ISWIM pipeline's modules it reuses.  The script fails if it reaches a
 module of the CEK or reduction columns, or of adequacy outside its ISWIM
-row.  The splits that also prove globalize or explicate control in the
+row.  The splits that also prove hoist or explicate control in the
 graph model are estimated from the measured rows, each further bridge at
 the size of ISWIMμ's.
 
@@ -209,7 +209,7 @@ imports a proof module (the theorem files do, by design), or if a module
 outside the proof/ directories is not reached from the theorem files:
 those of agda/ from the ISWIM pipelines'.  ISWIMμ's theorem files
 (agda/Mu/Theorems/) state only the paper's end-to-end theorems (and
-delay's), so the semantics of its intermediate languages
+split's), so the semantics of its intermediate languages
 (agda/Mu/Semantics/), which only the proofs use, are reached by no
 statement; they are listed as not on the audit surface, and must import
 no proof module either.
@@ -289,7 +289,7 @@ BUNDLES = {W + 'GraphModel/Prelude.agda', W + 'GraphModel/ErrorPrelude.agda',
 # (side, group, glob patterns)
 GROUPS = [
     # the languages, the passes and the lemmas about their output that the
-    # proofs use (cast insertion on closed programs, globalize's references,
+    # proofs use (cast insertion on closed programs, hoist's references,
     # select's labels and frames, simplify keeps programs closed), and the
     # observations.  Those not used by all four proofs of a pipeline are
     # counted in each proof that uses them (see main).  Untyped ISWIM, the
@@ -374,8 +374,8 @@ GROUPS = [
     ('den', 'CC: capture', [GC + 'CaptureCorrect.agda']),
     ('den', 'CC: prune', [GC + 'PruneCorrect.agda']),
     ('den', 'CC: concretize', [GC + 'ConcretizeCorrect.agda']),
-    ('den', 'CC: delay', [GC + 'Delay*.agda']),
-    ('den', 'CC: globalize', [GC + 'GlobalizeCorrect.agda']),
+    ('den', 'CC: split', [GC + 'Split*.agda']),
+    ('den', 'CC: hoist', [GC + 'HoistCorrect.agda']),
     ('den', 'rco', [GC + 'RCOCorrect.agda']),
     ('den', 'lift locals', [GC + 'LiftLocalsCorrect.agda']),
     ('den', 'explicate control', [GC + 'ExplicateCorrect.agda']),
@@ -406,8 +406,8 @@ GROUPS = [
     ('op', 'CC: capture', [OC + 'CaptureSim.agda']),
     ('op', 'CC: prune', [OC + 'PruneSim.agda']),
     ('op', 'CC: concretize', [OC + 'ConcretizeSim.agda']),
-    ('op', 'CC: delay', [OC + 'DelaySim.agda']),
-    ('op', 'CC: globalize', [OC + 'GlobalizeSim.agda']),
+    ('op', 'CC: split', [OC + 'SplitSim.agda']),
+    ('op', 'CC: hoist', [OC + 'HoistSim.agda']),
     ('op', 'rco', [OC + 'RCOSim.agda']),
     ('op', 'lift locals', [OC + 'LiftLocalsSim.agda']),
     # explicate control and select instructions are between the machines of
@@ -425,8 +425,8 @@ GROUPS = [
     ('ck', 'CC: capture', [FC + 'CaptureFuel.agda']),
     ('ck', 'CC: prune', [FC + 'PruneFuel.agda']),
     ('ck', 'CC: concretize', [FC + 'ConcretizeFuel.agda']),
-    ('ck', 'CC: delay', [FC + 'DelayFuel.agda']),
-    ('ck', 'CC: globalize', [FC + 'GlobalizeFuel.agda']),
+    ('ck', 'CC: split', [FC + 'SplitFuel.agda']),
+    ('ck', 'CC: hoist', [FC + 'HoistFuel.agda']),
     ('ck', 'rco', [FC + 'RCOFuel.agda']),
     ('ck', 'lift locals', [FC + 'LiftLocalsFuel.agda']),
     ('ck', 'explicate control', [FC + 'ExplicateFuel.agda']),
@@ -443,8 +443,8 @@ GROUPS = [
     ('red', 'CC: capture', [RC + 'CaptureRed.agda']),
     ('red', 'CC: prune', [RC + 'PruneRed.agda']),
     ('red', 'CC: concretize', [RC + 'ConcretizeRed.agda']),
-    ('red', 'CC: delay', [RC + 'DelayRed.agda']),
-    ('red', 'CC: globalize', [RC + 'GlobalizeRed.agda']),
+    ('red', 'CC: split', [RC + 'SplitRed.agda']),
+    ('red', 'CC: hoist', [RC + 'HoistRed.agda']),
     ('red', 'rco', [RC + 'RCORed.agda']),
     ('red', 'lift locals', [RC + 'LiftLocalsRed.agda']),
     ('red', 'composition', [RC + 'PipelineRed.agda']),
@@ -458,8 +458,8 @@ GROUPS = [
     ('gerr', 'CC: capture', [GEC + 'CaptureCorrect.agda']),
     ('gerr', 'CC: prune', [GEC + 'PruneCorrect.agda']),
     ('gerr', 'CC: concretize', [GEC + 'ConcretizeCorrect.agda']),
-    ('gerr', 'CC: delay', [GEC + 'Delay*.agda']),
-    ('gerr', 'CC: globalize', [GEC + 'GlobalizeCorrect.agda']),
+    ('gerr', 'CC: split', [GEC + 'Split*.agda']),
+    ('gerr', 'CC: hoist', [GEC + 'HoistCorrect.agda']),
     ('gerr', 'rco', [GEC + 'RCOCorrect.agda']),
     ('gerr', 'lift locals', [GEC + 'LiftLocalsCorrect.agda']),
     ('gerr', 'explicate control', [GEC + 'ExplicateCorrect.agda']),
@@ -472,7 +472,7 @@ GROUPS = [
     ('adeq', 'Clos5', [AP + 'Clos5*.agda']),
     ('adeq', 'X86ᵀ', [AP + 'X86*.agda']),
     # that the table of compile-x86 M is consistent and holds each
-    # definition's code (as Clos5ᵀ's, from globalize-older)
+    # definition's code (as Clos5ᵀ's, from hoist-older)
     ('adeq', 'well-formedness of compiled programs', [AP + 'X86Compiled.agda']),
     ('adeq', 'end to end', [AP + 'EndToEnd.agda']),
     # of the graph model with errors: X86ᵀ is direct; its Clos5ᵀ adequacy is
@@ -498,10 +498,10 @@ GROUPS = [
     ('uden', 'CC: capture', [u(GC) + 'CaptureCorrect.agda']),
     ('uden', 'CC: prune', [u(GC) + 'PruneCorrect.agda']),
     ('uden', 'CC: concretize', [u(GC) + 'ConcretizeCorrect.agda']),
-    ('uden', 'CC: delay',
-     [u(GC) + 'DelayFiniteCommon.agda', u(GC) + 'DelayFiniteRel.agda', u(GC) + 'DelayApp.agda',
-      u(GC) + 'DelayPreserve.agda', u(GC) + 'DelayReflectFinite.agda']),
-    ('uden', 'CC: globalize', [u(GC) + 'GlobalizeCorrect.agda']),
+    ('uden', 'CC: split',
+     [u(GC) + 'SplitFiniteCommon.agda', u(GC) + 'SplitFiniteRel.agda', u(GC) + 'SplitApp.agda',
+      u(GC) + 'SplitPreserve.agda', u(GC) + 'SplitReflectFinite.agda']),
+    ('uden', 'CC: hoist', [u(GC) + 'HoistCorrect.agda']),
     ('uden', 'rco', [u(GC) + 'RCOCorrect.agda']),
     # against the continuation-passing semantics of Imp; against the direct
     # one, see 'uexp'
@@ -515,8 +515,8 @@ GROUPS = [
     ('uop', 'CC: capture', [u(OC) + 'CaptureSim.agda']),
     ('uop', 'CC: prune', [u(OC) + 'PruneSim.agda']),
     ('uop', 'CC: concretize', [u(OC) + 'ConcretizeSim.agda']),
-    ('uop', 'CC: delay', [u(OC) + 'DelaySim.agda']),
-    ('uop', 'CC: globalize', [u(OC) + 'GlobalizeSim.agda']),
+    ('uop', 'CC: split', [u(OC) + 'SplitSim.agda']),
+    ('uop', 'CC: hoist', [u(OC) + 'HoistSim.agda']),
     ('uop', 'rco', [u(OC) + 'RCOSim.agda']),
     ('uop', 'lift locals', [u(OC) + 'LiftLocalsSim.agda']),
     ('uop+ured', 'explicate control', [u(OC) + 'ExplicateSim.agda']),
@@ -526,8 +526,8 @@ GROUPS = [
     ('ured', 'CC: capture', [u(RC) + 'CaptureRed.agda']),
     ('ured', 'CC: prune', [u(RC) + 'PruneRed.agda']),
     ('ured', 'CC: concretize', [u(RC) + 'ConcretizeRed.agda']),
-    ('ured', 'CC: delay', [u(RC) + 'DelayRed.agda']),
-    ('ured', 'CC: globalize', [u(RC) + 'GlobalizeRed.agda']),
+    ('ured', 'CC: split', [u(RC) + 'SplitRed.agda']),
+    ('ured', 'CC: hoist', [u(RC) + 'HoistRed.agda']),
     ('ured', 'rco', [u(RC) + 'RCORed.agda']),
     ('ured', 'lift locals', [u(RC) + 'LiftLocalsRed.agda']),
     ('ured', 'composition', [u(RC) + 'CompilerRed.agda', u(RC) + 'CompilerX86Red.agda']),
@@ -535,8 +535,8 @@ GROUPS = [
     ('uck', 'CC: capture', [u(FC) + 'CaptureFuel.agda']),
     ('uck', 'CC: prune', [u(FC) + 'PruneFuel.agda']),
     ('uck', 'CC: concretize', [u(FC) + 'ConcretizeFuel.agda']),
-    ('uck', 'CC: delay', [u(FC) + 'DelayFuel.agda']),
-    ('uck', 'CC: globalize', [u(FC) + 'GlobalizeFuel.agda']),
+    ('uck', 'CC: split', [u(FC) + 'SplitFuel.agda']),
+    ('uck', 'CC: hoist', [u(FC) + 'HoistFuel.agda']),
     ('uck', 'rco', [u(FC) + 'RCOFuel.agda']),
     ('uck', 'lift locals', [u(FC) + 'LiftLocalsFuel.agda']),
     ('uck', 'explicate control', [u(FC) + 'ExplicateFuel.agda']),
@@ -546,8 +546,8 @@ GROUPS = [
     ('ugerr', 'CC: capture', [u(GEC) + 'CaptureCorrect.agda']),
     ('ugerr', 'CC: prune', [u(GEC) + 'PruneCorrect.agda']),
     ('ugerr', 'CC: concretize', [u(GEC) + 'ConcretizeCorrect.agda']),
-    ('ugerr', 'CC: delay', [u(GEC) + 'Delay*.agda']),
-    ('ugerr', 'CC: globalize', [u(GEC) + 'GlobalizeCorrect.agda']),
+    ('ugerr', 'CC: split', [u(GEC) + 'Split*.agda']),
+    ('ugerr', 'CC: hoist', [u(GEC) + 'HoistCorrect.agda']),
     ('ugerr', 'rco', [u(GEC) + 'RCOCorrect.agda']),
     ('ugerr', 'lift locals', [u(GEC) + 'LiftLocalsCorrect.agda']),
     ('ugerr', 'explicate control', [u(GEC) + 'ExplicateCorrect.agda']),
@@ -570,22 +570,22 @@ GROUPS = [
      [u(GEA) + 'Clos5WF.agda', u(GEA) + 'X86CompileWF.agda', u(GEA) + 'X86WF.agda']),
     ('ugadeq', 'end to end', [u(GEA) + 'EndToEnd.agda']),
     ('uexamples', 'examples', [u(GC) + '*Example.agda', u(PC) + 'Examples/*.agda']),
-    # not in the totals: a direct backward simulation for delay, without
+    # not in the totals: a direct backward simulation for split, without
     # determinism, and the direct semantics of Imp (ImpDirect.agda) with lift
     # locals and explicate control proved against it (see loc.md)
-    ('uexp', 'simulation: direct backward simulation for delay — framework', [u(OP) + 'Backward.agda']),
-    ('uexp', 'simulation: direct backward simulation for delay — delay', [u(OC) + 'DelayBackSim.agda']),
+    ('uexp', 'simulation: direct backward simulation for split — framework', [u(OP) + 'Backward.agda']),
+    ('uexp', 'simulation: direct backward simulation for split — split', [u(OC) + 'SplitBackSim.agda']),
     ('uexp', 'graph model: direct Imp — semantics', [u(GP) + 'ImpDirect.agda']),
     ('uexp', 'graph model: direct Imp — lift locals', [u(GC) + 'LiftLocalsCorrect.agda']),
     ('uexp', 'graph model: direct Imp — explicate control', [u(GC) + 'ExplicateCorrect.agda']),
     ('uthm', 'theorem statements', [U + 'Theorems/*.agda']),
 
     # --- ISWIMμ (agda/Mu/), in no total of the ISWIM pipelines -------------------
-    # with the lemma that globalize refers only to older definitions, which
+    # with the lemma that hoist refers only to older definitions, which
     # only adequacy uses (shared in the typed pipeline, where the graph model
     # with errors uses it too), counted as a shared module
     ('mu-shared', 'syntax, languages, compiler passes',
-     [MU + 'Language/*.agda', MU + 'Compiler/*.agda', MUP + 'Compiler/GlobalizeOlder.agda']),
+     [MU + 'Language/*.agda', MU + 'Compiler/*.agda', MUP + 'Compiler/HoistOlder.agda']),
     ('mu-infra', 'heterogeneous vectors: lookup, collecting, selecting, relating',
      [MU + 'Framework/*.agda', MUP + 'Framework/AllProp.agda']),
     # simplify's syntactic lemmas are used by its four proofs: counted in the
@@ -596,9 +596,9 @@ GROUPS = [
     ('mu-den', 'CC: capture', [MUP + 'Correctness/GraphModel/CaptureCorrect.agda']),
     ('mu-den', 'CC: prune', [MUP + 'Correctness/GraphModel/PruneCorrect.agda']),
     ('mu-den', 'CC: concretize', [MUP + 'Correctness/GraphModel/ConcretizeCorrect.agda']),
-    ('mu-den', 'CC: delay', [MUP + 'Correctness/GraphModel/ApproxLR.agda']
-     + [MUP + 'Correctness/GraphModel/Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')]),
-    ('mu-den', 'CC: globalize', [MUP + 'Correctness/GraphModel/GlobalizeCorrect.agda']),
+    ('mu-den', 'CC: split', [MUP + 'Correctness/GraphModel/ApproxLR.agda']
+     + [MUP + 'Correctness/GraphModel/Split' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')]),
+    ('mu-den', 'CC: hoist', [MUP + 'Correctness/GraphModel/HoistCorrect.agda']),
     ('mu-den', 'rco', [MUP + 'Correctness/GraphModel/RCOCorrect.agda']),
     ('mu-den', 'lift locals', [MUP + 'Correctness/GraphModel/LiftLocalsCorrect.agda']),
     ('mu-den', 'explicate control', [MUP + 'Correctness/GraphModel/ExplicateCorrect.agda']),
@@ -614,9 +614,9 @@ GROUPS = [
     ('mu-op', 'CC: capture', [MUP + 'Correctness/AbstractMachines/CaptureSim.agda']),
     ('mu-op', 'CC: prune', [MUP + 'Correctness/AbstractMachines/PruneSim.agda']),
     ('mu-op', 'CC: concretize', [MUP + 'Correctness/AbstractMachines/ConcretizeSim.agda']),
-    ('mu-op', 'CC: delay', [MUP + 'Correctness/AbstractMachines/DelaySim.agda']),
+    ('mu-op', 'CC: split', [MUP + 'Correctness/AbstractMachines/SplitSim.agda']),
     ('mu-op', 'lemmas shared by the passes', [MUP + 'Correctness/AbstractMachines/GlobalFunCommon.agda', MUP + 'Semantics/AbstractMachines/Rel.agda']),
-    ('mu-op', 'CC: globalize', [MUP + 'Correctness/AbstractMachines/GlobalizeSim.agda']),
+    ('mu-op', 'CC: hoist', [MUP + 'Correctness/AbstractMachines/HoistSim.agda']),
     ('mu-op', 'rco', [MUP + 'Correctness/AbstractMachines/RCOSim.agda']),
     ('mu-op', 'lift locals', [MUP + 'Correctness/AbstractMachines/LiftLocalsSim.agda']),
     ('mu-op+mu-red', 'explicate control', [MUP + 'Correctness/AbstractMachines/ExplicateSim.agda']),
@@ -627,8 +627,8 @@ GROUPS = [
     ('mu-ck', 'CC: capture', [MUP + 'Correctness/ClockedInterpreters/CaptureFuel.agda']),
     ('mu-ck', 'CC: prune', [MUP + 'Correctness/ClockedInterpreters/PruneFuel.agda']),
     ('mu-ck', 'CC: concretize', [MUP + 'Correctness/ClockedInterpreters/ConcretizeFuel.agda']),
-    ('mu-ck', 'CC: delay', [MUP + 'Correctness/ClockedInterpreters/DelayFuel.agda']),
-    ('mu-ck', 'CC: globalize', [MUP + 'Correctness/ClockedInterpreters/GlobalizeFuel.agda']),
+    ('mu-ck', 'CC: split', [MUP + 'Correctness/ClockedInterpreters/SplitFuel.agda']),
+    ('mu-ck', 'CC: hoist', [MUP + 'Correctness/ClockedInterpreters/HoistFuel.agda']),
     ('mu-ck', 'rco', [MUP + 'Correctness/ClockedInterpreters/RCOFuel.agda']),
     ('mu-ck', 'lift locals', [MUP + 'Correctness/ClockedInterpreters/LiftLocalsFuel.agda']),
     ('mu-ck', 'explicate control', [MUP + 'Correctness/ClockedInterpreters/ExplicateFuel.agda']),
@@ -663,10 +663,10 @@ GROUPS = [
     ('mu-adeq-cek', 'X86', [MUP + 'Adequacy/AbstractMachines/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
     ('mu-adeq-cek', 'end to end', [MUP + 'Adequacy/AbstractMachines/EndToEnd.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
-    # design experiments, in no total: the delay relation on target sets of
+    # design experiments, in no total: the split relation on target sets of
     # bounded depth (the paper's design space for reflection, §4.2)
-    ('mu-exp', 'delay: design experiments (target sets of bounded depth; a finite source side)',
-     [MUP + 'Correctness/GraphModel/DelayDesign*.agda']),
+    ('mu-exp', 'split: design experiments (target sets of bounded depth; a finite source side)',
+     [MUP + 'Correctness/GraphModel/SplitDesign*.agda']),
     # mixing semantics (--mixed): simplify in the graph model and the other
     # passes by the interpreters, joined by the bridge at ISWIMμ (its graph
     # semantics against its interpreter: the ISWIM row of adequacy); it
@@ -683,8 +683,8 @@ GROUPS = [
     ('mu-red', 'CC: capture', [MUP + 'Correctness/ReductionSemantics/CaptureRed.agda']),
     ('mu-red', 'CC: prune', [MUP + 'Correctness/ReductionSemantics/PruneRed.agda']),
     ('mu-red', 'CC: concretize', [MUP + 'Correctness/ReductionSemantics/ConcretizeRed.agda']),
-    ('mu-red', 'CC: delay', [MUP + 'Correctness/ReductionSemantics/DelayRed.agda']),
-    ('mu-red', 'CC: globalize', [MUP + 'Correctness/ReductionSemantics/GlobalizeRed.agda']),
+    ('mu-red', 'CC: split', [MUP + 'Correctness/ReductionSemantics/SplitRed.agda']),
+    ('mu-red', 'CC: hoist', [MUP + 'Correctness/ReductionSemantics/HoistRed.agda']),
     ('mu-red', 'rco', [MUP + 'Correctness/ReductionSemantics/RCORed.agda']),
     ('mu-red', 'lift locals', [MUP + 'Correctness/ReductionSemantics/LiftLocalsRed.agda']),
     ('mu-red', 'composition', [MUP + 'Correctness/ReductionSemantics/PipelineRed.agda']),
@@ -698,7 +698,7 @@ GROUPS = [
 ADEQ_ROWS = ['ISWIM', 'Clos5', 'X86', 'X86ᵀ', 'well-formedness of compiled programs', 'end to end',
              'simplify through the ISWIM machine']
 ROWS = ['semantics of the languages', 'lemmas shared by the passes', 'simplify', 'cast insertion',
-        'CC: capture', 'CC: prune', 'CC: concretize', 'CC: delay', 'CC: globalize', 'rco',
+        'CC: capture', 'CC: prune', 'CC: concretize', 'CC: split', 'CC: hoist', 'rco',
         'lift locals', 'explicate control', 'select instructions', 'composition']
 
 # the style of each side, for the independence checks and the labels
@@ -1026,7 +1026,7 @@ class Count:
             sys.exit('outside the proof/ directories but not reached from the theorem files:\n  '
                      + '\n  '.join(unreached))
         # ISWIMμ's theorem files state only the end-to-end theorems (and
-        # delay's), so the semantics of the intermediate languages, which
+        # split's), so the semantics of the intermediate languages, which
         # only the proofs use, are definitions outside Mu/proof/ that no
         # statement reaches; they must be semantics, and import no proof
         # module (checked above)
@@ -1349,14 +1349,14 @@ def mu_pass(row, graph, cek):
             [MUP + 'Correctness/GraphModel/' + g for g in graph], [MUP + 'Correctness/AbstractMachines/' + o for o in cek])
 
 
-MU_DELAY = ['Rel', 'Preserve', 'Reflect', 'Correct']
+MU_SPLIT = ['Rel', 'Preserve', 'Reflect', 'Correct']
 
 
-def mu_delay(x):
-    """ISWIMμ's files of delay's graph-model module x: its relation, Rel, is
-    split into the approximant logical relation (ApproxLR) and DelayRel."""
+def mu_split(x):
+    """ISWIMμ's files of split's graph-model module x: its relation, Rel, is
+    split into the approximant logical relation (ApproxLR) and SplitRel."""
     return ([MUP + 'Correctness/GraphModel/ApproxLR.agda'] if x == 'Rel' else []) \
-        + [MUP + 'Correctness/GraphModel/Delay' + x + '.agda']
+        + [MUP + 'Correctness/GraphModel/Split' + x + '.agda']
 
 
 MU_ROWS = [
@@ -1376,9 +1376,9 @@ MU_ROWS = [
     mu_pass('CC: capture', ['CaptureCorrect.agda'], ['CaptureSim.agda']),
     mu_pass('CC: prune', ['PruneCorrect.agda'], ['PruneSim.agda']),
     mu_pass('CC: concretize', ['ConcretizeCorrect.agda'], ['ConcretizeSim.agda']),
-    ('CC: delay', [GC + 'Delay' + x + '.agda' for x in MU_DELAY], [OC + 'DelaySim.agda'],
-     [f for x in MU_DELAY for f in mu_delay(x)], [MUP + 'Correctness/AbstractMachines/DelaySim.agda']),
-    mu_pass('CC: globalize', ['GlobalizeCorrect.agda'], ['GlobalizeSim.agda']),
+    ('CC: split', [GC + 'Split' + x + '.agda' for x in MU_SPLIT], [OC + 'SplitSim.agda'],
+     [f for x in MU_SPLIT for f in mu_split(x)], [MUP + 'Correctness/AbstractMachines/SplitSim.agda']),
+    mu_pass('CC: hoist', ['HoistCorrect.agda'], ['HoistSim.agda']),
     mu_pass('rco', ['RCOCorrect.agda'], ['RCOSim.agda']),
     mu_pass('lift locals', ['LiftLocalsCorrect.agda'], ['LiftLocalsSim.agda']),
     mu_pass('explicate control', ['ExplicateCorrect.agda'], ['ExplicateSim.agda']),
@@ -1387,7 +1387,7 @@ MU_ROWS = [
 ]
 MU_SHARED = ([L + 'Typed/' + x + '.agda'
               for x in ('Type', 'ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5', 'Mon', 'Imp', 'CFG', 'X86')]
-             + [C + x + '.agda' for x in ('Capture', 'Prune', 'Concretize', 'Delay', 'Globalize', 'RCO',
+             + [C + x + '.agda' for x in ('Capture', 'Prune', 'Concretize', 'Split', 'Hoist', 'RCO',
                                           'LiftLocals', 'Explicate', 'Select', 'Pipeline')])
 MU_INFRA = [W + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda', WP + 'Lookup.agda']
 
@@ -1447,11 +1447,11 @@ def mu_report(c, T):
     print(f"| the main table's total, without simplify and cast insertion | {main_tot['den']} | — "
           f"| {main_tot['op']} | — |")
     print()
-    print('| graph-model delay, by module | typed | μ |')
+    print('| graph-model split, by module | typed | μ |')
     print('|---|---:|---:|')
-    for x in MU_DELAY:
-        print(f'| `Delay{x}` | {code_lines(GC + "Delay" + x + ".agda")} '
-              f'| {sum(code_lines(f) for f in mu_delay(x))} |')
+    for x in MU_SPLIT:
+        print(f'| `Split{x}` | {code_lines(GC + "Split" + x + ".agda")} '
+              f'| {sum(code_lines(f) for f in mu_split(x))} |')
     print()
     print('| not counted in the rows | typed | μ |')
     print('|---|---:|---:|')
@@ -1485,8 +1485,8 @@ MU_CK_ROWS = [
     ('CC: capture', [FC + 'CaptureFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/CaptureFuel.agda']),
     ('CC: prune', [FC + 'PruneFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/PruneFuel.agda']),
     ('CC: concretize', [FC + 'ConcretizeFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/ConcretizeFuel.agda']),
-    ('CC: delay', [FC + 'DelayFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/DelayFuel.agda']),
-    ('CC: globalize', [FC + 'GlobalizeFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/GlobalizeFuel.agda']),
+    ('CC: split', [FC + 'SplitFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/SplitFuel.agda']),
+    ('CC: hoist', [FC + 'HoistFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/HoistFuel.agda']),
     ('rco', [FC + 'RCOFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/RCOFuel.agda']),
     ('lift locals', [FC + 'LiftLocalsFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/LiftLocalsFuel.agda']),
     ('explicate control', [FC + 'ExplicateFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/ExplicateFuel.agda']),
@@ -1540,8 +1540,8 @@ MU_RED_ROWS = [
     ('CC: capture', [RC + 'CaptureRed.agda'], [MUP + 'Correctness/ReductionSemantics/CaptureRed.agda']),
     ('CC: prune', [RC + 'PruneRed.agda'], [MUP + 'Correctness/ReductionSemantics/PruneRed.agda']),
     ('CC: concretize', [RC + 'ConcretizeRed.agda'], [MUP + 'Correctness/ReductionSemantics/ConcretizeRed.agda']),
-    ('CC: delay', [RC + 'DelayRed.agda'], [MUP + 'Correctness/ReductionSemantics/DelayRed.agda']),
-    ('CC: globalize', [RC + 'GlobalizeRed.agda'], [MUP + 'Correctness/ReductionSemantics/GlobalizeRed.agda']),
+    ('CC: split', [RC + 'SplitRed.agda'], [MUP + 'Correctness/ReductionSemantics/SplitRed.agda']),
+    ('CC: hoist', [RC + 'HoistRed.agda'], [MUP + 'Correctness/ReductionSemantics/HoistRed.agda']),
     ('rco', [RC + 'RCORed.agda'], [MUP + 'Correctness/ReductionSemantics/RCORed.agda']),
     ('lift locals', [RC + 'LiftLocalsRed.agda'], [MUP + 'Correctness/ReductionSemantics/LiftLocalsRed.agda']),
     ('explicate control (the CEK column\'s)', [OC + 'ExplicateSim.agda'], [MUP + 'Correctness/AbstractMachines/ExplicateSim.agda']),
@@ -1808,17 +1808,17 @@ def mu_modules(c, M):
 # --- mixing semantics (--mixed): the graph model and the interpreters ----------
 
 MIX_ROOT = MUP + 'Mixed/CompilerMixed.agda'
-MIX_PASSES = ['simplify', 'CC: capture', 'CC: prune', 'CC: concretize', 'CC: delay', 'CC: globalize',
+MIX_PASSES = ['simplify', 'CC: capture', 'CC: prune', 'CC: concretize', 'CC: split', 'CC: hoist',
               'rco', 'lift locals', 'explicate control', 'select instructions']
 # the passes that are cheaper in the graph model, and the languages at
 # which a proof of each in the graph model needs a bridge (its source and
 # its target), for the estimated splits
-MIX_LANGS = {'simplify': ['ISWIM'], 'CC: globalize': ['Clos4', 'Clos5'], 'explicate control': ['Imp', 'CFG']}
+MIX_LANGS = {'simplify': ['ISWIM'], 'CC: hoist': ['Clos4', 'Clos5'], 'explicate control': ['Imp', 'CFG']}
 
 
 def mixed_analyze(c, M):
     """Split (a), measured: what the mixed composition reaches, by row and
-    style; the splits that also prove globalize and/or explicate control in
+    style; the splits that also prove hoist and/or explicate control in
     the graph model, estimated from the measured rows (each further bridge
     at the size of ISWIMμ's, without the tuples of sets it would share)."""
     reach = reachable({unit(MIX_ROOT)}, c.graph)
@@ -1861,10 +1861,10 @@ def mixed_analyze(c, M):
                    for f in (MU + f'Semantics/GraphModel/{ml(x)}.agda', MUP + f'Semantics/GraphModel/{ml(x)}.agda')
                    if os.path.exists(f))
     splits = [('(a) simplify in the graph model', ['simplify'], total, True)]
-    for name_, more in (('(b) also globalize', ['CC: globalize']),
+    for name_, more in (('(b) also hoist', ['CC: hoist']),
                         ('(b) also explicate control', ['explicate control']),
-                        ('(c) the per-pass minimum: also globalize and explicate control',
-                         ['CC: globalize', 'explicate control'])):
+                        ('(c) the per-pass minimum: also hoist and explicate control',
+                         ['CC: hoist', 'explicate control'])):
         t = total + gsem(['Ops'])
         for r in more:
             t += c.counts[('mu-den', r)] - c.counts[('mu-ck', r)] + gsem(MIX_LANGS[r]) + 2 * core
@@ -1944,7 +1944,7 @@ def mixed_report(c, M, X):
 
 def iswim_brief(c, T, M):
     """The ISWIM pipeline against ISWIMμ, briefly: the totals per style (and
-    the graph model with errors), simplify and delay, adequacy, and delay in
+    the graph model with errors), simplify and split, adequacy, and split in
     the graph model by module."""
     cells, total = T['cells'], T['total']
     cols = TYPED['sides'] + (TYPED['gerr'],)
@@ -1954,7 +1954,7 @@ def iswim_brief(c, T, M):
     print('| ISWIM pipeline, total without cast insertion | '
           + ' | '.join(str(total[s] - (cells[(s, 'cast insertion')] or 0)) for s in cols) + ' |')
     print('| ISWIMμ, total | ' + ' | '.join(str(M['total'][s]) for s in MU_SIDES) + ' | — |')
-    for r, rname in (('simplify', 'simplify'), ('CC: delay', 'delay')):
+    for r, rname in (('simplify', 'simplify'), ('CC: split', 'split')):
         print(f'| ISWIM pipeline: {rname} | ' + ' | '.join(str(cells[(s, r)]) for s in cols) + ' |')
         print(f'| ISWIMμ: {rname} | ' + ' | '.join(str(c.counts[(s, r)]) for s in MU_SIDES) + ' | — |')
     print()
@@ -1963,13 +1963,13 @@ def iswim_brief(c, T, M):
     print(f"| ISWIM pipeline | {T['adq'][TYPED['adeq']]} | {T['adq'][TYPED['gadeq']]} |")
     print(f"| ISWIMμ | {M['total']['mu-adeq']} | — |")
     print()
-    print('| graph-model delay, by module | ISWIM pipeline | ISWIMμ |')
+    print('| graph-model split, by module | ISWIM pipeline | ISWIMμ |')
     print('|---|---:|---:|')
-    for x in MU_DELAY:
-        print(f'| `Delay{x}` | {code_lines(GC + "Delay" + x + ".agda")} '
-              f'| {sum(code_lines(f) for f in mu_delay(x))} |')
-    print(f'| **total** | {sum(code_lines(GC + "Delay" + x + ".agda") for x in MU_DELAY)} '
-          f'| {sum(code_lines(f) for x in MU_DELAY for f in mu_delay(x))} |')
+    for x in MU_SPLIT:
+        print(f'| `Split{x}` | {code_lines(GC + "Split" + x + ".agda")} '
+              f'| {sum(code_lines(f) for f in mu_split(x))} |')
+    print(f'| **total** | {sum(code_lines(GC + "Split" + x + ".agda") for x in MU_SPLIT)} '
+          f'| {sum(code_lines(f) for x in MU_SPLIT for f in mu_split(x))} |')
     print()
 
 
@@ -1981,8 +1981,8 @@ SCOTT_ROWS = [
     ('CC: capture', [SC + 'CaptureCorrect.agda']),
     ('CC: prune', [SC + 'PruneCorrect.agda']),
     ('CC: concretize', [SC + 'ConcretizeCorrect.agda']),
-    ('CC: delay', [SC + 'Delay*.agda', WP + 'Scott/StageCall.agda']),
-    ('CC: globalize', [SC + 'GlobalizeCorrect.agda']),
+    ('CC: split', [SC + 'Split*.agda', WP + 'Scott/StageCall.agda']),
+    ('CC: hoist', [SC + 'HoistCorrect.agda']),
     ('rco', [SC + 'RCOCorrect.agda']),
     ('lift locals', [SC + 'LiftLocalsCorrect.agda']),
     ('explicate control', [SC + 'ExplicateCorrect.agda']),
@@ -2070,7 +2070,7 @@ def scott_report(c, M):
         print()
     print('The Scott column counts the meaning of the primitives (`Semantics.Scott.Prim`) in its '
           "semantics row, and simplify's syntactic lemmas (`Mu.proof.Compiler.SimplifyFacts`) in its "
-          'simplify row, as the graph model does; its delay row includes the calls of approximated '
+          'simplify row, as the graph model does; its split row includes the calls of approximated '
           'closures (`proof.Framework.Scott.StageCall`).')
     print()
     print('| infrastructure of the Scott column (not in the total) | lines |')
@@ -2179,7 +2179,7 @@ def artifact_tables(c, M):
     order = ['mu-den', 'scott', 'mu-op', 'mu-ck', 'mu-red']
     scott = {r: n for r, _, n in S['cells']}
     names = {'CC: capture': 'capture', 'CC: prune': 'prune', 'CC: concretize': 'concretize',
-             'CC: delay': 'delay', 'CC: globalize': 'globalize', 'rco': 'remove complex operands'}
+             'CC: split': 'split closure', 'CC: hoist': 'hoist', 'rco': 'remove complex operands'}
     print('## Table 1: lines of Agda in the five correctness proofs')
     print()
     print('| | ' + ' | '.join(cols) + ' |')

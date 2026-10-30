@@ -1,7 +1,7 @@
 module Untyped.Semantics.Graph.Clos5Iswim where
 {-
 
- The semantics of Clos5, the language after the 'globalize' pass.
+ The semantics of Clos5, the language after the 'hoist' pass.
 
  The meaning of a term depends on a table T of the global definitions:
  a reference fun-ref k denotes T k. The definitions of a program are

@@ -1,7 +1,7 @@
 {-
 
   Scott domains: applying embedded approximations, for the reflection
-  half of delay. An element x of stage k + 1 embedded in 𝔻 unrolls to x
+  half of split. An element x of stage k + 1 embedded in 𝔻 unrolls to x
   with ε∞ k applied to its payload (unroll-ε∞); so a function of depth
   k + 1 applied to Y depends only on the approximation e k Y of depth k
   of Y, and gives a value of depth k (app-ε∞). Then a call of the

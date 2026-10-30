@@ -8,7 +8,7 @@
   proof/.
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
+          --split--> Clos4 --hoist--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
@@ -48,8 +48,8 @@ open import Compiler.Simplify using (simplify)
 open import Untyped.Compiler.Capture using (capture)
 open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Delay using (delay)
-open import Untyped.Compiler.Globalize using (globalize)
+open import Untyped.Compiler.Split using (split)
+open import Untyped.Compiler.Hoist using (hoist)
 open import Untyped.Compiler.RCO using (rco-program)
 open import Untyped.Compiler.LiftLocals using (lift-program)
 open import Untyped.Compiler.Explicate using (explicate)
@@ -73,8 +73,8 @@ import proof.Correctness.Reduction.SimplifyRed as SimplifyRed
 import Untyped.proof.Correctness.Reduction.CaptureRed as CaptureRed
 import Untyped.proof.Correctness.Reduction.PruneRed as PruneRed
 import Untyped.proof.Correctness.Reduction.ConcretizeRed as ConcretizeRed
-import Untyped.proof.Correctness.Reduction.DelayRed as DelayRed
-import Untyped.proof.Correctness.Reduction.GlobalizeRed as GlobalizeRed
+import Untyped.proof.Correctness.Reduction.SplitRed as SplitRed
+import Untyped.proof.Correctness.Reduction.HoistRed as HoistRed
 import Untyped.proof.Correctness.Reduction.CompilerRed as CompilerRed
 import Untyped.proof.Correctness.Reduction.RCORed as RCORed
 import Untyped.proof.Correctness.Reduction.LiftLocalsRed as LiftLocalsRed
@@ -104,11 +104,11 @@ concretize-correct : ∀ (M : Clos2.AST) → WS 0 M
   → Equivalent (Clos2ᵣ.sem M) (Clos3ᵣ.sem (concretize-program M))
 concretize-correct = ConcretizeRed.concretize-correct
 
-delay-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ᵣ.sem M) (Clos4ᵣ.sem (delay M))
-delay-correct = DelayRed.delay-correct
+split-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ᵣ.sem M) (Clos4ᵣ.sem (split M))
+split-correct = SplitRed.split-correct
 
-globalize-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ᵣ.sem M) (Clos5ᵣ.sem (globalize M))
-globalize-correct = GlobalizeRed.globalize-correct
+hoist-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ᵣ.sem M) (Clos5ᵣ.sem (hoist M))
+hoist-correct = HoistRed.hoist-correct
 
 {- remove complex operands, for well-scoped programs (which the compiler
    produces) -}

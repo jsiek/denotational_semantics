@@ -28,7 +28,7 @@ open import Untyped.Compiler.LiftLocals using (lift-atom; lift-atoms; lift-defs;
 open import Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; init)
 open import Untyped.Semantics.Graph.Imp using (Store; read; _[_↦_]; 𝒜; 𝒜s; frame)
 open import Untyped.proof.Correctness.Graph.RCOCorrect using (compile-mon-same)
-open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
+open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
 open import Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
 open import Untyped.Compiler.Pipeline using (compile; compile-imp)
 open import Untyped.Compiler.RCO using (rco-program-mon)

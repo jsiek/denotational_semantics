@@ -4,8 +4,8 @@
   X86ᵀ:
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
-          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
-          --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --split--> Clos4ᵀ
+          --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   compile₄ goes to Clos4ᵀ, compile to Clos5ᵀ, and compile-mon,
@@ -32,8 +32,8 @@ open import Compiler.Cast using (cast-closed)
 open import Compiler.Capture using (capture)
 open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
-open import Compiler.Delay using (delay-program)
-open import Compiler.Globalize using (globalize)
+open import Compiler.Split using (split-program)
+open import Compiler.Hoist using (hoist)
 open import Compiler.RCO using (rco-program)
 open import Compiler.LiftLocals using (lift-program)
 open import Compiler.Explicate using (explicate)
@@ -42,10 +42,10 @@ open import Compiler.Select using (select)
 open import Data.List using ([])
 
 compile₄ : AST → Clos4ᵀ.Tm [] Any
-compile₄ M = delay-program (concretize-program (prune-program (capture (cast-closed (simplify M)))))
+compile₄ M = split-program (concretize-program (prune-program (capture (cast-closed (simplify M)))))
 
 compile : AST → Clos5ᵀ.Program
-compile M = globalize (compile₄ M)
+compile M = hoist (compile₄ M)
 
 compile-mon : AST → Monᵀ.Program
 compile-mon M = rco-program (compile M)

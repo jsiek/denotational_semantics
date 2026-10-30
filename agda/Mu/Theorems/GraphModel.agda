@@ -2,13 +2,13 @@
 
   The correctness of the ISWIMμ compiler in the graph model: the
   statements of Theorem 4.1 (compiler correctness) and Theorem 4.4
-  (correctness of delay) of the paper. The proofs are in
+  (correctness of split) of the paper. The proofs are in
   Mu/proof/Correctness/GraphModel/; each theorem here is one of them,
   with its type written out.
 
     ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
-           --concretize--> EnvClosμ --delay--> PairClosμ
-           --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
+           --concretize--> EnvClosμ --split--> PairClosμ
+           --hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 
   compile (Mu/Compiler/Pipeline.agda) is the composition of the ten
@@ -34,7 +34,7 @@ open import Mu.Language.Type using (base)
 import Mu.Language.ISWIM as ISWIMμ
 import Mu.Language.EnvClos as EnvClosμ
 
-open import Mu.Compiler.Delay using (delay-program)
+open import Mu.Compiler.Split using (split-program)
 open import Mu.Compiler.Pipeline using (compile)
 
 open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
@@ -43,7 +43,7 @@ open import Mu.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_�
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
 open import Mu.Semantics.GraphModel.Closed public using (ρ₀)
 
-import Mu.proof.Correctness.GraphModel.DelayCorrect as Delay
+import Mu.proof.Correctness.GraphModel.SplitCorrect as Split
 import Mu.proof.Correctness.GraphModel.CompilerCorrect as Compiler
 
 open import Data.List using ([])
@@ -77,17 +77,17 @@ compile-correct-nonempty : ∀ {A} (M : ISWIMμ.Tm [] A)
   × (nonempty ⟦ compile M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
 compile-correct-nonempty M = proj₂ (Compiler.compile-same M)
 
-{- Theorem 4.4 (Correctness of delay) -----------------------------------------}
+{- Theorem 4.4 (Correctness of split) -----------------------------------------}
 
 {- for a closed EnvClosμ term M, and every constant c:
-   c ∈ ⟦ M ⟧ if and only if c ∈ ⟦ delay M ⟧ -}
-delay-correct-const : ∀ {A} (M : EnvClosμ.Tm [] A) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ᵉ ρ₀ → const c ∈ ⟦ delay-program M ⟧ᶠ ρ₀)
-  × (const c ∈ ⟦ delay-program M ⟧ᶠ ρ₀ → const c ∈ ⟦ M ⟧ᵉ ρ₀)
-delay-correct-const = Delay.delay-correct-const
+   c ∈ ⟦ M ⟧ if and only if c ∈ ⟦ split M ⟧ -}
+split-correct-const : ∀ {A} (M : EnvClosμ.Tm [] A) {B} (c : base-rep B)
+  → (const c ∈ ⟦ M ⟧ᵉ ρ₀ → const c ∈ ⟦ split-program M ⟧ᶠ ρ₀)
+  × (const c ∈ ⟦ split-program M ⟧ᶠ ρ₀ → const c ∈ ⟦ M ⟧ᵉ ρ₀)
+split-correct-const = Split.split-correct-const
 
-{- moreover, ⟦ M ⟧ ≠ ∅ if and only if ⟦ delay M ⟧ ≠ ∅ -}
-delay-correct-nonempty : ∀ {A} (M : EnvClosμ.Tm [] A)
-  → (nonempty (⟦ M ⟧ᵉ ρ₀) → nonempty (⟦ delay-program M ⟧ᶠ ρ₀))
-  × (nonempty (⟦ delay-program M ⟧ᶠ ρ₀) → nonempty (⟦ M ⟧ᵉ ρ₀))
-delay-correct-nonempty = Delay.delay-correct-nonempty
+{- moreover, ⟦ M ⟧ ≠ ∅ if and only if ⟦ split M ⟧ ≠ ∅ -}
+split-correct-nonempty : ∀ {A} (M : EnvClosμ.Tm [] A)
+  → (nonempty (⟦ M ⟧ᵉ ρ₀) → nonempty (⟦ split-program M ⟧ᶠ ρ₀))
+  × (nonempty (⟦ split-program M ⟧ᶠ ρ₀) → nonempty (⟦ M ⟧ᵉ ρ₀))
+split-correct-nonempty = Split.split-correct-nonempty

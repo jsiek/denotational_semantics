@@ -18,10 +18,10 @@ module Untyped.proof.Adequacy.Clos5Common (ds : List AST) where
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (ν)
 open import Untyped.Semantics.Graph.Clos5Iswim using (table) renaming (code to codeD)
-open import Untyped.proof.Correctness.Graph.GlobalizeCorrect using (table-ext; table-top)
+open import Untyped.proof.Correctness.Graph.HoistCorrect using (table-ext; table-top)
 open import proof.Framework.ListUtil using (reverse-‼-split)
 open import Untyped.Semantics.CEK.Clos5
-open import Untyped.proof.Compiler.GlobalizeTable using (_⊑_)
+open import Untyped.proof.Compiler.HoistTable using (_⊑_)
 open import Untyped.proof.Adequacy.Clos5WF using (DefsWF)
 open import proof.Framework.Runs using (module Runs)
 

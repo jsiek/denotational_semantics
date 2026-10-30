@@ -7,7 +7,7 @@
   The program produces 7 in ISWIM, so by the end theorem the compiled
   Clos5 program produces 7 as well.
 
-  Also, a check of what globalize itself produces for a function whose
+  Also, a check of what hoist itself produces for a function whose
   body is another function: the inner code is lifted first.
 
 -}
@@ -17,7 +17,7 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
 import Untyped.Language.Clos4 as L4
 import Untyped.Language.Clos5 as L5
-open import Untyped.Compiler.Globalize using (globalize)
+open import Untyped.Compiler.Hoist using (hoist)
 open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
 open import Untyped.proof.Correctness.Graph.CaptureExample using (prog; prog-is-7)
 open import Untyped.proof.Correctness.Graph.CompilerCorrect
@@ -37,10 +37,10 @@ nested = L4.fun-op L4.⦅ ! L4.clear (L4.bind (L4.bind (L4.ast
 
 {- the inner code is definition 0 and the outer code, which refers to it,
    is definition 1; the definitions are listed newest first -}
-nested-globalized : globalize nested
+nested-hoisted : hoist nested
   ≡ L5.program (L5.fun-ref 0 L5.⦅ Nil ⦆ ∷ L5.lit Nat 5 L5.⦅ Nil ⦆ ∷ [])
                (L5.fun-ref 1 L5.⦅ Nil ⦆)
-nested-globalized = refl
+nested-hoisted = refl
 
 {- no function is left: simplify reduces (λx. λy. x) 7 to λy. 7, a known
    function, and inlines its call on 5 -}

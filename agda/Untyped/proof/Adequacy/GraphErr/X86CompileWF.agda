@@ -18,7 +18,7 @@ import Untyped.Language.Mon as Mo
 import Untyped.Language.Imp as I
 import Untyped.Language.CFG as G
 import Language.Prim as P
-open import Untyped.Compiler.Globalize using (Defs; glob; glob-arg; glob-args)
+open import Untyped.Compiler.Hoist using (Defs; glob; glob-arg; glob-args)
 open import Untyped.Compiler.RCO using (lets; binds; atoms; atomize; atom?; lift; case-on; rco; rco-args; rco-program; rco-program-mon)
 open import Untyped.Compiler.LiftLocals using (lift-atom; lift-atoms; lift-body; lift-defs; lift-program) renaming (lift to liftL)
 open import Untyped.Compiler.Explicate using (explicate-assign; explicate-tail; explicate-body; explicate)
@@ -52,9 +52,9 @@ open import Relation.Nullary using (¬_)
 
 {- The compiler produces well-formed programs -------------------------------------
 
-  Globalize adds the code of a function as a definition after those made
+  Hoist adds the code of a function as a definition after those made
   from the functions nested in it, and the code refers only to those
-  (glob-shape, as in Correctness/Graph/GlobalizeCorrect.agda); so each
+  (glob-shape, as in Correctness/Graph/HoistCorrect.agda); so each
   definition refers only to older ones, and main to existing ones (RB).
   Remove complex operands renames no reference (rb-rco); lift locals,
   explicate control and select instructions keep the atoms, so the labels
@@ -101,7 +101,7 @@ RB-arg-mono (C5.clear a) n≤m r = RB-arg-mono a n≤m r
 RB-args-mono C5.nil n≤m tt = tt
 RB-args-mono (C5.cons a args) n≤m (ra , rs) = RB-arg-mono a n≤m ra , RB-args-mono args n≤m rs
 
-{- Globalize ---------------------------------------------------------------------}
+{- Hoist ---------------------------------------------------------------------}
 
 Extends : Defs → Defs → Set
 Extends ds ds' = Σ[ more ∈ Defs ] ds' ≡ more ++ ds
