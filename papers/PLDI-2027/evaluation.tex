@@ -203,20 +203,20 @@ several times larger even for these passes, as for \pass{optimize} and
 \paragraph{Equal meanings, different runs: the denotational proofs tend to be smallest.}
 
 \pass{simplify} is the clearest case, at 349 lines in the graph model
-and 411 with Scott domains, against 508 to 697.  It reduces programs
-under binders and removes calls, so the target takes fewer steps than
-the source. Each operational proof must replay those reductions as
-steps of the source program: on open terms in the reduction semantics,
-or as a run-ahead of the source machine or interpreter, with
-stuttering where the target does more. For the interpreters, the
-target needs fewer clock ticks than the source, which breaks the usual
-clock-for-clock argument. \pass{globalize} fits the pattern less
-cleanly, at 115 and 147 lines against 175 to 213. Its interpreter
-proof is still clock for clock; the runs differ only in where the code
-of a function lives, since in the target it is a reference into a
-table of definitions. The interpreter proof relates the two tables
-value by value, while the denotational proof shows that a reference
-means what the code it replaced means.
+and 411 with Scott domains, against 508 to 697.  This pass reduces
+expression under binders and inlines calls, so the target takes fewer
+steps than the source. Each operational proof must replay those
+reductions as steps of the source program: on open terms in the
+reduction semantics, or as a run-ahead of the source machine or
+interpreter, with stuttering where the target does more. For the
+interpreters, the target needs fewer clock ticks than the source,
+which breaks the usual clock-for-clock argument. The \pass{globalize}
+pass fits the pattern less cleanly, at 115 and 147 lines against 175
+to 213. Its interpreter proof is still clock for clock; the runs
+differ only in where the code of a function lives, since in the target
+it is a reference into a table of definitions. The interpreter proof
+relates the two tables value by value, while the denotational proof
+shows that a reference means what the code it replaced means.
 
 \paragraph{Changed representations: the operational proofs are several times smaller.}
 
