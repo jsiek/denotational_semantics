@@ -44,7 +44,7 @@ import Language.ISWIM as ISWIM
 open import Language.X86 hiding (fst; snd; get)
 open import Untyped.Compiler.Select
 open import Untyped.Compiler.Pipeline using (compile-x86; compile-cfg)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Untyped.Semantics.GraphErr.Imp using (𝒜; 𝒜s; 𝒮; frame)
 open import Untyped.Semantics.GraphErr.CFG
   using () renaming (⟦_⟧[_] to ⟪_⟫[_]; Blocks to Blocksₜ; blocks to blocksₜ; table to tableₜ; code to codeₜ; ⟦_⟧ₚ to ⟪_⟫ₚ)

@@ -19,7 +19,7 @@
   sub τ M is related to sub τ' (concretize φ M) when τ is related to τ'
   through φ.
 
-  The precondition: the program is well scoped (which optimize keeps).
+  The precondition: the program is well scoped (which prune keeps).
   A variable of a closure's code beyond its parameters becomes a
   different variable in the two languages (in Clos3, variable 2), and
   substitution moves both, so it would not stay related; the machines

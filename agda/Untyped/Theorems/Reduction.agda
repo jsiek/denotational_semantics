@@ -7,7 +7,7 @@
   them, with its type written out, so that it can be read without opening
   proof/.
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -23,7 +23,7 @@
 
   To read them: the languages (Language/), the passes
   (Compiler/), the semantics, the observations, and the
-  preconditions: Closed (Compiler/EncloseScope.agda), WS
+  preconditions: Closed (Compiler/CaptureScope.agda), WS
   (Framework/Syntax/Scope.agda), Scoped
   (Compiler/PipelineScope.agda) and MonProgram
   (Language/Mon.agda).
@@ -45,8 +45,8 @@ import Untyped.Language.Imp as Imp
 import Untyped.Language.CFG as CFG
 
 open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Enclose using (enclose)
-open import Untyped.Compiler.Optimize using (optimize-program)
+open import Untyped.Compiler.Capture using (capture)
+open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
 open import Untyped.Compiler.Delay using (delay)
 open import Untyped.Compiler.Globalize using (globalize)
@@ -56,7 +56,7 @@ open import Untyped.Compiler.Explicate using (explicate)
 open import Untyped.Compiler.Select using (select)
 open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
 open import Untyped.Compiler.PipelineScope using (Scoped)
 
@@ -70,8 +70,8 @@ import Untyped.Semantics.CEK.CFG as CFGₘ
 import Semantics.CEK.X86 as X86ₘ
 
 import proof.Correctness.Reduction.SimplifyRed as SimplifyRed
-import Untyped.proof.Correctness.Reduction.EncloseRed as EncloseRed
-import Untyped.proof.Correctness.Reduction.OptimizeRed as OptimizeRed
+import Untyped.proof.Correctness.Reduction.CaptureRed as CaptureRed
+import Untyped.proof.Correctness.Reduction.PruneRed as PruneRed
 import Untyped.proof.Correctness.Reduction.ConcretizeRed as ConcretizeRed
 import Untyped.proof.Correctness.Reduction.DelayRed as DelayRed
 import Untyped.proof.Correctness.Reduction.GlobalizeRed as GlobalizeRed
@@ -89,17 +89,17 @@ simplify-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMᵣ.sem M) (ISWIMᵣ.sem (simplify M))
 simplify-correct = SimplifyRed.simplify-correct
 
-{- enclose, for closed programs -}
-enclose-correct : ∀ (M : ISWIM.AST) → Closed M
-  → Equivalent (ISWIMᵣ.sem M) (Clos2ᵣ.sem (enclose M))
-enclose-correct = EncloseRed.enclose-correct
+{- capture, for closed programs -}
+capture-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵣ.sem M) (Clos2ᵣ.sem (capture M))
+capture-correct = CaptureRed.capture-correct
 
-{- optimize, for well-scoped programs (which enclose produces) -}
-optimize-correct : ∀ (M : Clos2.AST) → WS 0 M
-  → Equivalent (Clos2ᵣ.sem M) (Clos2ᵣ.sem (optimize-program M))
-optimize-correct = OptimizeRed.optimize-correct
+{- prune, for well-scoped programs (which capture produces) -}
+prune-correct : ∀ (M : Clos2.AST) → WS 0 M
+  → Equivalent (Clos2ᵣ.sem M) (Clos2ᵣ.sem (prune-program M))
+prune-correct = PruneRed.prune-correct
 
-{- concretize, for well-scoped programs (which optimize produces) -}
+{- concretize, for well-scoped programs (which prune produces) -}
 concretize-correct : ∀ (M : Clos2.AST) → WS 0 M
   → Equivalent (Clos2ᵣ.sem M) (Clos3ᵣ.sem (concretize-program M))
 concretize-correct = ConcretizeRed.concretize-correct

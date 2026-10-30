@@ -16,7 +16,7 @@ module Untyped.proof.Adequacy.CompileWF where
 open import Untyped.Language.Clos4
 import Untyped.Language.Clos5 as C5
 import Untyped.proof.Adequacy.Clos5WF as F
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Untyped.Compiler.Globalize
 open import Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
 open import Untyped.proof.Correctness.Graph.GlobalizeCorrect using (RB; glob-shape)

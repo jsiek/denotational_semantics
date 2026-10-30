@@ -4,7 +4,7 @@
   with errors: for a closed ISWIM program, the compiled program errs
   exactly when the source does, produces the same constants, and
   produces a value exactly when the source does (Same). Simplify, cast
-  insertion, enclose, optimize, concretize, globalize, rco, lift locals
+  insertion, capture, prune, concretize, globalize, rco, lift locals
   and explicate control preserve the meaning exactly (≃); delay
   preserves and reflects the three facts; select instructions is ≃
   (SelectCorrect.agda).
@@ -21,8 +21,8 @@ open import Framework.Iff using (_⇔_)
 open import Language.ISWIM using (AST; Op; sig)
 open import Framework.Syntax.Scope Op sig using (WS)
 open import Compiler.Cast using (cast-program)
-open import Compiler.Enclose using (enclose)
-open import Compiler.Optimize using (optimize-program)
+open import Compiler.Capture using (capture)
+open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Delay using (delay-program)
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
@@ -31,15 +31,15 @@ import Semantics.GraphErr.Typed.ISWIM
 open import proof.Compiler.SimplifyScope using (closed-ws)
 import Semantics.GraphErr.Typed.Clos4 as S4
 open import proof.Correctness.GraphErr.CastCorrect using (cast-correct)
-open import proof.Correctness.GraphErr.EncloseCorrect using (enclose-correct)
-open import proof.Correctness.GraphErr.OptimizeCorrect using (optimize-correct)
+open import proof.Correctness.GraphErr.CaptureCorrect using (capture-correct)
+open import proof.Correctness.GraphErr.PruneCorrect using (prune-correct)
 open import proof.Correctness.GraphErr.ConcretizeCorrect using (concretize-correct)
 open import proof.Correctness.GraphErr.DelayCorrect
   using (delay-correct-error; delay-correct-const; delay-correct-val)
 
 open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (sym; cong)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.Simplify using (simplify)
 open import Compiler.Cast using (cast-closed)
 open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
@@ -64,11 +64,11 @@ Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst
 
 {- cast insertion to delay, on a well-scoped closed program -}
 compile-same : ∀ (M : AST) (w : WS 0 M)
-  → Same (⟦ M ⟧ ρ₀) (S4.⟦ delay-program (concretize-program (optimize-program (enclose (cast-program M w)))) ⟧ ρ₀)
-compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂))))
+  → Same (⟦ M ⟧ ρ₀) (S4.⟦ delay-program (concretize-program (prune-program (capture (cast-program M w)))) ⟧ ρ₀)
+compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (capture-correct M₁) (≃-trans (prune-correct (capture M₁)) (concretize-correct M₂))))
   where
   M₁ = cast-program M w
-  M₂ = optimize-program (enclose M₁)
+  M₂ = prune-program (capture M₁)
   M₃ = concretize-program M₂
   go : ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀ → Same (⟦ M ⟧ ρ₀) (S4.⟦ delay-program M₃ ⟧ ρ₀)
   go ⟨ D⊆ , E⊆ ⟩ =

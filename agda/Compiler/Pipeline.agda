@@ -3,8 +3,8 @@
   The typed compiler, from untyped ISWIM to the typed assembly language
   X86ᵀ:
 
-    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
-          --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
@@ -29,8 +29,8 @@ import Language.Typed.CFG as CFGᵀ
 import Language.Typed.X86 as X86ᵀ
 open import Compiler.Simplify using (simplify)
 open import Compiler.Cast using (cast-closed)
-open import Compiler.Enclose using (enclose)
-open import Compiler.Optimize using (optimize-program)
+open import Compiler.Capture using (capture)
+open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Delay using (delay-program)
 open import Compiler.Globalize using (globalize)
@@ -42,7 +42,7 @@ open import Compiler.Select using (select)
 open import Data.List using ([])
 
 compile₄ : AST → Clos4ᵀ.Tm [] Any
-compile₄ M = delay-program (concretize-program (optimize-program (enclose (cast-closed (simplify M)))))
+compile₄ M = delay-program (concretize-program (prune-program (capture (cast-closed (simplify M)))))
 
 compile : AST → Clos5ᵀ.Program
 compile M = globalize (compile₄ M)

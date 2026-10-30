@@ -31,8 +31,8 @@ open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
 open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Enclose using (enclose)
-open import Mu.Compiler.Optimize using (optimize-program)
+open import Mu.Compiler.Capture using (capture)
+open import Mu.Compiler.Prune using (prune-program)
 open import Mu.Compiler.Concretize using (concretize-program)
 open import Mu.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import Semantics.Observation
@@ -41,8 +41,8 @@ import Mu.Semantics.ClockedInterpreters.ISWIM as ISWIMμᵢ
 import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
 open import Mu.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.EncloseFuel using (enclose-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.OptimizeFuel using (optimize-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.CaptureFuel using (capture-correct)
+open import Mu.proof.Correctness.ClockedInterpreters.PruneFuel using (prune-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.ConcretizeFuel using (concretize-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.DelayFuel using (delay-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.GlobalizeFuel using (globalize-correct)
@@ -67,13 +67,13 @@ private
 {- the passes after simplify, by the interpreters -}
 after-simplify : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem (simplify M)) (X86μᵢ.sem (compile M))
 after-simplify M =
-  equiv-trans (enclose-correct (simplify M)) (equiv-trans (optimize-correct M₁)
+  equiv-trans (capture-correct (simplify M)) (equiv-trans (prune-correct M₁)
     (equiv-trans (concretize-correct M₂) (equiv-trans (delay-correct (concretize-program M₂))
       (equiv-trans (globalize-correct (compile-to-PairClos M)) (equiv-trans (rco-correct (compile-to-GlobalFun M))
         (equiv-trans (lift-locals-correct (compile-to-Mon M)) (equiv-trans (explicate-correct (compile-to-Imp M))
           (select-correct (compile-to-CFG M)))))))))
-  where M₁ = enclose (simplify M)
-        M₂ = optimize-program M₁
+  where M₁ = capture (simplify M)
+        M₂ = prune-program M₁
 
 {- for a main of type Int, as the other columns state it -}
 

@@ -18,12 +18,12 @@ open import Framework.Iff using (_⇔_)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
 open import Language.ISWIM using (AST)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.Simplify using (simplify)
 open import proof.Compiler.SimplifyScope using (simplify-closed)
 open import Compiler.Cast using (cast-closed)
-open import Compiler.Enclose using (enclose)
-open import Compiler.Optimize using (optimize-program)
+open import Compiler.Capture using (capture)
+open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Pipeline
 open import Language.Typed.Mon using (⌜_⌝ₚ)
@@ -34,8 +34,8 @@ open import Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧�
 open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
 open import proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
 open import proof.Correctness.Graph.CastCorrect using (cast-correct)
-open import proof.Correctness.Graph.EncloseCorrect using (enclose-correct)
-open import proof.Correctness.Graph.OptimizeCorrect using (optimize-correct)
+open import proof.Correctness.Graph.CaptureCorrect using (capture-correct)
+open import proof.Correctness.Graph.PruneCorrect using (prune-correct)
 open import proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct)
 open import proof.Correctness.Graph.DelayCorrect using (delay-correct-const; delay-correct-nonempty)
 open import proof.Correctness.Graph.GlobalizeCorrect using (globalize-correct)
@@ -61,15 +61,15 @@ then ⟨ c , n ⟩ ⟨ E⊆ , E'⊆ ⟩ =
 
 compile-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
 compile-same M c with ≃-trans (simplify-correct M) (≃-trans (cast-correct (simplify M) (simplify-closed M c))
-                       (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂))))
+                       (≃-trans (capture-correct M₁) (≃-trans (prune-correct (capture M₁)) (concretize-correct M₂))))
   where
   M₁ = cast-closed (simplify M)
-  M₂ = optimize-program (enclose M₁)
+  M₂ = prune-program (capture M₁)
 ... | ⟨ D⊆ , E⊆ ⟩ =
   then ⟨ (λ k → ⇔∘ ⟨ D⊆ _ , E⊆ _ ⟩ (delay-correct-const M₃ k))
        , ⇔∘ ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , D⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) ⟩ (delay-correct-nonempty M₃) ⟩
        (globalize-correct (compile₄ M))
-  where M₃ = concretize-program (optimize-program (enclose (cast-closed (simplify M))))
+  where M₃ = concretize-program (prune-program (capture (cast-closed (simplify M))))
 
 compile-mon-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
 compile-mon-same M c = then (compile-same M c) (rco-correct (compile M))

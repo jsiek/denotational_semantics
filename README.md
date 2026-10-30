@@ -12,8 +12,8 @@ relations, after CakeML; reduction semantics + simulation, by
 substitution; and the graph model with errors), with the adequacy of the
 two graph models for the machines:
 
-    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --CC: enclose--> Clos2ᵀ
-          --CC: optimize--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: delay--> Clos4ᵀ
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --CC: capture--> Clos2ᵀ
+          --CC: prune--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: delay--> Clos4ᵀ
           --CC: globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 

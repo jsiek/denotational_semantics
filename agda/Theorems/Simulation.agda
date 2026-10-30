@@ -6,8 +6,8 @@
   with its type written out, so that it can be read without opening
   proof/.
 
-    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
-          --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
@@ -23,7 +23,7 @@
 
   To read them: the languages (Language/, Language/Typed/), the passes
   (Compiler/), the machines, the observations, and the
-  precondition Closed (Compiler/EncloseScope.agda), for the untyped
+  precondition Closed (Compiler/CaptureScope.agda), for the untyped
   source only.
 
 -}
@@ -48,8 +48,8 @@ import Language.Typed.CFG as CFGᵀ
 
 open import Compiler.Simplify using (simplify)
 open import Compiler.Cast using (cast-closed)
-open import Compiler.Enclose using (enclose)
-open import Compiler.Optimize using (optimize-program)
+open import Compiler.Capture using (capture)
+open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Delay using (delay-program)
 open import Compiler.Globalize using (globalize)
@@ -59,7 +59,7 @@ open import Compiler.Explicate using (explicate)
 open import Compiler.Select using (select)
 open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 
 import Semantics.CEK.ISWIM as ISWIMₘ
 import Semantics.CEK.Typed.ISWIM as ISWIMᵀₘ
@@ -72,8 +72,8 @@ import Semantics.CEK.Typed.CFG as CFGᵀₘ
 import Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 import proof.Correctness.CEK.SimplifySim as SimplifySim
-import proof.Correctness.CEK.EncloseSim as EncloseSim
-import proof.Correctness.CEK.OptimizeSim as OptimizeSim
+import proof.Correctness.CEK.CaptureSim as CaptureSim
+import proof.Correctness.CEK.PruneSim as PruneSim
 import proof.Correctness.CEK.ConcretizeSim as ConcretizeSim
 import proof.Correctness.CEK.DelaySim as DelaySim
 import proof.Correctness.CEK.GlobalizeSim as GlobalizeSim
@@ -95,11 +95,11 @@ cast-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMₘ.sem M) (ISWIMᵀₘ.sem (cast-closed M))
 cast-correct = PipelineSim.cast-correct
 
-enclose-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀₘ.sem M) (Clos2ᵀₘ.sem (enclose M))
-enclose-correct = EncloseSim.enclose-correct
+capture-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀₘ.sem M) (Clos2ᵀₘ.sem (capture M))
+capture-correct = CaptureSim.capture-correct
 
-optimize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀₘ.sem M) (Clos2ᵀₘ.sem (optimize-program M))
-optimize-correct = OptimizeSim.optimize-correct
+prune-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀₘ.sem M) (Clos2ᵀₘ.sem (prune-program M))
+prune-correct = PruneSim.prune-correct
 
 concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀₘ.sem M) (Clos3ᵀₘ.sem (concretize-program M))
 concretize-correct = ConcretizeSim.concretize-correct

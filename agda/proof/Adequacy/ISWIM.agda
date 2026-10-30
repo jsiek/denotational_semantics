@@ -48,7 +48,7 @@ open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; terminates-det; next; stop)
 open import Semantics.CEK.ISWIM
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
 open import proof.Adequacy.Common
 open import proof.Adequacy.Soundness using (soundness) public

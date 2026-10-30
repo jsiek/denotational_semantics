@@ -36,7 +36,7 @@ open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; never-final-diverges; next; stop)
 open import Semantics.CEK.ISWIM
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
 open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const; ↠→star)
 open import proof.Adequacy.GraphErr.Soundness using (soundness; sound-error; shape-ω) public

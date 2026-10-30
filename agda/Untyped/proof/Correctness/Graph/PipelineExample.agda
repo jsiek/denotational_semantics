@@ -4,9 +4,9 @@
 
     (λx. λy. λz. x) 7 3 1
 
-  enclose captures the first two surrounding variables, x and y, in the
+  capture captures the first two surrounding variables, x and y, in the
   innermost closure, because its body uses x; but the body does not use
-  y, so optimize stops capturing it. The program produces 7 in ISWIM, so
+  y, so prune stops capturing it. The program produces 7 in ISWIM, so
   by the end theorem the compiled Clos5 program produces 7 as well.
 
 -}
@@ -17,8 +17,8 @@ open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
 open import Language.ISWIM
 open import proof.Semantics.Graph.ISWIM
-open import Untyped.Compiler.Enclose using (enclose)
-open import Untyped.Compiler.Optimize using (optimize-program)
+open import Untyped.Compiler.Capture using (capture)
+open import Untyped.Compiler.Prune using (prune-program)
 import Untyped.Language.Clos2 as L2
 open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
 open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
@@ -44,22 +44,22 @@ prog = app ⦅ app ⦅ app ⦅ fun ,, lit-nat 7 ,, Nil ⦆ ,, lit-nat 3 ,, Nil �
            ,, lit-nat 1 ,, Nil ⦆
 
 {- the innermost closure captures x and y -}
-enclosed : enclose fun
+captured : capture fun
   ≡ L2.clos-op 0 L2.⦅ ! L2.clear (L2.bind (L2.ast
       (L2.clos-op 1 L2.⦅ ! L2.clear (L2.bind (L2.bind (L2.ast
           (L2.clos-op 2 L2.⦅ ! L2.clear (L2.bind (L2.bind (L2.bind (L2.ast (L2.` 2)))))
                            ,, ((L2.` 1) ,, ((L2.` 0) ,, Nil)) ⦆))))
                        ,, ((L2.` 0) ,, Nil) ⦆))) ,, Nil ⦆
-enclosed = refl
+captured = refl
 
-{- optimize drops y: the innermost closure captures only x -}
-optimized : optimize-program (enclose fun)
+{- prune drops y: the innermost closure captures only x -}
+pruned : prune-program (capture fun)
   ≡ L2.clos-op 0 L2.⦅ ! L2.clear (L2.bind (L2.ast
       (L2.clos-op 1 L2.⦅ ! L2.clear (L2.bind (L2.bind (L2.ast
           (L2.clos-op 1 L2.⦅ ! L2.clear (L2.bind (L2.bind (L2.ast (L2.` 1))))
                            ,, ((L2.` 1) ,, Nil) ⦆))))
                        ,, ((L2.` 0) ,, Nil) ⦆))) ,, Nil ⦆
-optimized = refl
+pruned = refl
 
 prog-is-7 : const {Nat} 7 ∈ ⟦ prog ⟧ ρ₀
 prog-is-7 =

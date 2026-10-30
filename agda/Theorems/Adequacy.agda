@@ -25,7 +25,7 @@ open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
 import Language.ISWIM as ISWIM
 open import Compiler.Pipeline using (compile; compile₄; compile-x86)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Theorems.Denotational using (ρ₀)
 open import Semantics.Graph.ISWIM using (⟦_⟧)
 open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)

@@ -34,7 +34,7 @@ open import Untyped.Compiler.RCO
 open import Untyped.Compiler.Pipeline using (compile; compile-mon)
 open import Untyped.Compiler.PipelineScope using (Scoped)
 open import Untyped.proof.Compiler.PipelineScope using (compile-scoped)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import proof.Framework.Simulation Obs using (equiv-trans)

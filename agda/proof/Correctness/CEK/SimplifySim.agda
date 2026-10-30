@@ -47,7 +47,7 @@ open import proof.Compiler.SimplifyFacts as P
          lam?; is-lam; other; simp-call; size; inline-size; inline-fuel;
          simp-app; simp-let; simp-get; simp-case; simp-prim; simplify; small; atom; value; values;
          component; branch; int-of; prim-term; value-sv; small-sv; comp-inv; int-inv; branch-inl; branch-inr)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Compiler.SimplifyScope using (closed-ws)
 open import Framework.Syntax.Rename Op sig using (rename; rename-args; shift)
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)

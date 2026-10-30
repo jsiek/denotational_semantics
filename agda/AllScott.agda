@@ -34,13 +34,13 @@ import proof.Framework.Scott.Stages
 import proof.Framework.Scott.StageCall
 
 {- lemmas shared by the passes -}
-import Mu.proof.Semantics.ScottDomains.OptimizeLemmas
+import Mu.proof.Semantics.ScottDomains.PruneLemmas
 import Mu.proof.Semantics.ScottDomains.BackEndLemmas
 
 {- the passes, and the whole compiler -}
 import Mu.proof.Correctness.ScottDomains.SimplifyCorrect
-import Mu.proof.Correctness.ScottDomains.EncloseCorrect
-import Mu.proof.Correctness.ScottDomains.OptimizeCorrect
+import Mu.proof.Correctness.ScottDomains.CaptureCorrect
+import Mu.proof.Correctness.ScottDomains.PruneCorrect
 import Mu.proof.Correctness.ScottDomains.ConcretizeCorrect
 import Mu.proof.Correctness.ScottDomains.DelayRel
 import Mu.proof.Correctness.ScottDomains.DelayPreserve

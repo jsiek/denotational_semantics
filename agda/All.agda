@@ -2,8 +2,8 @@
 
   The compiler and its correctness proofs, in five styles.
 
-    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
-          --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
@@ -145,11 +145,11 @@ import proof.Correctness.Graph.DelayCorrect
 import proof.Correctness.Graph.DelayPreserve
 import proof.Correctness.Graph.DelayReflect
 import proof.Correctness.Graph.DelayRel
-import proof.Correctness.Graph.EncloseCorrect
+import proof.Correctness.Graph.CaptureCorrect
 import proof.Correctness.Graph.ExplicateCorrect
 import proof.Correctness.Graph.GlobalizeCorrect
 import proof.Correctness.Graph.LiftLocalsCorrect
-import proof.Correctness.Graph.OptimizeCorrect
+import proof.Correctness.Graph.PruneCorrect
 import proof.Correctness.Graph.RCOCorrect
 import proof.Correctness.Graph.SelectCorrect
 import proof.Correctness.Graph.SimplifyCorrect
@@ -173,11 +173,11 @@ import proof.Correctness.CEK.Clos5Common
 import proof.Correctness.CEK.Common
 import proof.Correctness.CEK.ConcretizeSim
 import proof.Correctness.CEK.DelaySim
-import proof.Correctness.CEK.EncloseSim
+import proof.Correctness.CEK.CaptureSim
 import proof.Correctness.CEK.ExplicateSim
 import proof.Correctness.CEK.GlobalizeSim
 import proof.Correctness.CEK.LiftLocalsSim
-import proof.Correctness.CEK.OptimizeSim
+import proof.Correctness.CEK.PruneSim
 import proof.Correctness.CEK.PipelineSim
 import proof.Correctness.CEK.RCOSim
 import proof.Correctness.CEK.SelectSim
@@ -193,11 +193,11 @@ import proof.Correctness.Interp.CastFuel
 import proof.Correctness.Interp.CompilerFuel
 import proof.Correctness.Interp.ConcretizeFuel
 import proof.Correctness.Interp.DelayFuel
-import proof.Correctness.Interp.EncloseFuel
+import proof.Correctness.Interp.CaptureFuel
 import proof.Correctness.Interp.ExplicateFuel
 import proof.Correctness.Interp.GlobalizeFuel
 import proof.Correctness.Interp.LiftLocalsFuel
-import proof.Correctness.Interp.OptimizeFuel
+import proof.Correctness.Interp.PruneFuel
 import proof.Correctness.Interp.RCOFuel
 import proof.Correctness.Interp.SelectFuel
 import proof.Correctness.Interp.SimplifyFuel
@@ -213,10 +213,10 @@ import proof.Semantics.Interp.Typed.Rel
 import proof.Correctness.Reduction.CastRed
 import proof.Correctness.Reduction.ConcretizeRed
 import proof.Correctness.Reduction.DelayRed
-import proof.Correctness.Reduction.EncloseRed
+import proof.Correctness.Reduction.CaptureRed
 import proof.Correctness.Reduction.GlobalizeRed
 import proof.Correctness.Reduction.LiftLocalsRed
-import proof.Correctness.Reduction.OptimizeRed
+import proof.Correctness.Reduction.PruneRed
 import proof.Correctness.Reduction.PipelineRed
 import proof.Correctness.Reduction.RCORed
 import proof.Correctness.Reduction.SimplifyRed
@@ -237,11 +237,11 @@ import proof.Correctness.GraphErr.DelayCorrect
 import proof.Correctness.GraphErr.DelayPreserve
 import proof.Correctness.GraphErr.DelayReflect
 import proof.Correctness.GraphErr.DelayRel
-import proof.Correctness.GraphErr.EncloseCorrect
+import proof.Correctness.GraphErr.CaptureCorrect
 import proof.Correctness.GraphErr.ExplicateCorrect
 import proof.Correctness.GraphErr.GlobalizeCorrect
 import proof.Correctness.GraphErr.LiftLocalsCorrect
-import proof.Correctness.GraphErr.OptimizeCorrect
+import proof.Correctness.GraphErr.PruneCorrect
 import proof.Correctness.GraphErr.RCOCorrect
 import proof.Correctness.GraphErr.SelectCorrect
 import proof.Correctness.GraphErr.SimplifyCorrect

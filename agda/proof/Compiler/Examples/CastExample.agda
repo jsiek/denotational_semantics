@@ -2,7 +2,7 @@
 
   An example of cast insertion and the typed closure-conversion passes:
   (λx. x - 1) 5, and an application of a non-function, 5 5, through cast
-  insertion, enclose, optimize, concretize and delay, run on the ISWIM
+  insertion, capture, prune, concretize and delay, run on the ISWIM
   machine and on the Clos4ᵀ machine.
 
 -}
@@ -14,8 +14,8 @@ open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 open import Language.Typed.Type
 import Language.Typed.ISWIM as T
 open import Compiler.Cast using (cast-program)
-open import Compiler.Enclose using (enclose)
-open import Compiler.Optimize using (optimize-program)
+open import Compiler.Capture using (capture)
+open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Delay using (delay-program)
 import Language.Typed.Clos4 as Clos4ᵀ
@@ -38,7 +38,7 @@ module proof.Compiler.Examples.CastExample where
 
 {- cast insertion to delay, on a well-scoped closed program -}
 to-clos4 : (M : AST) → WS 0 M → Clos4ᵀ.Tm [] Any
-to-clos4 M w = delay-program (concretize-program (optimize-program (enclose (cast-program M w))))
+to-clos4 M w = delay-program (concretize-program (prune-program (capture (cast-program M w))))
 
 {- run a machine for at most n steps -}
 run : ℕ → (L : Machine) → Maybe Obs

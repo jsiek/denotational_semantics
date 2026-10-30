@@ -19,7 +19,7 @@ import Untyped.Language.Clos4 as L4
 import Untyped.Language.Clos5 as L5
 open import Untyped.Compiler.Globalize using (globalize)
 open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
-open import Untyped.proof.Correctness.Graph.EncloseExample using (prog; prog-is-7)
+open import Untyped.proof.Correctness.Graph.CaptureExample using (prog; prog-is-7)
 open import Untyped.proof.Correctness.Graph.CompilerCorrect
 
 open import Framework.Syntax.SyntaxUtil

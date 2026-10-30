@@ -46,7 +46,7 @@ open import proof.Compiler.SimplifyFacts as P
          simp; simp-args; simp-app; lam?; is-lam; other; simp-call; simp-let; size; inline-size; inline-fuel;
          simp-get; simp-case; simp-prim; simplify; small; value; component; branch; int-of; prim-term;
          SV; SVs; value-sv; small-sv; sv-sub; svs-sub; sv-rename; prim-term-sv; int-of-just; component-just)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Compiler.SimplifyScope using (closed-ws; ws-proj; ws-prim-term)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error

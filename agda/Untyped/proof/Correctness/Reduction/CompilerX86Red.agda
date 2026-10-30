@@ -12,7 +12,7 @@
 module Untyped.proof.Correctness.Reduction.CompilerX86Red where
 
 open import Untyped.Compiler.Pipeline using (compile-imp; compile-cfg; compile-x86)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equiv-trans)
 open import Untyped.proof.Correctness.Reduction.LiftLocalsRed using (compile-imp-correct)
 open import Untyped.proof.Correctness.CEK.ExplicateSim using (explicate-correct)

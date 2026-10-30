@@ -8,7 +8,7 @@ reduction semantics. It also proves the graph model adequate for the
 clocked interpreters of ISWIMμ and x86μ, and it measures the sizes of
 the five proofs (Tables 1 and 2 of the paper).
 
-    ISWIMμ --simplify--> ISWIMμ --enclose--> Clos --optimize--> Clos
+    ISWIMμ --simplify--> ISWIMμ --capture--> Clos --prune--> Clos
            --concretize--> EnvClos --delay--> PairClos
            --globalize--> GlobalFun --rco--> Mon --lift locals--> Imp
            --explicate control--> CFG --select instructions--> x86μ

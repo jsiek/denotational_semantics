@@ -4,8 +4,8 @@
   statements. The proofs are in proof/Correctness/Graph/; each
   theorem here is one of them, with its type written out.
 
-    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
-          --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
@@ -36,12 +36,12 @@ import Language.Typed.Mon as Monᵀ
 open Monᵀ using (⌜_⌝ₚ)
 import Language.Typed.Imp as Impᵀ
 import Language.Typed.CFG as CFGᵀ
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 
 open import Compiler.Simplify using (simplify)
 open import Compiler.Cast using (cast-closed)
-open import Compiler.Enclose using (enclose)
-open import Compiler.Optimize using (optimize-program)
+open import Compiler.Capture using (capture)
+open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Delay using (delay-program)
 open import Compiler.Globalize using (globalize)
@@ -63,8 +63,8 @@ open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
 
 import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.Graph.CastCorrect as Cast
-import proof.Correctness.Graph.EncloseCorrect as Enclose
-import proof.Correctness.Graph.OptimizeCorrect as Optimize
+import proof.Correctness.Graph.CaptureCorrect as Capture
+import proof.Correctness.Graph.PruneCorrect as Prune
 import proof.Correctness.Graph.ConcretizeCorrect as Concretize
 import proof.Correctness.Graph.DelayCorrect as Delay
 import proof.Correctness.Graph.GlobalizeCorrect as Globalize
@@ -94,11 +94,11 @@ simplify-correct = SimplifyCorrect.simplify-correct
 cast-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ cast-closed M ⟧ᵀ ρ₀
 cast-correct = Cast.cast-correct
 
-enclose-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → ⟦ M ⟧ᵀ ρ₀ ≃ ⟦ enclose M ⟧₂ ρ₀
-enclose-correct = Enclose.enclose-correct
+capture-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → ⟦ M ⟧ᵀ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
+capture-correct = Capture.capture-correct
 
-optimize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ optimize-program M ⟧₂ ρ₀
-optimize-correct = Optimize.optimize-correct
+prune-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ prune-program M ⟧₂ ρ₀
+prune-correct = Prune.prune-correct
 
 concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = Concretize.concretize-correct

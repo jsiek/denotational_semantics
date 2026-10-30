@@ -13,7 +13,7 @@ module proof.Compiler.CastScope where
 open import Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args)
 open import Framework.Syntax.ScopeDec Op sig using (ws?)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.Simplify using (simplify)
 open import proof.Compiler.SimplifyScope using (simplify-closed; closed-ws)
 open import Compiler.Cast using (cast-program; cast-closed)

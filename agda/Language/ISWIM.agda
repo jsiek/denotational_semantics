@@ -6,7 +6,7 @@ module Language.ISWIM where
    There are no booleans: eq returns inl ⟨⟩ for true and inr ⟨⟩ for false
    (⟨⟩ is the empty tuple), so case serves as if (see Language/Prim).
  A function lam ⦅ (y. N) ⦆ refers to the surrounding variables directly.
- This language is before the 'enclose' pass.
+ This language is before the 'capture' pass.
 -}
 
 open import Framework.Primitives

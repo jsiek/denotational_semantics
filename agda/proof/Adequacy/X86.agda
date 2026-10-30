@@ -29,7 +29,7 @@ open import proof.Semantics.Graph.Typed.Ops using (ConT; tables)
 open import Language.Typed.Type using (Any)
 open import Language.Typed.X86 using (Program; program)
 open import Language.ISWIM using (AST)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.Pipeline using (compile-x86)
 open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation

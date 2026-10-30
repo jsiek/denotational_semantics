@@ -38,7 +38,7 @@ import Semantics.Interp.ISWIM as ISWIM
 open import Untyped.proof.Correctness.Interp.RCOFuel using (compile-mon-correct)
 open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
 open import Untyped.Compiler.RCO using (rco-program-mon)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; _ʳ++_; _++_; length; reverse; replicate)

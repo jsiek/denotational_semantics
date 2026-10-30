@@ -24,8 +24,8 @@ open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
 open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Enclose using (enclose)
-open import Mu.Compiler.Optimize using (optimize-program)
+open import Mu.Compiler.Capture using (capture)
+open import Mu.Compiler.Prune using (prune-program)
 open import Mu.Compiler.Concretize using (concretize-program)
 open import Mu.Compiler.Pipeline
 open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
@@ -35,8 +35,8 @@ open import Mu.Semantics.GraphModel.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧
 open import Mu.Semantics.GraphModel.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
 open import Mu.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-correct)
-open import Mu.proof.Correctness.GraphModel.EncloseCorrect using (enclose-correct)
-open import Mu.proof.Correctness.GraphModel.OptimizeCorrect using (optimize-correct)
+open import Mu.proof.Correctness.GraphModel.CaptureCorrect using (capture-correct)
+open import Mu.proof.Correctness.GraphModel.PruneCorrect using (prune-correct)
 open import Mu.proof.Correctness.GraphModel.ConcretizeCorrect using (concretize-correct)
 open import Mu.proof.Correctness.GraphModel.DelayCorrect using (delay-correct-const; delay-correct-nonempty)
 open import Mu.proof.Correctness.GraphModel.GlobalizeCorrect using (globalize-correct)
@@ -65,11 +65,11 @@ same D≃@(⟨ D⊆ , E⊆ ⟩) = ⟨ (λ k → ⟨ D⊆ _ , E⊆ _ ⟩) , ⟨ n
 
 compile-to-PairClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) (⟦ compile-to-PairClos M ⟧₄ ρ₀)
 compile-to-PairClos-same M =
-  then (same (≃-trans (simplify-correct M) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂)))))
+  then (same (≃-trans (simplify-correct M) (≃-trans (capture-correct M₁) (≃-trans (prune-correct (capture M₁)) (concretize-correct M₂)))))
        ⟨ delay-correct-const (concretize-program M₂) , delay-correct-nonempty (concretize-program M₂) ⟩
   where
   M₁ = simplify M
-  M₂ = optimize-program (enclose M₁)
+  M₂ = prune-program (capture M₁)
 
 compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
 compile-to-GlobalFun-same M = then (compile-to-PairClos-same M) (same (globalize-correct (compile-to-PairClos M)))

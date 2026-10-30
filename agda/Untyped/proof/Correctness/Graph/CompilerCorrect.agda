@@ -2,7 +2,7 @@
 
   Correctness of the whole closure-conversion compiler:
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5
 
   For a closed ISWIM program, the compiled Clos5 program produces the same
@@ -20,14 +20,14 @@ open import proof.Framework.GraphModel.Domain
 open import Language.ISWIM
 open import proof.Semantics.Graph.ISWIM
 open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
-open import Untyped.Compiler.Enclose using (enclose)
-open import Untyped.Compiler.Optimize using (optimize-program)
+open import Untyped.Compiler.Capture using (capture)
+open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
 open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
 open import proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
 open import Compiler.Simplify using (simplify)
-open import Untyped.proof.Correctness.Graph.EncloseCorrect using (enclose-correct-closed)
-open import Untyped.proof.Correctness.Graph.OptimizeCorrect using (optimize-correct-closed)
+open import Untyped.proof.Correctness.Graph.CaptureCorrect using (capture-correct-closed)
+open import Untyped.proof.Correctness.Graph.PruneCorrect using (prune-correct-closed)
 open import Untyped.proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct-closed)
 open import Untyped.proof.Correctness.Graph.DelayPreserve
   using (delay-correct-const; delay-correct-nonempty)
@@ -59,14 +59,14 @@ Same-trans ⟨ c₁ , n₁ ⟩ ⟨ c₂ , n₂ ⟩ = ⟨ (λ c → ⇔-trans (c�
 
 compile-same : ∀ (M : AST) → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧ₚ
 compile-same M =
-  Same-trans (≃→Same (≃-trans (simplify-correct M) (≃-trans (enclose-correct-closed M₁)
-                     (≃-trans (optimize-correct-closed M₂) (concretize-correct-closed M₂')))))
+  Same-trans (≃→Same (≃-trans (simplify-correct M) (≃-trans (capture-correct-closed M₁)
+                     (≃-trans (prune-correct-closed M₂) (concretize-correct-closed M₂')))))
   (Same-trans ⟨ delay-correct-const M₃ , delay-correct-nonempty M₃ ⟩
               (≃→Same (globalize-correct (compile₄ M))))
   where
   M₁ = simplify M
-  M₂ = enclose M₁
-  M₂' = optimize-program M₂
+  M₂ = capture M₁
+  M₂' = prune-program M₂
   M₃ = concretize-program M₂'
 
 compile-correct-const : ∀ (M : AST) → ∀ {B} (c : base-rep B)

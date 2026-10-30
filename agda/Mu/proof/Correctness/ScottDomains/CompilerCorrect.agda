@@ -20,8 +20,8 @@ open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
 open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Enclose using (enclose)
-open import Mu.Compiler.Optimize using (optimize-program)
+open import Mu.Compiler.Capture using (capture)
+open import Mu.Compiler.Prune using (prune-program)
 open import Mu.Compiler.Concretize using (concretize-program)
 open import Mu.Compiler.Pipeline
 
@@ -41,8 +41,8 @@ open import Mu.Semantics.ScottDomains.Imp pt fe pe using () renaming (⟦_⟧ₚ
 open import Mu.Semantics.ScottDomains.CFG pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
 open import Mu.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
 open import Mu.proof.Correctness.ScottDomains.SimplifyCorrect pt fe pe using (simplify-correct)
-open import Mu.proof.Correctness.ScottDomains.EncloseCorrect pt fe pe using (enclose-correct)
-open import Mu.proof.Correctness.ScottDomains.OptimizeCorrect pt fe pe using (optimize-correct)
+open import Mu.proof.Correctness.ScottDomains.CaptureCorrect pt fe pe using (capture-correct)
+open import Mu.proof.Correctness.ScottDomains.PruneCorrect pt fe pe using (prune-correct)
 open import Mu.proof.Correctness.ScottDomains.ConcretizeCorrect pt fe pe using (concretize-correct)
 open import Mu.proof.Correctness.ScottDomains.DelayCorrect pt fe pe using (delay-correct-const; delay-correct-defined)
 open import Mu.proof.Correctness.ScottDomains.GlobalizeCorrect pt fe pe using (globalize-correct)
@@ -70,9 +70,9 @@ compile-to-PairClos-same M =
   (λ h → pr₁ (delay-correct-defined M₃) (transport defined eq h)) , (λ h → transport defined (eq ⁻¹) (pr₂ (delay-correct-defined M₃) h))
  where
   M₁ = simplify M
-  M₂ = optimize-program (enclose M₁)
+  M₂ = prune-program (capture M₁)
   M₃ = concretize-program M₂
-  eq = simplify-correct M ∙ enclose-correct M₁ ∙ optimize-correct (enclose M₁) ∙ concretize-correct M₂
+  eq = simplify-correct M ∙ capture-correct M₁ ∙ prune-correct (capture M₁) ∙ concretize-correct M₂
 
 compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
 compile-to-GlobalFun-same M = then (⟦ M ⟧ · ρ₀) (⟦ compile-to-PairClos M ⟧₄ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅ (compile-to-PairClos-same M) (globalize-correct (compile-to-PairClos M))

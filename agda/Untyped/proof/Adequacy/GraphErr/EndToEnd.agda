@@ -26,7 +26,7 @@ import Semantics.CEK.ISWIM as ISWIMₘ
 import Untyped.Semantics.CEK.Clos5 as Clos5ₘ
 import Semantics.CEK.X86 as X86ₘ
 open import Untyped.Compiler.Pipeline using (compile; compile-x86)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Untyped.proof.Correctness.GraphErr.CompilerCorrect using (compile-same; compile-x86-same)
 import proof.Adequacy.GraphErr.ISWIM as A
 import Untyped.proof.Adequacy.GraphErr.Clos5 as A5

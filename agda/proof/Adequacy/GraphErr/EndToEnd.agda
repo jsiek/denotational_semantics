@@ -49,7 +49,7 @@ open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅; ⟦_⟧[_]; ⟦_�
 open import Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
 open import Compiler.Pipeline using (compile; compile₄; compile-cfg; compile-x86)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Compiler.RCO using (rco)
 open import Compiler.LiftLocals using (lift)
 open import Compiler.Explicate using (explicate-body)

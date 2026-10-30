@@ -38,7 +38,7 @@ open import Untyped.Language.Mon
 open import Untyped.Compiler.LiftLocals
 open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
 open import Untyped.Compiler.RCO using (rco-program-mon)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error using (Red; val; error; to; step-in; toNext; Frame; frame; frame-id; frame-∘; val-in; ret?; pre; pre⋆; any-i)
 open import Framework.Smallstep Obs using (Machine; Next; next; stop; Star; ε; _◅_; Step)

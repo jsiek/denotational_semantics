@@ -2,8 +2,8 @@
 
 A compiler from ISWIM to X86ᵀ, a typed assembly language,
 
-    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --CC: enclose--> Clos2ᵀ
-          --CC: optimize--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: delay--> Clos4ᵀ
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --CC: capture--> Clos2ᵀ
+          --CC: prune--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: delay--> Clos4ᵀ
           --CC: globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
@@ -67,12 +67,12 @@ other than `--without-K`, failing if it finds any.
   `code n`), the typed languages ISWIMᵀ, Clos2ᵀ–Clos5ᵀ, Monᵀ, Impᵀ and
   CFGᵀ, and the target, X86ᵀ (`X86.agda`), with its erasure into X86
   (`X86Erase.agda`).
-* `Compiler/`: the passes (simplify, cast insertion, enclose, optimize,
+* `Compiler/`: the passes (simplify, cast insertion, capture, prune,
   concretize, delay, globalize, rco, lift locals, explicate control,
   select instructions, into X86ᵀ) and their compositions
   (`Pipeline.agda`: `compile₄`, `compile`, `compile-mon`, `compile-imp`,
   `compile-cfg`, `compile-x86`, which ends at X86ᵀ), `Closed`
-  (`EncloseScope.agda`), the precondition of the theorems about the
+  (`CaptureScope.agda`), the precondition of the theorems about the
   whole compiler, and select into untyped X86 (`SelectX86.agda`), not a
   pass but the code select emits without the types.
 * `Semantics/<style>/`: the semantics of ISWIM in each style, and in
@@ -96,7 +96,7 @@ other than `--without-K`, failing if it finds any.
 * `Untyped/`: the untyped pipeline that preceded this one, preserved
   and checked:
 
-      ISWIM --simplify--> ISWIM --CC: enclose--> Clos2 --CC: optimize--> Clos2
+      ISWIM --simplify--> ISWIM --CC: capture--> Clos2 --CC: prune--> Clos2
             --CC: concretize--> Clos3 --CC: delay--> Clos4 --CC: globalize--> Clos5
             --rco--> Clos5 --lift locals--> Imp --explicate control--> CFG
             --select instructions--> X86
@@ -118,7 +118,7 @@ other than `--without-K`, failing if it finds any.
   ISWIM with iso-recursive types (no recursion construct, no errors)
   and its compiler to the typed assembly language X86μ,
 
-      ISWIMμ --simplify--> ISWIMμ --CC: enclose--> Closμ --CC: optimize--> Closμ
+      ISWIMμ --simplify--> ISWIMμ --CC: capture--> Closμ --CC: prune--> Closμ
              --CC: concretize--> EnvClosμ --CC: delay--> PairClosμ
              --CC: globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
              --explicate control--> CFGμ --select instructions--> X86μ

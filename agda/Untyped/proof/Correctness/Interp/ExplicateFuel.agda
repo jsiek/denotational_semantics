@@ -26,7 +26,7 @@ open import Untyped.Language.Imp as Imp using (simple; assign)
 open import Untyped.Language.CFG using (Body; Tail; goto; case)
 open import Untyped.Compiler.Explicate
 open import Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
-open import Untyped.proof.Compiler.EncloseScope using (Closed)
+open import Untyped.proof.Compiler.CaptureScope using (Closed)
 open import proof.Semantics.Interp.Clock
 import Untyped.Semantics.Interp.Imp as I
 import Untyped.Semantics.Interp.CFG as G

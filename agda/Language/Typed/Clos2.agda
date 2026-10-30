@@ -1,7 +1,7 @@
 {-
 
-  Clos2ᵀ: Clos2, intrinsically typed. The output of typed enclose
-  (Compiler/Enclose.agda).
+  Clos2ᵀ: Clos2, intrinsically typed. The output of typed capture
+  (Compiler/Capture.agda).
 
   A closure clos N (M₀ ∷ … ∷ Mₙ₋₁) has closed code N in a context of
   n + 1 variables: variable 0 is the argument and variable suc i the

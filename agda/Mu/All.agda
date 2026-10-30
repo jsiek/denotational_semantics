@@ -5,7 +5,7 @@
   X86μ, proved correct in five styles: the development of the PLDI 2027
   paper. Mu/README.md is the road map from the paper to this code.
 
-    ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
+    ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --delay--> PairClosμ
            --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ

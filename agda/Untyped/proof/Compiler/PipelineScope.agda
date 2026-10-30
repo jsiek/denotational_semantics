@@ -6,10 +6,10 @@
   of remove complex operands (RCOSim, RCOFuel).
 
   Each pass preserves well-scopedness (WS, Framework/Syntax/Scope.agda), starting
-  from enclose-closed (proof/Compiler/EncloseScope.agda):
+  from capture-closed (proof/Compiler/CaptureScope.agda):
 
-  * optimize: the code of a closure, renamed by ext-var (index P), uses
-    only the free variables that prune keeps, whose new positions are
+  * prune: the code of a closure, renamed by ext-var (index P), uses
+    only the free variables that prune-fvs keeps, whose new positions are
     below the count of kept ones (prune-used), since it drops a free
     variable only when the code does not use it;
   * concretize: a variable becomes a variable or a projection from a
@@ -34,12 +34,12 @@ import Untyped.Language.Clos4 as C4
 import Untyped.Language.Clos5 as C5
 import proof.Framework.Syntax.Scope
 import proof.Framework.Syntax.ScopeRename
-import Untyped.proof.Compiler.EncloseScope as ES
+import Untyped.proof.Compiler.CaptureScope as ES
 open ES using (Closed)
-open import Untyped.Compiler.Enclose using (enclose)
+open import Untyped.Compiler.Capture using (capture)
 open import Compiler.Simplify using (simplify)
 open import proof.Compiler.SimplifyScope using (simplify-closed)
-import Untyped.Compiler.Optimize
+import Untyped.Compiler.Prune
 import Untyped.Compiler.Concretize
 open import Untyped.Compiler.Pipeline using (compile; compile₄)
 
@@ -64,11 +64,11 @@ module W5 = proof.Framework.Syntax.Scope C5.Op C5.sig
 split< : ∀ {j m} → j < suc m → j < m ⊎ j ≡ m
 split< (s≤s le) = m≤n⇒m<n∨m≡n le
 
-{- optimize ----------------------------------------------------------------------}
+{- prune ----------------------------------------------------------------------}
 
 module Opt where
   open C2
-  open import Untyped.Compiler.Optimize
+  open import Untyped.Compiler.Prune
   open W2 using (WS; WS-arg; WS-args; ws-uses)
 
   module _ (r : Var → Var) {U : ℕ → Set} (dec : ∀ j → Dec (U j)) where
@@ -76,32 +76,32 @@ module Opt where
     {- the positions past the free variables are renumbered by b, after
        the kept ones -}
     prune-past : ∀ m (fvs : Args (replicate m ■)) b k
-      → index (prune m r dec fvs b) (m + k) ≡ count (prune m r dec fvs b) + b k
+      → index (prune-fvs m r dec fvs b) (m + k) ≡ count (prune-fvs m r dec fvs b) + b k
     prune-past zero Nil b k = refl
     prune-past (suc m) ((` y) ,, fvs) b k with dec m
     ... | yes _ =
-      trans (cong (index (prune m r dec fvs (keep-base b))) (sym (+-suc m k)))
+      trans (cong (index (prune-fvs m r dec fvs (keep-base b))) (sym (+-suc m k)))
             (trans (prune-past m fvs (keep-base b) (suc k)) (+-suc _ _))
     ... | no _ =
-      trans (cong (index (prune m r dec fvs (drop-base b))) (sym (+-suc m k)))
+      trans (cong (index (prune-fvs m r dec fvs (drop-base b))) (sym (+-suc m k)))
             (prune-past m fvs (drop-base b) (suc k))
     prune-past (suc m) ((op ⦅ args ⦆) ,, fvs) b k =
-      trans (cong (index (prune m r dec fvs (keep-base b))) (sym (+-suc m k)))
+      trans (cong (index (prune-fvs m r dec fvs (keep-base b))) (sym (+-suc m k)))
             (trans (prune-past m fvs (keep-base b) (suc k)) (+-suc _ _))
 
     {- the position m of a kept free variable, just below the ones kept
        before it -}
     kept-top : ∀ m (fvs : Args (replicate m ■)) b
-      → index (prune m r dec fvs (keep-base b)) m < suc (count (prune m r dec fvs (keep-base b)))
+      → index (prune-fvs m r dec fvs (keep-base b)) m < suc (count (prune-fvs m r dec fvs (keep-base b)))
     kept-top m fvs b =
       subst (λ x → index P x < suc (count P)) (+-identityʳ m)
         (subst (_< suc (count P)) (sym (prune-past m fvs (keep-base b) 0))
           (s≤s (≤-reflexive (+-identityʳ (count P)))))
-      where P = prune m r dec fvs (keep-base b)
+      where P = prune-fvs m r dec fvs (keep-base b)
 
     {- a used free variable is kept, below the count of kept ones -}
     prune-used : ∀ m (fvs : Args (replicate m ■)) b j → j < m → U j
-      → index (prune m r dec fvs b) j < count (prune m r dec fvs b)
+      → index (prune-fvs m r dec fvs b) j < count (prune-fvs m r dec fvs b)
     prune-used (suc m) ((` y) ,, fvs) b j j< u with dec m | split< j<
     ... | yes _ | inj₁ lt = m<n⇒m<1+n (prune-used m fvs (keep-base b) j lt u)
     ... | yes _ | inj₂ refl = kept-top m fvs b
@@ -116,23 +116,23 @@ module Opt where
   ws-unbind (suc n) {k} (bind a) w =
     subst (λ x → WS (suc x) (unbind-n n a)) (+-suc n k) (ws-unbind n a w)
 
-  optimize-ws : ∀ r {j k} M → WS j M → (∀ x → Uses x M → r x < k) → WS k (optimize r M)
+  prune-ws : ∀ r {j k} M → WS j M → (∀ x → Uses x M → r x < k) → WS k (prune r M)
   opt-args-ws : ∀ r {n j k} (args : Args (replicate n ■)) → WS-args j args
     → (∀ x → UsesArgs x args → r x < k) → WS-args k (opt-args r args)
   opt-body-ws : ∀ r {k k'} n (a : Arg (ν-n n (ν ■))) → WS-arg k a
     → (∀ x → Uses x (unbind-n n a) → r x < k') → WS k' (opt-body r n a)
   kept-ws : ∀ r {U : ℕ → Set} (dec : ∀ j → Dec (U j)) m {j k} (fvs : Args (replicate m ■)) b
-    → WS-args j fvs → (∀ x → UsesArgs x fvs → r x < k) → WS-args k (kept (prune m r dec fvs b))
+    → WS-args j fvs → (∀ x → UsesArgs x fvs → r x < k) → WS-args k (kept (prune-fvs m r dec fvs b))
 
-  optimize-ws r (` x) w h = h x refl
-  optimize-ws r (clos-op n ⦅ ! clear a ,, fvs ⦆) (wa , ws) h =
-    ES.Enclosed.bind-n-ws c 0 body'
+  prune-ws r (` x) w h = h x refl
+  prune-ws r (clos-op n ⦅ ! clear a ,, fvs ⦆) (wa , ws) h =
+    ES.Captured.bind-n-ws c 0 body'
       (subst (λ x → WS (suc x) body') (sym (+-identityʳ c))
         (opt-body-ws (ext-var (index P)) n a wa h'))
     , kept-ws r dec n fvs (λ k → k) ws (λ x u → h x (inj₂ u))
     where
     dec = λ j → uses? (suc j) (unbind-n n a)
-    P = prune n r dec fvs (λ k → k)
+    P = prune-fvs n r dec fvs (λ k → k)
     c = count P
     body' = opt-body (ext-var (index P)) n a
     h' : ∀ x → Uses x (unbind-n n a) → ext-var (index P) x < suc c
@@ -141,17 +141,17 @@ module Opt where
       s≤s (prune-used r dec n fvs (λ k → k) x
              (subst (suc x ≤_) (+-identityʳ n) (≤-pred (ws-uses (unbind-n n a) (ws-unbind n a wa) u)))
              u)
-  optimize-ws r (app ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) h =
-    optimize-ws r L wL (λ x u → h x (inj₁ u)) , optimize-ws r M wM (λ x u → h x (inj₂ (inj₁ u))) , tt
-  optimize-ws r (lit B k ⦅ Nil ⦆) w h = tt
-  optimize-ws r (tuple n ⦅ args ⦆) w h = opt-args-ws r args w h
-  optimize-ws r (get i ⦅ M ,, Nil ⦆) (w , _) h = optimize-ws r M w (λ x u → h x (inj₁ u)) , tt
-  optimize-ws r (inl-op ⦅ M ,, Nil ⦆) (w , _) h = optimize-ws r M w (λ x u → h x (inj₁ u)) , tt
-  optimize-ws r (inr-op ⦅ M ,, Nil ⦆) (w , _) h = optimize-ws r M w (λ x u → h x (inj₁ u)) , tt
-  optimize-ws r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) h =
-    optimize-ws r L wL (λ x u → h x (inj₁ u))
-    , optimize-ws (ext-var r) M wM hM
-    , optimize-ws (ext-var r) N wN hN
+  prune-ws r (app ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) h =
+    prune-ws r L wL (λ x u → h x (inj₁ u)) , prune-ws r M wM (λ x u → h x (inj₂ (inj₁ u))) , tt
+  prune-ws r (lit B k ⦅ Nil ⦆) w h = tt
+  prune-ws r (tuple n ⦅ args ⦆) w h = opt-args-ws r args w h
+  prune-ws r (get i ⦅ M ,, Nil ⦆) (w , _) h = prune-ws r M w (λ x u → h x (inj₁ u)) , tt
+  prune-ws r (inl-op ⦅ M ,, Nil ⦆) (w , _) h = prune-ws r M w (λ x u → h x (inj₁ u)) , tt
+  prune-ws r (inr-op ⦅ M ,, Nil ⦆) (w , _) h = prune-ws r M w (λ x u → h x (inj₁ u)) , tt
+  prune-ws r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) h =
+    prune-ws r L wL (λ x u → h x (inj₁ u))
+    , prune-ws (ext-var r) M wM hM
+    , prune-ws (ext-var r) N wN hN
     , tt
     where
     hM : ∀ x → Uses x M → ext-var r x < suc _
@@ -160,10 +160,10 @@ module Opt where
     hN : ∀ x → Uses x N → ext-var r x < suc _
     hN zero _ = s≤s z≤n
     hN (suc x) u = s≤s (h x (inj₂ (inj₂ (inj₁ u))))
-  optimize-ws r (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) h =
-    optimize-ws r L wL (λ x u → h x (inj₁ u)) , optimize-ws r M wM (λ x u → h x (inj₂ (inj₁ u))) , tt
-  optimize-ws r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) (wM , wN , _) h =
-    optimize-ws r M wM (λ x u → h x (inj₁ u)) , optimize-ws (ext-var r) N wN hN , tt
+  prune-ws r (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) h =
+    prune-ws r L wL (λ x u → h x (inj₁ u)) , prune-ws r M wM (λ x u → h x (inj₂ (inj₁ u))) , tt
+  prune-ws r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) (wM , wN , _) h =
+    prune-ws r M wM (λ x u → h x (inj₁ u)) , prune-ws (ext-var r) N wN hN , tt
     where
     hN : ∀ x → Uses x N → ext-var r x < suc _
     hN zero _ = s≤s z≤n
@@ -171,9 +171,9 @@ module Opt where
 
   opt-args-ws r {zero} Nil w h = tt
   opt-args-ws r {suc n} (M ,, args) (w , ws) h =
-    optimize-ws r M w (λ x u → h x (inj₁ u)) , opt-args-ws r args ws (λ x u → h x (inj₂ u))
+    prune-ws r M w (λ x u → h x (inj₁ u)) , opt-args-ws r args ws (λ x u → h x (inj₂ u))
 
-  opt-body-ws r zero (bind (ast N)) w h = optimize-ws r N w h
+  opt-body-ws r zero (bind (ast N)) w h = prune-ws r N w h
   opt-body-ws r (suc n) (bind a) w h = opt-body-ws r n a w h
 
   kept-ws r dec zero Nil b w h = tt
@@ -181,11 +181,11 @@ module Opt where
   ... | yes _ = h y (inj₁ refl) , kept-ws r dec m fvs (keep-base b) ws (λ x u → h x (inj₂ u))
   ... | no _ = kept-ws r dec m fvs (drop-base b) ws (λ x u → h x (inj₂ u))
   kept-ws r dec (suc m) ((op ⦅ args ⦆) ,, fvs) b (w , ws) h =
-    optimize-ws r (op ⦅ args ⦆) w (λ x u → h x (inj₁ u))
+    prune-ws r (op ⦅ args ⦆) w (λ x u → h x (inj₁ u))
     , kept-ws r dec m fvs (keep-base b) ws (λ x u → h x (inj₂ u))
 
-  optimize-closed : ∀ M → WS 0 M → WS 0 (optimize-program M)
-  optimize-closed M w = optimize-ws (λ x → x) M w (λ x u → ws-uses M w u)
+  prune-closed : ∀ M → WS 0 M → WS 0 (prune-program M)
+  prune-closed M w = prune-ws (λ x → x) M w (λ x u → ws-uses M w u)
 
 {- concretize ----------------------------------------------------------------------}
 
@@ -327,10 +327,10 @@ module Glob where
 {- the Clos4 program before globalize is closed -}
 compile₄-closed : ∀ M → Closed M → W4.WS 0 (compile₄ M)
 compile₄-closed M c =
-  Del.delay-ws M₃ (Conc.concretize-closed M₂' (Opt.optimize-closed M₂ (ES.enclose-closed (simplify M) (simplify-closed M c))))
+  Del.delay-ws M₃ (Conc.concretize-closed M₂' (Opt.prune-closed M₂ (ES.capture-closed (simplify M) (simplify-closed M c))))
   where
-  M₂ = enclose (simplify M)
-  M₂' = Untyped.Compiler.Optimize.optimize-program M₂
+  M₂ = capture (simplify M)
+  M₂' = Untyped.Compiler.Prune.prune-program M₂
   M₃ = Untyped.Compiler.Concretize.concretize-program M₂'
 
 compile-scoped : ∀ M → Closed M → Scoped (compile M)

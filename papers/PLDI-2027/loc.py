@@ -371,8 +371,8 @@ GROUPS = [
     ('den', 'semantics of the languages', [G + 'Typed/*.agda', GP + 'Typed/*.agda']),
     (BOTH, 'simplify', [GC + 'SimplifyCorrect.agda']),
     ('den', 'cast insertion', [GC + 'CastCorrect.agda']),
-    ('den', 'CC: enclose', [GC + 'EncloseCorrect.agda']),
-    ('den', 'CC: optimize', [GC + 'OptimizeCorrect.agda']),
+    ('den', 'CC: capture', [GC + 'CaptureCorrect.agda']),
+    ('den', 'CC: prune', [GC + 'PruneCorrect.agda']),
     ('den', 'CC: concretize', [GC + 'ConcretizeCorrect.agda']),
     ('den', 'CC: delay', [GC + 'Delay*.agda']),
     ('den', 'CC: globalize', [GC + 'GlobalizeCorrect.agda']),
@@ -403,8 +403,8 @@ GROUPS = [
     # with 48 lines of list and primitive lemmas copied from adequacy, so
     # that the CEK proof does not import it (CastSimLemmas)
     ('op', 'cast insertion', [OC + 'CastSim.agda', OC + 'CastSimLemmas.agda']),
-    ('op', 'CC: enclose', [OC + 'EncloseSim.agda']),
-    ('op', 'CC: optimize', [OC + 'OptimizeSim.agda']),
+    ('op', 'CC: capture', [OC + 'CaptureSim.agda']),
+    ('op', 'CC: prune', [OC + 'PruneSim.agda']),
     ('op', 'CC: concretize', [OC + 'ConcretizeSim.agda']),
     ('op', 'CC: delay', [OC + 'DelaySim.agda']),
     ('op', 'CC: globalize', [OC + 'GlobalizeSim.agda']),
@@ -422,8 +422,8 @@ GROUPS = [
     ('ck', 'semantics of the languages', [F + 'Typed/*.agda', FP + 'Typed/*.agda']),
     ('ck+uck', 'simplify', [FC + 'SimplifyFuel.agda']),
     ('ck', 'cast insertion', [FC + 'CastFuel.agda']),
-    ('ck', 'CC: enclose', [FC + 'EncloseFuel.agda']),
-    ('ck', 'CC: optimize', [FC + 'OptimizeFuel.agda']),
+    ('ck', 'CC: capture', [FC + 'CaptureFuel.agda']),
+    ('ck', 'CC: prune', [FC + 'PruneFuel.agda']),
     ('ck', 'CC: concretize', [FC + 'ConcretizeFuel.agda']),
     ('ck', 'CC: delay', [FC + 'DelayFuel.agda']),
     ('ck', 'CC: globalize', [FC + 'GlobalizeFuel.agda']),
@@ -440,8 +440,8 @@ GROUPS = [
     ('red', 'semantics of the languages', [RD + 'Typed/*.agda', RP + 'Typed/*.agda']),
     ('red+ured', 'simplify', [RC + 'SimplifyRed.agda']),
     ('red', 'cast insertion', [RC + 'CastRed.agda']),
-    ('red', 'CC: enclose', [RC + 'EncloseRed.agda']),
-    ('red', 'CC: optimize', [RC + 'OptimizeRed.agda']),
+    ('red', 'CC: capture', [RC + 'CaptureRed.agda']),
+    ('red', 'CC: prune', [RC + 'PruneRed.agda']),
     ('red', 'CC: concretize', [RC + 'ConcretizeRed.agda']),
     ('red', 'CC: delay', [RC + 'DelayRed.agda']),
     ('red', 'CC: globalize', [RC + 'GlobalizeRed.agda']),
@@ -455,8 +455,8 @@ GROUPS = [
     ('gerr', 'semantics of the languages', [GE + 'Typed/*.agda', GEP + 'Typed/*.agda']),
     ('gerr+ugerr', 'simplify', [GEC + 'SimplifyCorrect.agda']),
     ('gerr', 'cast insertion', [GEC + 'CastCorrect.agda']),
-    ('gerr', 'CC: enclose', [GEC + 'EncloseCorrect.agda']),
-    ('gerr', 'CC: optimize', [GEC + 'OptimizeCorrect.agda']),
+    ('gerr', 'CC: capture', [GEC + 'CaptureCorrect.agda']),
+    ('gerr', 'CC: prune', [GEC + 'PruneCorrect.agda']),
     ('gerr', 'CC: concretize', [GEC + 'ConcretizeCorrect.agda']),
     ('gerr', 'CC: delay', [GEC + 'Delay*.agda']),
     ('gerr', 'CC: globalize', [GEC + 'GlobalizeCorrect.agda']),
@@ -495,8 +495,8 @@ GROUPS = [
      [u(G) + 'Frames.agda', u(G) + 'X86.agda', u(GP) + 'X86.agda', u(G) + 'Clos2Iswim.agda', u(GP) + 'Clos2Iswim.agda', u(G) + 'Clos3Iswim.agda', u(GP) + 'Clos3Iswim.agda',
       u(G) + 'Clos4Iswim.agda', u(GP) + 'Clos4Iswim.agda', u(G) + 'Clos5Iswim.agda',
       u(GP) + 'Clos5IswimContinuous.agda', u(G) + 'Imp.agda', u(G) + 'ImpK.agda', u(G) + 'CFG.agda']),
-    ('uden', 'CC: enclose', [u(GC) + 'EncloseCorrect.agda']),
-    ('uden', 'CC: optimize', [u(GC) + 'OptimizeCorrect.agda']),
+    ('uden', 'CC: capture', [u(GC) + 'CaptureCorrect.agda']),
+    ('uden', 'CC: prune', [u(GC) + 'PruneCorrect.agda']),
     ('uden', 'CC: concretize', [u(GC) + 'ConcretizeCorrect.agda']),
     ('uden', 'CC: delay',
      [u(GC) + 'DelayFiniteCommon.agda', u(GC) + 'DelayFiniteRel.agda', u(GC) + 'DelayApp.agda',
@@ -512,8 +512,8 @@ GROUPS = [
     ('uop', 'semantics of the languages',
      [u(O) + 'Clos2.agda', u(O) + 'Clos3.agda', u(O) + 'Clos4.agda', u(O) + 'Clos5.agda']),
     ('uop+ured', 'semantics of the languages', [u(O) + 'Imp.agda', u(O) + 'CFG.agda']),
-    ('uop', 'CC: enclose', [u(OC) + 'EncloseSim.agda']),
-    ('uop', 'CC: optimize', [u(OC) + 'OptimizeSim.agda']),
+    ('uop', 'CC: capture', [u(OC) + 'CaptureSim.agda']),
+    ('uop', 'CC: prune', [u(OC) + 'PruneSim.agda']),
     ('uop', 'CC: concretize', [u(OC) + 'ConcretizeSim.agda']),
     ('uop', 'CC: delay', [u(OC) + 'DelaySim.agda']),
     ('uop', 'CC: globalize', [u(OC) + 'GlobalizeSim.agda']),
@@ -523,8 +523,8 @@ GROUPS = [
     ('uop+ured', 'select instructions', [u(OC) + 'SelectSim.agda']),
     ('uop', 'composition', [u(OC) + 'CompilerSim.agda', u(OC) + 'CompilerX86Sim.agda']),
     ('ured', 'semantics of the languages', [u(RD) + '*.agda', u(RP) + '*.agda']),
-    ('ured', 'CC: enclose', [u(RC) + 'EncloseRed.agda']),
-    ('ured', 'CC: optimize', [u(RC) + 'OptimizeRed.agda']),
+    ('ured', 'CC: capture', [u(RC) + 'CaptureRed.agda']),
+    ('ured', 'CC: prune', [u(RC) + 'PruneRed.agda']),
     ('ured', 'CC: concretize', [u(RC) + 'ConcretizeRed.agda']),
     ('ured', 'CC: delay', [u(RC) + 'DelayRed.agda']),
     ('ured', 'CC: globalize', [u(RC) + 'GlobalizeRed.agda']),
@@ -532,8 +532,8 @@ GROUPS = [
     ('ured', 'lift locals', [u(RC) + 'LiftLocalsRed.agda']),
     ('ured', 'composition', [u(RC) + 'CompilerRed.agda', u(RC) + 'CompilerX86Red.agda']),
     ('uck', 'semantics of the languages', [u(F) + '*.agda']),
-    ('uck', 'CC: enclose', [u(FC) + 'EncloseFuel.agda']),
-    ('uck', 'CC: optimize', [u(FC) + 'OptimizeFuel.agda']),
+    ('uck', 'CC: capture', [u(FC) + 'CaptureFuel.agda']),
+    ('uck', 'CC: prune', [u(FC) + 'PruneFuel.agda']),
     ('uck', 'CC: concretize', [u(FC) + 'ConcretizeFuel.agda']),
     ('uck', 'CC: delay', [u(FC) + 'DelayFuel.agda']),
     ('uck', 'CC: globalize', [u(FC) + 'GlobalizeFuel.agda']),
@@ -543,8 +543,8 @@ GROUPS = [
     ('uck', 'select instructions', [u(FC) + 'SelectFuel.agda']),
     ('uck', 'composition', [u(FC) + 'CompilerFuel.agda']),
     ('ugerr', 'semantics of the languages', [u(GE) + '*.agda', u(GEP) + '*.agda']),
-    ('ugerr', 'CC: enclose', [u(GEC) + 'EncloseCorrect.agda']),
-    ('ugerr', 'CC: optimize', [u(GEC) + 'OptimizeCorrect.agda']),
+    ('ugerr', 'CC: capture', [u(GEC) + 'CaptureCorrect.agda']),
+    ('ugerr', 'CC: prune', [u(GEC) + 'PruneCorrect.agda']),
     ('ugerr', 'CC: concretize', [u(GEC) + 'ConcretizeCorrect.agda']),
     ('ugerr', 'CC: delay', [u(GEC) + 'Delay*.agda']),
     ('ugerr', 'CC: globalize', [u(GEC) + 'GlobalizeCorrect.agda']),
@@ -593,8 +593,8 @@ GROUPS = [
     ('mu-den+mu-op+mu-ck+mu-red', 'simplify', [MUP + 'Compiler/SimplifyFacts.agda']),
     ('mu-den', 'semantics of the languages', [MU + 'Semantics/GraphModel/*.agda', MUP + 'Semantics/GraphModel/*.agda']),
     ('mu-den', 'simplify', [MUP + 'Correctness/GraphModel/SimplifyCorrect.agda']),
-    ('mu-den', 'CC: enclose', [MUP + 'Correctness/GraphModel/EncloseCorrect.agda']),
-    ('mu-den', 'CC: optimize', [MUP + 'Correctness/GraphModel/OptimizeCorrect.agda']),
+    ('mu-den', 'CC: capture', [MUP + 'Correctness/GraphModel/CaptureCorrect.agda']),
+    ('mu-den', 'CC: prune', [MUP + 'Correctness/GraphModel/PruneCorrect.agda']),
     ('mu-den', 'CC: concretize', [MUP + 'Correctness/GraphModel/ConcretizeCorrect.agda']),
     ('mu-den', 'CC: delay', [MUP + 'Correctness/GraphModel/ApproxLR.agda']
      + [MUP + 'Correctness/GraphModel/Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')]),
@@ -611,8 +611,8 @@ GROUPS = [
     ('mu-op', 'semantics of the languages', [MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('Values', 'ISWIM', 'Clos', 'EnvClos', 'PairClos')]),
     ('mu-op+mu-red', 'semantics of the languages', [MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('GlobalFun', 'Imp', 'CFG', 'X86')]),
     ('mu-op', 'simplify', [MUP + 'Correctness/AbstractMachines/SimplifySim.agda']),
-    ('mu-op', 'CC: enclose', [MUP + 'Correctness/AbstractMachines/EncloseSim.agda']),
-    ('mu-op', 'CC: optimize', [MUP + 'Correctness/AbstractMachines/OptimizeSim.agda']),
+    ('mu-op', 'CC: capture', [MUP + 'Correctness/AbstractMachines/CaptureSim.agda']),
+    ('mu-op', 'CC: prune', [MUP + 'Correctness/AbstractMachines/PruneSim.agda']),
     ('mu-op', 'CC: concretize', [MUP + 'Correctness/AbstractMachines/ConcretizeSim.agda']),
     ('mu-op', 'CC: delay', [MUP + 'Correctness/AbstractMachines/DelaySim.agda']),
     ('mu-op', 'lemmas shared by the passes', [MUP + 'Correctness/AbstractMachines/GlobalFunCommon.agda', MUP + 'Semantics/AbstractMachines/Rel.agda']),
@@ -624,8 +624,8 @@ GROUPS = [
     ('mu-op', 'composition', [MUP + 'Correctness/AbstractMachines/PipelineSim.agda']),
     ('mu-ck', 'semantics of the languages', [MU + 'Semantics/ClockedInterpreters/*.agda', MUP + 'Semantics/ClockedInterpreters/*.agda']),
     ('mu-ck', 'simplify', [MUP + 'Correctness/ClockedInterpreters/SimplifyFuel.agda']),
-    ('mu-ck', 'CC: enclose', [MUP + 'Correctness/ClockedInterpreters/EncloseFuel.agda']),
-    ('mu-ck', 'CC: optimize', [MUP + 'Correctness/ClockedInterpreters/OptimizeFuel.agda']),
+    ('mu-ck', 'CC: capture', [MUP + 'Correctness/ClockedInterpreters/CaptureFuel.agda']),
+    ('mu-ck', 'CC: prune', [MUP + 'Correctness/ClockedInterpreters/PruneFuel.agda']),
     ('mu-ck', 'CC: concretize', [MUP + 'Correctness/ClockedInterpreters/ConcretizeFuel.agda']),
     ('mu-ck', 'CC: delay', [MUP + 'Correctness/ClockedInterpreters/DelayFuel.agda']),
     ('mu-ck', 'CC: globalize', [MUP + 'Correctness/ClockedInterpreters/GlobalizeFuel.agda']),
@@ -680,8 +680,8 @@ GROUPS = [
     # the typed pipeline's reduction column does ('op+red')
     ('mu-red', 'semantics of the languages', [MU + 'Semantics/ReductionSemantics/*.agda', MUP + 'Semantics/ReductionSemantics/*.agda']),
     ('mu-red', 'simplify', [MUP + 'Correctness/ReductionSemantics/SimplifyRed.agda']),
-    ('mu-red', 'CC: enclose', [MUP + 'Correctness/ReductionSemantics/EncloseRed.agda']),
-    ('mu-red', 'CC: optimize', [MUP + 'Correctness/ReductionSemantics/OptimizeRed.agda']),
+    ('mu-red', 'CC: capture', [MUP + 'Correctness/ReductionSemantics/CaptureRed.agda']),
+    ('mu-red', 'CC: prune', [MUP + 'Correctness/ReductionSemantics/PruneRed.agda']),
     ('mu-red', 'CC: concretize', [MUP + 'Correctness/ReductionSemantics/ConcretizeRed.agda']),
     ('mu-red', 'CC: delay', [MUP + 'Correctness/ReductionSemantics/DelayRed.agda']),
     ('mu-red', 'CC: globalize', [MUP + 'Correctness/ReductionSemantics/GlobalizeRed.agda']),
@@ -698,7 +698,7 @@ GROUPS = [
 ADEQ_ROWS = ['ISWIM', 'Clos5', 'X86', 'X86ᵀ', 'well-formedness of compiled programs', 'end to end',
              'simplify through the ISWIM machine']
 ROWS = ['semantics of the languages', 'lemmas shared by the passes', 'simplify', 'cast insertion',
-        'CC: enclose', 'CC: optimize', 'CC: concretize', 'CC: delay', 'CC: globalize', 'rco',
+        'CC: capture', 'CC: prune', 'CC: concretize', 'CC: delay', 'CC: globalize', 'rco',
         'lift locals', 'explicate control', 'select instructions', 'composition']
 
 # the style of each side, for the independence checks and the labels
@@ -1373,8 +1373,8 @@ MU_ROWS = [
      [MU + 'Semantics/GraphModel/Ops.agda', MUP + 'Semantics/GraphModel/Ops.agda'], [MU + 'Semantics/AbstractMachines/Values.agda']),
     ('lemmas shared by the passes (`Common`, `Clos5Common`)', [], [OC + 'Common.agda', OC + 'Clos5Common.agda'],
      [], [MUP + 'Correctness/AbstractMachines/GlobalFunCommon.agda', MUP + 'Semantics/AbstractMachines/Rel.agda']),
-    mu_pass('CC: enclose', ['EncloseCorrect.agda'], ['EncloseSim.agda']),
-    mu_pass('CC: optimize', ['OptimizeCorrect.agda'], ['OptimizeSim.agda']),
+    mu_pass('CC: capture', ['CaptureCorrect.agda'], ['CaptureSim.agda']),
+    mu_pass('CC: prune', ['PruneCorrect.agda'], ['PruneSim.agda']),
     mu_pass('CC: concretize', ['ConcretizeCorrect.agda'], ['ConcretizeSim.agda']),
     ('CC: delay', [GC + 'Delay' + x + '.agda' for x in MU_DELAY], [OC + 'DelaySim.agda'],
      [f for x in MU_DELAY for f in mu_delay(x)], [MUP + 'Correctness/AbstractMachines/DelaySim.agda']),
@@ -1387,7 +1387,7 @@ MU_ROWS = [
 ]
 MU_SHARED = ([L + 'Typed/' + x + '.agda'
               for x in ('Type', 'ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5', 'Mon', 'Imp', 'CFG', 'X86')]
-             + [C + x + '.agda' for x in ('Enclose', 'Optimize', 'Concretize', 'Delay', 'Globalize', 'RCO',
+             + [C + x + '.agda' for x in ('Capture', 'Prune', 'Concretize', 'Delay', 'Globalize', 'RCO',
                                           'LiftLocals', 'Explicate', 'Select', 'Pipeline')])
 MU_INFRA = [W + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda', WP + 'Lookup.agda']
 
@@ -1482,8 +1482,8 @@ MU_CK_ROWS = [
     ('semantics: X86', [F + 'Typed/X86.agda'], [MU + 'Semantics/ClockedInterpreters/X86.agda']),
     ('semantics: values (`Values`)', [F + 'Typed/Values.agda'], [MU + 'Semantics/ClockedInterpreters/Values.agda']),
     ('semantics: value relations (`Rel`)', [FP + 'Typed/Rel.agda'], [MUP + 'Semantics/ClockedInterpreters/Rel.agda']),
-    ('CC: enclose', [FC + 'EncloseFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/EncloseFuel.agda']),
-    ('CC: optimize', [FC + 'OptimizeFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/OptimizeFuel.agda']),
+    ('CC: capture', [FC + 'CaptureFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/CaptureFuel.agda']),
+    ('CC: prune', [FC + 'PruneFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/PruneFuel.agda']),
     ('CC: concretize', [FC + 'ConcretizeFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/ConcretizeFuel.agda']),
     ('CC: delay', [FC + 'DelayFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/DelayFuel.agda']),
     ('CC: globalize', [FC + 'GlobalizeFuel.agda'], [MUP + 'Correctness/ClockedInterpreters/GlobalizeFuel.agda']),
@@ -1537,8 +1537,8 @@ MU_RED_ROWS = [
     ('semantics: the CEK framework at this compiler\'s observations (shared)',
      [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda'],
      [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
-    ('CC: enclose', [RC + 'EncloseRed.agda'], [MUP + 'Correctness/ReductionSemantics/EncloseRed.agda']),
-    ('CC: optimize', [RC + 'OptimizeRed.agda'], [MUP + 'Correctness/ReductionSemantics/OptimizeRed.agda']),
+    ('CC: capture', [RC + 'CaptureRed.agda'], [MUP + 'Correctness/ReductionSemantics/CaptureRed.agda']),
+    ('CC: prune', [RC + 'PruneRed.agda'], [MUP + 'Correctness/ReductionSemantics/PruneRed.agda']),
     ('CC: concretize', [RC + 'ConcretizeRed.agda'], [MUP + 'Correctness/ReductionSemantics/ConcretizeRed.agda']),
     ('CC: delay', [RC + 'DelayRed.agda'], [MUP + 'Correctness/ReductionSemantics/DelayRed.agda']),
     ('CC: globalize', [RC + 'GlobalizeRed.agda'], [MUP + 'Correctness/ReductionSemantics/GlobalizeRed.agda']),
@@ -1808,7 +1808,7 @@ def mu_modules(c, M):
 # --- mixing semantics (--mixed): the graph model and the interpreters ----------
 
 MIX_ROOT = MUP + 'Mixed/CompilerMixed.agda'
-MIX_PASSES = ['simplify', 'CC: enclose', 'CC: optimize', 'CC: concretize', 'CC: delay', 'CC: globalize',
+MIX_PASSES = ['simplify', 'CC: capture', 'CC: prune', 'CC: concretize', 'CC: delay', 'CC: globalize',
               'rco', 'lift locals', 'explicate control', 'select instructions']
 # the passes that are cheaper in the graph model, and the languages at
 # which a proof of each in the graph model needs a bridge (its source and
@@ -1978,8 +1978,8 @@ SCOTT_ROWS = [
     ('semantics of the languages', [MU + 'Semantics/ScottDomains/*.agda', A + 'Semantics/Scott/*.agda']),
     ('lemmas shared by the passes', [SCP + '*.agda']),
     ('simplify', [SC + 'SimplifyCorrect.agda', MUP + 'Compiler/SimplifyFacts.agda']),
-    ('CC: enclose', [SC + 'EncloseCorrect.agda']),
-    ('CC: optimize', [SC + 'OptimizeCorrect.agda']),
+    ('CC: capture', [SC + 'CaptureCorrect.agda']),
+    ('CC: prune', [SC + 'PruneCorrect.agda']),
     ('CC: concretize', [SC + 'ConcretizeCorrect.agda']),
     ('CC: delay', [SC + 'Delay*.agda', WP + 'Scott/StageCall.agda']),
     ('CC: globalize', [SC + 'GlobalizeCorrect.agda']),
@@ -2178,7 +2178,7 @@ def artifact_tables(c, M):
     cols = ['graph model', 'Scott domains', 'machines', 'interpreters', 'reduction']
     order = ['mu-den', 'scott', 'mu-op', 'mu-ck', 'mu-red']
     scott = {r: n for r, _, n in S['cells']}
-    names = {'CC: enclose': 'enclose', 'CC: optimize': 'optimize', 'CC: concretize': 'concretize',
+    names = {'CC: capture': 'capture', 'CC: prune': 'prune', 'CC: concretize': 'concretize',
              'CC: delay': 'delay', 'CC: globalize': 'globalize', 'rco': 'remove complex operands'}
     print('## Table 1: lines of Agda in the five correctness proofs')
     print()

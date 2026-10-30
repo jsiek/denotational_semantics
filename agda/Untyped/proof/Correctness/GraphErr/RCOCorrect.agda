@@ -44,7 +44,7 @@ import proof.Framework.GraphModel.RenameSem Op sig as RenameSem
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import Untyped.Compiler.PipelineScope using (Scoped)
 open import Untyped.proof.Compiler.PipelineScope using (compile-scoped)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import Untyped.Compiler.Pipeline using (compile; compile-mon)
 import Language.ISWIM as ISWIM
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)

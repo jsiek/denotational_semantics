@@ -24,7 +24,7 @@ open import Untyped.Compiler.LiftLocals using (lift-atom; lift-atoms; lift-body;
 open import Untyped.Compiler.Explicate using (explicate-assign; explicate-tail; explicate-body; explicate)
 open import Untyped.Compiler.Select using (select-atm; select-simple; select-tail; prologue; select-body; select)
 open import Untyped.Compiler.Pipeline using (compile; compile₄; compile-x86)
-open import Compiler.EncloseScope using (Closed)
+open import Compiler.CaptureScope using (Closed)
 open import proof.Framework.Syntax.Rename C5.Op C5.sig using (rename; rename-arg; rename-args; ext)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Framework.abt.Sig using (■)
