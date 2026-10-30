@@ -12,7 +12,7 @@
   Smallstep.agda.
 
   Observations: Obs has no pairs, and Clos4 uses a pair only to represent
-  a closure (delay makes one only from a Clos3 closure), so a pair, like
+  a closure (split makes one only from a Clos3 closure), so a pair, like
   bare code, is observed as a function (o-fun), as source functions are.
 
 -}

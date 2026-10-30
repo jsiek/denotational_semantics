@@ -7,8 +7,8 @@
   proof/.
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
-          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
-          --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --split--> Clos4ᵀ
+          --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   Each language has a small-step machine (here Lₘ.sem for language L):
@@ -51,8 +51,8 @@ open import Compiler.Cast using (cast-closed)
 open import Compiler.Capture using (capture)
 open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
-open import Compiler.Delay using (delay-program)
-open import Compiler.Globalize using (globalize)
+open import Compiler.Split using (split-program)
+open import Compiler.Hoist using (hoist)
 open import Compiler.RCO using (rco-program)
 open import Compiler.LiftLocals using (lift-program)
 open import Compiler.Explicate using (explicate)
@@ -75,8 +75,8 @@ import proof.Correctness.CEK.SimplifySim as SimplifySim
 import proof.Correctness.CEK.CaptureSim as CaptureSim
 import proof.Correctness.CEK.PruneSim as PruneSim
 import proof.Correctness.CEK.ConcretizeSim as ConcretizeSim
-import proof.Correctness.CEK.DelaySim as DelaySim
-import proof.Correctness.CEK.GlobalizeSim as GlobalizeSim
+import proof.Correctness.CEK.SplitSim as SplitSim
+import proof.Correctness.CEK.HoistSim as HoistSim
 import proof.Correctness.CEK.RCOSim as RCOSim
 import proof.Correctness.CEK.LiftLocalsSim as LiftLocalsSim
 import proof.Correctness.CEK.ExplicateSim as ExplicateSim
@@ -104,11 +104,11 @@ prune-correct = PruneSim.prune-correct
 concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀₘ.sem M) (Clos3ᵀₘ.sem (concretize-program M))
 concretize-correct = ConcretizeSim.concretize-correct
 
-delay-correct : ∀ (M : Clos3ᵀ.Tm [] Any) → Equivalent (Clos3ᵀₘ.sem M) (Clos4ᵀₘ.sem (delay-program M))
-delay-correct = DelaySim.delay-correct
+split-correct : ∀ (M : Clos3ᵀ.Tm [] Any) → Equivalent (Clos3ᵀₘ.sem M) (Clos4ᵀₘ.sem (split-program M))
+split-correct = SplitSim.split-correct
 
-globalize-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → Equivalent (Clos4ᵀₘ.sem M) (Clos5ᵀₘ.sem (globalize M))
-globalize-correct = GlobalizeSim.globalize-correct
+hoist-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → Equivalent (Clos4ᵀₘ.sem M) (Clos5ᵀₘ.sem (hoist M))
+hoist-correct = HoistSim.hoist-correct
 
 rco-correct : ∀ (P : Clos5ᵀ.Program) → Equivalent (Clos5ᵀₘ.sem P) (Clos5ᵀₘ.sem ⌜ rco-program P ⌝ₚ)
 rco-correct = RCOSim.rco-correct

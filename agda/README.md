@@ -3,8 +3,8 @@
 A compiler from ISWIM to X86ᵀ, a typed assembly language,
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --CC: capture--> Clos2ᵀ
-          --CC: prune--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: delay--> Clos4ᵀ
-          --CC: globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --CC: prune--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: split--> Clos4ᵀ
+          --CC: hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
 (The passes marked "CC:" are the closure-conversion passes; the
@@ -68,7 +68,7 @@ other than `--without-K`, failing if it finds any.
   CFGᵀ, and the target, X86ᵀ (`X86.agda`), with its erasure into X86
   (`X86Erase.agda`).
 * `Compiler/`: the passes (simplify, cast insertion, capture, prune,
-  concretize, delay, globalize, rco, lift locals, explicate control,
+  concretize, split, hoist, rco, lift locals, explicate control,
   select instructions, into X86ᵀ) and their compositions
   (`Pipeline.agda`: `compile₄`, `compile`, `compile-mon`, `compile-imp`,
   `compile-cfg`, `compile-x86`, which ends at X86ᵀ), `Closed`
@@ -97,7 +97,7 @@ other than `--without-K`, failing if it finds any.
   and checked:
 
       ISWIM --simplify--> ISWIM --CC: capture--> Clos2 --CC: prune--> Clos2
-            --CC: concretize--> Clos3 --CC: delay--> Clos4 --CC: globalize--> Clos5
+            --CC: concretize--> Clos3 --CC: split--> Clos4 --CC: hoist--> Clos5
             --rco--> Clos5 --lift locals--> Imp --explicate control--> CFG
             --select instructions--> X86
 
@@ -119,8 +119,8 @@ other than `--without-K`, failing if it finds any.
   and its compiler to the typed assembly language X86μ,
 
       ISWIMμ --simplify--> ISWIMμ --CC: capture--> Closμ --CC: prune--> Closμ
-             --CC: concretize--> EnvClosμ --CC: delay--> PairClosμ
-             --CC: globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
+             --CC: concretize--> EnvClosμ --CC: split--> PairClosμ
+             --CC: hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
              --explicate control--> CFGμ --select instructions--> X86μ
 
   proved in the graph model (with its adequacy for the clocked
@@ -157,7 +157,7 @@ languages, which only the proofs use).
   every type:
   * `Mu/Theorems/GraphModel.agda`: Theorem 4.1, the compiled program
     produces the same constants as the source and produces something
-    exactly when the source does; and Theorem 4.4, the same for delay;
+    exactly when the source does; and Theorem 4.4, the same for split;
   * `Mu/Theorems/AbstractMachines.agda`, `ClockedInterpreters.agda`,
     `ReductionSemantics.agda`: Theorems F.2, F.1 and F.3, the source and
     X86μ stop with the same integer, or both diverge
@@ -188,7 +188,7 @@ languages, which only the proofs use).
 * Theorem statements (`Theorems/`), each with its type written out and
   defined as the corresponding theorem of `proof/`:
   * `Theorems/Denotational.agda`: each pass preserves the meaning of a
-    program in the graph model (delay: its constants and whether it has
+    program in the graph model (split: its constants and whether it has
     any), and the whole compiler, into Clos5ᵀ, Monᵀ, Impᵀ, CFGᵀ and X86ᵀ,
     preserves the constants a closed program produces and whether it
     produces anything.
@@ -206,7 +206,7 @@ languages, which only the proofs use).
     only, preserves the constants a closed program computes and whether
     it terminates with an answer.
   * `Theorems/GraphErrors.agda`: in the graph model with errors every
-    pass but delay preserves the meaning of a program, delay preserves
+    pass but split preserves the meaning of a program, split preserves
     and reflects errors, constants and values (`Same`), and so does the
     whole compiler; the model is adequate for the ISWIM and X86ᵀ
     machines on all three outcomes, and for the Clos5ᵀ machine by the
@@ -297,13 +297,13 @@ directory per style, and adequacy is in `proof/Adequacy/`:
 * `proof/Compiler/`: syntactic facts about the passes (for simplify, the
   values and known values it inspects, `SimplifyFacts.agda`, used by its
   proofs, and that it keeps programs closed, `SimplifyScope.agda`; cast
-  insertion on closed programs, `CastScope.agda`; globalize's references
-  to older definitions, `GlobalizeOlder.agda`; that select emits, without
+  insertion on closed programs, `CastScope.agda`; hoist's references
+  to older definitions, `HoistOlder.agda`; that select emits, without
   the types, the code of select into untyped X86, `SelectErase.agda`),
   and examples (`Examples/`: smoke tests run by `refl`);
 * `Untyped/proof/`: the same for the untyped pipeline, with its
   experiments: a direct semantics of Imp with lift locals and explicate
-  control proved against it, and a direct backward simulation for delay.
+  control proved against it, and a direct backward simulation for split.
 * `Mu/proof/`: the same for ISWIMμ (its reduction column shares the
   CEK column's proofs of explicate control and select instructions; its
   adequacy, `Mu/proof/Adequacy/`, is direct for the X86μ interpreter;
@@ -315,7 +315,7 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   language-independent lemmas in
   `proof/Framework/Scott/`: the solution of the domain equation, the
   operators, the stages of the bilimit (approximations by depth) and the
-  calls of approximated closures, which delay's logical relations use).
+  calls of approximated closures, which split's logical relations use).
 
 `All.agda` imports the theorem files, every module of `proof/`,
 `Untyped/All.agda`, `Mu/All.agda` (which imports `Mu/Theorems/` and

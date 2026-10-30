@@ -13,8 +13,8 @@ substitution; and the graph model with errors), with the adequacy of the
 two graph models for the machines:
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --CC: capture--> Clos2ᵀ
-          --CC: prune--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: delay--> Clos4ᵀ
-          --CC: globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --CC: prune--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: split--> Clos4ᵀ
+          --CC: hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
 (The passes marked "CC:" are the closure-conversion passes; the

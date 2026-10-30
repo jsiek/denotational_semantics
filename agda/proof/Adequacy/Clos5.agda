@@ -3,8 +3,8 @@
   Soundness and adequacy of the graph model of Clos5ᵀ
   (Semantics/Graph/Typed/Clos5.agda, ⟦_⟧ₚ) with respect to the Clos5ᵀ
   machine (Semantics/CEK/Typed/Clos5.agda), for programs whose
-  definitions refer only to older ones (OlderDefs), which globalize
-  produces (proof/Compiler/GlobalizeOlder.agda):
+  definitions refer only to older ones (OlderDefs), which hoist
+  produces (proof/Compiler/HoistOlder.agda):
 
     soundness (Clos5Soundness): if the machine stops with an answer,
       the value it returns denotes a part of ⟦ P ⟧ₚ;
@@ -27,7 +27,7 @@ open import Semantics.Graph.Typed.Clos5 using (⟦_⟧ₚ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges; diverges-not-terminates; terminates-det)
 open import Semantics.CEK.Typed.Clos5 using (sem; ret; halt; obs)
-open import proof.Compiler.GlobalizeOlder using (OlderDefs)
+open import proof.Compiler.HoistOlder using (OlderDefs)
 import proof.Adequacy.Clos5Common as C
 import proof.Adequacy.Clos5LogRel as LR
 import proof.Adequacy.Clos5Soundness as S

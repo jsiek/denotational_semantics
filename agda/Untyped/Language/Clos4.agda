@@ -4,8 +4,8 @@ module Untyped.Language.Clos4 where
  In this intermediate semantics all functions take two parameters,
    so applications have two operands. We use a pair to create 
    concrete closures instead of performing early appliction.
- This language is after the 'delay' pass,
-   and before the 'globalize' pass.
+ This language is after the 'split' pass,
+   and before the 'hoist' pass.
 
 -}
 

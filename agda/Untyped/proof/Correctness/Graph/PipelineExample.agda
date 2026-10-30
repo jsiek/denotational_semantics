@@ -20,7 +20,7 @@ open import proof.Semantics.Graph.ISWIM
 open import Untyped.Compiler.Capture using (capture)
 open import Untyped.Compiler.Prune using (prune-program)
 import Untyped.Language.Clos2 as L2
-open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
+open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
 open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
 open import Untyped.proof.Correctness.Graph.CompilerCorrect
 

@@ -4,8 +4,8 @@
   with errors: for a closed ISWIM program, the compiled program errs
   exactly when the source does, produces the same constants, and
   produces a value exactly when the source does (Same). Simplify, cast
-  insertion, capture, prune, concretize, globalize, rco, lift locals
-  and explicate control preserve the meaning exactly (≃); delay
+  insertion, capture, prune, concretize, hoist, rco, lift locals
+  and explicate control preserve the meaning exactly (≃); split
   preserves and reflects the three facts; select instructions is ≃
   (SelectCorrect.agda).
 
@@ -24,7 +24,7 @@ open import Compiler.Cast using (cast-program)
 open import Compiler.Capture using (capture)
 open import Compiler.Prune using (prune-program)
 open import Compiler.Concretize using (concretize-program)
-open import Compiler.Delay using (delay-program)
+open import Compiler.Split using (split-program)
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
 import Semantics.GraphErr.Typed.Clos3
 import Semantics.GraphErr.Typed.ISWIM
@@ -34,8 +34,8 @@ open import proof.Correctness.GraphErr.CastCorrect using (cast-correct)
 open import proof.Correctness.GraphErr.CaptureCorrect using (capture-correct)
 open import proof.Correctness.GraphErr.PruneCorrect using (prune-correct)
 open import proof.Correctness.GraphErr.ConcretizeCorrect using (concretize-correct)
-open import proof.Correctness.GraphErr.DelayCorrect
-  using (delay-correct-error; delay-correct-const; delay-correct-val)
+open import proof.Correctness.GraphErr.SplitCorrect
+  using (split-correct-error; split-correct-const; split-correct-val)
 
 open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (sym; cong)
@@ -50,7 +50,7 @@ open import Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
 open import Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
 open import Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
 open import Language.Typed.Mon using (⌜_⌝ₚ)
-open import proof.Correctness.GraphErr.GlobalizeCorrect using (globalize-correct)
+open import proof.Correctness.GraphErr.HoistCorrect using (hoist-correct)
 open import proof.Correctness.GraphErr.RCOCorrect using (rco-correct)
 open import proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-locals-correct)
 open import proof.Correctness.GraphErr.ExplicateCorrect using (explicate-correct)
@@ -62,20 +62,20 @@ Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst
 ⇔∘ : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
 ⇔∘ ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
-{- cast insertion to delay, on a well-scoped closed program -}
+{- cast insertion to split, on a well-scoped closed program -}
 compile-same : ∀ (M : AST) (w : WS 0 M)
-  → Same (⟦ M ⟧ ρ₀) (S4.⟦ delay-program (concretize-program (prune-program (capture (cast-program M w)))) ⟧ ρ₀)
+  → Same (⟦ M ⟧ ρ₀) (S4.⟦ split-program (concretize-program (prune-program (capture (cast-program M w)))) ⟧ ρ₀)
 compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (capture-correct M₁) (≃-trans (prune-correct (capture M₁)) (concretize-correct M₂))))
   where
   M₁ = cast-program M w
   M₂ = prune-program (capture M₁)
   M₃ = concretize-program M₂
-  go : ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀ → Same (⟦ M ⟧ ρ₀) (S4.⟦ delay-program M₃ ⟧ ρ₀)
+  go : ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀ → Same (⟦ M ⟧ ρ₀) (S4.⟦ split-program M₃ ⟧ ρ₀)
   go ⟨ D⊆ , E⊆ ⟩ =
-    ⟨ ⇔∘ ⟨ D⊆ ω , E⊆ ω ⟩ (delay-correct-error M₃)
-    , ⟨ (λ c → ⇔∘ ⟨ D⊆ (dconst c) , E⊆ (dconst c) ⟩ (delay-correct-const M₃ c))
+    ⟨ ⇔∘ ⟨ D⊆ ω , E⊆ ω ⟩ (split-correct-error M₃)
+    , ⟨ (λ c → ⇔∘ ⟨ D⊆ (dconst c) , E⊆ (dconst c) ⟩ (split-correct-const M₃ c))
       , ⇔∘ ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊆ d d∈ , d≢ ⟩ ⟩ })
-           , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊆ d d∈ , d≢ ⟩ ⟩ }) ⟩ (delay-correct-val M₃) ⟩ ⟩
+           , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊆ d d∈ , d≢ ⟩ ⟩ }) ⟩ (split-correct-val M₃) ⟩ ⟩
 
 {- The typed compiler from untyped ISWIM ------------------------------------------}
 
@@ -96,7 +96,7 @@ compile₄-same M c rewrite cast-closed-≡ (simplify M) (simplify-ws M c) =
       , ⇔∘ ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊆ d d∈ , d≢ ⟩ ⟩ }) , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊇ d d∈ , d≢ ⟩ ⟩ }) ⟩ v ⟩ ⟩
 
 compile-same₅ : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
-compile-same₅ M c = ≃-Same (compile₄-same M c) (globalize-correct (compile₄ M))
+compile-same₅ M c = ≃-Same (compile₄-same M c) (hoist-correct (compile₄ M))
 
 compile-mon-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
 compile-mon-same M c = ≃-Same (compile-same₅ M c) (rco-correct (compile M))

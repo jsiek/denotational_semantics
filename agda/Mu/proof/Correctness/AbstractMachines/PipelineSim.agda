@@ -22,8 +22,8 @@ open import Mu.proof.Correctness.AbstractMachines.SimplifySim using (simplify-co
 open import Mu.proof.Correctness.AbstractMachines.CaptureSim using (capture-correct)
 open import Mu.proof.Correctness.AbstractMachines.PruneSim using (prune-correct)
 open import Mu.proof.Correctness.AbstractMachines.ConcretizeSim using (concretize-correct)
-open import Mu.proof.Correctness.AbstractMachines.DelaySim using (delay-correct)
-open import Mu.proof.Correctness.AbstractMachines.GlobalizeSim using (globalize-correct)
+open import Mu.proof.Correctness.AbstractMachines.SplitSim using (split-correct)
+open import Mu.proof.Correctness.AbstractMachines.HoistSim using (hoist-correct)
 open import Mu.proof.Correctness.AbstractMachines.RCOSim using (rco-correct)
 open import Mu.proof.Correctness.AbstractMachines.LiftLocalsSim using (lift-locals-correct)
 open import Mu.proof.Correctness.AbstractMachines.ExplicateSim using (explicate-correct)
@@ -43,10 +43,10 @@ open import Data.List using ([])
 compile-to-PairClos-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (PairClosμₘ.sem (compile-to-PairClos M))
 compile-to-PairClos-correct M =
   equiv-trans (simplify-correct M)
-    (equiv-trans (capture-correct _) (equiv-trans (prune-correct _) (equiv-trans (concretize-correct _) (delay-correct _))))
+    (equiv-trans (capture-correct _) (equiv-trans (prune-correct _) (equiv-trans (concretize-correct _) (split-correct _))))
 
 compile-to-GlobalFun-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (GlobalFunμₘ.sem (compile-to-GlobalFun M))
-compile-to-GlobalFun-correct M = equiv-trans (compile-to-PairClos-correct M) (globalize-correct _)
+compile-to-GlobalFun-correct M = equiv-trans (compile-to-PairClos-correct M) (hoist-correct _)
 
 compile-to-Mon-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (GlobalFunμₘ.sem ⌜ compile-to-Mon M ⌝ₚ)
 compile-to-Mon-correct M = equiv-trans (compile-to-GlobalFun-correct M) (rco-correct _)

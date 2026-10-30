@@ -2,7 +2,7 @@
 
   Scott domains: the domain of values 𝔻 as the bilimit of its stages
   (Framework/Scott/Solve.agda), for the proofs that need induction on
-  the depth of values (the delay pass):
+  the depth of values (the split pass):
 
     𝓓 0 = 𝟙,   𝓓 (n + 1) = 𝓛 (Σ t , Payload t (𝓓 n)),
 

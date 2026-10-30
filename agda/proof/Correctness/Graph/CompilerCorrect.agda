@@ -5,8 +5,8 @@
   Monᵀ (by its embedding), Impᵀ, CFGᵀ and X86ᵀ, produces the same
   constants as the source, and produces something exactly when the
   source does (Same). Simplify (the same proof as the untyped
-  pipeline's), cast insertion and every later pass but delay preserve
-  the meaning exactly (≃); delay preserves and reflects constants and
+  pipeline's), cast insertion and every later pass but split preserve
+  the meaning exactly (≃); split preserves and reflects constants and
   nonemptiness.
 
 -}
@@ -37,8 +37,8 @@ open import proof.Correctness.Graph.CastCorrect using (cast-correct)
 open import proof.Correctness.Graph.CaptureCorrect using (capture-correct)
 open import proof.Correctness.Graph.PruneCorrect using (prune-correct)
 open import proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct)
-open import proof.Correctness.Graph.DelayCorrect using (delay-correct-const; delay-correct-nonempty)
-open import proof.Correctness.Graph.GlobalizeCorrect using (globalize-correct)
+open import proof.Correctness.Graph.SplitCorrect using (split-correct-const; split-correct-nonempty)
+open import proof.Correctness.Graph.HoistCorrect using (hoist-correct)
 open import proof.Correctness.Graph.RCOCorrect using (rco-correct)
 open import proof.Correctness.Graph.LiftLocalsCorrect using (lift-locals-correct)
 open import proof.Correctness.Graph.ExplicateCorrect using (explicate-correct)
@@ -66,9 +66,9 @@ compile-same M c with ≃-trans (simplify-correct M) (≃-trans (cast-correct (s
   M₁ = cast-closed (simplify M)
   M₂ = prune-program (capture M₁)
 ... | ⟨ D⊆ , E⊆ ⟩ =
-  then ⟨ (λ k → ⇔∘ ⟨ D⊆ _ , E⊆ _ ⟩ (delay-correct-const M₃ k))
-       , ⇔∘ ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , D⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) ⟩ (delay-correct-nonempty M₃) ⟩
-       (globalize-correct (compile₄ M))
+  then ⟨ (λ k → ⇔∘ ⟨ D⊆ _ , E⊆ _ ⟩ (split-correct-const M₃ k))
+       , ⇔∘ ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , D⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) ⟩ (split-correct-nonempty M₃) ⟩
+       (hoist-correct (compile₄ M))
   where M₃ = concretize-program (prune-program (capture (cast-closed (simplify M))))
 
 compile-mon-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅

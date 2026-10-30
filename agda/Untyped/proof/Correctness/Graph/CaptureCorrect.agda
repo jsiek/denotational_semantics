@@ -27,7 +27,7 @@ open import Untyped.proof.Semantics.Graph.Clos2Iswim as S2 renaming
   (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂)
 open import Untyped.Compiler.Prune using (bind-n-ast)
 open import Untyped.Compiler.Capture
-open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (Env; ρ₀)
+open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; ρ₀)
 open import Untyped.proof.Correctness.Graph.ConcretizeCorrect
   using (init₀; push; apply-push; push-plus)
 open import Untyped.proof.Correctness.Graph.PruneCorrect using (unbind-bind; push-ne)

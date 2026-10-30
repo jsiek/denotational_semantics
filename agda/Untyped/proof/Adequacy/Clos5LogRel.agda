@@ -50,7 +50,7 @@ import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import proof.Framework.ListUtil
 open import Untyped.Semantics.CEK.Clos5
-open import Untyped.proof.Compiler.GlobalizeTable using (_⊑_; ∷-⊑; global-⊑)
+open import Untyped.proof.Compiler.HoistTable using (_⊑_; ∷-⊑; global-⊑)
 open import Untyped.proof.Adequacy.Clos5WF using (WS; WS-args; DefsWF)
 open import Untyped.proof.Adequacy.Clos5Common ds
 open import Untyped.proof.Adequacy.Values using (module Rel)

@@ -9,8 +9,8 @@ clocked interpreters of ISWIMμ and x86μ, and it measures the sizes of
 the five proofs (Tables 1 and 2 of the paper).
 
     ISWIMμ --simplify--> ISWIMμ --capture--> Clos --prune--> Clos
-           --concretize--> EnvClos --delay--> PairClos
-           --globalize--> GlobalFun --rco--> Mon --lift locals--> Imp
+           --concretize--> EnvClos --split--> PairClos
+           --hoist--> GlobalFun --rco--> Mon --lift locals--> Imp
            --explicate control--> CFG --select instructions--> x86μ
 
 Every file is checked with `--safe`, and no file postulates anything.
@@ -94,12 +94,12 @@ definition, figure and appendix section).
 | Lemma 3.1 (β) | | `proof/Framework/GraphModel/Ops.agda` | `Λ-β`, `ΛΛ-β` |
 | Theorem 4.1 (Compiler correctness, graph model) | `Mu/Theorems/GraphModel.agda` | `Mu/proof/Correctness/GraphModel/CompilerCorrect.agda` | `compile-int-const`, `compile-int-nonempty`; every type: `compile-correct-const`, `compile-correct-nonempty` |
 | Lemma 4.2 (Depth irrelevance and unfolding) | | `Mu/proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-depth-irrelevant`; `unfold`, `fold` |
-| Lemma 4.3 (Fundamental lemma) | | `Mu/proof/Correctness/GraphModel/DelayReflect.agda` | `delay-reflect` |
-| Theorem 4.4 (Correctness of delay) | `Mu/Theorems/GraphModel.agda` | `Mu/proof/Correctness/GraphModel/DelayCorrect.agda` (reflection: `DelayReflect.agda`; preservation: `DelayPreserve.agda`) | `delay-correct-const`, `delay-correct-nonempty` |
+| Lemma 4.3 (Fundamental lemma) | | `Mu/proof/Correctness/GraphModel/SplitReflect.agda` | `split-reflect` |
+| Theorem 4.4 (Correctness of split closure) | `Mu/Theorems/GraphModel.agda` | `Mu/proof/Correctness/GraphModel/SplitCorrect.agda` (reflection: `SplitReflect.agda`; preservation: `SplitPreserve.agda`) | `split-correct-const`, `split-correct-nonempty` |
 | Theorem 4.5 (Adequacy) | `Mu/Theorems/Adequacy.agda` | `Mu/proof/Adequacy/ISWIM.agda`, `Mu/proof/Adequacy/X86.agda` | `iswim-const-iff`, `iswim-diverges-iff`, `x86-const-iff`, `x86-diverges-iff` |
 | Theorems 4.1 and 4.5 together (§4.3) | `Mu/Theorems/Adequacy.agda` | `Mu/proof/Adequacy/EndToEnd.agda` | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
-| §4.2, "Which sides to relate": a finite source side fails | | `Mu/proof/Correctness/GraphModel/DelayDesignFiniteSource.agda` | `no-finite-source-ApproxLR′`, `finite-source′`, `no-finite-source` |
-| §4.2, "Which sides to relate": target sets of bounded depth | | `Mu/proof/Correctness/GraphModel/DelayDesignBoundedSets.agda` | `ApproxLRSet⇔` |
+| §4.2, "Which sides to relate": a finite source side fails | | `Mu/proof/Correctness/GraphModel/SplitDesignFiniteSource.agda` | `no-finite-source-ApproxLR′`, `finite-source′`, `no-finite-source` |
+| §4.2, "Which sides to relate": target sets of bounded depth | | `Mu/proof/Correctness/GraphModel/SplitDesignBoundedSets.agda` | `ApproxLRSet⇔` |
 | Theorem F.1 (Correctness, clocked interpreters) | `Mu/Theorems/ClockedInterpreters.agda` | `Mu/proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
 | Theorem F.2 (Correctness, abstract machines) | `Mu/Theorems/AbstractMachines.agda` | `Mu/proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
 | Theorem F.3 (Correctness, reduction semantics) | `Mu/Theorems/ReductionSemantics.agda` | `Mu/proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |

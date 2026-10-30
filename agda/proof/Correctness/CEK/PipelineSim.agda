@@ -24,8 +24,8 @@ open import proof.Correctness.CEK.CastSim renaming (cast-correct to cast-ws-corr
 open import proof.Correctness.CEK.CaptureSim using (capture-correct)
 open import proof.Correctness.CEK.PruneSim using (prune-correct)
 open import proof.Correctness.CEK.ConcretizeSim using (concretize-correct)
-open import proof.Correctness.CEK.DelaySim using (delay-correct)
-open import proof.Correctness.CEK.GlobalizeSim using (globalize-correct)
+open import proof.Correctness.CEK.SplitSim using (split-correct)
+open import proof.Correctness.CEK.HoistSim using (hoist-correct)
 open import proof.Correctness.CEK.RCOSim using (rco-correct)
 open import proof.Correctness.CEK.LiftLocalsSim using (lift-locals-correct)
 open import proof.Correctness.CEK.ExplicateSim using (explicate-correct)
@@ -51,10 +51,10 @@ cast-correct M c = subst (λ T → Equivalent _ (ISWIMᵀₘ.sem T)) (sym (cast-
 compile₄-correct : ∀ M → Closed M → Equivalent (ISWIMₘ.sem M) (Clos4ᵀₘ.sem (compile₄ M))
 compile₄-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (cast-correct (simplify M) (simplify-closed M c))
-    (equiv-trans (capture-correct _) (equiv-trans (prune-correct _) (equiv-trans (concretize-correct _) (delay-correct _)))))
+    (equiv-trans (capture-correct _) (equiv-trans (prune-correct _) (equiv-trans (concretize-correct _) (split-correct _)))))
 
 compile-correct : ∀ M → Closed M → Equivalent (ISWIMₘ.sem M) (Clos5ᵀₘ.sem (compile M))
-compile-correct M c = equiv-trans (compile₄-correct M c) (globalize-correct _)
+compile-correct M c = equiv-trans (compile₄-correct M c) (hoist-correct _)
 
 compile-mon-correct : ∀ M → Closed M → Equivalent (ISWIMₘ.sem M) (Clos5ᵀₘ.sem ⌜ compile-mon M ⌝ₚ)
 compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct _)

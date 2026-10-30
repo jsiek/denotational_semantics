@@ -3,8 +3,8 @@ module Untyped.Semantics.Graph.Clos4Iswim where
 
  In this intermediate semantics all functions take two parameters,
    so application have two operands and
- This semantics is after the 'delay' pass,
-   and before the 'globalize' pass.
+ This semantics is after the 'split' pass,
+   and before the 'hoist' pass.
 
 -}
 

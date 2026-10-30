@@ -7,7 +7,7 @@
                    ⇔  ⟦ compile M ⟧₅         (Correctness/Graph/CompilerCorrect.agda)
                    ⇔  Clos5ᵀ machine         (Adequacy/Clos5.agda)
 
-  with Clos5ᵀ adequacy's precondition discharged by globalize-older, and
+  with Clos5ᵀ adequacy's precondition discharged by hoist-older, and
   likewise into X86ᵀ through the X86ᵀ machine (Adequacy/X86.agda, whose
   precondition the compiled programs meet, X86Compiled.agda), from
   compile-x86-same.
@@ -31,7 +31,7 @@ import Semantics.CEK.Typed.X86 as X
 import proof.Adequacy.ISWIM as AI
 import proof.Adequacy.Clos5 as A5
 import proof.Adequacy.X86 as AX
-open import proof.Compiler.GlobalizeOlder using (globalize-older)
+open import proof.Compiler.HoistOlder using (hoist-older)
 open import proof.Correctness.Graph.CompilerCorrect using (compile-same; compile-x86-same)
 
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
@@ -53,14 +53,14 @@ end-to-end-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
 end-to-end-const M c k =
   ⟨ (λ t → proj₁ (A5.const-iff (compile M) od) (proj₁ (compile-correct-machine-const M c k) t))
   , (λ t → proj₂ (compile-correct-machine-const M c k) (proj₂ (A5.const-iff (compile M) od) t)) ⟩
-  where od = globalize-older (compile₄ M)
+  where od = hoist-older (compile₄ M)
 
 end-to-end-converges : ∀ M → Closed M
   → Converges (Terminates (I.sem M)) ⇔ Converges (Terminates (C5.sem (compile M)))
 end-to-end-converges M c =
   ⟨ (λ t → proj₁ (A5.nonempty-iff (compile M) od) (proj₁ (compile-correct-machine-converges M c) t))
   , (λ t → proj₂ (compile-correct-machine-converges M c) (proj₂ (A5.nonempty-iff (compile M) od) t)) ⟩
-  where od = globalize-older (compile₄ M)
+  where od = hoist-older (compile₄ M)
 
 end-to-end-x86-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
   → Terminates (I.sem M) (o-const B k) ⇔ Terminates (X.sem (compile-x86 M)) (o-const B k)

@@ -6,7 +6,7 @@ module Untyped.Language.Clos5 where
    tuple of its free variables, and applications have two operands
    besides the function, as in Clos4.
  A program is a list of global definitions and a main expression.
- This language is after the 'globalize' pass.
+ This language is after the 'hoist' pass.
 
 -}
 

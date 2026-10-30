@@ -118,7 +118,7 @@ REWRITES = [
      r'  proved in the graph model to passes proved by the interpreters\n'
      r'  \(Mu/proof/Mixed/CompilerMixed\.agda\)\.',
      "graph model's end-to-end theorem (Mu/proof/Adequacy/EndToEnd.agda).", 1),
-    ('agda/Mu/proof/Compiler/GlobalizeOlder.agda',
+    ('agda/Mu/proof/Compiler/HoistOlder.agda',
      r'older ones only\n  \(as Untyped/Semantics/Graph/Clos5Iswim\.agda does\), so it needs',
      'older ones only,\n  so it needs', 1),
     ('agda/Framework/GraphModel/Prelude.agda', r'papers/PLDI-2027/loc\.py', 'loc.py', 1),

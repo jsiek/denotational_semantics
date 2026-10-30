@@ -50,7 +50,7 @@ open import Untyped.proof.Semantics.Graph.X86 using (Tagged; Inv; tagged-≈; in
 open import Untyped.proof.Correctness.Graph.ExplicateCommon using (module Agreeing; checked-≃)
 open import Untyped.proof.Correctness.Graph.ExplicateCorrectK using (compile-cfg-same)
 open import Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
-open import Untyped.proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
+open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
 open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
 import Language.ISWIM as ISWIM
 open import Framework.Primitives using (base-rep)

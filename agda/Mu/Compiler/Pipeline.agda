@@ -3,7 +3,7 @@
   The passes of the ISWIMμ compiler, composed: from ISWIMμ to X86μ,
 
     ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
-           --concretize--> EnvClosμ --delay--> PairClosμ --globalize--> GlobalFunμ --rco--> Monμ
+           --concretize--> EnvClosμ --split--> PairClosμ --hoist--> GlobalFunμ --rco--> Monμ
            --lift locals--> Impμ --explicate control--> CFGμ
            --select instructions--> X86μ
 
@@ -32,8 +32,8 @@ open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Capture using (capture)
 open import Mu.Compiler.Prune using (prune-program)
 open import Mu.Compiler.Concretize using (concretize-program)
-open import Mu.Compiler.Delay using (delay-program)
-open import Mu.Compiler.Globalize using (globalize)
+open import Mu.Compiler.Split using (split-program)
+open import Mu.Compiler.Hoist using (hoist)
 open import Mu.Compiler.RCO using (rco-program)
 open import Mu.Compiler.LiftLocals using (lift-program)
 open import Mu.Compiler.Explicate using (explicate)
@@ -45,10 +45,10 @@ enclose : ∀ {A : Type} → ISWIMμ.Tm [] A → EnvClosμ.Tm [] A
 enclose M = concretize-program (prune-program (capture M))
 
 compile-to-PairClos : ∀ {A : Type} → ISWIMμ.Tm [] A → PairClosμ.Tm [] A
-compile-to-PairClos M = delay-program (enclose (simplify M))
+compile-to-PairClos M = split-program (enclose (simplify M))
 
 compile-to-GlobalFun : ∀ {A : Type} → ISWIMμ.Tm [] A → GlobalFunμ.Program A
-compile-to-GlobalFun M = globalize (compile-to-PairClos M)
+compile-to-GlobalFun M = hoist (compile-to-PairClos M)
 
 compile-to-Mon : ∀ {A : Type} → ISWIMμ.Tm [] A → Monμ.Program A
 compile-to-Mon M = rco-program (compile-to-GlobalFun M)

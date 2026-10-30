@@ -9,7 +9,7 @@
     observation o: the constant itself, a function entry, an entry of
     the right component of a tuple of the right size, a left or right
     injection. A function is also observed through the entries ⦅ u , v ⦆
-    of a pair, which is how closures are represented after delay
+    of a pair, which is how closures are represented after split
     (Adequacy/Clos5.agda, for Clos5ᵀ); the ISWIM semantics never produces them.
 
 -}

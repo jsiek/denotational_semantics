@@ -2,7 +2,7 @@
 
   Well-formed Clos5 programs for the graph model with errors, the
   precondition of soundness and adequacy for the Clos5 machine
-  (Adequacy/GraphErr/Clos5.agda), and the proof that globalize produces
+  (Adequacy/GraphErr/Clos5.agda), and the proof that hoist produces
   them from every Clos4 term (compile-wf).
 
   Each reference refers to an existing definition, and the code of a
@@ -12,8 +12,8 @@
 
   Unlike proof/Adequacy/Clos5WF.agda, scoping is not needed: an unbound
   variable denotes init = {ω} and errs in the machine, so the logical
-  relation relates them. (RB and the shape of globalize are as in
-  proof/Correctness/Graph/GlobalizeCorrect.agda, which is outside the
+  relation relates them. (RB and the shape of hoist are as in
+  proof/Correctness/Graph/HoistCorrect.agda, which is outside the
   graph model with errors.)
 
 -}
@@ -22,7 +22,7 @@ module Untyped.proof.Adequacy.GraphErr.Clos5WF where
 
 open import Untyped.Language.Clos4
 import Untyped.Language.Clos5 as L5
-open import Untyped.Compiler.Globalize
+open import Untyped.Compiler.Hoist
 open import Untyped.Compiler.Pipeline using (compile; compile₄)
 
 open import Data.Nat using (ℕ; _<_; _≤_)
@@ -84,7 +84,7 @@ DefsWF (N ∷ Ns) = RB (length Ns) N × DefsWF Ns
 WF : L5.Program → Set
 WF (L5.program ds M) = DefsWF ds × RB (length ds) M
 
-{- The shape of globalize -------------------------------------------------------}
+{- The shape of hoist -------------------------------------------------------}
 
 Extends : Defs → Defs → Set
 Extends ds ds' = Σ[ more ∈ Defs ] ds' ≡ more ++ ds
@@ -134,7 +134,7 @@ glob-shape-args (cons a args) ds =
   sa = glob-shape-arg a ds
   ss = glob-shape-args args (proj₂ (glob-arg a ds))
 
-{- globalize adds definitions that refer only to older ones -}
+{- hoist adds definitions that refer only to older ones -}
 glob-wf : ∀ M ds → DefsWF ds → DefsWF (proj₂ (glob M ds))
 glob-wf-arg : ∀ {b} (a : Arg b) ds → DefsWF ds → DefsWF (proj₂ (glob-arg a ds))
 glob-wf-args : ∀ {bs} (args : Args bs) ds → DefsWF ds → DefsWF (proj₂ (glob-args args ds))
@@ -164,8 +164,8 @@ glob-wf-args (cons a args) ds d = glob-wf-args args (proj₂ (glob-arg a ds)) (g
 
 {- The compiler ------------------------------------------------------------------}
 
-globalize-wf : ∀ M → WF (globalize M)
-globalize-wf M = ⟨ glob-wf M [] tt , proj₂ (glob-shape M []) ⟩
+hoist-wf : ∀ M → WF (hoist M)
+hoist-wf M = ⟨ glob-wf M [] tt , proj₂ (glob-shape M []) ⟩
 
 compile-wf : ∀ M → WF (compile M)
-compile-wf M = globalize-wf (compile₄ M)
+compile-wf M = hoist-wf (compile₄ M)

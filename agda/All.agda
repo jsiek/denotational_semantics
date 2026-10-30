@@ -3,8 +3,8 @@
   The compiler and its correctness proofs, in five styles.
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
-          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
-          --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --split--> Clos4ᵀ
+          --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   The intermediate languages and the target, the typed assembly
@@ -123,12 +123,12 @@ import proof.Framework.abt.ScopedTuple
 
 {- ---------------------------------------------------------------------------
    proof/: syntactic facts about the passes: simplify, cast insertion on
-   closed programs, globalize's references to older definitions, and the
+   closed programs, hoist's references to older definitions, and the
    definitions, labels and frames that select instructions relies on
    --------------------------------------------------------------------------- -}
 
 import proof.Compiler.CastScope
-import proof.Compiler.GlobalizeOlder
+import proof.Compiler.HoistOlder
 import proof.Compiler.SelectErase
 import proof.Compiler.SimplifyFacts
 import proof.Compiler.SimplifyScope
@@ -141,13 +141,13 @@ import proof.Compiler.SimplifyScope
 import proof.Correctness.Graph.CastCorrect
 import proof.Correctness.Graph.CompilerCorrect
 import proof.Correctness.Graph.ConcretizeCorrect
-import proof.Correctness.Graph.DelayCorrect
-import proof.Correctness.Graph.DelayPreserve
-import proof.Correctness.Graph.DelayReflect
-import proof.Correctness.Graph.DelayRel
+import proof.Correctness.Graph.SplitCorrect
+import proof.Correctness.Graph.SplitPreserve
+import proof.Correctness.Graph.SplitReflect
+import proof.Correctness.Graph.SplitRel
 import proof.Correctness.Graph.CaptureCorrect
 import proof.Correctness.Graph.ExplicateCorrect
-import proof.Correctness.Graph.GlobalizeCorrect
+import proof.Correctness.Graph.HoistCorrect
 import proof.Correctness.Graph.LiftLocalsCorrect
 import proof.Correctness.Graph.PruneCorrect
 import proof.Correctness.Graph.RCOCorrect
@@ -172,10 +172,10 @@ import proof.Correctness.CEK.CastSimLemmas
 import proof.Correctness.CEK.Clos5Common
 import proof.Correctness.CEK.Common
 import proof.Correctness.CEK.ConcretizeSim
-import proof.Correctness.CEK.DelaySim
+import proof.Correctness.CEK.SplitSim
 import proof.Correctness.CEK.CaptureSim
 import proof.Correctness.CEK.ExplicateSim
-import proof.Correctness.CEK.GlobalizeSim
+import proof.Correctness.CEK.HoistSim
 import proof.Correctness.CEK.LiftLocalsSim
 import proof.Correctness.CEK.PruneSim
 import proof.Correctness.CEK.PipelineSim
@@ -192,10 +192,10 @@ import proof.Semantics.CEK.Smallstep
 import proof.Correctness.Interp.CastFuel
 import proof.Correctness.Interp.CompilerFuel
 import proof.Correctness.Interp.ConcretizeFuel
-import proof.Correctness.Interp.DelayFuel
+import proof.Correctness.Interp.SplitFuel
 import proof.Correctness.Interp.CaptureFuel
 import proof.Correctness.Interp.ExplicateFuel
-import proof.Correctness.Interp.GlobalizeFuel
+import proof.Correctness.Interp.HoistFuel
 import proof.Correctness.Interp.LiftLocalsFuel
 import proof.Correctness.Interp.PruneFuel
 import proof.Correctness.Interp.RCOFuel
@@ -212,9 +212,9 @@ import proof.Semantics.Interp.Typed.Rel
 
 import proof.Correctness.Reduction.CastRed
 import proof.Correctness.Reduction.ConcretizeRed
-import proof.Correctness.Reduction.DelayRed
+import proof.Correctness.Reduction.SplitRed
 import proof.Correctness.Reduction.CaptureRed
-import proof.Correctness.Reduction.GlobalizeRed
+import proof.Correctness.Reduction.HoistRed
 import proof.Correctness.Reduction.LiftLocalsRed
 import proof.Correctness.Reduction.PruneRed
 import proof.Correctness.Reduction.PipelineRed
@@ -233,13 +233,13 @@ import proof.Semantics.Reduction.Typed.ISWIM
 import proof.Correctness.GraphErr.CastCorrect
 import proof.Correctness.GraphErr.CompilerCorrect
 import proof.Correctness.GraphErr.ConcretizeCorrect
-import proof.Correctness.GraphErr.DelayCorrect
-import proof.Correctness.GraphErr.DelayPreserve
-import proof.Correctness.GraphErr.DelayReflect
-import proof.Correctness.GraphErr.DelayRel
+import proof.Correctness.GraphErr.SplitCorrect
+import proof.Correctness.GraphErr.SplitPreserve
+import proof.Correctness.GraphErr.SplitReflect
+import proof.Correctness.GraphErr.SplitRel
 import proof.Correctness.GraphErr.CaptureCorrect
 import proof.Correctness.GraphErr.ExplicateCorrect
-import proof.Correctness.GraphErr.GlobalizeCorrect
+import proof.Correctness.GraphErr.HoistCorrect
 import proof.Correctness.GraphErr.LiftLocalsCorrect
 import proof.Correctness.GraphErr.PruneCorrect
 import proof.Correctness.GraphErr.RCOCorrect

@@ -6,7 +6,7 @@
   program, the compiled program, in PairClosμ, GlobalFunμ, Monμ (by its
   embedding), Impμ, CFGμ and X86μ, produces the same constants as the
   source, and produces something exactly when the source does (Same).
-  Every pass but delay preserves the meaning exactly (≃); delay
+  Every pass but split preserves the meaning exactly (≃); split
   preserves and reflects constants and nonemptiness. The end-to-end
   theorem is stated for a main program of type Int, the observation of
   ISWIMμ (compile-int); the others hold at any type.
@@ -38,8 +38,8 @@ open import Mu.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-corr
 open import Mu.proof.Correctness.GraphModel.CaptureCorrect using (capture-correct)
 open import Mu.proof.Correctness.GraphModel.PruneCorrect using (prune-correct)
 open import Mu.proof.Correctness.GraphModel.ConcretizeCorrect using (concretize-correct)
-open import Mu.proof.Correctness.GraphModel.DelayCorrect using (delay-correct-const; delay-correct-nonempty)
-open import Mu.proof.Correctness.GraphModel.GlobalizeCorrect using (globalize-correct)
+open import Mu.proof.Correctness.GraphModel.SplitCorrect using (split-correct-const; split-correct-nonempty)
+open import Mu.proof.Correctness.GraphModel.HoistCorrect using (hoist-correct)
 open import Mu.proof.Correctness.GraphModel.RCOCorrect using (rco-correct)
 open import Mu.proof.Correctness.GraphModel.LiftLocalsCorrect using (lift-locals-correct)
 open import Mu.proof.Correctness.GraphModel.ExplicateCorrect using (explicate-correct)
@@ -71,12 +71,12 @@ enclose-correct M =
 compile-to-PairClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) (⟦ compile-to-PairClos M ⟧₄ ρ₀)
 compile-to-PairClos-same M =
   then (same (≃-trans (simplify-correct M) (enclose-correct M₁)))
-       ⟨ delay-correct-const (enclose M₁) , delay-correct-nonempty (enclose M₁) ⟩
+       ⟨ split-correct-const (enclose M₁) , split-correct-nonempty (enclose M₁) ⟩
   where
   M₁ = simplify M
 
 compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
-compile-to-GlobalFun-same M = then (compile-to-PairClos-same M) (same (globalize-correct (compile-to-PairClos M)))
+compile-to-GlobalFun-same M = then (compile-to-PairClos-same M) (same (hoist-correct (compile-to-PairClos M)))
 
 compile-to-Mon-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅
 compile-to-Mon-same M = then (compile-to-GlobalFun-same M) (same (rco-correct (compile-to-GlobalFun M)))

@@ -46,7 +46,7 @@ open import proof.Semantics.CEK.Smallstep using (Terminates; next; stop)
 open import proof.Framework.ListUtil
 open import Untyped.Semantics.CEK.Clos5
 import Untyped.Semantics.CEK.Clos5 as T using (inl; inr)
-open import Untyped.proof.Compiler.GlobalizeTable using (∷-⊑)
+open import Untyped.proof.Compiler.HoistTable using (∷-⊑)
 open import proof.Adequacy.Common using (ShapeOf; δ?-inv; has-length→length; length→has-length)
 open import proof.Adequacy.GraphErr.Soundness
   using (At; AllNE; 𝒯P; bindL; 𝒯L; _⊆L_; ⊆L-refl; bindL-mono; 𝒯P-mono; Vals; 𝒯L-β; errsL; errsL-ω;

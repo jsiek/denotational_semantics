@@ -6,7 +6,7 @@
   can be read without opening proof/.
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
+          --split--> Clos4 --hoist--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
@@ -38,8 +38,8 @@ open import Compiler.Simplify using (simplify)
 open import Untyped.Compiler.Capture using (capture)
 open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Delay using (delay)
-open import Untyped.Compiler.Globalize using (globalize)
+open import Untyped.Compiler.Split using (split)
+open import Untyped.Compiler.Hoist using (hoist)
 open import Untyped.Compiler.RCO using (rco-program)
 open import Untyped.Compiler.LiftLocals using (lift-program)
 open import Untyped.Compiler.Explicate using (explicate)
@@ -59,8 +59,8 @@ import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
 import Untyped.proof.Correctness.Graph.CaptureCorrect as CaptureCorrect
 import Untyped.proof.Correctness.Graph.PruneCorrect as PruneCorrect
 import Untyped.proof.Correctness.Graph.ConcretizeCorrect as ConcretizeCorrect
-import Untyped.proof.Correctness.Graph.DelayPreserve as DelayCorrect
-import Untyped.proof.Correctness.Graph.GlobalizeCorrect as GlobalizeCorrect
+import Untyped.proof.Correctness.Graph.SplitPreserve as SplitCorrect
+import Untyped.proof.Correctness.Graph.HoistCorrect as HoistCorrect
 import Untyped.proof.Correctness.Graph.RCOCorrect as RCOCorrect
 import Untyped.proof.Correctness.Graph.LiftLocalsCorrectK as LiftLocalsCorrect
 import Untyped.proof.Correctness.Graph.ExplicateCorrectK as ExplicateCorrect
@@ -79,7 +79,7 @@ open import Data.Product using (_×_)
 
 {- Each pass ------------------------------------------------------------------}
 
-{- every pass but delay preserves the meaning of a program exactly (≃) -}
+{- every pass but split preserves the meaning of a program exactly (≃) -}
 
 {- simplify (ISWIM → ISWIM, the first pass) -}
 simplify-correct : ∀ (M : ISWIM.AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
@@ -94,20 +94,20 @@ prune-correct = PruneCorrect.prune-correct-closed
 concretize-correct : ∀ (M : Clos2.AST) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = ConcretizeCorrect.concretize-correct-closed
 
-{- delay preserves and reflects the constants a program produces, and
+{- split preserves and reflects the constants a program produces, and
    whether it produces anything -}
-delay-correct-const : ∀ (M : Clos3.AST) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ delay M ⟧₄ ρ₀)
-  × (const c ∈ ⟦ delay M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
-delay-correct-const = DelayCorrect.delay-correct-const
+split-correct-const : ∀ (M : Clos3.AST) {B} (c : base-rep B)
+  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ split M ⟧₄ ρ₀)
+  × (const c ∈ ⟦ split M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
+split-correct-const = SplitCorrect.split-correct-const
 
-delay-correct-nonempty : ∀ (M : Clos3.AST)
-  → (nonempty (⟦ M ⟧₃ ρ₀) → nonempty (⟦ delay M ⟧₄ ρ₀))
-  × (nonempty (⟦ delay M ⟧₄ ρ₀) → nonempty (⟦ M ⟧₃ ρ₀))
-delay-correct-nonempty = DelayCorrect.delay-correct-nonempty
+split-correct-nonempty : ∀ (M : Clos3.AST)
+  → (nonempty (⟦ M ⟧₃ ρ₀) → nonempty (⟦ split M ⟧₄ ρ₀))
+  × (nonempty (⟦ split M ⟧₄ ρ₀) → nonempty (⟦ M ⟧₃ ρ₀))
+split-correct-nonempty = SplitCorrect.split-correct-nonempty
 
-globalize-correct : ∀ (M : Clos4.AST) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ globalize M ⟧₅
-globalize-correct = GlobalizeCorrect.globalize-correct
+hoist-correct : ∀ (M : Clos4.AST) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ hoist M ⟧₅
+hoist-correct = HoistCorrect.hoist-correct
 
 rco-correct : ∀ (P : Clos5.Program) → ⟦ rco-program P ⟧₅ ≃ ⟦ P ⟧₅
 rco-correct = RCOCorrect.rco-program-correct

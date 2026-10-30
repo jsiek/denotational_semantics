@@ -8,7 +8,7 @@
   proof/.
 
     ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
+          --split--> Clos4 --hoist--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
@@ -45,8 +45,8 @@ open import Compiler.Simplify using (simplify)
 open import Untyped.Compiler.Capture using (capture)
 open import Untyped.Compiler.Prune using (prune-program)
 open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Delay using (delay)
-open import Untyped.Compiler.Globalize using (globalize)
+open import Untyped.Compiler.Split using (split)
+open import Untyped.Compiler.Hoist using (hoist)
 open import Untyped.Compiler.RCO using (rco-program)
 open import Untyped.Compiler.LiftLocals using (lift-program)
 open import Untyped.Compiler.Explicate using (explicate)
@@ -70,8 +70,8 @@ import proof.Correctness.CEK.SimplifySim as SimplifySim
 import Untyped.proof.Correctness.CEK.CaptureSim as CaptureSim
 import Untyped.proof.Correctness.CEK.PruneSim as PruneSim
 import Untyped.proof.Correctness.CEK.ConcretizeSim as ConcretizeSim
-import Untyped.proof.Correctness.CEK.DelaySim as DelaySim
-import Untyped.proof.Correctness.CEK.GlobalizeSim as GlobalizeSim
+import Untyped.proof.Correctness.CEK.SplitSim as SplitSim
+import Untyped.proof.Correctness.CEK.HoistSim as HoistSim
 import Untyped.proof.Correctness.CEK.RCOSim as RCOSim
 import Untyped.proof.Correctness.CEK.LiftLocalsSim as LiftLocalsSim
 import Untyped.proof.Correctness.CEK.ExplicateSim as ExplicateSim
@@ -100,11 +100,11 @@ concretize-correct : ∀ (M : Clos2.AST)
   → Equivalent (Clos2ₘ.sem M) (Clos3ₘ.sem (concretize-program M))
 concretize-correct = ConcretizeSim.concretize-correct
 
-delay-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ₘ.sem M) (Clos4ₘ.sem (delay M))
-delay-correct = DelaySim.delay-correct
+split-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ₘ.sem M) (Clos4ₘ.sem (split M))
+split-correct = SplitSim.split-correct
 
-globalize-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ₘ.sem M) (Clos5ₘ.sem (globalize M))
-globalize-correct = GlobalizeSim.globalize-correct
+hoist-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ₘ.sem M) (Clos5ₘ.sem (hoist M))
+hoist-correct = HoistSim.hoist-correct
 
 {- remove complex operands, for well-scoped programs (which the compiler
    produces) -}

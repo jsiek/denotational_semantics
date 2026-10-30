@@ -11,8 +11,8 @@ tuples, sums and iso-recursive types μX.A, with no recursion construct
 and no errors.
 
     ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
-           --concretize--> EnvClosμ --delay--> PairClosμ
-           --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
+           --concretize--> EnvClosμ --split--> PairClosμ
+           --hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 
 The Agda names carry a `μ` (`Closμ`, `X86μ`, ...) where the paper writes
@@ -76,14 +76,14 @@ and the small-step, reduction and clocked frameworks.
 | Lemma 4.2 (Depth irrelevance and unfolding), part 1 | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-depth-irrelevant` (one direction; with k and j swapped, the other) |
 | Lemma 4.2, part 2 | `proof/Correctness/GraphModel/ApproxLR.agda` | `unfold`, `fold` |
 | monotone in D, antitone in V (after Lemma 4.2) | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-mono`, `ApproxLR-⊆` |
-| Lemma 4.3 (Fundamental lemma) | `proof/Correctness/GraphModel/DelayReflect.agda` | `delay-reflect` (related environments: `Envs`; the case of a call: `collect`; of a closure: `clos-app`) |
-| Theorem 4.4 (Correctness of delay) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `delay-correct-const`, `delay-correct-nonempty` |
-| Theorem 4.4, proof | `proof/Correctness/GraphModel/DelayCorrect.agda` (reflection: `proof/Correctness/GraphModel/DelayReflect.agda`, `reflect-const`, `reflect-nonempty`; preservation: `proof/Correctness/GraphModel/DelayPreserve.agda`, `preserve-const`, `preserve-nonempty`) | `delay-correct-const`, `delay-correct-nonempty` |
+| Lemma 4.3 (Fundamental lemma) | `proof/Correctness/GraphModel/SplitReflect.agda` | `split-reflect` (related environments: `Envs`; the case of a call: `collect`; of a closure: `clos-app`) |
+| Theorem 4.4 (Correctness of split closure) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `split-correct-const`, `split-correct-nonempty` |
+| Theorem 4.4, proof | `proof/Correctness/GraphModel/SplitCorrect.agda` (reflection: `proof/Correctness/GraphModel/SplitReflect.agda`, `reflect-const`, `reflect-nonempty`; preservation: `proof/Correctness/GraphModel/SplitPreserve.agda`, `preserve-const`, `preserve-nonempty`) | `split-correct-const`, `split-correct-nonempty` |
 | Theorem 4.5 (Adequacy) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda) | ISWIMμ: `iswim-const-iff`, `iswim-diverges-iff`; x86μ: `x86-const-iff`, `x86-diverges-iff` |
 | Theorem 4.5, proof | `proof/Adequacy/ISWIM.agda` (`const-iff`, `diverges-iff`), `proof/Adequacy/X86.agda` (`x86-const-iff`, `x86-diverges-iff`); soundness: `proof/Adequacy/Soundness.agda`, `proof/Adequacy/X86Soundness.agda`; the logical relations: `proof/Adequacy/LogRel.agda`, `proof/Adequacy/X86LogRel.agda` | |
 | Theorems 4.1 and 4.5 together: the operational theorem (§4.3) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda); proof `proof/Adequacy/EndToEnd.agda` | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
-| §4.2, "Which sides to relate": a finite source side fails the function clause (the Agda check) | `proof/Correctness/GraphModel/DelayDesignFiniteSource.agda` | example 3 of its header, the paper's (λf.f, the singletons of [n] ↦ n): `no-finite-source-ApproxLR′`, `finite-source′`; example 1: `no-finite-source-ApproxLR`; any such relation: `no-finite-source` |
-| §4.2, "Which sides to relate": a target set of bounded depth is related exactly when each finite sublist is (the Agda check) | `proof/Correctness/GraphModel/DelayDesignBoundedSets.agda` | `ApproxLRSet⇔` (from `ApproxLRSet⇒`, `ApproxLRSet⇐`) |
+| §4.2, "Which sides to relate": a finite source side fails the function clause (the Agda check) | `proof/Correctness/GraphModel/SplitDesignFiniteSource.agda` | example 3 of its header, the paper's (λf.f, the singletons of [n] ↦ n): `no-finite-source-ApproxLR′`, `finite-source′`; example 1: `no-finite-source-ApproxLR`; any such relation: `no-finite-source` |
+| §4.2, "Which sides to relate": a target set of bounded depth is related exactly when each finite sublist is (the Agda check) | `proof/Correctness/GraphModel/SplitDesignBoundedSets.agda` | `ApproxLRSet⇔` (from `ApproxLRSet⇒`, `ApproxLRSet⇐`) |
 | Theorem F.1 (Correctness, clocked interpreters) | [`Theorems/ClockedInterpreters.agda`](Theorems/ClockedInterpreters.agda); proof `proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
 | Theorem F.2 (Correctness, abstract machines) | [`Theorems/AbstractMachines.agda`](Theorems/AbstractMachines.agda); proof `proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
 | Theorem F.3 (Correctness, reduction semantics) | [`Theorems/ReductionSemantics.agda`](Theorems/ReductionSemantics.agda); proof `proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
@@ -98,7 +98,7 @@ environment ρ₀ is `ρ₀` of `Semantics/GraphModel/Closed.agda`.
 The per-pass results of §4.1 and Appendix D are proved in
 `proof/Correctness/GraphModel/<Pass>Correct.agda` (`simplify-correct`,
 `capture-correct`, `prune-correct`, `concretize-correct`,
-`globalize-correct`, `rco-correct`, `lift-locals-correct`,
+`hoist-correct`, `rco-correct`, `lift-locals-correct`,
 `explicate-correct`, `select-correct`), and those of the other styles
 in `proof/Correctness/<style>/`. They are not restated in `Theorems/`.
 The graph-model correctness of enclose, `enclose-correct`, composes
@@ -135,8 +135,8 @@ pipelines.
 | prune (Clos to Clos) | [`Compiler/Prune.agda`](Compiler/Prune.agda) | `prune-program` |
 | concretize (Clos to EnvClos) | [`Compiler/Concretize.agda`](Compiler/Concretize.agda) | `concretize-program` (`concretize` with references φ: `Ref`, `Refs`) |
 | enclose (ISWIMμ to EnvClos), the closure-conversion pass: concretize ∘ prune ∘ capture | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `enclose` |
-| delay (EnvClos to PairClos) | [`Compiler/Delay.agda`](Compiler/Delay.agda) | `delay-program` (`delay`) |
-| globalize (PairClos to GlobalFun) | [`Compiler/Globalize.agda`](Compiler/Globalize.agda) | `globalize` |
+| split closure (EnvClos to PairClos) | [`Compiler/Split.agda`](Compiler/Split.agda) | `split-program` (`split`) |
+| hoist (PairClos to GlobalFun) | [`Compiler/Hoist.agda`](Compiler/Hoist.agda) | `hoist` |
 | remove complex operands (GlobalFun to Mon) | [`Compiler/RCO.agda`](Compiler/RCO.agda) | `rco-program` |
 | lift locals (Mon to Imp) | [`Compiler/LiftLocals.agda`](Compiler/LiftLocals.agda) | `lift-program` |
 | explicate control (Imp to CFG) | [`Compiler/Explicate.agda`](Compiler/Explicate.agda) | `explicate` |
@@ -175,7 +175,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | D • E (application) | `../Framework/GraphModel/Ops.agda` | `⋆` (written `_●_` in `proof/Correctness/GraphModel/ApproxLR.agda`) |
 | Λ(F) | `../Framework/GraphModel/Ops.agda` | `Λ` (the curried form of Lemma 3.1, part 2: `ΛΛ`, `../proof/Framework/GraphModel/Ops.agda`) |
 | pair, car, cdr | `../Framework/GraphModel/Ops.agda` | `pair`, `car`, `cdr` |
-| D ⊙ E (call a closure) | `Semantics/GraphModel/PairClos.agda` (the meaning of `callc`), `proof/Correctness/GraphModel/DelayRel.agda` | `⟦ callc L M ⟧`, `_⊙_` |
+| D ⊙ E (call a closure) | `Semantics/GraphModel/PairClos.agda` (the meaning of `callc`), `proof/Correctness/GraphModel/SplitRel.agda` | `⟦ callc L M ⟧`, `_⊙_` |
 | 𝒯(D₁, …, Dₙ) | `../Framework/GraphModel/Ops.agda` | `𝒯` |
 | inl, inr | `../Framework/GraphModel/Ops.agda` | `inl`, `inr` |
 | π_t (t = tupᵢ, left, right) | `../Framework/GraphModel/Ops.agda`, `../proof/Framework/GraphModel/DomainUtilBase.agda` | `proj` (tupᵢ), `Untag` (any tag) |
@@ -185,17 +185,17 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | further operators (Appendix A.3): 𝒞, guard, prim, out, δ | `../Framework/GraphModel/Ops.agda`, `../Framework/GraphModel/OpsBase.agda`, `../Semantics/Graph/Prim.agda`, `../Language/Prim.agda` | `𝒞`, `guard-n`, `strict`, `ℬ` (constants), `primD`, `out`, `δ` |
 | finitary, monotone (Lemma 3.1) | `../proof/Framework/GraphModel/OpsBase.agda` | `Finitary`, `Mono₁` |
 
-### The proof of delay (Section 4.2, Figures 3 and 4)
+### The proof of split closure (Section 4.2, Figures 3 and 4)
 
 | Paper | File | Agda |
 |---|---|---|
-| v ⊑ D′ and U ⊑* E′ (Figure 3) | `proof/Correctness/GraphModel/DelayPreserve.agda` | `_⊑_`, `_⊑*_`; preservation: `preserve` |
+| v ⊑ D′ and U ⊑* E′ (Figure 3) | `proof/Correctness/GraphModel/SplitPreserve.agda` | `_⊑_`, `_⊑*_`; preservation: `preserve` |
 | usable entry U_a ↦ w ∈ V (Figure 4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `UsableEntry` (constructor `usable-entry`) |
 | args(V) and a batch of calls (Figure 4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `Batch` (fields `results` and `args`) |
 | D ≼ₖ V and D ≼ V (Figure 4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR≤`, `ApproxLR` |
 | its four clauses | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLRLayer`: `const-obs`, `nonempty-obs`, `app-obs`, `tag-obs` |
-| D related to every finite V ⊆ D′ | `proof/Correctness/GraphModel/DelayRel.agda` | `Approx` |
-| related environments (before Lemma 4.3) | `proof/Correctness/GraphModel/DelayReflect.agda` | `Envs` |
+| D related to every finite V ⊆ D′ | `proof/Correctness/GraphModel/SplitRel.agda` | `Approx` |
+| related environments (before Lemma 4.3) | `proof/Correctness/GraphModel/SplitReflect.agda` | `Envs` |
 
 ## The appendices and the Agda
 
@@ -217,15 +217,15 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | C.2 capture | | `Compiler/Capture.agda` (`capture`) |
 | C.3 prune | | `Compiler/Prune.agda` (`prune-program`) |
 | C.4 concretize | | `Compiler/Concretize.agda` (`concretize-program`) |
-| C.5 delay | | `Compiler/Delay.agda` (`delay-program`) |
-| C.6 globalize | | `Compiler/Globalize.agda` (`globalize`) |
+| C.5 split closure | | `Compiler/Split.agda` (`split-program`) |
+| C.6 hoist | | `Compiler/Hoist.agda` (`hoist`) |
 | C.7 remove complex operands | | `Compiler/RCO.agda` (`rco-program`) |
 | C.8 lift locals | | `Compiler/LiftLocals.agda` (`lift-program`) |
 | C.9 explicate control | | `Compiler/Explicate.agda` (`explicate`) |
 | C.10 select instructions | | `Compiler/Select.agda` (`select`) |
 | D, Capture | calculation | `proof/Correctness/GraphModel/CaptureCorrect.agda` (`capture-correct`) |
 | D, Prune | calculation | `proof/Correctness/GraphModel/PruneCorrect.agda` (`prune-correct`) |
-| D, Globalize | calculation | `proof/Correctness/GraphModel/GlobalizeCorrect.agda` (`globalize-correct`) |
+| D, Hoist | calculation | `proof/Correctness/GraphModel/HoistCorrect.agda` (`hoist-correct`) |
 | D, Remove complex operands | calculation | `proof/Correctness/GraphModel/RCOCorrect.agda` (`rco-correct`) |
 | D, Lift locals | calculation | `proof/Correctness/GraphModel/LiftLocalsCorrect.agda` (`lift-locals-correct`) |
 | D, Explicate control | calculation | `proof/Correctness/GraphModel/ExplicateCorrect.agda` (`explicate-correct`) |
