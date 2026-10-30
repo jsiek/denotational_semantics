@@ -8,6 +8,43 @@
 \label{sec:compiler}
 
 \begin{figure}[t]
+\centering
+\small
+\begin{tikzpicture}[x=3.6cm, y=1.0cm, every node/.style={inner sep=2pt},
+    lbl/.style={font=\scriptsize}, ->, >=stealth]
+  \node (s0) at (0,0)  {\iswim};
+  \node (s1) at (1,0)  {\iswim};
+  \node (c2) at (2,0)  {Clos};
+  \node (c2b) at (3,0) {Clos};
+  \node (c3) at (3,-1) {EnvClos};
+  \node (c4) at (2,-1) {PairClos};
+  \node (c5) at (1,-1) {GlobalFun};
+  \node (mon) at (0,-1) {Mon};
+  \node (imp) at (0,-2) {Imp};
+  \node (cfg) at (1,-2) {CFG};
+  \node (x86) at (2,-2) {x86$\mu$};
+  \draw (s0) -- node[lbl,above] {\pass{simplify}} (s1);
+  \draw (s1) -- node[lbl,above] {\pass{enclose}} (c2);
+  \draw (c2) -- node[lbl,above] {\pass{optimize}} (c2b);
+  \draw (c2b) -- node[lbl,right] {\pass{concretize}} (c3);
+  \draw (c3) -- node[lbl,above] {\pass{delay}} (c4);
+  \draw (c4) -- node[lbl,above] {\pass{globalize}} (c5);
+  \draw (c5) -- node[lbl,above] {\pass{RCO}} (mon);
+  \draw (mon) -- node[lbl,left] {\pass{lift locals}} (imp);
+  \draw (imp) -- node[lbl,above] {\pass{explicate control}} (cfg);
+  \draw (cfg) -- node[lbl,above] {\pass{select instructions}} (x86);
+  \begin{scope}[on background layer]
+    \draw[-, rounded corners=6pt, fill=gray!12, draw=gray!60, dashed]
+      (1.25,0.42) -- (3.38,0.42) -- (3.38,-1.3) -- (0.62,-1.3)
+      -- (0.62,-0.62) -- (1.25,-0.62) -- cycle;
+  \end{scope}
+  \node[font=\itshape, text=gray!70!black] at (2.45,-0.5){closure conversion};
+\end{tikzpicture}
+\caption{The passes of the compiler and the languages between them.}
+\label{fig:pipeline}
+\end{figure}
+
+\begin{figure}[t]
 \small
 \[
 \begin{array}{@{}l@{\;\;}r@{\;}c@{\;}l@{}}
@@ -60,40 +97,7 @@
 
 Our compiler translates \iswim, a call-by-value $\lambda$-calculus
 with recursive types, to x86$\mu$, a typed assembly language, in ten
-passes through seven intermediate languages. This section defines the languages and passes that Section~\ref{sec:compiler-proof} proves correct:
-\begin{center}
-\small
-\begin{tikzpicture}[x=3.6cm, y=1.25cm, every node/.style={inner sep=2pt},
-    lbl/.style={font=\scriptsize}, ->, >=stealth]
-  \node (s0) at (0,0)  {\iswim};
-  \node (s1) at (1,0)  {\iswim};
-  \node (c2) at (2,0)  {Clos};
-  \node (c2b) at (3,0) {Clos};
-  \node (c3) at (3,-1) {EnvClos};
-  \node (c4) at (2,-1) {PairClos};
-  \node (c5) at (1,-1) {GlobalFun};
-  \node (mon) at (0,-1) {Mon};
-  \node (imp) at (0,-2) {Imp};
-  \node (cfg) at (1,-2) {CFG};
-  \node (x86) at (2,-2) {x86$\mu$};
-  \draw (s0) -- node[lbl,above] {\pass{simplify}} (s1);
-  \draw (s1) -- node[lbl,above] {\pass{enclose}} (c2);
-  \draw (c2) -- node[lbl,above] {\pass{optimize}} (c2b);
-  \draw (c2b) -- node[lbl,right] {\pass{concretize}} (c3);
-  \draw (c3) -- node[lbl,above] {\pass{delay}} (c4);
-  \draw (c4) -- node[lbl,above] {\pass{globalize}} (c5);
-  \draw (c5) -- node[lbl,above] {\pass{RCO}} (mon);
-  \draw (mon) -- node[lbl,left] {\pass{lift locals}} (imp);
-  \draw (imp) -- node[lbl,above] {\pass{explicate control}} (cfg);
-  \draw (cfg) -- node[lbl,above] {\pass{select instructions}} (x86);
-  \begin{scope}[on background layer]
-    \draw[-, rounded corners=6pt, fill=gray!12, draw=gray!60, dashed]
-      (1.25,0.42) -- (3.38,0.42) -- (3.38,-1.3) -- (1.62,-1.3)
-      -- (1.62,-0.62) -- (1.25,-0.62) -- cycle;
-  \end{scope}
-  \node[font=\itshape, text=gray!70!black] at (2.45,-0.5){closure conversion};
-\end{tikzpicture}
-\end{center}
+passes through seven intermediate languages. Figure~\ref{fig:pipeline} shows the passes and languages, which this section defines and Section~\ref{sec:compiler-proof} proves correct.
 Figure~\ref{fig:grammars} presents the grammars of all the languages, and Appendix~\ref{app:types} gives their typing rules.\footnote{Every language is intrinsically
 typed in our Agda development, so every term is well typed by
 construction and no pass needs a precondition about scoping or
@@ -108,8 +112,8 @@ Imp on, they range over fixed locations in a function's stack frame,
 as we explain below. We write a binder as one or more names followed by a period, and the binder binds the names in the term after the period. For example, in
 $\lambda x.\,N$ and $\kw{case}\;L\;(x.\,M)\;(y.\,N)$, the name $x$ is
 bound in $N$ and $M$, and $\kw{clos}\;(\vec{x}, y.\,N)$ binds $\vec{x}$
-and $y$ in $N$. Every language also has a semantics in the graph
-model of Section~\ref{sec:graph-models}, given in full in
+and $y$ in $N$. Every language also has a graph-model semantics
+(Section~\ref{sec:graph-models}), given in full in
 Appendix~\ref{app:languages}.
 
 \paragraph{The source language}
@@ -146,7 +150,7 @@ inlines small known functions.
 
 \paragraph{Closure conversion}
 
-The next four passes perform closure conversion. The \pass{enclose}
+The next five passes perform closure conversion. The \pass{enclose}
 pass (\S\ref{app:pass-enclose}) turns each $\lambda$-abstraction into a closure
 $\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$ of Clos, which binds a name
 $x_i$ for each captured value $M_i$ and the parameter $y$ in its code
@@ -166,7 +170,7 @@ $\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times
 \kw{tup}(\Delta)$ of typed closure conversion \citep{Minamide:1996ys},
 so closures with different environments have the same type. Thus
 $\kw{pair}$ also packs an existential, but it means just a pair. The form
-$\kw{callc}\;L\;M$ opens the closure $L$ and calls its code with its
+$\kw{callc}\;L\;M$ calls the code of the closure $L$ with its
 environment and the argument $M$.
 \vspace{-5pt}
 \begin{gather*}
@@ -185,13 +189,14 @@ environment and the argument $M$.
         \end{array}}
        {\Gamma \vdash \kw{callc}\;L\;M : C}
 \end{gather*}
+Finally, the \pass{globalize} pass (\S\ref{app:pass-globalize}) turns the code of every function into a
+global definition $d_k$, and each occurrence of the code into a
+reference $f_k$ to it, so a GlobalFun program is a list of function
+definitions and a main term.
 
 \paragraph{The back end}
 
-The \pass{globalize} pass (\S\ref{app:pass-globalize}) turns the code of every function into a
-global definition $d_k$, and each occurrence of the code into a
-reference $f_k$ to it, so a GlobalFun program is a list of function
-definitions and a main term. The pass \pass{remove complex operands}
+The pass \pass{remove complex operands}
 (\pass{RCO}, \S\ref{app:pass-rco}) binds each operand that is not atomic to a variable with
 $\kw{let}$, so the operands of every operation in Mon are atomic.  The
 atomic terms are variables, constants, and function names.  The

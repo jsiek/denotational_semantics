@@ -87,9 +87,8 @@ a typed assembly language.  Recursive types let us write the
 call-by-value fixed-point combinator, so \iswim\ has general recursion
 and admits divergence. The compiler first applies a source-to-source
 optimizer modeled on the cp0 pass of Chez Scheme
-\citep{Waddell:1997fk}, then performs closure conversion in four
-passes, and finally uses five passes to make functions global, remove
-complex operands, lift locals, make control flow explicit, and select
+\citep{Waddell:1997fk}, then performs closure conversion in five
+passes, and finally uses four passes to remove complex operands, lift locals, make control flow explicit, and select
 instructions. Every language in the compiler has a denotational
 semantics in each model. In both, we prove most passes correct by an
 equation between the denotations before and after the pass. RQ3
