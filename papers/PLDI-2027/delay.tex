@@ -397,13 +397,11 @@ Let $d$ be a source value and $d'$ a target value, and write
 $\pi^\infty_n(d) \in \mathbb{D}_n$ for the approximation of $d$ at
 stage $n$. For preservation, the stage relation
 $\pi^\infty_n(d) \SR{+}{n} d'$ relates the approximation of $d$ to the
-whole of $d'$, and $d \SRel{+} d'$ holds when it does at every stage.
+whole of $d'$. We write $d \SRel{+} d'$ when it holds at every stage.
 For reflection, the roles swap, and $d' \SRel{-} d$ holds when
 $\pi^\infty_n(d') \SR{-}{n} d$ at every stage
-(Figure~\ref{fig:scott-delay} in Appendix~\ref{app:scott-delay}). Like
-the approximant logical relation, each relation approximates only one
-side. As in the graph-model proof, each direction has its own
-relation, but here both relations recurse on stages. The clauses for closures are
+(Figure~\ref{fig:scott-delay} in Appendix~\ref{app:scott-delay}).
+The clauses for closures are
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   (\mathit{fun}, h) \mathrel{\mathcal{M}^{+}_n} (\mathit{pr}, (c, e))
@@ -418,11 +416,11 @@ where $\mathit{call}(c, e, a)$ applies the code $c$ to the environment
 $e$ and then to the argument $a$. The preservation clause has the
 shape of the relation that \citet{Nielsen:2000aa} used for
 defunctionalization. The reflection clause relates calls across
-stages, because a call of a pair at stage $m + 2$ applies its code twice and
-shows its result only at stage $m$ ($\mathit{call}_m$). Because the
-closure clause looks three levels into the target domain but only one
-into the source, the method of \citet{Pitts:1996aa} does not apply
-directly. The junk of
+stages, because a call of a pair at stage $m + 2$ applies its code
+twice and shows its result only at stage $m$
+($\mathit{call}_m$). Because the closure clause looks three levels
+into the target domain but only one into the source, the method of
+\citet{Pitts:1996aa} does not apply directly. The junk of
 Section~\ref{sec:approx-lr} does not arise, because a Scott closure is
 a single pair, and a call takes the code and the environment from the
 same pair. In exchange, the proof must show that every stage relation
