@@ -103,8 +103,8 @@ and its translation produce the same constants, and one produces
 something exactly when the other does (Theorem~\ref{thm:delay}). The forward half,
 preservation, requires only a relation between a \emph{single} source
 element and the \emph{set} of target elements, defined by recursion on
-the source element (Figure~\ref{fig:preserve}): a source function has
-no code and environment to separate. We read $v \sqsubseteq D'$ as ``$v$ is included in the behavior of $D'$''. The source element is finite, so the
+the source element (Figure~\ref{fig:preserve}), because a source
+function has no code and environment to separate. We read $v \sqsubseteq D'$ as ``$v$ is included in the behavior of $D'$''. The source element is finite, so the
 recursion is structural, and preservation is a routine induction on
 $M$.
 
@@ -376,8 +376,8 @@ follows from the relation $\sqsubseteq$ of
 Figure~\ref{fig:preserve}. For a constant, $c \sqsubseteq D'$ means
 $c \in D'$, and $v \sqsubseteq D'$ implies $D' \neq \emptyset$.
 
-Theorem~\ref{thm:delay} is the result announced in the introduction:
-closure conversion preserves and reflects the meaning of programs,
+Theorem~\ref{thm:delay} is the result announced in the introduction,
+that closure conversion preserves and reflects the meaning of programs,
 divergence included. Section~\ref{sec:evaluation} compares the size of
 this proof with the operational proofs of \pass{delay}.
 
@@ -390,8 +390,7 @@ universal domain $\mathbb{D}$ of tagged values, divergence is its least
 element $\bot$ (Appendix~\ref{app:scott}), and \pass{delay} is again
 the only pass that needs a relation. For space, this section only
 summarizes that proof; Appendix~\ref{app:scott-delay} gives it in
-full. Scott values are infinite, so the
-relation cannot recurse on finite elements. We define it instead by
+full. We define the relation by
 recursion on the stages $\mathbb{D}_0, \mathbb{D}_1, \ldots$ of the
 bilimit that constructs $\mathbb{D}$, as \citet{Reynolds:1974aa} did.
 The stage relation $s \SR{\pm}{n} w$ relates an approximation
