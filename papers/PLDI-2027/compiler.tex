@@ -35,8 +35,7 @@
   \draw (cfg) -- node[lbl,above] {\pass{select instructions}} (x86);
   \begin{scope}[on background layer]
     \draw[-, rounded corners=6pt, fill=gray!12, draw=gray!60, dashed]
-      (1.25,0.42) -- (3.38,0.42) -- (3.38,-1.3) -- (0.62,-1.3)
-      -- (0.62,-0.62) -- (1.25,-0.62) -- cycle;
+      (1.25,0.42) rectangle (3.38,-1.3);
   \end{scope}
   \node[font=\itshape, text=gray!70!black] at (2.45,-0.5){closure conversion};
 \end{tikzpicture}
