@@ -54,15 +54,15 @@ These challenges motivate five research questions:
   graph model) affect the proof?
 \end{description}
 
-We answer RQ1 affirmatively, in two denotational models. The final
-missing link was a denotational proof that closure conversion both
-preserves and reflects divergence for a higher-order language with
-general recursion, and we give one in each model. Our first model is a graph model, in which a
-program's denotation is a set of inductively defined \emph{graph
-elements}. Each element is a finite piece of evidence about the
-program's behavior, the meaning of a function is a set of
-input--output entries, and a program that diverges produces no
-evidence, so its meaning is the empty set
+We answer RQ1 affirmatively, in two denotational models. The missing
+link was a denotational proof that closure conversion both preserves
+and reflects divergence for a higher-order language with general
+recursion, and we give such a proof for both models. Our first model
+is a graph model, in which a program's denotation is a set of
+inductively defined \emph{graph elements}. Each element is a finite
+piece of evidence about the program's behavior, the meaning of a
+function is a set of input--output entries, and a program that
+diverges produces no evidence, so its meaning is the empty set
 \citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq}. The reflection
 direction uses a new kind of relation between denotations, which we
 call an \emph{approximant logical relation}.  Our key insight is to
