@@ -420,10 +420,13 @@ stages, because a call of a pair at stage $m + 2$ applies its code
 twice and shows its result only at stage $m$
 ($\mathit{call}_m$). Because the closure clause looks three levels
 into the target domain but only one into the source, the method of
-\citet{Pitts:1996aa} does not apply directly. The junk of
-Section~\ref{sec:approx-lr} does not arise, because a Scott closure is
-a single pair, and a call takes the code and the environment from the
-same pair. In exchange, the proof must show that every stage relation
+\citet{Pitts:1996aa} does not apply directly. In the graph
+model, a target closure is a set of pairs, so a call can combine the
+code entry of one pair with the environment of another, and the code
+has entries for environments that the program never supplies
+(Section~\ref{sec:approx-lr}). In Scott domains, a closure is a single
+pair, and a call applies its code only to the environment of that
+pair. In exchange, the proof must show that every stage relation
 is a proposition, downward closed, admissible, and preserved by the
 maps between stages (Lemma~\ref{lem:scott-stages}). The result,
 Theorem~\ref{thm:scott-delay}, is the counterpart of
