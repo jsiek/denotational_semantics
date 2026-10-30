@@ -39,7 +39,7 @@ Theorem~\ref{thm:compiler} to running code.
 For seven of the eight passes, the theorem is an equation between the
 meaning of a program and the meaning of its translation, such as
 $\den{M} = \den{\pass{simplify}(M)}$ or
-$\den{M} = \den{\pass{globalize}(M)}$. To apply induction, each proof
+$\den{M} = \den{\pass{hoist}(M)}$. To apply induction, each proof
 generalizes the equation from closed programs to open terms. The
 generalized statement says that a term, in a source environment, means
 the same as its translation, in a related target environment. In every one of these passes, the relation on environments requires

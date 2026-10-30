@@ -106,7 +106,7 @@ lemmas shared by the passes & --- & 135 & 38 & --- & ---\\
 \pass{simplify} & \textbf{349} & 411 & 560 & 508 & 697\\
 \pass{enclose} & 149 & 199 & 287 & \textbf{140} & 507\\
 \pass{split closure} & 450 & 723 & 73 & \textbf{35} & 126\\
-\pass{globalize} & \textbf{115} & 147 & 213 & 175 & 192\\
+\pass{hoist} & \textbf{115} & 147 & 213 & 175 & 192\\
 \pass{remove complex operands} & 109 & 159 & 120 & \textbf{83} & 157\\
 \pass{lift locals} & 39 & 59 & 51 & \textbf{27} & 204\\
 \pass{explicate control} & \textbf{64} & 92 & 105 & 75 & 105\\
@@ -170,7 +170,7 @@ and the meaning of its translation; only \pass{split closure} is the
 exception. On the operational side, the runs of the source and target
 correspond closely for most passes, including \pass{split closure}, but differ
 more for \pass{simplify} and, to a lesser degree,
-\pass{globalize}. Combining the two factors gives three groups of
+\pass{hoist}. Combining the two factors gives three groups of
 passes, which we discuss in turn.
 
 \paragraph{Equal meanings, similar runs: the interpreter proofs tend to be smaller.}
@@ -209,7 +209,7 @@ open terms in the reduction semantics, or as a run-ahead of the source
 machine or interpreter, with stuttering where the target does
 more. For the interpreters, the target needs fewer clock ticks than
 the source, which breaks the usual clock-for-clock argument. The
-\pass{globalize} pass fits the pattern less cleanly, at 115 lines in
+\pass{hoist} pass fits the pattern less cleanly, at 115 lines in
 the graph model and 147 with Scott domains, against 175 to 213 for the
 operational proofs. The interpreter proof is clock for clock; the runs
 differ only in where the code of a function lives, because in the

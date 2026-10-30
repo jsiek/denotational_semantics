@@ -296,7 +296,7 @@ PairClos, the target of \pass{split closure}, replaces closures and application 
 \subsection{The GlobalFun and Mon Languages}
 \agda{Mu/Language/GlobalFun.agda, Mu/Language/Mon.agda, Mu/Semantics/GraphModel/GlobalFun.agda}
 
-GlobalFun, the target of \pass{globalize}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
+GlobalFun, the target of \pass{hoist}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
 of the signatures $\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
 definitions, and a term is typed by the table and its context,
 $\Sigma; \Gamma \vdash M : A$. The other forms are typed as in PairClos.
@@ -608,7 +608,7 @@ with one operand. The subsections follow the order of the pipeline; Sections~\re
 \[
 \begin{array}{@{}l@{}}
   \pass{compile} = \pass{select} \circ \pass{explicate} \circ \pass{lift}
-    \circ \pass{rco} \circ \pass{globalize}\\
+    \circ \pass{rco} \circ \pass{hoist}\\
   \qquad\qquad {} \circ \pass{split} \circ \pass{enclose} \circ \pass{simplify}
 \end{array}
 \]
@@ -807,14 +807,14 @@ values, and an application opens the closure and calls its code:
   \pass{split}(L\;M) = \kw{callc}\;\pass{split}(L)\;\pass{split}(M)
 \]
 
-\subsection{\pass{globalize} (PairClos to GlobalFun)}
+\subsection{\pass{hoist} (PairClos to GlobalFun)}
 \label{app:pass-globalize}
 \agda{Mu/Compiler/Globalize.agda (globalize)}
 
 The code of every function becomes a global definition, and the code
 itself a reference to it. The pass threads the list $\vec{d}$ of the
 definitions made so far, from left to right. For code, it first
-globalizes the body, so the functions nested in it become definitions
+translates the body, so the functions nested in it become definitions
 first. For any other form $\mathit{op}$ with subterms $A_1, \ldots,
 A_n$ (each under its binders $\bar{x}_i$):
 \[
@@ -826,7 +826,7 @@ A_n$ (each under its binders $\bar{x}_i$):
   \pass{glob}(\mathit{op}(\bar{x}_1.\,A_1, \ldots, \bar{x}_n.\,A_n), \vec{d}_0) & = &
     (\mathit{op}(\bar{x}_1.\,A'_1, \ldots, \bar{x}_n.\,A'_n), \vec{d}_n)\\
   & & \quad \text{where } (A'_i, \vec{d}_i) = \pass{glob}(A_i, \vec{d}_{i-1})\\[4pt]
-  \pass{globalize}(M) & = & (\vec{d};\; M')
+  \pass{hoist}(M) & = & (\vec{d};\; M')
     \quad \text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
 \end{array}
 \]
@@ -1020,11 +1020,11 @@ The guards hold together because a dropped captured value is a
 variable, which the environment makes nonempty. The induction
 hypothesis applies because $N$ uses only $\vec{x}_I$ and $y$.
 
-\paragraph{Globalize}
+\paragraph{Hoist}
 
 The induction hypothesis says that a term means the same as its
 translation under the table $T'$ of the definitions made so far. For
-code, \pass{globalize} first translates the body $N$ to $N'$ and then
+code, \pass{hoist} first translates the body $N$ to $N'$ and then
 adds the definition $d_k = \kw{code}\;(z, y.\,N')$:
 {\small
 \[
