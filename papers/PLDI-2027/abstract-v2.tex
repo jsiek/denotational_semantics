@@ -1,6 +1,6 @@
 
-When setting out to prove the correctness of a compiler, an important
-question is: correctness with respect to which style of semantics?
+Anyone who sets out to prove the correctness of a compiler must
+answer the question: correctness with respect to which style of semantics?
 The CakeML and CompCert projects, among others, show that operational
 semantics such as abstract machines and interpreters are viable
 choices. Their correctness proofs reason about program execution using
@@ -38,5 +38,5 @@ source and target differ.  For denotational semantics, the proofs are
 succinct when the correctness of a pass can be expressed as semantic
 equality, for a pass such as a source optimizer that inlines
 functions, but the proofs become lengthy when a logical relation is
-needed for a pass, such as the step of closure conversion that separates the code of
-each closure from its environment.
+needed for a pass, such as the step of closure conversion that
+separates the code of each closure from its environment.
