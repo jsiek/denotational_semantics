@@ -138,12 +138,12 @@ likewise for $\mathsf{right}$. A guard makes a set strict in other sets:
 
 \subsection{Monotonicity}
 \label{app:monotone}
-\agda{Mu/proof/Semantics/GraphModel/\{ISWIM,EnvClos,FlatClos\}.agda}
+\agda{Mu/proof/Semantics/GraphModel/\{ISWIM,EnvClos,PairClos\}.agda}
 
 %% The first component of ok (Ok = Mono × Cont × consistency,
 %% proof/Framework/GraphModel/TypedOkBase.agda).
 \begin{lemma}[Monotonicity]\label{lem:monotone}
-Let $M$ be a term of \iswim, EnvClos, or FlatClos. If
+Let $M$ be a term of \iswim, EnvClos, or PairClos. If
 $\rho(x) \subseteq \rho'(x)$ for every variable $x$, then
 $\den{M}\rho \subseteq \den{M}\rho'$.
 \end{lemma}
@@ -266,28 +266,28 @@ curried meaning of its code to the tuple of the captured values
 \end{array}
 \]
 
-\subsection{The FlatClos Language}
-\agda{Mu/Language/FlatClos.agda, Mu/Semantics/GraphModel/FlatClos.agda}
+\subsection{The PairClos Language}
+\agda{Mu/Language/PairClos.agda, Mu/Semantics/GraphModel/PairClos.agda}
 
-FlatClos, the target of \pass{delay}, replaces closures and application with code, packing, and calls, and types and interprets its other forms as \iswim\ does.
-\defhead{Typing of FlatClos}{\Gamma \vdash M : A}
+PairClos, the target of \pass{delay}, replaces closures and application with code, pairs, and calls, and types and interprets its other forms as \iswim\ does.
+\defhead{Typing of PairClos}{\Gamma \vdash M : A}
 \[
   \dfrac{z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
         {\Gamma \vdash \kw{code}\;(z, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
   \qquad
   \dfrac{\Gamma \vdash L : \kw{code}(\Delta; A \rightarrow C)
          \quad \Gamma \vdash M : \kw{tup}(\Delta)}
-        {\Gamma \vdash \kw{pack}\;L\;M : A \rightarrow C}
+        {\Gamma \vdash \kw{pair}\;L\;M : A \rightarrow C}
 \]
 \[
   \dfrac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}
         {\Gamma \vdash \kw{callc}\;L\;M : C}
 \]
-\defhead{Semantics of FlatClos}{\den{M}\rho = D}
+\defhead{Semantics of PairClos}{\den{M}\rho = D}
 \[
   \den{\kw{code}\;(z, y.\,N)}\rho =  \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y]))
   \qquad
-  \den{\kw{pack}\;L\;M}\rho = \mathsf{pair}(\den{L}\rho, \den{M}\rho)
+  \den{\kw{pair}\;L\;M}\rho = \mathsf{pair}(\den{L}\rho, \den{M}\rho)
 \]
 \[
   \den{\kw{callc}\;L\;M}\rho = \den{L}\rho \callop \den{M}\rho
@@ -299,7 +299,7 @@ FlatClos, the target of \pass{delay}, replaces closures and application with cod
 GlobalFun, the target of \pass{globalize}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
 of the signatures $\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
 definitions, and a term is typed by the table and its context,
-$\Sigma; \Gamma \vdash M : A$. The other forms are typed as in FlatClos.
+$\Sigma; \Gamma \vdash M : A$. The other forms are typed as in PairClos.
 \defhead{Typing of GlobalFun}{\Sigma; \Gamma \vdash M : A \qquad \vdash P : A}
 \[
   \dfrac{k < m}{\Sigma; \Gamma \vdash f_k : \kw{code}(\Delta_k; A_k \rightarrow C_k)}
@@ -310,7 +310,7 @@ $\Sigma; \Gamma \vdash M : A$. The other forms are typed as in FlatClos.
 \]
 where $d_k = \kw{code}\;(z, y.\,N_k)$. A term means a set given a table $T$ that gives each definition its
 meaning, $\den{M}_T\rho$; the other forms are interpreted as in
-FlatClos, passing $T$ along. A definition means the curried function
+PairClos, passing $T$ along. A definition means the curried function
 of its code, given the table $T_k$ of the definitions older than it
 ($T_k(j) = T(j)$ for $j < k$, and $T_k(j) = \emptyset$ otherwise).
 \defhead{Semantics of GlobalFun}{\den{M}_T\rho = D \qquad T(k) = D}
@@ -790,7 +790,7 @@ $\kw{get}_i\,z$, in EnvClos:
 Under a $\kw{let}$ or $\kw{case}$ the bound variable maps to itself,
 and a program starts with the empty map.
 
-\subsection{\pass{delay} (EnvClos to FlatClos)}
+\subsection{\pass{delay} (EnvClos to PairClos)}
 \label{app:pass-delay}
 \agda{Mu/Compiler/Delay.agda (delay-program)}
 
@@ -798,13 +798,13 @@ A closure becomes a pair of its code and the tuple of its captured
 values, and an application opens the closure and calls its code:
 \[
   \pass{delay}(\kw{clos}\;(z, y.\,N)\;\vec{M}) =
-    \kw{pack}\;(\kw{code}\;(z, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))
+    \kw{pair}\;(\kw{code}\;(z, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))
 \]
 \[
   \pass{delay}(L\;M) = \kw{callc}\;\pass{delay}(L)\;\pass{delay}(M)
 \]
 
-\subsection{\pass{globalize} (FlatClos to GlobalFun)}
+\subsection{\pass{globalize} (PairClos to GlobalFun)}
 \label{app:pass-globalize}
 \agda{Mu/Compiler/Globalize.agda (globalize)}
 
@@ -935,7 +935,7 @@ so $\kw{callc}$ and $\kw{case}$ take a slot.
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \pass{sel}(a, \omega, k) & = & \kw{movq}\; a, \bar{\omega};\; k\\
-  \pass{sel}(\kw{pack}\;a_1\;a_2, \omega, k) & = & \kw{alloc}\; \kw{pair}(a_1, a_2), \bar{\omega};\; k\\
+  \pass{sel}(\kw{pair}\;a_1\;a_2, \omega, k) & = & \kw{alloc}\; \kw{pair}(a_1, a_2), \bar{\omega};\; k\\
   \pass{sel}(\kw{callc}\;x\;a, \omega, k) & = &
     \kw{fst}\; x, \%\kw{rax};\; \kw{snd}\; x, \%\kw{rdi};\; \kw{movq}\; a, \%\kw{rsi};\\
   & & \kw{callq}\; \%\kw{rax};\; \kw{movq}\; \%\kw{rax}, \bar{\omega};\; k\\

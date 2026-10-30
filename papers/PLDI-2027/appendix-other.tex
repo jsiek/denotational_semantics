@@ -32,14 +32,14 @@ artifact.
 The three operational styles share their values and their
 observations. A value of type $A$ is one of
 \[
-  v, w ::= c \mid \kw{code}\,f \mid \kw{pack}(v, w) \mid \kw{tup}(v_1, \ldots, v_n)
+  v, w ::= c \mid \kw{code}\,f \mid \kw{pair}(v, w) \mid \kw{tup}(v_1, \ldots, v_n)
     \mid \kw{inl}\,v \mid \kw{inr}\,v \mid \kw{fold}\,v
 \]
-where a closure $\kw{pack}(v, w)$ pairs a code value $v$ with the tuple
+where a closure $\kw{pair}(v, w)$ pairs a code value $v$ with the tuple
 $w$ of its environment. In \iswim, the code of a closure is the body $N$
 of a $\lambda$-abstraction and its environment is the environment
 $\rho$ of the $\lambda$-abstraction, a list of values; we write
-$\langle \lambda x.\,N, \rho\rangle$ for $\kw{pack}(\kw{code}\,N,
+$\langle \lambda x.\,N, \rho\rangle$ for $\kw{pair}(\kw{code}\,N,
 \kw{tup}(\rho))$. In x86$\mu$, the code of a closure is the name $f$ of a
 definition. A run is observed through its final value, forgetting the
 code and environment inside closures. An observation is one of
@@ -51,7 +51,7 @@ and the observation of a value is
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
   \mathit{obs}(c) & = & c &
-  \mathit{obs}(\kw{pack}(v, w)) & = & \mathit{fun}\\
+  \mathit{obs}(\kw{pair}(v, w)) & = & \mathit{fun}\\
   \mathit{obs}(\kw{tup}(v_1, \ldots, v_n)) & = & \mathit{tuple}(\mathit{obs}(v_1), \ldots, \mathit{obs}(v_n)) &
   \mathit{obs}(\kw{fold}\,v) & = & \mathit{obs}(v)\\
   \mathit{obs}(\kw{inl}\,v) & = & \mathit{left}(\mathit{obs}(v)) &
@@ -145,7 +145,7 @@ an atom in the frame, the value of a register, and
 $\kw{fold}\,(\mathit{arg}(a, m))$ for $\kw{fold}\,a$ and the $v$ such
 that $\mathit{arg}(a, m) = \kw{fold}\,v$ for $\kw{unfold}\,a$. An
 object means the value that its operands make:
-$\mathit{obj}(\kw{pair}(a_1, a_2), m) = \kw{pack}(\mathit{arg}(a_1, m),
+$\mathit{obj}(\kw{pair}(a_1, a_2), m) = \kw{pair}(\mathit{arg}(a_1, m),
 \mathit{arg}(a_2, m))$, and likewise a tuple and the injections. A write
 $\mathit{put}(d, v, m)$ sets a register, or, for a slot $x$, extends
 the frame cut at $x$ with $v$, $\sigma|_x[x{:=}v]$, and closes the open
@@ -160,7 +160,7 @@ state.
   \kw{alloc}\; o, d &: \mathit{put}(d, \mathit{obj}(o, m), m) \\
   \kw{load}\; \kw{get}_i\; a, d &: \mathit{put}(d, v_i, m) \text{ where } \mathit{arg}(a, m) = \kw{tup}(v_1, \ldots, v_n) \\
   \kw{fst}\; x, \%r &: m \text{ with } r \text{ set to } c \text{ and the open closure } u,
-    \text{ where } \sigma(x) = \kw{pack}(c, u) \\
+    \text{ where } \sigma(x) = \kw{pair}(c, u) \\
   \kw{snd}\; x, \%r &: m \text{ with } r \text{ set to the environment of the open closure}
 \end{align*}
 where $\kw{fst}$ also unsets the registers that held the code or the
@@ -556,7 +556,7 @@ pair of stage $m + 2$ therefore gives its result at stage $m$:
   \mathit{Refl}(d, d') \iff d' \SRel{-} d
 \]
 \caption{The relations of the Scott-domain proof of \pass{delay},
-  between a source (EnvClos) value $d$ and a target (FlatClos) value
+  between a source (EnvClos) value $d$ and a target (PairClos) value
   $d'$. The superscript $\pm$ stands for either direction. Here $g'$ is
   the strict function that agrees with $g$ on defined values.}
 \label{fig:scott-delay}
@@ -611,7 +611,7 @@ of $\mathbb{D}_m$, and part~2 absorbs the difference.
 
 Write $\sim$ for either $\mathit{Pres}$ or $\mathit{Refl}$. Both relate
 $\bot$ to every value in the approximated position, and the operators
-that EnvClos and FlatClos share preserve both.
+that EnvClos and PairClos share preserve both.
 
 \begin{lemma}[Operators]\label{lem:scott-ops}
 If $d_i \sim d'_i$ for each $i$, then $\mathcal{T}(d_1, \ldots, d_n)

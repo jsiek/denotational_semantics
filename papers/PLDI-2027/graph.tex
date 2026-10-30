@@ -119,7 +119,7 @@ meaning of every $\lambda$-abstraction contains the element $\nu$,
 which says only that the term is a function. Thus a $\lambda$-abstraction
 has a nonempty meaning, as befits a value in a call-by-value language,
 even if it is never applied. The other elements describe the data of
-our languages: a constant $c$; a pair $\pairv{u}{v}$, which FlatClos
+our languages: a constant $c$; a pair $\pairv{u}{v}$, which PairClos
 uses for closures; a tuple element $\mathsf{tup}_i(v)$, which says that
 component $i$ of a tuple is described by $v$; the injections
 $\mathsf{left}(v)$ and $\mathsf{right}(v)$ of a sum; and the empty tuple
@@ -155,7 +155,7 @@ $\Lambda$ builds only entries whose inputs are consistent, which rules
 out entries such as $[1, 2] \mapsto 3$ in the meaning of $\lambda x.\,
 x + 1$, whose input describes no single argument.
 %
-Our model requires consistency because the proof for the \pass{delay} pass needs it (Section~\ref{sec:approx-lr}). A call in FlatClos takes
+Our model requires consistency because the proof for the \pass{delay} pass needs it (Section~\ref{sec:approx-lr}). A call in PairClos takes
 the code from one pair and the environment from another, so a
 closure's meaning may combine the code of one pair with the
 environment of a different pair. Consistency ensures that the
@@ -167,7 +167,7 @@ environments of these pairs are consistent with each other.
 %% Lemma: agda/proof/Framework/GraphModel/Ops.agda, Λ-β (and ΛΛ-β for
 %% the curried form used in the delay proof).
 %% The finitary premise holds for term meanings by `ok` in
-%% agda/Mu/proof/Semantics/GraphModel/{ISWIM,EnvClos,FlatClos,GlobalFun}.agda (fin₁, fin₂).
+%% agda/Mu/proof/Semantics/GraphModel/{ISWIM,EnvClos,PairClos,GlobalFun}.agda (fin₁, fin₂).
 The meaning of a term is monotone in its environment
 (Lemma~\ref{lem:monotone}), and it is
 continuous in the sense that each element of the meaning depends on

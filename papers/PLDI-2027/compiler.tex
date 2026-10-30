@@ -23,13 +23,13 @@
 \text{Clos} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}
   \qquad (\text{in place of } \lambda x.\, N)\\
 \text{EnvClos} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(z, y.\,N)\;\vec{M}\\
-\text{FlatClos} & K, L, M, N & ::= & \ldots \mid \kw{code}\;(z, y.\,N) \mid \kw{pack}\;L\;M \mid \kw{callc}\;L\;M
+\text{PairClos} & K, L, M, N & ::= & \ldots \mid \kw{code}\;(z, y.\,N) \mid \kw{pair}\;L\;M \mid \kw{callc}\;L\;M
   \qquad (\text{in place of } \kw{clos} \text{ and } L\;M)\\
 \text{GlobalFun} & K, L, M, N & ::= & \ldots \mid f_k
   \qquad (\text{in place of } \kw{code})\\
  & d & ::= & \kw{code}\;(z, y.\,N) \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
 \text{Mon} & a & ::= & x \mid c \mid f_k\\
- & o & ::= & \kw{pack} \mid \kw{callc} \mid \kw{tuple} \mid \kw{get}_i \mid \kw{inl}
+ & o & ::= & \kw{pair} \mid \kw{callc} \mid \kw{tuple} \mid \kw{get}_i \mid \kw{inl}
   \mid \kw{inr} \mid \kw{prim}_p \mid \kw{fold} \mid \kw{unfold}\\
  & M, N & ::= & a \mid o\;\vec{a} \mid \kw{case}\;a\;(x.\,M)\;(y.\,N)
   \mid \kw{let}\;x = M\;\kw{in}\;N
@@ -70,7 +70,7 @@ passes through seven intermediate languages. This section defines the languages 
   \node (c2) at (2,0)  {Clos};
   \node (c2b) at (3,0) {Clos};
   \node (c3) at (3,-1) {EnvClos};
-  \node (c4) at (2,-1) {FlatClos};
+  \node (c4) at (2,-1) {PairClos};
   \node (c5) at (1,-1) {GlobalFun};
   \node (mon) at (0,-1) {Mon};
   \node (imp) at (0,-2) {Imp};
@@ -157,15 +157,15 @@ stores the captured values of a closure in a single environment tuple,
 so an EnvClos closure $\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds two variables in its code, the environment $z$ and the parameter $y$, and
 the code reads $x_i$ as $\kw{get}_i\,z$. The \pass{delay} pass (\S\ref{app:pass-delay}) then
 separates a closure into its code and its environment, translating
-from EnvClos to FlatClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is
+from EnvClos to PairClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is
 closed code of type $\kw{code}(\Delta; A \rightarrow C)$, which
 expects an environment of type $\kw{tup}(\Delta)$ and an argument of
-type $A$. The form $\kw{pack}\;L\;M$ builds a closure (represented as
-a pair) from code $L$ and an environment $M$ of the same $\Delta$. Its
-type, $A \rightarrow C$, hides $\Delta$, as in the existential type
+type $A$. The form $\kw{pair}\;L\;M$ builds a closure, which is a pair of code
+$L$ and an environment $M$ of the same $\Delta$. Its type, $A \rightarrow C$, hides $\Delta$, as in the existential type
 $\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times
 \kw{tup}(\Delta)$ of typed closure conversion \citep{Minamide:1996ys},
-so closures with different environments have the same type. The form
+so closures with different environments have the same type. Thus
+$\kw{pair}$ also packs an existential, but it means just a pair. The form
 $\kw{callc}\;L\;M$ opens the closure $L$ and calls its code with its
 environment and the argument $M$.
 \vspace{-5pt}
@@ -177,7 +177,7 @@ environment and the argument $M$.
         \Gamma \vdash L : \kw{code}(\Delta; A \rightarrow C)\\
         \Gamma \vdash M : \kw{tup}(\Delta)
         \end{array}}
-       {\Gamma \vdash \kw{pack}\;L\;M : A \rightarrow C}
+       {\Gamma \vdash \kw{pair}\;L\;M : A \rightarrow C}
   \quad
   \frac{\begin{array}{l}
         \Gamma \vdash L : A \rightarrow C \\

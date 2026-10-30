@@ -1,7 +1,7 @@
 %% Section 4.3: delay and the approximant logical relation. First draft.
 %% Budget: 2.75 pages (notes/paper-outline.md). The definitions follow the
 %% Agda: agda/Mu/Compiler/Delay.agda (the pass),
-%% agda/Mu/Semantics/GraphModel/EnvClos.agda and FlatClos.agda (the semantics),
+%% agda/Mu/Semantics/GraphModel/EnvClos.agda and PairClos.agda (the semantics),
 %% agda/Mu/proof/Correctness/GraphModel/DelayRel.agda (the relation),
 %% DelayReflect.agda (the fundamental lemma, collect),
 %% DelayPreserve.agda (the forward relation) and DelayCorrect.agda (the
@@ -14,13 +14,13 @@
 \subsection{Correctness of \pass{delay} and the Approximant Logical Relation}
 \label{sec:approx-lr}
 
-The \pass{delay} pass lowers closures to pairs of code and
-environment. Its proof is the hardest part of the compiler proof. This section
+The \pass{delay} pass separates the code of each closure from its
+environment, making the closure a pair. Its proof is the hardest part of the compiler proof. This section
 shows why semantic reflection for \pass{delay} resisted our earlier
 attempts and how the approximant logical relation proves it.
 
 In EnvClos, the source language of \pass{delay}, a closure
-$\kw{clos}\;(z, y.\,N)\;\vec{M}$ is still a function. Its code $N$ is closed,
+$\kw{clos}\;(z, y.\,N)\;\vec{M}$ still means a function. Its code $N$ is closed,
 with free variables $z$ for the environment and $y$ for the argument,
 and its meaning is a curried function of the environment $X$ and then
 the argument $Y$. The meaning of the closure is this function applied
@@ -34,10 +34,10 @@ applies a function:
 \end{array}
 \]
 
-In FlatClos, the target language, a closure is
+In PairClos, the target language, a closure is
 a pair of code and environment, and a call takes the pair apart. The
 meaning of $\kw{code}\;(z, y.\,N)$ is the same curried function as before. The
-meaning of $\kw{pack}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
+meaning of $\kw{pair}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
 $u$ from the code $L$ and $v$ from the environment $M$. A call applies
 the first components of the pairs to their second components and then
 to the argument, which is the operator $\callop$ of
@@ -45,7 +45,7 @@ Figure~\ref{fig:graph-ops}:
 \[
 \begin{array}{rcl}
     \den{\kw{code}\;(z, y.\,N)}\rho & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y]))\\
-  \den{\kw{pack}\;L\;M}\rho & = &
+  \den{\kw{pair}\;L\;M}\rho & = &
     \{\, \pairv{u}{v} \mid u \in \den{L}\rho,\; v \in \den{M}\rho \,\}\\
   \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
 \end{array}
@@ -56,7 +56,7 @@ homomorphically:
 \[
 \begin{array}{rcl}
     \pass{delay}(\kw{clos}\;(z, y.\,N)\;\vec{M}) & = &
-    \kw{pack}\;(\kw{code}\;(z, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))\\
+    \kw{pair}\;(\kw{code}\;(z, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))\\
   \pass{delay}(L\;M) & = &
     \kw{callc}\;\pass{delay}(L)\;\pass{delay}(M)
 \end{array}
@@ -91,7 +91,7 @@ homomorphically:
 \caption{The relation $v \sqsubseteq D'$ (``$v$ is included in the
   behavior of $D'$'') for the preservation half of \pass{delay}. It
   relates a source element $v$ (of EnvClos) to a set $D'$ of target
-  elements (of FlatClos) and is defined by recursion on $v$. The
+  elements (of PairClos) and is defined by recursion on $v$. The
   relation $U \sqsubseteq^* E'$ extends it to a finite list $U$.}
 \label{fig:preserve}
 \end{figure}
@@ -208,7 +208,7 @@ junk. The finite list also makes the relation well founded.
 \end{array}
 \]
 \caption{The approximant logical relation $D \ALR V$ between a set $D$
-  of source (EnvClos) elements and a finite list $V$ of target (FlatClos)
+  of source (EnvClos) elements and a finite list $V$ of target (PairClos)
   elements. Here $c$
   ranges over constants and $\pi$ over the projections of tuple
     components and sum injections; $\car$ and $\cdr$ are as in
@@ -324,7 +324,7 @@ $E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
 $\den{M}\rho \ALR V$.
 
 \fbox{\emph{Case $M = \kw{clos}\,(z, y.\,N)\,\vec{K}$.}} Then
-$\pass{delay}(M) = \kw{pack}\,(\kw{code}\,(z, y.\,\pass{delay}(N)))\,(\kw{tuple}\,\pass{delay}(\vec{K}))$,
+$\pass{delay}(M) = \kw{pair}\,(\kw{code}\,(z, y.\,\pass{delay}(N)))\,(\kw{tuple}\,\pass{delay}(\vec{K}))$,
 so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\pass{delay}(\vec{K})}\rho')$. Let
 $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the

@@ -93,8 +93,8 @@ complex operands, lift locals, make control flow explicit, and select
 instructions. Every language in the compiler has a denotational
 semantics in each model. In both, we prove most passes correct by an
 equation between the denotations before and after the pass. RQ3
-nevertheless has a negative answer. The pass that lowers closures to
-code and environment pairs, which we call \pass{delay}, does not yield
+nevertheless has a negative answer. The pass that separates the code of
+each closure from its environment, which we call \pass{delay}, does not yield
 to equational reasoning; its reflection proof uses the approximant
 logical relation in the graph model and the stage relation in Scott
 domains.
