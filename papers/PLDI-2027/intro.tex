@@ -69,14 +69,14 @@ call an \emph{approximant logical relation}.  Our key insight is to
 relate a finite set of target graph elements (a finite approximation)
 to a possibly infinite source denotation, and define the relation by
 recursion on the depth of the elements in the finite set
-(Section~\ref{sec:approx-lr}). Our second model uses Scott domains: a
-program denotes an element of a standard universal domain of tagged
-values, and divergence is its least element. Scott values are
-infinite, so a relation for the Scott domain cannot recurse on finite
-elements. We define the relation instead by recursion on the stages of
-the bilimit that constructs the domain
-(Section~\ref{sec:scott-delay}), as \citet{Reynolds:1974aa} did to
-relate direct and continuation semantics.
+(Section~\ref{sec:approx-lr}). Our second model uses Scott domains, in
+which a program denotes an element of a standard universal domain of
+tagged values and divergence is the least element. There we define the
+relation by recursion on the stages of the bilimit that constructs the
+domain, as \citet{Reynolds:1974aa} did to relate direct and
+continuation semantics. At each stage, the relation relates an
+approximation of one value to the whole other value
+(Section~\ref{sec:scott-delay}).
 
 We use these denotational closure-conversion results in two
 correctness proofs of a ten-pass compiler from a call-by-value
