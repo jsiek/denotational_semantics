@@ -16,9 +16,9 @@ diverges on $M$, that is, times out at every clock. The same holds
 for x86$\mu$ and $\pass{compile}(M)$.
 \end{theorem}
 
-The proof for each language has two halves. Soundness says that what
-the interpreter returns at some clock denotes a part of the meaning of
-the program. Adequacy says that every element of the meaning is
+The proof for each language has two halves. Soundness says that if
+the interpreter returns a value at some clock, then that value denotes
+a part of the meaning of the program. Adequacy says that every element of the meaning is
 related to the value that the interpreter returns from some clock on,
 by a logical relation defined by recursion on the element, as in
 earlier adequacy proofs for graph and filter models

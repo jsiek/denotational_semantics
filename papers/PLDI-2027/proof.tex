@@ -42,7 +42,7 @@ $\den{M} = \den{\pass{simplify}(M)}$ or
 $\den{M} = \den{\pass{globalize}(M)}$. To apply induction, each proof
 generalizes the equation from closed programs to open terms. The
 generalized statement says that a term, in a source environment, means
-the same as its translation, in a related target environment. The relation on environments says what the pass assumes
+the same as its translation, in a related target environment. The relation on environments states the pass's assumptions
 about the variables in scope, and most cases of the induction need
 nothing else. Because every semantics is compositional and the passes
 translate most forms homomorphically, the case for such a form applies
@@ -84,8 +84,8 @@ $(\lambda x.\, N)\;M$ is the same calculation without the second step.
 
 \paragraph{Concretize}
 
-Each variable $x$ means in $\rho$ what its reference $\varphi(x)$, either
-$x$ or $\kw{get}_i\,z$, means in $\rho'$. Let $D_i = \den{M_i}\rho$ and
+Each variable $x$ satisfies $\den{x}\rho = \den{\varphi(x)}\rho'$, where
+its reference $\varphi(x)$ is either $x$ or $\kw{get}_i\,z$. Let $D_i = \den{M_i}\rho$ and
 $D'_i = \den{\pass{concretize}_\varphi(M_i)}\rho'$, so that $D_i = D'_i$,
 and let $N' = \pass{concretize}_{\varphi'}(N)$:
 {\small

@@ -150,8 +150,8 @@ examples and the variants we tried in Agda).
   denotation is well founded, but the target denotation is unbounded,
   and the outputs of a call can come from code entries of any depth.
 \end{itemize}
-What remains is a finite list of target elements against the whole
-source denotation. Recursion on types, as in the proofs of
+The remaining combination relates a finite list of target elements to
+the whole source denotation. Recursion on types, as in the proofs of
 \citet{Chlipala:2007fk} and \citet{Nielsen:2000aa}, is not an option:
 since $\kw{fold}$ and $\kw{unfold}$ mean the identity, the relation at
 $\mu X.\,A$ would be the relation at $A[\mu X.\,A/X]$, which is not a smaller type. The relation does not depend on types.
