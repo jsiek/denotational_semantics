@@ -1,6 +1,6 @@
 
-Anyone who sets out to prove the correctness of a compiler must
-answer the question: correctness with respect to which style of semantics?
+Anyone who sets out to prove the correctness of a compiler must answer
+the question: correctness with respect to which style of semantics?
 The CakeML and CompCert projects, among others, show that operational
 semantics such as abstract machines and interpreters are viable
 choices. Their correctness proofs reason about program execution using
@@ -11,16 +11,16 @@ reveals an important gap. There are no proofs of compiler correctness
 with respect to denotational semantics for a Turing-complete source
 language with lexically scoped functions, through closure conversion,
 to a lower-level intermediate language. Compiler correctness involves
-two directions, semantic preservation and reflection. The latter
-guarantees that when a source program diverges, so does the target
-program. For closure conversion, semantic reflection is the hard part
-using denotational semantics. In this paper we present the first two
-denotational proofs of semantic reflection for closure conversion
-applied to a Turing-complete language, one proof with respect to a
-graph model and one proof with respect to a Scott domain. We develop
-the new \emph{approximant logical relation} for the proof with the
-graph model, and we adapt a logical relation of Reynolds for the proof
-with the Scott domain.
+two directions, semantic preservation and reflection. Semantic
+reflection guarantees that when a source program diverges, so does the
+target program. For closure conversion, semantic reflection is the
+hard part when using denotational semantics. In this paper we present
+the first two denotational proofs of semantic reflection for closure
+conversion applied to a Turing-complete language, one proof with
+respect to a graph model and one proof with respect to a Scott
+domain. We develop the new \emph{approximant logical relation} for the
+proof with the graph model, and we adapt a logical relation of
+Reynolds for the proof with the Scott domain.
 
 As a first step in evaluating the tradeoffs between different
 semantics, we conduct an apples-to-apples comparison between five
@@ -35,8 +35,8 @@ smallest proof overall and the graph model the second smallest.  We
 identify two factors that influence proof size. For operational
 semantics, the proof size tends to grow with how much the runs of the
 source and target differ.  For denotational semantics, the proofs are
-succinct when the correctness of a pass can be expressed as semantic
-equality, for a pass such as a source optimizer that inlines
-functions, but the proofs become lengthy when a logical relation is
-needed for a pass, such as the step of closure conversion that
-separates the code of each closure from its environment.
+succinct when the correctness of a pass, can be expressed as semantic
+equality, as it can be for a source optimizer, but the proofs become
+lengthy when a logical relation is needed for a pass, as in the step
+of closure conversion that separates the code of each closure from its
+environment.
