@@ -101,6 +101,9 @@ The per-pass results of §4.1 and Appendix D are proved in
 `globalize-correct`, `rco-correct`, `lift-locals-correct`,
 `explicate-correct`, `select-correct`), and those of the other styles
 in `proof/Correctness/<style>/`. They are not restated in `Theorems/`.
+The graph-model correctness of enclose, `enclose-correct`, composes
+those of capture, prune and concretize in
+`proof/Correctness/GraphModel/CompilerCorrect.agda`.
 
 ## The paper's definitions
 
@@ -131,6 +134,7 @@ pipelines.
 | capture (ISWIMμ to Clos) | [`Compiler/Capture.agda`](Compiler/Capture.agda) | `capture` |
 | prune (Clos to Clos) | [`Compiler/Prune.agda`](Compiler/Prune.agda) | `prune-program` |
 | concretize (Clos to EnvClos) | [`Compiler/Concretize.agda`](Compiler/Concretize.agda) | `concretize-program` (`concretize` with references φ: `Ref`, `Refs`) |
+| enclose (ISWIMμ to EnvClos), the closure-conversion pass: concretize ∘ prune ∘ capture | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `enclose` |
 | delay (EnvClos to PairClos) | [`Compiler/Delay.agda`](Compiler/Delay.agda) | `delay-program` (`delay`) |
 | globalize (PairClos to GlobalFun) | [`Compiler/Globalize.agda`](Compiler/Globalize.agda) | `globalize` |
 | remove complex operands (GlobalFun to Mon) | [`Compiler/RCO.agda`](Compiler/RCO.agda) | `rco-program` |
