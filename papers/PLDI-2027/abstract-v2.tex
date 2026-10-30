@@ -7,11 +7,11 @@ choices. Their correctness proofs reason about program execution using
 simulations and step-indexed logical relations. In this paper we
 explore whether denotational semantics can also be used in proofs of
 compiler correctness and evaluate the tradeoffs. Our literature review
-reveals an important gap: there were no proofs of compiler correctness
+reveals an important gap. There are no proofs of compiler correctness
 with respect to denotational semantics for a Turing-complete source
 language with lexically scoped functions, through closure conversion,
 to a lower-level intermediate language. Compiler correctness involves
-two directions, semantic preservation and reflection. The later
+two directions, semantic preservation and reflection. The latter
 guarantees that when a source program diverges, so does the target
 program. For closure conversion, semantic reflection is the hard part
 using denotational semantics. In this paper we present the first two
@@ -24,22 +24,19 @@ with the Scott domain.
 
 As a first step in evaluating the tradeoffs between different
 semantics, we conduct an apples-to-apples comparison between five
-semantic styles in proving the correctness of a compiler from a typed
-lambda calculus with recursive types down to a typed low-level
-intermediate language. The five styles include the two denotational
-semantics (graph model and Scott domain) and three operational
-semantics: interpreters, reduction semantics, and abstract machines
-(CEK). We discover that no one semantic style yields the shortest
-proofs for every compiler pass, though interpreters yield the smallest
-proof overall and the graph model the second smallest.  We identify
-two factors that influence proof size. For operational semantics, the
-proof size tends to grow with how much the runs of the source and
-target differ.  For denotational semantics, the proofs are succinct
-when the correctness of a pass can be expressed as semantic equality,
-such as a source optimizer that inlines functions, but the proofs
-become lengthy when a logical relation is needed for a pass, such as
-the part of closure conversion that lowers functions into pairs.
-
-
-
-
+semantic styles in mechanizing proofs of correctness of a compiler
+from a typed lambda calculus with recursive types down to a typed
+low-level intermediate language. The five styles include the two
+denotational semantics (graph model and Scott domain) and three
+operational semantics: interpreters, reduction semantics, and abstract
+machines (CEK). We discover that no one semantic style yields the
+shortest proofs for every compiler pass, though interpreters yield the
+smallest proof overall and the graph model the second smallest.  We
+identify two factors that influence proof size. For operational
+semantics, the proof size tends to grow with how much the runs of the
+source and target differ.  For denotational semantics, the proofs are
+succinct when the correctness of a pass can be expressed as semantic
+equality, for a pass such as a source optimizer that inlines
+functions, but the proofs become lengthy when a logical relation is
+needed for a pass, such as the part of closure conversion that lowers
+closures into pairs.
