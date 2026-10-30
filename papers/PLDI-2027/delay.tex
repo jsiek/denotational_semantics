@@ -393,15 +393,17 @@ summarizes that proof; Appendix~\ref{app:scott-delay} gives it in
 full. We define the relation by
 recursion on the stages $\mathbb{D}_0, \mathbb{D}_1, \ldots$ of the
 bilimit that constructs $\mathbb{D}$, as \citet{Reynolds:1974aa} did.
-The stage relation $s \SR{\pm}{n} w$ relates an approximation
-$s \in \mathbb{D}_n$ of one value to the whole other value $w$, and two
-values are related when every approximation of the approximated one is
-related to the other (Figure~\ref{fig:scott-delay} in
-Appendix~\ref{app:scott-delay}). Like the approximant logical relation,
-it approximates only one side. As in the graph-model proof, each
-direction has its own relation, but here both relations recurse on
-stages. Preservation ($+$) approximates the source, and reflection
-($-$) approximates the target. The clauses for closures are
+Let $d$ be a source value and $d'$ a target value, and write
+$\pi^\infty_n(d) \in \mathbb{D}_n$ for the approximation of $d$ at
+stage $n$. For preservation, the stage relation
+$\pi^\infty_n(d) \SR{+}{n} d'$ relates the approximation of $d$ to the
+whole of $d'$, and $d \SRel{+} d'$ holds when it does at every stage.
+For reflection, the roles swap, and $d' \SRel{-} d$ holds when
+$\pi^\infty_n(d') \SR{-}{n} d$ at every stage
+(Figure~\ref{fig:scott-delay} in Appendix~\ref{app:scott-delay}). Like
+the approximant logical relation, each relation approximates only one
+side. As in the graph-model proof, each direction has its own
+relation, but here both relations recurse on stages. The clauses for closures are
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   (\mathit{fun}, h) \mathrel{\mathcal{M}^{+}_n} (\mathit{pr}, (c, e))
