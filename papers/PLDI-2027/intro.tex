@@ -30,13 +30,15 @@ program produces output, the target program produces the same output;
 output, the source programs produces the same output. By
 contraposition, reflection guarantees that a diverging source program
 compiles to a diverging target program.  Establishing semantic
-reflection denotationally for closure conversion is the hard part.
-After closure conversion, the meaning of a function's code describes
-its behavior on every environment, not just the environment with which
-the compiled program pairs it. The target denotation therefore
-contains code--environment combinations that correspond to no source
-function, and a reflection proof must show that these combinations
-never contribute an answer.
+reflection denotationally for closure conversion is the hard part,
+because the relation between source functions and target closures
+refers to itself in negative position, and the domain of meanings is
+recursive. In a graph model there is a further problem. The meaning of
+a function's code describes its behavior on every environment, not
+just the environment with which the compiled program pairs it, so the
+target denotation contains code--environment combinations that
+correspond to no source function, and a reflection proof must show
+that these combinations never contribute an answer.
 
 These challenges motivate five research questions:
 \begin{description}
