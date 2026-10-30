@@ -1,24 +1,25 @@
 
-When setting out to prove the correctness of a compiler, and important
+When setting out to prove the correctness of a compiler, an important
 question is: correctness with respect to which style of semantics?
-The CakeML and CompCert projects, among others, have shown that
-operational semantics such as abstract machines and interpreters are
-viable choices. Their correctness proofs reason about program
-execution using simulations and step-indexed logical relations. In
-this paper we explore whether denotational semantics can also be used
-in proofs of compiler correctness and evaluate the tradeoffs. Our
-literature review revealed an important gap: there were no proofs of
-compiler correctness with respect to denotational semantics for a
-Turing-complete source language with lexically scoped functions,
-through closure conversion, to a lower-level intermediate
-language. Compiler correctness involves two directions: semantic
-preservation and reflection, and for closure conversion, semantic
-reflection is the hard part using denotational semantics. In this
-paper we present the first two denotational proofs of semantic
-reflection for closure conversion, one proof with respect to a graph
-model and one proof with respect to a Scott domain. We developed the
-new \emph{approximant logical relation} for the proof with the graph
-model, and we adapted a logical relation of Reynolds for the proof
+The CakeML and CompCert projects, among others, show that operational
+semantics such as abstract machines and interpreters are viable
+choices. Their correctness proofs reason about program execution using
+simulations and step-indexed logical relations. In this paper we
+explore whether denotational semantics can also be used in proofs of
+compiler correctness and evaluate the tradeoffs. Our literature review
+reveals an important gap: there were no proofs of compiler correctness
+with respect to denotational semantics for a Turing-complete source
+language with lexically scoped functions, through closure conversion,
+to a lower-level intermediate language. Compiler correctness involves
+two directions, semantic preservation and reflection. The later
+guarantees that when a source program diverges, so does the target
+program. For closure conversion, semantic reflection is the hard part
+using denotational semantics. In this paper we present the first two
+denotational proofs of semantic reflection for closure conversion
+applied to a Turing-complete language, one proof with respect to a
+graph model and one proof with respect to a Scott domain. We develop
+the new \emph{approximant logical relation} for the proof with the
+graph model, and we adapt a logical relation of Reynolds for the proof
 with the Scott domain.
 
 As a first step in evaluating the tradeoffs between different
@@ -29,14 +30,15 @@ intermediate language. The five styles include the two denotational
 semantics (graph model and Scott domain) and three operational
 semantics: interpreters, reduction semantics, and abstract machines
 (CEK). We discover that no one semantic style yields the shortest
-proofs for every compiler pass and we isolate two factors that
-influence proof size. For operational semantics, the proof size tends
-to be proportional to how different the execution traces are for the
-source and target programs of a compiler pass. For denotational
-semantics, the proofs are succinct when the correctness of a pass can
-be expressed as semantic equality, such as function inlining, but the
-proofs become lengthy when a logical relation is needed for a pass,
-such as closure conversion.
+proofs for every compiler pass, though interpreters yield the smallest
+proof overall and the graph model the second smallest.  We identify
+two factors that influence proof size. For operational semantics, the
+proof size tends to grow with how much the runs of the source and
+target differ.  For denotational semantics, the proofs are succinct
+when the correctness of a pass can be expressed as semantic equality,
+such as a source optimizer that inlines functions, but the proofs
+become lengthy when a logical relation is needed for a pass, such as
+the part of closure conversion that lowers functions into pairs.
 
 
 
