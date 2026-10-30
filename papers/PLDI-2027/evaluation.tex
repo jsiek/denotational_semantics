@@ -184,26 +184,21 @@ proofs are short. The interpreter proofs are smaller by 1 to 28 lines,
 except for \pass{explicate control}, where the two are about the same
 size. The Scott-domain proofs of these passes are 1.2 to 2.8 times the
 interpreter proofs, for the reasons given at the end of this
-section. The difference is not in the congruence cases, which take one
-line per construct in both styles. In the graph model, a term denotes
-a set of values and several operators place conditions on these sets:
-strict closures, $\kw{let}$s, and writes require their sets to be
-nonempty, and the binders require them to be consistent. The
-denotational proofs must establish these conditions, whereas they hold
-trivially for the single value that an interpreter computes. It must
-also apply laws of the graph model that have premises, where an
-interpreter runs: the $\beta$-law of Lemma~\ref{lem:beta}, and
-commuting conversions that move a $\kw{let}$ or $\kw{case}$ past a
-continuation. These costs are largest, relative to the interpreter
-proofs, for \pass{lift locals} and \pass{select instructions}. Their
-denotational proofs are about 1.4 and 1.6 times the size of the
-interpreter proofs. In \pass{lift locals}, the continuation-passing
-semantics of Imp requires a commuting conversion.  In \pass{select
-  instructions}, the prologue of a function body in x86$\mu$ requires
-two uses of Lemma~\ref{lem:beta}. The tendency concerns the
-interpreters only. The reduction semantics, which works by
-substitution, is often several times larger even for these passes, as
-for \pass{optimize} and \pass{lift locals}.
+section. The congruence cases take one line per construct in both
+styles. The difference lies in the obligations of the graph model.
+Because a term denotes a set of values, some operators require their
+sets to be nonempty or consistent, and some laws have premises, such as
+the $\beta$-law of Lemma~\ref{lem:beta} and the commuting conversions
+that move a $\kw{let}$ or $\kw{case}$ past a continuation. An
+interpreter computes a single value, so these obligations do not arise.
+They cost the most for \pass{lift locals}, whose continuation-passing
+semantics needs a commuting conversion, and for \pass{select
+  instructions}, whose function prologue needs two uses of
+Lemma~\ref{lem:beta}; these graph-model proofs are about 1.4 and 1.6
+times the interpreter proofs. The tendency concerns the interpreters
+only: the reduction semantics, which works by substitution, is often
+several times larger even for these passes, as for \pass{optimize} and
+\pass{lift locals}.
 
 \paragraph{Equal meanings, different runs: the denotational proofs tend to be smallest.}
 
