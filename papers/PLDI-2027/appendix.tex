@@ -795,7 +795,7 @@ and a program starts with the empty map.
 
 \subsection{\pass{split closure} (EnvClos to PairClos)}
 \label{app:pass-delay}
-\agda{Mu/Compiler/Delay.agda (delay-program)}
+\agda{Mu/Compiler/Split.agda (split-program)}
 
 A closure becomes a pair of its code and the tuple of its captured
 values, and an application opens the closure and calls its code:
@@ -809,7 +809,7 @@ values, and an application opens the closure and calls its code:
 
 \subsection{\pass{hoist} (PairClos to GlobalFun)}
 \label{app:pass-globalize}
-\agda{Mu/Compiler/Globalize.agda (globalize)}
+\agda{Mu/Compiler/Hoist.agda (hoist)}
 
 The code of every function becomes a global definition, and the code
 itself a reference to it. The pass threads the list $\vec{d}$ of the
