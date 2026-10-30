@@ -741,7 +741,7 @@ $\kw{let}$.
 
 \subsection{\pass{enclose} (\iswim\ to EnvClos)}
 \label{app:pass-enclose}
-\agda{Mu/Compiler/\{Enclose,Optimize,Concretize\}.agda (enclose, optimize-program, concretize-program)}
+\agda{Mu/Compiler/\{Capture,Prune,Concretize,Pipeline\}.agda (capture, prune-program, concretize-program, enclose)}
 
 \pass{enclose} works in three steps, which go through the intermediate
 language Clos:
@@ -979,7 +979,7 @@ environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
 
 \section{Calculations for the Other Equational Passes}
 \label{app:calculations}
-\agda{Mu/proof/Correctness/GraphModel/, one file per pass (EncloseCorrect.agda, ...)}
+\agda{Mu/proof/Correctness/GraphModel/, one file per pass or step (CaptureCorrect.agda, ...)}
 
 This appendix gives the key case of the proofs of the first two steps of \pass{enclose} and of the five equational passes that Section~\ref{sec:equational} does not show, in the order of the pipeline. As there, each proof generalizes the equation to open terms under related environments, the other cases are congruences, and where a step needs a set to be nonempty we show the nonempty case.
 
