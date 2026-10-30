@@ -265,9 +265,9 @@ nonemptiness; in exchange, the proof needs no consistency. The
 graph-model relations recurse on finite elements, and neither of the
 first two costs arises. The infrastructure widens the gap further
 (Table~\ref{tab:infra}). The rest of the gap comes from Agda,
-whose \texttt{with}-abstraction is slow when a value of the domain is in
-scope, so six places in five passes use auxiliary lemmas, records, or
-an opaque definition instead.
+whose \texttt{with}-abstraction is slow to check when a value of the
+domain is in scope, so most of the equational proofs replace some of
+its uses with auxiliary lemmas, records, or opaque definitions.
 
 
 \subsection{Threats to Validity}
