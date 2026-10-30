@@ -1,19 +1,19 @@
 {-
 
-  Correctness of delay (EnvClosμ → FlatClosμ) by a forward simulation between
+  Correctness of delay (EnvClosμ → PairClosμ) by a forward simulation between
   the typed machines, as for typed delay
   (proof/Correctness/CEK/DelaySim.agda).
 
   The machines run in lock step, except that building a closure takes
-  three more FlatClosμ steps (the code, then the tuple of free variables,
-  under pack). Neither machine stops with an error.
+  three more PairClosμ steps (the code, then the tuple of free variables,
+  under pair). Neither machine stops with an error.
 
   Values are related (_≈_, proof/Semantics/AbstractMachines/Rel.agda) when they
   agree, except that a EnvClosμ closure of N and vs is related to the pack
   of code (delay N) and a tuple of values related to vs. Environments are related through the renaming r
   that delay carries (EnvRel): variable x of ρ₁ and variable r x of ρ₂
   hold related values. Continuations are related frame by frame: appL
-  to callL, appR to callR, and closK to packR.
+  to callL, appR to callR, and closK to pairR.
 
 -}
 
@@ -21,13 +21,13 @@ module Mu.proof.Correctness.AbstractMachines.DelaySim where
 
 open import Mu.Language.Type
 open import Mu.Language.EnvClos
-import Mu.Language.FlatClos as C4
+import Mu.Language.PairClos as C4
 open import Mu.Compiler.Delay
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 import Mu.Semantics.AbstractMachines.EnvClos as Src
-import Mu.Semantics.AbstractMachines.FlatClos as Tgt
+import Mu.Semantics.AbstractMachines.PairClos as Tgt
 
 open import Data.List using ([]; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
@@ -50,7 +50,7 @@ data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
       {ρ₂ : Tgt.Env Δ} {κ₁ κ₂}
     → All₂ _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.tupK {A = A} vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (delays r Ms) ρ₂ κ₂
-  closK : ∀ {Δ A B N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {Δ} {A} {B} N κ₁ ≈k Tgt.packR (Tgt.code (delay (λ x → x) N)) κ₂
+  closK : ∀ {Δ A B N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {Δ} {A} {B} N κ₁ ≈k Tgt.pairR (Tgt.code (delay (λ x → x) N)) κ₂
   getK : ∀ {Δ A i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {Δ} {A} i κ₁ ≈k Tgt.getK i κ₂
   inlK : ∀ {A B κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inlK {A} {B} κ₁ ≈k Tgt.inlK κ₂
   inrK : ∀ {A B κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inrK {A} {B} κ₁ ≈k Tgt.inrK κ₂
@@ -74,7 +74,7 @@ env-ext : ∀ {Γ Δ B} {r : Ren Γ Δ} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ
 env-ext r er Z = r
 env-ext r er (S x) = er x
 
-{- The simulation, for any FlatClosμ program P ------------------------------------}
+{- The simulation, for any PairClosμ program P ------------------------------------}
 
 module _ {T : Type} (P : C4.Tm [] T) where
 

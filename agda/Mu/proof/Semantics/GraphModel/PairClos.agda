@@ -1,21 +1,21 @@
 {-
 
-  Lemmas about the semantics of FlatClosμ in the graph model
-  (Mu/Semantics/GraphModel/FlatClos.agda): its denotations are Ok, by induction
+  Lemmas about the semantics of PairClosμ in the graph model
+  (Mu/Semantics/GraphModel/PairClos.agda): its denotations are Ok, by induction
   on the term, one line per construct (callc is callcᵈ), as for Clos4ᵀ.
 
 -}
 
-module Mu.proof.Semantics.GraphModel.FlatClos where
+module Mu.proof.Semantics.GraphModel.PairClos where
 
-open import Mu.Semantics.GraphModel.FlatClos public
+open import Mu.Semantics.GraphModel.PairClos public
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Continuity
 open import proof.Framework.GraphModel.TypedOkBase
 open import proof.Semantics.Graph.Prim using (primD-good)
 open import Mu.Language.Type using (idx)
-open import Mu.Language.FlatClos
+open import Mu.Language.PairClos
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)
@@ -27,7 +27,7 @@ oks : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) → Oks (replicate (length Δ) ■) (spl
 
 ok (` x) = var-ok (idx x)
 ok (code N) = ΛΛ-ok (ok N)
-ok (pack L M) = ok-op pair-good ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
+ok (pair L M) = ok-op pair-good ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
 ok (callc L M) = ok-op callc-good ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
 ok (lit B c) = ok-op (ℬ-good B c) ptt
 ok (tuple Ms) = ok-vec (𝒯-good _) (oks Ms)

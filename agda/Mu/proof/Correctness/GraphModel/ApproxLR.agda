@@ -2,10 +2,10 @@
 
   The approximant logical relation of the paper (Section 4.2, Figure 4)
   and Lemma 4.2 (depth irrelevance and unfolding), for the reflection
-  half of delay (EnvClosμ → FlatClosμ) in the graph model.
+  half of delay (EnvClosμ → PairClosμ) in the graph model.
 
   ApproxLR D V relates a set D of source (EnvClosμ) elements to a finite
-  list V of target (FlatClosμ) elements, by recursion on the depth of V,
+  list V of target (PairClosμ) elements, by recursion on the depth of V,
   since a target closure is a set of pairs whose calls combine the codes
   and environments of several pairs (Batch). ApproxLRLayer is the four
   clauses, with the recursive occurrence left open (Q); ApproxLR≤ k is

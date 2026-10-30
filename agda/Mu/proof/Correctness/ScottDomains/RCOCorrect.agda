@@ -48,7 +48,7 @@ open import Framework.Scott.Base pt fe
 open import Framework.Scott.Lift pt fe pe
 open import Framework.Scott.Functor pt fe pe
 open import Framework.Scott.Sum pt fe using (copair)
-open import proof.Framework.Scott.Ops pt fe pe
+open import proof.Framework.Scott.Ops pt fe pe renaming (pair to pairᵈ)
   renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; case to caseᵈ; ext to extᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD; prim-br₁; prim-br₂)
@@ -164,7 +164,7 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
   atomize-sem (` x) {ρ} k ag F sF ks = ap F (agr ag x) ∙ ks (var (ρ x)) id-ag
   atomize-sem (fun-ref f) k ag F sF ks = ap F (TT f) ∙ ks (ref f) id-ag
   atomize-sem (lit B c) k ag F sF ks = ks (lit B c) id-ag
-  atomize-sem N@(pack _ _) = let-sem N
+  atomize-sem N@(pair _ _) = let-sem N
   atomize-sem N@(callc _ _) = let-sem N
   atomize-sem N@(tuple _) = let-sem N
   atomize-sem N@(get _ _) = let-sem N
@@ -205,8 +205,8 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
 
   rco-sem (` x) ag = agr ag x
   rco-sem (fun-ref f) ag = TT f
-  rco-sem (pack L N) ag =
-    atomize₂-sem L N M.pack ag (λ a b → pair · a · b) (λ b a p → pr₁ (pair-defined← a b p)) (λ a b p → pr₂ (pair-defined← a b p))
+  rco-sem (pair L N) ag =
+    atomize₂-sem L N M.pair ag (λ a b → pairᵈ · a · b) (λ b a p → pr₁ (pair-defined← a b p)) (λ a b p → pr₂ (pair-defined← a b p))
       λ _ _ _ → refl
   rco-sem (callc L N) ag =
     atomize₂-sem L N M.callc ag CALL callc-str₁

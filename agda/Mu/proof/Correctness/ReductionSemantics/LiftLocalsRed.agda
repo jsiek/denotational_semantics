@@ -64,7 +64,7 @@ module _ {Σ' : List DSig} where
   ⌞_⌟ : ∀ {A} → Val Σ' A → Tm Σ' [] A
   ⌞_⌟ᵛ : ∀ {Δ} → All (Val Σ') Δ → All (Tm Σ' []) Δ
   ⌞ code f ⌟ = C.fun-ref f
-  ⌞ pack v w ⌟ = C.pack ⌞ v ⌟ ⌞ w ⌟
+  ⌞ pack v w ⌟ = C.pair ⌞ v ⌟ ⌞ w ⌟
   ⌞ const {B} c ⌟ = C.lit B c
   ⌞ tup vs ⌟ = C.tuple ⌞ vs ⌟ᵛ
   ⌞ inl v ⌟ = C.inl ⌞ v ⌟
@@ -76,7 +76,7 @@ module _ {Σ' : List DSig} where
   value-⌞⌟ : ∀ {A} (v : Val Σ' A) → Value ⌞ v ⌟
   values-⌞⌟ : ∀ {Δ} (vs : All (Val Σ') Δ) → Each Value ⌞ vs ⌟ᵛ
   value-⌞⌟ (code f) = T.fun-ref
-  value-⌞⌟ (pack v w) = T.pack (value-⌞⌟ v) (value-⌞⌟ w)
+  value-⌞⌟ (pack v w) = T.pair (value-⌞⌟ v) (value-⌞⌟ w)
   value-⌞⌟ (const c) = T.lit
   value-⌞⌟ (tup vs) = T.tuple (values-⌞⌟ vs)
   value-⌞⌟ (inl v) = T.inl (value-⌞⌟ v)
@@ -109,7 +109,7 @@ module _ {Σ' : List DSig} where
   {- Impμ in GlobalFunμ -}
   ⌜_⌝ˢ : ∀ {Δ A} → Simple Σ' Δ A → Tm Σ' Δ A
   ⌜ atm a ⌝ˢ = ⌜ a ⌝ᵃ
-  ⌜ pack a b ⌝ˢ = C.pack ⌜ a ⌝ᵃ ⌜ b ⌝ᵃ
+  ⌜ pair a b ⌝ˢ = C.pair ⌜ a ⌝ᵃ ⌜ b ⌝ᵃ
   ⌜ callc a b ⌝ˢ = C.callc ⌜ a ⌝ᵃ ⌜ b ⌝ᵃ
   ⌜ tuple as ⌝ˢ = C.tuple Mon.⌜ as ⌝ᵛ
   ⌜ get i a ⌝ˢ = C.get i ⌜ a ⌝ᵃ
@@ -126,7 +126,7 @@ module _ {Σ' : List DSig} where
 
   ⌜lift⌝ : ∀ {Δ A} (e : Mon.Exp Σ' Δ A) → ⌜ lift e ⌝ⁱ ≡ Mon.⌜ e ⌝
   ⌜lift⌝ (Mon.atm a) = refl
-  ⌜lift⌝ (Mon.pack a b) = refl
+  ⌜lift⌝ (Mon.pair a b) = refl
   ⌜lift⌝ (Mon.callc a b) = refl
   ⌜lift⌝ (Mon.tuple as) = refl
   ⌜lift⌝ (Mon.get i a) = refl
@@ -176,11 +176,11 @@ module _ {Σ' : List DSig} where
       val0 : ∀ {A} {s : Simple Σ' Δ A} {v} → sub (env φ) ⌜ s ⌝ˢ ≡ ⌞ v ⌟ → SV φ s (value v)
       val1 : ∀ {A} {s : Simple Σ' Δ A} {v} → red₁ (sub (env φ) ⌜ s ⌝ˢ) ≡ to ⌞ v ⌟ → SV φ s (value v)
       cal : ∀ {Δ' A B} {s : Simple Σ' Δ B} {f : Σ' ∋ sig Δ' A B} {e w}
-        → sub (env φ) ⌜ s ⌝ˢ ≡ C.callc (C.pack (C.fun-ref f) ⌞ e ⌟) ⌞ w ⌟ → SV φ s (call (pack (code f) e) w)
+        → sub (env φ) ⌜ s ⌝ˢ ≡ C.callc (C.pair (C.fun-ref f) ⌞ e ⌟) ⌞ w ⌟ → SV φ s (call (pack (code f) e) w)
 
     sv : ∀ {Δ A} (s : Simple Σ' Δ A) (φ : Env Σ' Δ) → SV φ s (I.run s φ)
     sv (atm a) φ = val0 (atom-⌞⌟ φ a)
-    sv (pack a b) φ = val0 (cong₂ C.pack (atom-⌞⌟ φ a) (atom-⌞⌟ φ b))
+    sv (pair a b) φ = val0 (cong₂ C.pair (atom-⌞⌟ φ a) (atom-⌞⌟ φ b))
     sv (callc a b) φ with I.atom φ a | atom-⌞⌟ φ a
     ... | pack (code f) e | ea = cal (cong₂ C.callc ea (atom-⌞⌟ φ b))
     sv (tuple as) φ = val0 (cong C.tuple (atoms-⌞⌟ φ as))
@@ -281,8 +281,8 @@ module _ {Σ' : List DSig} where
     sim (simple s) φ κ with I.run s φ in e | sv s φ
     ... | value v | _ = value-ans s φ κ v e
     ... | call (pack (code f) e') w | cal r rewrite r =
-      to-lag (fin κ , plug κ (C.callc (C.pack (C.fun-ref f) ⌞ e' ⌟) ⌞ w ⌟)) (cong (toNext _) (step-in-to (plugΣ κ)
-        (trans (val-in (value-red (T.pack T.fun-ref (value-⌞⌟ e')))) (trans (val-in (value-red (value-⌞⌟ w)))
+      to-lag (fin κ , plug κ (C.callc (C.pair (C.fun-ref f) ⌞ e' ⌟) ⌞ w ⌟)) (cong (toNext _) (step-in-to (plugΣ κ)
+        (trans (val-in (value-red (T.pair T.fun-ref (value-⌞⌟ e')))) (trans (val-in (value-red (value-⌞⌟ w)))
           (cong (λ X → to (sub (env (w ∷ e' ∷ [])) X))
             (trans (lookup-map Mon.⌜_⌝ ds f) (sym (trans (cong ⌜_⌝ⁱ (lookup-map lift ds f)) (⌜lift⌝ (lookup ds f))))))))))
         (cong (λ x → I.res ds₂ x κ) e)

@@ -35,7 +35,7 @@ module _ {Σ : List DSig} (ds : All (λ s → Exp Σ (Args s) (DSig.cod s)) Σ) 
   module _ (ck : ℕ) (calls : ∀ {A B} (f : Val (A ⇒ B)) w → C.call dsC ck f w ≡ I.call dsI ck f w) where
     lift-ok : ∀ {Δ A} (e : Exp Σ Δ A) (φ : Env Δ) → C.eval dsC ck φ ⌜ e ⌝ ≡ I.eval dsI ck φ (lift e)
     lift-ok (atm a) φ = eval-atom a
-    lift-ok (pack a b) φ = trans (atm-bind a) (atm-bind b)
+    lift-ok (pair a b) φ = trans (atm-bind a) (atm-bind b)
     lift-ok (callc a b) φ = trans (trans (atm-bind a) (atm-bind b)) (calls _ _)
     lift-ok (tuple as) φ = atoms-bind as
     lift-ok (get i a) φ = atm-bind a

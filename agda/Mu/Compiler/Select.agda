@@ -74,7 +74,7 @@ dst (to p lt) = slot p lt
 sel : ∀ {Σ n R Bs Δ A Δ''} → I.Simple Σ Δ A → (o : Out n Δ A Δ'')
   → (∀ {Γ O F} → Seq Σ n R Bs (after o Γ O F)) → ∀ {Γ O F} → Seq Σ n R Bs (st Γ Δ O F)
 sel (I.atm a) o k = movq (atom a) (dst o) ∷ k
-sel (I.pack c e) o k = alloc (pair (atom c) (atom e)) (dst o) ∷ k
+sel (I.pair c e) o k = alloc (pair (atom c) (atom e)) (dst o) ∷ k
 sel (I.callc (var x) a) o k =
   loadfst x rax ∷ loadsnd rdi ∷ movq (atom a) (reg rsi) ∷ callq (reg rax refl) refl refl ∷ movq (reg rax refl) (dst o) ∷ k
 sel (I.tuple as) o k = alloc (tuple (atms as)) (dst o) ∷ k

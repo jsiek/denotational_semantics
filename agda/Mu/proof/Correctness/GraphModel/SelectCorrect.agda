@@ -98,7 +98,7 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
     sel-≃ : ∀ {Δ A Δ''} (s : I.Simple Σ Δ A) (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)} {ρ Γ O F R F'}
       → Fits o K k ρ → then o K (𝒮 s T ρ) ≃ X.⟦_⟧ˢ T' (sel s o k {Γ} {O} {F}) B' ρ R F'
     sel-≃ s@(I.atm a) o f = put-≃ o f (𝒮-≃ TT s _)
-    sel-≃ s@(I.pack c e) o f = put-≃ o f (𝒮-≃ TT s _)
+    sel-≃ s@(I.pair c e) o f = put-≃ o f (𝒮-≃ TT s _)
     sel-≃ s@(I.callc (var x) a) o f = strict-put o f (𝒮-≃ TT s _)
     sel-≃ s@(I.tuple {Δs} as) o {ρ = ρ} {Γ} {O} {F} {R} f =
       put-≃ o f (≃-trans (𝒮-≃ TT s ρ) (≃-reflexive (cong (𝒯 (length Δs)) (𝒪s-atms {Γ = Γ} {O} {F} as ρ R))))

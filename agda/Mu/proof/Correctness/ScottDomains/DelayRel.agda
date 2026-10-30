@@ -1,10 +1,10 @@
 {-
 
-  Correctness of delay (EnvClosμ → FlatClosμ) in Scott domains: the logical
+  Correctness of delay (EnvClosμ → PairClosμ) in Scott domains: the logical
   relations of the two halves, and what they share.
 
   delay changes the representation of closures (a function value in
-  EnvClosμ, a pair of code and environment in FlatClosμ), so the meanings of
+  EnvClosμ, a pair of code and environment in PairClosμ), so the meanings of
   a program and its translation are related, not equal. In Scott
   domains with the universal domain 𝔻 the relations cannot be defined by
   recursion on types (μ types) nor on values; they are defined by
@@ -27,7 +27,7 @@
   Both relations are downward closed and admissible in the approximated
   value (R-mono, R-sup), and survive moving between stages (R-π, R-ε).
   Values are related (Rel δ a w) when every approximation of a is
-  related to w. The operators of EnvClosμ and FlatClosμ other than closures
+  related to w. The operators of EnvClosμ and PairClosμ other than closures
   and calls preserve both relations (Rel-seq, ..., Rel-prim); closures
   and calls are in DelayPreserve.agda and DelayReflect.agda.
 

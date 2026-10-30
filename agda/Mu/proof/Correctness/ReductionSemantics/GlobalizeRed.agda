@@ -1,6 +1,6 @@
 {-
 
-  Correctness of globalize (FlatClosμ → GlobalFunμ) by a forward simulation
+  Correctness of globalize (PairClosμ → GlobalFunμ) by a forward simulation
   between their reduction semantics, in lock step, as for typed
   globalize (proof/Correctness/Reduction/GlobalizeRed.agda).
 
@@ -22,7 +22,7 @@ module Mu.proof.Correctness.ReductionSemantics.GlobalizeRed where
 open import Mu.Language.Type hiding (_[_])
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
 open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
-open import Mu.Language.FlatClos
+open import Mu.Language.PairClos
 import Mu.Language.GlobalFun as C
 open C using (DSig; sig)
 open import Mu.Compiler.Globalize
@@ -31,7 +31,7 @@ open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Mu.proof.Semantics.ReductionSemantics.FlatClos as S
+import Mu.proof.Semantics.ReductionSemantics.PairClos as S
 import Mu.proof.Semantics.ReductionSemantics.GlobalFun as T
 open T using (Value; value-red)
 import Language.Prim as P
@@ -56,7 +56,7 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   data _⊢_≈_ {Σ} (e : Emb Σ) : ∀ {Γ A} → Tm Γ A → C.Tm Σ Γ A → Set where
     var≈ : ∀ {Γ A} {x : Γ ∋ A} → e ⊢ ` x ≈ C.` x
     code≈ : ∀ {Γ Δ A B N} {f : Σ ∋ sig Δ A B} → (λ x → x) ⊢ N ≈ lookup ds (e f) → e ⊢ code {Γ} N ≈ C.fun-ref f
-    pack≈ : ∀ {Γ Δ A B} {L : Tm Γ (code Δ A B)} {L' M M'} → e ⊢ L ≈ L' → e ⊢ M ≈ M' → e ⊢ pack L M ≈ C.pack L' M'
+    pair≈ : ∀ {Γ Δ A B} {L : Tm Γ (code Δ A B)} {L' M M'} → e ⊢ L ≈ L' → e ⊢ M ≈ M' → e ⊢ pair L M ≈ C.pair L' M'
     callc≈ : ∀ {Γ A B} {L : Tm Γ (A ⇒ B)} {L' M M'} → e ⊢ L ≈ L' → e ⊢ M ≈ M' → e ⊢ callc L M ≈ C.callc L' M'
     lit≈ : ∀ {Γ B c} → e ⊢ lit {Γ} B c ≈ C.lit B c
     tuple≈ : ∀ {Γ Δ} {Ms : All (Tm Γ) Δ} {Ms'} → All₂ (e ⊢_≈_) Ms Ms' → e ⊢ tuple Ms ≈ C.tuple Ms'
@@ -81,7 +81,7 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
     → (∀ {n} (f : Σ ∋ n) → e' (g f) ≡ e f) → All₂ (e ⊢_≈_) Ms Ms' → All₂ (e' ⊢_≈_) Ms (C.wks g Ms')
   ≈-wk h var≈ = var≈
   ≈-wk {M = code N} h (code≈ {f = f} r) = code≈ (subst (λ f' → N ≈ lookup ds f') (sym (h f)) r)
-  ≈-wk h (pack≈ r s) = pack≈ (≈-wk h r) (≈-wk h s)
+  ≈-wk h (pair≈ r s) = pair≈ (≈-wk h r) (≈-wk h s)
   ≈-wk h (callc≈ r s) = callc≈ (≈-wk h r) (≈-wk h s)
   ≈-wk h lit≈ = lit≈
   ≈-wk h (tuple≈ rs) = tuple≈ (≈-wks h rs)
@@ -131,7 +131,7 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   glob≈ (code N) D with glob N D | glob≈ N D
   ... | out g D' N' | ih = λ { s (e , a) → let (r , a') = ih _ a in
           code≈ (subst (_ ≈_) (sym e) (≈-wk (λ _ → refl) r)) , agree-irr a' }
-  glob≈ (pack L M) D = glob₂≈ pack≈ L M D
+  glob≈ (pair L M) D = glob₂≈ pair≈ L M D
   glob≈ (callc L M) D = glob₂≈ callc≈ L M D
   glob≈ (lit B c) D s a = lit≈ , agree-irr a
   glob≈ (tuple Ms) D with globs Ms D | globs≈ Ms D
@@ -191,7 +191,7 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
       → All₂ _≈_ Ms Ms' → OK σ τ → All₂ _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
     ≈-trav var≈ ok = ok _
     ≈-trav (code≈ r) ok = code≈ r
-    ≈-trav (pack≈ r s) ok = pack≈ (≈-trav r ok) (≈-trav s ok)
+    ≈-trav (pair≈ r s) ok = pair≈ (≈-trav r ok) (≈-trav s ok)
     ≈-trav (callc≈ r s) ok = callc≈ (≈-trav r ok) (≈-trav s ok)
     ≈-trav lit≈ ok = lit≈
     ≈-trav (tuple≈ rs) ok = tuple≈ (≈-travs rs ok)
@@ -217,7 +217,7 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → Value V' → S.obs V ≡ T.obs V'
   obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ _≈_ Vs Vs' → Each Value Vs' → S.obss Vs ≡ T.obss Vs'
   obs≈ (code≈ _) _ = refl
-  obs≈ (pack≈ _ _) _ = refl
+  obs≈ (pair≈ _ _) _ = refl
   obs≈ lit≈ _ = refl
   obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
   obs≈ (inl≈ r) (T.inl v) = cong o-inl (obs≈ r v)
@@ -238,17 +238,17 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   sim : ∀ {A} {M : Tm [] A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
   sims : ∀ {Δ} {Ms : All (Tm []) Δ} {Ms'} → All₂ _≈_ Ms Ms' → Ans (T.reds ds) (Each Value) (All₂ _≈_) Ms (S.reds Ms) Ms'
   sim (code≈ r) = val ε T.fun-ref (code≈ r)
-  sim (pack≈ r s) =
-    ans-in (frame _ λ _ → refl) (λ m → pack≈ m s) (sim r)
-      λ v m → ans-in (frame {g = C.pack _} _ λ _ → val-in (value-red v)) (pack≈ m) (sim s) λ w m' → val ε (T.pack v w) (pack≈ m m')
+  sim (pair≈ r s) =
+    ans-in (frame _ λ _ → refl) (λ m → pair≈ m s) (sim r)
+      λ v m → ans-in (frame {g = C.pair _} _ λ _ → val-in (value-red v)) (pair≈ m) (sim s) λ w m' → val ε (T.pair v w) (pair≈ m m')
   sim (callc≈ r s) =
     ans-in (frame _ λ _ → refl) (λ m → callc≈ m s) (sim r)
       λ v m → ans-in (frame {g = C.callc _} _ λ _ → val-in (value-red v)) (callc≈ m) (sim s) λ w m' → call-sim v m w m'
     where
     call-sim : ∀ {A B} {V : Tm [] (A ⇒ B)} {V' W W'} → Value V' → V ≈ V' → Value W' → W ≈ W'
       → Ans′ (callc V W) (S.call V refl W) (C.callc V' W')
-    call-sim (T.pack T.fun-ref e) (pack≈ (code≈ n) m) w m' =
-      to (one (trans (val-in (value-red (T.pack T.fun-ref e))) (val-in (value-red w))))
+    call-sim (T.pair T.fun-ref e) (pair≈ (code≈ n) m) w m' =
+      to (one (trans (val-in (value-red (T.pair T.fun-ref e))) (val-in (value-red w))))
          (SubT.≈-trav n λ { Z → m' ; (S Z) → m })
   sim lit≈ = val ε T.lit lit≈
   sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)

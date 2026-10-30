@@ -64,7 +64,7 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
   lift-sem : ∀ {Δ A} (e : M.Exp Σ Δ A) σ (κ : ⟨ K ⟩) → κ · ⊥𝔻 ＝ ⊥𝔻
     → κ · (⟦ ⌜ e ⌝ ⟧[ T ] · σ) ＝ ⟦ lift e ⟧ᴷ T' · σ · κ
   lift-sem (M.atm a) σ κ s = ap (κ ·_) (atm-＝ a σ)
-  lift-sem (M.pack a b) σ κ s = ap₂ (λ x y → κ · (pair · x · y)) (atm-＝ a σ) (atm-＝ b σ)
+  lift-sem (M.pair a b) σ κ s = ap₂ (λ x y → κ · (pair · x · y)) (atm-＝ a σ) (atm-＝ b σ)
   lift-sem (M.callc a b) σ κ s =
     ap₂ (λ x y → κ · (appᵈ · (appᵈ · (car · x) · (cdr · x)) · y)) (atm-＝ a σ) (atm-＝ b σ)
   lift-sem (M.tuple {Δs} as) σ κ s = ap (λ x → κ · (tupleᵈ (length Δs) · x)) (atms-＝ as σ)

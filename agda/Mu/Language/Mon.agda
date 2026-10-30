@@ -29,7 +29,7 @@ data Atm (Σ : List DSig) (Γ : Ctx) : Type → Set where
 
 data Exp (Σ : List DSig) (Γ : Ctx) : Type → Set where
   atm : ∀ {A} → Atm Σ Γ A → Exp Σ Γ A
-  pack : ∀ {Δ A B} → Atm Σ Γ (code Δ A B) → Atm Σ Γ (tup Δ) → Exp Σ Γ (A ⇒ B)
+  pair : ∀ {Δ A B} → Atm Σ Γ (code Δ A B) → Atm Σ Γ (tup Δ) → Exp Σ Γ (A ⇒ B)
   callc : ∀ {A B} → Atm Σ Γ (A ⇒ B) → Atm Σ Γ A → Exp Σ Γ B
   tuple : ∀ {Δ} → All (Atm Σ Γ) Δ → Exp Σ Γ (tup Δ)
   get : ∀ {Δ A} → Δ ∋ A → Atm Σ Γ (tup Δ) → Exp Σ Γ A
@@ -67,7 +67,7 @@ ren r (ref f) = ref f
 
 ⌜_⌝ : ∀ {Σ Γ A} → Exp Σ Γ A → C.Tm Σ Γ A
 ⌜ atm a ⌝ = ⌜ a ⌝ᵃ
-⌜ pack a b ⌝ = C.pack ⌜ a ⌝ᵃ ⌜ b ⌝ᵃ
+⌜ pair a b ⌝ = C.pair ⌜ a ⌝ᵃ ⌜ b ⌝ᵃ
 ⌜ callc a b ⌝ = C.callc ⌜ a ⌝ᵃ ⌜ b ⌝ᵃ
 ⌜ tuple as ⌝ = C.tuple ⌜ as ⌝ᵛ
 ⌜ get i a ⌝ = C.get i ⌜ a ⌝ᵃ

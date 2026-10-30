@@ -11,7 +11,7 @@ tuples, sums and iso-recursive types μX.A, with no recursion construct
 and no errors.
 
     ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
-           --concretize--> EnvClosμ --delay--> FlatClosμ
+           --concretize--> EnvClosμ --delay--> PairClosμ
            --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 
@@ -112,7 +112,7 @@ in `proof/Correctness/<style>/`. They are not restated in `Theorems/`.
 | ISWIMμ | [`Language/ISWIM.agda`](Language/ISWIM.agda) | `Tm` (renaming and substitution: `Language/ISWIMSubst.agda`) |
 | Clos | [`Language/Clos.agda`](Language/Clos.agda) | `Tm` |
 | EnvClos | [`Language/EnvClos.agda`](Language/EnvClos.agda) | `Tm` |
-| FlatClos | [`Language/FlatClos.agda`](Language/FlatClos.agda) | `Tm` |
+| PairClos | [`Language/PairClos.agda`](Language/PairClos.agda) | `Tm` |
 | GlobalFun | [`Language/GlobalFun.agda`](Language/GlobalFun.agda) | `Tm`, `Code`, `Program`, `DSig` |
 | Mon | [`Language/Mon.agda`](Language/Mon.agda) | `Atm`, `Exp`, `Program`; its embedding into GlobalFun, `⌜_⌝ₚ` (Mon has no semantics of its own) |
 | Imp | [`Language/Imp.agda`](Language/Imp.agda) | `Simple`, `Exp`, `Program` |
@@ -131,13 +131,13 @@ pipelines.
 | enclose (ISWIMμ to Clos) | [`Compiler/Enclose.agda`](Compiler/Enclose.agda) | `enclose` |
 | optimize (Clos to Clos) | [`Compiler/Optimize.agda`](Compiler/Optimize.agda) | `optimize-program` |
 | concretize (Clos to EnvClos) | [`Compiler/Concretize.agda`](Compiler/Concretize.agda) | `concretize-program` (`concretize` with references φ: `Ref`, `Refs`) |
-| delay (EnvClos to FlatClos) | [`Compiler/Delay.agda`](Compiler/Delay.agda) | `delay-program` (`delay`) |
-| globalize (FlatClos to GlobalFun) | [`Compiler/Globalize.agda`](Compiler/Globalize.agda) | `globalize` |
+| delay (EnvClos to PairClos) | [`Compiler/Delay.agda`](Compiler/Delay.agda) | `delay-program` (`delay`) |
+| globalize (PairClos to GlobalFun) | [`Compiler/Globalize.agda`](Compiler/Globalize.agda) | `globalize` |
 | remove complex operands (GlobalFun to Mon) | [`Compiler/RCO.agda`](Compiler/RCO.agda) | `rco-program` |
 | lift locals (Mon to Imp) | [`Compiler/LiftLocals.agda`](Compiler/LiftLocals.agda) | `lift-program` |
 | explicate control (Imp to CFG) | [`Compiler/Explicate.agda`](Compiler/Explicate.agda) | `explicate` |
 | select instructions (CFG to x86μ) | [`Compiler/Select.agda`](Compiler/Select.agda) | `select` (the frame's slots: `depth`) |
-| the compiler, `compile` | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `compile` (prefixes: `compile-to-FlatClos`, `compile-to-GlobalFun`, `compile-to-Mon`, `compile-to-Imp`, `compile-to-CFG`) |
+| the compiler, `compile` | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `compile` (prefixes: `compile-to-PairClos`, `compile-to-GlobalFun`, `compile-to-Mon`, `compile-to-Imp`, `compile-to-CFG`) |
 
 ### Semantics, in each of the five styles
 
@@ -146,7 +146,7 @@ pipelines.
 | ISWIMμ | `Semantics/GraphModel/ISWIM.agda`: `⟦_⟧` | `Semantics/ScottDomains/ISWIM.agda`: `⟦_⟧` | `Semantics/AbstractMachines/ISWIM.agda`: `State`, `step`, `sem` | `Semantics/ClockedInterpreters/ISWIM.agda`: `eval`, `call`, `sem` | `Semantics/ReductionSemantics/ISWIM.agda`: `red`, `sem` |
 | Clos | `Semantics/GraphModel/Clos.agda`: `⟦_⟧` | `Semantics/ScottDomains/Clos.agda`: `⟦_⟧` | `Semantics/AbstractMachines/Clos.agda`: `sem` | `Semantics/ClockedInterpreters/Clos.agda`: `eval`, `sem` | `Semantics/ReductionSemantics/Clos.agda`: `red`, `sem` |
 | EnvClos | `Semantics/GraphModel/EnvClos.agda`: `⟦_⟧` | `Semantics/ScottDomains/EnvClos.agda`: `⟦_⟧` | `Semantics/AbstractMachines/EnvClos.agda`: `sem` | `Semantics/ClockedInterpreters/EnvClos.agda`: `eval`, `sem` | `Semantics/ReductionSemantics/EnvClos.agda`: `red`, `sem` |
-| FlatClos | `Semantics/GraphModel/FlatClos.agda`: `⟦_⟧` | `Semantics/ScottDomains/FlatClos.agda`: `⟦_⟧` | `Semantics/AbstractMachines/FlatClos.agda`: `sem` | `Semantics/ClockedInterpreters/FlatClos.agda`: `eval`, `sem` | `Semantics/ReductionSemantics/FlatClos.agda`: `red`, `sem` |
+| PairClos | `Semantics/GraphModel/PairClos.agda`: `⟦_⟧` | `Semantics/ScottDomains/PairClos.agda`: `⟦_⟧` | `Semantics/AbstractMachines/PairClos.agda`: `sem` | `Semantics/ClockedInterpreters/PairClos.agda`: `eval`, `sem` | `Semantics/ReductionSemantics/PairClos.agda`: `red`, `sem` |
 | GlobalFun | `Semantics/GraphModel/GlobalFun.agda`: `⟦_⟧ₚ` | `Semantics/ScottDomains/GlobalFun.agda`: `⟦_⟧ₚ` | `Semantics/AbstractMachines/GlobalFun.agda`: `sem` | `Semantics/ClockedInterpreters/GlobalFun.agda`: `sem` | `Semantics/ReductionSemantics/GlobalFun.agda`: `sem` |
 | Mon | as its embedding `⌜_⌝ₚ` into GlobalFun, in every style | | | | |
 | Imp | `Semantics/GraphModel/Imp.agda`: `⟦_⟧ₚ` | `Semantics/ScottDomains/Imp.agda`: `⟦_⟧ₚ` | `Semantics/AbstractMachines/Imp.agda`: `sem` | `Semantics/ClockedInterpreters/Imp.agda`: `sem` | the abstract machine |
@@ -171,7 +171,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | D • E (application) | `../Framework/GraphModel/Ops.agda` | `⋆` (written `_●_` in `proof/Correctness/GraphModel/ApproxLR.agda`) |
 | Λ(F) | `../Framework/GraphModel/Ops.agda` | `Λ` (the curried form of Lemma 3.1, part 2: `ΛΛ`, `../proof/Framework/GraphModel/Ops.agda`) |
 | pair, car, cdr | `../Framework/GraphModel/Ops.agda` | `pair`, `car`, `cdr` |
-| D ⊙ E (call a closure) | `Semantics/GraphModel/FlatClos.agda` (the meaning of `callc`), `proof/Correctness/GraphModel/DelayRel.agda` | `⟦ callc L M ⟧`, `_⊙_` |
+| D ⊙ E (call a closure) | `Semantics/GraphModel/PairClos.agda` (the meaning of `callc`), `proof/Correctness/GraphModel/DelayRel.agda` | `⟦ callc L M ⟧`, `_⊙_` |
 | 𝒯(D₁, …, Dₙ) | `../Framework/GraphModel/Ops.agda` | `𝒯` |
 | inl, inr | `../Framework/GraphModel/Ops.agda` | `inl`, `inr` |
 | π_t (t = tupᵢ, left, right) | `../Framework/GraphModel/Ops.agda`, `../proof/Framework/GraphModel/DomainUtilBase.agda` | `proj` (tupᵢ), `Untag` (any tag) |
@@ -203,7 +203,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | B (opening) | base types, ρ₀, ⟦M⟧ = ⟦M⟧ρ₀ | `Language/Type.agda`, `Semantics/GraphModel/Closed.agda` (`ρ₀`) |
 | B.1 The ISWIM Language | typing, graph semantics | `Language/Type.agda`, `Language/ISWIM.agda`, `Semantics/GraphModel/ISWIM.agda` |
 | B.2 The Clos and EnvClos Languages | typing, graph semantics | `Language/Clos.agda`, `Language/EnvClos.agda`, `Semantics/GraphModel/Clos.agda`, `Semantics/GraphModel/EnvClos.agda` |
-| B.3 The FlatClos Language | typing, graph semantics | `Language/FlatClos.agda`, `Semantics/GraphModel/FlatClos.agda` |
+| B.3 The PairClos Language | typing, graph semantics | `Language/PairClos.agda`, `Semantics/GraphModel/PairClos.agda` |
 | B.4 The GlobalFun and Mon Languages | typing, graph semantics, the embedding of Mon | `Language/GlobalFun.agda`, `Language/Mon.agda` (`⌜_⌝ₚ`), `Semantics/GraphModel/GlobalFun.agda`, `Semantics/GraphModel/Ops.agda` (tables) |
 | B.5 The Imp Language | typing, graph semantics | `Language/Imp.agda`, `Semantics/GraphModel/Imp.agda` |
 | B.6 The CFG Language | typing, graph semantics | `Language/CFG.agda`, `Semantics/GraphModel/CFG.agda` |
@@ -256,7 +256,7 @@ styles other than Scott domains):
   `Compiler/*.agda` (all eleven files);
 * heterogeneous vectors: `Framework/AllUtil.agda`,
   `Framework/ReductionAll.agda`;
-* the graph model: `Semantics/GraphModel/{ISWIM,EnvClos,FlatClos,Imp,CFG,X86,Ops,Closed}.agda`,
+* the graph model: `Semantics/GraphModel/{ISWIM,EnvClos,PairClos,Imp,CFG,X86,Ops,Closed}.agda`,
   and `../Framework/GraphModel/{Domain,SetsAsPredicates,Env,DOpSig,OpsBase,Ops}.agda`,
   `../Semantics/Graph/Prim.agda`;
 * Scott domains: `Semantics/ScottDomains/{ISWIM,Imp,CFG,X86,Ops,Closed}.agda`,
@@ -276,7 +276,7 @@ styles other than Scott domains):
   `../Framework/abt/{AbstractBindingTree,GSubst,ScopedTuple,Sig,Var}.agda`.
 
 The semantics of the other intermediate languages
-(`Semantics/<style>/{Clos,EnvClos,FlatClos,GlobalFun}.agda` where not
+(`Semantics/<style>/{Clos,EnvClos,PairClos,GlobalFun}.agda` where not
 listed above) are used only by the proofs, and are not on the surface.
 Everything under `proof/` (here and in `../proof/`) is proof.
 

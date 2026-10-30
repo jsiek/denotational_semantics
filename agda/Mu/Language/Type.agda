@@ -12,7 +12,7 @@
   * fold : A [ μ A ] → μ A and unfold : μ A → A [ μ A ] (in the
     languages) are the coercions of the isomorphism; they do nothing at
     run time.
-  * code Δ A B, in FlatClosμ only: closed code that takes a tuple of type
+  * code Δ A B, in PairClosμ only: closed code that takes a tuple of type
     tup Δ (its environment) and an argument of type A.
   * A primitive's result: sub gives an integer, eq a boolean, the sum
     tup [] ⊹ tup [] (inl ⟨⟩ for true).

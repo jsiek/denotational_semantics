@@ -1,7 +1,7 @@
 {-
 
   The semantics of GlobalFunμ (Mu/Language/GlobalFun.agda) in the graph model,
-  as that of FlatClosμ (Mu/Semantics/GraphModel/FlatClos.agda), given a table T of
+  as that of PairClosμ (Mu/Semantics/GraphModel/PairClos.agda), given a table T of
   the meanings of the global definitions: fun-ref f means T f. The
   definitions of a program are given meaning newest first, each with
   the table of the older ones (tables, Mu/Semantics/GraphModel/Ops.agda), and
@@ -12,7 +12,7 @@
 module Mu.Semantics.GraphModel.GlobalFun where
 
 open import Framework.GraphModel.Prelude
-open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
+open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to pairD)
 open import Semantics.Graph.Prim using (primD)
 open import Mu.Semantics.GraphModel.Ops
 open import Mu.Language.Type
@@ -28,7 +28,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 ⟦ ` x ⟧[ T ] ρ = ρ (idx x)
 ⟦ fun-ref f ⟧[ T ] ρ = T f
-⟦ pack L M ⟧[ T ] ρ = pair ⟨ ⟦ L ⟧[ T ] ρ , ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩ ⟩
+⟦ pair L M ⟧[ T ] ρ = pairD ⟨ ⟦ L ⟧[ T ] ρ , ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩ ⟩
 ⟦ callc L M ⟧[ T ] ρ =
   ⋆ ⟨ ⋆ ⟨ car ⟨ ⟦ L ⟧[ T ] ρ , ptt ⟩ , ⟨ cdr ⟨ ⟦ L ⟧[ T ] ρ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩ ⟩
 ⟦ lit B c ⟧[ T ] ρ = ℬ B c ptt

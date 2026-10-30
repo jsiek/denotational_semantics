@@ -1,7 +1,7 @@
 {-
 
   A reduction semantics for GlobalFunμ (Mu/Language/GlobalFun.agda), as for
-  FlatClosμ (Mu/Semantics/ReductionSemantics/FlatClos.agda) and Clos5ᵀ
+  PairClosμ (Mu/Semantics/ReductionSemantics/PairClos.agda) and Clos5ᵀ
   (Semantics/Reduction/Typed/Clos5.agda), for a program's table of
   definitions ds: a reference to a definition is a value, and callc
   calls the definition it refers to.
@@ -42,7 +42,7 @@ module _ {Σ : List DSig} where
     travs : ∀ {Γ Δ Δ'} → Sub 𝒦 Γ Δ → All (Tm Σ Γ) Δ' → All (Tm Σ Δ) Δ'
     trav σ (` x) = tm (σ x)
     trav σ (fun-ref f) = fun-ref f
-    trav σ (pack L M) = pack (trav σ L) (trav σ M)
+    trav σ (pair L M) = pair (trav σ L) (trav σ M)
     trav σ (callc L M) = callc (trav σ L) (trav σ M)
     trav σ (lit B c) = lit B c
     trav σ (tuple Ms) = tuple (travs σ Ms)
@@ -89,7 +89,7 @@ module _ {Σ : List DSig} where
   obs : ∀ {A} → Tm Σ [] A → Obs
   obss : ∀ {Δ} → All (Tm Σ []) Δ → List Obs
   obs (fun-ref _) = o-fun
-  obs (pack _ _) = o-fun
+  obs (pair _ _) = o-fun
   obs (lit B c) = o-const B c
   obs (tuple Ms) = o-tuple (obss Ms)
   obs (inl M) = o-inl (obs M)
@@ -104,14 +104,14 @@ module _ {Σ : List DSig} where
   out P.sub n m = lit Int (n - m)
   out P.eq n m = if does (n ≟ m) then inl (tuple []) else inr (tuple [])
 
-  {- the redexes, once the operands are values (the code of a pack is
+  {- the redexes, once the operands are values (the code of a pair is
      split by a second function, at a generic type) -}
   call-ref : ∀ {C Δ A B} → All (Code Σ) Σ → Tm Σ [] C → C ≡ code Δ A B → Tm Σ [] (tup Δ) → Tm Σ [] A → Red (Tm Σ [] B)
   call-ref ds (fun-ref f) refl E W = to (sub (W • E • ∅) (lookup ds f))
   call-ref ds _ _ E W = error
 
   call : ∀ {C A B} → All (Code Σ) Σ → Tm Σ [] C → C ≡ A ⇒ B → Tm Σ [] A → Red (Tm Σ [] B)
-  call ds (pack L E) refl W = call-ref ds L refl E W
+  call ds (pair L E) refl W = call-ref ds L refl E W
   call ds _ _ W = error
 
   get? : ∀ {C Δ A} → Δ ∋ A → Tm Σ [] C → C ≡ tup Δ → Red (Tm Σ [] A)
@@ -136,7 +136,7 @@ module _ {Σ : List DSig} where
   reds : All (Code Σ) Σ → ∀ {Δ} → All (Tm Σ []) Δ → Red (All (Tm Σ []) Δ)
   red ds (` ())
   red ds (fun-ref f) = val
-  red ds (pack L M) = step-in (λ L' → pack L' M) (red ds L) (step-in (pack L) (red ds M) val)
+  red ds (pair L M) = step-in (λ L' → pair L' M) (red ds L) (step-in (pair L) (red ds M) val)
   red ds (callc L M) = step-in (λ L' → callc L' M) (red ds L) (step-in (callc L) (red ds M) (call ds L refl M))
   red ds (lit B c) = val
   red ds (tuple Ms) = step-in tuple (reds ds Ms) val

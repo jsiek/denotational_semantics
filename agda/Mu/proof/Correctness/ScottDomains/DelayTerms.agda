@@ -1,6 +1,6 @@
 {-
 
-  Correctness of delay (EnvClosμ → FlatClosμ) in Scott domains: the
+  Correctness of delay (EnvClosμ → PairClosμ) in Scott domains: the
   fundamental lemma of each half, by induction on terms. The two are
   the same induction, over a relation S between source and target
   values that the operators preserve (module Terms); it is instantiated
@@ -36,7 +36,7 @@ open import proof.Framework.Scott.Ops pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 open import Mu.Semantics.ScottDomains.EnvClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
-open import Mu.Semantics.ScottDomains.FlatClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
+open import Mu.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
 open import Mu.proof.Correctness.ScottDomains.DelayRel pt fe pe
 open import Mu.proof.Correctness.ScottDomains.DelayPreserve pt fe pe using (Pres; Pres-clos; Pres-call)
 open import Mu.proof.Correctness.ScottDomains.DelayReflect pt fe pe using (Refl; Refl-clos; Refl-call)

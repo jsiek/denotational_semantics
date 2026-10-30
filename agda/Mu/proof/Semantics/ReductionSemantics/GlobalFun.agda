@@ -30,7 +30,7 @@ module _ {Σ : List DSig} where
 
   data Value {Γ} : ∀ {A} → Tm Σ Γ A → Set where
     fun-ref : ∀ {Δ A B} {f : Σ ∋ sig Δ A B} → Value (fun-ref f)
-    pack : ∀ {Δ A B} {L : Tm Σ Γ (code Δ A B)} {M} → Value L → Value M → Value (pack L M)
+    pair : ∀ {Δ A B} {L : Tm Σ Γ (code Δ A B)} {M} → Value L → Value M → Value (pair L M)
     lit : ∀ {B c} → Value (lit B c)
     tuple : ∀ {Δ} {Vs : All (Tm Σ Γ) Δ} → Each Value Vs → Value (tuple Vs)
     inl : ∀ {A B} {V : Tm Σ Γ A} → Value V → Value (inl {B = B} V)
@@ -40,7 +40,7 @@ module _ {Σ : List DSig} where
   value-red : ∀ {ds A} {V : Tm Σ [] A} → Value V → red ds V ≡ val
   values-red : ∀ {ds Δ} {Vs : All (Tm Σ []) Δ} → Each Value Vs → reds ds Vs ≡ val
   value-red fun-ref = refl
-  value-red {ds} (pack v w) rewrite value-red {ds} v | value-red {ds} w = refl
+  value-red {ds} (pair v w) rewrite value-red {ds} v | value-red {ds} w = refl
   value-red lit = refl
   value-red {ds} (tuple vs) rewrite values-red {ds} vs = refl
   value-red {ds} (inl v) rewrite value-red {ds} v = refl
@@ -62,7 +62,7 @@ module _ {Σ : List DSig} where
       → travs 𝒦₂ σ₂ (travs 𝒦₁ σ₁ Ms) ≡ travs 𝒦₃ σ₃ Ms
     fuse r (` x) = R-var r x
     fuse r (fun-ref f) = refl
-    fuse r (pack L M) = cong₂ pack (fuse r L) (fuse r M)
+    fuse r (pair L M) = cong₂ pair (fuse r L) (fuse r M)
     fuse r (callc L M) = cong₂ callc (fuse r L) (fuse r M)
     fuse r (lit B c) = refl
     fuse r (tuple Ms) = cong tuple (fuses r Ms)
@@ -109,7 +109,7 @@ module _ {Σ : List DSig} where
   sub-id-exts h (S x) = cong (ren S) (h x)
   sub-id h (` x) = h x
   sub-id h (fun-ref f) = refl
-  sub-id h (pack L M) = cong₂ pack (sub-id h L) (sub-id h M)
+  sub-id h (pair L M) = cong₂ pair (sub-id h L) (sub-id h M)
   sub-id h (callc L M) = cong₂ callc (sub-id h L) (sub-id h M)
   sub-id h (lit B c) = refl
   sub-id h (tuple Ms) = cong tuple (sub-ids h Ms)

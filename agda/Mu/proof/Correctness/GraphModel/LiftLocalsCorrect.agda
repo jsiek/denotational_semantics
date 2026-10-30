@@ -59,7 +59,7 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T) (TT : ∀ {s} (f : Σ ∋ s) → T
 
   lift-sem : ∀ {Δ A} (e : M.Exp Σ Δ A) σ k → Con-env σ → K⟨ k ⟩ (⟦ ⌜ e ⌝ ⟧[ T ] σ) ≃ ⟦ lift e ⟧ᴷ T' σ K⟨ k ⟩
   lift-sem (M.atm a) σ k C = K-≃ k (atm-≃ a σ)
-  lift-sem (M.pack a b) σ k C = K-≃ k (mono-≃ pair-mono ⟨ up (atm-≃ a σ) , ⟨ up (atm-≃ b σ) , ptt ⟩ ⟩)
+  lift-sem (M.pair a b) σ k C = K-≃ k (mono-≃ pair-mono ⟨ up (atm-≃ a σ) , ⟨ up (atm-≃ b σ) , ptt ⟩ ⟩)
   lift-sem (M.callc a b) σ k C = K-≃ k (mono-≃ (mono (callc-good {⊤})) ⟨ up (atm-≃ a σ) , ⟨ up (atm-≃ b σ) , ptt ⟩ ⟩)
   lift-sem (M.tuple as) σ k C = K-≃ k (𝒯-≃ _ (atms-≃ as σ))
   lift-sem (M.get i a) σ k C = K-≃ k (proj-≃ (pos i) (atm-≃ a σ))

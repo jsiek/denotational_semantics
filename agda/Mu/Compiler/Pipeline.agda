@@ -3,12 +3,12 @@
   The passes of the ISWIMμ compiler, composed: from ISWIMμ to X86μ,
 
     ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
-           --concretize--> EnvClosμ --delay--> FlatClosμ --globalize--> GlobalFunμ --rco--> Monμ
+           --concretize--> EnvClosμ --delay--> PairClosμ --globalize--> GlobalFunμ --rco--> Monμ
            --lift locals--> Impμ --explicate control--> CFGμ
            --select instructions--> X86μ
 
   as the typed pipeline's (Compiler/Pipeline.agda), without cast insertion:
-  compile is the whole compiler, into X86μ; its prefixes compile-to-FlatClos,
+  compile is the whole compiler, into X86μ; its prefixes compile-to-PairClos,
   compile-to-GlobalFun, compile-to-Mon, compile-to-Imp and compile-to-CFG
   stop at those languages. A program is a closed term of any type, and
   each compiled program has its type.
@@ -19,7 +19,7 @@ module Mu.Compiler.Pipeline where
 
 open import Mu.Language.Type using (Type)
 import Mu.Language.ISWIM as ISWIMμ
-import Mu.Language.FlatClos as FlatClosμ
+import Mu.Language.PairClos as PairClosμ
 import Mu.Language.GlobalFun as GlobalFunμ
 import Mu.Language.Mon as Monμ
 import Mu.Language.Imp as Impμ
@@ -38,11 +38,11 @@ open import Mu.Compiler.Select using (select)
 
 open import Data.List using ([])
 
-compile-to-FlatClos : ∀ {A : Type} → ISWIMμ.Tm [] A → FlatClosμ.Tm [] A
-compile-to-FlatClos M = delay-program (concretize-program (optimize-program (enclose (simplify M))))
+compile-to-PairClos : ∀ {A : Type} → ISWIMμ.Tm [] A → PairClosμ.Tm [] A
+compile-to-PairClos M = delay-program (concretize-program (optimize-program (enclose (simplify M))))
 
 compile-to-GlobalFun : ∀ {A : Type} → ISWIMμ.Tm [] A → GlobalFunμ.Program A
-compile-to-GlobalFun M = globalize (compile-to-FlatClos M)
+compile-to-GlobalFun M = globalize (compile-to-PairClos M)
 
 compile-to-Mon : ∀ {A : Type} → ISWIMμ.Tm [] A → Monμ.Program A
 compile-to-Mon M = rco-program (compile-to-GlobalFun M)

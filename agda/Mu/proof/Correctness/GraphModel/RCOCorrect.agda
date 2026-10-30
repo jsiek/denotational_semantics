@@ -103,7 +103,7 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {s} (f : Σ ∋ s) → 
   atomize-sem (` x) k e O ks = ≃-trans (cong O ⟨ lift (agr e x) , ptt ⟩) (ks (λ y → y) _ _ (id-ext e))
   atomize-sem (fun-ref f) k e O ks = ≃-trans (cong O ⟨ lift (TT f) , ptt ⟩) (ks (λ y → y) _ _ (id-ext e))
   atomize-sem (lit B c) k e O ks = ks (λ y → y) _ _ (id-ext e)
-  atomize-sem N@(pack _ _) = let-sem N
+  atomize-sem N@(pair _ _) = let-sem N
   atomize-sem N@(callc _ _) = let-sem N
   atomize-sem N@(tuple _) = let-sem N
   atomize-sem N@(get _ _) = let-sem N
@@ -144,7 +144,7 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {s} (f : Σ ∋ s) → 
 
   rco-sem (` x) e = agr e x
   rco-sem (fun-ref f) e = TT f
-  rco-sem (pack L N) e = atomize₂-sem L N M.pack e pair-op′ λ _ _ _ → ≃-refl
+  rco-sem (pair L N) e = atomize₂-sem L N M.pair e pair-op′ λ _ _ _ → ≃-refl
   rco-sem (callc L N) e = atomize₂-sem L N M.callc e callc-op λ _ _ _ → ≃-refl
   rco-sem (lit B c) e = ≃-refl
   rco-sem (tuple Ns) e = atomizes-sem Ns _ e (tuple-op _) λ _ _ _ _ → ≃-refl

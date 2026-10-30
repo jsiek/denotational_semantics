@@ -36,7 +36,7 @@ module Mu.Semantics.ScottDomains.Imp
 
 open import Framework.Scott.Base pt fe
 open import Framework.Scott.Domain pt fe pe using (𝔻)
-open import Framework.Scott.Ops pt fe pe using (Env; ext; const; proj; pair; car; cdr; Λ; strict)
+open import Framework.Scott.Ops pt fe pe using (Env; ext; const; proj; car; cdr; Λ; strict) renaming (pair to pairᵈ)
   renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ)
 open import Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
@@ -53,7 +53,7 @@ open import Mu.Semantics.ScottDomains.Ops pt fe pe
 
 𝒮 : ∀ {Σ Δ A} → Simple Σ Δ A → Table Σ → Den Env
 𝒮 (atm a) T = 𝒜 a T
-𝒮 (pack a b) T = op₂ pair (𝒜 a T) (𝒜 b T)
+𝒮 (pair a b) T = op₂ pairᵈ (𝒜 a T) (𝒜 b T)
 𝒮 (callc f a) T = op₂ appᵈ (op₂ appᵈ (op₁ car (𝒜 f T)) (op₁ cdr (𝒜 f T))) (𝒜 a T)
 𝒮 (tuple as) T = tupleᶜ (𝒜s as T)
 𝒮 (get i a) T = op₁ (proj (pos i)) (𝒜 a T)

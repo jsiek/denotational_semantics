@@ -1,20 +1,20 @@
 {-
 
-  A reduction semantics for FlatClosμ (Mu/Language/FlatClos.agda), as for
+  A reduction semantics for PairClosμ (Mu/Language/PairClos.agda), as for
   EnvClosμ (Mu/Semantics/ReductionSemantics/EnvClos.agda) and Clos4ᵀ
   (Semantics/Reduction/Typed/Clos4.agda). Code is a value, and so is a
-  pack of values; callc L M evaluates L and M, and then calls the code
+  pair of values; callc L M evaluates L and M, and then calls the code
   of the closure L with its environment and the argument.
 
 -}
 
-module Mu.Semantics.ReductionSemantics.FlatClos where
+module Mu.Semantics.ReductionSemantics.PairClos where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
 open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.FlatClos
+open import Mu.Language.PairClos
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
@@ -41,7 +41,7 @@ module _ (𝒦 : Kit) where
   travs : ∀ {Γ Δ Δ'} → Sub 𝒦 Γ Δ → All (Tm Γ) Δ' → All (Tm Δ) Δ'
   trav σ (` x) = tm (σ x)
   trav σ (code N) = code N
-  trav σ (pack L M) = pack (trav σ L) (trav σ M)
+  trav σ (pair L M) = pair (trav σ L) (trav σ M)
   trav σ (callc L M) = callc (trav σ L) (trav σ M)
   trav σ (lit B c) = lit B c
   trav σ (tuple Ms) = tuple (travs σ Ms)
@@ -86,7 +86,7 @@ N [ V ] = sub (V • ∅) N
 obs : ∀ {A} → Tm [] A → Obs
 obss : ∀ {Δ} → All (Tm []) Δ → List Obs
 obs (code _) = o-fun
-obs (pack _ _) = o-fun
+obs (pair _ _) = o-fun
 obs (lit B c) = o-const B c
 obs (tuple Ms) = o-tuple (obss Ms)
 obs (inl M) = o-inl (obs M)
@@ -102,13 +102,13 @@ out P.sub n m = lit Int (n - m)
 out P.eq n m = if does (n ≟ m) then inl (tuple []) else inr (tuple [])
 
 {- the redexes, once the operands are values -}
-{- (the code of a pack is split by a second function, at a generic type) -}
+{- (the code of a pair is split by a second function, at a generic type) -}
 call-code : ∀ {C Δ A B} → Tm [] C → C ≡ code Δ A B → Tm [] (tup Δ) → Tm [] A → Red (Tm [] B)
 call-code (code N) refl E W = to (sub (W • E • ∅) N)
 call-code _ _ E W = error
 
 call : ∀ {C A B} → Tm [] C → C ≡ A ⇒ B → Tm [] A → Red (Tm [] B)
-call (pack L E) refl W = call-code L refl E W
+call (pair L E) refl W = call-code L refl E W
 call _ _ W = error
 
 get? : ∀ {C Δ A} → Δ ∋ A → Tm [] C → C ≡ tup Δ → Red (Tm [] A)
@@ -132,7 +132,7 @@ red : ∀ {A} → Tm [] A → Red (Tm [] A)
 reds : ∀ {Δ} → All (Tm []) Δ → Red (All (Tm []) Δ)
 red (` ())
 red (code N) = val
-red (pack L M) = step-in (λ L' → pack L' M) (red L) (step-in (pack L) (red M) val)
+red (pair L M) = step-in (λ L' → pair L' M) (red L) (step-in (pair L) (red M) val)
 red (callc L M) = step-in (λ L' → callc L' M) (red L) (step-in (callc L) (red M) (call L refl M))
 red (lit B c) = val
 red (tuple Ms) = step-in tuple (reds Ms) val

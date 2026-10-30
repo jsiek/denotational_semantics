@@ -68,7 +68,7 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
 
     rco-ok (` x) ρ ag = cong ret (ag x)
     rco-ok (fun-ref f) ρ ag = refl
-    rco-ok (pack L N) ρ ag = atomize₂-ok L N ρ {k = M.pack} ag λ φ' a b → sym (trans (atm-bind a) (atm-bind b))
+    rco-ok (pair L N) ρ ag = atomize₂-ok L N ρ {k = M.pair} ag λ φ' a b → sym (trans (atm-bind a) (atm-bind b))
     rco-ok (callc L N) ρ ag =
       trans (bind-cong (eval ds ck _ L) λ f → bind-cong (eval ds ck _ N) λ w → calls f w)
         (atomize₂-ok L N ρ {k = M.callc} ag λ φ' a b → sym (trans (atm-bind a) (atm-bind b)))
@@ -93,7 +93,7 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
     atomize-ok (` x) ρ {K' = K'} ag kok = trans (cong K' (ag x)) (kok (λ y → y) _ (var (ρ x)) λ y → refl)
     atomize-ok (fun-ref f) ρ ag kok = kok (λ y → y) _ (ref f) λ y → refl
     atomize-ok (lit B c) ρ ag kok = kok (λ y → y) _ (lit B c) λ y → refl
-    atomize-ok N@(pack _ _) = atomize-let N
+    atomize-ok N@(pair _ _) = atomize-let N
     atomize-ok N@(callc _ _) = atomize-let N
     atomize-ok N@(tuple _) = atomize-let N
     atomize-ok N@(get _ _) = atomize-let N

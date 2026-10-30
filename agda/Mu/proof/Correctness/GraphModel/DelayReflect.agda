@@ -1,6 +1,6 @@
 {-
 
-  Backward (reflect) direction of delay (EnvClosμ → FlatClosμ) in the graph
+  Backward (reflect) direction of delay (EnvClosμ → PairClosμ) in the graph
   model, as for typed delay (proof/Correctness/Graph/DelayReflect.agda),
   with the approximant logical relation ApproxLR of DelayRel (source
   sets against finite target approximants). The target call (callc) is
@@ -20,9 +20,9 @@ open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-none
 open import Mu.proof.Semantics.GraphModel.Binders using (body-mono)
 open import Mu.Language.Type using (Ctx; Type; tup; _⊹_; _∋_; Z; S; idx)
 open import Mu.Language.EnvClos
-import Mu.Language.FlatClos as T
+import Mu.Language.PairClos as T
 import Mu.proof.Semantics.GraphModel.EnvClos as S3
-import Mu.proof.Semantics.GraphModel.FlatClos as S4
+import Mu.proof.Semantics.GraphModel.PairClos as S4
 open S3 using (⟦_⟧; ⟦_⟧s)
 open S4 using () renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
 open import proof.Framework.GraphModel.TypedOkBase using (fin₁; fin₂)

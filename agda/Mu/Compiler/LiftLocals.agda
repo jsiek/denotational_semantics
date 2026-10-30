@@ -18,7 +18,7 @@ open import Data.List using ([]; _∷_)
 
 lift : ∀ {Σ Δ A} → M.Exp Σ Δ A → Exp Σ Δ A
 lift (M.atm a) = simple (atm a)
-lift (M.pack a b) = simple (pack a b)
+lift (M.pair a b) = simple (pair a b)
 lift (M.callc a b) = simple (callc a b)
 lift (M.tuple as) = simple (tuple as)
 lift (M.get i a) = simple (get i a)

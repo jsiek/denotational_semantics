@@ -34,7 +34,7 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
 
   eval ck ρ (` x) = ret (lookup ρ x)
   eval ck ρ (fun-ref f) = ret (code f)
-  eval ck ρ (pack L M) = do c ← eval ck ρ L; e ← eval ck ρ M; ret (pack c e)
+  eval ck ρ (pair L M) = do c ← eval ck ρ L; e ← eval ck ρ M; ret (pack c e)
   eval ck ρ (callc L M) = do f ← eval ck ρ L; w ← eval ck ρ M; call ck f w
   eval ck ρ (lit B c) = ret (const c)
   eval ck ρ (tuple Ms) = do vs ← evals ck ρ Ms; ret (tup vs)

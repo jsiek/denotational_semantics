@@ -1,6 +1,6 @@
 {-
 
-  A design experiment for the reflection half of delay (EnvClosμ → FlatClosμ)
+  A design experiment for the reflection half of delay (EnvClosμ → PairClosμ)
   in the graph model, in no proof's total: the approximant logical
   relation of DelayRel with a target *set* T of bounded depth, possibly
   infinite, in place of the finite target list V (the paper, §4.2,

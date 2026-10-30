@@ -46,7 +46,7 @@ atomize₂ : ∀ {Σ Γ Δ A₁ A₂ B} → Tm Σ Γ A₁ → Tm Σ Γ A₂ → 
 
 rco (` x) ρ = atm (var (ρ x))
 rco (fun-ref f) ρ = atm (ref f)
-rco (pack L M) ρ = atomize₂ L M ρ M.pack
+rco (pair L M) ρ = atomize₂ L M ρ M.pair
 rco (callc L M) ρ = atomize₂ L M ρ M.callc
 rco (lit B c) ρ = atm (lit B c)
 rco (tuple Ms) ρ = atomizes Ms ρ λ _ as → M.tuple as

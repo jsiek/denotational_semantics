@@ -126,10 +126,10 @@ module Sim {Σ : List DSig} (ds : All (Code Σ) Σ) {T} (M₀ : Tm Σ [] T) wher
   case-both (inl u) e k = move (step⁺ refl) (step⁺ refl) (eval~ (er-ext e) k)
   case-both (inr u) e k = move (step⁺ refl) (step⁺ refl) (eval~ (er-ext e) k)
 
-  {- the second operand of pack, callc and prim, after an atom a for the first -}
-  krel-packR : ∀ {Δ Δ' A B} {φ₂ : Env Σ Δ} (a : Atm Σ Δ (code Δ' A B)) {κ₁ κ₂} → κ₁ ≈ κ₂
-    → KRel (packR (atom φ₂ a) κ₁) (λ r₂ b → M.pack (ren r₂ a) b) φ₂ κ₂
-  krel-packR a k r₂ φ₂'' b e₂ = move (step⁺ refl) (plus refl (at₂ (ren r₂ a) ◅ refl ◅ at₂ b ◅ refl ◅ ε))
+  {- the second operand of pair, callc and prim, after an atom a for the first -}
+  krel-pairR : ∀ {Δ Δ' A B} {φ₂ : Env Σ Δ} (a : Atm Σ Δ (code Δ' A B)) {κ₁ κ₂} → κ₁ ≈ κ₂
+    → KRel (pairR (atom φ₂ a) κ₁) (λ r₂ b → M.pair (ren r₂ a) b) φ₂ κ₂
+  krel-pairR a k r₂ φ₂'' b e₂ = move (step⁺ refl) (plus refl (at₂ (ren r₂ a) ◅ refl ◅ at₂ b ◅ refl ◅ ε))
     (ret≡ (cong (λ u → pack u (atom φ₂'' b)) (sym (atom-ren e₂ a))) k)
 
   krel-callR : ∀ {Δ A B} {φ₂ : Env Σ Δ} (a : Atm Σ Δ (A ⇒ B)) {κ₁ κ₂} → κ₁ ≈ κ₂
@@ -154,7 +154,7 @@ module Sim {Σ : List DSig} (ds : All (Code Σ) Σ) {T} (M₀ : Tm Σ [] T) wher
 
   sim-eval (` x) e k = move (step⁺ refl) (step⁺ refl) (ret≡ (sym (at e x)) k)
   sim-eval (fun-ref f) e k = move (step⁺ refl) (step⁺ refl) (ret~ k)
-  sim-eval (pack L N) e k = pre₁ _~_ refl refl (atz L e λ _ _ a e₁ → pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-packR a k)))
+  sim-eval (pair L N) e k = pre₁ _~_ refl refl (atz L e λ _ _ a e₁ → pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-pairR a k)))
   sim-eval (callc L N) e k = pre₁ _~_ refl refl (atz L e λ _ _ a e₁ → pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-callR a k)))
   sim-eval (lit B c) e k = move (step⁺ refl) (step⁺ refl) (ret~ k)
   sim-eval (tuple Ms) e k = atzs Ms e (λ _ _ as _ st → move (step⁺ st) (plus refl (tuple-atoms ds₂ ⌜ rco M₀ (λ x → x) ⌝ [] as)) (ret~ k)) refl
@@ -171,7 +171,7 @@ module Sim {Σ : List DSig} (ds : All (Code Σ) Σ) {T} (M₀ : Tm Σ [] T) wher
     pre₁ _~_ refl refl (subst (λ v → 𝔅 (ret v κ₁) (eval ⌜ k (λ y → y) (var (r x)) ⌝ φ₂ _)) (at e x) (kr (λ y → y) φ₂ (var (r x)) er-id))
   atz (fun-ref f) e kr = pre₁ _~_ refl refl (kr (λ y → y) _ (ref f) er-id)
   atz (lit B c) e kr = pre₁ _~_ refl refl (kr (λ y → y) _ (lit B c) er-id)
-  atz N@(pack _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
+  atz N@(pair _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
   atz N@(callc _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
   atz N@(tuple _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
   atz N@(get _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))

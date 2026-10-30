@@ -1,7 +1,7 @@
 {-
 
-  Correctness of globalize (FlatClosμ → GlobalFunμ) in the graph model
-  (Mu/Semantics/GraphModel/{FlatClos,GlobalFun}.agda), as for the typed pass
+  Correctness of globalize (PairClosμ → GlobalFunμ) in the graph model
+  (Mu/Semantics/GraphModel/{PairClos,GlobalFun}.agda), as for the typed pass
   (proof/Correctness/Graph/GlobalizeCorrect.agda): the pass preserves
   denotations exactly.
 
@@ -21,15 +21,15 @@
 module Mu.proof.Correctness.GraphModel.GlobalizeCorrect where
 
 open import proof.Framework.GraphModel.Prelude
-open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
+open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to pairD)
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Semantics.Graph.Prim using (primD-≃)
 open import Mu.proof.Semantics.GraphModel.Ops
 open import Mu.Semantics.GraphModel.GlobalFun
-open import Mu.proof.Semantics.GraphModel.FlatClos using () renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
+open import Mu.proof.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
 open import Mu.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.FlatClos as S
+import Mu.Language.PairClos as S
 open import Mu.Language.GlobalFun
 open import Mu.Compiler.Globalize
 open import Mu.proof.Semantics.GraphModel.Binders using (let-≃; case-≃)
@@ -48,7 +48,7 @@ open import Level using (lift)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
 open import Relation.Nullary using (yes; no)
 
-pair-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+pair-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → pairD ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pairD ⟨ D' , ⟨ E' , ptt ⟩ ⟩
 pair-≃ a b = mono-≃ pair-mono ⟨ lift a , ⟨ lift b , ptt ⟩ ⟩
 
 callc-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → callcᵈ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ callcᵈ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
@@ -62,7 +62,7 @@ module _ {Σ Σ'} (r : ∀ {s} → Σ ∋ s → Σ' ∋ s) {T : Table Σ'} {T' :
   wks-sem : ∀ {Γ Δ} (Ms : All (Tm Σ Γ) Δ) ρ i → nthD (⟦ Ms ⟧s[ T' ] ρ) i ≃ nthD (⟦ wks r Ms ⟧s[ T ] ρ) i
   wk-sem (` x) ρ = ≃-refl
   wk-sem (fun-ref f) ρ = h f
-  wk-sem (pack L M) ρ = pair-≃ (wk-sem L ρ) (wk-sem M ρ)
+  wk-sem (pair L M) ρ = pair-≃ (wk-sem L ρ) (wk-sem M ρ)
   wk-sem (callc L M) ρ = callc-≃ (wk-sem L ρ) (wk-sem M ρ)
   wk-sem (lit B c) ρ = ≃-refl
   wk-sem (tuple Ms) ρ = 𝒯-≃ _ (wks-sem Ms ρ)
@@ -124,7 +124,7 @@ glob₂-ok : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A →
 glob-ok (S.` x) D = ⟨ ext (λ f → refl) , (λ ρ → ≃-refl) ⟩
 glob-ok (S.code N) D with glob N D | glob-ok N D
 ... | out s D' N' | ⟨ e , h ⟩ = ⟨ ext (at e) , (λ ρ → ΛΛ-≃ λ X Y → h _) ⟩
-glob-ok (S.pack L M) D = glob₂-ok pack L M D {M₄ = S.pack L M} λ hL hM ρ → pair-≃ (hL ρ) (hM ρ)
+glob-ok (S.pair L M) D = glob₂-ok pair L M D {M₄ = S.pair L M} λ hL hM ρ → pair-≃ (hL ρ) (hM ρ)
 glob-ok (S.callc L M) D = glob₂-ok callc L M D {M₄ = S.callc L M} λ hL hM ρ → callc-≃ (hL ρ) (hM ρ)
 glob-ok (S.lit B c) D = ⟨ ext (λ f → refl) , (λ ρ → ≃-refl) ⟩
 glob-ok (S.tuple Ms) D with globs Ms D | globs-ok Ms D
@@ -173,7 +173,7 @@ wk-id : ∀ {Σ Γ A} (M : Tm Σ Γ A) → wk (λ f → f) M ≡ M
 wks-id : ∀ {Σ Γ Δ} (Ms : All (Tm Σ Γ) Δ) → wks (λ f → f) Ms ≡ Ms
 wk-id (` x) = refl
 wk-id (fun-ref f) = refl
-wk-id (pack L M) = cong₂ pack (wk-id L) (wk-id M)
+wk-id (pair L M) = cong₂ pair (wk-id L) (wk-id M)
 wk-id (callc L M) = cong₂ callc (wk-id L) (wk-id M)
 wk-id (lit B c) = refl
 wk-id (tuple Ms) = cong tuple (wks-id Ms)
