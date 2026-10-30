@@ -234,7 +234,7 @@ MU = A + 'Mu/'
 MUP = MU + 'proof/'
 # ISWIMμ's names of the languages that the ISWIM pipeline calls Clos2–Clos5
 # (the names of the paper)
-MU_LANG = {'Clos2': 'Clos', 'Clos3': 'EnvClos', 'Clos4': 'FlatClos', 'Clos5': 'GlobalFun'}
+MU_LANG = {'Clos2': 'Clos', 'Clos3': 'EnvClos', 'Clos4': 'PairClos', 'Clos5': 'GlobalFun'}
 
 
 def ml(x):
@@ -604,11 +604,11 @@ GROUPS = [
     ('mu-den', 'explicate control', [MUP + 'Correctness/GraphModel/ExplicateCorrect.agda']),
     ('mu-den', 'select instructions', [MUP + 'Correctness/GraphModel/SelectCorrect.agda']),
     ('mu-den', 'composition', [MUP + 'Correctness/GraphModel/CompilerCorrect.agda']),
-    # the machines of ISWIMμ and Closμ–FlatClosμ; those of GlobalFunμ, Impμ, CFGμ
+    # the machines of ISWIMμ and Closμ–PairClosμ; those of GlobalFunμ, Impμ, CFGμ
     # and X86μ, with the proofs of explicate control and select
     # instructions, are shared with the reduction column ('mu-op+mu-red'),
     # as the typed pipeline's are ('op+red')
-    ('mu-op', 'semantics of the languages', [MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('Values', 'ISWIM', 'Clos', 'EnvClos', 'FlatClos')]),
+    ('mu-op', 'semantics of the languages', [MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('Values', 'ISWIM', 'Clos', 'EnvClos', 'PairClos')]),
     ('mu-op+mu-red', 'semantics of the languages', [MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('GlobalFun', 'Imp', 'CFG', 'X86')]),
     ('mu-op', 'simplify', [MUP + 'Correctness/AbstractMachines/SimplifySim.agda']),
     ('mu-op', 'CC: enclose', [MUP + 'Correctness/AbstractMachines/EncloseSim.agda']),
@@ -1474,7 +1474,7 @@ MU_CK_ROWS = [
     ('semantics: ISWIM', [F + 'Typed/ISWIM.agda'], [MU + 'Semantics/ClockedInterpreters/ISWIM.agda']),
     ('semantics: Clos2', [F + 'Typed/Clos2.agda'], [MU + 'Semantics/ClockedInterpreters/Clos.agda']),
     ('semantics: Clos3', [F + 'Typed/Clos3.agda'], [MU + 'Semantics/ClockedInterpreters/EnvClos.agda']),
-    ('semantics: Clos4', [F + 'Typed/Clos4.agda'], [MU + 'Semantics/ClockedInterpreters/FlatClos.agda']),
+    ('semantics: Clos4', [F + 'Typed/Clos4.agda'], [MU + 'Semantics/ClockedInterpreters/PairClos.agda']),
     ('semantics: Clos5 (with the lemmas about Mon\'s embedding)', [F + 'Typed/Clos5.agda', FP + 'Typed/Clos5.agda'],
      [MU + 'Semantics/ClockedInterpreters/GlobalFun.agda', MUP + 'Semantics/ClockedInterpreters/GlobalFun.agda']),
     ('semantics: Imp', [F + 'Typed/Imp.agda'], [MU + 'Semantics/ClockedInterpreters/Imp.agda']),

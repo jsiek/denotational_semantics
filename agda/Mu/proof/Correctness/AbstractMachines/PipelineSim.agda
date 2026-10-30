@@ -16,7 +16,7 @@ open import Framework.Primitives using (Int)
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
-open import Mu.Compiler.Pipeline using (compile-to-FlatClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
+open import Mu.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equiv-trans)
 open import Mu.proof.Correctness.AbstractMachines.SimplifySim using (simplify-correct)
 open import Mu.proof.Correctness.AbstractMachines.EncloseSim using (enclose-correct)
@@ -29,7 +29,7 @@ open import Mu.proof.Correctness.AbstractMachines.LiftLocalsSim using (lift-loca
 open import Mu.proof.Correctness.AbstractMachines.ExplicateSim using (explicate-correct)
 open import Mu.proof.Correctness.AbstractMachines.SelectSim using (select-correct)
 import Mu.Semantics.AbstractMachines.ISWIM as ISWIMμₘ
-import Mu.Semantics.AbstractMachines.FlatClos as FlatClosμₘ
+import Mu.Semantics.AbstractMachines.PairClos as PairClosμₘ
 import Mu.Semantics.AbstractMachines.GlobalFun as GlobalFunμₘ
 import Mu.Semantics.AbstractMachines.Imp as Impμₘ
 import Mu.Semantics.AbstractMachines.CFG as CFGμₘ
@@ -40,13 +40,13 @@ open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 
-compile-to-FlatClos-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (FlatClosμₘ.sem (compile-to-FlatClos M))
-compile-to-FlatClos-correct M =
+compile-to-PairClos-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (PairClosμₘ.sem (compile-to-PairClos M))
+compile-to-PairClos-correct M =
   equiv-trans (simplify-correct M)
     (equiv-trans (enclose-correct _) (equiv-trans (optimize-correct _) (equiv-trans (concretize-correct _) (delay-correct _))))
 
 compile-to-GlobalFun-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (GlobalFunμₘ.sem (compile-to-GlobalFun M))
-compile-to-GlobalFun-correct M = equiv-trans (compile-to-FlatClos-correct M) (globalize-correct _)
+compile-to-GlobalFun-correct M = equiv-trans (compile-to-PairClos-correct M) (globalize-correct _)
 
 compile-to-Mon-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (GlobalFunμₘ.sem ⌜ compile-to-Mon M ⌝ₚ)
 compile-to-Mon-correct M = equiv-trans (compile-to-GlobalFun-correct M) (rco-correct _)

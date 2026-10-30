@@ -1,6 +1,6 @@
 {-
 
-  The semantics of FlatClosμ (Mu/Language/FlatClos.agda) in the graph model,
+  The semantics of PairClosμ (Mu/Language/PairClos.agda) in the graph model,
   as that of Clos4ᵀ (Semantics/Graph/Typed/Clos4.agda): code is a closed
   function of two arguments, a closure the pair of code and
   environment, and callc applies the closure's code (car) to its
@@ -8,13 +8,13 @@
 
 -}
 
-module Mu.Semantics.GraphModel.FlatClos where
+module Mu.Semantics.GraphModel.PairClos where
 
 open import Framework.GraphModel.Prelude
-open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
+open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to pairD)
 open import Semantics.Graph.Prim using (primD)
 open import Mu.Language.Type
-open import Mu.Language.FlatClos
+open import Mu.Language.PairClos
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)
@@ -26,7 +26,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 ⟦ ` x ⟧ ρ = ρ (idx x)
 ⟦ code N ⟧ ρ = Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ⟨⟩ ⌉)) , ptt ⟩) , ptt ⟩
-⟦ pack L M ⟧ ρ = pair ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
+⟦ pair L M ⟧ ρ = pairD ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ callc L M ⟧ ρ = ⋆ ⟨ ⋆ ⟨ car ⟨ ⟦ L ⟧ ρ , ptt ⟩ , ⟨ cdr ⟨ ⟦ L ⟧ ρ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ lit B c ⟧ ρ = ℬ B c ptt
 ⟦ tuple {Δ} Ms ⟧ ρ = 𝒯 (length Δ) (⟦ Ms ⟧s ρ)

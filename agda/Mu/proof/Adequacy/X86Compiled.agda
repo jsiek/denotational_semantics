@@ -36,7 +36,7 @@ open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝)
 open import Mu.Framework.AllUtil using (All; lookup) renaming (map to All-map)
 open import Mu.proof.Framework.AllProp using (lookup-map)
-open import Mu.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-FlatClos; compile)
+open import Mu.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-PairClos; compile)
 open import Mu.Compiler.RCO using (rco)
 open import Mu.Compiler.LiftLocals using () renaming (lift to liftₗ)
 open import Mu.Compiler.Explicate using (explicate-body)
@@ -78,7 +78,7 @@ compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , close
   TT : ∀ {s} (f : _ ∋ s) → table ds₅ f ≃ tables codeₜ (All-map def-body ds꜀) f
   TT f = ≃-trans (table-rco ds₅ f) (≃-trans (table-lift dsₘ f) (≃-trans (table-explicate dsᵢ f) (table-≃ ds꜀ f)))
   closed : Contains codeₜ (All-map def-body ds꜀)
-  closed f d d∈ = proj₁ (TT f) d (clos5-closed ds₅ (globalize-older (compile-to-FlatClos M)) f d (proj₂ code≃ d (subst (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
+  closed f d d∈ = proj₁ (TT f) d (clos5-closed ds₅ (globalize-older (compile-to-PairClos M)) f d (proj₂ code≃ d (subst (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
     where
     eq : lookup (All-map def-body ds꜀) f ≡ def-body (explicate-body (liftₗ (rco (lookup ds₅ f) (λ x → x))))
     eq = trans (lookup-map def-body ds꜀ f) (cong def-body (trans (lookup-map explicate-body dsᵢ f)

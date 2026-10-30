@@ -1,7 +1,7 @@
 {-
 
-  Correctness of globalize (FlatClosμ → GlobalFunμ) in Scott domains
-  (Mu/Semantics/ScottDomains/{FlatClos,GlobalFun}.agda), as in the graph model
+  Correctness of globalize (PairClosμ → GlobalFunμ) in Scott domains
+  (Mu/Semantics/ScottDomains/{PairClos,GlobalFun}.agda), as in the graph model
   (Mu/proof/Correctness/GraphModel/GlobalizeCorrect.agda), with equality of
   values in place of equality of sets: the pass preserves meanings
   exactly.
@@ -37,7 +37,7 @@ open import UF.Base using (ap₂; happly)
 open import Framework.Primitives using (Int)
 open import Mu.Language.Type renaming (unroll to unrollᵗ)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.FlatClos as S
+import Mu.Language.PairClos as S
 open import Mu.Language.GlobalFun
 open import Mu.Compiler.Globalize
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
@@ -56,11 +56,11 @@ module Mu.proof.Correctness.ScottDomains.GlobalizeCorrect
        where
 
 open import Framework.Scott.Base pt fe
-open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; case to caseᵈ)
+open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; case to caseᵈ; pair to pairᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 open import Mu.Semantics.ScottDomains.Ops pt fe pe
-open import Mu.Semantics.ScottDomains.FlatClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
+open import Mu.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
 open import Mu.Semantics.ScottDomains.GlobalFun pt fe pe
 open import Mu.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong)
 
@@ -75,7 +75,7 @@ module _ {Σ Σ'} (r : ∀ {s} → Σ ∋ s → Σ' ∋ s) (T : Table Σ') (T' :
   wks-sem : ∀ {Γ Δ} (Ms : All (Tm Σ Γ) Δ) (ρ : ⟨ Env ⟩) → ⟦ Ms ⟧s[ T' ] · ρ ＝ ⟦ wks r Ms ⟧s[ T ] · ρ
   wk-sem (` x) ρ = refl
   wk-sem (fun-ref f) ρ = h f
-  wk-sem (pack L M) ρ = ap₂ (λ a b → pair · a · b) (wk-sem L ρ) (wk-sem M ρ)
+  wk-sem (pair L M) ρ = ap₂ (λ a b → pairᵈ · a · b) (wk-sem L ρ) (wk-sem M ρ)
   wk-sem (callc L M) ρ = ap₂ (λ a b → appᵈ · (appᵈ · (car · a) · (cdr · a)) · b) (wk-sem L ρ) (wk-sem M ρ)
   wk-sem (lit B c) ρ = refl
   wk-sem (tuple {Δ} Ms) ρ = ap (tupleᵈ (length Δ) ·_) (wks-sem Ms ρ)
@@ -152,7 +152,7 @@ glob₂-ok : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A →
 glob-ok (S.` x) D = mk-ok (mk-ext (λ f → refl)) λ ρ → refl
 glob-ok (S.code N) D with glob N D | glob-ok N D
 ... | out s D' N' | mk-ok e h = mk-ok (mk-ext (agrees e)) λ ρ → codeᶜ-cong ⟦ N ⟧₄ ⟦ N' ⟧[ made D' ] (λ X Y _ _ → h (env₂ X Y))
-glob-ok (S.pack L M) D = glob₂-ok pack L M D {M₄ = S.pack L M} (mk-cong₂ λ hL hM ρ → ap₂ (λ a b → pair · a · b) (hL ρ) (hM ρ))
+glob-ok (S.pair L M) D = glob₂-ok pair L M D {M₄ = S.pair L M} (mk-cong₂ λ hL hM ρ → ap₂ (λ a b → pairᵈ · a · b) (hL ρ) (hM ρ))
 glob-ok (S.callc L M) D = glob₂-ok callc L M D {M₄ = S.callc L M}
   (mk-cong₂ λ hL hM ρ → ap₂ (λ a b → appᵈ · (appᵈ · (car · a) · (cdr · a)) · b) (hL ρ) (hM ρ))
 glob-ok (S.lit B c) D = mk-ok (mk-ext (λ f → refl)) λ ρ → refl
@@ -207,7 +207,7 @@ wk-id : ∀ {Σ Γ A} (M : Tm Σ Γ A) → wk (λ f → f) M Eq.≡ M
 wks-id : ∀ {Σ Γ Δ} (Ms : All (Tm Σ Γ) Δ) → wks (λ f → f) Ms Eq.≡ Ms
 wk-id (` x) = Eq.refl
 wk-id (fun-ref f) = Eq.refl
-wk-id (pack L M) = Eq.cong₂ pack (wk-id L) (wk-id M)
+wk-id (pair L M) = Eq.cong₂ pair (wk-id L) (wk-id M)
 wk-id (callc L M) = Eq.cong₂ callc (wk-id L) (wk-id M)
 wk-id (lit B c) = Eq.refl
 wk-id (tuple Ms) = Eq.cong tuple (wks-id Ms)

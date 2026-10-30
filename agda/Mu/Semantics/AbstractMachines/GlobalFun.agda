@@ -1,7 +1,7 @@
 {-
 
   A CEK machine for GlobalFunμ (Mu/Language/GlobalFun.agda), as the one for
-  FlatClosμ (Mu/Semantics/AbstractMachines/FlatClos.agda), except for code: a program
+  PairClosμ (Mu/Semantics/AbstractMachines/PairClos.agda), except for code: a program
   runs with its table of definitions, fun-ref f evaluates to the code
   pointer code f, and a call runs definition f, as the Clos5ᵀ machine
   (Semantics/CEK/Typed/Clos5.agda) does. Values, environments and
@@ -78,8 +78,8 @@ data Cont (Σ : List DSig) : Type → Set where
   halt : ∀ {A} → Cont Σ A
   callL : ∀ {Γ A B} → Tm Σ Γ A → Env Σ Γ → Cont Σ B → Cont Σ (A ⇒ B)
   callR : ∀ {A B} → Val Σ (A ⇒ B) → Cont Σ B → Cont Σ A
-  packL : ∀ {Γ Δ A B} → Tm Σ Γ (tup Δ) → Env Σ Γ → Cont Σ (A ⇒ B) → Cont Σ (code Δ A B)
-  packR : ∀ {Δ A B} → Val Σ (code Δ A B) → Cont Σ (A ⇒ B) → Cont Σ (tup Δ)
+  pairL : ∀ {Γ Δ A B} → Tm Σ Γ (tup Δ) → Env Σ Γ → Cont Σ (A ⇒ B) → Cont Σ (code Δ A B)
+  pairR : ∀ {Δ A B} → Val Σ (code Δ A B) → Cont Σ (A ⇒ B) → Cont Σ (tup Δ)
   {- the values so far (newest first) and the components still to evaluate -}
   tupK : ∀ {Γ Δ' A Δ} → All (Val Σ) Δ' → All (Tm Σ Γ) Δ → Env Σ Γ → Cont Σ (tup (Δ' <>< (A ∷ Δ))) → Cont Σ A
   getK : ∀ {Δ A} → Δ ∋ A → Cont Σ A → Cont Σ (tup Δ)
@@ -107,7 +107,7 @@ module _ {Σ : List DSig} where
   begin : ∀ {Γ A} → Tm Σ Γ A → Env Σ Γ → Cont Σ A → State Σ
   begin (` x) ρ κ = ret (lookup ρ x) κ
   begin (fun-ref f) ρ κ = ret (code f) κ
-  begin (pack L M) ρ κ = eval L ρ (packL M ρ κ)
+  begin (pair L M) ρ κ = eval L ρ (pairL M ρ κ)
   begin (callc L M) ρ κ = eval L ρ (callL M ρ κ)
   begin (lit B c) ρ κ = ret (const c) κ
   begin (tuple Ms) ρ κ = tuple-next [] Ms ρ κ
@@ -132,8 +132,8 @@ module _ {Σ : List DSig} where
     step (ret v halt) = stop (obs v)
     step (ret f (callL M ρ κ)) = next (eval M ρ (callR f κ))
     step (ret w (callR f κ)) = next (call f w κ)
-    step (ret c (packL M ρ κ)) = next (eval M ρ (packR c κ))
-    step (ret e (packR c κ)) = next (ret (pack c e) κ)
+    step (ret c (pairL M ρ κ)) = next (eval M ρ (pairR c κ))
+    step (ret e (pairR c κ)) = next (ret (pack c e) κ)
     step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
     step (ret v (getK i κ)) = next (ret (lookup (elems v) i) κ)
     step (ret v (inlK κ)) = next (ret (inl v) κ)

@@ -1,15 +1,15 @@
 {-
 
-  The values of the FlatClosμ reduction semantics
-  (Mu/Semantics/ReductionSemantics/FlatClos.agda), which reduce to val.
+  The values of the PairClosμ reduction semantics
+  (Mu/Semantics/ReductionSemantics/PairClos.agda), which reduce to val.
 
 -}
 
-module Mu.proof.Semantics.ReductionSemantics.FlatClos where
+module Mu.proof.Semantics.ReductionSemantics.PairClos where
 
-open import Mu.Semantics.ReductionSemantics.FlatClos public
+open import Mu.Semantics.ReductionSemantics.PairClos public
 open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.FlatClos
+open import Mu.Language.PairClos
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Observation using (Obs; o-error)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
@@ -20,7 +20,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 data Value {Γ} : ∀ {A} → Tm Γ A → Set where
   code : ∀ {Δ A B} {N : Tm (A ∷ tup Δ ∷ []) B} → Value (code {Γ} N)
-  pack : ∀ {Δ A B} {L : Tm Γ (code Δ A B)} {M} → Value L → Value M → Value (pack L M)
+  pair : ∀ {Δ A B} {L : Tm Γ (code Δ A B)} {M} → Value L → Value M → Value (pair L M)
   lit : ∀ {B c} → Value (lit B c)
   tuple : ∀ {Δ} {Vs : All (Tm Γ) Δ} → Each Value Vs → Value (tuple Vs)
   inl : ∀ {A B} {V : Tm Γ A} → Value V → Value (inl {B = B} V)
@@ -30,7 +30,7 @@ data Value {Γ} : ∀ {A} → Tm Γ A → Set where
 value-red : ∀ {A} {V : Tm [] A} → Value V → red V ≡ val
 values-red : ∀ {Δ} {Vs : All (Tm []) Δ} → Each Value Vs → reds Vs ≡ val
 value-red code = refl
-value-red (pack v w) rewrite value-red v | value-red w = refl
+value-red (pair v w) rewrite value-red v | value-red w = refl
 value-red lit = refl
 value-red (tuple vs) rewrite values-red vs = refl
 value-red (inl v) rewrite value-red v = refl

@@ -1,10 +1,10 @@
 {-
 
-  Correctness of globalize (FlatClosμ → GlobalFunμ, Mu/Compiler/Globalize.agda)
+  Correctness of globalize (PairClosμ → GlobalFunμ, Mu/Compiler/Globalize.agda)
   by a forward simulation between the machines, as for typed globalize
   (proof/Correctness/CEK/GlobalizeSim.agda).
 
-  The machines run in lock step. A FlatClosμ term is related to a GlobalFunμ
+  The machines run in lock step. A PairClosμ term is related to a GlobalFunμ
   term over the final table (Top ⊢ M ⇝ M') when they agree, except that
   code N is related to fun-ref g when N is related to definition g
   (Top g N). Values are related in the same way (code N to code g),
@@ -26,7 +26,7 @@ module Mu.proof.Correctness.AbstractMachines.GlobalizeSim where
 
 open import Mu.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.FlatClos as S
+import Mu.Language.PairClos as S
 open import Mu.Language.GlobalFun
 open import Mu.Compiler.Globalize
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
@@ -34,7 +34,7 @@ open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-import Mu.Semantics.AbstractMachines.FlatClos as Sₘ
+import Mu.Semantics.AbstractMachines.PairClos as Sₘ
 import Mu.Semantics.AbstractMachines.GlobalFun as Tₘ
 
 open import Data.Bool using (true; false)
@@ -56,7 +56,7 @@ infix 4 _⊢_⇝_
 data _⊢_⇝_ {Σ} (I : Interp Σ) {Γ} : ∀ {A} → S.Tm Γ A → Tm Σ Γ A → Set where
   var : ∀ {A} {x : Γ ∋ A} → I ⊢ S.` x ⇝ ` x
   code : ∀ {Δ A B} {g : Σ ∋ sig Δ A B} {N} → I g N → I ⊢ S.code N ⇝ fun-ref g
-  pack : ∀ {Δ A B} {L : S.Tm Γ (code Δ A B)} {L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.pack L M ⇝ pack L' M'
+  pair : ∀ {Δ A B} {L : S.Tm Γ (code Δ A B)} {L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.pair L M ⇝ pair L' M'
   callc : ∀ {A B} {L : S.Tm Γ (A ⇒ B)} {L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.callc L M ⇝ callc L' M'
   lit : ∀ {B c} → I ⊢ S.lit B c ⇝ lit B c
   tuple : ∀ {Δ} {Ms : All _ Δ} {Ms'} → All₂ (I ⊢_⇝_) Ms Ms' → I ⊢ S.tuple Ms ⇝ tuple Ms'
@@ -78,7 +78,7 @@ data _⊢_⇝_ {Σ} (I : Interp Σ) {Γ} : ∀ {A} → S.Tm Γ A → Tm Σ Γ A 
   → All₂ (I ⊢_⇝_) Ms Ms' → All₂ (J ⊢_⇝_) Ms (wks σ Ms')
 ⊢-wk h var = var
 ⊢-wk h (code r) = code (h r)
-⊢-wk h (pack r r') = pack (⊢-wk h r) (⊢-wk h r')
+⊢-wk h (pair r r') = pair (⊢-wk h r) (⊢-wk h r')
 ⊢-wk h (callc r r') = callc (⊢-wk h r) (⊢-wk h r')
 ⊢-wk h lit = lit
 ⊢-wk h (tuple rs) = tuple (⊢-wks h rs)
@@ -106,7 +106,7 @@ glob-grows : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → MExt (Out.grows (gl
 globs-grows : ∀ {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) → MExt (Out.grows (globs Ms D)) D (Out.made (globs Ms D))
 glob-grows (S.` x) D = here
 glob-grows (S.code N) D = there (glob-grows N D)
-glob-grows (S.pack L M) D = mext-trans (glob-grows L D) (glob-grows M _)
+glob-grows (S.pair L M) D = mext-trans (glob-grows L D) (glob-grows M _)
 glob-grows (S.callc L M) D = mext-trans (glob-grows L D) (glob-grows M _)
 glob-grows (S.lit B c) D = here
 glob-grows (S.tuple Ms) D = globs-grows Ms D
@@ -158,7 +158,7 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
 
   glob-⇝ (S.` x) D F = var
   glob-⇝ (S.code N) D (h , F) = code (h N (glob-⇝ N D F))
-  glob-⇝ (S.pack L M) D F = uncurry′ pack (two L M D F)
+  glob-⇝ (S.pair L M) D F = uncurry′ pair (two L M D F)
   glob-⇝ (S.callc L M) D F = uncurry′ callc (two L M D F)
   glob-⇝ (S.lit B c) D F = lit
   glob-⇝ (S.tuple Ms) D F = tuple (globs-⇝ Ms D F)
@@ -211,9 +211,9 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     callL : ∀ {Γ A B} {M : S.Tm Γ A} {M' ρ₁ ρ₂} {κ₁ : Sₘ.Cont B} {κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
       → Sₘ.callL M ρ₁ κ₁ ≈k Tₘ.callL M' ρ₂ κ₂
     callR : ∀ {A B v w} {κ₁ : Sₘ.Cont B} {κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.callR {A} v κ₁ ≈k Tₘ.callR w κ₂
-    packL : ∀ {Γ Δ A B} {M : S.Tm Γ (tup Δ)} {M' ρ₁ ρ₂} {κ₁ : Sₘ.Cont (A ⇒ B)} {κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
-      → Sₘ.packL M ρ₁ κ₁ ≈k Tₘ.packL M' ρ₂ κ₂
-    packR : ∀ {Δ A B} {v : Sₘ.Val (code Δ A B)} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.packR v κ₁ ≈k Tₘ.packR w κ₂
+    pairL : ∀ {Γ Δ A B} {M : S.Tm Γ (tup Δ)} {M' ρ₁ ρ₂} {κ₁ : Sₘ.Cont (A ⇒ B)} {κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+      → Sₘ.pairL M ρ₁ κ₁ ≈k Tₘ.pairL M' ρ₂ κ₂
+    pairR : ∀ {Δ A B} {v : Sₘ.Val (code Δ A B)} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.pairR v κ₁ ≈k Tₘ.pairR w κ₂
     tupK : ∀ {Γ Δ' A Δ} {vs : All _ Δ'} {ws} {Ms : All (S.Tm Γ) Δ} {Ms'} {ρ₁ ρ₂} {κ₁ : Sₘ.Cont (tup (Δ' <>< (A ∷ Δ)))} {κ₂}
       → All₂ _≈_ vs ws → All₂ _⇝_ Ms Ms' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
       → Sₘ.tupK vs Ms ρ₁ κ₁ ≈k Tₘ.tupK ws Ms' ρ₂ κ₂
@@ -266,7 +266,7 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Sₘ.step s₁) s₂
     sim (eval~ (var {x = x}) er k) = steps₁ refl (ret~ (lookup₂ er x) k)
     sim (eval~ (code h) er k) = steps₁ refl (ret~ (code≈ h) k)
-    sim (eval~ (pack m m') er k) = steps₁ refl (eval~ m er (packL m' er k))
+    sim (eval~ (pair m m') er k) = steps₁ refl (eval~ m er (pairL m' er k))
     sim (eval~ (callc m m') er k) = steps₁ refl (eval~ m er (callL m' er k))
     sim (eval~ lit er k) = steps₁ refl (ret~ const≈ k)
     sim (eval~ (tuple ms) er k) = steps₁ refl (tuple-next~ [] ms er k)
@@ -281,8 +281,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
     sim (ret~ r (callL m er k)) = steps₁ refl (eval~ m er (callR r k))
     sim (ret~ r (callR (pack≈ (code≈ (top h)) re) k)) = steps₁ refl (eval~ h (r ∷ re ∷ []) k)
-    sim (ret~ r (packL m er k)) = steps₁ refl (eval~ m er (packR r k))
-    sim (ret~ r (packR r' k)) = steps₁ refl (ret~ (pack≈ r' r) k)
+    sim (ret~ r (pairL m er k)) = steps₁ refl (eval~ m er (pairR r k))
+    sim (ret~ r (pairR r' k)) = steps₁ refl (ret~ (pack≈ r' r) k)
     sim (ret~ r (tupK rs ms er k)) = steps₁ refl (tuple-next~ (r ∷ rs) ms er k)
     sim (ret~ (tup≈ rs) (getK {i = i} k)) = steps₁ refl (ret~ (lookup₂ rs i) k)
     sim (ret~ r (inlK k)) = steps₁ refl (ret~ (inl≈ r) k)
@@ -295,7 +295,7 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     sim (ret~ r (foldK k)) = steps₁ refl (ret~ (fold≈ r) k)
     sim (ret~ (fold≈ r) (unfoldK k)) = steps₁ refl (ret~ r k)
 
-{- The end theorem: for every FlatClosμ program ----------------------------------}
+{- The end theorem: for every PairClosμ program ----------------------------------}
 
 globalize-correct : ∀ {A} (M : S.Tm [] A) → Equivalent (Sₘ.sem M) (Tₘ.sem (globalize M))
 globalize-correct M =

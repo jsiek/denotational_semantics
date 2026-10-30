@@ -22,7 +22,7 @@ open import proof.Semantics.Graph.Prim using (primD-mono)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import Mu.Language.Type
 open import Mu.Language.CFG
-open import Mu.Language.Imp using (var; lit; ref; atm; pack; callc; tuple; get; inl; inr; prim; fold; unfold)
+open import Mu.Language.Imp using (var; lit; ref; atm; pair; callc; tuple; get; inl; inr; prim; fold; unfold)
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (List; []; _∷_; length; replicate)
@@ -39,7 +39,7 @@ module _ {Σ Δ} {T T' : Table Σ} {σ σ'} (h : ∀ {A} (a : Atm Σ Δ A) → �
 
   𝒮-⊆ : ∀ {A} (s : Simple Σ Δ A) → 𝒮 s T σ ⊆ 𝒮 s T' σ'
   𝒮-⊆ (atm a) = h a
-  𝒮-⊆ (pack a b) = lower (pair-mono _ _ ⟨ lift (h a) , ⟨ lift (h b) , ptt ⟩ ⟩)
+  𝒮-⊆ (pair a b) = lower (pair-mono _ _ ⟨ lift (h a) , ⟨ lift (h b) , ptt ⟩ ⟩)
   𝒮-⊆ (callc f a) = lower (⋆-mono _ _
     ⟨ ⋆-mono _ _ ⟨ car-mono _ _ ⟨ lift (h f) , ptt ⟩ , ⟨ cdr-mono _ _ ⟨ lift (h f) , ptt ⟩ , ptt ⟩ ⟩ , ⟨ lift (h a) , ptt ⟩ ⟩)
   𝒮-⊆ (tuple as) = lower (𝒯-mono _ _ _ (𝒜s-⊆ as))

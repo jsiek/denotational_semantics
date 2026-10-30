@@ -1,6 +1,6 @@
 {-
 
-  Correctness of delay (EnvClosμ → FlatClosμ) in the graph model, as for
+  Correctness of delay (EnvClosμ → PairClosμ) in the graph model, as for
   typed delay (proof/Correctness/Graph/DelayCorrect.agda): delay changes
   how a closure is represented, so it is not an equation; it preserves
   (DelayPreserve) and reflects (DelayReflect) the constants a closed
@@ -14,7 +14,7 @@ open import Mu.Semantics.GraphModel.Closed using (ρ₀)
 open import Mu.Language.EnvClos using (Tm)
 open import Mu.Compiler.Delay using (delay-program)
 open import Mu.Semantics.GraphModel.EnvClos using (⟦_⟧)
-open import Mu.Semantics.GraphModel.FlatClos renaming (⟦_⟧ to ⟦_⟧₄)
+open import Mu.Semantics.GraphModel.PairClos renaming (⟦_⟧ to ⟦_⟧₄)
 open import Mu.proof.Correctness.GraphModel.DelayPreserve using (preserve-const; preserve-nonempty)
 open import Mu.proof.Correctness.GraphModel.DelayReflect using (reflect-const; reflect-nonempty)
 

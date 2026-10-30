@@ -64,7 +64,7 @@ module _ {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s)) �
            → K v ≡ X.run xds ck bs η (put (dst o) v ⟨ ρ , φ , op , f ⟩) k)
       → (s : I.Simple Σ Δ A) → (eval-simple (G.call ds ck) φ s >>= K) ≡ X.run xds ck bs η ⟨ ρ , φ , op , f ⟩ (sel s o k)
     sel-ok o h (I.atm a) = h _ _ _ _
-    sel-ok o h (I.pack a b) = h _ _ _ _
+    sel-ok o h (I.pair a b) = h _ _ _ _
     sel-ok {φ = φ} o h (I.callc (var x) a) = bind≡ (H (lookup φ x) (value-of φ a)) λ v → h _ _ _ v
     sel-ok {ρ = ρ} {op} {f} {φ} o h (I.tuple as) rewrite args-ok {m = ⟨ ρ , φ , op , f ⟩} as = h _ _ _ _
     sel-ok o h (I.get i a) = h _ _ _ _

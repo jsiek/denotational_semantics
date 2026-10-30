@@ -1,6 +1,6 @@
 {-
 
-  Correctness of globalize (FlatClosμ → GlobalFunμ), clock for clock, as for
+  Correctness of globalize (PairClosμ → GlobalFunμ), clock for clock, as for
   typed globalize (proof/Correctness/Interp/GlobalizeFuel.agda):
   globalize maps each callc to one callc, so the interpreters call in
   lock step.
@@ -22,12 +22,12 @@ open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 open import Mu.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.FlatClos as S
+import Mu.Language.PairClos as S
 open import Mu.Language.GlobalFun
 open import Mu.Compiler.Globalize
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.FlatClos as S4
+import Mu.Semantics.ClockedInterpreters.PairClos as S4
 import Mu.Semantics.ClockedInterpreters.GlobalFun as T
 open import proof.Framework.Lookup using (⊑-∋-trans)
 
@@ -45,7 +45,7 @@ wks-wk : ∀ {Σ₁ Σ₂ Σ₃ Γ Δ} (r : Ren Σ₂ Σ₃) (r' : Ren Σ₁ Σ�
   → wks r (wks r' Ms) ≡ wks (λ x → r (r' x)) Ms
 wk-wk r r' (` x) = refl
 wk-wk r r' (fun-ref f) = refl
-wk-wk r r' (pack L M) = cong₂ pack (wk-wk r r' L) (wk-wk r r' M)
+wk-wk r r' (pair L M) = cong₂ pair (wk-wk r r' L) (wk-wk r r' M)
 wk-wk r r' (callc L M) = cong₂ callc (wk-wk r r' L) (wk-wk r r' M)
 wk-wk r r' (lit B c) = refl
 wk-wk r r' (tuple Ms) = cong tuple (wks-wk r r' Ms)
@@ -64,7 +64,7 @@ wk-id : ∀ {Σ Γ A} (M : Tm Σ Γ A) → wk (λ x → x) M ≡ M
 wks-id : ∀ {Σ Γ Δ} (Ms : All (Tm Σ Γ) Δ) → wks (λ x → x) Ms ≡ Ms
 wk-id (` x) = refl
 wk-id (fun-ref f) = refl
-wk-id (pack L M) = cong₂ pack (wk-id L) (wk-id M)
+wk-id (pair L M) = cong₂ pair (wk-id L) (wk-id M)
 wk-id (callc L M) = cong₂ callc (wk-id L) (wk-id M)
 wk-id (lit B c) = refl
 wk-id (tuple Ms) = cong tuple (wks-id Ms)
@@ -98,7 +98,7 @@ glob₂-ext : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A �
 glob-ext (S.` x) D = same
 glob-ext (S.code N) D with glob N D | glob-ext N D
 ... | out s D' N' | e = more e
-glob-ext (S.pack L M) D = glob₂-ext pack L M D
+glob-ext (S.pair L M) D = glob₂-ext pair L M D
 glob-ext (S.callc L M) D = glob₂-ext callc L M D
 glob-ext (S.lit B c) D = same
 glob-ext (S.tuple Ms) D with globs Ms D | globs-ext Ms D
@@ -169,7 +169,7 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
   run≈ ck (S.code N) D {r} c E with glob N D in eq
   ... | out s D' N' with c
   ...   | r' , h , d , c' = ret (code≈ (gcode D _ eq r' (contains-cong D' h c') d))
-  run≈ ck (S.pack L M) D {r} c E with glob L D | run≈ ck L D
+  run≈ ck (S.pair L M) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
     bind-rel (ihL (contains-ext e₂ c) E) λ { (code≈ g) → bind-rel (ihM c E) λ { (tup≈ rs) → ret (pack≈ rs (same g)) } }

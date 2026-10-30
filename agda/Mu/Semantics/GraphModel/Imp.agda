@@ -19,7 +19,7 @@
 module Mu.Semantics.GraphModel.Imp where
 
 open import Framework.GraphModel.Prelude
-open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
+open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to pairD)
 open import Semantics.Graph.Prim using (primD)
 open import Mu.Semantics.GraphModel.Ops
 open import Mu.Language.Type
@@ -41,7 +41,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 𝒮 : ∀ {Σ Δ A} → Simple Σ Δ A → Table Σ → Env Value → 𝒫 Value
 𝒮 (atm a) T σ = 𝒜 a T σ
-𝒮 (pack a b) T σ = pair ⟨ 𝒜 a T σ , ⟨ 𝒜 b T σ , ptt ⟩ ⟩
+𝒮 (pair a b) T σ = pairD ⟨ 𝒜 a T σ , ⟨ 𝒜 b T σ , ptt ⟩ ⟩
 𝒮 (callc f a) T σ = ⋆ ⟨ ⋆ ⟨ car ⟨ 𝒜 f T σ , ptt ⟩ , ⟨ cdr ⟨ 𝒜 f T σ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ 𝒜 a T σ , ptt ⟩ ⟩
 𝒮 (tuple {Δs} as) T σ = 𝒯 (length Δs) (𝒜s as T σ)
 𝒮 (get i a) T σ = proj (pos i) ⟨ 𝒜 a T σ , ptt ⟩

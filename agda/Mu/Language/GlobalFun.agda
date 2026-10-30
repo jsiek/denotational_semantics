@@ -2,7 +2,7 @@
 
   GlobalFunμ: GlobalFun, intrinsically typed, with recursive types. The output
   of globalize (Mu/Compiler/Globalize.agda); as Clos5ᵀ
-  (Language/Typed/Clos5.agda), with the types of FlatClosμ.
+  (Language/Typed/Clos5.agda), with the types of PairClosμ.
 
   The code of every function is a global definition. A program has a
   table Σ, the signatures of its definitions (newest first): a
@@ -35,7 +35,7 @@ record DSig : Set where
 data Tm (Σ : List DSig) (Γ : Ctx) : Type → Set where
   `_ : ∀ {A} → Γ ∋ A → Tm Σ Γ A
   fun-ref : ∀ {Δ A B} → Σ ∋ sig Δ A B → Tm Σ Γ (code Δ A B)
-  pack : ∀ {Δ A B} → Tm Σ Γ (code Δ A B) → Tm Σ Γ (tup Δ) → Tm Σ Γ (A ⇒ B)
+  pair : ∀ {Δ A B} → Tm Σ Γ (code Δ A B) → Tm Σ Γ (tup Δ) → Tm Σ Γ (A ⇒ B)
   callc : ∀ {A B} → Tm Σ Γ (A ⇒ B) → Tm Σ Γ A → Tm Σ Γ B
   lit : (B : Base) → base-rep B → Tm Σ Γ (base B)
   tuple : ∀ {Δ} → All (Tm Σ Γ) Δ → Tm Σ Γ (tup Δ)
@@ -68,7 +68,7 @@ wk : ∀ {Σ Σ' Γ A} → (∀ {s} → Σ ∋ s → Σ' ∋ s) → Tm Σ Γ A �
 wks : ∀ {Σ Σ' Γ Δ} → (∀ {s} → Σ ∋ s → Σ' ∋ s) → All (Tm Σ Γ) Δ → All (Tm Σ' Γ) Δ
 wk r (` x) = ` x
 wk r (fun-ref f) = fun-ref (r f)
-wk r (pack L M) = pack (wk r L) (wk r M)
+wk r (pair L M) = pair (wk r L) (wk r M)
 wk r (callc L M) = callc (wk r L) (wk r M)
 wk r (lit B c) = lit B c
 wk r (tuple Ms) = tuple (wks r Ms)

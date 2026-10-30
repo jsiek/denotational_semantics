@@ -185,7 +185,7 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
     sel-＝ : ∀ {Δ A Δ''} (s : I.Simple Σ Δ A) (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)} {ρ Γ O F R F'}
       → Fits o K k ρ → then o K (𝒮 s T · ρ) ＝ X86.⟦_⟧ˢ T' (sel s o k {Γ} {O} {F}) B' · (ρ , (R , F'))
     sel-＝ s@(I.atm a) o f = put-＝ o f (𝒮-＝ TT s _)
-    sel-＝ s@(I.pack c e) o f = put-＝ o f (𝒮-＝ TT s _)
+    sel-＝ s@(I.pair c e) o f = put-＝ o f (𝒮-＝ TT s _)
     sel-＝ s@(I.callc (var x) a) o {K} {k} {ρ} f =
       ap (then o K) (𝒮-＝ TT s ρ) ∙ then-seq o K (𝒮 s T' · ρ) ⁻¹ ∙ ap (seq · (𝒮 s T' · ρ) ·_) (put-＝ o f refl)
     sel-＝ s@(I.tuple {Δs} as) o {ρ = ρ} {Γ} {O} {F} {R} {F'} f =

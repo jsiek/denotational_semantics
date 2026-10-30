@@ -28,13 +28,13 @@ open import Data.Nat using (ℕ; _<_)
 open import proof.Framework.Lookup using (lvl-<)
 open import Data.Product using (_×_; _,_)
 open import Data.Unit using (⊤; tt)
-import Mu.Language.FlatClos as S
+import Mu.Language.PairClos as S
 
 Older : ∀ {Σ Γ A} → ℕ → Tm Σ Γ A → Set
 Olders : ∀ {Σ Γ Δ} → ℕ → All (Tm Σ Γ) Δ → Set
 Older k (` x) = ⊤
 Older k (fun-ref f) = lvl f < k
-Older k (pack L M) = Older k L × Older k M
+Older k (pair L M) = Older k L × Older k M
 Older k (callc L M) = Older k L × Older k M
 Older k (lit B c) = ⊤
 Older k (tuple Ms) = Olders k Ms
@@ -66,7 +66,7 @@ wks-older : ∀ {Σ Σ' Γ Δ k} (r : ∀ {s} → Σ ∋ s → Σ' ∋ s) → (�
   → (Ms : All (Tm Σ Γ) Δ) → Olders k (wks r Ms)
 wk-older r h (` x) = tt
 wk-older r h (fun-ref f) = h f
-wk-older r h (pack L M) = wk-older r h L , wk-older r h M
+wk-older r h (pair L M) = wk-older r h L , wk-older r h M
 wk-older r h (callc L M) = wk-older r h L , wk-older r h M
 wk-older r h (lit B c) = tt
 wk-older r h (tuple Ms) = wks-older r h Ms

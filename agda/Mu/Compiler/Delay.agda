@@ -1,11 +1,11 @@
 {-
 
-  Delay (EnvClosμ → FlatClosμ), as typed delay (Compiler/Delay.agda): a
+  Delay (EnvClosμ → PairClosμ), as typed delay (Compiler/Delay.agda): a
   closure becomes a packed pair of its code and the tuple of its free
   variables, and an application opens the closure and calls its code
   with its environment:
 
-    clos N Ms ⇒ pack (code N') (tuple Ms'),
+    clos N Ms ⇒ pair (code N') (tuple Ms'),
     app L M   ⇒ callc L' M'.
 
   (It carries a renaming of the variables, the identity for a program.)
@@ -16,7 +16,7 @@ module Mu.Compiler.Delay where
 
 open import Mu.Language.Type
 open import Mu.Language.EnvClos
-import Mu.Language.FlatClos as T
+import Mu.Language.PairClos as T
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 
 open import Data.List using ([]; _∷_)
@@ -33,7 +33,7 @@ delay : ∀ {Γ Δ A} → Ren Γ Δ → Tm Γ A → T.Tm Δ A
 delays : ∀ {Γ Δ Δ'} → Ren Γ Δ → All (Tm Γ) Δ' → All (T.Tm Δ) Δ'
 
 delay r (` x) = T.` r x
-delay r (clos N Ms) = T.pack (T.code (delay (λ x → x) N)) (T.tuple (delays r Ms))
+delay r (clos N Ms) = T.pair (T.code (delay (λ x → x) N)) (T.tuple (delays r Ms))
 delay r (app L M) = T.callc (delay r L) (delay r M)
 delay r (lit B c) = T.lit B c
 delay r (tuple Ms) = T.tuple (delays r Ms)

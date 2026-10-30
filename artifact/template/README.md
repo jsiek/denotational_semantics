@@ -9,7 +9,7 @@ clocked interpreters of ISWIMμ and x86μ, and it measures the sizes of
 the five proofs (Tables 1 and 2 of the paper).
 
     ISWIMμ --simplify--> ISWIMμ --enclose--> Clos --optimize--> Clos
-           --concretize--> EnvClos --delay--> FlatClos
+           --concretize--> EnvClos --delay--> PairClos
            --globalize--> GlobalFun --rco--> Mon --lift locals--> Imp
            --explicate control--> CFG --select instructions--> x86μ
 
@@ -141,7 +141,7 @@ the proofs they re-export (`make tables` checks this). The surface is:
 * the theorem statements: `Mu/Theorems/{GraphModel,AbstractMachines,ClockedInterpreters,ReductionSemantics,ScottDomains,Adequacy}.agda`;
 * the languages and passes: `Mu/Language/*.agda`, `Mu/Compiler/*.agda`;
 * heterogeneous vectors: `Mu/Framework/AllUtil.agda`, `Mu/Framework/ReductionAll.agda`;
-* the graph model: `Mu/Semantics/GraphModel/{ISWIM,EnvClos,FlatClos,Imp,CFG,X86,Ops,Closed}.agda`,
+* the graph model: `Mu/Semantics/GraphModel/{ISWIM,EnvClos,PairClos,Imp,CFG,X86,Ops,Closed}.agda`,
   `Framework/GraphModel/{Domain,SetsAsPredicates,Env,DOpSig,OpsBase,Ops}.agda`,
   `Semantics/Graph/Prim.agda`;
 * Scott domains: `Mu/Semantics/ScottDomains/{ISWIM,Imp,CFG,X86,Ops,Closed}.agda`,

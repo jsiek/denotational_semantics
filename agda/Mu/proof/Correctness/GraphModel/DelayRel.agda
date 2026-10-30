@@ -1,14 +1,14 @@
 {-
 
   The approximant logical relation, for the backward (reflect) direction
-  of delay (EnvClosμ → FlatClosμ) in the graph model: that of typed delay
+  of delay (EnvClosμ → PairClosμ) in the graph model: that of typed delay
   (proof/Correctness/Graph/DelayRel.agda) without its clause for
   project (fun-obs), which ISWIMμ does not have. The relation itself and
   Lemma 4.2 are in ApproxLR.agda (re-exported here); this module adds the
   call of a closure (_⊙_), the union of batches, and Approx, the form of
   the fundamental lemma.
   ApproxLR D V' relates an arbitrary source denotation D (a set of EnvClosμ
-  values) to a finite target approximant V' (a list of FlatClosμ values), by
+  values) to a finite target approximant V' (a list of PairClosμ values), by
   recursion on the depth of V', since a target closure is a set of pairs
   whose calls combine the codes and environments of several pairs (Batch).
   ApproxLRLayer is one unfolding of the relation, with the recursive call

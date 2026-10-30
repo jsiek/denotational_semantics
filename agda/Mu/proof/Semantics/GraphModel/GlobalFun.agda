@@ -29,7 +29,7 @@ module _ {Σ} {T : Table Σ} (cT : ConT T) where
 
   ok (` x) = var-ok (idx x)
   ok (fun-ref f) = const-ok (cT f)
-  ok (pack L M) = ok-op pair-good ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
+  ok (pair L M) = ok-op pair-good ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
   ok (callc L M) = ok-op callc-good ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
   ok (lit B c) = ok-op (ℬ-good B c) ptt
   ok (tuple Ms) = ok-vec (𝒯-good _) (oks Ms)

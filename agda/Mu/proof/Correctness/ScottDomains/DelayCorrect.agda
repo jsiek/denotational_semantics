@@ -1,6 +1,6 @@
 {-
 
-  Correctness of delay (EnvClosμ → FlatClosμ) in Scott domains: a closed
+  Correctness of delay (EnvClosμ → PairClosμ) in Scott domains: a closed
   program and its translation produce the same constants, and one is
   defined exactly when the other is, as in the graph model
   (Mu/proof/Correctness/GraphModel/DelayCorrect.agda). Forward by Pres,
@@ -34,7 +34,7 @@ open import proof.Framework.Scott.Semantics pt fe pe using (ρ₀)
 open import Mu.proof.Correctness.ScottDomains.DelayRel pt fe pe
 open import Mu.proof.Correctness.ScottDomains.DelayTerms pt fe pe using (delay-pres; delay-refl)
 open import Mu.Semantics.ScottDomains.EnvClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₃)
-open import Mu.Semantics.ScottDomains.FlatClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄)
+open import Mu.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄)
 
 {- a defined value related to a constant is that constant -}
 Rel-const-is : ∀ {δ w} (B : Base) (c : base-rep B) → Rel δ (const B c) w → defined w → w ＝ const B c

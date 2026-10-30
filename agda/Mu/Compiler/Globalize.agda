@@ -1,6 +1,6 @@
 {-
 
-  Globalize (FlatClosμ → GlobalFunμ): the code of every function becomes a
+  Globalize (PairClosμ → GlobalFunμ): the code of every function becomes a
   global definition, and the code itself a reference to it, as typed
   globalize (Compiler/Globalize.agda) does.
 
@@ -17,7 +17,7 @@ module Mu.Compiler.Globalize where
 
 open import Mu.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.FlatClos as S
+import Mu.Language.PairClos as S
 open import Mu.Language.GlobalFun
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 
@@ -47,7 +47,7 @@ glob₂ : ∀ {Σ Γ Γ₁ Γ₂ A B C} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm
 glob (S.` x) D = out here⊑ D (` x)
 glob (S.code N) D with glob N D
 ... | out s D' N' = out (there⊑ s) (D' ▷ N') (fun-ref Z)
-glob (S.pack L M) D = glob₂ pack L M D
+glob (S.pair L M) D = glob₂ pair L M D
 glob (S.callc L M) D = glob₂ callc L M D
 glob (S.lit B c) D = out here⊑ D (lit B c)
 glob (S.tuple Ms) D with globs Ms D

@@ -24,7 +24,7 @@ open import Framework.Primitives using (Int)
 
 data Simple (Σ : List DSig) (Δ : Ctx) : Type → Set where
   atm : ∀ {A} → Atm Σ Δ A → Simple Σ Δ A
-  pack : ∀ {Δ' A B} → Atm Σ Δ (code Δ' A B) → Atm Σ Δ (tup Δ') → Simple Σ Δ (A ⇒ B)
+  pair : ∀ {Δ' A B} → Atm Σ Δ (code Δ' A B) → Atm Σ Δ (tup Δ') → Simple Σ Δ (A ⇒ B)
   callc : ∀ {A B} → Atm Σ Δ (A ⇒ B) → Atm Σ Δ A → Simple Σ Δ B
   tuple : ∀ {Δ'} → All (Atm Σ Δ) Δ' → Simple Σ Δ (tup Δ')
   get : ∀ {Δ' A} → Δ' ∋ A → Atm Σ Δ (tup Δ') → Simple Σ Δ A

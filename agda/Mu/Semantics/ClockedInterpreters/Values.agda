@@ -8,7 +8,7 @@
 
   A closure is a pair of code and the tuple of its environment, packed
   (pack): the code of a function is a value of type code Δ A B only in
-  FlatClosμ, but every language uses the same shape. A value of a
+  PairClosμ, but every language uses the same shape. A value of a
   recursive type is a fold of a value of its unfolding; unfold takes it
   apart and cannot fail, so no operation errs. An environment is typed
   by its context.

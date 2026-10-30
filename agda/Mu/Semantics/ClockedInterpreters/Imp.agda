@@ -34,7 +34,7 @@ module _ {Σ : List DSig} where
   {- a simple expression, with call the calls -}
   eval-simple : ∀ {Δ A} → (∀ {A B} → Val (A ⇒ B) → Val A → Result (Val B)) → Env Δ → Simple Σ Δ A → Result (Val A)
   eval-simple call φ (atm a) = ret (atom φ a)
-  eval-simple call φ (pack a b) = ret (pack (atom φ a) (atom φ b))
+  eval-simple call φ (pair a b) = ret (pack (atom φ a) (atom φ b))
   eval-simple call φ (callc a b) = call (atom φ a) (atom φ b)
   eval-simple call φ (tuple as) = ret (tup (map (atom φ) as))
   eval-simple call φ (get i a) = ret (nth i (atom φ a))

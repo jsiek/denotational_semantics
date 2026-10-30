@@ -1,6 +1,6 @@
 {-
 
-  A CEK machine for FlatClosμ (Mu/Language/FlatClos.agda), as the one for
+  A CEK machine for PairClosμ (Mu/Language/PairClos.agda), as the one for
   EnvClosμ (Mu/Semantics/AbstractMachines/EnvClos.agda). The value of code is the code;
   a closure is a packed pair of code and an environment of the same
   types Δ. callc L M evaluates the closure and the argument, then runs
@@ -8,11 +8,11 @@
 
 -}
 
-module Mu.Semantics.AbstractMachines.FlatClos where
+module Mu.Semantics.AbstractMachines.PairClos where
 
 open import Framework.Primitives using (Int)
 open import Mu.Language.Type
-open import Mu.Language.FlatClos
+open import Mu.Language.PairClos
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 
@@ -25,8 +25,8 @@ data Cont : Type → Set where
   halt : ∀ {A} → Cont A
   callL : ∀ {Γ A B} → Tm Γ A → Env Γ → Cont B → Cont (A ⇒ B)
   callR : ∀ {A B} → Val (A ⇒ B) → Cont B → Cont A
-  packL : ∀ {Γ Δ A B} → Tm Γ (tup Δ) → Env Γ → Cont (A ⇒ B) → Cont (code Δ A B)
-  packR : ∀ {Δ A B} → Val (code Δ A B) → Cont (A ⇒ B) → Cont (tup Δ)
+  pairL : ∀ {Γ Δ A B} → Tm Γ (tup Δ) → Env Γ → Cont (A ⇒ B) → Cont (code Δ A B)
+  pairR : ∀ {Δ A B} → Val (code Δ A B) → Cont (A ⇒ B) → Cont (tup Δ)
   {- the values so far (newest first) and the components still to evaluate -}
   tupK : ∀ {Γ Δ' A Δ} → All Val Δ' → All (Tm Γ) Δ → Env Γ → Cont (tup (Δ' <>< (A ∷ Δ))) → Cont A
   getK : ∀ {Δ A} → Δ ∋ A → Cont A → Cont (tup Δ)
@@ -51,7 +51,7 @@ tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 step : State → Next State
 step (eval (` x) ρ κ) = next (ret (lookup ρ x) κ)
 step (eval (code N) ρ κ) = next (ret (code N) κ)
-step (eval (pack L M) ρ κ) = next (eval L ρ (packL M ρ κ))
+step (eval (pair L M) ρ κ) = next (eval L ρ (pairL M ρ κ))
 step (eval (callc L M) ρ κ) = next (eval L ρ (callL M ρ κ))
 step (eval (lit B c) ρ κ) = next (ret (const c) κ)
 step (eval (tuple Ms) ρ κ) = next (tuple-next [] Ms ρ κ)
@@ -66,8 +66,8 @@ step (eval (unfold M) ρ κ) = next (eval M ρ (unfoldK κ))
 step (ret v halt) = stop (obs v)
 step (ret f (callL M ρ κ)) = next (eval M ρ (callR f κ))
 step (ret w (callR (pack (code N) e) κ)) = next (eval N (w ∷ e ∷ []) κ)
-step (ret c (packL M ρ κ)) = next (eval M ρ (packR c κ))
-step (ret e (packR c κ)) = next (ret (pack c e) κ)
+step (ret c (pairL M ρ κ)) = next (eval M ρ (pairR c κ))
+step (ret e (pairR c κ)) = next (ret (pack c e) κ)
 step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
 step (ret (tup vs) (getK i κ)) = next (ret (lookup vs i) κ)
 step (ret v (inlK κ)) = next (ret (inl v) κ)

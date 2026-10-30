@@ -6,7 +6,7 @@
   paper. Mu/README.md is the road map from the paper to this code.
 
     ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
-           --concretize--> EnvClosμ --delay--> FlatClosμ
+           --concretize--> EnvClosμ --delay--> PairClosμ
            --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 

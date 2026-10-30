@@ -52,7 +52,7 @@ module _ {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)) 
 
     simple≡ : ∀ {Δ A} (φ : Env Δ) (s : Simple Σ Δ A) → eval-simple (I.call ds ck) φ s ≡ eval-simple (G.call ds' ck) φ s
     simple≡ φ (Imp.atm a) = refl
-    simple≡ φ (Imp.pack a b) = refl
+    simple≡ φ (Imp.pair a b) = refl
     simple≡ φ (Imp.callc a b) = calls _ _
     simple≡ φ (Imp.tuple as) = refl
     simple≡ φ (Imp.get i a) = refl

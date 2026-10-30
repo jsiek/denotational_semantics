@@ -1,7 +1,7 @@
 {-
 
   A design-space fact about the relation for the reflect half of delay
-  (EnvClosμ → FlatClosμ) in the graph model (DelayRel, DelayReflect): its
+  (EnvClosμ → PairClosμ) in the graph model (DelayRel, DelayReflect): its
   source side must be a whole, possibly infinite, source set, not a
   single element or a finite list. Two examples show it: one whose
   source sets differ only by duplicate inputs (1, 2), and one with no
@@ -62,7 +62,7 @@ open import proof.Framework.GraphModel.DomainUtilBase
 open import Mu.Language.Type using (Type; base; _⇒_; tup; Z)
 open import Mu.Language.EnvClos
 import Mu.proof.Semantics.GraphModel.EnvClos as S3
-import Mu.proof.Semantics.GraphModel.FlatClos as S4
+import Mu.proof.Semantics.GraphModel.PairClos as S4
 open S3 using (⟦_⟧)
 open S4 using () renaming (⟦_⟧ to ⟦_⟧')
 open import Mu.Framework.AllUtil using ([])

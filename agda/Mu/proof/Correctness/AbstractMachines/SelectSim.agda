@@ -120,7 +120,7 @@ module Sim {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s))
     sel~ : ∀ {A} {φ : G.Frame Σ Δ} (o : Out n Δ A Δ'') {k : ∀ {Γ O F} → Seq Σ n R Bs (after o Γ O F)} (s : I.Simple Σ Δ A)
       → XOut bs σ φ o k (G.run s φ) (X.run (sel s o k) bs σ η ⟨ ρ , φ , op , f ⟩)
     sel~ o (I.atm a) = xval (step⁺ refl)
-    sel~ o (I.pack c e) = xval (step⁺ refl)
+    sel~ o (I.pair c e) = xval (step⁺ refl)
     sel~ {φ = φ} o (I.callc (var x) a) = call~ o x a (lookup φ x) refl
     sel~ o {k} (I.tuple as) = xval (step⁺ (cong (λ vs → next (X.run k bs σ η (X.put (dst o) (X.tup vs) _))) (args~ as)))
     sel~ o (I.get i a) = xval (step⁺ refl)

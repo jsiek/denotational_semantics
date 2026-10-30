@@ -164,7 +164,7 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
 
   𝒮-＝ : ∀ {Δ A} (s : I.Simple Σ Δ A) σ → 𝒮 s T · σ ＝ 𝒮 s T' · σ
   𝒮-＝ (I.atm a) σ = 𝒜-＝ a σ
-  𝒮-＝ (I.pack a b) σ = ap₂ (λ x y → pair · x · y) (𝒜-＝ a σ) (𝒜-＝ b σ)
+  𝒮-＝ (I.pair a b) σ = ap₂ (λ x y → pair · x · y) (𝒜-＝ a σ) (𝒜-＝ b σ)
   𝒮-＝ (I.callc a b) σ = ap₂ (λ x y → app · (app · (car · x) · (cdr · x)) · y) (𝒜-＝ a σ) (𝒜-＝ b σ)
   𝒮-＝ (I.tuple {Δs} as) σ = ap (tuple (length Δs) ·_) (𝒜s-＝ as σ)
   𝒮-＝ (I.get i a) σ = ap (proj (pos i) ·_) (𝒜-＝ a σ)

@@ -133,9 +133,9 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
 
   rco≈ (` x) ρ σ τ a vs = subst (_≈ _) (a x) (val≈ (subst Value (sym (a x)) (vs x)))
   rco≈ (fun-ref f) ρ σ τ a vs = val≈ T.fun-ref
-  rco≈ (pack L M) ρ σ τ a vs =
-    atomize₂≈ L M ρ Mon.pack σ τ a vs {h = pack} (frame _ λ _ → refl) (λ v → frame _ λ _ → val-in (value-red v))
-      λ τ' a b v w → val≈ (T.pack v w)
+  rco≈ (pair L M) ρ σ τ a vs =
+    atomize₂≈ L M ρ Mon.pair σ τ a vs {h = pair} (frame _ λ _ → refl) (λ v → frame _ λ _ → val-in (value-red v))
+      λ τ' a b v w → val≈ (T.pair v w)
   rco≈ (callc L M) ρ σ τ a vs =
     atomize₂≈ L M ρ Mon.callc σ τ a vs {h = callc} (frame _ λ _ → refl) (λ v → frame _ λ _ → val-in (value-red v))
       λ τ' a b v w → call≈ v w
@@ -157,7 +157,7 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
   atomize≈ (` x) ρ k σ τ a vs {h} F kk = subst (λ X → h X ≈ _) (a x) (kk (λ y → y) τ (var (ρ x)) (λ _ → refl) (subst Value (sym (a x)) (vs x)))
   atomize≈ (fun-ref f) ρ k σ τ a vs F kk = kk (λ y → y) τ (ref f) (λ _ → refl) T.fun-ref
   atomize≈ (lit B c) ρ k σ τ a vs F kk = kk (λ y → y) τ (lit B c) (λ _ → refl) T.lit
-  atomize≈ M@(pack _ _) = let-op M
+  atomize≈ M@(pair _ _) = let-op M
   atomize≈ M@(callc _ _) = let-op M
   atomize≈ M@(tuple _) = let-op M
   atomize≈ M@(get _ _) = let-op M
@@ -203,7 +203,7 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
     cont v r' with ≈-val r' v
     ... | refl = ans-step (val-in (value-red v))
                    (subst (λ x → Ans′ (h M) x _) (trans (Frame.eq F M) (val-in (value-red v))) (sim (k M v)))
-  sim (call≈ {W = W} f@(T.pack {M = E} (T.fun-ref {f = g}) e) w) rewrite value-red {ds = ds} f | value-red {ds = ds} w =
+  sim (call≈ {W = W} f@(T.pair {M = E} (T.fun-ref {f = g}) e) w) rewrite value-red {ds = ds} f | value-red {ds = ds} w =
     to (one (trans (val-in (value-red f)) (trans (val-in (value-red w))
               (cong (λ D → to (sub (W • E • ∅) D)) (trans (lookup-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds) g) (cong ⌜_⌝ (lookup-map (λ D → rco D (λ x → x)) ds g)))))))
        (rco≈ (lookup ds g) (λ x → x) (W • E • ∅) (W • E • ∅) (λ _ → refl) (ext-vals w (ext-vals e λ ())))

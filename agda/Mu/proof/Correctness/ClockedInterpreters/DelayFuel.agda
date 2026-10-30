@@ -1,9 +1,9 @@
 {-
 
-  Correctness of delay (EnvClosμ → FlatClosμ), clock for clock, as for typed
+  Correctness of delay (EnvClosμ → PairClosμ), clock for clock, as for typed
   delay (proof/Correctness/Interp/DelayFuel.agda; see the design note in
   Semantics/Interp/Clock.agda): clos N Ms becomes
-  pack (code N') (tuple Ms'), and app becomes callc, which calls as app
+  pair (code N') (tuple Ms'), and app becomes callc, which calls as app
   does. The pass renames variables (the identity for a program), so
   environments are related through the renaming (Env≈); a closure of N
   and vs is related to a pack of the code delay N and related values
@@ -16,12 +16,12 @@ module Mu.proof.Correctness.ClockedInterpreters.DelayFuel where
 open import Data.List using ([]; _∷_)
 open import Mu.Language.Type
 open import Mu.Language.EnvClos
-import Mu.Language.FlatClos as C4
+import Mu.Language.PairClos as C4
 open import Mu.Compiler.Delay
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂)
 open import proof.Semantics.Interp.Clock
 import Mu.Semantics.ClockedInterpreters.EnvClos as S
-import Mu.Semantics.ClockedInterpreters.FlatClos as T
+import Mu.Semantics.ClockedInterpreters.PairClos as T
 open import Mu.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B}
 
 open import Data.Nat using (zero; suc)

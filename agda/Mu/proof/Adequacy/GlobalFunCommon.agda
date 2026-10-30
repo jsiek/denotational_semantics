@@ -105,7 +105,7 @@ module _ {Σ : List DSig} where
     → results-rel-pres _⊆_ (replicate (length Δ) ■) (⟦ Ms ⟧s[ T ] ρ) (⟦ Ms ⟧s[ T' ] ρ)
   tbl-mono (` x) cT o h ρ = ⊆r
   tbl-mono (fun-ref f) cT o h ρ = h f o
-  tbl-mono (pack L M) cT ⟨ o₁ , o₂ ⟩ h ρ = m2 pair-good (tbl-mono L cT o₁ h ρ) (tbl-mono M cT o₂ h ρ)
+  tbl-mono (pair L M) cT ⟨ o₁ , o₂ ⟩ h ρ = m2 pair-good (tbl-mono L cT o₁ h ρ) (tbl-mono M cT o₂ h ρ)
   tbl-mono (callc L M) cT ⟨ o₁ , o₂ ⟩ h ρ = m2 callc-good (tbl-mono L cT o₁ h ρ) (tbl-mono M cT o₂ h ρ)
   tbl-mono (lit B c) cT o h ρ = ⊆r
   tbl-mono (tuple {Δ} Ms) cT o h ρ = lower (mono (𝒯-good {⊤} (length Δ)) _ _ (tbl-monos Ms cT o h ρ))

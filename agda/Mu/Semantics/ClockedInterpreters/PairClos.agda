@@ -1,17 +1,17 @@
 {-
 
-  A clocked interpreter for FlatClosμ (Mu/Language/FlatClos.agda), as the one
+  A clocked interpreter for PairClosμ (Mu/Language/PairClos.agda), as the one
   for EnvClosμ (Mu/Semantics/ClockedInterpreters/EnvClos.agda), with the same values:
-  code is a value, pack pairs it with an environment, and callc L M runs
+  code is a value, pair L M pairs it with an environment, and callc L M runs
   the code of the closure L with its environment and the argument M,
   after both are evaluated.
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.FlatClos where
+module Mu.Semantics.ClockedInterpreters.PairClos where
 
 open import Mu.Language.Type
-open import Mu.Language.FlatClos
+open import Mu.Language.PairClos
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
 
@@ -26,7 +26,7 @@ call : ∀ {A B} → ℕ → Val (A ⇒ B) → Val A → Result (Val B)
 
 eval ck ρ (` x) = ret (lookup ρ x)
 eval ck ρ (code N) = ret (code N)
-eval ck ρ (pack L M) = do c ← eval ck ρ L; e ← eval ck ρ M; ret (pack c e)
+eval ck ρ (pair L M) = do c ← eval ck ρ L; e ← eval ck ρ M; ret (pack c e)
 eval ck ρ (callc L M) = do f ← eval ck ρ L; w ← eval ck ρ M; call ck f w
 eval ck ρ (lit B c) = ret (const c)
 eval ck ρ (tuple Ms) = do vs ← evals ck ρ Ms; ret (tup vs)

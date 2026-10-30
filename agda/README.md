@@ -119,7 +119,7 @@ other than `--without-K`, failing if it finds any.
   and its compiler to the typed assembly language X86μ,
 
       ISWIMμ --simplify--> ISWIMμ --CC: enclose--> Closμ --CC: optimize--> Closμ
-             --CC: concretize--> EnvClosμ --CC: delay--> FlatClosμ
+             --CC: concretize--> EnvClosμ --CC: delay--> PairClosμ
              --CC: globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
              --explicate control--> CFGμ --select instructions--> X86μ
 

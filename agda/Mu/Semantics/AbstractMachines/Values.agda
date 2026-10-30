@@ -1,6 +1,6 @@
 {-
 
-  The values of the CEK machines of ISWIMμ and Closμ–FlatClosμ
+  The values of the CEK machines of ISWIMμ and Closμ–PairClosμ
   (Mu/Semantics/AbstractMachines/), indexed by their type, as those of the clocked
   interpreters (Mu/Semantics/ClockedInterpreters/Values.agda); C Δ A B is what the
   code of a closure with free variables of types Δ, an argument of type
@@ -8,7 +8,7 @@
 
   A closure is a pair of code and the tuple of its environment, packed
   (pack): the code of a function is a value of type code Δ A B only in
-  FlatClosμ, but every language uses the same shape, so that the passes
+  PairClosμ, but every language uses the same shape, so that the passes
   between them relate values the same way (proof/Semantics/AbstractMachines/Rel.agda).
   A value of a recursive type is a fold of a value of its unfolding. An
   environment is typed by its context.

@@ -1,7 +1,7 @@
 {-
 
-  The semantics of FlatClosμ (Mu/Language/FlatClos.agda) in Scott domains, as
-  in the graph model (Mu/Semantics/GraphModel/FlatClos.agda): code is a closed
+  The semantics of PairClosμ (Mu/Language/PairClos.agda) in Scott domains, as
+  in the graph model (Mu/Semantics/GraphModel/PairClos.agda): code is a closed
   function of two arguments (codeᶜ, Framework/Scott/Semantics.agda), a
   closure the pair of code and environment, and callc applies the
   closure's code (car) to its environment (cdr) and the argument;
@@ -15,11 +15,11 @@ open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
 open import Mu.Language.Type
-open import Mu.Language.FlatClos
+open import Mu.Language.PairClos
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
 open import Data.List using (length)
 
-module Mu.Semantics.ScottDomains.FlatClos
+module Mu.Semantics.ScottDomains.PairClos
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -27,7 +27,7 @@ module Mu.Semantics.ScottDomains.FlatClos
 
 open import Framework.Scott.Base pt fe using (at)
 open import Framework.Scott.Domain pt fe pe using (𝔻)
-open import Framework.Scott.Ops pt fe pe using (Env; const; proj; pair; car; cdr) renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ)
+open import Framework.Scott.Ops pt fe pe using (Env; const; proj; car; cdr) renaming (pair to pairᵈ; app to appᵈ; inl to inlᵈ; inr to inrᵈ)
 open import Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 
@@ -36,7 +36,7 @@ open import Semantics.Scott.Prim pt fe pe using (primD)
 
 ⟦ ` x ⟧ = at _ 𝔻 (idx x)
 ⟦ code N ⟧ = litᶜ (codeᶜ ⟦ N ⟧)
-⟦ pack L M ⟧ = op₂ pair ⟦ L ⟧ ⟦ M ⟧
+⟦ pair L M ⟧ = op₂ pairᵈ ⟦ L ⟧ ⟦ M ⟧
 ⟦ callc L M ⟧ = op₂ appᵈ (op₂ appᵈ (op₁ car ⟦ L ⟧) (op₁ cdr ⟦ L ⟧)) ⟦ M ⟧
 ⟦ lit B c ⟧ = litᶜ (const B c)
 ⟦ tuple Ms ⟧ = tupleᶜ ⟦ Ms ⟧s

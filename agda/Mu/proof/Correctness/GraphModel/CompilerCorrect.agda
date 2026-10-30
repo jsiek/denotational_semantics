@@ -3,7 +3,7 @@
   The ISWIMμ compiler (Mu/Compiler/Pipeline.agda) in the plain
   graph model, as for the typed pipeline
   (proof/Correctness/Graph/CompilerCorrect.agda): for a closed ISWIMμ
-  program, the compiled program, in FlatClosμ, GlobalFunμ, Monμ (by its
+  program, the compiled program, in PairClosμ, GlobalFunμ, Monμ (by its
   embedding), Impμ, CFGμ and X86μ, produces the same constants as the
   source, and produces something exactly when the source does (Same).
   Every pass but delay preserves the meaning exactly (≃); delay
@@ -29,7 +29,7 @@ open import Mu.Compiler.Optimize using (optimize-program)
 open import Mu.Compiler.Concretize using (concretize-program)
 open import Mu.Compiler.Pipeline
 open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
-open import Mu.Semantics.GraphModel.FlatClos using () renaming (⟦_⟧ to ⟦_⟧₄)
+open import Mu.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧₄)
 open import Mu.Semantics.GraphModel.GlobalFun using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Mu.Semantics.GraphModel.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import Mu.Semantics.GraphModel.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
@@ -63,8 +63,8 @@ then ⟨ c , n ⟩ ⟨ c' , n' ⟩ = ⟨ (λ k → ⇔∘ (c k) (c' k)) , ⇔∘
 same : ∀ {D E} → D ≃ E → Same D E
 same D≃@(⟨ D⊆ , E⊆ ⟩) = ⟨ (λ k → ⟨ D⊆ _ , E⊆ _ ⟩) , ⟨ ne-≃ D≃ , ne-≃ (≃-sym D≃) ⟩ ⟩
 
-compile-to-FlatClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) (⟦ compile-to-FlatClos M ⟧₄ ρ₀)
-compile-to-FlatClos-same M =
+compile-to-PairClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) (⟦ compile-to-PairClos M ⟧₄ ρ₀)
+compile-to-PairClos-same M =
   then (same (≃-trans (simplify-correct M) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂)))))
        ⟨ delay-correct-const (concretize-program M₂) , delay-correct-nonempty (concretize-program M₂) ⟩
   where
@@ -72,7 +72,7 @@ compile-to-FlatClos-same M =
   M₂ = optimize-program (enclose M₁)
 
 compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
-compile-to-GlobalFun-same M = then (compile-to-FlatClos-same M) (same (globalize-correct (compile-to-FlatClos M)))
+compile-to-GlobalFun-same M = then (compile-to-PairClos-same M) (same (globalize-correct (compile-to-PairClos M)))
 
 compile-to-Mon-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅
 compile-to-Mon-same M = then (compile-to-GlobalFun-same M) (same (rco-correct (compile-to-GlobalFun M)))

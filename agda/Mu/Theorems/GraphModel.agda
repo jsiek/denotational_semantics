@@ -7,7 +7,7 @@
   with its type written out.
 
     ISWIMμ --simplify--> ISWIMμ --enclose--> Closμ --optimize--> Closμ
-           --concretize--> EnvClosμ --delay--> FlatClosμ
+           --concretize--> EnvClosμ --delay--> PairClosμ
            --globalize--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 
@@ -19,7 +19,7 @@
 
   To read them: the languages (Mu/Language/), the passes
   (Mu/Compiler/), the graph-model semantics of ISWIMμ, EnvClosμ,
-  FlatClosμ and X86μ (Mu/Semantics/GraphModel/), and the domain and
+  PairClosμ and X86μ (Mu/Semantics/GraphModel/), and the domain and
   operators they are built from (Framework/GraphModel/).
 
 -}
@@ -39,7 +39,7 @@ open import Mu.Compiler.Pipeline using (compile)
 
 open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
 open import Mu.Semantics.GraphModel.EnvClos using () renaming (⟦_⟧ to ⟦_⟧ᵉ)
-open import Mu.Semantics.GraphModel.FlatClos using () renaming (⟦_⟧ to ⟦_⟧ᶠ)
+open import Mu.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧ᶠ)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
 open import Mu.Semantics.GraphModel.Closed public using (ρ₀)
 

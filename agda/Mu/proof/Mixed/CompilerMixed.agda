@@ -34,7 +34,7 @@ open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Enclose using (enclose)
 open import Mu.Compiler.Optimize using (optimize-program)
 open import Mu.Compiler.Concretize using (concretize-program)
-open import Mu.Compiler.Pipeline using (compile-to-FlatClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
+open import Mu.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
 import Mu.Semantics.ClockedInterpreters.ISWIM as ISWIMμᵢ
@@ -69,7 +69,7 @@ after-simplify : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem (simplify 
 after-simplify M =
   equiv-trans (enclose-correct (simplify M)) (equiv-trans (optimize-correct M₁)
     (equiv-trans (concretize-correct M₂) (equiv-trans (delay-correct (concretize-program M₂))
-      (equiv-trans (globalize-correct (compile-to-FlatClos M)) (equiv-trans (rco-correct (compile-to-GlobalFun M))
+      (equiv-trans (globalize-correct (compile-to-PairClos M)) (equiv-trans (rco-correct (compile-to-GlobalFun M))
         (equiv-trans (lift-locals-correct (compile-to-Mon M)) (equiv-trans (explicate-correct (compile-to-Imp M))
           (select-correct (compile-to-CFG M)))))))))
   where M₁ = enclose (simplify M)

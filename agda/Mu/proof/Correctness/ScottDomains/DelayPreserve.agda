@@ -1,6 +1,6 @@
 {-
 
-  Correctness of delay (EnvClosμ → FlatClosμ) in Scott domains, the forward
+  Correctness of delay (EnvClosμ → PairClosμ) in Scott domains, the forward
   half: what a source program produces, the compiled one produces too
   (Pres, the relation of DelayRel.agda that approximates the source).
 

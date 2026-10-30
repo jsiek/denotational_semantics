@@ -20,7 +20,7 @@ module Mu.proof.Correctness.AbstractMachines.LiftLocalsSim where
 
 open import Mu.Language.Type
 import Mu.Language.Mon as M
-open M using (DSig; Args; atm; pack; callc; tuple; get; inl; inr; case; prim; let′; fold; unfold; ⌜_⌝; ⌜_⌝ₚ)
+open M using (DSig; Args; atm; pair; callc; tuple; get; inl; inr; case; prim; let′; fold; unfold; ⌜_⌝; ⌜_⌝ₚ)
 open import Mu.Compiler.LiftLocals using (lift; lift-program)
 open import Mu.Framework.AllUtil using (All; []; _∷_; map)
 open import Mu.proof.Framework.AllProp using (lookup-map)
@@ -85,7 +85,7 @@ module Sim {Σ : List DSig} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) 
 
   sim : s₂ ~ s₁ → 𝔅 s₁ s₂
   sim (eval~ {e = atm a} k) = val refl k (step⁺ (at a))
-  sim (eval~ {e = pack a b} k) = val refl k (plus refl (at a ◅ refl ◅ at b ◅ refl ◅ ε))
+  sim (eval~ {e = pair a b} k) = val refl k (plus refl (at a ◅ refl ◅ at b ◅ refl ◅ ε))
   sim (eval~ {e = callc f a} k) = call _ _ refl k (plus refl (at f ◅ refl ◅ at a ◅ ε))
   sim (eval~ {e = tuple as} k) = val refl k (plus refl (tuple-atoms ds₂ ⌜ e₀ ⌝ [] as))
   sim (eval~ {e = get i a} k) = val refl k (plus refl (at a ◅ refl ◅ ε))

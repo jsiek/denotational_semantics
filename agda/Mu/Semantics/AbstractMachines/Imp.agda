@@ -46,7 +46,7 @@ module _ {Σ : List DSig} where
 
   run : ∀ {Δ A} → Simple Σ Δ A → Frame Σ Δ → Res A
   run (atm a) φ = value (atom φ a)
-  run (pack a b) φ = value (pack (atom φ a) (atom φ b))
+  run (pair a b) φ = value (pack (atom φ a) (atom φ b))
   run (callc f a) φ = call (atom φ f) (atom φ a)
   run (tuple as) φ = value (tup (map (atom φ) as))
   run (get i a) φ = value (lookup (elems (atom φ a)) i)

@@ -1,12 +1,12 @@
 {-
 
-  Correctness of delay (EnvClosμ → FlatClosμ) by a forward simulation
+  Correctness of delay (EnvClosμ → PairClosμ) by a forward simulation
   between their reduction semantics, in lock step, as for typed delay
   (proof/Correctness/Reduction/DelayRed.agda).
 
   The relation on terms (_⊢_≈_) relates a variable x to ρ x, for the
   renaming ρ of the pass; it is a congruence, closed under substitution
-  (≈-trav), that relates a closure to the pack of its code and the tuple
+  (≈-trav), that relates a closure to the pair of its code and the tuple
   of its free variables, and an application to a callc. Applying related
   closures substitutes related values in related code.
 
@@ -16,7 +16,7 @@ module Mu.proof.Correctness.ReductionSemantics.DelayRed where
 
 open import Mu.Language.Type hiding (_[_])
 open import Mu.Language.EnvClos
-import Mu.Language.FlatClos as C
+import Mu.Language.PairClos as C
 open import Mu.Compiler.Delay
 open import Mu.Framework.AllUtil using (All; []; _∷_; All₂; lookup₂)
 open import Semantics.Observation
@@ -24,7 +24,7 @@ open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import Mu.proof.Semantics.ReductionSemantics.EnvClos as S
-import Mu.proof.Semantics.ReductionSemantics.FlatClos as T
+import Mu.proof.Semantics.ReductionSemantics.PairClos as T
 open T using (Value; value-red)
 import Language.Prim as P
 
@@ -40,7 +40,7 @@ infix 4 _⊢_≈_
 data _⊢_≈_ : ∀ {Γ Δ A} → Ren Γ Δ → Tm Γ A → C.Tm Δ A → Set where
   var≈ : ∀ {Γ Δ A} {ρ : Ren Γ Δ} {x : Γ ∋ A} {y} → ρ x ≡ y → ρ ⊢ ` x ≈ C.` y
   clos≈ : ∀ {Γ Δ Θ A B} {ρ : Ren Γ Δ} {N : Tm (A ∷ tup Θ ∷ []) B} {N' Ms} {Ms' : All _ Θ} → (λ x → x) ⊢ N ≈ N'
-    → All₂ (ρ ⊢_≈_) Ms Ms' → ρ ⊢ clos N Ms ≈ C.pack (C.code N') (C.tuple Ms')
+    → All₂ (ρ ⊢_≈_) Ms Ms' → ρ ⊢ clos N Ms ≈ C.pair (C.code N') (C.tuple Ms')
   app≈ : ∀ {Γ Δ A B} {ρ : Ren Γ Δ} {L : Tm Γ (A ⇒ B)} {L' M M'} → ρ ⊢ L ≈ L' → ρ ⊢ M ≈ M' → ρ ⊢ app L M ≈ C.callc L' M'
   lit≈ : ∀ {Γ Δ} {ρ : Ren Γ Δ} {B c} → ρ ⊢ lit B c ≈ C.lit B c
   tuple≈ : ∀ {Γ Δ Θ} {ρ : Ren Γ Δ} {Ms : All _ Θ} {Ms'} → All₂ (ρ ⊢_≈_) Ms Ms' → ρ ⊢ tuple Ms ≈ C.tuple Ms'
@@ -148,16 +148,16 @@ module _ {ρ₀ : Ren [] []} where
   sim : ∀ {A} {M M'} → R {A} M M' → Ans′ M (S.red M) M'
   sims : ∀ {Θ} {Ms : All _ Θ} {Ms'} → All₂ R Ms Ms' → Ans T.reds (Each Value) (All₂ R) Ms (S.reds Ms) Ms'
   sim (clos≈ {N' = N'} n rs) =
-    ans-in (frame-∘ {redU = T.red} {h = C.tuple} {f = C.pack (C.code N')} (frame _ λ _ → refl) (frame _ λ _ → refl))
-      (clos≈ n) (sims rs) λ vs ms → val ε (T.pack T.code (T.tuple vs)) (clos≈ n ms)
+    ans-in (frame-∘ {redU = T.red} {h = C.tuple} {f = C.pair (C.code N')} (frame _ λ _ → refl) (frame _ λ _ → refl))
+      (clos≈ n) (sims rs) λ vs ms → val ε (T.pair T.code (T.tuple vs)) (clos≈ n ms)
   sim (app≈ r s) =
     ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
       λ v m → ans-in (frame {g = C.callc _} _ λ _ → val-in (value-red v)) (app≈ m) (sim s) λ w m' → β-sim v m w m'
     where
     β-sim : ∀ {A B} {V : Tm [] (A ⇒ B)} {V' W W'} → Value V' → R V V' → Value W' → R W W'
       → Ans′ (app V W) (S.β V refl W) (C.callc V' W')
-    β-sim (T.pack T.code (T.tuple vs)) (clos≈ n ms) w m' =
-      to (one (trans (val-in (value-red (T.pack T.code (T.tuple vs)))) (val-in (value-red w))))
+    β-sim (T.pair T.code (T.tuple vs)) (clos≈ n ms) w m' =
+      to (one (trans (val-in (value-red (T.pair T.code (T.tuple vs)))) (val-in (value-red w))))
          (SubT.≈-trav n λ { Z → m' ; (S Z) → tuple≈ ms })
   sim lit≈ = val ε T.lit lit≈
   sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)
