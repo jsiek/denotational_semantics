@@ -48,7 +48,17 @@ checked against Table 1 and Table 2 of evaluation.tex on 2026-10-31.
    equivalent to the operational one. Agda.
 8. **The comparison.** Five styles, each proof against its own
    semantics; earlier comparisons cover one pass or phase (Owens et al.,
-   Kahn et al.); ours is the first on a whole compiler.
+   Kahn et al.); ours is the first on a whole compiler. Name and cite
+   the styles we leave out, and say that comparing them for compiler
+   correctness is future work: synthetic domain theory (Hyland 1991,
+   Rosolini 1986: not yet in all.bib) and synthetic guarded domain
+   theory (Birkedal:2011aa, Mogelberg:2016aa); categorical semantics
+   (e.g. Fiore:1994aa); coinductive big-step (Leroy:2009rc),
+   pretty-big-step (Chargueraud:2013aa) and functional big-step
+   (Owens:2016aa); the partiality monad (Danielsson:2012aa) and
+   interaction trees (Xia:2019aa); game semantics; action semantics
+   (Mosses:1996rp). One sentence, a short list of citations (at most
+   three examples per kind).
 9. **Findings.** Ranks: interpreters 1,504, graph model 1,808, machines
    2,103, Scott domains 2,485, reduction 3,093; with infrastructure the
    graph model is third (3,352) and Scott domains fifth (10,319).
