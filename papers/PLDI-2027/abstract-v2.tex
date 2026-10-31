@@ -1,24 +1,23 @@
 
-Anyone who sets out to prove a compiler correct must first choose a
-style of semantics.  The CakeML and CompCert projects, among others,
-show that operational semantics such as abstract machines and
-interpreters are viable choices. Their correctness proofs reason about
-program execution using simulations and induction on evaluation. In
-this paper we explore whether denotational semantics can also be used
-in proofs of compiler correctness and evaluate the tradeoffs. However,
-a literature review reveals an obstacle. Every compiler for a language
-with lexically scoped functions performs closure conversion, and
-no proof of compiler correctness with respect to denotational
-semantics covers closure conversion for a Turing-complete source
-language.  Compiler correctness involves two directions, semantic
-preservation and reflection. Semantic reflection implies that when a
-source program diverges, so does the target program. For closure
-conversion, semantic reflection is the hard direction for a
-denotational proof. We present the first denotational proofs of
-semantic reflection for closure conversion applied to a
-Turing-complete language, one proof with respect to a graph model and
-one with respect to Scott domains. For the graph-model proof we
-develop a new logical relation, the
+Anyone setting out to prove a compiler correct must choose a style of
+semantics.  The CakeML and CompCert projects, among others, show that
+operational semantics such as abstract machines and interpreters are
+viable choices. Their correctness proofs reason about program
+execution using simulations and induction on evaluation. In this paper
+we explore whether denotational semantics can also be used in proofs
+of compiler correctness and evaluate the tradeoffs. However, a
+literature review reveals an obstacle. Every compiler for a language
+with lexically scoped functions performs closure conversion, and no
+proof of compiler correctness with respect to denotational semantics
+covers closure conversion for a Turing-complete source language.
+Compiler correctness involves two directions, semantic preservation
+and reflection. Semantic reflection implies that when a source program
+diverges, so does the target program. For closure conversion, semantic
+reflection is the hard direction for a denotational proof. We present
+the first denotational proofs of semantic reflection for closure
+conversion applied to a Turing-complete language, one proof with
+respect to a graph model and one with respect to Scott domains. For
+the graph-model proof we develop a new logical relation, the
 \emph{approximant logical relation}, and for the Scott-domain proof we
 adapt a logical relation of Reynolds.
 

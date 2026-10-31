@@ -11,27 +11,24 @@
 This paper proves a compiler, including closure conversion, correct
 with respect to denotational semantics, and it compares these proofs,
 pass by pass, with proofs of correctness with respect to operational
-semantics. We give the first
-denotational proofs that closure conversion both preserves and
-reflects the meaning of programs, divergence included, for a
-Turing-complete language, one proof in a graph model and one in Scott
-domains. We extend both proofs to an eight-pass compiler. We then
-compare them with proofs of the same compiler with respect to three
-operational semantics: clocked interpreters, abstract machines, and
-reduction semantics. For every pass, the smallest proof is either the
-graph-model proof or the interpreter proof, and we identify the
-properties of a pass that favor each of the two
-(Section~\ref{sec:evaluation}).  We mechanize all of our
-results in Agda and provide the development as supplementary material.
-Section~\ref{sec:compiler} presents the compiler,
+semantics. We give the first denotational proofs that closure
+conversion both preserves and reflects the meaning of programs,
+divergence included, for a Turing-complete language, one proof in a
+graph model and one in Scott domains. We extend both proofs to an
+eight-pass compiler. We then compare them with proofs of the same
+compiler with respect to three operational semantics: clocked
+interpreters, abstract machines, and reduction semantics. For every
+pass, the smallest proof is either the graph-model proof or the
+interpreter proof, and we identify the properties of a pass that favor
+each of the two (Section~\ref{sec:evaluation}).  We mechanize all of
+our results in Agda and provide the development as supplementary
+material.  Section~\ref{sec:compiler} presents the compiler,
 Section~\ref{sec:graph-models} the graph model, and
 Section~\ref{sec:compiler-proof} the proofs.
 Section~\ref{sec:evaluation} compares the five proofs,
 Section~\ref{sec:related} discusses related work, and
-Section~\ref{sec:conclusion} concludes. The appendices give the
-semantics of every language, define every pass, and give the
-Scott-domain proof of \pass{split closure}.
-
+Section~\ref{sec:conclusion} concludes. The appendices define the
+semantics of every language and define every pass in the compiler.
 
 Compiler correctness is correctness with respect to a semantics of
 the source and target languages, and the style of that semantics
