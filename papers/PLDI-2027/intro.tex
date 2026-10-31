@@ -10,25 +10,26 @@
 
 This paper shows that denotational semantics can carry a proof of
 compiler correctness through closure conversion, and it compares that
-approach with operational ones, pass by pass. We mechanize all of our
-results in Agda and provide the development as supplementary
-material. We give the first denotational proofs that closure conversion
-both preserves and reflects the meaning of programs, divergence
-included, for a Turing-complete language, one proof in a graph model
-and one in Scott domains. We extend both proofs to an eight-pass
-compiler. We then compare them with three
-mechanized operational proofs of the same compiler, one each with
-clocked interpreters, abstract machines, and reduction semantics.
-Each style has passes for which it gives the smallest proof, and we
-identify the properties of a pass that favor each style
-(Section~\ref{sec:evaluation}). Section~\ref{sec:compiler} presents
-the compiler, Section~\ref{sec:graph-models} the graph model, and
+approach with operational ones, pass by pass. We give the first
+denotational proofs that closure conversion both preserves and
+reflects the meaning of programs, divergence included, for a
+Turing-complete language, one proof in a graph model and one in Scott
+domains. We extend both proofs to an eight-pass compiler. We then
+compare them with proofs of the same compiler with respect to three
+operational semantics: clocked interpreters, abstract machines, and
+reduction semantics.  Each style has passes for which it gives the
+smallest proof, and we identify the properties of a pass that favor
+each style (Section~\ref{sec:evaluation}).  We mechanize all of our
+results in Agda and provide the development as supplementary material.
+Section~\ref{sec:compiler} presents the compiler,
+Section~\ref{sec:graph-models} the graph model, and
 Section~\ref{sec:compiler-proof} the proofs.
 Section~\ref{sec:evaluation} compares the five proofs,
 Section~\ref{sec:related} discusses related work, and
 Section~\ref{sec:conclusion} concludes. The appendices give the
 semantics of every language, define every pass, and give the
 Scott-domain proof of \pass{split closure}.
+
 
 Every proof of compiler correctness rests on a semantics for each
 language in the compiler, and the style of semantics shapes the proof. CompCert \citep{Leroy:2009aa} gives its languages
