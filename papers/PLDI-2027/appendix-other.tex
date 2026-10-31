@@ -1,4 +1,4 @@
-%% Appendix: the semantics of ISWIMμ and x86μ in the other four styles, and
+%% Appendix: the semantics of ISWIMμ and Instrμ in the other four styles, and
 %% the correctness theorem of each style. Sources:
 %% agda/Mu/Theorems/{ScottDomains,AbstractMachines,ClockedInterpreters,ReductionSemantics}.agda (the
 %% statements); agda/Mu/Semantics/ClockedInterpreters/{Values,ISWIM,X86}.agda,
@@ -20,7 +20,7 @@ languages. For the graph model, the semantics are those of
 Appendix~\ref{app:languages} and the theorem is
 Theorem~\ref{thm:compiler}. This appendix gives, for each of the other
 four styles, the semantics of the source language \iswim\ and the
-target language x86$\mu$, and the correctness theorem for the whole
+target language \instr, and the correctness theorem for the whole
 compiler, so that each theorem can be read on its own. The semantics
 of the intermediate languages follow the same pattern and are in the
 artifact.
@@ -40,7 +40,7 @@ $w$ of its environment. In \iswim, the code of a closure is the body $N$
 of a $\lambda$-abstraction and its environment is the environment
 $\rho$ of the $\lambda$-abstraction, a list of values; we write
 $\langle \lambda x.\,N, \rho\rangle$ for $\kw{pair}(\kw{code}\,N,
-\kw{tup}(\rho))$. In x86$\mu$, the code of a closure is the name $f$ of a
+\kw{tup}(\rho))$. In \instr, the code of a closure is the name $f$ of a
 definition. A run is observed through its final value, forgetting the
 code and environment inside closures. An observation is one of
 \[
@@ -69,7 +69,7 @@ $\kw{inr}\,\kw{tup}()$ otherwise.
 A machine is a set of states, a start state, and a step function that
 maps each state $\varsigma$ either to a next state, written $\varsigma \longrightarrow \varsigma'$, or to a final observation $o$, written $\varsigma \longrightarrow \mathsf{stop}(o)$. A machine \emph{terminates with} $o$ when a sequence of steps leads from the start state to a state $\varsigma$ with $\varsigma \longrightarrow \mathsf{stop}(o)$, and it \emph{diverges} when
 for every $n$ there is a sequence of $n$ steps from the start state. We use the same notation for each machine; the CEK
-machines of \iswim\ and x86$\mu$ (Appendix~\ref{app:machines}) and
+machines of \iswim\ and \instr\ (Appendix~\ref{app:machines}) and
 the reduction semantics of \iswim\ (Appendix~\ref{app:reduction})
 each define their own $\longrightarrow$ and $\longrightarrow
 \mathsf{stop}$.
@@ -134,9 +134,9 @@ A pattern on the left of $\leftarrow$ always matches, because the
 interpreter is defined on well-typed terms and values. The interpreter
 of a closed program $M$ is $k \mapsto \mathit{eval}_k(\emptyset, M)$.
 
-\paragraph{Interpreter for x86$\mu$}
+\paragraph{Interpreter for \instr}
 
-A machine state $m$ of x86$\mu$ has the registers $\kw{rax}$,
+A machine state $m$ of \instr\ has the registers $\kw{rax}$,
 $\kw{rdi}$, and $\kw{rsi}$, each holding a value or unset; the frame
 $\sigma$, which holds a value in each slot assigned so far; the
 environment of the open closure, if any; and the flag, which is a
@@ -168,7 +168,7 @@ environment of an earlier open closure. Write $\mathit{instr}(i, m)$
 for the state that an instruction $i$ other than $\kw{callq}$ leaves.
 The interpreter $\mathit{run}_k(B, m, s)$ runs a sequence $s$ with
 blocks $B$ in the state $m$.
-\defhead{The interpreter of x86$\mu$}{\mathit{run}_k(B, m, s) = e \qquad \mathit{jump}_k(B, l, \sigma) = e \qquad \mathit{call}_k(c, u, w) = e}
+\defhead{The interpreter of \instr}{\mathit{run}_k(B, m, s) = e \qquad \mathit{jump}_k(B, l, \sigma) = e \qquad \mathit{call}_k(c, u, w) = e}
 \begin{align*}
   \mathit{run}_k(B, m, i;\; s) &= \mathit{run}_k(B, \mathit{instr}(i, m), s)
     \qquad\text{for $i$ not $\kw{callq}$} \\
@@ -194,7 +194,7 @@ empty frame, and nothing else set. The interpreter of a program is $k
 blocks $B$, where $m_0$ has an empty frame and nothing set.
 
 \begin{theorem}[Correctness, clocked interpreters]\label{thm:interp}
-Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the interpreter of \iswim\ on $M$ terminates with $n$ if and only if the interpreter of x86$\mu$ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two interpreters are equivalent.
+Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the interpreter of \iswim\ on $M$ terminates with $n$ if and only if the interpreter of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two interpreters are equivalent.
 \end{theorem}
 
 \subsection{Abstract Machines}
@@ -248,15 +248,15 @@ A state of the CEK machine of \iswim\ either evaluates a term $M$ in an environm
 The machine of a closed program $M$ starts in
 $\mathit{eval}(M, \emptyset, \mathit{halt})$.
 
-\paragraph{Machine for x86$\mu$}
+\paragraph{Machine for \instr}
 
-In the notation of Appendix~\ref{app:interp}, a state of the machine of x86$\mu$, $\mathit{run}(s, B, \Sigma, m)$, runs a sequence $s$ with blocks $B$, a stack $\Sigma$ of the callers' return points, and registers, frame, open closure and flag $m$. A return point $\mathit{retK}(s, B, \sigma)$ holds the rest $s$ of the caller's sequence, its blocks, and its frame, which the callee's $\kw{retq}$ restores.
+In the notation of Appendix~\ref{app:interp}, a state of the machine of \instr, $\mathit{run}(s, B, \Sigma, m)$, runs a sequence $s$ with blocks $B$, a stack $\Sigma$ of the callers' return points, and registers, frame, open closure and flag $m$. A return point $\mathit{retK}(s, B, \sigma)$ holds the rest $s$ of the caller's sequence, its blocks, and its frame, which the callee's $\kw{retq}$ restores.
 \defhead{States and stacks}{\varsigma \qquad \Sigma}
 \begin{align*}
   \varsigma &::= \mathit{run}(s, B, \Sigma, m) \\
   \Sigma &::= \mathit{halt} \mid \mathit{retK}(s, B, \sigma) :: \Sigma
 \end{align*}
-\defhead{Steps of the machine of x86$\mu$}{\varsigma \longrightarrow \varsigma'}
+\defhead{Steps of the machine of \instr}{\varsigma \longrightarrow \varsigma'}
 \begin{align*}
   \mathit{run}(i;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s, B, \Sigma, \mathit{instr}(i, m))
     \qquad\text{for $i$ not $\kw{callq}$} \\
@@ -269,7 +269,7 @@ In the notation of Appendix~\ref{app:interp}, a state of the machine of x86$\mu$
  & \quad\text{if } \sigma(x) = \kw{inl}\,v \\
  & \text{(and likewise for $\kw{inr}$ and $l_2$)}
 \end{align*}
-\defhead{Final observation of the machine of x86$\mu$}{\varsigma \longrightarrow \mathsf{stop}(o)}
+\defhead{Final observation of the machine of \instr}{\varsigma \longrightarrow \mathsf{stop}(o)}
 \[
   \mathit{run}(\kw{retq}, B, \mathit{halt}, m) \longrightarrow \mathsf{stop}(\mathit{obs}(m(\kw{rax})))
 \]
@@ -277,7 +277,7 @@ The machine of a program starts in $\mathit{run}(s, B, \mathit{halt},
 m_0)$ for the main function body $s$ with blocks $B$.
 
 \begin{theorem}[Correctness, abstract machines]\label{thm:machines}
-Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the machine of \iswim\ on $M$ terminates with $n$ if and only if the machine of x86$\mu$ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two machines are equivalent.
+Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the machine of \iswim\ on $M$ terminates with $n$ if and only if the machine of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two machines are equivalent.
 \end{theorem}
 
 \subsection{Reduction Semantics}
@@ -340,14 +340,14 @@ starts at $M$.
   M \longrightarrow \mathsf{stop}(\mathit{obs}(M)) \ \text{ if } \mathit{red}(M) = \mathsf{val}
 \]
 
-The first-order languages Imp, CFG, and x86$\mu$ have no binders, so
+The first-order languages Imp, CFG, and \instr\ have no binders, so
 the reduction-semantics development uses the machines of
 Appendix~\ref{app:machines} for them, and shares the proofs of
 \pass{explicate control} and \pass{select instructions} with the
 abstract-machine development.
 
 \begin{theorem}[Correctness, reduction semantics]\label{thm:reduction}
-Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the reduction semantics of \iswim\ on $M$ terminates with $n$ if and only if the machine of x86$\mu$ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two are equivalent.
+Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the reduction semantics of \iswim\ on $M$ terminates with $n$ if and only if the machine of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two are equivalent.
 \end{theorem}
 
 \subsection{Scott Domains}
@@ -441,10 +441,10 @@ The semantics of \iswim\ has the equations of the graph-model semantics
 where $g'$ is the strict function that agrees with $g$ on defined
 values, as in $\Lambda$.
 
-\paragraph{Semantics of x86$\mu$}
+\paragraph{Semantics of \instr}
 
-The semantics of x86$\mu$ has the equations of the graph-model
-semantics of x86$\mu$ (Appendix~\ref{app:languages}), with the
+The semantics of \instr\ has the equations of the graph-model
+semantics of \instr\ (Appendix~\ref{app:languages}), with the
 operators of $\mathbb{D}$ in place of those of the graph model,
 $\mathsf{seq}$ in place of $\mathsf{guard}$ in the meaning of
 $\kw{callq}$, and the empty tuple $\langle\rangle$ in place of

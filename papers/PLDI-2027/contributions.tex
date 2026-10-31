@@ -3,7 +3,7 @@
 %% notes/related-work.md). The first rests on the four core
 %% criteria K1, K2a, K2b, K3 (a denotational proof, of closure conversion,
 %% for a source with general recursion, that preserves and reflects
-%% divergence; claims C2-C4); mechanization and assembly (K4, K5) are
+%% divergence; claims C2-C4); mechanization and the low-level target (K4, K5) are
 %% facts about the work, not part of the novelty claim. The second is C6,
 %% the third C7-C8, the fourth C9 in its narrow form: a whole multi-pass
 %% compiler, denotational against three operational styles (earlier
@@ -16,8 +16,8 @@
 \item Two proofs, one in a graph model and one in Scott domains, that
   closure conversion preserves and reflects a denotational semantics
   for a call-by-value $\lambda$-calculus with iso-recursive types. We
-  extend both proofs to the whole compiler, targeting typed assembly
-  language, and we mechanize them in Agda (\S\ref{sec:compiler-proof},
+  extend both proofs to the whole compiler, targeting a typed low-level
+  intermediate language, and we mechanize them in Agda (\S\ref{sec:compiler-proof},
   \S\ref{sec:scott-delay}).
 \item Approximant logical relations relate two denotations by
   recursion on the depth of a finite set of graph elements, which lets
@@ -26,7 +26,7 @@
   compile to diverging programs and that earlier denotational proofs
   left open (\S\ref{sec:approx-lr}).
 \item Proofs that the denotational semantics of the source and of the
-  assembly language are adequate with respect to the interpreters,
+  target language are adequate with respect to the interpreters,
   which connect our whole-compiler theorem about denotations to the
   corresponding theorems about operational semantics
   (\S\ref{sec:adequacy}).

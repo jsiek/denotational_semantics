@@ -431,10 +431,10 @@ older than $l$, and the function body means $\den{t}_{T,B}$. Definitions and
 programs are given meaning as in Imp, with the function body in place of the
 expression and no continuation.
 
-\subsection{The x86$\mu$ Language}
+\subsection{The \instr\ Language}
 \agda{Mu/Language/X86.agda, Mu/Semantics/GraphModel/X86.agda}
 
-x86$\mu$ is the target language, produced by \pass{select instructions}; Section~\ref{sec:compiler} describes its instructions informally. An instruction is typed by the type of the machine state it starts in
+\instr\ is the target language, produced by \pass{select instructions}; Section~\ref{sec:compiler} describes its instructions informally. An instruction is typed by the type of the machine state it starts in
 and the one it leaves. A state type
 $\psi = \langle \Theta; \Delta; O; F \rangle$ gives the types $\Theta$
 of the registers, the frame $\Delta$ of the slots assigned so far, the
@@ -920,7 +920,7 @@ $l_2$.
 and $\pass{explicate}$ maps over the definitions and main expression of
 a program.
 
-\subsection{\pass{select instructions} (CFG to x86$\mu$)}
+\subsection{\pass{select instructions} (CFG to \instr)}
 \label{app:pass-select}
 \agda{Mu/Compiler/Select.agda (select)}
 

@@ -20,7 +20,7 @@
   \node (mon) at (0,-1) {Mon};
   \node (imp) at (0,-2) {Imp};
   \node (cfg) at (1,-2) {CFG};
-  \node (x86) at (2,-2) {x86$\mu$};
+  \node (x86) at (2,-2) {\instr};
   \draw (s0) -- node[lbl,above] {\pass{simplify}} (s1);
   \draw (s1) -- node[lbl,above] {\pass{enclose}} (c3);
   \draw (c3) -- node[lbl,right] {\pass{split closure}} (c4);
@@ -73,7 +73,7 @@
   \mid \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)\\
  & b & ::= & (t_0, \ldots, t_{j-1};\, t)
   \qquad P ::= (\vec{b};\, b)\\[3pt]
-\text{x86}\mu & a & ::= & x \mid c \mid f_k \mid \%r \mid \kw{fold}\;a \mid \kw{unfold}\;a
+\instr & a & ::= & x \mid c \mid f_k \mid \%r \mid \kw{fold}\;a \mid \kw{unfold}\;a
   \qquad d ::= \%r \mid x
   \qquad r ::= \kw{rax} \mid \kw{rdi} \mid \kw{rsi}\\
  & o & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
@@ -90,7 +90,7 @@
 \end{figure}
 
 Our compiler translates \iswim, a call-by-value $\lambda$-calculus
-with recursive types, to x86$\mu$, a typed assembly language, in eight
+with recursive types, to \instr, a typed low-level intermediate language, in eight
 passes through six intermediate languages. Figure~\ref{fig:pipeline} shows the passes and languages, which this section defines and Section~\ref{sec:compiler-proof} proves correct.
 Figure~\ref{fig:grammars} presents the grammars of all the languages, and Appendix~\ref{app:types} gives their typing rules.\footnote{Every language is intrinsically
 typed in our Agda development, so every term is well typed by
@@ -206,9 +206,9 @@ main program. A body consists of numbered blocks and a starting tail,
 and a block may jump only to blocks numbered before it, so control
 flow is acyclic.
 
-Finally, \pass{select instructions} (\S\ref{app:pass-select}) produces x86$\mu$, a typed assembly
-language in the style of TAL \citep{Morrisett:1999fk} with the
-registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
+Finally, \pass{select instructions} (\S\ref{app:pass-select}) produces \instr, a typed low-level
+language in the style of TAL \citep{Morrisett:1999fk}, with instructions
+modeled on x86, the registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
 and an abstract heap. Programs have the same structure as in CFG, except that a function
 body also declares the number of slots in its frame. An instruction reads operands $a$, which are slots, constants,
 names of definitions, and registers, and writes to a destination $d$,
@@ -226,14 +226,14 @@ closure, the third puts the argument in place, and the call leaves its
 result in $\kw{rax}$. The type system
 tracks which closure is open, so that a call never combines the code
 of one closure with the environment of another.  The coercions $\kw{fold}$ and
-$\kw{unfold}$ survive to x86$\mu$ as annotations on operands,
+$\kw{unfold}$ survive to \instr\ as annotations on operands,
 $\kw{fold}\;a$ and $\kw{unfold}\;a$, that do nothing.
 
-x86$\mu$ abstracts from a real instruction set. It is typed; its heap is abstract, with no addresses or memory layout; it has
+\instr\ abstracts from a real instruction set. It is typed; its heap is abstract, with no addresses or memory layout; it has
 three registers and no register allocation; control flow within a
 function is acyclic, so loops are recursive calls; and $\kw{case}$ is a
 pseudo-instruction that stands for a test, a load, and a conditional
 jump. None of these abstractions concerns closure
-conversion, because in x86$\mu$, as in machine code, a closure is a heap object
+conversion, because in \instr, as in machine code, a closure is a heap object
 that pairs the name of a function with a tuple of captured values, and
 a call loads both before it jumps.
