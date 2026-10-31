@@ -20,8 +20,8 @@ proof for every pass. Overall, the proof with clocked interpreters is
 the smallest and the graph-model proof is the second smallest. The
 denotational proofs are short when the correctness of a pass is an
 equation between meanings and long when a pass needs a logical
-relation, whereas the operational proofs grow with how much the runs
-of the source and target differ. Section~\ref{sec:compiler} presents
+relation, whereas the operational proofs tend to grow with how much
+the runs of the source and target differ. Section~\ref{sec:compiler} presents
 the compiler, Section~\ref{sec:graph-models} the graph model, and
 Section~\ref{sec:compiler-proof} the proofs.
 Section~\ref{sec:evaluation} compares the five proofs,
@@ -58,7 +58,7 @@ language terminates, so there is no divergence to preserve.
 \citet{Nielsen:2000aa} used a domain-theoretic semantics to prove that
 defunctionalization, a close cousin of closure conversion, preserves
 the meaning of programs with recursive functions, and left the other
-direction for later: ``Eventually, we want to prove full correctness,
+direction for later, writing ``Eventually, we want to prove full correctness,
 i.e., semantic equivalence of the two programs.''
 \citet{Banerjee:2001aa} proved both directions, but gave the source
 language an operational semantics. They report that they ``know of no
@@ -164,25 +164,25 @@ styles to future work, among them synthetic domain theory
 action semantics \citep{Mosses:1996rp}. We did not use interaction
 trees \citep{Xia:2019aa}, because a direct denotation of a
 higher-order function as an interaction tree needs a type of values
-that occurs negatively in its own definition, which the positivity
-checks of Coq and Agda reject. Guarded interaction trees
+that occurs negatively in its own definition, and the positivity
+checks of Coq and Agda reject such a definition. Guarded interaction trees
 \citep{Frumin:2024aa} lift this restriction by moving to guarded type
 theory.
 
 No style gives the smallest proof for every pass (RQ2). Counting each
 proof against its own semantics, the clocked interpreters give the
-smallest proof, at 1,504 lines of Agda, and the graph model the second
-smallest, at 1,808, ahead of abstract machines, Scott domains, and
-reduction semantics. Once the language-independent infrastructure is
-counted as well, the graph model ranks third and Scott domains fifth.
-Two factors explain the sizes (RQ3). The size of a denotational proof
-depends most on whether the pass preserves the meaning of a program
+smallest proof, at 1,504 lines of Agda, and the graph model gives the
+second smallest, at 1,808, ahead of abstract machines, Scott domains, and
+reduction semantics. If we also count the language-independent
+infrastructure, the graph model ranks third and Scott domains fifth.
+Two factors largely explain the sizes (RQ3). The size of a
+denotational proof tends to depend most on whether the pass preserves the meaning of a program
 exactly. The source optimizer, \pass{simplify}, does, and its
 graph-model and Scott-domain proofs take 349 and 411 lines, against
 508 to 697 for the operational proofs (Section~\ref{sec:equational}).
 \pass{split closure} does not, and its proofs take 450 and 723 lines,
-against 35 to 126. The size of an operational proof depends instead
-on how closely the run of the target follows the run of the source.
+against 35 to 126. The size of an operational proof tends to depend
+instead on how closely the run of the target follows the run of the source.
 The runs correspond closely for \pass{split closure}, which is why its
 operational proofs are small, and differ more for \pass{simplify},
 which inlines functions. Without \pass{split closure}, the graph-model
