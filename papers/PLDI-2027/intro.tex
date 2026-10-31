@@ -10,11 +10,13 @@
 
 This paper shows that denotational semantics can carry a proof of
 compiler correctness through closure conversion, and it compares that
-approach with operational ones, pass by pass. We give the first denotational proofs that closure conversion
+approach with operational ones, pass by pass. We mechanize all of our
+results in Agda and provide the development as supplementary
+material. We give the first denotational proofs that closure conversion
 both preserves and reflects the meaning of programs, divergence
 included, for a Turing-complete language, one proof in a graph model
 and one in Scott domains. We extend both proofs to an eight-pass
-compiler and mechanize them in Agda. We then compare them with three
+compiler. We then compare them with three
 mechanized operational proofs of the same compiler, one each with
 clocked interpreters, abstract machines, and reduction semantics.
 Each style has passes for which it gives the smallest proof, and we
