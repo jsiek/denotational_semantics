@@ -6,21 +6,22 @@ semantics such as abstract machines and interpreters are viable
 choices. Their correctness proofs reason about program execution using
 simulations and step-indexed logical relations. In this paper we
 explore whether denotational semantics can also be used in proofs of
-compiler correctness and evaluate the tradeoffs. Our literature review
-reveals an important gap. There are no proofs of compiler correctness
-with respect to denotational semantics for a Turing-complete source
-language with lexically scoped functions, through closure conversion,
-to a lower-level intermediate language. Compiler correctness involves
-two directions, semantic preservation and reflection. Semantic
-reflection guarantees that when a source program diverges, so does the
-target program. For closure conversion, semantic reflection is the
-hard part when using denotational semantics. In this paper we present
-the first two denotational proofs of semantic reflection for closure
-conversion applied to a Turing-complete language, one proof with
-respect to a graph model and one proof with respect to a Scott
-domain. We develop the new \emph{approximant logical relation} for the
-proof with the graph model, and we adapt a logical relation of
-Reynolds for the proof with the Scott domain.
+compiler correctness and evaluate the tradeoffs. However, a literature
+review reveals an important gap. There are no proofs of compiler
+correctness with respect to denotational semantics for a
+Turing-complete source language with lexically scoped functions,
+through closure conversion, to a lower-level intermediate
+language. Compiler correctness involves two directions, semantic
+preservation and reflection. Semantic reflection implies that when
+a source program diverges, so does the target program. For closure
+conversion, semantic reflection is the hard part when using
+denotational semantics. In this paper we present the first two
+denotational proofs of semantic reflection for closure conversion
+applied to a Turing-complete language, one proof with respect to a
+graph model and one proof with respect to a Scott domain. We develop
+the new \emph{approximant logical relation} for the proof with the
+graph model, and we adapt a logical relation of Reynolds for the proof
+with the Scott domain.
 
 As a first step in evaluating the tradeoffs between different
 semantics, we conduct an apples-to-apples comparison between five
@@ -31,7 +32,7 @@ denotational semantics (graph model and Scott domain) and three
 operational semantics: interpreters, reduction semantics, and abstract
 machines (CEK). We discover that no one semantic style yields the
 shortest proofs for every compiler pass, though interpreters yield the
-smallest proof overall and the graph model the second smallest.  We
+smallest proof overall; the graph model is second smallest.  We
 identify two factors that influence proof size. For operational
 semantics, the proof size tends to grow with how much the runs of the
 source and target differ.  For denotational semantics, the proofs are
