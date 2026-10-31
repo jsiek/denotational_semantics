@@ -32,11 +32,11 @@ denotational semantics (graph model and Scott domain) and three
 operational semantics: interpreters, reduction semantics, and abstract
 machines (CEK). We discover that no one semantic style yields the
 shortest proofs for every compiler pass, though interpreters yield the
-smallest proof overall; the graph model is second smallest.  We
+smallest proof overall and graph models yield the second smallest.  We
 identify two factors that influence proof size. For operational
 semantics, the proof size tends to grow with how much the runs of the
 source and target differ.  For denotational semantics, the proofs are
-succinct when the correctness of a pass, can be expressed as semantic
+succinct when the correctness of a pass can be expressed as semantic
 equality, as it can be for a source optimizer, but the proofs become
 lengthy when a logical relation is needed for a pass, as in the step
 of closure conversion that separates the code of each closure from its
