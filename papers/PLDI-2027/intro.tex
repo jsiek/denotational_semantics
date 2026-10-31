@@ -38,9 +38,8 @@ proof. \citet{Leroy:2009aa} proves CompCert correct with respect to
 small-step semantics, using simulations, and \citet{Kumar:2014aa}
 prove CakeML correct with respect to clocked interpreters (also called
 functional big-step semantics \citep{Owens:2016aa}), using induction
-on evaluation. Operational semantics are elementary, in that they use
-only mathematics familiar to undergraduates in computer science, but
-they are neither compositional nor extensional. A small-step semantics
+on evaluation. Operational semantics are neither compositional nor
+extensional. A small-step semantics
 yields behavior as a by-product of transitions, and in a big-step
 semantics a closure contains syntax \citep{Kahn:1987aa}. Proofs about operational semantics therefore
 often need simulations \citep{Milner:1995aa} or logical relations
@@ -54,14 +53,13 @@ observable behavior of programs \citep{Schmidt:2003aa}. A compiler
 pass is correct when the meaning of a program before the pass equals
 its meaning afterward, and compositionality lets the proof proceed by
 structural induction and equational reasoning. Early compiler proofs
-followed this recipe \citep{Polak:1981aa,Clinger:1984aa}. The standard
-domain-theoretic models are not elementary, however, and their
-mechanizations are large \citep{Benton:2009ab,Dockins:2014aa}. Like every
-denotational semantics, the graph models of the $\lambda$-calculus
-\citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq,Coppo:1979aa,Barendregt:2013aa}
-are compositional and extensional, and they are also elementary,
-because a function denotes a set of finite input--output tables
-\citep{Plotkin:1993ab}. In our development, the infrastructure for the
+followed this recipe \citep{Polak:1981aa,Clinger:1984aa}. Mechanizations
+of the standard domain-theoretic models are large
+\citep{Benton:2009ab,Dockins:2014aa}. In the graph models of the
+$\lambda$-calculus
+\citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq,Coppo:1979aa,Barendregt:2013aa},
+a function denotes a set of finite input--output tables. In our
+development, the infrastructure for the
 graph model takes 1,544 lines of Agda, against 7,834 for Scott domains
 (Table~\ref{tab:infra}). We ask whether denotational semantics, and
 graph models in particular, extend to a compiler for a higher-order
