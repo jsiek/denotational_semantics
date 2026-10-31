@@ -12,13 +12,13 @@ correctness with respect to denotational semantics for a
 Turing-complete source language with lexically scoped functions,
 through closure conversion, to a lower-level intermediate
 language. Compiler correctness involves two directions, semantic
-preservation and reflection. Semantic reflection implies that when
-a source program diverges, so does the target program. For closure
+preservation and reflection. Semantic reflection implies that when a
+source program diverges, so does the target program. For closure
 conversion, semantic reflection is the hard part when using
-denotational semantics. In this paper we present the first two
-denotational proofs of semantic reflection for closure conversion
+denotational semantics. In this paper we present the first
+denotationals proofs of semantic reflection for closure conversion
 applied to a Turing-complete language, one proof with respect to a
-graph model and one proof with respect to a Scott domain. We develop
+graph model and one proof with respect to a Scott domains. We develop
 the new \emph{approximant logical relation} for the proof with the
 graph model, and we adapt a logical relation of Reynolds for the proof
 with the Scott domain.
@@ -31,13 +31,13 @@ low-level intermediate language. The five styles include the two
 denotational semantics (graph model and Scott domain) and three
 operational semantics: interpreters, reduction semantics, and abstract
 machines (CEK). We discover that no one semantic style yields the
-shortest proofs for every compiler pass, though interpreters yield the
-smallest proof overall and graph models yield the second smallest.  We
-identify two factors that influence proof size. For operational
-semantics, the proof size tends to grow with how much the runs of the
-source and target differ.  For denotational semantics, the proofs are
-succinct when the correctness of a pass can be expressed as semantic
-equality, as it can be for a source optimizer, but the proofs become
-lengthy when a logical relation is needed for a pass, as in the step
-of closure conversion that separates the code of each closure from its
-environment.
+shortest proofs for every compiler pass, though the interpreter proof
+is the smallest overall and the graph-model proof is the second
+smallest.  We identify two factors that influence proof size. For
+operational semantics, the proof size tends to grow with how much the
+runs of the source and target differ.  For denotational semantics, the
+proofs are succinct when the correctness of a pass can be expressed as
+semantic equality, as it can be for a source optimizer, but the proofs
+become lengthy when a logical relation is needed for a pass, as in the
+step of closure conversion that separates the code of each closure
+from its environment.
