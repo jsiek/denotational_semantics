@@ -39,7 +39,11 @@ proof. \citet{Leroy:2016aa} prove today's CompCert
 using simulations, and \citet{Kumar:2014aa}
 prove CakeML correct with respect to clocked interpreters (also called
 functional big-step semantics \citep{Owens:2016aa}), using induction
-on evaluation. Operational semantics are neither compositional nor
+on evaluation. Both proofs were large undertakings. The proof of
+CompCert is 100,000 lines of Coq and took 6 person-years
+\citep{Leroy:2016aa}, and the proof of the CakeML compiler backend is
+about 100,000 lines of HOL4 \citep{Tan:2019aa}, written by six people
+over two years, part time \citep{Myreen:2016aa}. Operational semantics are neither compositional nor
 extensional. A small-step semantics
 yields behavior as a by-product of transitions, and in a big-step
 semantics a closure contains syntax \citep{Kahn:1987aa}. Proofs about operational semantics therefore
