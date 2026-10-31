@@ -15,14 +15,16 @@ semantics. We give the first denotational proofs that closure
 conversion both preserves and reflects the meaning of programs,
 divergence included, for a Turing-complete language, one proof in a
 graph model and one in Scott domains. We extend both proofs to an
-eight-pass compiler. We then compare them with proofs of the same
-compiler with respect to three operational semantics: clocked
-interpreters, abstract machines, and reduction semantics. For every
-pass, the smallest proof is either the graph-model proof or the
-interpreter proof, and we identify the properties of a pass that favor
-each of the two (Section~\ref{sec:evaluation}).  We mechanize all of
-our results in Agda and provide the development as supplementary
-material.  Section~\ref{sec:compiler} presents the compiler,
+eight-pass compiler for the FPC language \citep{Plotkin:1985aa} that
+targets a typed low-level intermediate language. We then compare these
+proofs to three more proofs of correctness for the same compiler, each
+with respect an operational semantics: clocked interpreters, abstract
+machines, and reduction semantics. For every pass, the smallest proof
+is either the graph-model proof or the interpreter proof, and we
+identify the properties of a pass that favor each of the two
+(Section~\ref{sec:evaluation}).  We mechanize all of our results in
+Agda and provide the development as supplementary material.
+Section~\ref{sec:compiler} presents the compiler,
 Section~\ref{sec:graph-models} the graph model, and
 Section~\ref{sec:compiler-proof} the proofs.
 Section~\ref{sec:evaluation} compares the five proofs,
@@ -31,47 +33,49 @@ Section~\ref{sec:conclusion} concludes. The appendices define the
 semantics of every language and define every pass in the compiler.
 
 A compiler is correct with respect to a semantics of its source and
-target languages, and the style of that semantics
-shapes the proof. \citet{Leroy:2009aa} proves CompCert correct with
-respect to small-step semantics, using simulations, and
-\citet{Kumar:2014aa} prove CakeML correct with respect to clocked
-interpreters, which \citet{Owens:2016aa} call functional big-step
-semantics, using induction on evaluation. Denotational semantics offers a
-different recipe. The meaning of a program is a mathematical object, a
-compiler pass is correct when the meaning of a program before the pass
-equals its meaning afterward, and the proof is by equational
-reasoning. Early compiler proofs followed this recipe
+target languages, and the style of that semantics shapes the
+proof. \citet{Leroy:2009aa} proves CompCert correct with respect to
+small-step semantics, using simulations, and \citet{Kumar:2014aa}
+prove CakeML correct with respect to clocked interpreters
+(aka. functional big-step semantics \citet{Owens:2016aa}), using
+induction on evaluation. Denotational semantics offers a different
+recipe. The meaning of a program is a mathematical object, a compiler
+pass is correct when the meaning of a program before the pass equals
+its meaning afterward, and the proof is by equational reasoning. Early
+compiler proofs followed this recipe
 \citep{Polak:1981aa,Clinger:1984aa}. We ask whether it extends to a
-compiler for a higher-order language, and how its proofs compare in size.
+compiler for a higher-order language, and how its proofs compare in
+size.
 
 However, the recipe runs into \emph{closure conversion}, the pass by
 which every compiler for a language with lexically scoped functions
 replaces each function with a pair of code and the values of its free
-variables, and each call with code that takes the pair apart. Closure conversion turns functions into data, so its
-correctness proof must relate two representations of a function. To date,
-every proof of compiler correctness with respect to a denotational
-semantics stops short of closure conversion for a Turing-complete
-language, each in its own way. \citet{Chlipala:2007fk} proved
-correct a compiler from the simply typed $\lambda$-calculus to
-assembly, including closure conversion, but every program of that
-language terminates, so there is no divergence to preserve.
-\citet{Nielsen:2000aa} used a domain-theoretic semantics to prove that
-defunctionalization, a close cousin of closure conversion, preserves
-the meaning of programs with recursive functions, and left the other
-direction for later, writing ``Eventually, we want to prove full correctness,
-i.e., semantic equivalence of the two programs.''
-\citet{Banerjee:2001aa} proved both directions, but gave the source
-language an operational semantics. They report that they ``know of no
-other proofs of correctness (that is, both directions) for ordinary or
-CFA-based defunctionalization in the presence of recursion.'' Other
-denotational proofs avoid closure conversion, because their source
-language is first-order
-\citep{Polak:1981aa,Xia:2019aa,Cheng:2026aa} or their target language
-has closures \citep{Clinger:1984aa,Benton:2009aa}. When
-\citet{Chlipala:2010aa} proved correct a compiler for a language with
-recursion, he switched to operational semantics, explaining that the
-denotational approach of his 2007 compiler ``cannot be applied
-directly to Turing-complete programming languages.''
+variables, and each call with code that takes the pair apart. Closure
+conversion turns functions into data, so its correctness proof must
+relate two representations of a function. To date, every proof of
+compiler correctness with respect to a denotational semantics stops
+short of closure conversion for a Turing-complete language, each in
+its own way. \citet{Chlipala:2007fk} proved correct a compiler from
+the simply typed $\lambda$-calculus to assembly, including closure
+conversion, but every program of that language terminates, so there is
+no divergence to preserve.  \citet{Nielsen:2000aa} used a
+domain-theoretic semantics to prove that defunctionalization, a close
+cousin of closure conversion, preserves the meaning of programs with
+recursive functions, and left the other direction for later, writing
+``Eventually, we want to prove full correctness, i.e., semantic
+equivalence of the two programs.''  \citet{Banerjee:2001aa} proved
+both directions, but gave the source language an operational
+semantics. They report that they ``know of no other proofs of
+correctness (that is, both directions) for ordinary or CFA-based
+defunctionalization in the presence of recursion.'' Other denotational
+proofs avoid closure conversion, because their source language is
+first-order \citep{Polak:1981aa,Xia:2019aa,Cheng:2026aa} or their
+target language has closures
+\citep{Clinger:1984aa,Benton:2009aa}. When \citet{Chlipala:2010aa}
+proved correct a compiler for a language with recursion, he switched
+to operational semantics, explaining that the denotational approach of
+his 2007 compiler ``cannot be applied directly to Turing-complete
+programming languages.''
 
 A correct compiler must both preserve and reflect the behavior of
 programs. \emph{Semantic preservation} says that if the source program
