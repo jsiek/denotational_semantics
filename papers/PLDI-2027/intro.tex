@@ -16,13 +16,10 @@ included, for a Turing-complete language, one proof in a graph model
 and one in Scott domains. We extend both proofs to an eight-pass
 compiler and mechanize them in Agda. We then compare them with three
 mechanized operational proofs of the same compiler, one each with
-clocked interpreters, abstract machines, and reduction semantics. No style gives the smallest
-proof for every pass. Overall, the proof with clocked interpreters is
-the smallest and the graph-model proof is the second smallest. The
-denotational proofs are short when the correctness of a pass is an
-equation between meanings and long when a pass needs a logical
-relation, whereas the operational proofs tend to grow with how much
-the runs of the source and target differ. Section~\ref{sec:compiler} presents
+clocked interpreters, abstract machines, and reduction semantics.
+Each style has passes for which it gives the smallest proof, and we
+identify the properties of a pass that favor each style
+(Section~\ref{sec:evaluation}). Section~\ref{sec:compiler} presents
 the compiler, Section~\ref{sec:graph-models} the graph model, and
 Section~\ref{sec:compiler-proof} the proofs.
 Section~\ref{sec:evaluation} compares the five proofs,
@@ -31,8 +28,8 @@ Section~\ref{sec:conclusion} concludes. The appendices give the
 semantics of every language, define every pass, and give the
 Scott-domain proof of \pass{split closure}.
 
-Anyone who sets out to prove a compiler correct must first choose a
-style of semantics. CompCert \citep{Leroy:2009aa} gives its languages
+Every proof of compiler correctness rests on a semantics for each
+language in the compiler, and the style of semantics shapes the proof. CompCert \citep{Leroy:2009aa} gives its languages
 small-step semantics and proves each pass by a simulation. CakeML
 \citep{Kumar:2014aa} gives its languages clocked interpreters, which
 \citet{Owens:2016aa} call functional big-step semantics, and proves
@@ -44,15 +41,14 @@ reasoning. Early compiler proofs followed this recipe
 \citep{Polak:1981aa,Clinger:1984aa}. We ask whether it extends to a
 compiler for a higher-order language, and how its proofs compare in size.
 
-However, the recipe meets an obstacle. Every compiler for a language
-with lexically scoped functions performs \emph{closure conversion},
-which replaces each function with a pair of code and the values of its
-free variables, and replaces each call with code that takes the pair
-apart. Closure conversion turns functions into data, so its
-correctness proof must relate two representations of a function. No
-proof of compiler correctness with respect to denotational semantics
-covers closure conversion for a Turing-complete source language, and
-the closest proofs each stop short. \citet{Chlipala:2007fk} proved
+However, the recipe runs into \emph{closure conversion}, the pass by
+which every compiler for a language with lexically scoped functions
+replaces each function with a pair of code and the values of its free
+variables, and each call with code that takes the pair apart. Closure conversion turns functions into data, so its
+correctness proof must relate two representations of a function. Every
+denotational proof of compiler correctness to date stops short of
+closure conversion for a Turing-complete language, each in its own
+way. \citet{Chlipala:2007fk} proved
 correct a compiler from the simply typed $\lambda$-calculus to
 assembly, including closure conversion, but every program of that
 language terminates, so there is no divergence to preserve.
@@ -80,8 +76,8 @@ produces an output, the target program produces the same output, and
 \emph{semantic reflection} says that if the target program produces an
 output, the source program produces the same output. By
 contraposition, reflection guarantees that a diverging source program
-compiles to a diverging target program. For closure conversion,
-reflection is the hard direction for a denotational proof, because the
+compiles to a diverging target program. Reflection is where
+closure conversion resists a denotational proof, because the
 relation between source functions and target closures refers to itself
 in negative position, and the domain of meanings is recursive. In a
 graph model there is a further problem. The meaning of a function's
