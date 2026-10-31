@@ -5,8 +5,8 @@
 
   A closure clos N Ms, with Ms : All (Tm Γ) Δ its free variables, has
   closed code N in the context A ∷ Δ: variable Z is the argument and
-  variable S i the value of the i-th free variable. Otherwise as ISWIMμ
-  (Mu/Language/ISWIM.agda).
+  variable S i the value of the i-th free variable. Otherwise as FPC
+  (Mu/Language/FPC.agda).
 
 -}
 

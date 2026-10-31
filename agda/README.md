@@ -18,7 +18,7 @@ substitution, and forward simulations); and the graph model with errors
 (an error denotes a set holding ω, divergence ∅); with both graph models
 proved sound and adequate for the machines.
 
-A second compiler, from ISWIMμ, a typed ISWIM with iso-recursive types,
+A second compiler, from FPC (Plotkin's Fixed Point Calculus, with iso-recursive types)
 to the typed assembly language X86μ (`Mu/`, below), is proved correct
 in the first four styles, with the graph model proved adequate for the
 machines; it is the main experiment of the size comparison
@@ -114,17 +114,17 @@ other than `--without-K`, failing if it finds any.
   observations, the ISWIM adequacy, the frameworks), and X86 and its
   machine, which the typed pipeline's assurance uses, stay here.
   `Untyped/All.agda` imports it, and `All.agda` imports that.
-* `Mu/`: ISWIMμ, the main experiment of the size comparison: a typed
-  ISWIM with iso-recursive types (no recursion construct, no errors)
+* `Mu/`: FPC, the main experiment of the size comparison: Plotkin's
+  Fixed Point Calculus with iso-recursive types (no recursion construct, no errors)
   and its compiler to the typed assembly language X86μ,
 
-      ISWIMμ --simplify--> ISWIMμ --CC: capture--> Closμ --CC: prune--> Closμ
+      FPC --simplify--> FPC --CC: capture--> Closμ --CC: prune--> Closμ
              --CC: concretize--> EnvClosμ --CC: split--> PairClosμ
              --CC: hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
              --explicate control--> CFGμ --select instructions--> X86μ
 
   proved in the graph model (with its adequacy for the clocked
-  interpreters of ISWIMμ and X86μ), the CEK machines, the clocked
+  interpreters of FPC and X86μ), the CEK machines, the clocked
   interpreters, the reduction semantics and Scott domains
   (`papers/PLDI-2027/notes/iswim-mu-design.md`); `Mu/README.md` is
   its road map from the PLDI 2027 paper.
@@ -144,11 +144,11 @@ and nothing else. No module outside a `proof/` directory imports one in
 it, except the theorem files, which cite the proofs, and nothing outside
 `Untyped/` imports a module of `Untyped/` (`papers/PLDI-2027/loc.py`
 checks these, and that every module outside the `proof/` directories is
-used by a theorem statement: those of `Mu/` by ISWIMμ's, in
-`Mu/Theorems/`, but for the semantics of ISWIMμ's intermediate
+used by a theorem statement: those of `Mu/` by FPC's, in
+`Mu/Theorems/`, but for the semantics of FPC's intermediate
 languages, which only the proofs use).
 
-* ISWIMμ's theorem statements (`Mu/Theorems/`), one file per style,
+* FPC's theorem statements (`Mu/Theorems/`), one file per style,
   named and numbered as in the PLDI 2027 paper, each theorem with its
   type written out and defined as the corresponding theorem of
   `Mu/proof/`; `Mu/README.md` maps every theorem, lemma and definition
@@ -170,14 +170,14 @@ languages, which only the proofs use).
     truncations, function extensionality and propositional
     extensionality (the parameters of the module);
   * `Mu/Theorems/Adequacy.agda`: Theorem 4.5, the graph model is sound
-    and adequate for the ISWIMμ interpreter, and for the X86μ
+    and adequate for the FPC interpreter, and for the X86μ
     interpreter running compiled programs; with Theorem 4.1, for a main
     of type Int, the operational styles' end-to-end theorem
     (`end-to-end-x86-const`, `end-to-end-x86-diverges`).
   The per-pass theorems and the compiler's prefixes are proved in
   `Mu/proof/` but not restated. The definitions the statements use are
   those of `Mu/` outside `Mu/proof/` that they reach (its languages,
-  passes, the semantics of ISWIMμ and X86μ in each style and what they
+  passes, the semantics of FPC and X86μ in each style and what they
   use, and heterogeneous vectors, `Mu/Framework/`), and of
   `Framework/`, `Semantics/Observation.agda` and the instances of the
   frameworks at the observations (`Semantics/CEK/Smallstep.agda`,
@@ -243,7 +243,7 @@ languages, which only the proofs use).
     values), Impᵀ, CFGᵀ and X86ᵀ (`Semantics/CEK/Typed/{Clos5,Imp,CFG,X86}.agda`),
     shared with the CEK machine + simulation style;
   * adequacy: those of the denotational and simulation theorems;
-  * denotational: Scott domains (ISWIMμ only): `Mu/Semantics/ScottDomains/`
+  * denotational: Scott domains (FPC only): `Mu/Semantics/ScottDomains/`
     (the semantics of each language, built with the combinators of
     `Framework/Scott/Semantics.agda`), `Semantics/Scott/Prim.agda` (the
     meaning of the primitives) and `Framework/Scott/` (on Tom de Jong's
@@ -304,7 +304,7 @@ directory per style, and adequacy is in `proof/Adequacy/`:
 * `Untyped/proof/`: the same for the untyped pipeline, with its
   experiments: a direct semantics of Imp with lift locals and explicate
   control proved against it, and a direct backward simulation for split.
-* `Mu/proof/`: the same for ISWIMμ (its reduction column shares the
+* `Mu/proof/`: the same for FPC (its reduction column shares the
   CEK column's proofs of explicate control and select instructions; its
   adequacy, `Mu/proof/Adequacy/`, is direct for the X86μ interpreter;
   its alternative for the machines, `Mu/proof/Adequacy/AbstractMachines/`,
@@ -336,5 +336,5 @@ default one plus TypeTopology). `make check-all` does both.
 
 Line counts of the proofs, and of the audit surface, are in
 `papers/PLDI-2027/loc.md` (`python3 papers/PLDI-2027/loc.py`, for
-ISWIMμ and, briefly, this pipeline; `--iswim` for this pipeline's full
+FPC and, briefly, this pipeline; `--iswim` for this pipeline's full
 tables, `--untyped` for the preserved pipeline).

@@ -32,7 +32,7 @@ open import Mu.Language.Type
 open import Mu.Language.GlobalFun using (DSig; Code; program)
 import Mu.Language.GlobalFun as GlobalFun
 open import Mu.Language.X86 using (Program)
-open import Mu.Language.ISWIM using (Tm)
+open import Mu.Language.FPC using (Tm)
 open import Mu.Language.Mon using (⌜_⌝)
 open import Mu.Framework.AllUtil using (All; lookup) renaming (map to All-map)
 open import Mu.proof.Framework.AllProp using (lookup-map)

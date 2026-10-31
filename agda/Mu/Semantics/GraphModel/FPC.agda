@@ -1,6 +1,6 @@
 {-
 
-  The semantics of ISWIMμ (Mu/Language/ISWIM.agda) in the graph model,
+  The semantics of FPC (Mu/Language/FPC.agda) in the graph model,
   as that of ISWIMᵀ (Semantics/Graph/Typed/ISWIM.agda): fold and unfold
   are the identity (a value of a recursive type is a value of its
   unfolding), and there is no project. Recursion needs no fixed point:
@@ -10,13 +10,13 @@
 
 -}
 
-module Mu.Semantics.GraphModel.ISWIM where
+module Mu.Semantics.GraphModel.FPC where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)

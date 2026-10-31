@@ -1,6 +1,6 @@
 {-
 
-  Capture (ISWIMμ → Closμ), as typed capture (Compiler/Capture.agda):
+  Capture (FPC → Closμ), as typed capture (Compiler/Capture.agda):
   each function becomes a closure that captures every variable of its
   context, in order, so its body is unchanged: variable S x of the
   closure's code is the free variable x.
@@ -10,7 +10,7 @@
 module Mu.Compiler.Capture where
 
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 import Mu.Language.Clos as T
 open import Mu.Framework.AllUtil using (All; []; _∷_; tab)
 

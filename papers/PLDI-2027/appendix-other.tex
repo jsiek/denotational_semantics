@@ -1,12 +1,12 @@
 %% Appendix: the semantics of FPC and Instrμ in the other four styles, and
 %% the correctness theorem of each style. Sources:
 %% agda/Mu/Theorems/{ScottDomains,AbstractMachines,ClockedInterpreters,ReductionSemantics}.agda (the
-%% statements); agda/Mu/Semantics/ClockedInterpreters/{Values,ISWIM,X86}.agda,
-%% agda/Framework/Clocked.agda; agda/Mu/Semantics/AbstractMachines/{Values,ISWIM,X86}.agda,
-%% agda/Framework/Smallstep.agda; agda/Mu/Semantics/ReductionSemantics/ISWIM.agda,
+%% statements); agda/Mu/Semantics/ClockedInterpreters/{Values,FPC,X86}.agda,
+%% agda/Framework/Clocked.agda; agda/Mu/Semantics/AbstractMachines/{Values,FPC,X86}.agda,
+%% agda/Framework/Smallstep.agda; agda/Mu/Semantics/ReductionSemantics/FPC.agda,
 %% agda/Framework/Reduction.agda (red is shown with step-in unfolded);
 %% agda/Framework/Scott/{Domain,Ops,Semantics}.agda,
-%% agda/Semantics/Scott/Prim.agda, agda/Mu/Semantics/Scott/{ISWIM,X86}.agda.
+%% agda/Semantics/Scott/Prim.agda, agda/Mu/Semantics/ScottDomains/{FPC,X86}.agda.
 
 \raggedbottom
 \allowdisplaybreaks
@@ -100,7 +100,7 @@ equivalent.
 
 \subsection{Clocked Interpreters}
 \label{app:interp}
-\agda{Mu/Semantics/ClockedInterpreters/ISWIM.agda, Mu/Semantics/ClockedInterpreters/X86.agda}
+\agda{Mu/Semantics/ClockedInterpreters/FPC.agda, Mu/Semantics/ClockedInterpreters/X86.agda}
 
 \paragraph{Interpreter for \fpc}
 
@@ -199,7 +199,7 @@ Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the
 
 \subsection{Abstract Machines}
 \label{app:machines}
-\agda{Mu/Semantics/AbstractMachines/ISWIM.agda, Mu/Semantics/AbstractMachines/X86.agda}
+\agda{Mu/Semantics/AbstractMachines/FPC.agda, Mu/Semantics/AbstractMachines/X86.agda}
 
 \paragraph{Machine for \fpc}
 
@@ -282,7 +282,7 @@ Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the
 
 \subsection{Reduction Semantics}
 \label{app:reduction}
-\agda{Mu/Semantics/ReductionSemantics/ISWIM.agda, Framework/Reduction.agda}
+\agda{Mu/Semantics/ReductionSemantics/FPC.agda, Framework/Reduction.agda}
 
 The reduction semantics of \fpc\ rewrites closed terms, by
 substitution, call by value and left to right. The values are
@@ -352,7 +352,7 @@ Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the
 
 \subsection{Scott Domains}
 \label{app:scott}
-\agda{Framework/Scott/Lift.agda, Framework/Scott/Domain.agda, Framework/Scott/Ops.agda, Mu/Semantics/ScottDomains/ISWIM.agda, Mu/Semantics/ScottDomains/X86.agda}
+\agda{Framework/Scott/Lift.agda, Framework/Scott/Domain.agda, Framework/Scott/Ops.agda, Mu/Semantics/ScottDomains/FPC.agda, Mu/Semantics/ScottDomains/X86.agda}
 
 Our Agda development builds the domain of values with the constructive
 domain theory of TypeTopology \citep{deJong:2023aa}, in which domains

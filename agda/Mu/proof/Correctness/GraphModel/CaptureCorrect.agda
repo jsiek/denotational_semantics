@@ -1,7 +1,7 @@
 {-
 
-  Correctness of capture (ISWIMμ → Closμ) in the graph model
-  (Mu/Semantics/GraphModel/{ISWIM,Clos}.agda), as for typed capture
+  Correctness of capture (FPC → Closμ) in the graph model
+  (Mu/Semantics/GraphModel/{FPC,Clos}.agda), as for typed capture
   (proof/Correctness/Graph/CaptureCorrect.agda).
 
   ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ' when the environments agree on the
@@ -20,9 +20,9 @@ open import Mu.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim using (primD-≃)
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 import Mu.Language.Clos as T
-open import Mu.Semantics.GraphModel.ISWIM
+open import Mu.Semantics.GraphModel.FPC
 open import Mu.proof.Semantics.GraphModel.Clos using (fv-env) renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
 open import Mu.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; guard-yes)
 open import Mu.Framework.AllUtil using (All; []; _∷_; tab; pos)

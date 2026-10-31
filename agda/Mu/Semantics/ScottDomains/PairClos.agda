@@ -5,7 +5,7 @@
   function of two arguments (codeᶜ, Framework/Scott/Semantics.agda), a
   closure the pair of code and environment, and callc applies the
   closure's code (car) to its environment (cdr) and the argument;
-  otherwise as ISWIMμ (Mu/Semantics/ScottDomains/ISWIM.agda).
+  otherwise as FPC (Mu/Semantics/ScottDomains/FPC.agda).
 
 -}
 

@@ -30,7 +30,7 @@ scott-deps:
 
 check-all: check check-scott
 
-# The anonymized artifact of the PLDI 2027 paper (ISWIMμ only), written to
+# The anonymized artifact of the PLDI 2027 paper (FPC only), written to
 # $(OUT): see artifact/export.py.
 OUT ?= _artifact
 artifact: scott-deps

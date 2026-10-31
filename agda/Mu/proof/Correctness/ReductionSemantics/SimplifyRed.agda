@@ -1,6 +1,6 @@
 {-
 
-  Correctness of the simplify pass (ISWIMμ → ISWIMμ) by a simulation of
+  Correctness of the simplify pass (FPC → FPC) by a simulation of
   the target by the source, between their reduction semantics, as for
   the untyped simplify (proof/Correctness/Reduction/SimplifyRed.agda; see
   the design note in Semantics/Reduction/Smallstep.agda).
@@ -42,7 +42,7 @@ module Mu.proof.Correctness.ReductionSemantics.SimplifyRed where
 open import Framework.Primitives using (Int)
 import Language.Prim as Pr
 open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import Mu.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; Facts; self; info; under; known-as; shift-info; shift-known;
@@ -55,7 +55,7 @@ open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (Equivalent)
 open import proof.Framework.Simulation Obs using (equiv-sym)
-import Mu.proof.Semantics.ReductionSemantics.ISWIM as S
+import Mu.proof.Semantics.ReductionSemantics.FPC as S
 open S using (sub; ren; tmK; tmL)
 import Relation.Binary.Construct.Closure.ReflexiveTransitive as RT
 open RT using (Star; gmap)

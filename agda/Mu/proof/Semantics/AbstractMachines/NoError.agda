@@ -1,6 +1,6 @@
 {-
 
-  The machines of ISWIMμ and X86μ never stop with an error: a machine
+  The machines of FPC and X86μ never stop with an error: a machine
   stops only when it returns a value to the empty continuation (stack),
   and no value is observed as o-error. Their steps have no error case
   (typed values are taken apart by total functions), so the proof is by
@@ -14,8 +14,8 @@ module Mu.proof.Semantics.AbstractMachines.NoError where
 open import Mu.Language.Type
 open import Semantics.Observation using (Obs; o-error; Answer)
 open import Semantics.CEK.Smallstep using (Terminates; Final; next; stop)
-import Mu.Language.ISWIM as L
-import Mu.Semantics.AbstractMachines.ISWIM as I
+import Mu.Language.FPC as L
+import Mu.Semantics.AbstractMachines.FPC as I
 import Mu.Semantics.AbstractMachines.GlobalFun as C5
 open import Mu.Language.X86
 open import Mu.Semantics.AbstractMachines.X86 using (State; run; halt; retK; enter; step; sem; cast; regs; _⦅_⦆)
@@ -31,47 +31,47 @@ module _ {S : Set} {stp : S → _} {s₀ : S} where
   no-error : (∀ s {o} → stp s ≡ stop o → Answer o) → ¬ Terminates (Semantics.CEK.Smallstep.machine S stp s₀) o-error
   no-error h (s , _ , fin) = h s fin refl
 
-{- ISWIMμ -----------------------------------------------------------------------}
+{- FPC -----------------------------------------------------------------------}
 
-iswim-answer : ∀ {A} (v : I.Val A) → Answer (I.obs v)
-iswim-answer (I.clo _ _) ()
-iswim-answer (I.const _) ()
-iswim-answer (I.tup _) ()
-iswim-answer (I.inl _) ()
-iswim-answer (I.inr _) ()
-iswim-answer (I.fold v) = iswim-answer v
+fpc-answer : ∀ {A} (v : I.Val A) → Answer (I.obs v)
+fpc-answer (I.clo _ _) ()
+fpc-answer (I.const _) ()
+fpc-answer (I.tup _) ()
+fpc-answer (I.inl _) ()
+fpc-answer (I.inr _) ()
+fpc-answer (I.fold v) = fpc-answer v
 
-iswim-stops : ∀ s {o} → I.step s ≡ stop o → Answer o
-iswim-stops (I.eval (L.` x) ρ κ) ()
-iswim-stops (I.eval (L.lam N) ρ κ) ()
-iswim-stops (I.eval (L.app L M) ρ κ) ()
-iswim-stops (I.eval (L.lit B c) ρ κ) ()
-iswim-stops (I.eval (L.tuple Ms) ρ κ) ()
-iswim-stops (I.eval (L.get i M) ρ κ) ()
-iswim-stops (I.eval (L.inl M) ρ κ) ()
-iswim-stops (I.eval (L.inr M) ρ κ) ()
-iswim-stops (I.eval (L.case L M N) ρ κ) ()
-iswim-stops (I.eval (L.prim p L M) ρ κ) ()
-iswim-stops (I.eval (L.let′ M N) ρ κ) ()
-iswim-stops (I.eval (L.fold M) ρ κ) ()
-iswim-stops (I.eval (L.unfold M) ρ κ) ()
-iswim-stops (I.ret v I.halt) refl = iswim-answer v
-iswim-stops (I.ret f (I.appL M ρ κ)) ()
-iswim-stops (I.ret w (I.appR (I.clo N ρ) κ)) ()
-iswim-stops (I.ret v (I.tupK vs Ms ρ κ)) ()
-iswim-stops (I.ret (I.tup vs) (I.getK i κ)) ()
-iswim-stops (I.ret v (I.inlK κ)) ()
-iswim-stops (I.ret v (I.inrK κ)) ()
-iswim-stops (I.ret (I.inl v) (I.caseK M N ρ κ)) ()
-iswim-stops (I.ret (I.inr v) (I.caseK M N ρ κ)) ()
-iswim-stops (I.ret (I.const n) (I.primL p M ρ κ)) ()
-iswim-stops (I.ret (I.const m) (I.primR p n κ)) ()
-iswim-stops (I.ret v (I.letK N ρ κ)) ()
-iswim-stops (I.ret v (I.foldK κ)) ()
-iswim-stops (I.ret (I.fold v) (I.unfoldK κ)) ()
+fpc-stops : ∀ s {o} → I.step s ≡ stop o → Answer o
+fpc-stops (I.eval (L.` x) ρ κ) ()
+fpc-stops (I.eval (L.lam N) ρ κ) ()
+fpc-stops (I.eval (L.app L M) ρ κ) ()
+fpc-stops (I.eval (L.lit B c) ρ κ) ()
+fpc-stops (I.eval (L.tuple Ms) ρ κ) ()
+fpc-stops (I.eval (L.get i M) ρ κ) ()
+fpc-stops (I.eval (L.inl M) ρ κ) ()
+fpc-stops (I.eval (L.inr M) ρ κ) ()
+fpc-stops (I.eval (L.case L M N) ρ κ) ()
+fpc-stops (I.eval (L.prim p L M) ρ κ) ()
+fpc-stops (I.eval (L.let′ M N) ρ κ) ()
+fpc-stops (I.eval (L.fold M) ρ κ) ()
+fpc-stops (I.eval (L.unfold M) ρ κ) ()
+fpc-stops (I.ret v I.halt) refl = fpc-answer v
+fpc-stops (I.ret f (I.appL M ρ κ)) ()
+fpc-stops (I.ret w (I.appR (I.clo N ρ) κ)) ()
+fpc-stops (I.ret v (I.tupK vs Ms ρ κ)) ()
+fpc-stops (I.ret (I.tup vs) (I.getK i κ)) ()
+fpc-stops (I.ret v (I.inlK κ)) ()
+fpc-stops (I.ret v (I.inrK κ)) ()
+fpc-stops (I.ret (I.inl v) (I.caseK M N ρ κ)) ()
+fpc-stops (I.ret (I.inr v) (I.caseK M N ρ κ)) ()
+fpc-stops (I.ret (I.const n) (I.primL p M ρ κ)) ()
+fpc-stops (I.ret (I.const m) (I.primR p n κ)) ()
+fpc-stops (I.ret v (I.letK N ρ κ)) ()
+fpc-stops (I.ret v (I.foldK κ)) ()
+fpc-stops (I.ret (I.fold v) (I.unfoldK κ)) ()
 
-iswim-no-error : ∀ {A} (M : L.Tm [] A) → ¬ Terminates (I.sem M) o-error
-iswim-no-error M = no-error iswim-stops
+fpc-no-error : ∀ {A} (M : L.Tm [] A) → ¬ Terminates (I.sem M) o-error
+fpc-no-error M = no-error fpc-stops
 
 {- X86μ --------------------------------------------------------------------------}
 

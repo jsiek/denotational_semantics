@@ -1,7 +1,7 @@
 {-
 
-  Divergence and recursion in ISWIMμ, through recursive types, without
-  a recursion construct (Mu/Language/ISWIM.agda):
+  Divergence and recursion in FPC, through recursive types, without
+  a recursion construct (Mu/Language/FPC.agda):
 
   * ω = λx. unfold x x : (μX. X ⇒ Int) ⇒ Int, and Ω = ω (fold ω), which
     diverges;
@@ -12,7 +12,7 @@
     countdown 3.
 
   Each is compiled with compile-to-PairClos (Mu/Compiler/Pipeline.agda) and run on
-  the ISWIMμ and PairClosμ machines, by computation.
+  the FPC and PairClosμ machines, by computation.
 
 -}
 
@@ -21,11 +21,11 @@ module Mu.proof.Compiler.Examples.RecursionExample where
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Compiler.Pipeline using (compile-to-PairClos)
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.CEK.Smallstep using (Machine; next; stop)
-import Mu.Semantics.AbstractMachines.ISWIM as ISWIMμₘ
+import Mu.Semantics.AbstractMachines.FPC as FPCₘ
 import Mu.Semantics.AbstractMachines.PairClos as PairClosμₘ
 
 open import Data.Fin using (zero)
@@ -75,15 +75,15 @@ run n L = go n (Machine.start L)
   ... | next s' = go n s'
   ... | stop o = just o
 
-three-iswim : run 200 (ISWIMμₘ.sem three) ≡ just (o-const Int (+ 0))
-three-iswim = refl
+three-fpc : run 200 (FPCₘ.sem three) ≡ just (o-const Int (+ 0))
+three-fpc = refl
 
 three-clos4 : run 400 (PairClosμₘ.sem (compile-to-PairClos three)) ≡ just (o-const Int (+ 0))
 three-clos4 = refl
 
 {- Ω runs on, on both machines -}
-Ω-iswim : run 200 (ISWIMμₘ.sem Ω) ≡ nothing
-Ω-iswim = refl
+Ω-fpc : run 200 (FPCₘ.sem Ω) ≡ nothing
+Ω-fpc = refl
 
 Ω-clos4 : run 400 (PairClosμₘ.sem (compile-to-PairClos Ω)) ≡ nothing
 Ω-clos4 = refl

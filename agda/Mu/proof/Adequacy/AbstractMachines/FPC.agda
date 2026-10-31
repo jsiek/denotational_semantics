@@ -1,8 +1,8 @@
 {-
 
-  Soundness and adequacy of the graph model of ISWIMμ
-  (Mu/Semantics/GraphModel/ISWIM.agda) with respect to the ISWIMμ machine
-  (Mu/Semantics/AbstractMachines/ISWIM.agda), for closed programs of any type,
+  Soundness and adequacy of the graph model of FPC
+  (Mu/Semantics/GraphModel/FPC.agda) with respect to the FPC machine
+  (Mu/Semantics/AbstractMachines/FPC.agda), for closed programs of any type,
   started in ρ₀ on the denotational side and in the empty environment
   on the machine side, as for ISWIM (proof/Adequacy/ISWIM.agda):
 
@@ -22,15 +22,15 @@
 
 -}
 
-module Mu.proof.Adequacy.AbstractMachines.ISWIM where
+module Mu.proof.Adequacy.AbstractMachines.FPC where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
 open import Mu.Semantics.GraphModel.Closed using (ρ₀)
-open import Mu.Language.ISWIM using (Tm)
-open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
-open import Mu.Semantics.AbstractMachines.ISWIM using (sem; Val; ret; halt; obs)
+open import Mu.Language.FPC using (Tm)
+open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
+open import Mu.Semantics.AbstractMachines.FPC using (sem; Val; ret; halt; obs)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges; diverges-not-terminates)
 import Mu.proof.Adequacy.AbstractMachines.Soundness as S

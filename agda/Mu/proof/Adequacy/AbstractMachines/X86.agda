@@ -27,7 +27,7 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
 open import Mu.proof.Semantics.GraphModel.Ops using (ConT; tables)
 open import Mu.Language.X86 using (Program; program)
-open import Mu.Language.ISWIM using (Tm)
+open import Mu.Language.FPC using (Tm)
 open import Mu.Compiler.Pipeline using (compile)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation

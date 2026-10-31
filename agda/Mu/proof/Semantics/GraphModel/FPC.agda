@@ -1,7 +1,7 @@
 {-
 
-  Lemmas about the semantics of ISWIMμ in the graph model
-  (Mu/Semantics/GraphModel/ISWIM.agda), for simplify and adequacy: its denotations
+  Lemmas about the semantics of FPC in the graph model
+  (Mu/Semantics/GraphModel/FPC.agda), for simplify and adequacy: its denotations
   are Ok (monotone, continuous and consistent), by induction on the
   term, one line per construct, as for GlobalFunμ
   (Mu/proof/Semantics/GraphModel/GlobalFun.agda); fold and unfold are the
@@ -9,16 +9,16 @@
 
 -}
 
-module Mu.proof.Semantics.GraphModel.ISWIM where
+module Mu.proof.Semantics.GraphModel.FPC where
 
-open import Mu.Semantics.GraphModel.ISWIM public
+open import Mu.Semantics.GraphModel.FPC public
 
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Continuity
 open import proof.Framework.GraphModel.TypedOkBase using (Ok; Oks; ok-op; ok-vec; var-ok; split)
 open import proof.Semantics.Graph.Prim using (primD-good)
 open import Mu.Language.Type using (idx)
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)

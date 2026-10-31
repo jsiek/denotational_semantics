@@ -1,12 +1,12 @@
 {-
 
-  The correctness of the ISWIMμ compiler in the graph model: the
+  The correctness of the FPC compiler in the graph model: the
   statements of Theorem 4.1 (compiler correctness) and Theorem 4.4
   (correctness of split) of the paper. The proofs are in
   Mu/proof/Correctness/GraphModel/; each theorem here is one of them,
   with its type written out.
 
-    ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
+    FPC --simplify--> FPC --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --split--> PairClosμ
            --hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
@@ -18,7 +18,7 @@
   (Mu/Semantics/GraphModel/Closed.agda: every variable denotes {⟨⟩}).
 
   To read them: the languages (Mu/Language/), the passes
-  (Mu/Compiler/), the graph-model semantics of ISWIMμ, EnvClosμ,
+  (Mu/Compiler/), the graph-model semantics of FPC, EnvClosμ,
   PairClosμ and X86μ (Mu/Semantics/GraphModel/), and the domain and
   operators they are built from (Framework/GraphModel/).
 
@@ -31,13 +31,13 @@ open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
 open import Framework.GraphModel.Domain using (const)
 
 open import Mu.Language.Type using (base)
-import Mu.Language.ISWIM as ISWIMμ
+import Mu.Language.FPC as FPC
 import Mu.Language.EnvClos as EnvClosμ
 
 open import Mu.Compiler.Split using (split-program)
 open import Mu.Compiler.Pipeline using (compile)
 
-open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
+open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
 open import Mu.Semantics.GraphModel.EnvClos using () renaming (⟦_⟧ to ⟦_⟧ᵉ)
 open import Mu.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧ᶠ)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
@@ -51,15 +51,15 @@ open import Data.Product using (_×_; proj₁; proj₂)
 
 {- Theorem 4.1 (Compiler correctness) -----------------------------------------}
 
-{- for a closed ISWIMμ term M of type Int, and every constant c:
+{- for a closed FPC term M of type Int, and every constant c:
    c ∈ ⟦ M ⟧ if and only if c ∈ ⟦ compile M ⟧ -}
-compile-int-const : ∀ (M : ISWIMμ.Tm [] (base Int)) → ∀ {B} (c : base-rep B)
+compile-int-const : ∀ (M : FPC.Tm [] (base Int)) → ∀ {B} (c : base-rep B)
   → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧ₜ)
   × (const c ∈ ⟦ compile M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
 compile-int-const M = proj₁ (Compiler.compile-int M)
 
 {- moreover, ⟦ M ⟧ ≠ ∅ if and only if ⟦ compile M ⟧ ≠ ∅ -}
-compile-int-nonempty : ∀ (M : ISWIMμ.Tm [] (base Int))
+compile-int-nonempty : ∀ (M : FPC.Tm [] (base Int))
   → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧ₜ)
   × (nonempty ⟦ compile M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
 compile-int-nonempty M = proj₂ (Compiler.compile-int M)
@@ -67,12 +67,12 @@ compile-int-nonempty M = proj₂ (Compiler.compile-int M)
 {- Theorem 4.1, for closed terms of every type (the paper: "The same
    statement holds for closed terms of every type") -}
 
-compile-correct-const : ∀ {A} (M : ISWIMμ.Tm [] A) → ∀ {B} (c : base-rep B)
+compile-correct-const : ∀ {A} (M : FPC.Tm [] A) → ∀ {B} (c : base-rep B)
   → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧ₜ)
   × (const c ∈ ⟦ compile M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
 compile-correct-const M = proj₁ (Compiler.compile-same M)
 
-compile-correct-nonempty : ∀ {A} (M : ISWIMμ.Tm [] A)
+compile-correct-nonempty : ∀ {A} (M : FPC.Tm [] A)
   → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧ₜ)
   × (nonempty ⟦ compile M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
 compile-correct-nonempty M = proj₂ (Compiler.compile-same M)

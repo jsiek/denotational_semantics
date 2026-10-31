@@ -1,6 +1,6 @@
 {-
 
-  The values of the clocked interpreters of ISWIMμ's languages
+  The values of the clocked interpreters of FPC's languages
   (Mu/Semantics/ClockedInterpreters/), as those of the typed pipeline
   (Semantics/Interp/Typed/Values.agda), indexed by their type; C Δ A B
   is what the code of a closure with free variables of types Δ, an

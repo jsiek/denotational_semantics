@@ -1,7 +1,7 @@
 {-
 
   A clocked interpreter for Closμ (Mu/Language/Clos.agda), as the one
-  for ISWIMμ (Mu/Semantics/ClockedInterpreters/ISWIM.agda), except that a closure
+  for FPC (Mu/Semantics/ClockedInterpreters/FPC.agda), except that a closure
   evaluates its free variables, left to right, and keeps their values
   as its environment.
 

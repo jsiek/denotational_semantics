@@ -1,7 +1,7 @@
 {-
 
   A reduction semantics for Closμ (Mu/Language/Clos.agda), as for
-  ISWIMμ (Mu/Semantics/ReductionSemantics/ISWIM.agda) and Clos2ᵀ
+  FPC (Mu/Semantics/ReductionSemantics/FPC.agda) and Clos2ᵀ
   (Semantics/Reduction/Typed/Clos2.agda). A closure evaluates its free
   variables left to right; applying it to a value W substitutes W and
   their values for the variables of its code, which no other

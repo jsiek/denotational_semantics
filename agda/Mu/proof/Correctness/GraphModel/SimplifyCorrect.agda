@@ -1,6 +1,6 @@
 {-
 
-  Correctness of the simplify pass (ISWIMμ → ISWIMμ) in the graph model,
+  Correctness of the simplify pass (FPC → FPC) in the graph model,
   as for the untyped simplify (proof/Correctness/Graph/SimplifyCorrect.agda).
 
   The main lemma (simp-ok): if what simp knows of each variable x is true
@@ -22,8 +22,8 @@
   unfold are the identity, so an unfold of a known fold V denotes V.
 
   Unlike untyped ISWIM, whose renaming and continuity come with the
-  syntax of any signature, ISWIMμ's renaming needs its lemma here
-  (ren-≃), and its continuity is Mu/proof/Semantics/GraphModel/ISWIM.agda's.
+  syntax of any signature, FPC's renaming needs its lemma here
+  (ren-≃), and its continuity is Mu/proof/Semantics/GraphModel/FPC.agda's.
 
 -}
 
@@ -40,9 +40,9 @@ open import proof.Semantics.Graph.Prim
 open import Language.Prim using (Prim; Out; int; bool; δ)
 import Language.Prim as Pr
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
-open import Mu.Language.ISWIMSubst using (ren; exts; varK; travs)
-open import Mu.proof.Semantics.GraphModel.ISWIM
+open import Mu.Language.FPC
+open import Mu.Language.FPCSubst using (ren; exts; varK; travs)
+open import Mu.proof.Semantics.GraphModel.FPC
 open import Mu.proof.Semantics.GraphModel.Binders using (Body-≃; lam-≃; let-≃; case-≃; body-mono)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import Mu.proof.Compiler.SimplifyFacts as P

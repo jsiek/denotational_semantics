@@ -1,9 +1,9 @@
 {-
 
-  The semantics of ISWIMμ (Mu/Language/ISWIM.agda) in Scott domains: a
+  The semantics of FPC (Mu/Language/FPC.agda) in Scott domains: a
   term means a continuous map from environments to the domain of values
   𝔻 (Framework/Scott/), by erasing the types, as in the graph model
-  (Mu/Semantics/GraphModel/ISWIM.agda): fold and unfold are the identity.
+  (Mu/Semantics/GraphModel/FPC.agda): fold and unfold are the identity.
   Recursion needs no fixed point: self-application, through a recursive
   type, gives it, as in untyped ISWIM, since 𝔻 ≅ 𝓛(… + (𝔻 ⟹ 𝔻) + …).
   Variable x is position idx x of the environment; component i of a
@@ -17,11 +17,11 @@ open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
 open import Data.List using (length)
 
-module Mu.Semantics.ScottDomains.ISWIM
+module Mu.Semantics.ScottDomains.FPC
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)

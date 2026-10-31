@@ -1,6 +1,6 @@
 {-
 
-  Hoist makes only references to older definitions, for ISWIMμ
+  Hoist makes only references to older definitions, for FPC
   (agda/Mu/), as for the typed pipeline (proof/Compiler/HoistOlder.agda);
   X86μ adequacy needs it (Mu/proof/Adequacy/X86Compiled.agda).
 

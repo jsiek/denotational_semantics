@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export the anonymized artifact of the PLDI 2027 paper: ISWIMμ (agda/Mu/).
+"""Export the anonymized artifact of the PLDI 2027 paper: FPC (agda/Mu/).
 
     python3 artifact/export.py OUTDIR        (from the repository root)
 
@@ -110,11 +110,11 @@ REWRITES = [
      r'  Language/Typed/ as Mu/Language/ and Semantics/<style>/Typed/ as\n'
      r'  Mu/Semantics/<style>/\), and the module Mu\.X to X\. It reuses the\n'
      r'  frameworks of agda/Framework/ unchanged;',
-     '  ISWIMμ uses the language-independent frameworks of agda/Framework/\n'
+     '  FPC uses the language-independent frameworks of agda/Framework/\n'
      '  (and their lemmas, agda/proof/Framework/);', 1),
-    ('agda/Mu/proof/Adequacy/ISWIM.agda',
+    ('agda/Mu/proof/Adequacy/FPC.agda',
      r'graph model\'s end-to-end theorem \(Mu/proof/Adequacy/EndToEnd\.agda\),\n'
-     r'  and the bridge at ISWIMμ of the mixed proof, which joins a pass\n'
+     r'  and the bridge at FPC of the mixed proof, which joins a pass\n'
      r'  proved in the graph model to passes proved by the interpreters\n'
      r'  \(Mu/proof/Mixed/CompilerMixed\.agda\)\.',
      "graph model's end-to-end theorem (Mu/proof/Adequacy/EndToEnd.agda).", 1),
@@ -282,10 +282,10 @@ Run from the root of the artifact:  python3 loc.py --artifact
 (or `make tables`), which prints Tables 1 and 2 of the paper.
 
 This is the script that measures the full development; the artifact holds
-only ISWIMμ's part of it (the import closure of agda/Mu/All.agda and
+only FPC's part of it (the import closure of agda/Mu/All.agda and
 agda/AllScott.agda), so it is run with --artifact.  In that mode the
 groups of modules that belong to the other parts are empty and skipped,
-and the checks about them are skipped too; the checks about ISWIMμ still
+and the checks about them are skipped too; the checks about FPC still
 run (every module is in exactly one group, no proof reaches another's
 modules, the audit surface imports no proof module).
 
@@ -297,7 +297,7 @@ finely a development is split into modules, not on its content.
 A proof's total is its own modules plus the shared modules it reaches
 (transitively, through imports) that are not reached by all four of the
 graph model, abstract machines, clocked interpreters and reduction
-semantics; shared modules reached by all four (ISWIMμ's languages and
+semantics; shared modules reached by all four (FPC's languages and
 passes) are counted in no total.  Language-independent infrastructure is
 counted separately (Table 2), for each proof the infrastructure modules
 it reaches.  A module X.agda and its proof half proof/X.agda are one

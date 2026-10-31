@@ -1,6 +1,6 @@
 {-
 
-  The simplify pass (ISWIMμ → ISWIMμ), a simplified version of the
+  The simplify pass (FPC → FPC), a simplified version of the
   source optimizer cp0 of Chez Scheme, the first pass of compile
   (Mu/Compiler/Pipeline.agda): the untyped simplify
   (Compiler/Simplify.agda), intrinsically typed, with the same design,
@@ -57,7 +57,7 @@
   concrete type (unfold's type A [ μ A ] does not unify with one; the
   design note's green slime); for the same reason lam? recognizes a
   function at any type. Typed tuples need no test of their length.
-  Renaming is the kit's (Mu/Language/ISWIMSubst.agda), which the
+  Renaming is the kit's (Mu/Language/FPCSubst.agda), which the
   reduction semantics shares.
 
 -}
@@ -67,8 +67,8 @@ module Mu.Compiler.Simplify where
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; sub; eq)
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
-open import Mu.Language.ISWIMSubst using (ren)
+open import Mu.Language.FPC
+open import Mu.Language.FPCSubst using (ren)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
 
 open import Data.Bool using (Bool; true; false; _∧_; if_then_else_)

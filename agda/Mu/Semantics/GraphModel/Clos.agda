@@ -4,7 +4,7 @@
   as that of Clos2ᵀ (Semantics/Graph/Typed/Clos2.agda): a closure is
   strict in its free variables (guard-n) and is the function of the
   argument whose body sees the argument and the meanings of the free
-  variables; otherwise as ISWIMμ (Mu/Semantics/GraphModel/ISWIM.agda).
+  variables; otherwise as FPC (Mu/Semantics/GraphModel/FPC.agda).
 
 -}
 

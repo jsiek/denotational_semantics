@@ -3,7 +3,7 @@
   Soundness and adequacy of the graph model of X86μ
   (Mu/Semantics/GraphModel/X86.agda, ⟦_⟧ₜ) with respect to the X86μ clocked
   interpreter (Mu/Semantics/ClockedInterpreters/X86.agda), direct, as
-  Mu/proof/Adequacy/ISWIM.agda is for ISWIMμ (and
+  Mu/proof/Adequacy/FPC.agda is for FPC (and
   Mu/proof/Adequacy/AbstractMachines/X86.agda for the X86μ machine):
 
     adequacy (X86LogRel.agda), for every program: every d ∈ ⟦ P ⟧ₜ is
@@ -30,7 +30,7 @@ open import proof.Framework.GraphModel.Domain using () renaming (const to dconst
 open import Mu.proof.Semantics.GraphModel.Ops using (ConT; tables)
 open import Mu.Language.Type using (Type)
 open import Mu.Language.X86 using (DSig; Body; called; entry; Program; program; body)
-open import Mu.Language.ISWIM using (Tm)
+open import Mu.Language.FPC using (Tm)
 open import Mu.Compiler.Pipeline using (compile)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation using (o-const; _⇔_)

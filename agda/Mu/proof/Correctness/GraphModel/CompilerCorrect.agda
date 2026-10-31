@@ -1,15 +1,15 @@
 {-
 
-  The ISWIMμ compiler (Mu/Compiler/Pipeline.agda) in the plain
+  The FPC compiler (Mu/Compiler/Pipeline.agda) in the plain
   graph model, as for the typed pipeline
-  (proof/Correctness/Graph/CompilerCorrect.agda): for a closed ISWIMμ
+  (proof/Correctness/Graph/CompilerCorrect.agda): for a closed FPC
   program, the compiled program, in PairClosμ, GlobalFunμ, Monμ (by its
   embedding), Impμ, CFGμ and X86μ, produces the same constants as the
   source, and produces something exactly when the source does (Same).
   Every pass but split preserves the meaning exactly (≃); split
   preserves and reflects constants and nonemptiness. The end-to-end
   theorem is stated for a main program of type Int, the observation of
-  ISWIMμ (compile-int); the others hold at any type.
+  FPC (compile-int); the others hold at any type.
 
 -}
 
@@ -21,13 +21,13 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
 open import Mu.Semantics.GraphModel.Closed using (ρ₀)
 open import Mu.Language.Type using (base)
-open import Mu.Language.ISWIM using (Tm)
+open import Mu.Language.FPC using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
 open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Capture using (capture)
 open import Mu.Compiler.Prune using (prune-program)
 open import Mu.Compiler.Pipeline
-open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
+open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
 open import Mu.Semantics.GraphModel.EnvClos using () renaming (⟦_⟧ to ⟦_⟧₃)
 open import Mu.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧₄)
 open import Mu.Semantics.GraphModel.GlobalFun using () renaming (⟦_⟧ₚ to ⟦_⟧₅)

@@ -1,22 +1,22 @@
 {-
 
-  The ISWIMμ compiler proved by mixing semantics: simplify in the graph
+  The FPC compiler proved by mixing semantics: simplify in the graph
   model (Mu/proof/Correctness/GraphModel/SimplifyCorrect.agda), every other
   pass by the clocked interpreters (Mu/proof/Correctness/ClockedInterpreters/, as in
-  CompilerFuel.agda), joined at ISWIMμ by the bridge between its graph
-  semantics and its interpreter (Mu/proof/Adequacy/ISWIM.agda, the
-  graph model's adequacy for the ISWIMμ interpreter), used for
+  CompilerFuel.agda), joined at FPC by the bridge between its graph
+  semantics and its interpreter (Mu/proof/Adequacy/FPC.agda, the
+  graph model's adequacy for the FPC interpreter), used for
   the program and for its simplification:
 
-    ISWIMμ interpreter, M  ⇔  ⟦ M ⟧ ρ₀              (bridge)
-                           ⇔  ⟦ simplify M ⟧ ρ₀     (simplify, graph model)
-                           ⇔  ISWIMμ interpreter, simplify M   (bridge)
-                           ⇔  X86μ interpreter, compile M  (the other passes, interpreters)
+    FPC interpreter, M  ⇔  ⟦ M ⟧ ρ₀              (bridge)
+                        ⇔  ⟦ simplify M ⟧ ρ₀     (simplify, graph model)
+                        ⇔  FPC interpreter, simplify M   (bridge)
+                        ⇔  X86μ interpreter, compile M  (the other passes, interpreters)
 
   for constants, and for divergence through the emptiness of the
   denotations. The end theorem is the interpreter column's
   (Mu/proof/Correctness/ClockedInterpreters/CompilerFuel.agda): for a main of type
-  Int, the interpreters of ISWIMμ and X86μ stop with the same constant,
+  Int, the interpreters of FPC and X86μ stop with the same constant,
   or both diverge.
 
 -}
@@ -28,8 +28,8 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
 open import Mu.Semantics.GraphModel.Closed using (ρ₀)
 open import Mu.Language.Type using (base)
-open import Mu.Language.ISWIM using (Tm)
-open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
+open import Mu.Language.FPC using (Tm)
+open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
 open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Capture using (capture)
 open import Mu.Compiler.Prune using (prune-program)
@@ -37,7 +37,7 @@ open import Mu.Compiler.Concretize using (concretize-program)
 open import Mu.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.ISWIM as ISWIMμᵢ
+import Mu.Semantics.ClockedInterpreters.FPC as FPCᵢ
 import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
 open import Mu.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-correct)
@@ -50,7 +50,7 @@ open import Mu.proof.Correctness.ClockedInterpreters.RCOFuel using (rco-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.LiftLocalsFuel using (lift-locals-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.ExplicateFuel using (explicate-correct)
 open import Mu.proof.Correctness.ClockedInterpreters.SelectFuel using (select-correct)
-open import Mu.proof.Adequacy.ISWIM using (const-iff; diverges-iff)
+open import Mu.proof.Adequacy.FPC using (const-iff; diverges-iff)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
@@ -65,7 +65,7 @@ private
   ⇔-sym (f , g) = g , f
 
 {- the passes after simplify, by the interpreters -}
-after-simplify : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem (simplify M)) (X86μᵢ.sem (compile M))
+after-simplify : ∀ {A} (M : Tm [] A) → Equivalent (FPCᵢ.sem (simplify M)) (X86μᵢ.sem (compile M))
 after-simplify M =
   equiv-trans (capture-correct (simplify M)) (equiv-trans (prune-correct M₁)
     (equiv-trans (concretize-correct M₂) (equiv-trans (split-correct (concretize-program M₂))
@@ -78,13 +78,13 @@ after-simplify M =
 {- for a main of type Int, as the other columns state it -}
 
 compile-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
-  → Terminates (ISWIMμᵢ.sem M) (o-const Int k) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int k)
+  → Terminates (FPCᵢ.sem M) (o-const Int k) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int k)
 compile-const M k =
   ⇔-sym (const-iff M) ∘⇔ ((proj₁ S _ , proj₂ S _) ∘⇔ (const-iff (simplify M)
     ∘⇔ Equivalent.terminates (after-simplify M) (o-const Int k)))
   where S = simplify-correct M
 
-compile-diverges : ∀ (M : Tm [] (base Int)) → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (X86μᵢ.sem (compile M))
+compile-diverges : ∀ (M : Tm [] (base Int)) → Diverges (FPCᵢ.sem M) ⇔ Diverges (X86μᵢ.sem (compile M))
 compile-diverges M =
   diverges-iff M ∘⇔ (empty ∘⇔ (⇔-sym (diverges-iff (simplify M)) ∘⇔ Equivalent.diverges (after-simplify M)))
   where

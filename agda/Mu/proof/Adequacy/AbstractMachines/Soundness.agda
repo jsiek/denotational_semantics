@@ -1,7 +1,7 @@
 {-
 
-  Soundness of the ISWIMμ machine (Mu/Semantics/AbstractMachines/ISWIM.agda) with
-  respect to the graph model (Mu/Semantics/GraphModel/ISWIM.agda): what the
+  Soundness of the FPC machine (Mu/Semantics/AbstractMachines/FPC.agda) with
+  respect to the graph model (Mu/Semantics/GraphModel/FPC.agda): what the
   machine computes is in the denotation of the program.
 
   As for ISWIM (proof/Adequacy/Soundness.agda): each machine state
@@ -10,7 +10,7 @@
   and of continuations, the contexts their frames stand for (𝒦); every
   step can only shrink it (step-⊆). The β steps (application, case,
   let) use the continuity of the semantics (fin₁, from
-  Mu/proof/Semantics/GraphModel/ISWIM.agda) and that every value denotes a
+  Mu/proof/Semantics/GraphModel/FPC.agda) and that every value denotes a
   nonempty, consistent set. fold v denotes 𝒱 v, and foldK and unfoldK
   are the identity, as fold and unfold are in the semantics. The
   machine is typed, so no step is stuck, and the only final state
@@ -37,10 +37,10 @@ open import proof.Semantics.Graph.Prim using (primD; primD-good) renaming (out t
 open import proof.Framework.Runs using (module Runs)
 open import Mu.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
-open import Mu.proof.Semantics.GraphModel.ISWIM using (⟦_⟧; ⟦_⟧s; ok; con)
+open import Mu.Language.FPC
+open import Mu.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; ok; con)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos; _<><_; _<><ᵃ_)
-open import Mu.Semantics.AbstractMachines.ISWIM
+open import Mu.Semantics.AbstractMachines.FPC
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.CEK.Smallstep using (Star; Terminates; next; stop)
 
@@ -78,7 +78,7 @@ private
 𝒱s : ∀ {Δ} → All Val Δ → List (𝒫 Value)
 𝓔 : ∀ {Γ} → Env Γ → E.Env Value
 
-{- no ISWIMμ program has a value of a code type -}
+{- no FPC program has a value of a code type -}
 𝒱 (code N) = ⌈ ⟨⟩ ⌉
 𝒱 (clo N γ) = Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩
 𝒱 (const {B} k) = ℬ B k ptt

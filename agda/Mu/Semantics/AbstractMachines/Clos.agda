@@ -1,7 +1,7 @@
 {-
 
   A CEK machine for Closμ (Mu/Language/Clos.agda), as the one for
-  ISWIMμ (Mu/Semantics/AbstractMachines/ISWIM.agda): a closure evaluates its free
+  FPC (Mu/Semantics/AbstractMachines/FPC.agda): a closure evaluates its free
   variables left to right, as a tuple, and its value is its code with
   their values, the environment of its code.
 

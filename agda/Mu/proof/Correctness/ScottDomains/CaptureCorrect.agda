@@ -1,7 +1,7 @@
 {-
 
-  Correctness of capture (ISWIMμ → Closμ) in Scott domains
-  (Mu/Semantics/ScottDomains/{ISWIM,Clos}.agda), as in the graph model
+  Correctness of capture (FPC → Closμ) in Scott domains
+  (Mu/Semantics/ScottDomains/{FPC,Clos}.agda), as in the graph model
   (Mu/proof/Correctness/GraphModel/CaptureCorrect.agda), with equality of
   values in place of equality of sets.
 
@@ -23,7 +23,7 @@ open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 import Mu.Language.Clos as T
 open import Mu.Framework.AllUtil using (All; []; _∷_; tab; pos)
 open import Mu.Compiler.Capture
@@ -41,7 +41,7 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.ISWIM pt fe pe
+open import Mu.Semantics.ScottDomains.FPC pt fe pe
 open import Mu.Semantics.ScottDomains.Clos pt fe pe renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
 
 Rel : Ctx → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇

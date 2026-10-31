@@ -1,16 +1,17 @@
-# ISWIMμ: the Agda development of the PLDI 2027 paper
+# FPC: the Agda development of the PLDI 2027 paper
 
 This directory is the mechanization behind the paper. It defines the
-compiler of the paper, from ISWIMμ to x86μ in ten passes, and proves it
+compiler of the paper, from FPC to x86μ in ten passes, and proves it
 correct in five semantic styles. The styles are the graph model (the
 paper's main result), Scott domains, abstract machines, clocked
 interpreters, and reduction semantics. It also proves the graph model
-adequate for the clocked interpreters. `Mu` stands for ISWIMμ, the
-source language: a call-by-value λ-calculus with base types, n-ary
+adequate for the clocked interpreters. The source language is FPC
+(Plotkin's Fixed Point Calculus), and `Mu` is for its iso-recursive
+types: FPC is a call-by-value λ-calculus with base types, n-ary
 tuples, sums and iso-recursive types μX.A, with no recursion construct
 and no errors.
 
-    ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
+    FPC --simplify--> FPC --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --split--> PairClosμ
            --hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
@@ -79,8 +80,8 @@ and the small-step, reduction and clocked frameworks.
 | Lemma 4.3 (Fundamental lemma) | `proof/Correctness/GraphModel/SplitReflect.agda` | `split-reflect` (related environments: `Envs`; the case of a call: `collect`; of a closure: `clos-app`) |
 | Theorem 4.4 (Correctness of split closure) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `split-correct-const`, `split-correct-nonempty` |
 | Theorem 4.4, proof | `proof/Correctness/GraphModel/SplitCorrect.agda` (reflection: `proof/Correctness/GraphModel/SplitReflect.agda`, `reflect-const`, `reflect-nonempty`; preservation: `proof/Correctness/GraphModel/SplitPreserve.agda`, `preserve-const`, `preserve-nonempty`) | `split-correct-const`, `split-correct-nonempty` |
-| Theorem 4.5 (Adequacy) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda) | ISWIMμ: `iswim-const-iff`, `iswim-diverges-iff`; x86μ: `x86-const-iff`, `x86-diverges-iff` |
-| Theorem 4.5, proof | `proof/Adequacy/ISWIM.agda` (`const-iff`, `diverges-iff`), `proof/Adequacy/X86.agda` (`x86-const-iff`, `x86-diverges-iff`); soundness: `proof/Adequacy/Soundness.agda`, `proof/Adequacy/X86Soundness.agda`; the logical relations: `proof/Adequacy/LogRel.agda`, `proof/Adequacy/X86LogRel.agda` | |
+| Theorem 4.5 (Adequacy) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda) | FPC: `fpc-const-iff`, `fpc-diverges-iff`; x86μ: `x86-const-iff`, `x86-diverges-iff` |
+| Theorem 4.5, proof | `proof/Adequacy/FPC.agda` (`const-iff`, `diverges-iff`), `proof/Adequacy/X86.agda` (`x86-const-iff`, `x86-diverges-iff`); soundness: `proof/Adequacy/Soundness.agda`, `proof/Adequacy/X86Soundness.agda`; the logical relations: `proof/Adequacy/LogRel.agda`, `proof/Adequacy/X86LogRel.agda` | |
 | Theorems 4.1 and 4.5 together: the operational theorem (§4.3) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda); proof `proof/Adequacy/EndToEnd.agda` | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
 | §4.2, "Which sides to relate": a finite source side fails the function clause (the Agda check) | `proof/Correctness/GraphModel/SplitDesignFiniteSource.agda` | example 3 of its header, the paper's (λf.f, the singletons of [n] ↦ n): `no-finite-source-ApproxLR′`, `finite-source′`; example 1: `no-finite-source-ApproxLR`; any such relation: `no-finite-source` |
 | §4.2, "Which sides to relate": a target set of bounded depth is related exactly when each finite sublist is (the Agda check) | `proof/Correctness/GraphModel/SplitDesignBoundedSets.agda` | `ApproxLRSet⇔` (from `ApproxLRSet⇒`, `ApproxLRSet⇐`) |
@@ -112,7 +113,7 @@ those of capture, prune and concretize in
 | Language | File | Agda |
 |---|---|---|
 | types and contexts | [`Language/Type.agda`](Language/Type.agda) | `Ty`, `Type`, `Ctx`, `_⇒_`, `_⊹_`, `tup`, `base`, `μ` types and `unroll` |
-| ISWIMμ | [`Language/ISWIM.agda`](Language/ISWIM.agda) | `Tm` (renaming and substitution: `Language/ISWIMSubst.agda`) |
+| FPC | [`Language/FPC.agda`](Language/FPC.agda) | `Tm` (renaming and substitution: `Language/FPCSubst.agda`) |
 | Clos | [`Language/Clos.agda`](Language/Clos.agda) | `Tm` |
 | EnvClos | [`Language/EnvClos.agda`](Language/EnvClos.agda) | `Tm` |
 | PairClos | [`Language/PairClos.agda`](Language/PairClos.agda) | `Tm` |
@@ -130,11 +131,11 @@ pipelines.
 
 | Pass | File | Agda |
 |---|---|---|
-| simplify (ISWIMμ to ISWIMμ) | [`Compiler/Simplify.agda`](Compiler/Simplify.agda) | `simplify` |
-| capture (ISWIMμ to Clos) | [`Compiler/Capture.agda`](Compiler/Capture.agda) | `capture` |
+| simplify (FPC to FPC) | [`Compiler/Simplify.agda`](Compiler/Simplify.agda) | `simplify` |
+| capture (FPC to Clos) | [`Compiler/Capture.agda`](Compiler/Capture.agda) | `capture` |
 | prune (Clos to Clos) | [`Compiler/Prune.agda`](Compiler/Prune.agda) | `prune-program` |
 | concretize (Clos to EnvClos) | [`Compiler/Concretize.agda`](Compiler/Concretize.agda) | `concretize-program` (`concretize` with references φ: `Ref`, `Refs`) |
-| enclose (ISWIMμ to EnvClos), the closure-conversion pass: concretize ∘ prune ∘ capture | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `enclose` |
+| enclose (FPC to EnvClos), the closure-conversion pass: concretize ∘ prune ∘ capture | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `enclose` |
 | split closure (EnvClos to PairClos) | [`Compiler/Split.agda`](Compiler/Split.agda) | `split-program` (`split`) |
 | hoist (PairClos to GlobalFun) | [`Compiler/Hoist.agda`](Compiler/Hoist.agda) | `hoist` |
 | remove complex operands (GlobalFun to Mon) | [`Compiler/RCO.agda`](Compiler/RCO.agda) | `rco-program` |
@@ -147,7 +148,7 @@ pipelines.
 
 | Language | Graph model (Appendix B) | Scott domains (F.5) | Abstract machines (F.3) | Clocked interpreters (F.2) | Reduction semantics (F.4) |
 |---|---|---|---|---|---|
-| ISWIMμ | `Semantics/GraphModel/ISWIM.agda`: `⟦_⟧` | `Semantics/ScottDomains/ISWIM.agda`: `⟦_⟧` | `Semantics/AbstractMachines/ISWIM.agda`: `State`, `step`, `sem` | `Semantics/ClockedInterpreters/ISWIM.agda`: `eval`, `call`, `sem` | `Semantics/ReductionSemantics/ISWIM.agda`: `red`, `sem` |
+| FPC | `Semantics/GraphModel/FPC.agda`: `⟦_⟧` | `Semantics/ScottDomains/FPC.agda`: `⟦_⟧` | `Semantics/AbstractMachines/FPC.agda`: `State`, `step`, `sem` | `Semantics/ClockedInterpreters/FPC.agda`: `eval`, `call`, `sem` | `Semantics/ReductionSemantics/FPC.agda`: `red`, `sem` |
 | Clos | `Semantics/GraphModel/Clos.agda`: `⟦_⟧` | `Semantics/ScottDomains/Clos.agda`: `⟦_⟧` | `Semantics/AbstractMachines/Clos.agda`: `sem` | `Semantics/ClockedInterpreters/Clos.agda`: `eval`, `sem` | `Semantics/ReductionSemantics/Clos.agda`: `red`, `sem` |
 | EnvClos | `Semantics/GraphModel/EnvClos.agda`: `⟦_⟧` | `Semantics/ScottDomains/EnvClos.agda`: `⟦_⟧` | `Semantics/AbstractMachines/EnvClos.agda`: `sem` | `Semantics/ClockedInterpreters/EnvClos.agda`: `eval`, `sem` | `Semantics/ReductionSemantics/EnvClos.agda`: `red`, `sem` |
 | PairClos | `Semantics/GraphModel/PairClos.agda`: `⟦_⟧` | `Semantics/ScottDomains/PairClos.agda`: `⟦_⟧` | `Semantics/AbstractMachines/PairClos.agda`: `sem` | `Semantics/ClockedInterpreters/PairClos.agda`: `eval`, `sem` | `Semantics/ReductionSemantics/PairClos.agda`: `red`, `sem` |
@@ -205,7 +206,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | A.2 Depth | depth of an element and a list | `../proof/Framework/GraphModel/DomainUtilBase.agda` (`depth`, `depths`) |
 | A.3 Further Operators | 𝒯(), prim, out, δ, 𝒞, guard | `../Framework/GraphModel/Ops.agda` (`𝒯`, `𝒞`, `guard-n`, `strict`), `../Framework/GraphModel/OpsBase.agda` (`ℬ`), `../Semantics/Graph/Prim.agda` (`primD`, `out`), `../Language/Prim.agda` (`δ`) |
 | B (opening) | base types, ρ₀, ⟦M⟧ = ⟦M⟧ρ₀ | `Language/Type.agda`, `Semantics/GraphModel/Closed.agda` (`ρ₀`) |
-| B.1 The ISWIM Language | typing, graph semantics | `Language/Type.agda`, `Language/ISWIM.agda`, `Semantics/GraphModel/ISWIM.agda` |
+| B.1 The FPC Language | typing, graph semantics | `Language/Type.agda`, `Language/FPC.agda`, `Semantics/GraphModel/FPC.agda` |
 | B.2 The Clos and EnvClos Languages | typing, graph semantics | `Language/Clos.agda`, `Language/EnvClos.agda`, `Semantics/GraphModel/Clos.agda`, `Semantics/GraphModel/EnvClos.agda` |
 | B.3 The PairClos Language | typing, graph semantics | `Language/PairClos.agda`, `Semantics/GraphModel/PairClos.agda` |
 | B.4 The GlobalFun and Mon Languages | typing, graph semantics, the embedding of Mon | `Language/GlobalFun.agda`, `Language/Mon.agda` (`⌜_⌝ₚ`), `Semantics/GraphModel/GlobalFun.agda`, `Semantics/GraphModel/Ops.agda` (tables) |
@@ -231,10 +232,10 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | D, Explicate control | calculation | `proof/Correctness/GraphModel/ExplicateCorrect.agda` (`explicate-correct`) |
 | E An Example of the Approximant Logical Relation | clause 3 on λy. x + y (the example itself is not mechanized) | `proof/Correctness/GraphModel/ApproxLR.agda` (`UsableEntry`, `Batch`, `ApproxLRLayer.app-obs`) |
 | F.1 Values and Observations | values, obs, observations, machines, clocked interpreters, equivalence | `Semantics/AbstractMachines/Values.agda` and `Semantics/ClockedInterpreters/Values.agda` (`Val`, `obs`), `../Semantics/Observation.agda` (`Obs`), `../Framework/Smallstep.agda` (`Machine`, `Terminates`, `Diverges`, `Equivalent`), `../Framework/Clocked.agda` (`Result`, `Terminates`, `Diverges`, `Equivalent`) |
-| F.2 Clocked Interpreters | ISWIMμ and x86μ; Theorem F.1 | `Semantics/ClockedInterpreters/ISWIM.agda`, `Semantics/ClockedInterpreters/X86.agda`; `Theorems/ClockedInterpreters.agda` |
-| F.3 Abstract Machines | ISWIMμ and x86μ; Theorem F.2 | `Semantics/AbstractMachines/ISWIM.agda`, `Semantics/AbstractMachines/X86.agda`; `Theorems/AbstractMachines.agda` |
-| F.4 Reduction Semantics | ISWIMμ; Theorem F.3 | `Semantics/ReductionSemantics/ISWIM.agda`, `../Framework/Reduction.agda` (`Red`, `step-in`); `Theorems/ReductionSemantics.agda` |
-| F.5 Scott Domains | 𝔻, its operators, ISWIMμ and x86μ; Theorem F.4 | `../Framework/Scott/Domain.agda` (`Tag`, `Payload`, `𝔻`, `roll`, `unroll`, `defined`), `../Framework/Scott/Ops.agda` (`Λ`, `app`, `tuple`, `proj`, `pair`, `component`, `inl`, `inr`, `cases`, `seq`), `../Framework/Scott/Semantics.agda`, `../Semantics/Scott/Prim.agda`, `Semantics/ScottDomains/ISWIM.agda`, `Semantics/ScottDomains/X86.agda`, `Semantics/ScottDomains/Closed.agda` (`ρ₀`); `Theorems/ScottDomains.agda` |
+| F.2 Clocked Interpreters | FPC and x86μ; Theorem F.1 | `Semantics/ClockedInterpreters/FPC.agda`, `Semantics/ClockedInterpreters/X86.agda`; `Theorems/ClockedInterpreters.agda` |
+| F.3 Abstract Machines | FPC and x86μ; Theorem F.2 | `Semantics/AbstractMachines/FPC.agda`, `Semantics/AbstractMachines/X86.agda`; `Theorems/AbstractMachines.agda` |
+| F.4 Reduction Semantics | FPC; Theorem F.3 | `Semantics/ReductionSemantics/FPC.agda`, `../Framework/Reduction.agda` (`Red`, `step-in`); `Theorems/ReductionSemantics.agda` |
+| F.5 Scott Domains | 𝔻, its operators, FPC and x86μ; Theorem F.4 | `../Framework/Scott/Domain.agda` (`Tag`, `Payload`, `𝔻`, `roll`, `unroll`, `defined`), `../Framework/Scott/Ops.agda` (`Λ`, `app`, `tuple`, `proj`, `pair`, `component`, `inl`, `inr`, `cases`, `seq`), `../Framework/Scott/Semantics.agda`, `../Semantics/Scott/Prim.agda`, `Semantics/ScottDomains/FPC.agda`, `Semantics/ScottDomains/X86.agda`, `Semantics/ScottDomains/Closed.agda` (`ρ₀`); `Theorems/ScottDomains.agda` |
 
 The semantics of the intermediate languages in the four other styles,
 which the paper leaves to the artifact, are in the table of semantics
@@ -260,17 +261,17 @@ styles other than Scott domains):
   `Compiler/*.agda` (all eleven files);
 * heterogeneous vectors: `Framework/AllUtil.agda`,
   `Framework/ReductionAll.agda`;
-* the graph model: `Semantics/GraphModel/{ISWIM,EnvClos,PairClos,Imp,CFG,X86,Ops,Closed}.agda`,
+* the graph model: `Semantics/GraphModel/{FPC,EnvClos,PairClos,Imp,CFG,X86,Ops,Closed}.agda`,
   and `../Framework/GraphModel/{Domain,SetsAsPredicates,Env,DOpSig,OpsBase,Ops}.agda`,
   `../Semantics/Graph/Prim.agda`;
-* Scott domains: `Semantics/ScottDomains/{ISWIM,Imp,CFG,X86,Ops,Closed}.agda`,
+* Scott domains: `Semantics/ScottDomains/{FPC,Imp,CFG,X86,Ops,Closed}.agda`,
   `../Framework/Scott/{Base,Sum,Lift,Functor,Solve,Domain,Ops,Semantics}.agda`,
   `../Semantics/Scott/Prim.agda`;
-* abstract machines: `Semantics/AbstractMachines/{ISWIM,GlobalFun,Imp,X86,Values}.agda`,
+* abstract machines: `Semantics/AbstractMachines/{FPC,GlobalFun,Imp,X86,Values}.agda`,
   `../Framework/Smallstep.agda`, `../Semantics/CEK/Smallstep.agda`;
-* clocked interpreters: `Semantics/ClockedInterpreters/{ISWIM,GlobalFun,Imp,X86,Values}.agda`,
+* clocked interpreters: `Semantics/ClockedInterpreters/{FPC,GlobalFun,Imp,X86,Values}.agda`,
   `../Framework/Clocked.agda`, `../Semantics/Interp/Clock.agda`;
-* reduction semantics: `Semantics/ReductionSemantics/ISWIM.agda`,
+* reduction semantics: `Semantics/ReductionSemantics/FPC.agda`,
   `../Framework/Reduction.agda`, `../Semantics/Reduction/Smallstep.agda`
   (and the machine of x86μ, above);
 * shared with the other pipelines: `../Semantics/Observation.agda`,

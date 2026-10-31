@@ -138,7 +138,7 @@ likewise for $\mathsf{right}$. A guard makes a set strict in other sets:
 
 \subsection{Monotonicity}
 \label{app:monotone}
-\agda{Mu/proof/Semantics/GraphModel/\{ISWIM,EnvClos,PairClos\}.agda}
+\agda{Mu/proof/Semantics/GraphModel/\{FPC,EnvClos,PairClos\}.agda}
 
 %% The first component of ok (Ok = Mono × Cont × consistency,
 %% proof/Framework/GraphModel/TypedOkBase.agda).
@@ -169,7 +169,7 @@ $\den{M} = \den{M}\rho_0$. The operators are those of
 Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 
 \subsection{The \fpc\ Language}
-\agda{Mu/Language/ISWIM.agda, Mu/Semantics/GraphModel/ISWIM.agda}
+\agda{Mu/Language/FPC.agda, Mu/Semantics/GraphModel/FPC.agda}
 
 \fpc\ is the source language, and the first pass, \pass{simplify}, maps it to itself. A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of variable types.
 \defhead{Typing of \fpc}{\Gamma \vdash M : A}

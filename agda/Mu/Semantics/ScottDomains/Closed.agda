@@ -1,6 +1,6 @@
 {-
 
-  The environment of a closed ISWIMμ program in Scott domains: every
+  The environment of a closed FPC program in Scott domains: every
   variable means init, the empty tuple, as in the graph model
   (Mu/Semantics/GraphModel/Closed.agda). It only matters for open terms.
 

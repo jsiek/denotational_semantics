@@ -5,7 +5,7 @@
   strict in its free variables (guard) and is the function of the
   argument whose body sees the argument and the values of the free
   variables (closureᶜ, Framework/Scott/Semantics.agda); otherwise as
-  ISWIMμ (Mu/Semantics/ScottDomains/ISWIM.agda).
+  FPC (Mu/Semantics/ScottDomains/FPC.agda).
 
 -}
 

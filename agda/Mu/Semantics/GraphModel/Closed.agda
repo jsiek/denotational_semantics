@@ -1,6 +1,6 @@
 {-
 
-  The environment of a closed ISWIMμ program in the graph model.
+  The environment of a closed FPC program in the graph model.
 
   Environments are total (Env Value = Var → 𝒫 Value) and nonempty-env
   asks every position to be nonempty, so the positions a closed program

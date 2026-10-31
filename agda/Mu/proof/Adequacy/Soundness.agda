@@ -1,12 +1,12 @@
 {-
 
-  Soundness of the clocked interpreter of ISWIMμ
-  (Mu/Semantics/ClockedInterpreters/ISWIM.agda) with respect to the graph model
-  (Mu/Semantics/GraphModel/ISWIM.agda): what the interpreter returns, at any
+  Soundness of the clocked interpreter of FPC
+  (Mu/Semantics/ClockedInterpreters/FPC.agda) with respect to the graph model
+  (Mu/Semantics/GraphModel/FPC.agda): what the interpreter returns, at any
   clock, denotes a part of the denotation of the program; and it never
   errs.
 
-  As the soundness of the ISWIMμ machine (Mu/proof/Adequacy/AbstractMachines/Soundness.agda),
+  As the soundness of the FPC machine (Mu/proof/Adequacy/AbstractMachines/Soundness.agda),
   through denotations of values (𝒱; a closure denotes its λ in the
   denotation of its environment, 𝓔), but by induction on the clock and
   the term instead of over the steps of a machine: no continuations.
@@ -37,10 +37,10 @@ open import proof.Semantics.Graph.Prim using (primD; primD-good) renaming (out t
 open import proof.Semantics.Interp.Clock using (Result; timeout; error; ret; _>>=_)
 open import Mu.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; 𝒯L-mono; At-length)
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
-open import Mu.proof.Semantics.GraphModel.ISWIM using (⟦_⟧; ⟦_⟧s; ok)
+open import Mu.Language.FPC
+open import Mu.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; ok)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
-open import Mu.Semantics.ClockedInterpreters.ISWIM
+open import Mu.Semantics.ClockedInterpreters.FPC
 open import Semantics.Observation using (o-const)
 
 open import Data.Bool using (true; false)
@@ -76,7 +76,7 @@ private
 𝒱s : ∀ {Δ} → All Val Δ → List (𝒫 Value)
 𝓔 : ∀ {Γ} → Env Γ → E.Env Value
 
-{- no ISWIMμ program has a value of a code type -}
+{- no FPC program has a value of a code type -}
 𝒱 (code N) = ⌈ ⟨⟩ ⌉
 𝒱 (pack (code N) (tup γ)) = Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩
 𝒱 (const {B} k) = ℬ B k ptt
