@@ -9,8 +9,8 @@
 \label{sec:intro}
 
 This paper shows that denotational semantics can carry a proof of
-compiler correctness through closure conversion, and it measures the
-cost. We give the first denotational proofs that closure conversion
+compiler correctness through closure conversion, and it compares that
+approach with operational ones, pass by pass. We give the first denotational proofs that closure conversion
 both preserves and reflects the meaning of programs, divergence
 included, for a Turing-complete language, one proof in a graph model
 and one in Scott domains. We extend both proofs to an eight-pass
@@ -41,7 +41,7 @@ compiler pass is correct when the meaning of a program before the pass
 equals its meaning afterward, and the proof is by equational
 reasoning. Early compiler proofs followed this recipe
 \citep{Polak:1981aa,Clinger:1984aa}. We ask whether it extends to a
-compiler for a higher-order language, and at what cost.
+compiler for a higher-order language, and how its proofs compare in size.
 
 However, the recipe meets an obstacle. Every compiler for a language
 with lexically scoped functions performs \emph{closure conversion},
