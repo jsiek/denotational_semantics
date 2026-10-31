@@ -15,14 +15,13 @@
 \begin{itemize}
 \item Two proofs, one in a graph model and one in Scott domains, that
   closure conversion preserves and reflects a denotational semantics
-  for a call-by-value $\lambda$-calculus with iso-recursive types. We
-  extend both proofs to the whole compiler, targeting a typed low-level
-  intermediate language, and we mechanize them in Agda (\S\ref{sec:compiler-proof},
+  of \fpc. We extend both proofs to the whole compiler and mechanize
+  them in Agda (\S\ref{sec:compiler-proof},
   \S\ref{sec:scott-delay}).
 \item Approximant logical relations relate two denotations by
   recursion on the depth of a finite set of graph elements, which lets
-  us prove semantic reflection for the pass that separates the code
-  of each closure from its environment, the direction that guarantees that diverging programs
+  us prove semantic reflection for \pass{split closure}, the
+  direction that guarantees that diverging programs
   compile to diverging programs and that earlier denotational proofs
   left open (\S\ref{sec:approx-lr}).
 \item Proofs that the denotational semantics of the source and of the
@@ -35,7 +34,6 @@
   styles, each with respect to its own semantics, which shows that both denotational
   proofs are
   smaller than the operational ones for \pass{simplify} and
-  \pass{hoist}, while for \pass{split closure} both denotational proofs
-  are several times larger than the operational ones
-  (\S\ref{sec:evaluation}).
+  \pass{hoist}, while for \pass{split closure} both are several times
+  larger (\S\ref{sec:evaluation}).
 \end{itemize}

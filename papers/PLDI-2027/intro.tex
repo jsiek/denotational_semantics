@@ -36,16 +36,36 @@ A compiler is correct with respect to a semantics of its source and
 target languages, and the style of that semantics shapes the
 proof. \citet{Leroy:2009aa} proves CompCert correct with respect to
 small-step semantics, using simulations, and \citet{Kumar:2014aa}
-prove CakeML correct with respect to clocked interpreters
-(aka. functional big-step semantics \citet{Owens:2016aa}), using
-induction on evaluation. Denotational semantics offers a different
-recipe. The meaning of a program is a mathematical object, a compiler
+prove CakeML correct with respect to clocked interpreters (also called
+functional big-step semantics \citep{Owens:2016aa}), using induction
+on evaluation. Operational semantics are elementary, in that they use
+only mathematics familiar to undergraduates in computer science, but
+they are neither compositional nor extensional. A small-step semantics
+yields behavior as a by-product of transitions, and in a big-step
+semantics a closure contains syntax \citep{Kahn:1987aa}. Proofs about operational semantics therefore
+often need simulations \citep{Milner:1995aa} or logical relations
+\citep{Plotkin:1973fk,Statman:1985aa}, which grow daunting for
+realistic languages \citep{Ahmed:2009aa,Hur:2011aa}.
+
+Denotational semantics offers a different recipe. A denotational
+semantics is compositional, defined by structural recursion on syntax
+\citep{Winskel:1993uq}, and extensional, specifying only the
+observable behavior of programs \citep{Schmidt:2003aa}. A compiler
 pass is correct when the meaning of a program before the pass equals
-its meaning afterward, and the proof is by equational reasoning. Early
-compiler proofs followed this recipe
-\citep{Polak:1981aa,Clinger:1984aa}. We ask whether it extends to a
-compiler for a higher-order language, and how its proofs compare in
-size.
+its meaning afterward, and compositionality lets the proof proceed by
+structural induction and equational reasoning. Early compiler proofs
+followed this recipe \citep{Polak:1981aa,Clinger:1984aa}. The standard
+domain-theoretic models are not elementary, however, and their
+mechanizations are large \citep{Benton:2009ab,Dockins:2014aa}. Like every
+denotational semantics, the graph models of the $\lambda$-calculus
+\citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq,Coppo:1979aa,Barendregt:2013aa}
+are compositional and extensional, and they are also elementary,
+because a function denotes a set of finite input--output tables
+\citep{Plotkin:1993ab}. In our development, the infrastructure for the
+graph model takes 1,544 lines of Agda, against 7,834 for Scott domains
+(Table~\ref{tab:infra}). We ask whether denotational semantics, and
+graph models in particular, extend to a compiler for a higher-order
+language, and how the proofs compare in size with operational ones.
 
 However, the recipe runs into \emph{closure conversion}, the pass by
 which every compiler for a language with lexically scoped functions
@@ -96,10 +116,9 @@ that these combinations never contribute an answer.
 
 These observations lead to three research questions:
 \begin{description}
-\item[RQ1] Can a denotational semantics prove a compiler correct for a
-  Turing-complete language with lexically scoped functions, through
-  closure conversion, both preserving and reflecting the meaning of
-  programs?
+\item[RQ1] Can we prove a compiler for a Turing-complete language
+  correct through closure conversion, in both directions, with respect
+  to a denotational semantics?
 \item[RQ2] How do the sizes of mechanized correctness proofs of one
   compiler compare across five semantic styles, two denotational and
   three operational, pass by pass and overall?
@@ -109,8 +128,7 @@ These observations lead to three research questions:
 
 We answer RQ1 affirmatively, in two models. Our first model is a graph
 model, in which a program denotes a set of inductively defined
-\emph{graph elements}
-\citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq}. Each element is a
+\emph{graph elements}. Each element is a
 finite piece of evidence about the program's behavior, the meaning of
 a function is a set of input--output entries, and a program that
 diverges produces no evidence, so its meaning is the empty set. For
@@ -133,12 +151,10 @@ compiler. Its source language is \fpc, the call-by-value
 $\lambda$-calculus with sums, products, and iso-recursive types of
 \citet{Plotkin:1985aa}, extended with integers. Recursive types let us
 write the call-by-value fixed-point combinator, so \fpc\ has general
-recursion and admits divergence. The compiler first applies a
-source-to-source optimizer modeled on the cp0 pass of Chez Scheme
-\citep{Waddell:1997fk}, then performs closure conversion in three
-passes, and finally uses four passes to remove complex operands, lift
-locals, make control flow explicit, and select instructions of
-\instr, a typed low-level intermediate language. Every language in
+recursion and admits divergence. The compiler applies a source optimizer modeled on the cp0
+pass of Chez Scheme \citep{Waddell:1997fk}, three closure-conversion
+passes, and four back-end passes that produce \instr, a typed
+low-level intermediate language. Every language in
 the compiler has a semantics in each model. For seven of the eight
 passes, the proof in either model is an equation between the meanings
 before and after the pass. The exception is the pass that separates
@@ -149,16 +165,16 @@ whole-compiler theorem says that the source and target denotations
 contain the same constants and are nonempty together. We also prove
 that the denotational semantics of \fpc\ and of \instr\ are adequate
 with respect to their interpreters, which makes our theorem equivalent
-to the usual operational one. We mechanize all of these results in
-Agda.
+to the usual operational one.
 
 To answer RQ2 and RQ3, we compare the two denotational proofs with
 proofs of correctness of the same compiler with respect to three
 operational semantics, each proved with the technique usual for its
 style: clocked interpreters with relations on values, abstract
 machines with simulations, and reduction semantics with simulations.
-Earlier comparisons of semantic styles for compiler proofs cover a
-single phase or pass \citep{Owens:2016aa,Kahn:2025aa}; ours is the
+Earlier work compares or combines semantic styles for a single phase
+or pass of a compiler \citep{Owens:2016aa,Kahn:2025aa,Knothe:2026aa};
+ours is the
 first on a whole compiler for a higher-order language. We leave other
 styles to future work, among them synthetic domain theory
 \citep{Rosolini:1986aa,Hyland:1991aa} and its guarded variant
@@ -192,11 +208,8 @@ The runs correspond closely for \pass{split closure}, which is why its
 operational proofs are small, and differ more for \pass{simplify},
 which inlines functions. Without \pass{split closure}, the graph-model
 proof would be the smallest of the five. The Scott-domain proof is 1.4
-times as large as the graph-model proof. Much of the difference is in
-\pass{split closure}, where we must show that the stage relation is
-admissible and preserved by the maps between stages, and where the
-method of \citet{Pitts:1996aa} does not
-apply directly (Section~\ref{sec:evaluation}).
+times as large as the graph-model proof, and \pass{split closure} accounts for 40\% of the
+difference (Section~\ref{sec:evaluation}).
 
 Our contributions are:
 \input{contributions}
