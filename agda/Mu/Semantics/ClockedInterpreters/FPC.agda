@@ -1,6 +1,6 @@
 {-
 
-  A clocked interpreter for ISWIMμ (Mu/Language/ISWIM.agda), as the one
+  A clocked interpreter for FPC (Mu/Language/FPC.agda), as the one
   for ISWIMᵀ (Semantics/Interp/Typed/ISWIM.agda; see the design note in
   Semantics/Interp/Clock.agda): call by value, left to right, and only
   a call ticks the clock. Values and environments are typed
@@ -11,10 +11,10 @@
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.ISWIM where
+module Mu.Semantics.ClockedInterpreters.FPC where
 
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
 

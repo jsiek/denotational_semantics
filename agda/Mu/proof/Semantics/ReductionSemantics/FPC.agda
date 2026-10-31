@@ -1,7 +1,7 @@
 {-
 
-  The values of the ISWIMμ reduction semantics
-  (Mu/Semantics/ReductionSemantics/ISWIM.agda), which reduce to val, and the
+  The values of the FPC reduction semantics
+  (Mu/Semantics/ReductionSemantics/FPC.agda), which reduce to val, and the
   laws of its renaming and substitution, as for ISWIMᵀ
   (proof/Semantics/Reduction/Typed/ISWIM.agda): two traversals fuse
   into one (fuse), and substitution by variables is the identity
@@ -10,11 +10,11 @@
 
 -}
 
-module Mu.proof.Semantics.ReductionSemantics.ISWIM where
+module Mu.proof.Semantics.ReductionSemantics.FPC where
 
-open import Mu.Semantics.ReductionSemantics.ISWIM public
+open import Mu.Semantics.ReductionSemantics.FPC public
 open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Observation using (Obs; o-error)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)

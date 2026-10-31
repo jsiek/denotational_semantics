@@ -1,12 +1,12 @@
 {-
 
-  The ISWIMμ compiler in the graph model, observed through the
+  The FPC compiler in the graph model, observed through the
   machines, as proof/Adequacy/EndToEnd.agda for the typed pipeline: for
-  a closed ISWIMμ program M,
+  a closed FPC program M,
 
-    ISWIMμ machine  ⇔  ⟦ M ⟧ ρ₀                (Adequacy/AbstractMachines/ISWIM.agda)
-                    ⇔  ⟦ compile M ⟧ₜ       (Correctness/GraphModel/CompilerCorrect.agda)
-                    ⇔  X86μ machine             (Adequacy/AbstractMachines/X86.agda)
+    FPC machine  ⇔  ⟦ M ⟧ ρ₀             (Adequacy/AbstractMachines/FPC.agda)
+                 ⇔  ⟦ compile M ⟧ₜ       (Correctness/GraphModel/CompilerCorrect.agda)
+                 ⇔  X86μ machine         (Adequacy/AbstractMachines/X86.agda)
 
   for constants and for convergence. Since neither machine stops with
   an error (proof/Semantics/AbstractMachines/NoError.agda), a machine that does not
@@ -28,17 +28,17 @@ module Mu.proof.Adequacy.AbstractMachines.EndToEnd where
 open import Framework.Primitives using (base-rep; Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import Mu.Language.Type using (base)
-open import Mu.Language.ISWIM using (Tm)
+open import Mu.Language.FPC using (Tm)
 open import Mu.Compiler.Pipeline using (compile)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Machine; Terminates; Diverges; Star; Final; start; never-final-diverges; diverges-not-terminates)
-import Mu.Semantics.AbstractMachines.ISWIM as I
+import Mu.Semantics.AbstractMachines.FPC as I
 import Mu.Semantics.AbstractMachines.X86 as X
-import Mu.proof.Adequacy.AbstractMachines.ISWIM as AI
+import Mu.proof.Adequacy.AbstractMachines.FPC as AI
 import Mu.proof.Adequacy.AbstractMachines.X86 as AX
 open import Mu.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
-open import Mu.proof.Semantics.AbstractMachines.NoError using () renaming (iswim-no-error to iswim-ok; x86-no-error to x86-ok)
+open import Mu.proof.Semantics.AbstractMachines.NoError using () renaming (fpc-no-error to fpc-ok; x86-no-error to x86-ok)
 
 open import Data.Empty using (⊥-elim)
 open import Data.Integer using (ℤ)
@@ -73,4 +73,4 @@ end-to-end-x86-diverges : ∀ (M : Tm [] (base Int))
   → Diverges (I.sem M) ⇔ Diverges (X.sem (compile M))
 end-to-end-x86-diverges M =
   ⟨ (λ div → diverges _ (x86-ok (compile M)) λ c → not-converges div (proj₂ (end-to-end-x86-converges M) c))
-  , (λ div → diverges _ (iswim-ok M) λ c → not-converges div (proj₁ (end-to-end-x86-converges M) c)) ⟩
+  , (λ div → diverges _ (fpc-ok M) λ c → not-converges div (proj₁ (end-to-end-x86-converges M) c)) ⟩

@@ -1,14 +1,14 @@
 # Artifact: compiler correctness in a graph model, and in four other styles
 
 This artifact is the Agda mechanization behind the paper. It defines the
-paper's compiler, from ISWIMμ to x86μ in ten passes, and proves it
+paper's compiler, from FPC to x86μ in ten passes, and proves it
 correct in five semantic styles: the graph model (the paper's main
 result), Scott domains, abstract machines, clocked interpreters and
 reduction semantics. It also proves the graph model adequate for the
-clocked interpreters of ISWIMμ and x86μ, and it measures the sizes of
+clocked interpreters of FPC and x86μ, and it measures the sizes of
 the five proofs (Tables 1 and 2 of the paper).
 
-    ISWIMμ --simplify--> ISWIMμ --capture--> Clos --prune--> Clos
+    FPC --simplify--> FPC --capture--> Clos --prune--> Clos
            --concretize--> EnvClos --split--> PairClos
            --hoist--> GlobalFun --rco--> Mon --lift locals--> Imp
            --explicate control--> CFG --select instructions--> x86μ
@@ -19,7 +19,7 @@ Every file is checked with `--safe`, and no file postulates anything.
 
 | Path | What |
 |---|---|
-| `agda/Mu/` | ISWIMμ: its languages, passes, semantics in the five styles, the theorem statements (`agda/Mu/Theorems/`) and the proofs (`agda/Mu/proof/`). [`agda/Mu/README.md`](agda/Mu/README.md) is the road map from the paper to the code. |
+| `agda/Mu/` | FPC: its languages, passes, semantics in the five styles, the theorem statements (`agda/Mu/Theorems/`) and the proofs (`agda/Mu/proof/`). [`agda/Mu/README.md`](agda/Mu/README.md) is the road map from the paper to the code. |
 | `agda/Framework/`, `agda/proof/Framework/` | the language-independent infrastructure: abstract binding trees, the graph model (values, operators, continuity), the Scott domains on TypeTopology, the small-step, reduction and clocked frameworks |
 | `agda/Language/`, `agda/Semantics/` | the primitives, the registers, the observations, and instances of the frameworks shared by the styles |
 | `agda/Mu/All.agda` | the root of `make check`: everything but the Scott domains |
@@ -96,7 +96,7 @@ definition, figure and appendix section).
 | Lemma 4.2 (Depth irrelevance and unfolding) | | `Mu/proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-depth-irrelevant`; `unfold`, `fold` |
 | Lemma 4.3 (Fundamental lemma) | | `Mu/proof/Correctness/GraphModel/SplitReflect.agda` | `split-reflect` |
 | Theorem 4.4 (Correctness of split closure) | `Mu/Theorems/GraphModel.agda` | `Mu/proof/Correctness/GraphModel/SplitCorrect.agda` (reflection: `SplitReflect.agda`; preservation: `SplitPreserve.agda`) | `split-correct-const`, `split-correct-nonempty` |
-| Theorem 4.5 (Adequacy) | `Mu/Theorems/Adequacy.agda` | `Mu/proof/Adequacy/ISWIM.agda`, `Mu/proof/Adequacy/X86.agda` | `iswim-const-iff`, `iswim-diverges-iff`, `x86-const-iff`, `x86-diverges-iff` |
+| Theorem 4.5 (Adequacy) | `Mu/Theorems/Adequacy.agda` | `Mu/proof/Adequacy/FPC.agda`, `Mu/proof/Adequacy/X86.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff` |
 | Theorems 4.1 and 4.5 together (§4.3) | `Mu/Theorems/Adequacy.agda` | `Mu/proof/Adequacy/EndToEnd.agda` | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
 | §4.2, "Which sides to relate": a finite source side fails | | `Mu/proof/Correctness/GraphModel/SplitDesignFiniteSource.agda` | `no-finite-source-ApproxLR′`, `finite-source′`, `no-finite-source` |
 | §4.2, "Which sides to relate": target sets of bounded depth | | `Mu/proof/Correctness/GraphModel/SplitDesignBoundedSets.agda` | `ApproxLRSet⇔` |
@@ -141,17 +141,17 @@ the proofs they re-export (`make tables` checks this). The surface is:
 * the theorem statements: `Mu/Theorems/{GraphModel,AbstractMachines,ClockedInterpreters,ReductionSemantics,ScottDomains,Adequacy}.agda`;
 * the languages and passes: `Mu/Language/*.agda`, `Mu/Compiler/*.agda`;
 * heterogeneous vectors: `Mu/Framework/AllUtil.agda`, `Mu/Framework/ReductionAll.agda`;
-* the graph model: `Mu/Semantics/GraphModel/{ISWIM,EnvClos,PairClos,Imp,CFG,X86,Ops,Closed}.agda`,
+* the graph model: `Mu/Semantics/GraphModel/{FPC,EnvClos,PairClos,Imp,CFG,X86,Ops,Closed}.agda`,
   `Framework/GraphModel/{Domain,SetsAsPredicates,Env,DOpSig,OpsBase,Ops}.agda`,
   `Semantics/Graph/Prim.agda`;
-* Scott domains: `Mu/Semantics/ScottDomains/{ISWIM,Imp,CFG,X86,Ops,Closed}.agda`,
+* Scott domains: `Mu/Semantics/ScottDomains/{FPC,Imp,CFG,X86,Ops,Closed}.agda`,
   `Framework/Scott/{Base,Sum,Lift,Functor,Solve,Domain,Ops,Semantics}.agda`,
   `Semantics/Scott/Prim.agda`;
-* abstract machines: `Mu/Semantics/AbstractMachines/{ISWIM,GlobalFun,Imp,X86,Values}.agda`,
+* abstract machines: `Mu/Semantics/AbstractMachines/{FPC,GlobalFun,Imp,X86,Values}.agda`,
   `Framework/Smallstep.agda`, `Semantics/CEK/Smallstep.agda`;
-* clocked interpreters: `Mu/Semantics/ClockedInterpreters/{ISWIM,GlobalFun,Imp,X86,Values}.agda`,
+* clocked interpreters: `Mu/Semantics/ClockedInterpreters/{FPC,GlobalFun,Imp,X86,Values}.agda`,
   `Framework/Clocked.agda`, `Semantics/Interp/Clock.agda`;
-* reduction semantics: `Mu/Semantics/ReductionSemantics/ISWIM.agda`,
+* reduction semantics: `Mu/Semantics/ReductionSemantics/FPC.agda`,
   `Framework/Reduction.agda`, `Semantics/Reduction/Smallstep.agda`
   (and the machine of x86μ, above);
 * shared: `Semantics/Observation.agda`, `Language/Prim.agda`,

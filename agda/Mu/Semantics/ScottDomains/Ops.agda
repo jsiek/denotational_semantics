@@ -1,6 +1,6 @@
 {-
 
-  What the languages of ISWIMμ from GlobalFunμ on share in Scott domains:
+  What the languages of FPC from GlobalFunμ on share in Scott domains:
   the tables of global definitions, as in the graph model
   (Mu/Semantics/GraphModel/Ops.agda).
 

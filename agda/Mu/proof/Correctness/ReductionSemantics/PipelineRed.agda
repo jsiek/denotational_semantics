@@ -1,13 +1,13 @@
 {-
 
-  The ISWIMμ compiler (Mu/Compiler/Pipeline.agda) is correct on
+  The FPC compiler (Mu/Compiler/Pipeline.agda) is correct on
   the reduction semantics, for closed programs: each pass is Equivalent
   (Mu/proof/Correctness/ReductionSemantics/*Red.agda) and equivalence composes,
   as for the typed pipeline (proof/Correctness/Reduction/PipelineRed.agda).
   Monμ runs as its embedding ⌜ P ⌝ₚ in GlobalFunμ; Impμ, CFGμ and X86μ have
   no binders and keep their machines, with the CEK column's proofs of
   explicate control and select instructions. A program may have any
-  type; for a main of type Int, ISWIMμ and X86μ stop with the same
+  type; for a main of type Int, FPC and X86μ stop with the same
   constant, or both diverge.
 
 -}
@@ -16,7 +16,7 @@ module Mu.proof.Correctness.ReductionSemantics.PipelineRed where
 
 open import Framework.Primitives using (Int)
 open import Mu.Language.Type using (base)
-open import Mu.Language.ISWIM using (Tm)
+open import Mu.Language.FPC using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
 open import Mu.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import Semantics.Observation using (Obs; o-const; _⇔_)
@@ -32,7 +32,7 @@ open import Mu.proof.Correctness.ReductionSemantics.RCORed using (rco-correct)
 open import Mu.proof.Correctness.ReductionSemantics.LiftLocalsRed using (lift-locals-correct)
 open import Mu.proof.Correctness.AbstractMachines.ExplicateSim using (explicate-correct)
 open import Mu.proof.Correctness.AbstractMachines.SelectSim using (select-correct)
-import Mu.Semantics.ReductionSemantics.ISWIM as S
+import Mu.Semantics.ReductionSemantics.FPC as S
 import Mu.Semantics.ReductionSemantics.GlobalFun as GlobalFunᵣ
 import Mu.Semantics.AbstractMachines.Imp as Impμₘ
 import Mu.Semantics.AbstractMachines.CFG as CFGμₘ

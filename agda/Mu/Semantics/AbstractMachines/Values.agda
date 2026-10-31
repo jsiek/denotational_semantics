@@ -1,6 +1,6 @@
 {-
 
-  The values of the CEK machines of ISWIMμ and Closμ–PairClosμ
+  The values of the CEK machines of FPC and Closμ–PairClosμ
   (Mu/Semantics/AbstractMachines/), indexed by their type, as those of the clocked
   interpreters (Mu/Semantics/ClockedInterpreters/Values.agda); C Δ A B is what the
   code of a closure with free variables of types Δ, an argument of type

@@ -1,14 +1,14 @@
 {-
 
-  The passes of the ISWIMμ compiler, composed: from ISWIMμ to X86μ,
+  The passes of the FPC compiler, composed: from FPC to X86μ,
 
-    ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
+    FPC --simplify--> FPC --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --split--> PairClosμ --hoist--> GlobalFunμ --rco--> Monμ
            --lift locals--> Impμ --explicate control--> CFGμ
            --select instructions--> X86μ
 
   as the typed pipeline's (Compiler/Pipeline.agda), without cast insertion:
-  enclose (ISWIMμ → EnvClosμ), the closure-conversion pass, is made of
+  enclose (FPC → EnvClosμ), the closure-conversion pass, is made of
   three steps, enclose = concretize ∘ prune ∘ capture. compile is the
   whole compiler, into X86μ; its prefixes compile-to-PairClos,
   compile-to-GlobalFun, compile-to-Mon, compile-to-Imp and compile-to-CFG
@@ -20,7 +20,7 @@
 module Mu.Compiler.Pipeline where
 
 open import Mu.Language.Type using (Type)
-import Mu.Language.ISWIM as ISWIMμ
+import Mu.Language.FPC as FPC
 import Mu.Language.EnvClos as EnvClosμ
 import Mu.Language.PairClos as PairClosμ
 import Mu.Language.GlobalFun as GlobalFunμ
@@ -41,23 +41,23 @@ open import Mu.Compiler.Select using (select)
 
 open import Data.List using ([])
 
-enclose : ∀ {A : Type} → ISWIMμ.Tm [] A → EnvClosμ.Tm [] A
+enclose : ∀ {A : Type} → FPC.Tm [] A → EnvClosμ.Tm [] A
 enclose M = concretize-program (prune-program (capture M))
 
-compile-to-PairClos : ∀ {A : Type} → ISWIMμ.Tm [] A → PairClosμ.Tm [] A
+compile-to-PairClos : ∀ {A : Type} → FPC.Tm [] A → PairClosμ.Tm [] A
 compile-to-PairClos M = split-program (enclose (simplify M))
 
-compile-to-GlobalFun : ∀ {A : Type} → ISWIMμ.Tm [] A → GlobalFunμ.Program A
+compile-to-GlobalFun : ∀ {A : Type} → FPC.Tm [] A → GlobalFunμ.Program A
 compile-to-GlobalFun M = hoist (compile-to-PairClos M)
 
-compile-to-Mon : ∀ {A : Type} → ISWIMμ.Tm [] A → Monμ.Program A
+compile-to-Mon : ∀ {A : Type} → FPC.Tm [] A → Monμ.Program A
 compile-to-Mon M = rco-program (compile-to-GlobalFun M)
 
-compile-to-Imp : ∀ {A : Type} → ISWIMμ.Tm [] A → Impμ.Program A
+compile-to-Imp : ∀ {A : Type} → FPC.Tm [] A → Impμ.Program A
 compile-to-Imp M = lift-program (compile-to-Mon M)
 
-compile-to-CFG : ∀ {A : Type} → ISWIMμ.Tm [] A → CFGμ.Program A
+compile-to-CFG : ∀ {A : Type} → FPC.Tm [] A → CFGμ.Program A
 compile-to-CFG M = explicate (compile-to-Imp M)
 
-compile : ∀ {A : Type} → ISWIMμ.Tm [] A → X86μ.Program A
+compile : ∀ {A : Type} → FPC.Tm [] A → X86μ.Program A
 compile M = select (compile-to-CFG M)

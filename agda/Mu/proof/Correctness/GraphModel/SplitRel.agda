@@ -3,7 +3,7 @@
   The approximant logical relation, for the backward (reflect) direction
   of split (EnvClosμ → PairClosμ) in the graph model: that of typed split
   (proof/Correctness/Graph/SplitRel.agda) without its clause for
-  project (fun-obs), which ISWIMμ does not have. The relation itself and
+  project (fun-obs), which FPC does not have. The relation itself and
   Lemma 4.2 are in ApproxLR.agda (re-exported here); this module adds the
   call of a closure (_⊙_), the union of batches, and Approx, the form of
   the fundamental lemma.

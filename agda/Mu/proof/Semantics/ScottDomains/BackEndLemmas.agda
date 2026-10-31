@@ -1,6 +1,6 @@
 {-
 
-  Scott domains: lemmas for the proofs of the passes of ISWIMμ from
+  Scott domains: lemmas for the proofs of the passes of FPC from
   hoist on (hoist, remove complex operands, lift locals,
   explicate control, select instructions,
   Mu/proof/Correctness/ScottDomains/{Hoist,RCO,LiftLocals,Explicate,Select}Correct.agda).

@@ -8,7 +8,7 @@
   of the GlobalFunμ values (Mu/proof/Adequacy/GlobalFunValues.agda), code f
   being related to Λ X. Λ Y. w when a call of definition f on values
   related to X and Y returns a value related to w (Run). "Returns" is
-  Stable, as for the ISWIMμ interpreter (Mu/proof/Adequacy/LogRel.agda):
+  Stable, as for the FPC interpreter (Mu/proof/Adequacy/LogRel.agda):
   the results of a call and of the rest of the caller compose by
   st-bind, and a call returns one value by stable-unique. The
   fundamental lemma (adequate) is by induction on the sequence, given

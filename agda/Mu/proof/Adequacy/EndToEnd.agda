@@ -1,11 +1,11 @@
 {-
 
-  The ISWIMμ compiler in the graph model, observed through the clocked
-  interpreters: for a closed ISWIMμ program M,
+  The FPC compiler in the graph model, observed through the clocked
+  interpreters: for a closed FPC program M,
 
-    ISWIMμ interpreter  ⇔  ⟦ M ⟧ ρ₀                (Adequacy/ISWIM.agda)
-                        ⇔  ⟦ compile M ⟧ₜ       (Correctness/GraphModel/CompilerCorrect.agda)
-                        ⇔  X86μ interpreter         (Adequacy/X86.agda)
+    FPC interpreter  ⇔  ⟦ M ⟧ ρ₀             (Adequacy/FPC.agda)
+                     ⇔  ⟦ compile M ⟧ₜ       (Correctness/GraphModel/CompilerCorrect.agda)
+                     ⇔  X86μ interpreter     (Adequacy/X86.agda)
 
   for constants, and for divergence through the emptiness of the
   denotations. Since both adequacy theorems give divergence directly
@@ -24,15 +24,15 @@ open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import Mu.Semantics.GraphModel.Closed using (ρ₀)
 open import Mu.Language.Type using (base)
-open import Mu.Language.ISWIM using (Tm)
-open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧)
+open import Mu.Language.FPC using (Tm)
+open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
 open import Mu.Compiler.Pipeline using (compile)
 open import Semantics.Observation using (o-const; _⇔_)
 open import proof.Semantics.Interp.Clock using (Terminates; Diverges)
-import Mu.Semantics.ClockedInterpreters.ISWIM as I
+import Mu.Semantics.ClockedInterpreters.FPC as I
 import Mu.Semantics.ClockedInterpreters.X86 as X
-import Mu.proof.Adequacy.ISWIM as AI
+import Mu.proof.Adequacy.FPC as AI
 import Mu.proof.Adequacy.X86 as AX
 open import Mu.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
 

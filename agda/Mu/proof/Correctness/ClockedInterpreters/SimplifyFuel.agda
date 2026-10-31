@@ -1,6 +1,6 @@
 {-
 
-  Correctness of the simplify pass (ISWIMμ → ISWIMμ) for the clocked
+  Correctness of the simplify pass (FPC → FPC) for the clocked
   interpreters, as for the untyped simplify
   (proof/Correctness/Interp/SimplifyFuel.agda; see the design note in
   Semantics/Interp/Clock.agda).
@@ -37,8 +37,8 @@ module Mu.proof.Correctness.ClockedInterpreters.SimplifyFuel where
 open import Framework.Primitives using (Int)
 import Language.Prim as Pr
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
-open import Mu.Language.ISWIMSubst using (ren; travs; varK)
+open import Mu.Language.FPC
+open import Mu.Language.FPCSubst using (ren; travs; varK)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import Mu.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; Facts; self; under; known-as; shift-info; shift-known; simp; simps;
@@ -46,7 +46,7 @@ open import Mu.proof.Compiler.SimplifyFacts as P
          values; component; branch; unfolded; int-of; prim-term; comp-inv; int-inv; branch-inl; branch-inr; unfold-inv)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.ISWIM as S
+import Mu.Semantics.ClockedInterpreters.FPC as S
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Empty using (⊥; ⊥-elim)

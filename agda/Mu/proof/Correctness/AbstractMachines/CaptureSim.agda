@@ -1,16 +1,16 @@
 {-
 
-  Correctness of capture (ISWIMμ → Closμ) by a forward simulation
+  Correctness of capture (FPC → Closμ) by a forward simulation
   between the typed machines, as for typed capture
   (proof/Correctness/CEK/CaptureSim.agda).
 
   The machines run in lock step, except that evaluating a function (one
-  ISWIMμ step) takes several Closμ steps: the closure evaluates the
+  FPC step) takes several Closμ steps: the closure evaluates the
   variables that it captures (capture-fvs), which collects exactly the
   environment, and then builds the closure.
 
   Values are related (_≈_, proof/Semantics/CEK/Rel.agda) when they
-  agree, except that an ISWIMμ closure of N and ρ is related to a Closμ
+  agree, except that an FPC closure of N and ρ is related to a Closμ
   closure of capture N whose captured values are related to ρ. Environments are related pointwise;
   continuations are related frame by frame. Neither machine stops with
   an error.
@@ -20,13 +20,13 @@
 module Mu.proof.Correctness.AbstractMachines.CaptureSim where
 
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 import Mu.Language.Clos as C2
 open import Mu.Compiler.Capture
 open import Mu.Framework.AllUtil using (All; []; _∷_; tab; lookup; _<><_; _<><ᵃ_; All₂; lookup₂; _<><₂_; tab-lookup₂)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-import Mu.Semantics.AbstractMachines.ISWIM as Src
+import Mu.Semantics.AbstractMachines.FPC as Src
 import Mu.Semantics.AbstractMachines.Clos as Tgt
 
 open import Data.List using (List; []; _∷_)
@@ -116,7 +116,7 @@ module _ {T : Type} (P : C2.Tm [] T) where
   sim (ret~ r (foldK k)) = steps₁ refl (ret~ (fold≈ r) k)
   sim (ret~ (fold≈ r) (unfoldK k)) = steps₁ refl (ret~ r k)
 
-{- The end theorem: for every closed ISWIMμ program ----------------------------}
+{- The end theorem: for every closed FPC program ----------------------------}
 
 capture-correct : ∀ {A} (M : Tm [] A) → Equivalent (Src.sem M) (Tgt.sem (capture M))
 capture-correct M = equivalent (plus-simulation _~_ (eval~ [] halt) (sim (capture M)))

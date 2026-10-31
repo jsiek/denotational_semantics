@@ -1,11 +1,11 @@
 {-
 
-  ISWIMμ: a typed ISWIM with iso-recursive types (no recursion
-  construct, no errors) and its compiler to the typed assembly language
+  FPC, Plotkin's Fixed Point Calculus, with iso-recursive types (no
+  recursion construct, no errors) and its compiler to the typed assembly language
   X86μ, proved correct in five styles: the development of the PLDI 2027
   paper. Mu/README.md is the road map from the paper to this code.
 
-    ISWIMμ --simplify--> ISWIMμ --capture--> Closμ --prune--> Closμ
+    FPC --simplify--> FPC --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --split--> PairClosμ
            --hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
@@ -13,7 +13,7 @@
   The theorem statements are in Mu/Theorems/, one file per style, each
   theorem with its type written out and defined as the corresponding
   theorem of Mu/proof/; they and the definitions they use (modules
-  outside Mu/proof/) are ISWIMμ's audit surface.
+  outside Mu/proof/) are FPC's audit surface.
 
   * graph model: Mu/Theorems/GraphModel.agda (Theorems 4.1 and 4.4),
     proved in Mu/proof/Correctness/GraphModel/, with split by the
@@ -29,7 +29,7 @@
   * Scott domains: Mu/Theorems/ScottDomains.agda (Theorem F.4),
     Mu/proof/Correctness/ScottDomains/; it needs TypeTopology, so it is
     checked from agda/AllScott.agda (make check-scott), not from here;
-  * adequacy of the graph model for the clocked interpreters of ISWIMμ
+  * adequacy of the graph model for the clocked interpreters of FPC
     and X86μ: Mu/Theorems/Adequacy.agda (Theorem 4.5),
     Mu/proof/Adequacy/; an alternative, reported separately, against the
     abstract machines instead: Mu/proof/Adequacy/AbstractMachines/;
@@ -48,7 +48,7 @@
   Mu/Semantics/<style>/), and the module Mu.X to X. It reuses the
   frameworks of agda/Framework/ unchanged; Mu/Framework/AllUtil.agda
   (with Mu/proof/Framework/AllProp.agda) adds heterogeneous vectors
-  (All), which the lists of types of ISWIMμ's contexts and tuples need.
+  (All), which the lists of types of FPC's contexts and tuples need.
 
 -}
 

@@ -1,15 +1,15 @@
 {-
 
-  A reduction semantics for ISWIMμ (Mu/Language/ISWIM.agda), as for
+  A reduction semantics for FPC (Mu/Language/FPC.agda), as for
   ISWIMᵀ (Semantics/Reduction/Typed/ISWIM.agda): call by value, left to
   right, by substitution, on closed terms of any type, with the same
-  order of evaluation as the CEK machine (Mu/Semantics/AbstractMachines/ISWIM.agda).
+  order of evaluation as the CEK machine (Mu/Semantics/AbstractMachines/FPC.agda).
   A term of type A reduces to one of type A, so there is no case for an
   operand of the wrong kind or for a variable, and nothing is stuck:
   unfold (fold V) reduces to V.
 
   Renaming and substitution are one traversal with a kit
-  (Mu/Language/ISWIMSubst.agda, which the simplify pass shares).
+  (Mu/Language/FPCSubst.agda, which the simplify pass shares).
 
   The redexes take an equation between the operand's type and the
   expected one (C ≡ A ⇒ B): a term cannot be split at a concrete type,
@@ -19,13 +19,13 @@
 
 -}
 
-module Mu.Semantics.ReductionSemantics.ISWIM where
+module Mu.Semantics.ReductionSemantics.FPC where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
 open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
@@ -39,7 +39,7 @@ open import Relation.Nullary using (does)
 
 {- Renaming and substitution (shared with simplify) ------------------------}
 
-open import Mu.Language.ISWIMSubst public
+open import Mu.Language.FPCSubst public
 
 {- a closing substitution: values for the variables, the newest first -}
 infixr 5 _•_

@@ -1,6 +1,6 @@
 {-
 
-  Adequacy of the graph model for the ISWIMμ machine: every element of
+  Adequacy of the graph model for the FPC machine: every element of
   the denotation of a closed program is witnessed by a run of the
   machine.
 
@@ -31,10 +31,10 @@ open import proof.Semantics.Graph.Prim using () renaming (out to dout)
 import proof.Framework.GraphModel.Env as E
 open import proof.Framework.Runs using (module Runs)
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
-open import Mu.Semantics.GraphModel.ISWIM using (⟦_⟧; ⟦_⟧s)
+open import Mu.Language.FPC
+open import Mu.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos; All₂; _<><ᵃ_)
-open import Mu.Semantics.AbstractMachines.ISWIM
+open import Mu.Semantics.AbstractMachines.FPC
 open import Semantics.Observation using (o-const; Answer)
 
 open import Data.Bool using (true; false)

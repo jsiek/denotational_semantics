@@ -1,6 +1,6 @@
 {-
 
-  The types of ISWIMμ and of the typed intermediate languages of its
+  The types of FPC and of the typed intermediate languages of its
   compiler (agda/Mu/): base types (Base of Framework/Primitives.agda:
   Nat, Int, 𝔹, Unit, Void and Blame), functions, n-ary tuples, binary
   sums and iso-recursive types μX.A, with type variables as de Bruijn

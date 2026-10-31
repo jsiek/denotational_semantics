@@ -16,8 +16,8 @@ open import Mu.Compiler.Simplify public
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
-open import Mu.Language.ISWIMSubst using (Kit; Sub; trav; travs; ren)
+open import Mu.Language.FPC
+open import Mu.Language.FPCSubst using (Kit; Sub; trav; travs; ren)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
 
 open import Data.Bool using (Bool; true; false; _∧_; if_then_else_)

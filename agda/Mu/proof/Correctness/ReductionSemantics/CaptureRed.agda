@@ -1,12 +1,12 @@
 {-
 
-  Correctness of capture (ISWIMμ → Closμ) by a forward simulation
+  Correctness of capture (FPC → Closμ) by a forward simulation
   between their reduction semantics, in lock step, as for typed capture
   (proof/Correctness/Reduction/CaptureRed.agda).
 
   The relation on terms (_≈_) is a congruence, closed under substitution
   (≈-trav, for both kits), except for functions. Substitution goes into
-  an ISWIMμ function, but not into the code of a Closμ closure, only
+  an FPC function, but not into the code of a Closμ closure, only
   into the terms it captures. So a function lam (sub (exts σ) N) is
   related to a closure of code N' related to N that captures terms Fs
   related to σ. Applying them substitutes related values in N and N'
@@ -18,7 +18,7 @@
 module Mu.proof.Correctness.ReductionSemantics.CaptureRed where
 
 open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 import Mu.Language.Clos as C
 open import Mu.Compiler.Capture using (capture; encs)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; tab; All₂; lookup₂)
@@ -26,7 +26,7 @@ open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_; each-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Mu.proof.Semantics.ReductionSemantics.ISWIM as S
+import Mu.proof.Semantics.ReductionSemantics.FPC as S
 import Mu.proof.Semantics.ReductionSemantics.Clos as T
 open T using (Value; value-red; VV; var; val; vv-wk; vv-value)
 import Language.Prim as P

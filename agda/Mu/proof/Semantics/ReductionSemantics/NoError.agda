@@ -1,6 +1,6 @@
 {-
 
-  The reduction semantics of ISWIMμ (Mu/Semantics/ReductionSemantics/ISWIM.agda)
+  The reduction semantics of FPC (Mu/Semantics/ReductionSemantics/FPC.agda)
   never stops with an error. Its redexes have catch-all error cases (a
   term cannot be split at a concrete type, the design note's green
   slime, so they split it at a generic type with an equation), and obs
@@ -15,9 +15,9 @@
 module Mu.proof.Semantics.ReductionSemantics.NoError where
 
 open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.ISWIM
-open import Mu.Semantics.ReductionSemantics.ISWIM
-open import Mu.proof.Semantics.ReductionSemantics.ISWIM using (Value; lam; lit; tuple; inl; inr; fold)
+open import Mu.Language.FPC
+open import Mu.Semantics.ReductionSemantics.FPC
+open import Mu.proof.Semantics.ReductionSemantics.FPC using (Value; lam; lit; tuple; inl; inr; fold)
 open import Semantics.Observation using (Obs; o-error; Answer)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Mu.Framework.AllUtil using (All; []; _∷_)
@@ -69,8 +69,8 @@ value-answer (inl v) ()
 value-answer (inr v) ()
 value-answer (fold v) = value-answer v
 
-iswim-no-error : ∀ {A} (M : Tm [] A) → ¬ Terminates (sem M) o-error
-iswim-no-error M (s , _ , fin) = go (progress s) fin
+fpc-no-error : ∀ {A} (M : Tm [] A) → ¬ Terminates (sem M) o-error
+fpc-no-error M (s , _ , fin) = go (progress s) fin
   where
   go : Prog Value s (red s) → toNext (obs s) (red s) ≡ stop o-error → ⊥
   go (value v e) f = value-answer v (cong stopped (trans (sym (cong (toNext (obs s)) e)) f))

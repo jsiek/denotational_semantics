@@ -1,7 +1,8 @@
 {-
 
-  ISWIMμ: ISWIM, intrinsically typed, with iso-recursive types. The
-  source of the ISWIMμ compiler (agda/Mu/).
+  FPC (Plotkin's Fixed Point Calculus): a call-by-value λ-calculus,
+  intrinsically typed, with iso-recursive types. The
+  source of the FPC compiler (agda/Mu/).
 
   Tm Γ A is a term of type A in the context Γ (a list of closed types,
   Mu/Language/Type.agda). The constructs are ISWIM's, typed, with
@@ -18,7 +19,7 @@
 
 -}
 
-module Mu.Language.ISWIM where
+module Mu.Language.FPC where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)

@@ -1,17 +1,17 @@
 {-
 
-  Renaming and substitution of ISWIMμ (Mu/Language/ISWIM.agda): one
+  Renaming and substitution of FPC (Mu/Language/FPC.agda): one
   traversal with a kit (Framework/Syntax/Kit.agda), over contexts that
   are lists of types, as for Clos4ᵀ (Semantics/Reduction/Typed/Clos4.agda).
   The simplify pass (Mu/Compiler/Simplify.agda) renames, and the
-  reduction semantics (Mu/Semantics/ReductionSemantics/ISWIM.agda) substitutes.
+  reduction semantics (Mu/Semantics/ReductionSemantics/FPC.agda) substitutes.
 
 -}
 
-module Mu.Language.ISWIMSubst where
+module Mu.Language.FPCSubst where
 
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 
 open import Data.List using (_∷_)

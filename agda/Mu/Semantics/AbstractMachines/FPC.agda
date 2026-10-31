@@ -1,6 +1,6 @@
 {-
 
-  A CEK machine for ISWIMμ (Mu/Language/ISWIM.agda), with typed values,
+  A CEK machine for FPC (Mu/Language/FPC.agda), with typed values,
   environments and continuations: a state is well typed by construction,
   so the machine has no case for a value of the wrong kind or an unbound
   variable, and it never stops with an error. Call by value, left to
@@ -16,11 +16,11 @@
 
 -}
 
-module Mu.Semantics.AbstractMachines.ISWIM where
+module Mu.Semantics.AbstractMachines.FPC where
 
 open import Framework.Primitives using (Int)
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
+open import Mu.Language.FPC
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 

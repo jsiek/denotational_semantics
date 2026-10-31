@@ -1,7 +1,7 @@
 {-
 
   Congruences of the binders of the graph model, in the form the
-  correctness proofs of ISWIMμ's passes use them.
+  correctness proofs of FPC's passes use them.
 
   The congruences of Ops.agda compare the bodies F and F' of a binder on
   the finite sets mem V it binds, so Agda cannot infer F from F (mem V),

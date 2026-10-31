@@ -75,8 +75,9 @@ patches it, and checks the column against it and the standard library.
 
 ## Reproducing the PLDI 2027 paper
 
-The paper's compiler is ISWIMμ (`agda/Mu/`): a call-by-value
-λ-calculus with iso-recursive types compiled in ten passes to X86μ.
+The paper's compiler (`agda/Mu/`) compiles FPC, Plotkin's Fixed Point
+Calculus (a call-by-value λ-calculus with iso-recursive types), in ten
+passes to X86μ.
 
 * Graph model, abstract machines, clocked interpreters, reduction
   semantics, and adequacy: `make check` (Agda 2.8.0, standard library

@@ -1,6 +1,6 @@
 {-
 
-  Lemmas about the tables of ISWIMμ in the graph model
+  Lemmas about the tables of FPC in the graph model
   (Mu/Semantics/GraphModel/Ops.agda): a table is consistent when the meaning
   of each definition is, given a consistent table.
 

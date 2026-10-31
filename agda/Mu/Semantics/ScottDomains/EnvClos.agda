@@ -4,7 +4,7 @@
   in the graph model (Mu/Semantics/GraphModel/EnvClos.agda): a closure is its
   code, a closed function of the tuple of its free variables and of the
   argument (codeᶜ, Framework/Scott/Semantics.agda), applied to that
-  tuple; otherwise as ISWIMμ (Mu/Semantics/ScottDomains/ISWIM.agda).
+  tuple; otherwise as FPC (Mu/Semantics/ScottDomains/FPC.agda).
 
 -}
 

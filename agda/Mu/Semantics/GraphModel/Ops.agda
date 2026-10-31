@@ -1,9 +1,9 @@
 {-
 
-  What the languages of ISWIMμ from GlobalFunμ on share in the graph
+  What the languages of FPC from GlobalFunμ on share in the graph
   model: the tables of global definitions, as in
   Semantics/Graph/Typed/Ops.agda (which also has project, which
-  ISWIMμ does not have).
+  FPC does not have).
 
   A table gives each definition of a program (Σ ∋ s) its meaning. The
   definitions are given meaning newest first, each with the table of

@@ -1,6 +1,6 @@
 {-
 
-  The clocked interpreters of ISWIMμ and X86μ never err: a closed
+  The clocked interpreters of FPC and X86μ never err: a closed
   well-typed program only times out or returns a value, whose
   observation is an answer. The interpreters have no error case (their
   values are typed, so they take them apart with total functions), so
@@ -12,14 +12,14 @@
 module Mu.proof.Semantics.ClockedInterpreters.NoError where
 
 open import Mu.Language.Type
-open import Mu.Language.ISWIM using (Tm)
+open import Mu.Language.FPC using (Tm)
 open import Mu.Language.X86 using (DSig; sig; called; Program; program; body; Body; Blocks; _▷_; Seq; _∷_; retq; jmp; case;
   movq; subq; cmpq; sete; alloc; load; loadfst; loadsnd; callq)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-error; Answer)
 open import Semantics.Interp.Clock
 import Mu.Semantics.ClockedInterpreters.Values as Values
-import Mu.Semantics.ClockedInterpreters.ISWIM as I
+import Mu.Semantics.ClockedInterpreters.FPC as I
 import Mu.Semantics.ClockedInterpreters.GlobalFun as C5
 import Mu.Semantics.ClockedInterpreters.X86 as X
 
@@ -69,10 +69,10 @@ module Ans (C : Ctx → Type → Type → Set) where
   either-safe (inl v) hf hg = hf v
   either-safe (inr v) hf hg = hg v
 
-{- ISWIMμ ----------------------------------------------------------------------}
+{- FPC ----------------------------------------------------------------------}
 
 module _ where
-  open import Mu.Language.ISWIM
+  open import Mu.Language.FPC
   open I
   open Ans (λ Δ A B → Tm (A ∷ Δ) B)
 
@@ -103,8 +103,8 @@ module _ where
   call-safe zero f w = timeout
   call-safe (suc ck) (pack (code N) (tup ρ)) w = eval-safe ck (w ∷ ρ) N
 
-  iswim-no-error : ∀ {A} (M : Tm [] A) → ¬ Terminates (sem M) o-error
-  iswim-no-error M = no-error obs-answer λ ck → eval-safe ck [] M
+  fpc-no-error : ∀ {A} (M : Tm [] A) → ¬ Terminates (sem M) o-error
+  fpc-no-error M = no-error obs-answer λ ck → eval-safe ck [] M
 
 {- X86μ ------------------------------------------------------------------------}
 

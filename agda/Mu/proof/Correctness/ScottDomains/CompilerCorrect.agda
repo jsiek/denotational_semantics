@@ -1,8 +1,8 @@
 {-
 
-  The ISWIMμ compiler (Mu/Compiler/Pipeline.agda) in Scott domains, as
+  The FPC compiler (Mu/Compiler/Pipeline.agda) in Scott domains, as
   in the graph model (Mu/proof/Correctness/GraphModel/CompilerCorrect.agda):
-  for a closed ISWIMμ program, the compiled program, in PairClosμ, GlobalFunμ,
+  for a closed FPC program, the compiled program, in PairClosμ, GlobalFunμ,
   Monμ (by its embedding), Impμ, CFGμ and X86μ, produces the same
   constants as the source, and is defined exactly when the source is
   (Same). Every pass but split preserves the meaning exactly (＝); split
@@ -17,7 +17,7 @@ open import UF.Subsingletons
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Mu.Language.Type using (base)
-open import Mu.Language.ISWIM using (Tm)
+open import Mu.Language.FPC using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
 open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Capture using (capture)
@@ -34,7 +34,7 @@ module Mu.proof.Correctness.ScottDomains.CompilerCorrect
 open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe using (ρ₀)
-open import Mu.Semantics.ScottDomains.ISWIM pt fe pe using (⟦_⟧)
+open import Mu.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
 open import Mu.Semantics.ScottDomains.PairClos pt fe pe using () renaming (⟦_⟧ to ⟦_⟧₄)
 open import Mu.Semantics.ScottDomains.GlobalFun pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Mu.Semantics.ScottDomains.Imp pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)

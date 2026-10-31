@@ -1,7 +1,7 @@
 {-
 
-  Correctness of the simplify pass (ISWIMμ → ISWIMμ) in Scott domains
-  (Mu/Semantics/ScottDomains/ISWIM.agda), as in the graph model
+  Correctness of the simplify pass (FPC → FPC) in Scott domains
+  (Mu/Semantics/ScottDomains/FPC.agda), as in the graph model
   (Mu/proof/Correctness/GraphModel/SimplifyCorrect.agda), with equality of
   values in place of equality of sets.
 
@@ -45,8 +45,8 @@ open import UF.Base using (ap₂; happly)
 open import Framework.Primitives using (Int)
 import Language.Prim as Pr
 open import Mu.Language.Type
-open import Mu.Language.ISWIM
-open import Mu.Language.ISWIMSubst using (ren; exts; varK; travs)
+open import Mu.Language.FPC
+open import Mu.Language.FPCSubst using (ren; exts; varK; travs)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import Mu.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; val; fun; Facts; self; info; under; known-as; shift-info; shift-known;
@@ -78,7 +78,7 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe hiding (component; branch; case; unroll) renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD; out)
-open import Mu.Semantics.ScottDomains.ISWIM pt fe pe
+open import Mu.Semantics.ScottDomains.FPC pt fe pe
 
 {- Renaming ---------------------------------------------------------------------}
 
