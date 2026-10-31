@@ -41,7 +41,7 @@ checked against Table 1 and Table 2 of evaluation.tex on 2026-10-31.
 6. **Our two closure-conversion proofs.** Approximant logical relation
    (finite set of target elements vs. whole source denotation, recursion
    on depth; §4.2). Reynolds's stage relation on one side only (§4.3).
-7. **The whole compiler.** ISWIMμ, eight passes (simplify after cp0;
+7. **The whole compiler.** FPC (Plotkin; Fiore and Plotkin) with integers, eight passes (simplify after cp0;
    enclose, split closure, hoist; four back-end passes) to a typed
    low-level intermediate language (not "assembly"). Seven passes by an
    equation, split closure by the relation. Adequacy makes the theorem
