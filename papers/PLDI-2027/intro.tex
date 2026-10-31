@@ -8,9 +8,10 @@
 \section{Introduction}
 \label{sec:intro}
 
-This paper shows that denotational semantics can carry a proof of
-compiler correctness through closure conversion, and it compares that
-approach with operational ones, pass by pass. We give the first
+This paper proves a compiler, including closure conversion, correct
+with respect to denotational semantics, and it compares these proofs,
+pass by pass, with proofs of correctness with respect to operational
+semantics. We give the first
 denotational proofs that closure conversion both preserves and
 reflects the meaning of programs, divergence included, for a
 Turing-complete language, one proof in a graph model and one in Scott
@@ -32,12 +33,13 @@ semantics of every language, define every pass, and give the
 Scott-domain proof of \pass{split closure}.
 
 
-Every proof of compiler correctness rests on a semantics for each
-language in the compiler, and the style of semantics shapes the proof. CompCert \citep{Leroy:2009aa} gives its languages
-small-step semantics and proves each pass by a simulation. CakeML
-\citep{Kumar:2014aa} gives its languages clocked interpreters, which
-\citet{Owens:2016aa} call functional big-step semantics, and proves
-each pass by induction on evaluation. Denotational semantics offers a
+Compiler correctness is correctness with respect to a semantics of
+the source and target languages, and the style of that semantics
+shapes the proof. \citet{Leroy:2009aa} proves CompCert correct with
+respect to small-step semantics, using simulations, and
+\citet{Kumar:2014aa} prove CakeML correct with respect to clocked
+interpreters, which \citet{Owens:2016aa} call functional big-step
+semantics, using induction on evaluation. Denotational semantics offers a
 different recipe. The meaning of a program is a mathematical object, a
 compiler pass is correct when the meaning of a program before the pass
 equals its meaning afterward, and the proof is by equational
@@ -49,10 +51,10 @@ However, the recipe runs into \emph{closure conversion}, the pass by
 which every compiler for a language with lexically scoped functions
 replaces each function with a pair of code and the values of its free
 variables, and each call with code that takes the pair apart. Closure conversion turns functions into data, so its
-correctness proof must relate two representations of a function. Every
-denotational proof of compiler correctness to date stops short of
-closure conversion for a Turing-complete language, each in its own
-way. \citet{Chlipala:2007fk} proved
+correctness proof must relate two representations of a function. To date,
+every proof of compiler correctness with respect to a denotational
+semantics stops short of closure conversion for a Turing-complete
+language, each in its own way. \citet{Chlipala:2007fk} proved
 correct a compiler from the simply typed $\lambda$-calculus to
 assembly, including closure conversion, but every program of that
 language terminates, so there is no divergence to preserve.
@@ -150,8 +152,9 @@ to the usual operational one. We mechanize all of these results in
 Agda.
 
 To answer RQ2 and RQ3, we compare the two denotational proofs with
-three operational proofs of the same compiler, each against its own
-semantics: clocked interpreters with relations on values, abstract
+proofs of correctness of the same compiler with respect to three
+operational semantics, each proved with the technique usual for its
+style: clocked interpreters with relations on values, abstract
 machines with simulations, and reduction semantics with simulations.
 Earlier comparisons of semantic styles for compiler proofs cover a
 single phase or pass \citep{Owens:2016aa,Kahn:2025aa}; ours is the
@@ -171,7 +174,7 @@ checks of Coq and Agda reject such a definition. Guarded interaction trees
 theory.
 
 No style gives the smallest proof for every pass (RQ2). Counting each
-proof against its own semantics, the clocked interpreters give the
+proof together with the semantics of its languages, the clocked interpreters give the
 smallest proof, at 1,504 lines of Agda, and the graph model gives the
 second smallest, at 1,808, ahead of abstract machines, Scott domains, and
 reduction semantics. If we also count the language-independent
