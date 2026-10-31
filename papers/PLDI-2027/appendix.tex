@@ -143,7 +143,7 @@ likewise for $\mathsf{right}$. A guard makes a set strict in other sets:
 %% The first component of ok (Ok = Mono × Cont × consistency,
 %% proof/Framework/GraphModel/TypedOkBase.agda).
 \begin{lemma}[Monotonicity]\label{lem:monotone}
-Let $M$ be a term of \iswim, EnvClos, or PairClos. If
+Let $M$ be a term of \fpc, EnvClos, or PairClos. If
 $\rho(x) \subseteq \rho'(x)$ for every variable $x$, then
 $\den{M}\rho \subseteq \den{M}\rho'$.
 \end{lemma}
@@ -168,11 +168,11 @@ hold no variable. The meaning of a closed program $M$ is
 $\den{M} = \den{M}\rho_0$. The operators are those of
 Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 
-\subsection{The \iswim\ Language}
+\subsection{The \fpc\ Language}
 \agda{Mu/Language/ISWIM.agda, Mu/Semantics/GraphModel/ISWIM.agda}
 
-\iswim\ is the source language, and the first pass, \pass{simplify}, maps it to itself. A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of variable types.
-\defhead{Typing of \iswim}{\Gamma \vdash M : A}
+\fpc\ is the source language, and the first pass, \pass{simplify}, maps it to itself. A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of variable types.
+\defhead{Typing of \fpc}{\Gamma \vdash M : A}
 \[
 \begin{array}{@{}c@{}}
   \dfrac{x{:}A \in \Gamma}{\Gamma \vdash x : A}
@@ -208,7 +208,7 @@ Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 \end{array}
 \]
 The semantics follows Section~\ref{sec:graph-models}, with the operators of Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
-\defhead{Semantics of \iswim}{\den{M}\rho = D}
+\defhead{Semantics of \fpc}{\den{M}\rho = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
   \den{x}\rho & = & \rho(x) &
@@ -233,7 +233,7 @@ The semantics follows Section~\ref{sec:graph-models}, with the operators of Figu
 \subsection{The Clos and EnvClos Languages}
 \agda{Mu/Language/Clos.agda, Mu/Language/EnvClos.agda, Mu/Semantics/GraphModel/Clos.agda, Mu/Semantics/GraphModel/EnvClos.agda}
 
-Clos is the intermediate language between the steps of \pass{enclose}, whose closures bind a name for each captured value. EnvClos, the target of \pass{enclose} and the source of \pass{split closure}, stores the captured values of a closure in one tuple. Both type and interpret their other forms as \iswim\ does.
+Clos is the intermediate language between the steps of \pass{enclose}, whose closures bind a name for each captured value. EnvClos, the target of \pass{enclose} and the source of \pass{split closure}, stores the captured values of a closure in one tuple. Both type and interpret their other forms as \fpc\ does.
 A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
 its captured values.
 \defhead{Typing of closures}{\Gamma \vdash M : A}
@@ -269,7 +269,7 @@ curried meaning of its code to the tuple of the captured values
 \subsection{The PairClos Language}
 \agda{Mu/Language/PairClos.agda, Mu/Semantics/GraphModel/PairClos.agda}
 
-PairClos, the target of \pass{split closure}, replaces closures and application with code, pairs, and calls, and types and interprets its other forms as \iswim\ does.
+PairClos, the target of \pass{split closure}, replaces closures and application with code, pairs, and calls, and types and interprets its other forms as \fpc\ does.
 \defhead{Typing of PairClos}{\Gamma \vdash M : A}
 \[
   \dfrac{z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
@@ -469,7 +469,7 @@ frame and closes the open closure.
 \]
 An object $\kw{pair}(a_1, a_2)$ has type $A \rightarrow C$ when
 $a_1 : \kw{code}(\Delta; A \rightarrow C)$ and $a_2 : \kw{tup}(\Delta)$;
-tuples and injections of operands are typed as in \iswim. With
+tuples and injections of operands are typed as in \fpc. With
 $\psi = \langle \Theta; \Delta; O; F \rangle$ and operands typed in
 $\psi$, the instructions are typed by.
 \defhead{Typing of instructions}{\Sigma; n \vdash i : \psi \Rightarrow \psi'}
@@ -613,7 +613,7 @@ with one operand. The subsections follow the order of the pipeline; Sections~\re
 \end{array}
 \]
 
-\subsection{\pass{simplify} (\iswim\ to \iswim)}
+\subsection{\pass{simplify} (\fpc\ to \fpc)}
 \label{app:pass-simplify}
 \agda{Mu/Compiler/Simplify.agda (simplify)}
 
@@ -739,7 +739,7 @@ have no effect, and otherwise keeps the order of evaluation. An operand
 that is not a syntactic value is never substituted but stays bound by a
 $\kw{let}$.
 
-\subsection{\pass{enclose} (\iswim\ to EnvClos)}
+\subsection{\pass{enclose} (\fpc\ to EnvClos)}
 \label{app:pass-enclose}
 \agda{Mu/Compiler/\{Capture,Prune,Concretize,Pipeline\}.agda (capture, prune-program, concretize-program, enclose)}
 

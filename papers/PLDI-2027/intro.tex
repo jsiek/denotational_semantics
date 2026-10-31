@@ -82,9 +82,9 @@ approximation of one value to the whole other value
 
 We use these denotational closure-conversion results in two
 correctness proofs of an eight-pass compiler from a call-by-value
-$\lambda$-calculus with iso-recursive types, which we call \iswim, to
+$\lambda$-calculus with iso-recursive types, which we call \fpc, to
 a typed assembly language.  Recursive types let us write the
-call-by-value fixed-point combinator, so \iswim\ has general recursion
+call-by-value fixed-point combinator, so \fpc\ has general recursion
 and admits divergence. The compiler first applies a source-to-source
 optimizer modeled on the cp0 pass of Chez Scheme
 \citep{Waddell:1997fk}, then performs closure conversion in three
@@ -100,7 +100,7 @@ domains.
 
 The whole-compiler correctness theorem states that the source and
 target denotations contain the same constants and are nonempty
-together. We also prove that the denotational semantics of \iswim\ and
+together. We also prove that the denotational semantics of \fpc\ and
 of the assembly language are adequate with respect to the interpreters
 for those languages. Our correctness theorem is therefore equivalent
 to the usual operational one.  We mechanize all of these results in

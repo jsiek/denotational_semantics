@@ -1,4 +1,4 @@
-%% Appendix: the semantics of ISWIMμ and Instrμ in the other four styles, and
+%% Appendix: the semantics of FPC and Instrμ in the other four styles, and
 %% the correctness theorem of each style. Sources:
 %% agda/Mu/Theorems/{ScottDomains,AbstractMachines,ClockedInterpreters,ReductionSemantics}.agda (the
 %% statements); agda/Mu/Semantics/ClockedInterpreters/{Values,ISWIM,X86}.agda,
@@ -19,7 +19,7 @@ the whole compiler correct with respect to its own semantics of the
 languages. For the graph model, the semantics are those of
 Appendix~\ref{app:languages} and the theorem is
 Theorem~\ref{thm:compiler}. This appendix gives, for each of the other
-four styles, the semantics of the source language \iswim\ and the
+four styles, the semantics of the source language \fpc\ and the
 target language \instr, and the correctness theorem for the whole
 compiler, so that each theorem can be read on its own. The semantics
 of the intermediate languages follow the same pattern and are in the
@@ -36,7 +36,7 @@ observations. A value of type $A$ is one of
     \mid \kw{inl}\,v \mid \kw{inr}\,v \mid \kw{fold}\,v
 \]
 where a closure $\kw{pair}(v, w)$ pairs a code value $v$ with the tuple
-$w$ of its environment. In \iswim, the code of a closure is the body $N$
+$w$ of its environment. In \fpc, the code of a closure is the body $N$
 of a $\lambda$-abstraction and its environment is the environment
 $\rho$ of the $\lambda$-abstraction, a list of values; we write
 $\langle \lambda x.\,N, \rho\rangle$ for $\kw{pair}(\kw{code}\,N,
@@ -69,8 +69,8 @@ $\kw{inr}\,\kw{tup}()$ otherwise.
 A machine is a set of states, a start state, and a step function that
 maps each state $\varsigma$ either to a next state, written $\varsigma \longrightarrow \varsigma'$, or to a final observation $o$, written $\varsigma \longrightarrow \mathsf{stop}(o)$. A machine \emph{terminates with} $o$ when a sequence of steps leads from the start state to a state $\varsigma$ with $\varsigma \longrightarrow \mathsf{stop}(o)$, and it \emph{diverges} when
 for every $n$ there is a sequence of $n$ steps from the start state. We use the same notation for each machine; the CEK
-machines of \iswim\ and \instr\ (Appendix~\ref{app:machines}) and
-the reduction semantics of \iswim\ (Appendix~\ref{app:reduction})
+machines of \fpc\ and \instr\ (Appendix~\ref{app:machines}) and
+the reduction semantics of \fpc\ (Appendix~\ref{app:reduction})
 each define their own $\longrightarrow$ and $\longrightarrow
 \mathsf{stop}$.
 
@@ -102,13 +102,13 @@ equivalent.
 \label{app:interp}
 \agda{Mu/Semantics/ClockedInterpreters/ISWIM.agda, Mu/Semantics/ClockedInterpreters/X86.agda}
 
-\paragraph{Interpreter for \iswim}
+\paragraph{Interpreter for \fpc}
 
 The interpreter $\mathit{eval}_k(\rho, M)$ evaluates a term $M$ in an
 environment $\rho$ of values at clock $k$. The clock ticks at each call
 of the interpreted program.
 
-\defhead{The interpreter of \iswim}{\mathit{eval}_k(\rho, M) = e \qquad \mathit{call}_k(f, w) = e}
+\defhead{The interpreter of \fpc}{\mathit{eval}_k(\rho, M) = e \qquad \mathit{call}_k(f, w) = e}
 \begin{align*}
   \mathit{eval}_k(\rho, x) &= \mathsf{ret}\,\rho(x) \\
   \mathit{eval}_k(\rho, \lambda x.\,N) &= \mathsf{ret}\,\langle \lambda x.\,N, \rho\rangle \\
@@ -194,16 +194,16 @@ empty frame, and nothing else set. The interpreter of a program is $k
 blocks $B$, where $m_0$ has an empty frame and nothing set.
 
 \begin{theorem}[Correctness, clocked interpreters]\label{thm:interp}
-Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the interpreter of \iswim\ on $M$ terminates with $n$ if and only if the interpreter of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two interpreters are equivalent.
+Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the interpreter of \fpc\ on $M$ terminates with $n$ if and only if the interpreter of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two interpreters are equivalent.
 \end{theorem}
 
 \subsection{Abstract Machines}
 \label{app:machines}
 \agda{Mu/Semantics/AbstractMachines/ISWIM.agda, Mu/Semantics/AbstractMachines/X86.agda}
 
-\paragraph{Machine for \iswim}
+\paragraph{Machine for \fpc}
 
-A state of the CEK machine of \iswim\ either evaluates a term $M$ in an environment $\rho$ with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or returns a value $v$ to a continuation, $\mathit{ret}(v, \kappa)$. A continuation is a stack of frames, and each frame holds the work that remains after a subterm returns its value; for example, $\mathit{appL}(M, \rho, \kappa)$ holds the argument $M$ that the machine evaluates next.
+A state of the CEK machine of \fpc\ either evaluates a term $M$ in an environment $\rho$ with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or returns a value $v$ to a continuation, $\mathit{ret}(v, \kappa)$. A continuation is a stack of frames, and each frame holds the work that remains after a subterm returns its value; for example, $\mathit{appL}(M, \rho, \kappa)$ holds the argument $M$ that the machine evaluates next.
 \defhead{States and continuations}{\varsigma \qquad \kappa}
 \begin{align*}
   \varsigma &::= \mathit{eval}(M, \rho, \kappa) \mid \mathit{ret}(v, \kappa) \\
@@ -214,7 +214,7 @@ A state of the CEK machine of \iswim\ either evaluates a term $M$ in an environm
     \mid \mathit{primR}_p(n, \kappa) \\
  &\mid \mathit{letK}(x.\,N, \rho, \kappa) \mid \mathit{foldK}(\kappa) \mid \mathit{unfoldK}(\kappa)
 \end{align*}
-\defhead{Steps of the CEK machine of \iswim}{\varsigma \longrightarrow \varsigma'}
+\defhead{Steps of the CEK machine of \fpc}{\varsigma \longrightarrow \varsigma'}
 \begin{align*}
   \mathit{eval}(x, \rho, \kappa) &\longrightarrow \mathit{ret}(\rho(x), \kappa) \\
   \mathit{eval}(\lambda x.\,N, \rho, \kappa) &\longrightarrow \mathit{ret}(\langle \lambda x.\,N, \rho\rangle, \kappa) \\
@@ -241,7 +241,7 @@ A state of the CEK machine of \iswim\ either evaluates a term $M$ in an environm
   \mathit{ret}(v, \mathit{letK}(x.\,N, \rho, \kappa)) &\longrightarrow \mathit{eval}(N, \rho[x{:=}v], \kappa) \\
   \mathit{ret}(\kw{fold}\,v, \mathit{unfoldK}(\kappa)) &\longrightarrow \mathit{ret}(v, \kappa)
 \end{align*}
-\defhead{Final observation of the CEK machine of \iswim}{\varsigma \longrightarrow \mathsf{stop}(o)}
+\defhead{Final observation of the CEK machine of \fpc}{\varsigma \longrightarrow \mathsf{stop}(o)}
 \[
   \mathit{ret}(v, \mathit{halt}) \longrightarrow \mathsf{stop}(\mathit{obs}(v))
 \]
@@ -277,14 +277,14 @@ The machine of a program starts in $\mathit{run}(s, B, \mathit{halt},
 m_0)$ for the main function body $s$ with blocks $B$.
 
 \begin{theorem}[Correctness, abstract machines]\label{thm:machines}
-Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the machine of \iswim\ on $M$ terminates with $n$ if and only if the machine of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two machines are equivalent.
+Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the machine of \fpc\ on $M$ terminates with $n$ if and only if the machine of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two machines are equivalent.
 \end{theorem}
 
 \subsection{Reduction Semantics}
 \label{app:reduction}
 \agda{Mu/Semantics/ReductionSemantics/ISWIM.agda, Framework/Reduction.agda}
 
-The reduction semantics of \iswim\ rewrites closed terms, by
+The reduction semantics of \fpc\ rewrites closed terms, by
 substitution, call by value and left to right. The values are
 \[
   V, W ::= \lambda x.\,N \mid c \mid \kw{tuple}\,(V_1, \ldots, V_n) \mid \kw{inl}\,V
@@ -347,7 +347,7 @@ Appendix~\ref{app:machines} for them, and shares the proofs of
 abstract-machine development.
 
 \begin{theorem}[Correctness, reduction semantics]\label{thm:reduction}
-Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every integer $n$, the reduction semantics of \iswim\ on $M$ terminates with $n$ if and only if the machine of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two are equivalent.
+Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the reduction semantics of \fpc\ on $M$ terminates with $n$ if and only if the machine of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two are equivalent.
 \end{theorem}
 
 \subsection{Scott Domains}
@@ -414,9 +414,9 @@ An environment maps variables to values, and the environment $\rho_0$
 of a closed program maps every variable to the empty tuple
 $\langle\rangle$.
 
-\paragraph{Semantics of \iswim}
+\paragraph{Semantics of \fpc}
 
-The semantics of \iswim\ has the equations of the graph-model semantics
+The semantics of \fpc\ has the equations of the graph-model semantics
 (Appendix~\ref{app:languages}), with the operators of $\mathbb{D}$:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
@@ -452,7 +452,7 @@ $\{\langle\rangle\}$ as the content of an unset register and an unset
 flag. A sequence means a continuous function of the frame, the
 registers, and the flag.
 
-\begin{theorem}[Correctness, Scott domains]\label{thm:scott} Assume propositional truncation, function extensionality, and propositional extensionality. Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every constant $c$, $\den{M}\rho_0 = \up{(c, ())}$ if and only if $\den{\pass{compile}(M)} = \up{(c, ())}$.
+\begin{theorem}[Correctness, Scott domains]\label{thm:scott} Assume propositional truncation, function extensionality, and propositional extensionality. Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every constant $c$, $\den{M}\rho_0 = \up{(c, ())}$ if and only if $\den{\pass{compile}(M)} = \up{(c, ())}$.
 Moreover, $\den{M}\rho_0$ is defined if and only if
 $\den{\pass{compile}(M)}$ is defined. More generally, for every closed
 term $M$, the same holds.

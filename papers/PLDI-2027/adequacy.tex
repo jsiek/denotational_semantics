@@ -6,11 +6,11 @@
 \label{sec:adequacy}
 
 Theorem~\ref{thm:compiler} speaks of denotations. To
-connect it to running code, we prove that the graph-model semantics of \iswim\ and \instr\ are adequate for the clocked interpreters of Section~\ref{sec:evaluation} (Appendix~\ref{app:interp}).
+connect it to running code, we prove that the graph-model semantics of \fpc\ and \instr\ are adequate for the clocked interpreters of Section~\ref{sec:evaluation} (Appendix~\ref{app:interp}).
 
 \begin{theorem}[Adequacy]\label{thm:adequacy}
-Let $M$ be a closed term of \iswim. For every constant $c$,
-$c \in \den{M}$ if and only if the interpreter of \iswim\ terminates on
+Let $M$ be a closed term of \fpc. For every constant $c$,
+$c \in \den{M}$ if and only if the interpreter of \fpc\ terminates on
 $M$ with $c$, and $\den{M}$ is empty if and only if the interpreter
 diverges on $M$, that is, times out at every clock. The same holds
 for \instr\ and $\pass{compile}(M)$.
@@ -25,5 +25,5 @@ earlier adequacy proofs for graph and filter models
 \citep{Siek:2017ab,Wadler:2020aa}. Together with
 Theorem~\ref{thm:compiler}, Theorem~\ref{thm:adequacy} gives the
 theorem that the operational proofs state, namely that for a program
-of integer type the interpreters of \iswim\ and \instr\ terminate with
+of integer type the interpreters of \fpc\ and \instr\ terminate with
 the same integer or both diverge. The adequacy proofs are 1,529 lines of Agda; Section~\ref{sec:evaluation} explains why we report them separately.

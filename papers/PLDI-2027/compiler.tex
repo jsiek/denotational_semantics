@@ -12,8 +12,8 @@
 \small
 \begin{tikzpicture}[x=3.6cm, y=1.3cm, every node/.style={inner sep=2pt},
     lbl/.style={font=\scriptsize}, ->, >=stealth]
-  \node (s0) at (0,0)  {\iswim};
-  \node (s1) at (1,0)  {\iswim};
+  \node (s0) at (0,0)  {\fpc};
+  \node (s1) at (1,0)  {\fpc};
   \node (c3) at (2,0)  {EnvClos};
   \node (c4) at (2,-1) {PairClos};
   \node (c5) at (1,-1) {GlobalFun};
@@ -47,7 +47,7 @@
 \text{Types} & A, C & ::= & B \mid A \rightarrow C \mid \kw{tup}(A_1, \ldots, A_n)
   \mid A + C \mid \mu X.\, A \mid X \mid \kw{code}(\Delta; A \rightarrow C)\\
  & \Delta & ::= & A_1, \ldots, A_n\\[3pt]
-\iswim & K, L, M, N & ::= & x \mid \lambda x.\, N \mid L\;M \mid c
+\fpc & K, L, M, N & ::= & x \mid \lambda x.\, N \mid L\;M \mid c
   \mid \kw{tuple}\;\vec{M} \mid \kw{get}_i\,M \mid \kw{inl}\;M \mid \kw{inr}\;M
   \mid \kw{case}\;L\;(x.\,M)\;(y.\,N)\\
  & & \mid & \kw{prim}_p\;L\;M \mid \kw{let}\;x = M\;\kw{in}\;N
@@ -89,15 +89,16 @@
 \label{fig:grammars}
 \end{figure}
 
-Our compiler translates \iswim, a call-by-value $\lambda$-calculus
-with recursive types, to \instr, a typed low-level intermediate language, in eight
+Our compiler translates \fpc, the call-by-value $\lambda$-calculus
+with sums, products, and iso-recursive types of \citet{Plotkin:1985aa}
+and \citet{Fiore:1994aa}, extended with integers, to \instr, a typed low-level intermediate language, in eight
 passes through six intermediate languages. Figure~\ref{fig:pipeline} shows the passes and languages, which this section defines and Section~\ref{sec:compiler-proof} proves correct.
 Figure~\ref{fig:grammars} presents the grammars of all the languages, and Appendix~\ref{app:types} gives their typing rules.\footnote{Every language is intrinsically
 typed in our Agda development, so every term is well typed by
 construction and no pass needs a precondition about scoping or
 typing.} In Figure~\ref{fig:grammars}, each closure language lists
 only the forms it adds to the one above it, and ``$\ldots$'' stands
-for the remaining forms of \iswim. Throughout, $c$ ranges over
+for the remaining forms of \fpc. Throughout, $c$ ranges over
 constants, $p$ over the primitives $\kw{sub}$ and $\kw{eq}$, $l$ over
 block labels, and $f_k$ over the names of a program's global
 definitions, where $f_k$ refers to the definition $d_k$. In the
@@ -112,7 +113,7 @@ Appendix~\ref{app:languages}.
 
 \paragraph{The source language}
 
-\iswim\ has integers, $n$-ary tuples, binary sums, the primitives
+\fpc\ has integers, $n$-ary tuples, binary sums, the primitives
 $\kw{sub}$ and $\kw{eq}$, and iso-recursive types. The primitive $\kw{eq}$ returns
 $\kw{inl}\;\langle\rangle$ for true and $\kw{inr}\;\langle\rangle$ for
 false, so $\kw{case}$ serves as the conditional. A recursive type $\mu
@@ -125,7 +126,7 @@ type, and $\kw{unfold}$ turns it back:
   \qquad
   \frac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \]
-Neither coercion does anything at run time. \iswim\ has no recursion
+Neither coercion does anything at run time. \fpc\ has no recursion
 operator.  Recursive types make self-application typable, so a program can define the call-by-value fixed-point combinator:
 \[
   \mathit{fix} = \lambda f.\, g\;(\kw{fold}\;g)
