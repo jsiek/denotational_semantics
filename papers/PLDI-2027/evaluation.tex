@@ -1,5 +1,5 @@
 %% Section 5: evaluation, comparing the denotational proof with the three
-%% operational ones (RQ2 quantitatively, RQ4). Budget: 3.0 pages
+%% operational ones (RQ2 and RQ3). Budget: 3.0 pages
 %% (notes/paper-outline.md, section 5). Numbers come from loc.md
 %% ("Current counts", loc.py --mu) and will change; update them before
 %% submission (in particular after the graph-proof cleanup PR).
@@ -10,9 +10,8 @@
 \section{Evaluation: Comparison with Other Semantics}
 \label{sec:evaluation}
 
-To measure how concise the denotational proofs are (RQ2), how the
-denotational proofs compare with operational ones (RQ4), and how the
-graph model compares with Scott domains (RQ5), we proved the same
+To compare the sizes of the proofs across the five styles (RQ2) and
+to explain the differences (RQ3), we proved the same
 compiler correct three more times using several styles of operational
 semantics. This section summarizes the five developments, compares the
 sizes of their proofs pass by pass, and explains the differences.
@@ -157,7 +156,7 @@ Coq for their domain theory.
 
 \subsection{Analysis}
 
-Two factors seem to drive the sizes in Table~\ref{tab:loc}. The size
+Two factors seem to drive the sizes in Table~\ref{tab:loc} (RQ3). The size
 of the denotational proofs tend to depend most on whether the pass
 preserves the meaning of a program exactly. When it does, the proof is
 an induction whose cases are congruences and a few laws of the model

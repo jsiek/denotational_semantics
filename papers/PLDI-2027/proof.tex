@@ -1,5 +1,5 @@
 %% Section 4 opening and 4.1: the whole-compiler theorem and the passes
-%% proved by an equation (RQ2). Sources: agda/Mu/Theorems/GraphModel.agda
+%% proved by an equation (RQ3). Sources: agda/Mu/Theorems/GraphModel.agda
 %% (the statements), agda/Mu/proof/Correctness/GraphModel/*Correct.agda (the
 %% proofs and their header comments), loc.md (Current counts; Simplify).
 %% Numbers come from loc.md (loc.py --mu) and will change; update them
@@ -28,9 +28,7 @@ Theorem~\ref{thm:compiler}, which we mechanize in Agda, answers RQ1 affirmativel
 \pass{split closure}, and for \pass{split closure} the weaker statement of
 Theorem~\ref{thm:delay}. 
 
-This section first shows how we prove the passes other than \pass{split closure} (Section~\ref{sec:equational}). These proofs answer whether the
-compositionality and equational reasoning of denotational semantics
-yield concise correctness proofs for some compiler passes (RQ2). The section then shows why \pass{split closure} needs more (Section~\ref{sec:approx-lr}), summarizes the Scott-domain proof of \pass{split closure} (Section~\ref{sec:scott-delay}), and ends with adequacy (Section~\ref{sec:adequacy}), which connects
+This section first shows how we prove the passes other than \pass{split closure} (Section~\ref{sec:equational}). These proofs give the denotational half of the answer to RQ3. The section then shows why \pass{split closure} needs more (Section~\ref{sec:approx-lr}), summarizes the Scott-domain proof of \pass{split closure} (Section~\ref{sec:scott-delay}), and ends with adequacy (Section~\ref{sec:adequacy}), which connects
 Theorem~\ref{thm:compiler} to running code.
 
 \subsection{Passes Proved by an Equation}
@@ -110,9 +108,9 @@ D'_i = D_i$ when every $D'_i$ is nonempty.
 Lemma~\ref{lem:beta} needs the tuple $\mathcal{T}(\vec{D}')$ to be
 nonempty and consistent.
 
-\paragraph{The answer to RQ2}
+\paragraph{Equations and RQ3}
 
-These calculations answer RQ2 affirmatively. For each of the seven
+These calculations show why a pass whose correctness is an equation has a small denotational proof (RQ3). For each of the seven
 passes, each interesting case is a short chain of equations between
 denotations: the meaning of the source form, a few laws of the graph
 model or the semantic equations, the induction hypothesis, and the
@@ -121,7 +119,7 @@ proof mentions evaluation steps, machine states, or clocks.
 Section~\ref{sec:evaluation} measures how concise these proofs are by
 comparing them with proofs of the same passes in four other styles. The exception is \pass{split closure}, the pass that changes the
 meaning of a closure from a function to a set of pairs of code and
-environment. Its correctness is not an equation, so the answer to RQ3 is negative, and its proof is the subject of Section~\ref{sec:approx-lr}.
+environment. Its correctness is not an equation, and its proof is the subject of Section~\ref{sec:approx-lr}.
 
 \input{delay}
 
