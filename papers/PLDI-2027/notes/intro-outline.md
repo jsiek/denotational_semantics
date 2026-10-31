@@ -29,7 +29,7 @@ checked against Table 1 and Table 2 of evaluation.tex on 2026-10-31.
 4. **Preservation and reflection; why reflection is hard.** Negative
    self-reference over a recursive domain; in the graph model, code-
    environment combinations that correspond to no source function.
-5. **Research questions** (proposed, three):
+5. **Research questions** (approved 2026-10-31, three):
    - RQ1 feasibility: can a denotational semantics prove a compiler
      correct through closure conversion, preserving and reflecting
      meaning, for a Turing-complete language? Yes, in two models (§4).
@@ -47,15 +47,16 @@ checked against Table 1 and Table 2 of evaluation.tex on 2026-10-31.
    equation, split closure by the relation. Adequacy makes the theorem
    equivalent to the operational one. Agda.
 8. **The comparison.** Five styles, each proof against its own
-   semantics; earlier comparisons cover one pass or phase (Owens et al.,
+   semantics. Our clocked interpreters are functional big-step
+   semantics in the sense of Owens:2016aa (the CakeML style); say so
+   when naming the style; earlier comparisons cover one pass or phase (Owens et al.,
    Kahn et al.); ours is the first on a whole compiler. Name and cite
    the styles we leave out, and say that comparing them for compiler
    correctness is future work: synthetic domain theory (Hyland 1991,
    Rosolini 1986: not yet in all.bib) and synthetic guarded domain
    theory (Birkedal:2011aa, Mogelberg:2016aa); categorical semantics
    (e.g. Fiore:1994aa); coinductive big-step (Leroy:2009rc),
-   pretty-big-step (Chargueraud:2013aa) and functional big-step
-   (Owens:2016aa); the partiality monad (Danielsson:2012aa); game
+   and pretty-big-step (Chargueraud:2013aa); the partiality monad (Danielsson:2012aa); game
    semantics; action semantics (Mosses:1996rp). Interaction trees
    (Xia:2019aa) get their own clause saying why we did not use them:
    a direct denotation of a higher-order function would need a value
@@ -77,4 +78,4 @@ checked against Table 1 and Table 2 of evaluation.tex on 2026-10-31.
    semantics of the languages.
 10. **Contributions** (contributions.tex, wording aligned).
 
-Open: approve the RQs; choose the name for x86μ.
+Decided: the RQs below; x86μ is renamed Instr_μ; the source is FPC.
