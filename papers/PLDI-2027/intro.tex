@@ -17,9 +17,10 @@ Turing-complete language, one proof in a graph model and one in Scott
 domains. We extend both proofs to an eight-pass compiler. We then
 compare them with proofs of the same compiler with respect to three
 operational semantics: clocked interpreters, abstract machines, and
-reduction semantics.  Each style has passes for which it gives the
-smallest proof, and we identify the properties of a pass that favor
-each style (Section~\ref{sec:evaluation}).  We mechanize all of our
+reduction semantics. For every pass, the smallest proof is either the
+graph-model proof or the interpreter proof, and we identify the
+properties of a pass that favor each of the two
+(Section~\ref{sec:evaluation}).  We mechanize all of our
 results in Agda and provide the development as supplementary material.
 Section~\ref{sec:compiler} presents the compiler,
 Section~\ref{sec:graph-models} the graph model, and
