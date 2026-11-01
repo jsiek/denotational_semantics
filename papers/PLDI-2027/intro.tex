@@ -26,7 +26,7 @@ HOL4 \citep{Tan:2019aa}, by six people over two years
 
 In contrast, the literature is less complete when it comes to the use
 of denotational semantics in compiler correctness proofs, but there is
-evidence that denotational semantics can yield simpler proofs due to
+evidence that denotational semantics can yield simpler proofs because of
 the benefits of equational and compositional reasoning
 \citep{Morris:1973ab,Stoy:1977aa,Xia:2019aa,Zakowski:2021aa}. This
 paper fills a fundamental gap in the literature, establishing the
@@ -50,7 +50,7 @@ Turing-complete language, in several different ways.
 \citet{Nielsen:2000aa} proved that defunctionalization, a close cousin
 of closure conversion, preserves the denotations of programs. However,
 compiler correctness requires that the denotation of programs is also
-reflected, otherwise a compiler would be allowed to translate a
+reflected. Otherwise a compiler could translate a
 diverging source program into a converging target.
 \citet{Nielsen:2000aa} says ``Eventually, we want to prove full
 correctness, i.e., semantic equivalence of the two programs.''
@@ -89,7 +89,7 @@ proofs of correctness for compilers of other programming languages.
 The compiler for FPC that we study begins with a source optimization
 pass based on the cp0 pass of Chez Scheme
 \citep{Waddell:1997fk,Dybvig:2006aa}, includes three passes for
-closure-conversion, and four back-end passes that target a typed
+closure conversion, and four back-end passes that target a typed
 low-level intermediate language. For this compiler we seek to answer
 three research questions:
 \begin{description}
@@ -121,7 +121,7 @@ recursion on the stages of the bilimit that constructs the domain
 (Section~\ref{sec:scott-delay}), as \citet{Reynolds:1974aa} did to
 relate the direct and continuation semantics of an untyped
 $\lambda$-calculus. Our results, however, are just the tip
-of an iceburg, as there many other styles of denotational semantics
+of an iceberg, because there are many other styles of denotational semantics
 that ought to be evaluated with respect to their application to
 compiler correctness and closure conversion. Those include synthetic
 domain theory \citep{Rosolini:1986aa,Hyland:1991aa} and its guarded
@@ -137,7 +137,7 @@ proofs in Agda. For seven of the eight passes, correctness is
 expressed as equality of denotations and the proofs are by induction
 on terms and use equational reasoning.  The exception is the pass that
 separates the code of each closure from its environment, \pass{split
-  closure}, whose reflection proof uses approximant logical relation
+  closure}, whose reflection proof uses the approximant logical relation
 for the graph model and the relation on stages of the bilimit for
 Scott domains.
 
@@ -152,7 +152,7 @@ Scott domains.
 %% also prove that the denotational semantics of \fpc\ and of \instr\ are
 %% adequate with respect to their interpreters, which makes our theorem
 %% equivalent to the usual operational one.
- 
+
 To answer RQ2 and RQ3, we compare the two denotational proofs with
 proofs of correctness of the same compiler with respect to three
 operational semantics, each proved using the technique usual for its
@@ -175,7 +175,7 @@ of a program exactly. The source optimizer, \pass{simplify}, does, and
 its graph-model and Scott-domain proofs take 349 and 411 lines,
 against 508 to 697 for the operational proofs
 (Section~\ref{sec:equational}).  \pass{split closure} does not, and
-its proofs take 450 and 723 lines in the graph-model and Scott-domain,
+its proofs take 450 and 723 lines in the graph model and in Scott domains,
 against 35 to 126 operationally. The size of an operational proof
 tends to depend instead on how closely the run of the target follows
 the run of the source.  The runs correspond closely for \pass{split
@@ -191,7 +191,7 @@ The rest of the paper is organized as follows.
 Section~\ref{sec:compiler} presents the compiler and its eight
 passes. Section~\ref{sec:graph-models} provides background on the
 graph model and Section~\ref{sec:compiler-proof} describes the proof
-of correctness of each pass the compiler with respect to the graph
+of correctness of each pass of the compiler with respect to the graph
 model.  In addition, Section~\ref{sec:scott-delay} describes the proof
 of correctness for \pass{split closure} with respect to Scott domains.
 Section~\ref{sec:evaluation} compares the five proofs of correctness
