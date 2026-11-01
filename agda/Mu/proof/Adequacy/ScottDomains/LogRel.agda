@@ -89,7 +89,7 @@ infix 4 _⊢_⇓_
 record _⊢_⇓_ {Γ A} (γ : Envᵢ Γ) (M : Tm Γ A) (v : Value A) : 𝓤₀ ̇ where
   constructor ev
   field run : Stable (λ ck → eval ck γ M) (ret v)
-open _⊢_⇓_
+open _⊢_⇓_ public
 
 private
  ret-inj : {X : 𝓤₀ ̇ } {a b : X} → _≡_ {A = Result X} (ret a) (ret b) → a ＝ b

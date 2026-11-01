@@ -19,6 +19,7 @@ module AllScott where
 
 {- the theorem statements -}
 import Mu.Theorems.ScottDomains
+import Mu.Theorems.ScottDomainsAdequacy
 
 {- the language-independent lemmas: dcpos, the solution of the domain
    equation, the domain of values and its operators, the combinators for
@@ -53,3 +54,8 @@ import Mu.proof.Correctness.ScottDomains.LiftLocalsCorrect
 import Mu.proof.Correctness.ScottDomains.ExplicateCorrect
 import Mu.proof.Correctness.ScottDomains.SelectCorrect
 import Mu.proof.Correctness.ScottDomains.CompilerCorrect
+
+{- adequacy for the clocked interpreters -}
+import Mu.proof.Adequacy.ScottDomains.Soundness
+import Mu.proof.Adequacy.ScottDomains.LogRel
+import Mu.proof.Adequacy.ScottDomains.FPC
