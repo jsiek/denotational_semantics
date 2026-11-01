@@ -26,16 +26,16 @@ HOL4 \citep{Tan:2019aa}, by six people over two years
 
 In contrast, the literature is less complete when it comes to the use
 of denotational semantics in compiler correctness proofs, but there is
-evidence that denotational semantics can yield simpler proofs because of
-the benefits of equational and compositional reasoning
+evidence that denotational semantics can yield simpler proofs due to
+equational and compositional reasoning
 \citep{Morris:1973ab,Stoy:1977aa,Xia:2019aa,Zakowski:2021aa}. This
 paper fills a fundamental gap in the literature, establishing the
 first proofs of compiler correctness with respect to denotational
 semantics, starting from a Turing-complete, higher-order language down
 to a first-order language. Why is there such a fundamental gap in the
-literature? We suspect two reasons: 1) the denotational semantics for
+literature? We suspect two reasons: (1) the denotational semantics for
 Turing-complete languages are more complex than those for
-strongly-normalizing languages, and 2) compilers for higher-order
+strongly-normalizing languages, and (2) compilers for higher-order
 languages that target a first-order language must go through closure
 conversion, which involves a change of representation, and that is
 more challenging to reason about in denotational semantics. Recall
@@ -61,10 +61,10 @@ operational semantics to the source language. They report that they
 for ordinary or CFA-based defunctionalization in the presence of
 recursion.''
 %
-\citet{Chlipala:2007fk} proved correct a compiler from the simply
-typed $\lambda$-calculus (STLC) to assembly, including closure
-conversion, but the STLC is not
-Turing-complete.
+\citet{Chlipala:2007fk} proved correctness of a compiler from the
+simply typed $\lambda$-calculus (STLC) to assembly, including closure
+conversion, but the STLC is not Turing-complete and its denotational
+semantics is simplistic.
 %
 Other denotational proofs of compiler correctness avoid closure
 conversion, because either their source language is first-order
@@ -77,14 +77,14 @@ Turing-complete programming languages.''
 
 A natural setting to study the compilation of higher-order languages
 is Plotkin's FPC language \citep{Plotkin:1985aa}, a call-by-value
-$\lambda$-calculus with sums, products, and iso-recursive
-types. Recursive types enable the call-by-value fixed-point
-combinator, so \fpc{} has general recursion and is Turing-complete.
-That being said, FPC lacks many of the features of modern programming
-languages, such as mutable state, exceptions, and multi-threading, to
-name a few. The claims in this paper are specific to the compilation
-of FPC. We make no claims about the impact of semantic styles on
-proofs of correctness for compilers of other programming languages.
+$\lambda$-calculus with sums, products, and iso-recursive types. The
+recursive types of FPC enable the fixed-point combinator, so \fpc{}
+has general recursion and is Turing-complete.  That being said, FPC
+lacks many of the features of modern programming languages, such as
+mutable state, exceptions, and multi-threading, to name a few. The
+claims in this paper are specific to the compilation of FPC. We make
+no claims about the impact of semantic styles on proofs of correctness
+for compilers of other programming languages.
 
 The compiler for FPC that we study begins with a source optimization
 pass based on the cp0 pass of Chez Scheme
