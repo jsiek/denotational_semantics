@@ -187,10 +187,12 @@ Scott-domain proofs for all of the compiler passes
 The rest of the paper is organized as follows.
 Section~\ref{sec:compiler} presents the compiler and its eight
 passes. Section~\ref{sec:graph-models} provides background on the
-graph model and Section~\ref{sec:compiler-proof} describes the proof
+graph model, and Section~\ref{sec:compiler-proof} describes the proof
 of correctness of each pass of the compiler with respect to the graph
 model.  In addition, Section~\ref{sec:scott-delay} describes the proof
 of correctness for \pass{split closure} with respect to Scott domains.
+Section~\ref{sec:adequacy} proves the graph model adequate with
+respect to the interpreters.
 Section~\ref{sec:evaluation} compares the five proofs of correctness
 and identifies which properties of the passes contribute to the sizes
 of the proofs in the different semantic styles.
