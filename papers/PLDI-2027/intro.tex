@@ -162,7 +162,8 @@ equivalences are well established for the $\lambda$-calculus
 proofs would adapt readily to \fpc\ and \instr.
 
 No one semantic style gives the smallest proof for every pass
-(RQ2). Counting each correctness proof together with the semantics of
+(RQ2), but for every pass, the smallest proof is either the
+graph-model proof or the interpreter proof. Counting each correctness proof together with the semantics of
 its languages, but not counting language-independent infrastructure,
 the clocked interpreters give the smallest proof, at 1,504 lines of
 Agda, and the graph model gives the second smallest, at 1,808, ahead
@@ -178,9 +179,7 @@ against 35 to 126 operationally. The size of an operational proof
 tends to depend instead on how closely the run of the target follows
 the run of the source.  The runs correspond closely for \pass{split
   closure}, which is why its operational proofs are small, and differ
-more for \pass{simplify}, which inlines functions.  For every pass,
-the smallest proof is either the graph-model proof or the interpreter
-proof. Without \pass{split closure}, the graph-model proof would be
+more for \pass{simplify}, which inlines functions. Without \pass{split closure}, the graph-model proof would be
 the smallest of the five. The graph-model proofs are smaller than the
 Scott-domain proofs for all of the compiler passes
 (Section~\ref{sec:evaluation}).
