@@ -29,22 +29,23 @@ can yield simpler proofs due to the benefits of equational and
 compositional reasoning
 \citep{Morris:1973ab,Stoy:1977aa,Xia:2019aa,Zakowski:2021aa}.
 
-This paper fills a fundamental gap in the literature for denotational
-semantics, establishing the first correctness proofs for a compiler of
-a Turing-complete, higher-order language that targets a first-order
-language. Why is there such a fundamental gap in the literature? We
-suspect two reasons: 1) the denotational semantics for Turing-complete
-languages are more complex than those for strongly-normalizing
-languages, and 2) compilers for higher-order languages that target a
-first-order language must go through closure conversion, which
-involves a change of representation, and that is more challenging to
-reason about in denotational semantics. Recall that \emph{closure
-conversion} replaces each function with a pair of code and the values
-of its free variables, and each function call with code that takes the
-pair apart~\citep{Guy-L.-Steele:1978yq,Cardelli:1984aa}.  To date,
-every proof of compiler correctness with respect to a denotational
-semantics stops short of closure conversion for a Turing-complete
-language, in several different ways.
+This paper fills a fundamental gap in the literature, establishing the
+first proofs of compiler correctness with respect to denotational
+semantics, starting from a Turing-complete, higher-order language down
+to a first-order language. Why is there such a fundamental gap in the
+literature? We suspect two reasons: 1) the denotational semantics for
+Turing-complete languages are more complex than those for
+strongly-normalizing languages, and 2) compilers for higher-order
+languages that target a first-order language must go through closure
+conversion, which involves a change of representation, and that is
+more challenging to reason about in denotational semantics. Recall
+that \emph{closure conversion} replaces each function with a pair of
+code and the values of its free variables, and each function call with
+code that takes the pair
+apart~\citep{Guy-L.-Steele:1978yq,Cardelli:1984aa}.  To date, every
+proof of compiler correctness with respect to a denotational semantics
+stops short of closure conversion for a Turing-complete language, in
+several different ways.
 
 \citet{Nielsen:2000aa} proved that defunctionalization, a close cousin
 of closure conversion, preserves the denotations of programs. However,
