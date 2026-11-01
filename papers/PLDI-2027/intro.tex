@@ -132,8 +132,7 @@ and game semantics \citep{Hyland:2000ve}.
 
 On top of our denotational results for closure conversion, we develop
 two correctness proofs for the eight-pass compiler from \fpc{} to a
-typed low-level intermediate language. We mechanize these correctness
-proofs in Agda. For seven of the eight passes, correctness is
+typed low-level intermediate language. For seven of the eight passes, correctness is
 expressed as equality of denotations and the proofs are by induction
 on terms and use equational reasoning.  The exception is the pass that
 separates the code of each closure from its environment, \pass{split
@@ -146,7 +145,7 @@ proofs of correctness of the same compiler with respect to three
 operational semantics, each proved using the technique usual for its
 style: clocked interpreters with relations on values, abstract
 machines with simulations, and reduction semantics with simulations.
-We mechanize each of the proofs in Agda.  Earlier work that compares
+Earlier work that compares
 proofs of compiler correctness focuses on a single phase or pass of a
 compiler \citep{Owens:2016aa,Kahn:2025aa,Knothe:2026aa}; ours is the
 first on a whole compiler for a higher-order language.
