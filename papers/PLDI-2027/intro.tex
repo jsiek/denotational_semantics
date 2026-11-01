@@ -63,8 +63,9 @@ recursion.''
 %
 \citet{Chlipala:2007fk} proved correctness of a compiler from the
 simply typed $\lambda$-calculus (STLC) to assembly, including closure
-conversion, but the STLC is not Turing-complete and its denotational
-semantics is simplistic.
+conversion, but the STLC is not Turing-complete, which let him
+interpret each type as a Coq type and each function as a total Coq
+function.
 %
 Other denotational proofs of compiler correctness avoid closure
 conversion, because either their source language is first-order
