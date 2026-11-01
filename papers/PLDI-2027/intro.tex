@@ -73,7 +73,8 @@ language, and how the proofs compare in size with operational ones.
 However, the recipe runs into \emph{closure conversion}, the pass by
 which every compiler for a language with lexically scoped functions
 replaces each function with a pair of code and the values of its free
-variables, and each call with code that takes the pair apart. Closure
+variables, and each call with code that takes the pair apart
+\citep{Guy-L.-Steele:1978yq,Cardelli:1984aa}. Closure
 conversion turns functions into data, so its correctness proof must
 relate two representations of a function. To date, every proof of
 compiler correctness with respect to a denotational semantics stops
