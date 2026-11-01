@@ -137,13 +137,9 @@ proofs in Agda. For seven of the eight passes, correctness is
 expressed as equality of denotations and the proofs are by induction
 on terms and use equational reasoning.  The exception is the pass that
 separates the code of each closure from its environment, \pass{split
-  closure}, whose reflection proof uses the approximant logical relation
-for the graph model and the relation on stages of the bilimit for
-Scott domains. We also prove that the denotational semantics of \fpc\
-and of \instr\ are adequate with respect to their interpreters
-(Section~\ref{sec:adequacy}), which makes the denotational and
-operational statements of correctness equivalent, whichever one you
-regard as more fundamental \citep{Scott:1971ab,Plotkin:1977oc}.
+  closure}, whose reflection proof uses the approximant logical
+relation for the graph model and the relation on stages of the bilimit
+for Scott domains.
 
 To answer RQ2 and RQ3, we compare the two denotational proofs with
 proofs of correctness of the same compiler with respect to three
@@ -154,6 +150,16 @@ We mechanize each of the proofs in Agda.  Earlier work that compares
 proofs of compiler correctness focuses on a single phase or pass of a
 compiler \citep{Owens:2016aa,Kahn:2025aa,Knothe:2026aa}; ours is the
 first on a whole compiler for a higher-order language.
+%
+Each of the five correctness theorems is with respect to a different
+semantics, so one might wonder if the semantics and therefore the
+theorems are equivalent.  To address this concern, we prove that the
+denotational semantics of both the source (\fpc{}) and target
+languages (named \instr{}) are adequate with respect to the
+corresponding interpreters (Section~\ref{sec:adequacy}). The
+equivalence of interpreters, abstract machines, and reduction
+semantics is well established
+\citep{G.-D.-Plotkin:1975on,Felleisen:kx,Ager:2003fk}.
 
 No one semantic style gives the smallest proof for every pass
 (RQ2). Counting each correctness proof together with the semantics of
