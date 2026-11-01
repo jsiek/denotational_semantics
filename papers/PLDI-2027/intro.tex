@@ -139,19 +139,11 @@ on terms and use equational reasoning.  The exception is the pass that
 separates the code of each closure from its environment, \pass{split
   closure}, whose reflection proof uses the approximant logical relation
 for the graph model and the relation on stages of the bilimit for
-Scott domains.
-
-%% Every language in the compiler has a semantics in each model. For
-%% seven of the eight passes, the proof in either model is an equation
-%% between the meanings before and after the pass. The exception is the
-%% pass that separates the code of each closure from its environment,
-%% \pass{split closure}, whose reflection proof uses the approximant
-%% logical relation in the graph model and the stage relation in Scott
-%% domains. The whole-compiler theorem says that the source and target
-%% denotations contain the same constants and are nonempty together. We
-%% also prove that the denotational semantics of \fpc\ and of \instr\ are
-%% adequate with respect to their interpreters, which makes our theorem
-%% equivalent to the usual operational one.
+Scott domains. We also prove that the denotational semantics of \fpc\
+and of \instr\ are adequate with respect to their interpreters
+(Section~\ref{sec:adequacy}), which makes the denotational and
+operational statements of correctness equivalent, whichever one you
+regard as more fundamental \citep{Scott:1971ab,Plotkin:1977oc}.
 
 To answer RQ2 and RQ3, we compare the two denotational proofs with
 proofs of correctness of the same compiler with respect to three
