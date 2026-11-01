@@ -6,24 +6,25 @@ viable choices. Their correctness proofs reason about program
 execution using simulations and induction on evaluation. In this paper
 we explore whether denotational semantics can also be used in proofs
 of compiler correctness and evaluate the tradeoffs. However, a
-literature review reveals an obstacle. Every compiler for a language
-with lexically scoped functions performs closure conversion, and no
-proof of compiler correctness with respect to denotational semantics
-covers closure conversion for a Turing-complete source language.
-Compiler correctness involves two directions, semantic preservation
-and reflection. Semantic reflection implies that when a source program
-diverges, so does the target program. For closure conversion, semantic
-reflection is the hard direction for a denotational proof. We present
-the first denotational proofs of semantic reflection for closure
-conversion applied to a Turing-complete language, one proof with
-respect to a graph model and one with respect to Scott domains. For
-the graph-model proof we develop a new logical relation, the
+literature review reveals an obstacle. Compiling a higher-order
+language to a first-order language requires closure conversion, and no
+proof of correctness with respect to denotational semantics covers
+closure conversion for a Turing-complete source language.  Compiler
+correctness requires that the denotation of a program be both
+preserved and reflected by the compiler. Without reflection, a
+compiler would be allowed to translate a diverging program into one
+that halts.  For closure conversion, reflection is the hard
+direction. We present the first denotational proofs of semantic
+reflection for closure conversion applied to a Turing-complete
+language, one proof with respect to a graph model and one with respect
+to Scott domains. For the graph-model proof we develop a new logical
+relation, the
 \emph{approximant logical relation}, and for the Scott-domain proof we
 adapt a logical relation of Reynolds.
 
 As a first step in evaluating the tradeoffs, we compare mechanized
-correctness proofs of one eight-pass compiler, from FPC, a
-typed $\lambda$-calculus with recursive types, down to a typed low-level
+correctness proofs of an eight-pass compiler, from FPC, a typed
+$\lambda$-calculus with recursive types, down to a typed low-level
 intermediate language, in five semantic styles, each proof with
 respect to one of the semantics. The five styles are the two
 denotational semantics (graph model and Scott domain) and three
