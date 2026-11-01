@@ -9,19 +9,19 @@
 
 This paper furthers our understanding of how the choice of language
 semantics impacts proofs of compiler correctness and delivers two
-novel denotational proofs of correctness for closure conversion. But before
-explaining our results, let us review the state of the art. Thanks to
-major compiler verification projects such as
+novel denotational proofs of correctness for closure conversion. But
+before explaining our results, let us review the state of the
+art. Thanks to major compiler verification projects such as
 CompCert~\citep{Leroy:2009aa} and
 CakeML~\citep{Kumar:2014aa,Owens:2016aa} we have a fairly good
 understanding of the use of operational semantics in proofs of
-compiler correctness. CompCert~\citep{Leroy:2016aa} employs small-step
-semantics and relates them using simulations. CakeML uses interpreters
-and reasons about them using induction on evaluation and value
-relations.  Both proofs were large undertakings. The proof of CompCert
-is 100,000 lines of Coq and took 6 person-years \citep{Leroy:2016aa},
-and the proof of the CakeML compiler backend is about 100,000 lines of
-HOL4 \citep{Tan:2019aa}, by six people over two years
+compiler correctness. CompCert employs small-step semantics and
+relates them using simulations~\citep{Leroy:2016aa}. CakeML uses
+interpreters and reasons about them using induction on evaluation and
+value relations.  Both proofs were large undertakings. The proof of
+CompCert is 100,000 lines of Coq and took 6 person-years, and the
+proof of the CakeML compiler backend is about 100,000 lines of HOL4
+\citep{Tan:2019aa}, by six people over two years
 \citep{Myreen:2016aa}.
 
 In contrast, the literature is less complete when it comes to the use
