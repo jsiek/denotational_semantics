@@ -22,14 +22,14 @@ relations.  Both proofs were large undertakings. The proof of CompCert
 is 100,000 lines of Coq and took 6 person-years \citep{Leroy:2016aa},
 and the proof of the CakeML compiler backend is about 100,000 lines of
 HOL4 \citep{Tan:2019aa}, by six people over two years
-\citep{Myreen:2016aa}. In contrast, the literature is less complete
-when it comes to the use of denotational semantics in compiler
-correctness proofs, but there is evidence that denotational semantics
-can yield simpler proofs due to the benefits of equational and
-compositional reasoning
-\citep{Morris:1973ab,Stoy:1977aa,Xia:2019aa,Zakowski:2021aa}.
+\citep{Myreen:2016aa}.
 
-This paper fills a fundamental gap in the literature, establishing the
+In contrast, the literature is less complete when it comes to the use
+of denotational semantics in compiler correctness proofs, but there is
+evidence that denotational semantics can yield simpler proofs due to
+the benefits of equational and compositional reasoning
+\citep{Morris:1973ab,Stoy:1977aa,Xia:2019aa,Zakowski:2021aa}. This
+paper fills a fundamental gap in the literature, establishing the
 first proofs of compiler correctness with respect to denotational
 semantics, starting from a Turing-complete, higher-order language down
 to a first-order language. Why is there such a fundamental gap in the
@@ -42,11 +42,11 @@ more challenging to reason about in denotational semantics. Recall
 that \emph{closure conversion} replaces each function with a pair of
 code and the values of its free variables, and each function call with
 code that takes the pair
-apart~\citep{Guy-L.-Steele:1978yq,Cardelli:1984aa}.  To date, every
-proof of compiler correctness with respect to a denotational semantics
-stops short of closure conversion for a Turing-complete language, in
-several different ways.
+apart~\citep{Guy-L.-Steele:1978yq,Cardelli:1984aa}.
 
+To date, every proof of compiler correctness with respect to a
+denotational semantics stops short of closure conversion for a
+Turing-complete language, in several different ways.
 \citet{Nielsen:2000aa} proved that defunctionalization, a close cousin
 of closure conversion, preserves the denotations of programs. However,
 compiler correctness requires that the denotation of programs is also
