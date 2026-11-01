@@ -1,5 +1,4 @@
-%% Introduction, input by paper.tex. Follows the order of abstract-v2.tex
-%% and notes/intro-outline.md. Numbers come from Table 1 and Table 2
+%% Introduction, input by paper.tex. Numbers come from Table 1 and Table 2
 %% (loc.py --mu) and will change; update them before submission. Prior
 %% work is cited by author name (see notes/related-work.md for the
 %% evidence behind each statement). Siek's earlier work is cited in the
@@ -8,11 +7,11 @@
 \section{Introduction}
 \label{sec:intro}
 
-This paper takes a step forward in developing an understanding of how
-the choice of language semantics impacts proofs of compiler
-correctness and delivers two novel technical results for denotational
-semantics. But before explaining our results, let us review the state
-of the art. Thanks to major compiler verification projects such as
+This paper furthers our understanding of how the choice of language
+semantics impacts proofs of compiler correctness and delivers two
+novel technical results for denotational semantics. But before
+explaining our results, let us review the state of the art. Thanks to
+major compiler verification projects such as
 CompCert~\citep{Leroy:2009aa} and
 CakeML~\citep{Kumar:2014aa,Owens:2016aa} we have a fairly good
 understanding of the use of operational semantics in proofs of
@@ -27,7 +26,8 @@ HOL4 \citep{Tan:2019aa}, written by six people over two years
 when it comes to the use of denotational semantics in compiler
 correctness proofs, but there are reasons to believe that they might
 yield simpler proofs due to the benefits of equational and
-compositional reasoning.
+compositional reasoning
+\citep{Morris:1973ab,Stoy:1977aa,Xia:2019aa,Zakowski:2021aa}.
 
 This paper fills a fundamental gap in the literature for denotational
 semantics, establishing the first correctness proofs for a compiler of
@@ -73,116 +73,6 @@ is still higher-order \citep{Clinger:1984aa,Benton:2009aa}. When
 general recursion, he switched to operational semantics, explaining
 that the denotational approach ``cannot be applied directly to
 Turing-complete programming languages.''
-
-
-%% This paper proves a compiler, including closure conversion, correct
-%% with respect to denotational semantics, and it compares these proofs,
-%% pass by pass, with proofs of correctness with respect to operational
-%% semantics. We give the first denotational proofs that closure
-%% conversion both preserves and reflects the meaning of programs,
-%% divergence included, for a Turing-complete language, one proof in a
-%% graph model and one in Scott domains. We extend both proofs to an
-%% eight-pass compiler for the FPC language \citep{Plotkin:1985aa} that
-%% targets a typed low-level intermediate language. We then compare these
-%% proofs to three more proofs of correctness for the same compiler, each
-%% with respect an operational semantics: clocked interpreters, abstract
-%% machines, and reduction semantics. For every pass, the smallest proof
-%% is either the graph-model proof or the interpreter proof, and we
-%% identify the properties of a pass that favor each of the two
-%% (Section~\ref{sec:evaluation}).  We mechanize all of our results in
-%% Agda and provide the development as supplementary material.
-%% Section~\ref{sec:compiler} presents the compiler,
-%% Section~\ref{sec:graph-models} the graph model, and
-%% Section~\ref{sec:compiler-proof} the proofs.
-%% Section~\ref{sec:evaluation} compares the five proofs,
-%% Section~\ref{sec:related} discusses related work, and
-%% Section~\ref{sec:conclusion} concludes. The appendices define the
-%% semantics of every language and define every pass in the compiler.
-
-%% A compiler is correct with respect to a semantics of its source and
-%% target languages, and the style of that semantics shapes the
-%% proof. \citet{Leroy:2016aa} prove today's CompCert
-%% \citep{Leroy:2009aa} correct with respect to small-step semantics,
-%% using simulations, and \citet{Kumar:2014aa}
-%% prove CakeML correct with respect to clocked interpreters (also called
-%% functional big-step semantics \citep{Owens:2016aa}), using induction
-%% on evaluation. Both proofs were large undertakings. The proof of
-%% CompCert is 100,000 lines of Coq and took 6 person-years
-%% \citep{Leroy:2016aa}, and the proof of the CakeML compiler backend is
-%% about 100,000 lines of HOL4 \citep{Tan:2019aa}, written by six people
-%% over two years, part time \citep{Myreen:2016aa}. Operational semantics are neither compositional nor
-%% extensional. A small-step semantics
-%% yields behavior as a by-product of transitions, and in a big-step
-%% semantics a closure contains syntax \citep{Kahn:1987aa}. Proofs about operational semantics therefore
-%% often need simulations \citep{Milner:1995aa} or logical relations
-%% \citep{Plotkin:1973fk,Statman:1985aa}, which grow daunting for
-%% realistic languages \citep{Ahmed:2009aa,Hur:2011aa}.
-
-%% Denotational semantics offers a different recipe. A denotational
-%% semantics is compositional, defined by structural recursion on syntax
-%% \citep{Winskel:1993uq}, and extensional, specifying only the
-%% observable behavior of programs \citep{Schmidt:2003aa}. A compiler
-%% pass is correct when the meaning of a program before the pass equals
-%% its meaning afterward, and compositionality lets the proof proceed by
-%% structural induction and equational reasoning. Early compiler proofs
-%% followed this recipe \citep{Polak:1981aa,Clinger:1984aa}. Mechanizations
-%% of the standard domain-theoretic models are large
-%% \citep{Benton:2009ab,Dockins:2014aa}. In the graph models of the
-%% $\lambda$-calculus
-%% \citep{Engeler:1981aa,Plotkin:1993ab,Scott:1976lq,Coppo:1979aa,Barendregt:2013aa},
-%% a function denotes a set of finite input--output tables. In our
-%% development, the infrastructure for the
-%% graph model takes 1,544 lines of Agda, against 7,834 for Scott domains
-%% (Table~\ref{tab:infra}). We ask whether denotational semantics, and
-%% graph models in particular, extend to a compiler for a higher-order
-%% language, and how the proofs compare in size with operational ones.
-
-%% However, the recipe runs into \emph{closure conversion}, the pass by
-%% which every compiler for a language with lexically scoped functions
-%% replaces each function with a pair of code and the values of its free
-%% variables, and each call with code that takes the pair apart. Closure
-%% conversion turns functions into data, so its correctness proof must
-%% relate two representations of a function. To date, every proof of
-%% compiler correctness with respect to a denotational semantics stops
-%% short of closure conversion for a Turing-complete language, each in
-%% its own way. \citet{Chlipala:2007fk} proved correct a compiler from
-%% the simply typed $\lambda$-calculus to assembly, including closure
-%% conversion, but every program of that language terminates, so there is
-%% no divergence to preserve.  \citet{Nielsen:2000aa} used a
-%% domain-theoretic semantics to prove that defunctionalization, a close
-%% cousin of closure conversion, preserves the meaning of programs with
-%% recursive functions, and left the other direction for later, writing
-%% ``Eventually, we want to prove full correctness, i.e., semantic
-%% equivalence of the two programs.''  \citet{Banerjee:2001aa} proved
-%% both directions, but gave the source language an operational
-%% semantics. They report that they ``know of no other proofs of
-%% correctness (that is, both directions) for ordinary or CFA-based
-%% defunctionalization in the presence of recursion.'' Other denotational
-%% proofs avoid closure conversion, because their source language is
-%% first-order \citep{Polak:1981aa,Xia:2019aa,Cheng:2026aa} or their
-%% target language has closures
-%% \citep{Clinger:1984aa,Benton:2009aa}. When \citet{Chlipala:2010aa}
-%% proved correct a compiler for a language with recursion, he switched
-%% to operational semantics, explaining that the denotational approach of
-%% his 2007 compiler ``cannot be applied directly to Turing-complete
-%% programming languages.''
-
-%% A correct compiler must both preserve and reflect the behavior of
-%% programs. \emph{Semantic preservation} says that if the source program
-%% produces an output, the target program produces the same output, and
-%% \emph{semantic reflection} says that if the target program produces an
-%% output, the source program produces the same output. By
-%% contraposition, reflection guarantees that a diverging source program
-%% compiles to a diverging target program. Reflection is where
-%% closure conversion resists a denotational proof, because the
-%% relation between source functions and target closures refers to itself
-%% in negative position, and the domain of meanings is recursive. In a
-%% graph model there is a further problem. The meaning of a function's
-%% code describes its behavior on every environment, not just the
-%% environment with which the compiled program pairs it. The target
-%% denotation therefore contains code--environment combinations that
-%% correspond to no source function, and a reflection proof must show
-%% that these combinations never contribute an answer.
 
 A natural setting to study the compilation of higher-order languages
 is Plotkin's FPC language \citep{Plotkin:1985aa}, a call-by-value
