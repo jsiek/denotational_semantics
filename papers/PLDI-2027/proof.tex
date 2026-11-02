@@ -47,25 +47,20 @@ closed term of the source language of $p$. Then
 $\den{M} = \den{p(M)}$.
 \end{lemma}
 
-To apply induction, each proof
-generalizes the equation of Lemma~\ref{lem:equational} from closed programs to open terms. The
-generalized statement says that a term, in a source environment, means
-the same as its translation, in a related target environment. In every one of these passes, the relation on environments requires
-each variable to mean the same as its translation, with side
-conditions such as nonemptiness and consistency, and most cases of the
-induction need nothing else. Because every semantics is compositional and the passes
-translate most forms homomorphically, the case for such a form applies
-the same operator to equal arguments and is immediate. The real work
-is in the few cases that the pass changes, where an equation about the
-operators of the graph model replaces the source form with the target
-form. Below we show that case as a calculation for \pass{simplify} and for
-the last step of \pass{enclose}, with the justification of each step on the right;
-Appendix~\ref{app:calculations} gives the calculations for the other
-steps and passes, including \pass{select instructions}, whose key case turns a
-call into $\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and $\kw{callq}$
-instructions. Where a step needs a set to
-be nonempty, we show the nonempty case; otherwise both sides
-are empty.
+Each proof is by induction on the term, generalizing
+Lemma~\ref{lem:equational} to open terms in a source and a target
+environment in which each variable means the same as its translation,
+with side conditions such as nonemptiness and consistency. Every semantics is
+compositional and the passes translate most forms homomorphically, so
+most cases apply the same operator to equal arguments. The real work
+is in the few forms that a pass changes, where an equation about the
+operators of the graph model turns the source form into the target
+form. Below we give these calculations for \pass{simplify} and for the
+last step of \pass{enclose}. Appendix~\ref{app:calculations} gives the rest, including
+\pass{select instructions}, whose key case turns a call into
+$\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and $\kw{callq}$.
+Where a step needs a nonempty set, we show the nonempty case;
+otherwise both sides are empty.
 
 \paragraph{Simplify}
 
