@@ -86,7 +86,7 @@ definitions of the languages and passes, and the script that computes
 the proof sizes of Section~\ref{sec:evaluation}. It checks with Agda
 2.8 and its standard library 2.4 in safe mode, with no postulates, in
 about two minutes from scratch on a desktop workstation (Intel Core Ultra 9 285K,
-64\,GB). The Scott-domain proofs also need the modules of TypeTopology that it imports, which the artifact includes, lightly patched, from a pinned commit. With them, the Scott-domain proofs check in safe mode in about two and a half more minutes, and its theorems take propositional truncation, function extensionality, and propositional extensionality as hypotheses. A Dockerfile builds and checks everything. The README of the artifact
+64\,GB). The Scott-domain proofs also need the modules of TypeTopology that it imports, which the artifact includes, lightly patched, from a pinned commit. With them, the Scott-domain proofs check in safe mode in about six and a half more minutes, and its theorems take propositional truncation, function extensionality, and propositional extensionality as hypotheses. A Dockerfile builds and checks everything. The README of the artifact
 lists the commands that check each development and regenerate
 Tables~\ref{tab:loc} and~\ref{tab:infra}, and it maps each claim of the paper
 to the file that states it. An anonymized version is provided as
