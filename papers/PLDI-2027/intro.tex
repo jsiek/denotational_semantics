@@ -152,16 +152,13 @@ first on a whole compiler for a higher-order language.
 %
 Each of the five correctness theorems is with respect to a different
 semantics, so one might wonder whether the semantics and therefore the
-theorems are equivalent.  To address this concern, we prove that both the graph-model
-and the Scott-domain semantics of the source language \fpc\ and of
-the target language \instr\ are adequate with respect to their
-interpreters (Section~\ref{sec:adequacy}). For Scott domains, the
-proof follows the textbook approach
-\citep{Plotkin:1985aa,Winskel:1993uq,Pitts:1996aa}. We do not prove our interpreters
-equivalent to our abstract machines and reduction semantics, but such
-equivalences are well established for the $\lambda$-calculus
-\citep{G.-D.-Plotkin:1975on,Felleisen:kx,Ager:2003fk}, and their
-proofs would adapt readily to \fpc\ and \instr.
+theorems are equivalent. To check that our mechanized semantics agree,
+we prove the graph model adequate with respect to the interpreters,
+the abstract machines, and the reduction semantics, and the
+Scott-domain semantics adequate with respect to the interpreters
+(Section~\ref{sec:adequacy}), so the five theorems are equivalent.
+These proofs adapt textbook proofs of adequacy
+\citep{Plotkin:1977oc,Plotkin:1985aa,Siek:2017ab}.
 
 No one semantic style gives the smallest proof for every pass
 (RQ2), but for every pass, the smallest proof is either the
@@ -193,8 +190,8 @@ graph model, and Section~\ref{sec:compiler-proof} describes the proof
 of correctness of each pass of the compiler with respect to the graph
 model.  In addition, Section~\ref{sec:scott-delay} describes the proof
 of correctness for \pass{split closure} with respect to Scott domains.
-Section~\ref{sec:adequacy} proves the graph model adequate with
-respect to the interpreters.
+Section~\ref{sec:adequacy} proves the denotational semantics adequate
+with respect to the operational semantics.
 Section~\ref{sec:evaluation} compares the five proofs of correctness
 and identifies which properties of the passes contribute to the sizes
 of the proofs in the different semantic styles.
