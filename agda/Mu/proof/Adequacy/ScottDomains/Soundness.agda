@@ -113,17 +113,17 @@ private
  view-＝ : (a b : ⟨ 𝔻 ⟩) (e : a ＝ b) (q : defined a) → view a q ＝ view b (transport defined e q)
  view-＝ a .a refl q = refl
 
- {- values made with different tags differ -}
- inj-tag : (t t' : Tag) (x : _) (y : _) → inj t · x ＝ inj t' · y → t ＝ t'
- inj-tag t t' x y e =
-  ap pr₁ (view-inj t x (defined-inj t x) ⁻¹ ∙ view-＝ _ _ e (defined-inj t x) ∙ view-inj t' y _)
+{- values made with different tags differ -}
+inj-tag : (t t' : Tag) (x : _) (y : _) → inj t · x ＝ inj t' · y → t ＝ t'
+inj-tag t t' x y e =
+ ap pr₁ (view-inj t x (defined-inj t x) ⁻¹ ∙ view-＝ _ _ e (defined-inj t x) ∙ view-inj t' y _)
 
- con-inj : ∀ {B B' k k'} → con B k ＝ con B' k' → o-const B k ≡ o-const B' k'
- con-inj refl = ≡-refl
+con-inj : ∀ {B B' k k'} → con B k ＝ con B' k' → o-const B k ≡ o-const B' k'
+con-inj refl = ≡-refl
 
- not-con : (t : Tag) (x : _) {B : Base} {k : base-rep B} → ((B' : Base) (k' : base-rep B') → ¬ (t ＝ con B' k'))
-   → ¬ (inj t · x ＝ const B k)
- not-con t x {B} {k} h e = h B k (inj-tag t (con B k) x ⋆ e)
+not-con : (t : Tag) (x : _) {B : Base} {k : base-rep B} → ((B' : Base) (k' : base-rep B') → ¬ (t ＝ con B' k'))
+  → ¬ (inj t · x ＝ const B k)
+not-con t x {B} {k} h e = h B k (inj-tag t (con B k) x ⋆ e)
 
 {- a value means a constant exactly when it is observed as that constant -}
 𝒱-const : ∀ {A B} {k : base-rep B} (v : Value A) → 𝒱 v ＝ const B k → obs v ≡ o-const B k

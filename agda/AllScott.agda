@@ -59,3 +59,8 @@ import Mu.proof.Correctness.ScottDomains.CompilerCorrect
 import Mu.proof.Adequacy.ScottDomains.Soundness
 import Mu.proof.Adequacy.ScottDomains.LogRel
 import Mu.proof.Adequacy.ScottDomains.FPC
+import Mu.proof.Adequacy.ScottDomains.X86Soundness
+import Mu.proof.Adequacy.ScottDomains.X86LogRel
+import Mu.proof.Adequacy.ScottDomains.X86Compiled
+import Mu.proof.Adequacy.ScottDomains.X86
+import Mu.proof.Adequacy.ScottDomains.EndToEnd

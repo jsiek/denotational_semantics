@@ -44,6 +44,7 @@ open import Mu.Semantics.ClockedInterpreters.X86
   renaming (⟨_,_,_,_⟩ to mach)
 open import Mu.proof.Adequacy.X86Common using (OpR; none; agree)
 open import Semantics.Interp.Clock using (Result; timeout; error; ret; _>>=_)
+open import Semantics.Observation using (o-const)
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Fin using (Fin; zero; suc)
@@ -68,7 +69,7 @@ open import Mu.Semantics.ScottDomains.CFG pt fe pe using (drop)
 open import Mu.Semantics.ScottDomains.X86 pt fe pe
   using (RegsD; 𝕊; Kont; regsᶜ; flagᶜ; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs)
   renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to runₛ)
-open import Mu.proof.Adequacy.ScottDomains.Soundness pt fe pe using (Holds; timeout; ret; bind-holds)
+open import Mu.proof.Adequacy.ScottDomains.Soundness pt fe pe using (Holds; timeout; ret; bind-holds; inj-tag; con-inj; not-con)
 open Over 𝕊 using (op₁; op₂)
 
 module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
@@ -331,3 +332,28 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
   soundness b ck =
     sound-run ck (Body.blocks b) [] (mach (rv tt tt tt) [] tt tt) (Body.start b) _
       (agr (λ ()) (λ { rax () ; rdi () ; rsi () }) ⋆ none)
+
+  {- Observations of constants ---------------------------------------------------------}
+
+  {- a value means a constant exactly when it is observed as that constant -}
+  𝒱-const : ∀ {A B} {k : base-rep B} (v : Val A) → 𝒱 v ＝ const B k → obs v ≡ o-const B k
+  𝒱-const (cv k') e = con-inj (inj-tag _ _ ⋆ ⋆ e)
+  𝒱-const (fold v) e = 𝒱-const v e
+  𝒱-const (code f) e = 𝟘-elim (not-con fun _ (λ _ _ ()) (closed f ⁻¹ ∙ e))
+  𝒱-const (pack c e') e =
+    𝟘-elim (not-con pr (pick₂ (𝒱 c) (𝒱 e')) (λ _ _ ())
+              (guard-defined 2 (pick₂ (𝒱 c) (𝒱 e')) (λ { zero → 𝒱-defined c ; (suc zero) → 𝒱-defined e' })
+                 (inj pr · pick₂ (𝒱 c) (𝒱 e')) ⁻¹ ∙ e))
+  𝒱-const (tup {Δ} ws) e =
+    𝟘-elim (not-con (tup (length Δ)) (𝒱s ws) (λ _ _ ()) (guard-defined (length Δ) (𝒱s ws) (𝒱s-defined ws) _ ⁻¹ ∙ e))
+  𝒱-const (inl v) e = 𝟘-elim (not-con left (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
+  𝒱-const (inr v) e = 𝟘-elim (not-con right (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
+
+  const-𝒱 : ∀ {A B} {k : base-rep B} (v : Val A) → obs v ≡ o-const B k → 𝒱 v ＝ const B k
+  const-𝒱 (cv k) ≡-refl = refl
+  const-𝒱 (fold v) e = const-𝒱 v e
+  const-𝒱 (code f) ()
+  const-𝒱 (pack c e') ()
+  const-𝒱 (tup ws) ()
+  const-𝒱 (inl v) ()
+  const-𝒱 (inr v) ()
