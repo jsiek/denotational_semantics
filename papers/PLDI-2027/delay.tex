@@ -229,12 +229,13 @@ junk. The finite list also makes the relation well founded.
 
 Figure~\ref{fig:alr} defines the approximant logical relation
 $D \ALR V$, which relates a finite list $V$ of target elements to a
-source set $D$. Its building block is the \emph{usable entry} of a
+source set $D$. We read $D \ALR V$ as ``$V$ approximates $D$''. Its building block is the \emph{usable entry} of a
 list. A target closure is a set of pairs $\pairv{u}{t}$ of code and
 environment. The code $u$ is a curried function, so its entries have
 the form $U_e \mapsto (U_a \mapsto w)$, which maps the environment $U_e$
 to a function that maps the arguments $U_a$ to $w$. We write
-$\entryin{U_a}{w}{V}$ when such an entry is among the codes $\car(V)$
+$\entryin{U_a}{w}{V}$, read ``$U_a \mapsto w$ is a usable entry of
+$V$'', when such an entry is among the codes $\car(V)$
 \emph{and} the environments $U_e$ are among the environments
 $\cdr(V)$ that $V$ itself provides. The second condition makes the
 relation sound in the presence of junk. A code entry for an environment
@@ -300,7 +301,8 @@ enlarging the source set or taking a sublist of the target list preserves it.
 \paragraph{The fundamental lemma}
 
 A source environment $\rho$ and a target environment $\rho'$ are
-related, written $\rho \ALR \rho'$, when $\rho(x) \ALR V$ for every
+related, written $\rho \ALR \rho'$ and read ``$\rho'$ approximates
+$\rho$'', when $\rho(x) \ALR V$ for every
 variable $x$ and every $V \subseteq \rho'(x)$. We also require that both environments be
 consistent and that $\rho$ map every variable to a nonempty set.
 
