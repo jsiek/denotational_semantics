@@ -145,8 +145,8 @@ E-disjoint {n} {m} (here refl) (here eq) =
   inputs _ = 0
 
 {- every result of a call of U is 1, and 1 is among the arguments -}
-calls-U : ∀ {U' W w} → Maps U U' W → w ⋵ W → w ≡ one × one ⋵ U'
-calls-U cs w∈ with Maps.results cs _ w∈
+calls-U : ∀ {U' W w} → SelfContainedMaps U U' W → w ⋵ W → w ≡ one × one ⋵ U'
+calls-U cs w∈ with SelfContainedMaps.results cs _ w∈
 ... | ⟨ _ , ⟨ usable-entry _ _ (here refl) _ _ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ = ⟨ refl , U₀⊆ one (here refl) ⟩
 ... | ⟨ _ , ⟨ usable-entry _ _ (there ()) _ _ , _ ⟩ ⟩
 
@@ -158,7 +158,7 @@ E-related n = foldᴬ record
   ; tag-obs = λ t W W⊆ → ApproxLR-∅ (λ w w∈ → untag-U t (W⊆ w w∈))
   }
   where
-  app-E : ∀ {U' W} → Maps U U' W → ∀ E' → Con E' → Con (mem U') → ApproxLR E' U' → ApproxLR (E n ● E') W
+  app-E : ∀ {U' W} → SelfContainedMaps U U' W → ∀ E' → Con E' → Con (mem U') → ApproxLR E' U' → ApproxLR (E n ● E') W
   app-E cs E' _ _ rE = ApproxLR-data res
     where
     one∈E' : ∀ {w} → w ⋵ _ → one ∈ E'
@@ -207,7 +207,7 @@ W = u₁ ∷ []
 V⊆idC' : mem V ⊆ ⟦ split-program idC ⟧' ρ₀
 V⊆idC' _ (here refl) = ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , tt ⟩
 
-calls : Maps V U W
+calls : SelfContainedMaps V U W
 calls = record
   { results = λ { _ (here refl) → ⟨ U , ⟨ ent , ⟨ (λ ()) , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
   ; args = λ { _ (here refl) → ⟨ U , ⟨ u₁ , ⟨ ent , here refl ⟩ ⟩ ⟩ ; _ (there ()) }
@@ -340,7 +340,7 @@ g-related : ∀ {E₁} → nonempty E₁ → ApproxLR E₁ (g ∷ [])
 g-related neE = foldᴬ record
   { const-obs = λ { c (here ()) ; c (there ()) }
   ; nonempty-obs = λ _ → neE
-  ; app-obs = λ cs _ _ _ _ → ApproxLR-∅ (λ w w∈ → no-car-g (proj₁ (proj₂ (Maps.results cs w w∈))))
+  ; app-obs = λ cs _ _ _ _ → ApproxLR-∅ (λ w w∈ → no-car-g (proj₁ (proj₂ (SelfContainedMaps.results cs w w∈))))
   ; tag-obs = λ t W W⊆ → ApproxLR-∅ (λ w w∈ → untag-g t (W⊆ w w∈))
   }
 
@@ -377,7 +377,7 @@ W′ = g ∷ []
 V′⊆idC' : mem V′ ⊆ ⟦ split-program idC ⟧' ρ₀
 V′⊆idC' _ (here refl) = ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , tt ⟩
 
-calls′ : Maps V′ U′ W′
+calls′ : SelfContainedMaps V′ U′ W′
 calls′ = record
   { results = λ { _ (here refl) → ⟨ U′ , ⟨ ent , ⟨ (λ ()) , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
   ; args = λ { _ (here refl) → ⟨ U′ , ⟨ g , ⟨ ent , here refl ⟩ ⟩ ⟩ ; _ (there ()) }

@@ -10,7 +10,7 @@
   ApproxLR D V' relates an arbitrary source denotation D (a set of EnvClosμ
   values) to a finite target approximant V' (a list of PairClosμ values), by
   recursion on the depth of V', since a target closure is a set of pairs
-  whose calls combine the codes and environments of several pairs (Maps).
+  whose calls combine the codes and environments of several pairs (SelfContainedMaps).
   ApproxLRLayer is one unfolding of the relation, with the recursive call
   left open (Q). The fuel index of ApproxLR≤ is only a termination
   device: ApproxLR-depth-irrelevant shows that any fuel bounding the
@@ -24,8 +24,8 @@
   identity on denotations), which is not smaller: at μX. X ⇒ Int,
   app-obs asks for the relation at the argument type, μX. X ⇒ Int
   itself. What decreases is the depth of the approximant: the arguments
-  U and results W of Maps V U W are shallower than V (Bnd-Maps-args,
-  Bnd-Maps-apps), which is what ApproxLR≤'s fuel counts. The values are
+  U and results W of SelfContainedMaps V U W are shallower than V (Bnd-SelfContainedMaps-args,
+  Bnd-SelfContainedMaps-apps), which is what ApproxLR≤'s fuel counts. The values are
   untyped, and fold does not change them, so the depth needs no help
   from the type.
 
@@ -68,11 +68,11 @@ out-data (bool true) = flat-⟨⟩
 out-data (bool false) = flat-⟨⟩
 
 {- two self-contained calls of V are one -}
-Maps-++ : ∀ {V U₁ U₂ W₁ W₂} → Maps V U₁ W₁ → Maps V U₂ W₂ → Maps V (U₁ ++ U₂) (W₁ ++ W₂)
-Maps-++ {U₁ = U₁} {W₁ = W₁} c₁ c₂ = record
-  { results = λ w w∈ → [ (λ i → Prod.map₂ (Prod.map₂ (Prod.map₂ λ ⊆U d d∈ → ∈-++⁺ˡ (⊆U d d∈))) (Maps.results c₁ w i))
-                       , (λ i → Prod.map₂ (Prod.map₂ (Prod.map₂ λ ⊆U d d∈ → ∈-++⁺ʳ U₁ (⊆U d d∈))) (Maps.results c₂ w i)) ]′ (∈-++⁻ W₁ w∈)
-  ; args = λ u u∈ → [ Maps.args c₁ u , Maps.args c₂ u ]′ (∈-++⁻ U₁ u∈)
+SelfContainedMaps-++ : ∀ {V U₁ U₂ W₁ W₂} → SelfContainedMaps V U₁ W₁ → SelfContainedMaps V U₂ W₂ → SelfContainedMaps V (U₁ ++ U₂) (W₁ ++ W₂)
+SelfContainedMaps-++ {U₁ = U₁} {W₁ = W₁} c₁ c₂ = record
+  { results = λ w w∈ → [ (λ i → Prod.map₂ (Prod.map₂ (Prod.map₂ λ ⊆U d d∈ → ∈-++⁺ˡ (⊆U d d∈))) (SelfContainedMaps.results c₁ w i))
+                       , (λ i → Prod.map₂ (Prod.map₂ (Prod.map₂ λ ⊆U d d∈ → ∈-++⁺ʳ U₁ (⊆U d d∈))) (SelfContainedMaps.results c₂ w i)) ]′ (∈-++⁻ W₁ w∈)
+  ; args = λ u u∈ → [ SelfContainedMaps.args c₁ u , SelfContainedMaps.args c₂ u ]′ (∈-++⁻ U₁ u∈)
   }
 
 {- D approximates every finite part of a target set D' (the conclusion of
@@ -96,7 +96,7 @@ Approx-untag t r W W⊆ = ApproxLRLayer.tag-obs (unfold (r (map (tag t) W) tW⊆
 
 {- the four clauses, for every finite part of D' -}
 AppObs : 𝒫 Value → 𝒫 Value → Set₁
-AppObs D D' = ∀ {V U W} → mem V ⊆ D' → Maps V U W → ∀ E → Con E → Con (mem U) → ApproxLR E U → ApproxLR (D ● E) W
+AppObs D D' = ∀ {V U W} → mem V ⊆ D' → SelfContainedMaps V U W → ∀ E → Con E → Con (mem U) → ApproxLR E U → ApproxLR (D ● E) W
 
 Approx-fold : ∀ {D D'} → (∀ {B} (c : base-rep B) → const c ∈ D' → const c ∈ D) → (nonempty D' → nonempty D)
   → AppObs D D' → (∀ t → Approx (Untag t D) (Untag t D')) → Approx D D'
@@ -110,4 +110,4 @@ Approx-fold cs ne app tg V V⊆ = fold record
 {- a target set without pairs has no calls -}
 Approx-fold₀ : ∀ {D D'} → (∀ {B} (c : base-rep B) → const c ∈ D' → const c ∈ D) → (nonempty D' → nonempty D)
   → (∀ u v → ⦅ u , v ⦆ ∈ D' → ⊥) → (∀ t → Approx (Untag t D) (Untag t D')) → Approx D D'
-Approx-fold₀ cs ne np = Approx-fold cs ne λ V⊆ calls _ _ _ _ → ApproxLR-∅ (Maps-none (λ u v uv∈ → np u v (V⊆ _ uv∈)) calls)
+Approx-fold₀ cs ne np = Approx-fold cs ne λ V⊆ calls _ _ _ _ → ApproxLR-∅ (SelfContainedMaps-none (λ u v uv∈ → np u v (V⊆ _ uv∈)) calls)
