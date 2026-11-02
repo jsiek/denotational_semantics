@@ -1,7 +1,7 @@
 {-
 
-  The registers of X86ᵀ (Language/Typed/X86.agda) and of untyped X86
-  (Language/X86.agda): %rax, %rdi and %rsi.
+  The registers of X86ᵀ (ISWIM/Language/Typed/X86.agda) and of untyped X86
+  (ISWIM/Language/X86.agda): %rax, %rdi and %rsi.
 
 -}
 

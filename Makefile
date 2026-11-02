@@ -1,12 +1,14 @@
 AGDA ?= agda
 
-# Check the closure-conversion compiler and its correctness proofs
-# (agda/All.agda: the theorem statements in agda/Theorems, everything in
-# agda/proof, and the preserved untyped pipeline, agda/Untyped/All.agda)
-# with --safe, so that nothing postulated or unsafe is used, and then
-# check that nothing in the checked tree (agda/, agda/Untyped/ included,
-# but not agda/old/, which is not checked) postulates or has a pragma,
-# other than the --without-K of the abt extract. See agda/README.md.
+# Check the closure-conversion compilers and their correctness proofs
+# (agda/All.agda: the FPC compiler of the PLDI 2027 paper, agda/FPC/All.agda,
+# but for its Scott-domain column; the ISWIM pipelines, agda/ISWIM/All.agda,
+# the preserved untyped one, agda/ISWIM/Untyped/, included; and the
+# modules they share, agda/proof/ among them) with --safe, so that nothing
+# postulated or unsafe is used, and then check that nothing in the
+# checked tree (agda/, but not agda/old/, which is not checked)
+# postulates or has a pragma, other than the --without-K of the abt
+# extract. See agda/README.md.
 check: agda pragma-check
 
 agda:
