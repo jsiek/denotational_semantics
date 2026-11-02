@@ -71,18 +71,18 @@ are empty.
 
 The main lemma for \pass{simplify} carries the invariant that
 the static information of \pass{simplify} about each variable is true of the source
-environment $\rho$ and the target environment $\rho'$. If \pass{simplify} replaces a variable by the term $T$, the variable means $\den{T}\rho'$, and if \pass{simplify} knows it to be a function $\langle \lambda x.\, N, E_f \rangle$, it means
+environment $\rho$ and the target environment $\rho'$. If \pass{simplify} replaces a variable by the term $M'$, the variable means $\den{M'}\rho'$, and if \pass{simplify} knows it to be a function $\langle \lambda x.\, N, E_f \rangle$, it means
 $\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ of which
 $E_f$ is true. The key case is inlining. Suppose \pass{simplify} knows $L$ to be
 $\langle \lambda x.\, N, E_f \rangle$, the operand $M$ simplifies to a
-small value, and the inlined body simplifies to $T''$. Then
+small value, and the inlined body simplifies to $N'$. Then
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
   \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho & \text{(meaning of application)}\\
     & = & \den{\lambda x.\,N}\rho_f \app \den{M}\rho & \text{(invariant for $L$)}\\
     & = & \den{N}\rho_f[x{:=}\den{M}\rho] & \text{(Lemma~\ref{lem:beta}, part 1)}\\
-    & = & \den{T''}\rho' & \text{(induction hypothesis for $N$)}
+    & = & \den{N'}\rho' & \text{(induction hypothesis for $N$)}
 \end{array}
 \]}
 The use of Lemma~\ref{lem:beta} needs $\den{M}\rho$ to be nonempty,
