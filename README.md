@@ -66,7 +66,7 @@ Line counts of the proofs, and their comparison, are in
 `--untyped` for the preserved pipeline).
 
 The denotational: Scott domains column (`agda/AllScott.agda`,
-`agda/Mu/Theorems/ScottDomains.agda`) also needs TypeTopology; check it with
+`agda/Mu/Theorems/CorrectWrtScottDomains.agda`) also needs TypeTopology; check it with
 
     make check-scott
 
@@ -91,13 +91,17 @@ Agda's capture, prune and concretize).
   `--safe` (about three more minutes). Its theorems take propositional
   truncation, function extensionality and propositional extensionality
   as module parameters.
-* Theorem statements, one file per style, named as in the paper:
-  `agda/Mu/Theorems/GraphModel.agda` (Theorem 4.1 and Lemma 4.6),
-  `ScottDomains.agda` (Theorem 4.2), `AbstractMachines.agda`
-  (Proposition F.2), `ClockedInterpreters.agda` (Proposition F.1),
-  `ReductionSemantics.agda` (Proposition F.3), and Proposition 5.1
-  (adequacy) in `Adequacy.agda`, `AbstractMachinesAdequacy.agda`,
-  `ReductionSemanticsAdequacy.agda` and `ScottDomainsAdequacy.agda`.
+* Theorem statements, one file per result: compiler correctness in
+  `agda/Mu/Theorems/CorrectWrtGraphModel.agda` (Theorem 4.1 and
+  Lemma 4.6), `CorrectWrtScottDomains.agda` (Theorem 4.2),
+  `CorrectWrtClockedInterpreters.agda` (Proposition F.1),
+  `CorrectWrtAbstractMachines.agda` (Proposition F.2) and
+  `CorrectWrtReductionSemantics.agda` (Proposition F.3); adequacy
+  (Proposition 5.1 and Section 5) in
+  `GraphModelAdequateWrtClockedInterpreters.agda`,
+  `GraphModelAdequateWrtAbstractMachines.agda`,
+  `GraphModelAdequateWrtReductionSemantics.agda` and
+  `ScottDomainsAdequateWrtClockedInterpreters.agda`.
 * `agda/Mu/README.md` maps each theorem, lemma, definition and appendix
   section of the paper to its Agda file and name, and lists the audit
   surface.

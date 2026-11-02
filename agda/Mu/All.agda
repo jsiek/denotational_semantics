@@ -19,28 +19,28 @@
   theorem of Mu/proof/; they and the definitions they use (modules
   outside Mu/proof/) are FPC's audit surface.
 
-  * graph model: Mu/Theorems/GraphModel.agda (Theorem 4.1 and Lemma 4.6),
+  * graph model: Mu/Theorems/CorrectWrtGraphModel.agda (Theorem 4.1 and Lemma 4.6),
     proved in Mu/proof/Correctness/GraphModel/, with split by the
     approximant logical relation (SplitRel.agda);
-  * abstract machines + simulation: Mu/Theorems/AbstractMachines.agda
+  * abstract machines + simulation: Mu/Theorems/CorrectWrtAbstractMachines.agda
     (Proposition F.2), Mu/proof/Correctness/AbstractMachines/;
   * clocked interpreters + value relations:
-    Mu/Theorems/ClockedInterpreters.agda (Proposition F.1),
+    Mu/Theorems/CorrectWrtClockedInterpreters.agda (Proposition F.1),
     Mu/proof/Correctness/ClockedInterpreters/;
   * reduction semantics + simulation:
-    Mu/Theorems/ReductionSemantics.agda (Proposition F.3),
+    Mu/Theorems/CorrectWrtReductionSemantics.agda (Proposition F.3),
     Mu/proof/Correctness/ReductionSemantics/;
-  * Scott domains: Mu/Theorems/ScottDomains.agda (Theorem 4.2),
+  * Scott domains: Mu/Theorems/CorrectWrtScottDomains.agda (Theorem 4.2),
     Mu/proof/Correctness/ScottDomains/; it needs TypeTopology, so it is
     checked from agda/AllScott.agda (make check-scott), not from here,
     as is the Scott-domain half of Proposition 5.1
-    (Mu/Theorems/ScottDomainsAdequacy.agda, Mu/proof/Adequacy/ScottDomains/);
+    (Mu/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda, Mu/proof/Adequacy/ScottDomains/);
   * adequacy of the graph model for the clocked interpreters of FPC
-    and X86μ: Mu/Theorems/Adequacy.agda (Proposition 5.1),
+    and X86μ: Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda (Proposition 5.1),
     Mu/proof/Adequacy/; the same against the
-    abstract machines instead: Mu/Theorems/AbstractMachinesAdequacy.agda,
+    abstract machines instead: Mu/Theorems/GraphModelAdequateWrtAbstractMachines.agda,
     Mu/proof/Adequacy/AbstractMachines/; and another, against FPC's
-    reduction semantics: Mu/Theorems/ReductionSemanticsAdequacy.agda,
+    reduction semantics: Mu/Theorems/GraphModelAdequateWrtReductionSemantics.agda,
     Mu/proof/Adequacy/ReductionSemantics/;
   * the two Agda checks of the paper's §4.2 ("Design alternatives: which sides to relate"):
     a finite source side cannot satisfy the function clause of split's
@@ -63,13 +63,13 @@
 
 module Mu.All where
 
-import Mu.Theorems.GraphModel
-import Mu.Theorems.AbstractMachines
-import Mu.Theorems.ClockedInterpreters
-import Mu.Theorems.ReductionSemantics
-import Mu.Theorems.Adequacy
-import Mu.Theorems.AbstractMachinesAdequacy
-import Mu.Theorems.ReductionSemanticsAdequacy
+import Mu.Theorems.CorrectWrtGraphModel
+import Mu.Theorems.CorrectWrtAbstractMachines
+import Mu.Theorems.CorrectWrtClockedInterpreters
+import Mu.Theorems.CorrectWrtReductionSemantics
+import Mu.Theorems.GraphModelAdequateWrtClockedInterpreters
+import Mu.Theorems.GraphModelAdequateWrtAbstractMachines
+import Mu.Theorems.GraphModelAdequateWrtReductionSemantics
 import Mu.proof.Correctness.GraphModel.CompilerCorrect
 import Mu.proof.Correctness.AbstractMachines.PipelineSim
 import Mu.proof.Correctness.ClockedInterpreters.CompilerFuel

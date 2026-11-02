@@ -98,22 +98,22 @@ definition, figure and appendix section).
 | Paper | Statement | Proof | Agda names |
 |---|---|---|---|
 | Lemma 3.1 (β) | | `proof/Framework/GraphModel/Ops.agda` | `Λ-β`, `ΛΛ-β` |
-| Theorem 4.1 (Compiler correctness, graph model) | `Mu/Theorems/GraphModel.agda` | `Mu/proof/Correctness/GraphModel/CompilerCorrect.agda` | `compile-int-const`, `compile-int-nonempty`; every type: `compile-correct-const`, `compile-correct-nonempty` |
-| Theorem 4.2 (Compiler correctness, Scott domains) | `Mu/Theorems/ScottDomains.agda` | `Mu/proof/Correctness/ScottDomains/CompilerCorrect.agda` | `compile-int-const`, `compile-int-defined`; every type: `compile-correct-const`, `compile-correct-defined` |
+| Theorem 4.1 (Compiler correctness, graph model) | `Mu/Theorems/CorrectWrtGraphModel.agda` | `Mu/proof/Correctness/GraphModel/CompilerCorrect.agda` | `compile-int-const`, `compile-int-nonempty`; every type: `compile-correct-const`, `compile-correct-nonempty` |
+| Theorem 4.2 (Compiler correctness, Scott domains) | `Mu/Theorems/CorrectWrtScottDomains.agda` | `Mu/proof/Correctness/ScottDomains/CompilerCorrect.agda` | `compile-int-const`, `compile-int-defined`; every type: `compile-correct-const`, `compile-correct-defined` |
 | Lemma 4.3 (Passes proved by an equation) | | `Mu/proof/Correctness/GraphModel/<Pass>Correct.agda` | `simplify-correct`, `capture-correct`, `prune-correct`, `concretize-correct` (enclose: `enclose-correct`, in `CompilerCorrect.agda`), `hoist-correct`, `rco-correct`, `lift-locals-correct`, `explicate-correct`, `select-correct` |
 | Lemma 4.4 (Depth irrelevance and unfolding) | | `Mu/proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-depth-irrelevant`; `unfold`, `fold` |
 | Lemma 4.5 (Fundamental lemma) | | `Mu/proof/Correctness/GraphModel/SplitReflect.agda` | `split-reflect` |
-| Lemma 4.6 (Correctness of split closure) | `Mu/Theorems/GraphModel.agda` | `Mu/proof/Correctness/GraphModel/SplitCorrect.agda` (reflection: `SplitReflect.agda`; preservation: `SplitPreserve.agda`) | `split-correct-const`, `split-correct-nonempty` |
+| Lemma 4.6 (Correctness of split closure) | `Mu/Theorems/CorrectWrtGraphModel.agda` | `Mu/proof/Correctness/GraphModel/SplitCorrect.agda` (reflection: `SplitReflect.agda`; preservation: `SplitPreserve.agda`) | `split-correct-const`, `split-correct-nonempty` |
 | §4.2, "Design alternatives: which sides to relate": a finite source side fails | | `Mu/proof/Correctness/GraphModel/SplitDesignFiniteSource.agda` | `no-finite-source-ApproxLR′`, `finite-source′`, `no-finite-source` |
 | §4.2, "Design alternatives: which sides to relate": target sets of bounded depth | | `Mu/proof/Correctness/GraphModel/SplitDesignBoundedSets.agda` | `ApproxLRSet⇔` |
-| Proposition 5.1 (Adequacy), graph model | `Mu/Theorems/Adequacy.agda` | `Mu/proof/Adequacy/FPC.agda`, `Mu/proof/Adequacy/X86.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff` |
-| Proposition 5.1, Scott domains | `Mu/Theorems/ScottDomainsAdequacy.agda` | `Mu/proof/Adequacy/ScottDomains/` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff` |
-| §5, the graph model and the abstract machines | `Mu/Theorems/AbstractMachinesAdequacy.agda` | `Mu/proof/Adequacy/AbstractMachines/` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff` |
-| §5, the graph model and the reduction semantics | `Mu/Theorems/ReductionSemanticsAdequacy.agda` | `Mu/proof/Adequacy/ReductionSemantics/` | `fpc-const-iff`, `fpc-diverges-iff` |
+| Proposition 5.1 (Adequacy), graph model | `Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda` | `Mu/proof/Adequacy/FPC.agda`, `Mu/proof/Adequacy/X86.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff` |
+| Proposition 5.1, Scott domains | `Mu/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda` | `Mu/proof/Adequacy/ScottDomains/` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff` |
+| §5, the graph model and the abstract machines | `Mu/Theorems/GraphModelAdequateWrtAbstractMachines.agda` | `Mu/proof/Adequacy/AbstractMachines/` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff` |
+| §5, the graph model and the reduction semantics | `Mu/Theorems/GraphModelAdequateWrtReductionSemantics.agda` | `Mu/proof/Adequacy/ReductionSemantics/` | `fpc-const-iff`, `fpc-diverges-iff` |
 | §5, Theorems 4.1 and 4.2 with Proposition 5.1 give the statements of Propositions F.1–F.3 | the four adequacy files above | `EndToEnd.agda` in each adequacy directory | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
-| Proposition F.1 (Correctness, clocked interpreters) | `Mu/Theorems/ClockedInterpreters.agda` | `Mu/proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
-| Proposition F.2 (Correctness, abstract machines) | `Mu/Theorems/AbstractMachines.agda` | `Mu/proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
-| Proposition F.3 (Correctness, reduction semantics) | `Mu/Theorems/ReductionSemantics.agda` | `Mu/proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
+| Proposition F.1 (Correctness, clocked interpreters) | `Mu/Theorems/CorrectWrtClockedInterpreters.agda` | `Mu/proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
+| Proposition F.2 (Correctness, abstract machines) | `Mu/Theorems/CorrectWrtAbstractMachines.agda` | `Mu/proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
+| Proposition F.3 (Correctness, reduction semantics) | `Mu/Theorems/CorrectWrtReductionSemantics.agda` | `Mu/proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
 | Lemmas G.1–G.5 (the Scott-domain proof of split closure) | | `Mu/proof/Correctness/ScottDomains/{SplitRel,SplitPreserve,SplitReflect,SplitTerms,SplitCorrect}.agda` | G.5: `split-correct-const`, `split-correct-defined` |
 | Table 1 (lines of the five proofs) | | `../loc.py` | `make tables` |
 | Table 2 (infrastructure) | | `../loc.py` | `make tables` |
@@ -149,7 +149,7 @@ To trust the theorem statements, a reader reads the theorem files
 directory imports one inside it, except the theorem files, which cite
 the proofs they re-export (`make tables` checks this). The surface is:
 
-* the theorem statements: `Mu/Theorems/{GraphModel,AbstractMachines,ClockedInterpreters,ReductionSemantics,ScottDomains,Adequacy,AbstractMachinesAdequacy,ReductionSemanticsAdequacy,ScottDomainsAdequacy}.agda`;
+* the theorem statements: `Mu/Theorems/{CorrectWrtGraphModel,CorrectWrtAbstractMachines,CorrectWrtClockedInterpreters,CorrectWrtReductionSemantics,CorrectWrtScottDomains,GraphModelAdequateWrtClockedInterpreters,GraphModelAdequateWrtAbstractMachines,GraphModelAdequateWrtReductionSemantics,ScottDomainsAdequateWrtClockedInterpreters}.agda`;
 * the languages and passes: `Mu/Language/*.agda`, `Mu/Compiler/*.agda`;
 * heterogeneous vectors: `Mu/Framework/AllUtil.agda`, `Mu/Framework/ReductionAll.agda`;
 * the graph model: `Mu/Semantics/GraphModel/{FPC,EnvClos,PairClos,Imp,CFG,X86,Ops,Closed}.agda`,
@@ -180,7 +180,7 @@ Every file is checked with `--safe`, and there are no postulates
 with `--without-K`, except the abstract-binding-tree extract). The
 Scott-domain development, and so Theorem 4.2 and the Scott-domain half
 of Proposition 5.1, takes three assumptions as module parameters of
-`Mu/Theorems/ScottDomains.agda` and `Mu/Theorems/ScottDomainsAdequacy.agda`, those of
+`Mu/Theorems/CorrectWrtScottDomains.agda` and `Mu/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda`, those of
 TypeTopology's domain theory: propositional truncation
 (`pt : propositional-truncations-exist`), function extensionality
 (`fe : Fun-Ext`) and propositional extensionality (`pe : propext 𝓤₀`).

@@ -24,7 +24,7 @@
 
 -}
 
-module Mu.Theorems.ReductionSemantics where
+module Mu.Theorems.CorrectWrtReductionSemantics where
 
 open import Framework.Primitives using (Int)
 open import Semantics.Observation using (o-const; _⇔_)

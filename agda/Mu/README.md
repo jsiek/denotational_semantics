@@ -76,27 +76,27 @@ and the small-step, reduction and clocked frameworks.
 |---|---|---|
 | Lemma 3.1 (β), part 1 | `../proof/Framework/GraphModel/Ops.agda` | `Λ-β` (Λ(F) • D is `letD`) |
 | Lemma 3.1 (β), part 2 | `../proof/Framework/GraphModel/Ops.agda` | `ΛΛ-β` |
-| Theorem 4.1 (Compiler correctness, graph model) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `compile-int-const`, `compile-int-nonempty`; every type: `compile-correct-const`, `compile-correct-nonempty` |
+| Theorem 4.1 (Compiler correctness, graph model) | [`Theorems/CorrectWrtGraphModel.agda`](Theorems/CorrectWrtGraphModel.agda) | `compile-int-const`, `compile-int-nonempty`; every type: `compile-correct-const`, `compile-correct-nonempty` |
 | Theorem 4.1, proof (composition of the passes) | `proof/Correctness/GraphModel/CompilerCorrect.agda` | `compile-int`, `compile-same` |
 | Lemma 4.3 (Passes proved by an equation) | `proof/Correctness/GraphModel/*Correct.agda` | `simplify-correct`, `enclose-correct`, `hoist-correct`, `rco-correct`, `lift-locals-correct`, `explicate-correct`, `select-correct` |
 | Lemma 4.4 (Depth irrelevance and unfolding), part 1 | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-depth-irrelevant` (one direction; with k and j swapped, the other) |
 | Lemma 4.4, part 2 | `proof/Correctness/GraphModel/ApproxLR.agda` | `unfold`, `fold` |
 | monotone in D, antitone in V (after Lemma 4.4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-mono`, `ApproxLR-⊆` |
 | Lemma 4.5 (Fundamental lemma) | `proof/Correctness/GraphModel/SplitReflect.agda` | `split-reflect` (related environments: `Envs`; the case of a call: `collect`; of a closure: `clos-app`) |
-| Lemma 4.6 (Correctness of split closure) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `split-correct-const`, `split-correct-nonempty` |
+| Lemma 4.6 (Correctness of split closure) | [`Theorems/CorrectWrtGraphModel.agda`](Theorems/CorrectWrtGraphModel.agda) | `split-correct-const`, `split-correct-nonempty` |
 | Lemma 4.6, proof | `proof/Correctness/GraphModel/SplitCorrect.agda` (reflection: `proof/Correctness/GraphModel/SplitReflect.agda`, `reflect-const`, `reflect-nonempty`; preservation: `proof/Correctness/GraphModel/SplitPreserve.agda`, `preserve-const`, `preserve-nonempty`) | `split-correct-const`, `split-correct-nonempty` |
-| Proposition 5.1 (Adequacy) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda) | FPC: `fpc-const-iff`, `fpc-diverges-iff`; Instrμ: `x86-const-iff`, `x86-diverges-iff` |
+| Proposition 5.1 (Adequacy) | [`Theorems/GraphModelAdequateWrtClockedInterpreters.agda`](Theorems/GraphModelAdequateWrtClockedInterpreters.agda) | FPC: `fpc-const-iff`, `fpc-diverges-iff`; Instrμ: `x86-const-iff`, `x86-diverges-iff` |
 | Proposition 5.1, proof | `proof/Adequacy/FPC.agda` (`const-iff`, `diverges-iff`), `proof/Adequacy/X86.agda` (`x86-const-iff`, `x86-diverges-iff`); soundness: `proof/Adequacy/Soundness.agda`, `proof/Adequacy/X86Soundness.agda`; the logical relations: `proof/Adequacy/LogRel.agda`, `proof/Adequacy/X86LogRel.agda` | |
-| Theorem 4.1 and Proposition 5.1 together: the operational theorem (§5) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda); proof `proof/Adequacy/EndToEnd.agda` | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
-| Adequacy, abstract machines (§5), and with Theorem 4.1 the operational theorem | [`Theorems/AbstractMachinesAdequacy.agda`](Theorems/AbstractMachinesAdequacy.agda); proofs in `proof/Adequacy/AbstractMachines/`: `FPC.agda`, `X86.agda`, `EndToEnd.agda`; soundness: `Soundness.agda`, `X86Soundness.agda`; the logical relations: `LogRel.agda`, `X86LogRel.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff`, `end-to-end-x86-const`, `end-to-end-x86-diverges` |
-| Adequacy, reduction semantics of FPC (§5), and with Theorem 4.1 the reduction column's theorem | [`Theorems/ReductionSemanticsAdequacy.agda`](Theorems/ReductionSemanticsAdequacy.agda); proofs in `proof/Adequacy/ReductionSemantics/`: `FPC.agda`, `EndToEnd.agda` (X86μ: the machine's, `proof/Adequacy/AbstractMachines/X86.agda`); soundness (a step preserves meaning): `Soundness.agda`; the logical relation: `LogRel.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `end-to-end-x86-const`, `end-to-end-x86-diverges` |
+| Theorem 4.1 and Proposition 5.1 together: the operational theorem (§5) | [`Theorems/GraphModelAdequateWrtClockedInterpreters.agda`](Theorems/GraphModelAdequateWrtClockedInterpreters.agda); proof `proof/Adequacy/EndToEnd.agda` | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
+| Adequacy, abstract machines (§5), and with Theorem 4.1 the operational theorem | [`Theorems/GraphModelAdequateWrtAbstractMachines.agda`](Theorems/GraphModelAdequateWrtAbstractMachines.agda); proofs in `proof/Adequacy/AbstractMachines/`: `FPC.agda`, `X86.agda`, `EndToEnd.agda`; soundness: `Soundness.agda`, `X86Soundness.agda`; the logical relations: `LogRel.agda`, `X86LogRel.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff`, `end-to-end-x86-const`, `end-to-end-x86-diverges` |
+| Adequacy, reduction semantics of FPC (§5), and with Theorem 4.1 the reduction column's theorem | [`Theorems/GraphModelAdequateWrtReductionSemantics.agda`](Theorems/GraphModelAdequateWrtReductionSemantics.agda); proofs in `proof/Adequacy/ReductionSemantics/`: `FPC.agda`, `EndToEnd.agda` (X86μ: the machine's, `proof/Adequacy/AbstractMachines/X86.agda`); soundness (a step preserves meaning): `Soundness.agda`; the logical relation: `LogRel.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `end-to-end-x86-const`, `end-to-end-x86-diverges` |
 | §4.2, "Design alternatives: which sides to relate": a finite source side fails the function clause (the Agda check) | `proof/Correctness/GraphModel/SplitDesignFiniteSource.agda` | example 3 of its header, the paper's (λf.f, the singletons of [n] ↦ n): `no-finite-source-ApproxLR′`, `finite-source′`; example 1: `no-finite-source-ApproxLR`; any such relation: `no-finite-source` |
 | §4.2, "Design alternatives: which sides to relate": a target set of bounded depth is related exactly when each finite sublist is (the Agda check) | `proof/Correctness/GraphModel/SplitDesignBoundedSets.agda` | `ApproxLRSet⇔` (from `ApproxLRSet⇒`, `ApproxLRSet⇐`) |
-| Proposition F.1 (Correctness, clocked interpreters) | [`Theorems/ClockedInterpreters.agda`](Theorems/ClockedInterpreters.agda); proof `proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
-| Proposition F.2 (Correctness, abstract machines) | [`Theorems/AbstractMachines.agda`](Theorems/AbstractMachines.agda); proof `proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
-| Proposition F.3 (Correctness, reduction semantics) | [`Theorems/ReductionSemantics.agda`](Theorems/ReductionSemantics.agda); proof `proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
-| Theorem 4.2 (Compiler correctness, Scott domains) | [`Theorems/ScottDomains.agda`](Theorems/ScottDomains.agda); proof `proof/Correctness/ScottDomains/CompilerCorrect.agda` | `compile-int-const`, `compile-int-defined`; every type: `compile-correct-const`, `compile-correct-defined` |
-| Proposition 5.1, Scott domains, and with Theorem 4.2 the operational theorem | [`Theorems/ScottDomainsAdequacy.agda`](Theorems/ScottDomainsAdequacy.agda); proofs in `proof/Adequacy/ScottDomains/`: `FPC.agda`, `X86.agda`, `EndToEnd.agda`; soundness: `Soundness.agda`, `X86Soundness.agda` (and `X86Compiled.agda`, its premise for compiled programs); the logical relations, by the stages of the bilimit: `LogRel.agda`, `X86LogRel.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff`, `end-to-end-x86-const`, `end-to-end-x86-diverges` |
+| Proposition F.1 (Correctness, clocked interpreters) | [`Theorems/CorrectWrtClockedInterpreters.agda`](Theorems/CorrectWrtClockedInterpreters.agda); proof `proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
+| Proposition F.2 (Correctness, abstract machines) | [`Theorems/CorrectWrtAbstractMachines.agda`](Theorems/CorrectWrtAbstractMachines.agda); proof `proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
+| Proposition F.3 (Correctness, reduction semantics) | [`Theorems/CorrectWrtReductionSemantics.agda`](Theorems/CorrectWrtReductionSemantics.agda); proof `proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
+| Theorem 4.2 (Compiler correctness, Scott domains) | [`Theorems/CorrectWrtScottDomains.agda`](Theorems/CorrectWrtScottDomains.agda); proof `proof/Correctness/ScottDomains/CompilerCorrect.agda` | `compile-int-const`, `compile-int-defined`; every type: `compile-correct-const`, `compile-correct-defined` |
+| Proposition 5.1, Scott domains, and with Theorem 4.2 the operational theorem | [`Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda`](Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda); proofs in `proof/Adequacy/ScottDomains/`: `FPC.agda`, `X86.agda`, `EndToEnd.agda`; soundness: `Soundness.agda`, `X86Soundness.agda` (and `X86Compiled.agda`, its premise for compiled programs); the logical relations, by the stages of the bilimit: `LogRel.agda`, `X86LogRel.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff`, `end-to-end-x86-const`, `end-to-end-x86-diverges` |
 | Table 1 (lines of the five proofs) | `../../papers/PLDI-2027/loc.py` | `python3 papers/PLDI-2027/loc.py --mu` (four columns), `--scott` (the Scott column) |
 | Table 2 (infrastructure) | `../../papers/PLDI-2027/loc.py` | `--mu` (its infrastructure table), `--scott` (the Scott infrastructure and TypeTopology; needs `make scott-deps`) |
 
@@ -240,10 +240,10 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | D, Select instructions | calculation | `proof/Correctness/GraphModel/SelectCorrect.agda` (`select-correct`) |
 | E An Example of the Approximant Logical Relation | clause 3 on λy. x + y (the example itself is not mechanized) | `proof/Correctness/GraphModel/ApproxLR.agda` (`UsableEntry`, `SelfContainedMaps`, `ApproxLRLayer.app-obs`) |
 | F.1 Values and Observations | values, obs, observations, machines, clocked interpreters, equivalence | `Semantics/AbstractMachines/Values.agda` and `Semantics/ClockedInterpreters/Values.agda` (`Val`, `obs`), `../Semantics/Observation.agda` (`Obs`), `../Framework/Smallstep.agda` (`Machine`, `Terminates`, `Diverges`, `Equivalent`), `../Framework/Clocked.agda` (`Result`, `Terminates`, `Diverges`, `Equivalent`) |
-| F.2 Clocked Interpreters | FPC and Instrμ; Proposition F.1 | `Semantics/ClockedInterpreters/FPC.agda`, `Semantics/ClockedInterpreters/X86.agda`; `Theorems/ClockedInterpreters.agda` |
-| F.3 Abstract Machines | FPC and Instrμ; Proposition F.2 | `Semantics/AbstractMachines/FPC.agda`, `Semantics/AbstractMachines/X86.agda`; `Theorems/AbstractMachines.agda` |
-| F.4 Reduction Semantics | FPC; Proposition F.3 | `Semantics/ReductionSemantics/FPC.agda`, `../Framework/Reduction.agda` (`Red`, `step-in`); `Theorems/ReductionSemantics.agda` |
-| F.5 Scott Domains | 𝔻, its operators, FPC and Instrμ (Theorem 4.2) | `../Framework/Scott/Domain.agda` (`Tag`, `Payload`, `𝔻`, `roll`, `unroll`, `defined`), `../Framework/Scott/Ops.agda` (`Λ`, `app`, `tuple`, `proj`, `pair`, `component`, `inl`, `inr`, `cases`, `seq`), `../Framework/Scott/Semantics.agda`, `../Semantics/Scott/Prim.agda`, `Semantics/ScottDomains/FPC.agda`, `Semantics/ScottDomains/X86.agda`, `Semantics/ScottDomains/Closed.agda` (`ρ₀`); `Theorems/ScottDomains.agda` |
+| F.2 Clocked Interpreters | FPC and Instrμ; Proposition F.1 | `Semantics/ClockedInterpreters/FPC.agda`, `Semantics/ClockedInterpreters/X86.agda`; `Theorems/CorrectWrtClockedInterpreters.agda` |
+| F.3 Abstract Machines | FPC and Instrμ; Proposition F.2 | `Semantics/AbstractMachines/FPC.agda`, `Semantics/AbstractMachines/X86.agda`; `Theorems/CorrectWrtAbstractMachines.agda` |
+| F.4 Reduction Semantics | FPC; Proposition F.3 | `Semantics/ReductionSemantics/FPC.agda`, `../Framework/Reduction.agda` (`Red`, `step-in`); `Theorems/CorrectWrtReductionSemantics.agda` |
+| F.5 Scott Domains | 𝔻, its operators, FPC and Instrμ (Theorem 4.2) | `../Framework/Scott/Domain.agda` (`Tag`, `Payload`, `𝔻`, `roll`, `unroll`, `defined`), `../Framework/Scott/Ops.agda` (`Λ`, `app`, `tuple`, `proj`, `pair`, `component`, `inl`, `inr`, `cases`, `seq`), `../Framework/Scott/Semantics.agda`, `../Semantics/Scott/Prim.agda`, `Semantics/ScottDomains/FPC.agda`, `Semantics/ScottDomains/X86.agda`, `Semantics/ScottDomains/Closed.agda` (`ρ₀`); `Theorems/CorrectWrtScottDomains.agda` |
 | G, the relations (Figure 7) | the stage relations, Pres and Refl | `proof/Correctness/ScottDomains/SplitRel.agda` (`R`, `Match`, `Call`, `Rel`), `proof/Correctness/ScottDomains/SplitPreserve.agda` (`Pres`), `proof/Correctness/ScottDomains/SplitReflect.agda` (`Refl`) |
 | G, Lemma G.1 (Stages) | | `proof/Correctness/ScottDomains/SplitRel.agda` (`R-prop`, `R-mono`, `R-sup`, `R-π`, `R-ε`, `Rel-ε`) |
 | G, Lemma G.2 (Operators) | | `proof/Correctness/ScottDomains/SplitRel.agda` (`Rel-⊥`, `Rel-cases`, `Rel-seq`, and the other `Rel-` lemmas) |
@@ -263,16 +263,16 @@ checked. No module outside a `proof/` directory imports one inside it,
 except the theorem files, which cite the proofs they re-export.
 `python3 papers/PLDI-2027/loc.py --mu` checks this and prints the size
 of each style's surface (the Scott column's is the closure of
-`Theorems/ScottDomains.agda`, which needs TypeTopology). The surface is
+`Theorems/CorrectWrtScottDomains.agda`, which needs TypeTopology). The surface is
 the following 93 files (3531 lines of code, 2260 of them for the
 statements other than those about Scott domains):
 
-* the theorem statements: `Theorems/GraphModel.agda`,
-  `Theorems/AbstractMachines.agda`, `Theorems/ClockedInterpreters.agda`,
-  `Theorems/ReductionSemantics.agda`, `Theorems/ScottDomains.agda`,
-  `Theorems/Adequacy.agda`, `Theorems/AbstractMachinesAdequacy.agda`,
-  `Theorems/ReductionSemanticsAdequacy.agda`,
-  `Theorems/ScottDomainsAdequacy.agda`;
+* the theorem statements: `Theorems/CorrectWrtGraphModel.agda`,
+  `Theorems/CorrectWrtAbstractMachines.agda`, `Theorems/CorrectWrtClockedInterpreters.agda`,
+  `Theorems/CorrectWrtReductionSemantics.agda`, `Theorems/CorrectWrtScottDomains.agda`,
+  `Theorems/GraphModelAdequateWrtClockedInterpreters.agda`, `Theorems/GraphModelAdequateWrtAbstractMachines.agda`,
+  `Theorems/GraphModelAdequateWrtReductionSemantics.agda`,
+  `Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda`;
 * the languages and passes: `Language/*.agda` (all eleven files),
   `Compiler/*.agda` (all eleven files);
 * heterogeneous vectors: `Framework/AllUtil.agda`,
@@ -308,7 +308,7 @@ Every file is checked with `--safe`, and there are no postulates
 with `--without-K`, except the abt extract). The Scott-domain
 development, and so Theorem 4.2 and the Scott-domain half of
 Proposition 5.1, takes three assumptions as module parameters of
-`Theorems/ScottDomains.agda` and `Theorems/ScottDomainsAdequacy.agda`, those of TypeTopology's
+`Theorems/CorrectWrtScottDomains.agda` and `Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda`, those of TypeTopology's
 domain theory: propositional truncation
 (`pt : propositional-truncations-exist`), function extensionality
 (`fe : Fun-Ext`) and propositional extensionality

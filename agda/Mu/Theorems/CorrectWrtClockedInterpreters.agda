@@ -22,7 +22,7 @@
 
 -}
 
-module Mu.Theorems.ClockedInterpreters where
+module Mu.Theorems.CorrectWrtClockedInterpreters where
 
 open import Framework.Primitives using (Int)
 open import Semantics.Observation using (o-const; _⇔_)

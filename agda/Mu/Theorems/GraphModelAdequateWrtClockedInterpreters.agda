@@ -11,7 +11,7 @@
   X86μ statements are for the programs the compiler produces, so that
   their preconditions (in Mu/proof/) need not be audited.
 
-  To read them: those of Mu/Theorems/GraphModel.agda, the FPC
+  To read them: those of Mu/Theorems/CorrectWrtGraphModel.agda, the FPC
   interpreter (Mu/Semantics/ClockedInterpreters/FPC.agda), the X86μ
   interpreter (Mu/Semantics/ClockedInterpreters/X86.agda), the clocked
   semantics (Semantics/Interp/Clock.agda) and the observations
@@ -19,7 +19,7 @@
 
 -}
 
-module Mu.Theorems.Adequacy where
+module Mu.Theorems.GraphModelAdequateWrtClockedInterpreters where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)

@@ -11,7 +11,7 @@
 
   for constants and for divergence. For a main of type Int, the graph
   model so states the theorem the reduction column states
-  (Mu/Theorems/ReductionSemantics.agda): the two stop with the same
+  (Mu/Theorems/CorrectWrtReductionSemantics.agda): the two stop with the same
   constant, or both diverge.
 
 -}

@@ -2,27 +2,27 @@
 
   The adequacy of the graph model for the reduction semantics of FPC:
   the analogue, for reduction, of Proposition 5.1 (adequacy) of the paper
-  (Mu/Theorems/Adequacy.agda, for the clocked interpreters), and the
+  (Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for the clocked interpreters), and the
   consequence drawn from it with Theorem 4.1, for the pair the reduction
-  column's theorem relates (Mu/Theorems/ReductionSemantics.agda): the
+  column's theorem relates (Mu/Theorems/CorrectWrtReductionSemantics.agda): the
   reduction semantics of FPC and the machine of X86μ. It is an
-  alternative to Mu/Theorems/Adequacy.agda, reported separately. The
+  alternative to Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported separately. The
   proofs are in Mu/proof/Adequacy/ReductionSemantics/ (and, for X86μ,
   Mu/proof/Adequacy/AbstractMachines/, as in
-  Mu/Theorems/AbstractMachinesAdequacy.agda).
+  Mu/Theorems/GraphModelAdequateWrtAbstractMachines.agda).
 
   compile is Mu/Compiler/Pipeline.agda's. The reduction semantics
   terminates with an observation when a run of reductions from M
   reaches a term that stops with that observation, and it diverges
   when it has a run of every length (Framework/Smallstep.agda), as in
-  Mu/Theorems/ReductionSemantics.agda.
+  Mu/Theorems/CorrectWrtReductionSemantics.agda.
 
-  To read them: those of Mu/Theorems/GraphModel.agda and of
-  Mu/Theorems/ReductionSemantics.agda.
+  To read them: those of Mu/Theorems/CorrectWrtGraphModel.agda and of
+  Mu/Theorems/CorrectWrtReductionSemantics.agda.
 
 -}
 
-module Mu.Theorems.ReductionSemanticsAdequacy where
+module Mu.Theorems.GraphModelAdequateWrtReductionSemantics where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)

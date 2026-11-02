@@ -255,8 +255,8 @@ def ml(x):
 # the Scott-domain column (needs TypeTopology; see --scott)
 SCOTT = [A + 'AllScott.agda', W + 'Scott/*.agda', WP + 'Scott/*.agda', A + 'Semantics/Scott/*.agda',
          MU + 'Semantics/ScottDomains/*.agda', MU + 'proof/Semantics/ScottDomains/*.agda',
-         MU + 'proof/Correctness/ScottDomains/*.agda', MU + 'Theorems/ScottDomains.agda',
-         MU + 'proof/Adequacy/ScottDomains/*.agda', MU + 'Theorems/ScottDomainsAdequacy.agda']
+         MU + 'proof/Correctness/ScottDomains/*.agda', MU + 'Theorems/CorrectWrtScottDomains.agda',
+         MU + 'proof/Adequacy/ScottDomains/*.agda', MU + 'Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda']
 
 
 def scott_files():
@@ -1644,11 +1644,11 @@ MU_BORROWED = "the ISWIM pipeline's modules it reuses (meaning of the primitives
 # FPC as a pipeline, for the audit-surface table (it has no graph model
 # with errors)
 MU_P = dict(sides=MU_SIDES, gerr=None, adeq='mu-adeq',
-            thm={'mu-den': MU + 'Theorems/GraphModel.agda', 'mu-op': MU + 'Theorems/AbstractMachines.agda',
-                 'mu-ck': MU + 'Theorems/ClockedInterpreters.agda', 'mu-red': MU + 'Theorems/ReductionSemantics.agda',
-                 'mu-adeq': MU + 'Theorems/Adequacy.agda',
-                 'mu-adeq-cek': MU + 'Theorems/AbstractMachinesAdequacy.agda',
-                 'mu-adeq-red': MU + 'Theorems/ReductionSemanticsAdequacy.agda'},
+            thm={'mu-den': MU + 'Theorems/CorrectWrtGraphModel.agda', 'mu-op': MU + 'Theorems/CorrectWrtAbstractMachines.agda',
+                 'mu-ck': MU + 'Theorems/CorrectWrtClockedInterpreters.agda', 'mu-red': MU + 'Theorems/CorrectWrtReductionSemantics.agda',
+                 'mu-adeq': MU + 'Theorems/GraphModelAdequateWrtClockedInterpreters.agda',
+                 'mu-adeq-cek': MU + 'Theorems/GraphModelAdequateWrtAbstractMachines.agda',
+                 'mu-adeq-red': MU + 'Theorems/GraphModelAdequateWrtReductionSemantics.agda'},
             name='FPC')
 
 
@@ -2046,9 +2046,9 @@ def scott_analyze(c, M):
     sf = scott_files()
     rows = [(r, files(ps)) for r, ps in SCOTT_ROWS]
     infra = [(r, files(ps)) for r, ps in SCOTT_INFRA]
-    thm = [MU + 'Theorems/ScottDomains.agda']
+    thm = [MU + 'Theorems/CorrectWrtScottDomains.agda']
     arows = [(r, files(ps)) for r, ps in SCOTT_ADEQ_ROWS]
-    athm = [MU + 'Theorems/ScottDomainsAdequacy.agda']
+    athm = [MU + 'Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda']
     covered = ({f for _, fs in rows + infra + arows for f in fs} | set(thm) | set(athm)
                | {A + 'AllScott.agda'})
     missing = sorted(sf - covered)
@@ -2128,7 +2128,7 @@ def scott_report(c, M):
         print(f'| {r} | {n} |')
     print(f"| **total** | {S['itotal']} |")
     print()
-    print(f"Theorem statements (Mu/Theorems/ScottDomains.agda): {S['thm']} lines.")
+    print(f"Theorem statements (Mu/Theorems/CorrectWrtScottDomains.agda): {S['thm']} lines.")
     print()
     print('| adequacy for the clocked interpreters (reported separately) | graph model | Scott domains |')
     print('|---|---:|---:|')
@@ -2144,7 +2144,7 @@ def scott_report(c, M):
         print('Reused by the Scott column\'s adequacy: ' + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
                                                                for un in sorted(S['areused'])) + '.')
         print()
-    print(f"Theorem statements (Mu/Theorems/ScottDomainsAdequacy.agda): {S['athm']} lines.")
+    print(f"Theorem statements (Mu/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda): {S['athm']} lines.")
     print()
     typetopology_report()
 

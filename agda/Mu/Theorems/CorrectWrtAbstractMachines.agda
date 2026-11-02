@@ -20,7 +20,7 @@
 
 -}
 
-module Mu.Theorems.AbstractMachines where
+module Mu.Theorems.CorrectWrtAbstractMachines where
 
 open import Framework.Primitives using (Int)
 open import Semantics.Observation using (o-const; _⇔_)

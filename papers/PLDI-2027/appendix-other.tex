@@ -1,6 +1,6 @@
 %% Appendix: the semantics of FPC and Instrμ in the other four styles, and
 %% the correctness theorem of each style. Sources:
-%% agda/Mu/Theorems/{ScottDomains,AbstractMachines,ClockedInterpreters,ReductionSemantics}.agda (the
+%% agda/Mu/Theorems/{CorrectWrtScottDomains,CorrectWrtAbstractMachines,CorrectWrtClockedInterpreters,CorrectWrtReductionSemantics}.agda (the
 %% statements); agda/Mu/Semantics/ClockedInterpreters/{Values,FPC,X86}.agda,
 %% agda/Framework/Clocked.agda; agda/Mu/Semantics/AbstractMachines/{Values,FPC,X86}.agda,
 %% agda/Framework/Smallstep.agda; agda/Mu/Semantics/ReductionSemantics/FPC.agda,
@@ -12,7 +12,7 @@
 \allowdisplaybreaks
 \section{The Other Four Semantics and Their Correctness Results}
 \label{app:other}
-\agda{Mu/Theorems/ClockedInterpreters.agda, AbstractMachines.agda, ReductionSemantics.agda, ScottDomains.agda}
+\agda{Mu/Theorems/CorrectWrtClockedInterpreters.agda, CorrectWrtAbstractMachines.agda, CorrectWrtReductionSemantics.agda, CorrectWrtScottDomains.agda}
 
 Each of the five developments of Section~\ref{sec:evaluation} proves
 the whole compiler correct with respect to its own semantics of the

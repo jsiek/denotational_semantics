@@ -24,7 +24,7 @@
 
 -}
 
-module Mu.Theorems.GraphModel where
+module Mu.Theorems.CorrectWrtGraphModel where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)

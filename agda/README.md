@@ -158,31 +158,31 @@ languages, which only the proofs use).
   of the paper to the code. Each states the end-to-end theorem for a
   closed main program of type Int, and its version for closed terms of
   every type:
-  * `Mu/Theorems/GraphModel.agda`: Theorem 4.1, the compiled program
+  * `Mu/Theorems/CorrectWrtGraphModel.agda`: Theorem 4.1, the compiled program
     produces the same constants as the source and produces something
     exactly when the source does; and Lemma 4.6, the same for split;
-  * `Mu/Theorems/AbstractMachines.agda`, `ClockedInterpreters.agda`,
-    `ReductionSemantics.agda`: Propositions F.2, F.1 and F.3, the source and
+  * `Mu/Theorems/CorrectWrtAbstractMachines.agda`, `CorrectWrtClockedInterpreters.agda`,
+    `CorrectWrtReductionSemantics.agda`: Propositions F.2, F.1 and F.3, the source and
     X86μ stop with the same integer, or both diverge
     (`compile-const`, `compile-diverges`), and are equivalent at
     every type (`compile-correct`);
-  * `Mu/Theorems/ScottDomains.agda` (checked by `make check-scott`, not
+  * `Mu/Theorems/CorrectWrtScottDomains.agda` (checked by `make check-scott`, not
     `make check`; see below): Theorem 4.2, the same as Theorem 4.1 in
     Scott domains (a term means an element of the domain of values 𝔻, a
     solution of 𝔻 ≅ 𝓛 (Σ t , Payload t 𝔻)), assuming propositional
     truncations, function extensionality and propositional
     extensionality (the parameters of the module);
-  * `Mu/Theorems/Adequacy.agda`: Proposition 5.1 for the graph model, which is sound
+  * `Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda`: Proposition 5.1 for the graph model, which is sound
     and adequate for the FPC interpreter, and for the X86μ
     interpreter running compiled programs; with Theorem 4.1, for a main
     of type Int, the operational styles' end-to-end theorem
     (`end-to-end-x86-const`, `end-to-end-x86-diverges`);
-  * `Mu/Theorems/AbstractMachinesAdequacy.agda`: the same, with the
+  * `Mu/Theorems/GraphModelAdequateWrtAbstractMachines.agda`: the same, with the
     abstract machines of FPC and X86μ in place of the interpreters.
-  * `Mu/Theorems/ReductionSemanticsAdequacy.agda`: the same for the
+  * `Mu/Theorems/GraphModelAdequateWrtReductionSemantics.agda`: the same for the
     reduction semantics of FPC, and, with the X86μ machine, the
     reduction column's end-to-end theorem.
-  * `Mu/Theorems/ScottDomainsAdequacy.agda` (checked by
+  * `Mu/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda` (checked by
     `make check-scott`): Proposition 5.1 for Scott domains, which are
     sound and adequate for the interpreters of FPC and X86μ; with
     Theorem 4.2, the interpreters' end-to-end theorem.
@@ -343,7 +343,7 @@ README).
 
 The denotational: Scott domains column needs TypeTopology, so it is not
 part of `All.agda`: `AllScott.agda` imports its theorem files
-(`Mu/Theorems/ScottDomains.agda`, `Mu/Theorems/ScottDomainsAdequacy.agda`) and proofs, and `make check-scott` fetches
+(`Mu/Theorems/CorrectWrtScottDomains.agda`, `Mu/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda`) and proofs, and `make check-scott` fetches
 TypeTopology at a pinned commit into `_deps/` (not tracked;
 `scott/fetch-typetopology.sh`, which applies
 `scott/typetopology-builtin-alias.patch` so that TypeTopology and the

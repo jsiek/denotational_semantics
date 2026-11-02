@@ -18,8 +18,8 @@
 module AllScott where
 
 {- the theorem statements -}
-import Mu.Theorems.ScottDomains
-import Mu.Theorems.ScottDomainsAdequacy
+import Mu.Theorems.CorrectWrtScottDomains
+import Mu.Theorems.ScottDomainsAdequateWrtClockedInterpreters
 
 {- the language-independent lemmas: dcpos, the solution of the domain
    equation, the domain of values and its operators, the combinators for

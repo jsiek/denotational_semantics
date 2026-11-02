@@ -4,7 +4,7 @@
   of Theorem 4.2 (compiler correctness, Scott domains) of the paper.
   The proofs are in Mu/proof/Correctness/ScottDomains/; each theorem
   here is one of them, with its type written out, as
-  Mu/Theorems/GraphModel.agda does for the graph model.
+  Mu/Theorems/CorrectWrtGraphModel.agda does for the graph model.
 
   compile (Mu/Compiler/Pipeline.agda) is the composition of the ten
   passes. A term means an element of the domain
@@ -36,7 +36,7 @@ open import Mu.Compiler.Pipeline using (compile)
 
 open import Data.List using ([])
 
-module Mu.Theorems.ScottDomains
+module Mu.Theorems.CorrectWrtScottDomains
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)

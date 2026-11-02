@@ -2,9 +2,9 @@
 
   The adequacy of the Scott-domain semantics for the clocked
   interpreters of FPC and X86μ: the Scott-domain half of
-  Proposition 5.1 (adequacy) of the paper (Mu/Theorems/Adequacy.agda has
+  Proposition 5.1 (adequacy) of the paper (Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda has
   the graph-model half), and the consequence drawn from it with compiler
-  correctness in Scott domains (Mu/Theorems/ScottDomains.agda), the
+  correctness in Scott domains (Mu/Theorems/CorrectWrtScottDomains.agda), the
   theorem the operational proofs state. The proofs are in
   Mu/proof/Adequacy/ScottDomains/. The X86μ statements are for the
   programs the compiler produces, so that their precondition (in
@@ -12,12 +12,12 @@
 
   A term means an element of the domain of values 𝔻
   (Framework/Scott/Domain.agda); const B c is the constant c() and ⊥𝔻
-  means divergence. As in Mu/Theorems/ScottDomains.agda, the theorems
+  means divergence. As in Mu/Theorems/CorrectWrtScottDomains.agda, the theorems
   are stated under the assumptions of TypeTopology's domain theory
   (propositional truncations, function extensionality and propositional
   extensionality), the parameters of this module.
 
-  To read them: those of Mu/Theorems/ScottDomains.agda, the FPC
+  To read them: those of Mu/Theorems/CorrectWrtScottDomains.agda, the FPC
   interpreter (Mu/Semantics/ClockedInterpreters/FPC.agda), the X86μ
   interpreter (Mu/Semantics/ClockedInterpreters/X86.agda), the clocked
   semantics (Semantics/Interp/Clock.agda) and the observations
@@ -42,7 +42,7 @@ import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
 open import Data.List using ([])
 open import Data.Integer using (ℤ)
 
-module Mu.Theorems.ScottDomainsAdequacy
+module Mu.Theorems.ScottDomainsAdequateWrtClockedInterpreters
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -86,7 +86,7 @@ x86-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
   × (⟦ compile M ⟧ₜ ＝ ⊥𝔻 → Diverges (X86μᵢ.sem (compile M)))
 x86-diverges-iff = AdequacyX86.x86-diverges-iff
 
-{- With compiler correctness (Mu/Theorems/ScottDomains.agda): the compiler,
+{- With compiler correctness (Mu/Theorems/CorrectWrtScottDomains.agda): the compiler,
    observed through the interpreters ----------------------------------------}
 
 {- for a program of type Int, the theorem the operational proofs state:

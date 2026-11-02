@@ -2,10 +2,10 @@
 
   The adequacy of the graph model for the abstract machines (CEK
   machines) of FPC and X86μ: the analogue, for the machines, of
-  Proposition 5.1 (adequacy) of the paper (Mu/Theorems/Adequacy.agda, for
+  Proposition 5.1 (adequacy) of the paper (Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for
   the clocked interpreters), and the consequence drawn from it with
   Theorem 4.1, the theorem the operational proofs state. It is an
-  alternative to Mu/Theorems/Adequacy.agda, reported separately. The
+  alternative to Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported separately. The
   proofs are in Mu/proof/Adequacy/AbstractMachines/.
 
   compile is Mu/Compiler/Pipeline.agda's. The X86μ statements are for
@@ -17,9 +17,9 @@
   when it has a run of every length (Framework/Smallstep.agda); these
   replace the interpreters' clocked Terminates and Diverges
   (Semantics/Interp/Clock.agda). The statements are otherwise those of
-  Mu/Theorems/Adequacy.agda.
+  Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda.
 
-  To read them: those of Mu/Theorems/GraphModel.agda, the machines of
+  To read them: those of Mu/Theorems/CorrectWrtGraphModel.agda, the machines of
   FPC and X86μ (Mu/Semantics/AbstractMachines/FPC.agda and X86.agda),
   their transition systems (Semantics/CEK/Smallstep.agda,
   Framework/Smallstep.agda) and the observations
@@ -27,7 +27,7 @@
 
 -}
 
-module Mu.Theorems.AbstractMachinesAdequacy where
+module Mu.Theorems.GraphModelAdequateWrtAbstractMachines where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)

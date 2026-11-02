@@ -162,7 +162,7 @@ README_REWRITES = [
      '| Table 2 (infrastructure) | `../../loc.py` | `make tables` (`python3 loc.py --artifact`) |\n', 1),
     (r'`python3 papers/PLDI-2027/loc\.py --mu` checks this and prints the size\n'
      r'of each style\'s surface \(the Scott column\'s is the closure of\n'
-     r'`Theorems/ScottDomains\.agda`, which needs TypeTopology\)\.',
+     r'`Theorems/CorrectWrtScottDomains\.agda`, which needs TypeTopology\)\.',
      '`make tables` (`python3 loc.py --artifact`) checks this.', 1),
     (r'The language-independent definitions are shared with the other\n'
      r'pipelines of the repository and live in',

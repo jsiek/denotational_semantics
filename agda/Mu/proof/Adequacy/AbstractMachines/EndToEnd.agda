@@ -18,7 +18,7 @@
 
   An alternative to Mu/proof/Adequacy/EndToEnd.agda, which observes the
   compiler through the clocked interpreters instead and is the graph
-  model's end theorem (Mu/Theorems/Adequacy.agda); this one is kept for
+  model's end theorem (Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda); this one is kept for
   the comparison of the two targets of adequacy, reported separately.
 
 -}
