@@ -157,19 +157,19 @@ languages, which only the proofs use).
   every type:
   * `Mu/Theorems/GraphModel.agda`: Theorem 4.1, the compiled program
     produces the same constants as the source and produces something
-    exactly when the source does; and Theorem 4.4, the same for split;
+    exactly when the source does; and Lemma 4.6, the same for split;
   * `Mu/Theorems/AbstractMachines.agda`, `ClockedInterpreters.agda`,
     `ReductionSemantics.agda`: Theorems F.2, F.1 and F.3, the source and
     X86μ stop with the same integer, or both diverge
     (`compile-const`, `compile-diverges`), and are equivalent at
     every type (`compile-correct`);
   * `Mu/Theorems/ScottDomains.agda` (checked by `make check-scott`, not
-    `make check`; see below): Theorem F.4, the same as Theorem 4.1 in
+    `make check`; see below): Theorem 4.2, the same as Theorem 4.1 in
     Scott domains (a term means an element of the domain of values 𝔻, a
     solution of 𝔻 ≅ 𝓛 (Σ t , Payload t 𝔻)), assuming propositional
     truncations, function extensionality and propositional
     extensionality (the parameters of the module);
-  * `Mu/Theorems/Adequacy.agda`: Theorem 4.5, the graph model is sound
+  * `Mu/Theorems/Adequacy.agda`: Proposition 5.1, the graph model is sound
     and adequate for the FPC interpreter, and for the X86μ
     interpreter running compiled programs; with Theorem 4.1, for a main
     of type Int, the operational styles' end-to-end theorem

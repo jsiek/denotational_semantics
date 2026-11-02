@@ -8,14 +8,10 @@
 \section{Proving the Compiler Correct}
 \label{sec:compiler-proof}
 
-This section proves the following theorem about the whole compiler,
-in the graph model. For space, it presents the Scott-domain proof of
-the same compiler only briefly: Section~\ref{sec:scott-delay}
-summarizes its proof of \pass{split closure}, Appendix~\ref{app:scott} states
-its theorem (Theorem~\ref{thm:scott}), and
-Appendix~\ref{app:scott-delay} gives the proof of \pass{split closure} in full.
-
-
+This section proves the following two theorems about the whole
+compiler. For space, it presents the Scott-domain proof only briefly
+(Section~\ref{sec:scott-delay} and Appendices~\ref{app:scott}
+and~\ref{app:scott-delay}).
 
 \begin{theorem}[Compiler correctness]\label{thm:compiler}
 Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every constant $c$,
@@ -24,9 +20,18 @@ Moreover, $\den{M} \neq \emptyset$ if and only if
 $\den{\pass{compile}(M)} \neq \emptyset$.
 \end{theorem}
 
-Theorem~\ref{thm:compiler}, which we mechanize in Agda, answers RQ1 affirmatively; with adequacy (Section~\ref{sec:adequacy}), it says that the compiler preserves and reflects divergence. The same statement holds for closed terms of every type; we state it for $\kw{Int}$, the type of a whole program's result, to align it with the operational theorems (Section~\ref{sec:evaluation}). The proof composes one result per pass: an equation for every pass but
-\pass{split closure}, and for \pass{split closure} the weaker statement of
-Theorem~\ref{thm:delay}. 
+\begin{theorem}[Compiler correctness, Scott domains]\label{thm:scott}
+Assume propositional truncation, function extensionality, and
+propositional extensionality. Let $M$ be a closed term of \fpc\ of
+type $\kw{Int}$. For every constant $c$,
+$\den{M}\rho_0 = \up{(c, ())}$ if and only if
+$\den{\pass{compile}(M)} = \up{(c, ())}$. Moreover, $\den{M}\rho_0$ is
+defined if and only if $\den{\pass{compile}(M)}$ is defined.
+\end{theorem}
+
+Theorems~\ref{thm:compiler} and~\ref{thm:scott}, which we mechanize in Agda, answer RQ1 affirmatively. With adequacy (Section~\ref{sec:adequacy}), they say that the compiler preserves and reflects divergence. The same statements hold for closed terms of every type; we state them for $\kw{Int}$, the type of a whole program's result, to align them with the operational correctness results (Section~\ref{sec:evaluation}). Each proof composes one result per pass: an equation for every pass but
+\pass{split closure} (Lemma~\ref{lem:equational} for the graph model), and for \pass{split closure} the weaker statement of
+Lemma~\ref{lem:delay} (Lemma~\ref{lem:scott-delay} for Scott domains).
 
 This section first shows how we prove the passes other than \pass{split closure} (Section~\ref{sec:equational}). These proofs give the denotational half of the answer to RQ3. The section then shows why \pass{split closure} needs more (Section~\ref{sec:approx-lr}), summarizes the Scott-domain proof of \pass{split closure} (Section~\ref{sec:scott-delay}), and ends with adequacy (Section~\ref{sec:adequacy}), which connects
 Theorem~\ref{thm:compiler} to running code.
@@ -34,11 +39,17 @@ Theorem~\ref{thm:compiler} to running code.
 \subsection{Passes Proved by an Equation}
 \label{sec:equational}
 
-For seven of the eight passes, the theorem is an equation between the
-meaning of a program and the meaning of its translation, such as
-$\den{M} = \den{\pass{simplify}(M)}$ or
-$\den{M} = \den{\pass{hoist}(M)}$. To apply induction, each proof
-generalizes the equation from closed programs to open terms. The
+For seven of the eight passes, correctness is an equation between the
+meaning of a program and the meaning of its translation.
+
+\begin{lemma}[Passes proved by an equation]\label{lem:equational}
+Let $p$ be a pass other than \pass{split closure}, and let $M$ be a
+closed term of the source language of $p$. Then
+$\den{M} = \den{p(M)}$.
+\end{lemma}
+
+To apply induction, each proof
+generalizes the equation of Lemma~\ref{lem:equational} from closed programs to open terms. The
 generalized statement says that a term, in a source environment, means
 the same as its translation, in a related target environment. In every one of these passes, the relation on environments requires
 each variable to mean the same as its translation, with side

@@ -10,7 +10,7 @@
 
 \raggedbottom
 \allowdisplaybreaks
-\section{The Other Four Semantics and Their Theorems}
+\section{The Other Four Semantics and Their Correctness Results}
 \label{app:other}
 \agda{Mu/Theorems/ClockedInterpreters.agda, AbstractMachines.agda, ReductionSemantics.agda, ScottDomains.agda}
 
@@ -20,8 +20,10 @@ languages. For the graph model, the semantics are those of
 Appendix~\ref{app:languages} and the theorem is
 Theorem~\ref{thm:compiler}. This appendix gives, for each of the other
 four styles, the semantics of the source language \fpc\ and the
-target language \instr, and the correctness theorem for the whole
-compiler, so that each theorem can be read on its own. The semantics
+target language \instr. For the operational styles, it also states
+the correctness result for the whole compiler, so that each can be
+read on its own. The theorem for Scott domains is
+Theorem~\ref{thm:scott}. The semantics
 of the intermediate languages follow the same pattern and are in the
 artifact.
 
@@ -95,7 +97,7 @@ clock.
 Two machines, or two interpreters, are \emph{equivalent} when, for
 every observation $o$, one terminates with $o$ if and only if the other
 does, and one diverges if and only if the other does. The three
-operational theorems state that a program and its compilation are
+operational propositions state that a program and its compilation are
 equivalent.
 
 \subsection{Clocked Interpreters}
@@ -193,9 +195,9 @@ empty frame, and nothing else set. The interpreter of a program is $k
 \mapsto \mathit{run}_k(B, m_0, s)$ for the main function body $s$ with
 blocks $B$, where $m_0$ has an empty frame and nothing set.
 
-\begin{theorem}[Correctness, clocked interpreters]\label{thm:interp}
+\begin{proposition}[Correctness, clocked interpreters]\label{prop:interp}
 Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the interpreter of \fpc\ on $M$ terminates with $n$ if and only if the interpreter of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two interpreters are equivalent.
-\end{theorem}
+\end{proposition}
 
 \subsection{Abstract Machines}
 \label{app:machines}
@@ -276,9 +278,9 @@ In the notation of Appendix~\ref{app:interp}, a state of the machine of \instr, 
 The machine of a program starts in $\mathit{run}(s, B, \mathit{halt},
 m_0)$ for the main function body $s$ with blocks $B$.
 
-\begin{theorem}[Correctness, abstract machines]\label{thm:machines}
+\begin{proposition}[Correctness, abstract machines]\label{prop:machines}
 Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the machine of \fpc\ on $M$ terminates with $n$ if and only if the machine of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two machines are equivalent.
-\end{theorem}
+\end{proposition}
 
 \subsection{Reduction Semantics}
 \label{app:reduction}
@@ -346,9 +348,9 @@ Appendix~\ref{app:machines} for them, and shares the proofs of
 \pass{explicate control} and \pass{select instructions} with the
 abstract-machine development.
 
-\begin{theorem}[Correctness, reduction semantics]\label{thm:reduction}
+\begin{proposition}[Correctness, reduction semantics]\label{prop:reduction}
 Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the reduction semantics of \fpc\ on $M$ terminates with $n$ if and only if the machine of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two are equivalent.
-\end{theorem}
+\end{proposition}
 
 \subsection{Scott Domains}
 \label{app:scott}
@@ -452,11 +454,8 @@ $\{\langle\rangle\}$ as the content of an unset register and an unset
 flag. A sequence means a continuous function of the frame, the
 registers, and the flag.
 
-\begin{theorem}[Correctness, Scott domains]\label{thm:scott} Assume propositional truncation, function extensionality, and propositional extensionality. Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every constant $c$, $\den{M}\rho_0 = \up{(c, ())}$ if and only if $\den{\pass{compile}(M)} = \up{(c, ())}$.
-Moreover, $\den{M}\rho_0$ is defined if and only if
-$\den{\pass{compile}(M)}$ is defined. More generally, for every closed
-term $M$, the same holds.
-\end{theorem}
+Theorem~\ref{thm:scott} (Section~\ref{sec:compiler-proof}) states the
+correctness of the compiler with respect to these semantics.
 
 \section{The Scott-Domain Proof of \pass{split closure}}
 \label{app:scott-delay}
@@ -659,13 +658,13 @@ The proof is by induction on $M$, with the same induction for both
 directions. Lemma~\ref{lem:scott-ops} covers the shared operators, and
 Lemma~\ref{lem:scott-clos} covers the closures and calls.
 
-\begin{theorem}[Correctness of \pass{split closure}, Scott domains]\label{thm:scott-delay}
+\begin{lemma}[Correctness of \pass{split closure}, Scott domains]\label{lem:scott-delay}
 Let $M$ be a closed term of EnvClos. For every constant $c$,
 $\den{M}\rho_0 = \up{(c, ())}$ if and only if
 $\den{\pass{split}(M)}\rho_0 = \up{(c, ())}$. Moreover,
 $\den{M}\rho_0$ is defined if and only if
 $\den{\pass{split}(M)}\rho_0$ is defined.
-\end{theorem}
+\end{lemma}
 
 The empty environments are related, so Lemma~\ref{lem:scott-fundamental}
 gives that $\den{M}\rho_0$ and $\den{\pass{split}(M)}\rho_0$ are

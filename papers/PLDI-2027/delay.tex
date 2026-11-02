@@ -100,7 +100,7 @@ homomorphically:
 
 The correctness of \pass{split closure} is not an equation. Instead, a closed program
 and its translation produce the same constants, and one produces
-something exactly when the other does (Theorem~\ref{thm:delay}). The forward half,
+something exactly when the other does (Lemma~\ref{lem:delay}). The forward half,
 preservation, requires only a relation between a \emph{single} source
 element and the \emph{set} of target elements, defined by recursion on
 the source element (Figure~\ref{fig:preserve}), because a source
@@ -359,12 +359,12 @@ gives us $\den{N}\rho_N \ALR W$.
 Finally, Lemma~\ref{lem:beta} yields $\den{N}\rho_N \subseteq D \app E$,
 and ${\ALR}$ is monotone in its source set, so $D \app E \ALR W$.
 
-\begin{theorem}[Correctness of \pass{split closure}]\label{thm:delay}
+\begin{lemma}[Correctness of \pass{split closure}]\label{lem:delay}
 Let $M$ be a closed term of EnvClos. For every constant $c$,
 $c \in \den{M}$ if and only if $c \in \den{\pass{split}(M)}$.
 Moreover, $\den{M} \neq \emptyset$ if and only if
 $\den{\pass{split}(M)} \neq \emptyset$.
-\end{theorem}
+\end{lemma}
 
 Because $\rho_0 \ALR \rho_0$, reflection follows from
 Lemma~\ref{lem:delay-fundamental}. If $c \in \den{\pass{split}(M)}$,
@@ -376,7 +376,7 @@ follows from the relation $\sqsubseteq$ of
 Figure~\ref{fig:preserve}. For a constant, $c \sqsubseteq D'$ means
 $c \in D'$, and $v \sqsubseteq D'$ implies $D' \neq \emptyset$.
 
-Theorem~\ref{thm:delay} is the result announced in the introduction,
+Lemma~\ref{lem:delay} is the result announced in the introduction,
 that closure conversion preserves and reflects the meaning of programs,
 divergence included. Section~\ref{sec:evaluation} compares the size of
 this proof with the operational proofs of \pass{split closure}.
@@ -429,7 +429,8 @@ pair, and a call applies its code only to the environment of that
 pair. In exchange, the proof must show that every stage relation
 is a proposition, downward closed, admissible, and preserved by the
 maps between stages (Lemma~\ref{lem:scott-stages}). The result,
-Theorem~\ref{thm:scott-delay}, is the counterpart of
-Theorem~\ref{thm:delay}: a second denotational proof that closure
-conversion preserves and reflects divergence.
+Lemma~\ref{lem:scott-delay}, is the counterpart of
+Lemma~\ref{lem:delay} and the key step of the proof of
+Theorem~\ref{thm:scott}. It is a second denotational proof that
+closure conversion preserves and reflects divergence.
 

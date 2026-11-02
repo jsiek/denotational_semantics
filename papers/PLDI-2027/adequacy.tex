@@ -11,7 +11,7 @@
 \section{Adequacy}
 \label{sec:adequacy}
 
-Each of our five correctness theorems speaks of a different semantics.
+Each of our five correctness results speaks of a different semantics.
 To check that our mechanized semantics agree, we prove the graph model
 adequate with respect to the clocked interpreters, the CEK machines,
 and the reduction semantics (Appendices~\ref{app:interp},
@@ -19,9 +19,9 @@ and the reduction semantics (Appendices~\ref{app:interp},
 Scott-domain semantics adequate with respect to the clocked
 interpreters. We regard these proofs as checks on our definitions, not
 as contributions, because each one adapts a textbook proof. We state
-the theorem for the interpreters.
+the proposition for the interpreters.
 
-\begin{theorem}[Adequacy]\label{thm:adequacy}
+\begin{proposition}[Adequacy]\label{prop:adequacy}
 Let $M$ be a closed term of \fpc. For every constant $c$,
 $c \in \den{M}$ if and only if the interpreter of \fpc\ terminates on
 $M$ with $c$, and $\den{M}$ is empty if and only if the interpreter
@@ -30,9 +30,9 @@ for \instr\ and $\pass{compile}(M)$. In the Scott-domain semantics,
 $\den{M}\rho_0 = \up{(c, ())}$ if and only if the interpreter
 terminates on $M$ with $c$, and $\den{M}\rho_0 = \bot$ if and only if
 the interpreter diverges on $M$, and the same holds for \instr.
-\end{theorem}
+\end{proposition}
 
-The graph-model half of the theorem also holds with the CEK machines
+The graph-model half of the proposition also holds with the CEK machines
 of \fpc\ and \instr\ in place of the interpreters, and with the
 reduction semantics of \fpc. These cover every semantics in our
 comparison, because the reduction-semantics proof of correctness uses
@@ -58,10 +58,12 @@ recursion on the stages of the bilimit, as for \pass{split closure}
 (Section~\ref{sec:scott-delay}). It relates each approximation of a
 domain element to an interpreter value.
 
-Together with Theorem~\ref{thm:compiler}, Theorem~\ref{thm:adequacy}
-gives the theorem that the operational proofs state, namely that for a
-program of integer type the source and the target terminate with the
-same integer or both diverge. All five correctness theorems are
+Together with Theorems~\ref{thm:compiler} and~\ref{thm:scott},
+Proposition~\ref{prop:adequacy} gives the statements of the operational
+correctness results
+(Propositions~\ref{prop:interp}--\ref{prop:reduction}), namely that for
+a program of integer type the source and the target terminate with the
+same integer or both diverge. All five correctness results are
 therefore equivalent. For the graph model, the adequacy proofs take
 1,529 lines of Agda for the interpreters, 1,606 for the CEK machines,
 and 1,574 for the reduction semantics, and the proof for Scott domains

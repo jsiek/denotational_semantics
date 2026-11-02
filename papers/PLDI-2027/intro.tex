@@ -103,7 +103,8 @@ three research questions:
   its correctness proof in each style?
 \end{description}
 
-We answer RQ1 affirmatively, in two denotational models. Our first
+We answer RQ1 affirmatively, in two denotational models
+(Theorems~\ref{thm:compiler} and~\ref{thm:scott}). Our first
 model is a graph model, in which a program denotes a set of
 inductively defined graph
 elements~\citep{Scott:1976lq,Engeler:1981aa,Plotkin:1993ab}. Each
@@ -115,11 +116,11 @@ introduce a new kind of relation between denotations, the
 finite set of target graph elements (a finite approximation) to a
 possibly infinite source denotation, and to define the relation by
 recursion on the depth of the elements in the finite set
-(Section~\ref{sec:approx-lr}). Our second model uses Scott domains, in
+(Section~\ref{sec:approx-lr} and Lemma~\ref{lem:delay}). Our second model uses Scott domains, in
 which a program denotes an element of a universal domain of tagged
 values~\citep{Scott:1982aa}.  There we define the relation by
 recursion on the stages of the bilimit that constructs the domain
-(Section~\ref{sec:scott-delay}), as \citet{Reynolds:1974aa} did to
+(Section~\ref{sec:scott-delay} and Lemma~\ref{lem:scott-delay}), as \citet{Reynolds:1974aa} did to
 relate the direct and continuation semantics of an untyped
 $\lambda$-calculus. Other styles of denotational semantics
 remain to be evaluated for compiler correctness and closure
@@ -133,7 +134,7 @@ and game semantics \citep{Hyland:2000ve}.
 On top of our denotational results for closure conversion, we develop
 two correctness proofs for the eight-pass compiler from \fpc{} to a
 typed low-level intermediate language. For seven of the eight passes, correctness is
-expressed as equality of denotations and the proofs are by induction
+expressed as equality of denotations (Lemma~\ref{lem:equational}) and the proofs are by induction
 on terms and use equational reasoning.  The exception is the pass that
 separates the code of each closure from its environment, \pass{split
   closure}, whose reflection proof uses the approximant logical
@@ -142,7 +143,8 @@ for Scott domains.
 
 To answer RQ2 and RQ3, we compare the two denotational proofs with
 proofs of correctness of the same compiler with respect to three
-operational semantics, each proved using the technique usual for its
+operational semantics
+(Propositions~\ref{prop:interp}--\ref{prop:reduction}), each proved using the technique usual for its
 style: clocked interpreters with relations on values, abstract
 machines with simulations, and reduction semantics with simulations.
 Earlier work that compares
@@ -150,13 +152,13 @@ proofs of compiler correctness focuses on a single phase or pass of a
 compiler \citep{Owens:2016aa,Kahn:2025aa,Knothe:2026aa}; ours is the
 first on a whole compiler for a higher-order language.
 %
-Each of the five correctness theorems is with respect to a different
+Each of the five correctness results is with respect to a different
 semantics, so one might wonder whether the semantics and therefore the
-theorems are equivalent. To check that our mechanized semantics agree,
+results are equivalent. To check that our mechanized semantics agree,
 we prove the graph model adequate with respect to the interpreters,
 the abstract machines, and the reduction semantics, and the
 Scott-domain semantics adequate with respect to the interpreters
-(Section~\ref{sec:adequacy}), so the five theorems are equivalent.
+(Proposition~\ref{prop:adequacy}), so the five results are equivalent.
 These proofs adapt textbook proofs of adequacy
 \citep{Plotkin:1977oc,Plotkin:1985aa,Siek:2017ab}.
 
