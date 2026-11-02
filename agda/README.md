@@ -1,4 +1,43 @@
-# The closure-conversion compiler and its correctness proofs
+# Two closure-conversion compilers and their correctness proofs
+
+This directory holds two compilers, each proved correct in several
+semantic styles, and the modules they share:
+
+* `FPC/`: the compiler of the PLDI 2027 paper, from FPC (Plotkin's
+  Fixed Point Calculus, with iso-recursive types) to the typed assembly
+  language X86μ, proved correct in five styles; `FPC/README.md` is its
+  road map from the paper, and `FPC/All.agda` imports it.
+* `ISWIM/`: the ISWIM compilers (below), with the typed pipeline, from
+  untyped ISWIM to the typed assembly language X86ᵀ, directly in
+  `ISWIM/`, and the untyped pipeline that preceded it in
+  `ISWIM/Untyped/`; `ISWIM/All.agda` imports both.
+* the modules both compilers share, directly here: the
+  language-independent frameworks (`Framework/`, with their lemmas in
+  `proof/Framework/`), the primitives (`Language/Prim.agda`) and the
+  registers (`Language/Reg.agda`), the graph model's and Scott domains'
+  meaning of the primitives (`Semantics/Graph/Prim.agda`,
+  `Semantics/Scott/Prim.agda`), the observations
+  (`Semantics/Observation.agda`), and the instances of the small-step,
+  clocked and reduction frameworks at them
+  (`Semantics/CEK/Smallstep.agda`, `Semantics/Interp/Clock.agda`,
+  `Semantics/Reduction/Smallstep.agda`), with their lemmas in `proof/`.
+* `All.agda`: imports `ISWIM/All.agda`, `FPC/All.agda`,
+  `FPC/Experiments.agda` and every module of `proof/`, so that
+  `make check` checks everything but the Scott-domain column of FPC,
+  which needs TypeTopology and is checked from `AllScott.agda`
+  (`make check-scott`).
+* `old/`: earlier developments, a separate library, not checked by
+  `make check` (see the top-level README).
+
+`FPC/` and `ISWIM/` have the same shape: in each, `Theorems/` holds the
+theorem statements, `Language/`, `Compiler/` and `Semantics/` the
+definitions they use, and `proof/` the proofs (see "The audit surface"
+below). `FPC/X.agda` corresponds to `ISWIM/X.agda` (with
+`ISWIM/Language/Typed/` as `FPC/Language/` and
+`ISWIM/Semantics/<style>/Typed/` as `FPC/Semantics/<style>/`), and the
+module `FPC.X` to `ISWIM.X`.
+
+## The ISWIM compilers
 
 A compiler from ISWIM to X86ᵀ, a typed assembly language,
 
@@ -18,26 +57,25 @@ substitution, and forward simulations); and the graph model with errors
 (an error denotes a set holding ω, divergence ∅); with both graph models
 proved sound and adequate for the machines.
 
-A second compiler, from FPC (Plotkin's Fixed Point Calculus, with iso-recursive types)
-to the typed assembly language X86μ (`Mu/`, below), is proved correct
-in the first four styles, with the graph model proved adequate for the
-machines; it is the main experiment of the size comparison
-(`papers/PLDI-2027/loc.md`), and this pipeline shows how dynamic typing
-and errors change it.
+The compiler of `FPC/`, from FPC to the typed assembly language X86μ,
+is proved correct in the first four styles (and in Scott domains), with
+the graph model proved adequate for the machines; it is the main
+experiment of the size comparison (`papers/PLDI-2027/loc.md`), and this
+pipeline shows how dynamic typing and errors change it.
 
 The source, ISWIM, is untyped. Cast insertion (after *Essentials of
 Compilation*, ch. 9) makes every check of the kind of a value explicit,
 as a `project` from the type `Any` of tagged values, placed where the
 ISWIM machine checks; the languages after it are intrinsically typed
 (terms indexed by a context and a type), so `project` is the only
-operation that can fail. The target, X86ᵀ (`Language/Typed/X86.agda`),
+operation that can fail. The target, X86ᵀ (`ISWIM/Language/Typed/X86.agda`),
 is a typed assembly language after Morrisett, Walker, Crary and Glew's
 TAL: x86 with variables over abstract values, its instructions typed by
 the machine states they start and end in (the types of the registers,
 the frame, the open closure and the flag); its only check is
 `project`'s, `chk`, which stands for the X86 instruction that errs on a
 value of another kind and the move. Without the types it is untyped X86
-(`Language/X86.agda`), the target of the untyped pipeline.
+(`ISWIM/Language/X86.agda`), the target of the untyped pipeline.
 
 The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
 simplified version of Chez Scheme's cp0: constant folding, case of a
@@ -53,21 +91,25 @@ Check everything, from the root of the repository, with
 
 which runs `agda --safe agda/All.agda` (no postulates, no unsafe flags,
 standard library only) and then greps the checked tree (everything here
-but `old/`, so `Untyped/` too) for `postulate`, `TERMINATING`,
+but `old/`, so `ISWIM/Untyped/` too) for `postulate`, `TERMINATING`,
 `NON_TERMINATING`, `NO_TERMINATION_CHECK`, `NO_POSITIVITY_CHECK`,
 `NO_UNIVERSE_CHECK`, `INJECTIVE`, `ETA`, `REWRITE` and `OPTIONS` flags
 other than `--without-K`, failing if it finds any.
 
 ## Layout
 
-* `Theorems/`: the public theorem statements (below).
-* `Language/`: the untyped source ISWIM, untyped X86 (the untyped
-  pipeline's target), and the primitives; `Language/Typed/`: the types
+The typed ISWIM pipeline is in `ISWIM/`, and uses the shared modules
+directly here:
+
+* `ISWIM/Theorems/`: the public theorem statements (below).
+* `ISWIM/Language/`: the untyped source ISWIM and untyped X86 (the
+  untyped pipeline's target); `ISWIM/Language/Typed/`: the types
   (`Type.agda`: `Any`, the flat types, the tags `project` tests,
   `code n`), the typed languages ISWIMᵀ, Clos2ᵀ–Clos5ᵀ, Monᵀ, Impᵀ and
   CFGᵀ, and the target, X86ᵀ (`X86.agda`), with its erasure into X86
-  (`X86Erase.agda`).
-* `Compiler/`: the passes (simplify, cast insertion, capture, prune,
+  (`X86Erase.agda`). The primitives are shared with FPC
+  (`Language/Prim.agda`).
+* `ISWIM/Compiler/`: the passes (simplify, cast insertion, capture, prune,
   concretize, split, hoist, rco, lift locals, explicate control,
   select instructions, into X86ᵀ) and their compositions
   (`Pipeline.agda`: `compile₄`, `compile`, `compile-mon`, `compile-imp`,
@@ -75,15 +117,18 @@ other than `--without-K`, failing if it finds any.
   (`CaptureScope.agda`), the precondition of the theorems about the
   whole compiler, and select into untyped X86 (`SelectX86.agda`), not a
   pass but the code select emits without the types.
-* `Semantics/<style>/`: the semantics of ISWIM in each style, and in
-  `Semantics/<style>/Typed/` those of the typed languages, X86ᵀ among
-  them (`<style>` is `Graph`, `CEK`, `Interp`, `Reduction` or
+* `ISWIM/Semantics/<style>/`: the semantics of ISWIM in each style, and
+  in `ISWIM/Semantics/<style>/Typed/` those of the typed languages, X86ᵀ
+  among them (`<style>` is `Graph`, `CEK`, `Interp`, `Reduction` or
   `GraphErr`; the reduction semantics has none for the languages
   without binders, whose machines it shares with `CEK`);
-  `Semantics/CEK/X86.agda`: the machine of untyped X86 (for the untyped
-  pipeline, and for the typed one's assurance);
-  `Semantics/Observation.agda`: the observations.
-* `Framework/`: the language-independent infrastructure (abstract
+  `ISWIM/Semantics/CEK/X86.agda`: the machine of untyped X86 (for the untyped
+  pipeline, and for the typed one's assurance). The meaning of the
+  primitives in the graph model, the observations and the frameworks'
+  instances at them are shared with FPC (`Semantics/Graph/Prim.agda`,
+  `Semantics/Observation.agda`, `Semantics/CEK/Smallstep.agda`,
+  `Semantics/Interp/Clock.agda`, `Semantics/Reduction/Smallstep.agda`).
+* `Framework/` (shared with FPC): the language-independent infrastructure (abstract
   binding trees, syntax and substitution, typed indices and vectors, the
   graph model and its error monad, the semantics of intrinsically typed
   syntax, the small-step, reduction and clocked frameworks).
@@ -92,8 +137,9 @@ other than `--without-K`, failing if it finds any.
   sets as predicates, DOp signatures, the domain, `Env`, `⋆` and `ℬ`
   (and the error monad); their `proof/` halves add the lemmas about
   them, for the proofs.  `papers/PLDI-2027/loc.py` looks through them.
-* `proof/`: the proofs, mirroring the paths above (see below).
-* `Untyped/`: the untyped pipeline that preceded this one, preserved
+* `ISWIM/proof/` (and `proof/`, for the shared modules): the proofs,
+  mirroring the paths above (see below).
+* `ISWIM/Untyped/`: the untyped pipeline that preceded this one, preserved
   and checked:
 
       ISWIM --simplify--> ISWIM --CC: capture--> Clos2 --CC: prune--> Clos2
@@ -101,40 +147,44 @@ other than `--without-K`, failing if it finds any.
             --rco--> Clos5 --lift locals--> Imp --explicate control--> CFG
             --select instructions--> X86
 
-  `Untyped/` mirrors this directory: `Untyped/X.agda` (module
-  `Untyped.X`) was `X.agda` before the typed pipeline became the main
-  one (or, for X86's semantics in the graph models and the interpreter
-  and its adequacy, before the typed pipeline came to end at X86ᵀ). It
+  `ISWIM/Untyped/` mirrors `ISWIM/`: `ISWIM/Untyped/X.agda` (module
+  `ISWIM.Untyped.X`) corresponds to `ISWIM/X.agda`; it was split off
+  when the typed pipeline became the main one (or, for X86's semantics
+  in the graph models and the interpreter and its adequacy, when the
+  typed pipeline came to end at X86ᵀ). It
   holds only what the untyped pipeline alone uses (its languages
   Clos2–Clos5, monadic Clos5, Imp and CFG, its passes, their semantics
   and proofs in every style, X86's semantics but its machine, its
   adequacy for Clos5 and X86, its theorem statements in
-  `Untyped/Theorems/`, its examples and experiments); what both
+  `ISWIM/Untyped/Theorems/`, its examples and experiments); what both
   pipelines use (ISWIM, simplify and its proofs, the primitives, the
   observations, the ISWIM adequacy, the frameworks), and X86 and its
-  machine, which the typed pipeline's assurance uses, stay here.
-  `Untyped/All.agda` imports it, and `All.agda` imports that.
-* `Mu/`: FPC, the main experiment of the size comparison: Plotkin's
-  Fixed Point Calculus with iso-recursive types (no recursion construct, no errors)
-  and its compiler to the typed assembly language X86μ,
+  machine, which the typed pipeline's assurance uses, stay in `ISWIM/`
+  (or, if FPC uses them too, directly in this directory).
+  `ISWIM/Untyped/All.agda` imports it, and `ISWIM/All.agda` imports
+  that.
 
-      FPC --simplify--> FPC --CC: capture--> Closμ --CC: prune--> Closμ
-             --CC: concretize--> EnvClosμ --CC: split--> PairClosμ
-             --CC: hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
-             --explicate control--> CFGμ --select instructions--> X86μ
+## FPC
 
-  proved in the graph model (with its adequacy for the clocked
-  interpreters of FPC and X86μ), the CEK machines, the clocked
-  interpreters, the reduction semantics and Scott domains
-  (`papers/PLDI-2027/notes/iswim-mu-design.md`); `Mu/README.md` is
-  its road map from the PLDI 2027 paper.
-  `Mu/` mirrors this directory as `Untyped/` does (module prefix `Mu.`,
-  with `Language/Typed/` as `Mu/Language/` and
-  `Semantics/<style>/Typed/` as `Mu/Semantics/<style>/`), and uses
-  `Framework/` unchanged; its theorem statements are in
-  `Mu/Theorems/`, its proofs in `Mu/proof/`. `Mu/All.agda` imports it,
-  and `All.agda` imports that and `Mu/Experiments.agda` (the
-  mixed-semantics experiment).
+FPC, in `FPC/`, is the main experiment of the size comparison:
+Plotkin's Fixed Point Calculus with iso-recursive types (no recursion
+construct, no errors) and its compiler to the typed assembly language
+X86μ (the paper's Instrμ; the paper groups capture, prune and
+concretize as one pass, enclose, and so counts eight passes),
+
+    FPC --simplify--> FPC --CC: capture--> Closμ --CC: prune--> Closμ
+           --CC: concretize--> EnvClosμ --CC: split--> PairClosμ
+           --CC: hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
+           --explicate control--> CFGμ --select instructions--> X86μ
+
+proved in the graph model, the CEK machines, the clocked interpreters,
+the reduction semantics and Scott domains, with the adequacy of the
+graph model for the interpreters, the CEK machines and the reduction
+semantics, and of Scott domains for the interpreters
+(`papers/PLDI-2027/notes/iswim-mu-design.md`). It uses `Framework/`
+unchanged; its theorem statements are in `FPC/Theorems/`, its proofs in
+`FPC/proof/`. `FPC/All.agda` imports it, and `All.agda` imports that and
+`FPC/Experiments.agda` (the mixed-semantics experiment).
 
 ## The audit surface
 
@@ -142,70 +192,79 @@ Everything outside the `proof/` directories is what must be read to
 trust the results: the theorem statements and the definitions they use,
 and nothing else. No module outside a `proof/` directory imports one in
 it, except the theorem files, which cite the proofs, and nothing outside
-`Untyped/` imports a module of `Untyped/` (`papers/PLDI-2027/loc.py`
+`ISWIM/Untyped/` imports a module of `ISWIM/Untyped/` (`papers/PLDI-2027/loc.py`
 checks these, and that every module outside the `proof/` directories is
-used by a theorem statement: those of `Mu/` by FPC's, in
-`Mu/Theorems/`, but for the semantics of FPC's intermediate
+used by a theorem statement: those of `FPC/` by FPC's, in
+`FPC/Theorems/`, but for the semantics of FPC's intermediate
 languages, which only the proofs use).
 
-* FPC's theorem statements (`Mu/Theorems/`), one file per style,
+* FPC's theorem statements (`FPC/Theorems/`), one file per style,
   named and numbered as in the PLDI 2027 paper, each theorem with its
   type written out and defined as the corresponding theorem of
-  `Mu/proof/`; `Mu/README.md` maps every theorem, lemma and definition
+  `FPC/proof/`; `FPC/README.md` maps every theorem, lemma and definition
   of the paper to the code. Each states the end-to-end theorem for a
   closed main program of type Int, and its version for closed terms of
   every type:
-  * `Mu/Theorems/GraphModel.agda`: Theorem 4.1, the compiled program
+  * `FPC/Theorems/CorrectWrtGraphModel.agda`: Theorem 4.1, the compiled program
     produces the same constants as the source and produces something
-    exactly when the source does; and Theorem 4.4, the same for split;
-  * `Mu/Theorems/AbstractMachines.agda`, `ClockedInterpreters.agda`,
-    `ReductionSemantics.agda`: Theorems F.2, F.1 and F.3, the source and
+    exactly when the source does; and Lemma 4.6, the same for split;
+  * `FPC/Theorems/CorrectWrtAbstractMachines.agda`, `CorrectWrtClockedInterpreters.agda`,
+    `CorrectWrtReductionSemantics.agda`: Propositions F.2, F.1 and F.3, the source and
     X86μ stop with the same integer, or both diverge
     (`compile-const`, `compile-diverges`), and are equivalent at
     every type (`compile-correct`);
-  * `Mu/Theorems/ScottDomains.agda` (checked by `make check-scott`, not
-    `make check`; see below): Theorem F.4, the same as Theorem 4.1 in
+  * `FPC/Theorems/CorrectWrtScottDomains.agda` (checked by `make check-scott`, not
+    `make check`; see below): Theorem 4.2, the same as Theorem 4.1 in
     Scott domains (a term means an element of the domain of values 𝔻, a
     solution of 𝔻 ≅ 𝓛 (Σ t , Payload t 𝔻)), assuming propositional
     truncations, function extensionality and propositional
     extensionality (the parameters of the module);
-  * `Mu/Theorems/Adequacy.agda`: Theorem 4.5, the graph model is sound
+  * `FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda`: Proposition 5.1 for the graph model, which is sound
     and adequate for the FPC interpreter, and for the X86μ
     interpreter running compiled programs; with Theorem 4.1, for a main
     of type Int, the operational styles' end-to-end theorem
-    (`end-to-end-x86-const`, `end-to-end-x86-diverges`).
+    (`end-to-end-x86-const`, `end-to-end-x86-diverges`);
+  * `FPC/Theorems/GraphModelAdequateWrtAbstractMachines.agda`: the same, with the
+    abstract machines of FPC and X86μ in place of the interpreters.
+  * `FPC/Theorems/GraphModelAdequateWrtReductionSemantics.agda`: the same for the
+    reduction semantics of FPC, and, with the X86μ machine, the
+    reduction column's end-to-end theorem.
+  * `FPC/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda` (checked by
+    `make check-scott`): Proposition 5.1 for Scott domains, which are
+    sound and adequate for the interpreters of FPC and X86μ; with
+    Theorem 4.2, the interpreters' end-to-end theorem.
   The per-pass theorems and the compiler's prefixes are proved in
-  `Mu/proof/` but not restated. The definitions the statements use are
-  those of `Mu/` outside `Mu/proof/` that they reach (its languages,
+  `FPC/proof/` but not restated. The definitions the statements use are
+  those of `FPC/` outside `FPC/proof/` that they reach (its languages,
   passes, the semantics of FPC and X86μ in each style and what they
-  use, and heterogeneous vectors, `Mu/Framework/`), and of
+  use, and heterogeneous vectors, `FPC/Framework/`), and of
   `Framework/`, `Semantics/Observation.agda` and the instances of the
   frameworks at the observations (`Semantics/CEK/Smallstep.agda`,
   `Semantics/Interp/Clock.agda`, `Semantics/Reduction/Smallstep.agda`)
   here. The semantics of the intermediate languages, in
-  `Mu/Semantics/`, are used only by the proofs.
+  `FPC/Semantics/`, are used only by the proofs.
 
-* Theorem statements (`Theorems/`), each with its type written out and
-  defined as the corresponding theorem of `proof/`:
-  * `Theorems/Denotational.agda`: each pass preserves the meaning of a
+* Theorem statements (`ISWIM/Theorems/`), each with its type written out and
+  defined as the corresponding theorem of `ISWIM/proof/`:
+  * `ISWIM/Theorems/Denotational.agda`: each pass preserves the meaning of a
     program in the graph model (split: its constants and whether it has
     any), and the whole compiler, into Clos5ᵀ, Monᵀ, Impᵀ, CFGᵀ and X86ᵀ,
     preserves the constants a closed program produces and whether it
     produces anything.
-  * `Theorems/Simulation.agda`: each pass, and the compiler into each of
+  * `ISWIM/Theorems/Simulation.agda`: each pass, and the compiler into each of
     Clos5ᵀ, Monᵀ, Impᵀ, CFGᵀ and X86ᵀ, produces an equivalent machine
     (the same observations on termination, including an error, and
     divergence exactly when the source diverges).
-  * `Theorems/Interpreter.agda`: the same, for the clocked interpreters.
-  * `Theorems/Reduction.agda`: the same, for the reduction semantics of
+  * `ISWIM/Theorems/Interpreter.agda`: the same, for the clocked interpreters.
+  * `ISWIM/Theorems/Reduction.agda`: the same, for the reduction semantics of
     ISWIM, ISWIMᵀ and Clos2ᵀ–Clos5ᵀ and the machines of Impᵀ, CFGᵀ and
     X86ᵀ.
-  * `Theorems/Adequacy.agda`: the graph model is sound and adequate for
+  * `ISWIM/Theorems/Adequacy.agda`: the graph model is sound and adequate for
     the ISWIM machine, and for the Clos5ᵀ and X86ᵀ machines running
     compiled programs; so the compiler, observed through the machines
     only, preserves the constants a closed program computes and whether
     it terminates with an answer.
-  * `Theorems/GraphErrors.agda`: in the graph model with errors every
+  * `ISWIM/Theorems/GraphErrors.agda`: in the graph model with errors every
     pass but split preserves the meaning of a program, split preserves
     and reflects errors, constants and values (`Same`), and so does the
     whole compiler; the model is adequate for the ISWIM and X86ᵀ
@@ -214,36 +273,39 @@ languages, which only the proofs use).
     and the Clos5ᵀ and X86ᵀ machines on its compilation stop with an
     error together, stop with the same constants, stop with an answer
     together, and diverge together.
-  * `Theorems/X86Erasure.agda` (assurance, not part of the comparison):
+  * `ISWIM/Theorems/X86Erasure.agda` (assurance, not part of the comparison):
     without its types, the X86ᵀ code select emits is the X86 code of
-    select into untyped X86 (`Compiler/SelectX86.agda`).
-  * `Untyped/Theorems/`: the same six files for the untyped pipeline.
-* The definitions they use: `Language/`, `Compiler/`, `Semantics/`,
-  `Framework/` (see the layout above), and those of `Untyped/` outside
-  `Untyped/proof/` for the untyped statements. Per style:
-  * denotational: `Semantics/Graph/` (the meaning of the primitives,
-    `Prim.agda`, ISWIM, and `Typed/`) and
+    select into untyped X86 (`ISWIM/Compiler/SelectX86.agda`).
+  * `ISWIM/Untyped/Theorems/`: the same six files for the untyped pipeline.
+* The definitions they use: `ISWIM/Language/`, `ISWIM/Compiler/`,
+  `ISWIM/Semantics/`, and the shared modules of this directory
+  (`Language/`, `Semantics/`, `Framework/`; see the layout above), and
+  those of `ISWIM/Untyped/` outside `ISWIM/Untyped/proof/` for the
+  untyped statements. Per style:
+  * denotational: `ISWIM/Semantics/Graph/` (ISWIM, and `Typed/`),
+    `Semantics/Graph/Prim.agda` (the meaning of the primitives) and
     `Framework/GraphModel/` (sets as predicates, environments, the
     values and their consistency, the operators, the guard of `project`);
-  * graph model with errors: `Semantics/GraphErr/` and
+  * graph model with errors: `ISWIM/Semantics/GraphErr/` and
     `Framework/GraphModel/ErrorMonad.agda` (an error monad on 𝒫 Value,
     and the operators built from it over the graph model's);
-  * CEK machine + simulation: `Semantics/CEK/` (a small-step machine
+  * CEK machine + simulation: `ISWIM/Semantics/CEK/` (a small-step machine
     per language), `Semantics/CEK/Smallstep.agda` and
     `Framework/Smallstep.agda` (machines, termination, divergence,
     `Equivalent`), `Semantics/Observation.agda`;
-  * clocked interpreter + value relations: `Semantics/Interp/` (a
+  * clocked interpreter + value relations: `ISWIM/Semantics/Interp/` (a
     clocked interpreter per language), `Semantics/Interp/Clock.agda` and
     `Framework/Clocked.agda` (results, termination, divergence,
     `Equivalent`);
-  * reduction semantics + simulation: `Semantics/Reduction/` (a
+  * reduction semantics + simulation: `ISWIM/Semantics/Reduction/` (a
     reduction semantics by substitution for ISWIM, ISWIMᵀ and
-    Clos2ᵀ–Clos5ᵀ), `Framework/Reduction.agda` (reductions as machines)
+    Clos2ᵀ–Clos5ᵀ), `Semantics/Reduction/Smallstep.agda`,
+    `Framework/Reduction.agda` (reductions as machines)
     and `Framework/Smallstep.agda`, and the machines of Clos5ᵀ (its
-    values), Impᵀ, CFGᵀ and X86ᵀ (`Semantics/CEK/Typed/{Clos5,Imp,CFG,X86}.agda`),
+    values), Impᵀ, CFGᵀ and X86ᵀ (`ISWIM/Semantics/CEK/Typed/{Clos5,Imp,CFG,X86}.agda`),
     shared with the CEK machine + simulation style;
   * adequacy: those of the denotational and simulation theorems;
-  * denotational: Scott domains (FPC only): `Mu/Semantics/ScottDomains/`
+  * denotational: Scott domains (FPC only): `FPC/Semantics/ScottDomains/`
     (the semantics of each language, built with the combinators of
     `Framework/Scott/Semantics.agda`), `Semantics/Scott/Prim.agda` (the
     meaning of the primitives) and `Framework/Scott/` (on Tom de Jong's
@@ -261,72 +323,80 @@ postulated or unsafe). You may of course want to read them to learn the
 proof techniques.
 
 `proof/` mirrors the paths of the surface: the lemmas about a module
-`X` of the surface are in `proof/X.agda` (which re-exports `X`); the
-correctness proofs of the passes are in `proof/Correctness/`, one
-directory per style, and adequacy is in `proof/Adequacy/`:
+`X` of the surface are in `proof/X.agda` (which re-exports `X`), and
+those about `ISWIM/X.agda` in `ISWIM/proof/X.agda` (likewise for
+`ISWIM/Untyped/` and `FPC/`); the
+correctness proofs of the passes are in `ISWIM/proof/Correctness/`, one
+directory per style, and adequacy is in `ISWIM/proof/Adequacy/`:
 
-* `proof/Correctness/Graph/`: the denotational proofs of the passes, and
-  `proof/Semantics/Graph/`: the monotonicity, consistency and continuity
+* `ISWIM/proof/Correctness/Graph/`: the denotational proofs of the passes, and
+  `ISWIM/proof/Semantics/Graph/` (and `proof/Semantics/Graph/Prim.agda`): the monotonicity, consistency and continuity
   of the semantics;
-* `proof/Correctness/CEK/`: the forward simulations (for simplify,
+* `ISWIM/proof/Correctness/CEK/`: the forward simulations (for simplify,
   `SimplifySim.agda`, of the target by the source, which may stutter;
-  the whole compiler, `PipelineSim.agda`), and `proof/Semantics/CEK/`:
-  the lemmas about runs of the machines;
-* `proof/Correctness/Interp/`: the clock-for-clock proofs (for
+  the whole compiler, `PipelineSim.agda`), and `proof/Semantics/CEK/`
+  (shared with FPC): the lemmas about runs of the machines;
+* `ISWIM/proof/Correctness/Interp/`: the clock-for-clock proofs (for
   simplify, `SimplifyFuel.agda`, clock-monotone instead: `clocked-le`,
-  `proof/Framework/Clocked.agda`), and `proof/Semantics/Interp/`:
+  `proof/Framework/Clocked.agda`), and `proof/Semantics/Interp/Clock.agda`
+  (shared with FPC) and `ISWIM/proof/Semantics/Interp/`:
   clock-for-clock correctness at this compiler's observations and the
   relation between typed values;
-* `proof/Correctness/Reduction/`: the forward simulations between
+* `ISWIM/proof/Correctness/Reduction/`: the forward simulations between
   reduction semantics (for simplify, `SimplifyRed.agda`, of the target by
   the source; explicate control and select instructions are the CEK
-  proofs, `proof/Correctness/CEK/{Explicate,Select}Sim.agda`, shared),
-  and `proof/Semantics/Reduction/`: the values of each reduction
+  proofs, `ISWIM/proof/Correctness/CEK/{Explicate,Select}Sim.agda`, shared),
+  and `ISWIM/proof/Semantics/Reduction/`: the values of each reduction
   semantics;
-* `proof/Correctness/GraphErr/`, `proof/Semantics/GraphErr/` and
-  `proof/Adequacy/GraphErr/`: the graph model with errors (X86ᵀ adequacy
+* `ISWIM/proof/Correctness/GraphErr/`, `ISWIM/proof/Semantics/GraphErr/` and
+  `ISWIM/proof/Adequacy/GraphErr/`: the graph model with errors (X86ᵀ adequacy
   direct; Clos5ᵀ adequacy derived from `PipelineSim`,
-  `Adequacy/GraphErr/EndToEnd.agda`);
-* `proof/Adequacy/`: soundness and adequacy (the ISWIM ones are those of
+  `ISWIM/proof/Adequacy/GraphErr/EndToEnd.agda`);
+* `ISWIM/proof/Adequacy/`: soundness and adequacy (the ISWIM ones are those of
   the untyped pipeline too);
 * `proof/Framework/`: the language-independent lemmas (continuity of the
   operators, the generic denotational semantics and its monotonicity and
   continuity, the semantics of intrinsically typed syntax, renaming,
   substitution and relations closed under it, forward simulations,
   simulations between reduction semantics, clock-for-clock correctness);
-* `proof/Compiler/`: syntactic facts about the passes (for simplify, the
+* `ISWIM/proof/Compiler/`: syntactic facts about the passes (for simplify, the
   values and known values it inspects, `SimplifyFacts.agda`, used by its
   proofs, and that it keeps programs closed, `SimplifyScope.agda`; cast
   insertion on closed programs, `CastScope.agda`; hoist's references
   to older definitions, `HoistOlder.agda`; that select emits, without
   the types, the code of select into untyped X86, `SelectErase.agda`),
   and examples (`Examples/`: smoke tests run by `refl`);
-* `Untyped/proof/`: the same for the untyped pipeline, with its
+* `ISWIM/Untyped/proof/`: the same for the untyped pipeline, with its
   experiments: a direct semantics of Imp with lift locals and explicate
   control proved against it, and a direct backward simulation for split.
-* `Mu/proof/`: the same for FPC (its reduction column shares the
+* `FPC/proof/`: the same for FPC (its reduction column shares the
   CEK column's proofs of explicate control and select instructions; its
-  adequacy, `Mu/proof/Adequacy/`, is direct for the X86μ interpreter;
-  its alternative for the machines, `Mu/proof/Adequacy/AbstractMachines/`,
+  adequacy, `FPC/proof/Adequacy/`, is direct for the X86μ interpreter;
+  its alternative for the machines, `FPC/proof/Adequacy/AbstractMachines/`,
   uses that neither machine stops with an error,
-  `Mu/proof/Semantics/AbstractMachines/NoError.agda`; its Scott-domain
-  column is `Mu/proof/Correctness/ScottDomains/`, with lemmas shared by
-  passes in `Mu/proof/Semantics/ScottDomains/`, and the
+  `FPC/proof/Semantics/AbstractMachines/NoError.agda`; its alternative
+  for FPC's reduction semantics, `FPC/proof/Adequacy/ReductionSemantics/`,
+  is Plotkin's: a step preserves meaning, with a logical relation on
+  closed values; its Scott-domain adequacy,
+  `FPC/proof/Adequacy/ScottDomains/`, defines its logical relation by
+  recursion on the stages of the bilimit; its Scott-domain
+  column is `FPC/proof/Correctness/ScottDomains/`, with lemmas shared by
+  passes in `FPC/proof/Semantics/ScottDomains/`, and the
   language-independent lemmas in
   `proof/Framework/Scott/`: the solution of the domain equation, the
   operators, the stages of the bilimit (approximations by depth) and the
   calls of approximated closures, which split's logical relations use).
 
-`All.agda` imports the theorem files, every module of `proof/`,
-`Untyped/All.agda`, `Mu/All.agda` (which imports `Mu/Theorems/` and
-`Mu/proof/`) and `Mu/Experiments.agda`, so that `make check` checks
-everything. `old/` holds
-earlier developments, not checked by `make check` (see the top-level
-README).
+`All.agda` imports `ISWIM/All.agda` (which imports `ISWIM/Theorems/`,
+every module of `ISWIM/proof/`, and `ISWIM/Untyped/All.agda`),
+`FPC/All.agda` (which imports `FPC/Theorems/` and `FPC/proof/`),
+`FPC/Experiments.agda` and every module of `proof/`, so that
+`make check` checks everything. `old/` holds earlier developments, not
+checked by `make check` (see the top-level README).
 
 The denotational: Scott domains column needs TypeTopology, so it is not
-part of `All.agda`: `AllScott.agda` imports its theorem file
-(`Mu/Theorems/ScottDomains.agda`) and proofs, and `make check-scott` fetches
+part of `All.agda`: `AllScott.agda` imports its theorem files
+(`FPC/Theorems/CorrectWrtScottDomains.agda`, `FPC/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda`) and proofs, and `make check-scott` fetches
 TypeTopology at a pinned commit into `_deps/` (not tracked;
 `scott/fetch-typetopology.sh`, which applies
 `scott/typetopology-builtin-alias.patch` so that TypeTopology and the

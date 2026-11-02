@@ -34,8 +34,6 @@ over sets of elements, and $i, j \in \mathbb{N}$.
   \mathsf{pair}(D, E) & = & \{\, \pairv{u}{v} \mid u \in D,\; v \in E \,\}\\
   \car(D) & = & \{\, u \mid \pairv{u}{v} \in D \,\}\\
   \cdr(D) & = & \{\, v \mid \pairv{u}{v} \in D \,\}\\
-  D \callop E & = & (\car(D) \app \cdr(D)) \app E
-    \hfill \text{(call a closure}\text{)}\\
   \mathcal{T}(D_1, \ldots, D_n) & = &
     \{\, \mathsf{tup}_i(v) \mid v \in D_i \,\}
     \quad \text{if } D_1, \ldots, D_n \neq \emptyset,
@@ -167,7 +165,7 @@ environments of these pairs are consistent with each other.
 %% Lemma: agda/proof/Framework/GraphModel/Ops.agda, Λ-β (and ΛΛ-β for
 %% the curried form used in the delay proof).
 %% The finitary premise holds for term meanings by `ok` in
-%% agda/Mu/proof/Semantics/GraphModel/{FPC,EnvClos,PairClos,GlobalFun}.agda (fin₁, fin₂).
+%% agda/FPC/proof/Semantics/GraphModel/{FPC,EnvClos,PairClos,GlobalFun}.agda (fin₁, fin₂).
 The meaning of a term is monotone in its environment
 (Lemma~\ref{lem:monotone}), and it is
 continuous in the sense that each element of the meaning depends on

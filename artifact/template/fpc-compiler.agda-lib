@@ -1,0 +1,3 @@
+name: fpc-compiler
+depend: standard-library
+include: agda

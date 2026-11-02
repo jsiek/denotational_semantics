@@ -1,0 +1,170 @@
+{-
+
+  The correctness of the compiler, by clocked interpreters and value
+  relations: the public statements.
+  The proofs (clock for clock) are in
+  proof/Correctness/Interp/; each theorem here is one of
+  them, with its type written out, so that it can be read without opening
+  proof/.
+
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
+          --split--> Clos4 --hoist--> Clos5 --rco--> Clos5
+          --lift locals--> Imp --explicate control--> CFG
+          --select instructions--> X86
+
+  Each language has an interpreter with a clock
+  (Semantics/Interp/, here Lᵢ.sem for language L): a program
+  terminates with an observation (Semantics/Observation.agda) when, for
+  some clock, it returns a value observed as o or errors (o-error),
+  and diverges when it times out for every clock. Two programs are
+  Equivalent (Framework/Clocked.agda) when each terminates with o exactly
+  when the other does, and one diverges exactly when the other does.
+
+  To read them: the languages (Language/), the passes
+  (Compiler/), the interpreters, the observations, and the
+  preconditions: Closed (ISWIM/Compiler/CaptureScope.agda), WS
+  (Framework/Syntax/Scope.agda), Scoped (Compiler/PipelineScope.agda)
+  and MonProgram (Language/Mon.agda).
+
+-}
+
+module ISWIM.Untyped.Theorems.Interpreter where
+
+open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
+open import Semantics.Interp.Clock using (Terminates; Diverges; Equivalent)
+
+import ISWIM.Language.ISWIM as ISWIM
+import ISWIM.Untyped.Language.Clos2 as Clos2
+import ISWIM.Untyped.Language.Clos3 as Clos3
+import ISWIM.Untyped.Language.Clos4 as Clos4
+import ISWIM.Untyped.Language.Clos5 as Clos5
+open import ISWIM.Untyped.Language.Mon using (MonProgram)
+import ISWIM.Untyped.Language.Imp as Imp
+import ISWIM.Untyped.Language.CFG as CFG
+
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Split using (split)
+open import ISWIM.Untyped.Compiler.Hoist using (hoist)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Untyped.Compiler.Explicate using (explicate)
+open import ISWIM.Untyped.Compiler.Select using (select)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
+open import ISWIM.Untyped.Compiler.PipelineScope using (Scoped)
+
+import ISWIM.Semantics.Interp.ISWIM as ISWIMᵢ
+import ISWIM.Untyped.Semantics.Interp.Clos2 as Clos2ᵢ
+import ISWIM.Untyped.Semantics.Interp.Clos3 as Clos3ᵢ
+import ISWIM.Untyped.Semantics.Interp.Clos4 as Clos4ᵢ
+import ISWIM.Untyped.Semantics.Interp.Clos5 as Clos5ᵢ
+import ISWIM.Untyped.Semantics.Interp.Imp as Impᵢ
+import ISWIM.Untyped.Semantics.Interp.CFG as CFGᵢ
+import ISWIM.Untyped.Semantics.Interp.X86 as X86ᵢ
+
+import ISWIM.proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
+import ISWIM.Untyped.proof.Correctness.Interp.CaptureFuel as CaptureFuel
+import ISWIM.Untyped.proof.Correctness.Interp.PruneFuel as PruneFuel
+import ISWIM.Untyped.proof.Correctness.Interp.ConcretizeFuel as ConcretizeFuel
+import ISWIM.Untyped.proof.Correctness.Interp.SplitFuel as SplitFuel
+import ISWIM.Untyped.proof.Correctness.Interp.HoistFuel as HoistFuel
+import ISWIM.Untyped.proof.Correctness.Interp.RCOFuel as RCOFuel
+import ISWIM.Untyped.proof.Correctness.Interp.LiftLocalsFuel as LiftLocalsFuel
+import ISWIM.Untyped.proof.Correctness.Interp.ExplicateFuel as ExplicateFuel
+import ISWIM.Untyped.proof.Correctness.Interp.SelectFuel as SelectFuel
+import ISWIM.Untyped.proof.Correctness.Interp.CompilerFuel as CompilerFuel
+
+{- Each pass ------------------------------------------------------------------}
+
+{- simplify, for closed programs. Not clock for clock: simplify removes
+   calls, so the simplified program needs no more clock than the original,
+   which may need more (the proof relates the two at the same clock in one
+   direction, and at some larger clock in the other) -}
+simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (ISWIMᵢ.sem (simplify M))
+simplify-correct = SimplifyFuel.simplify-correct
+
+{- capture, for closed programs -}
+capture-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (Clos2ᵢ.sem (capture M))
+capture-correct = CaptureFuel.capture-correct
+
+{- prune, for well-scoped programs (which capture produces) -}
+prune-correct : ∀ (M : Clos2.AST) → WS 0 M
+  → Equivalent (Clos2ᵢ.sem M) (Clos2ᵢ.sem (prune-program M))
+prune-correct = PruneFuel.prune-correct
+
+concretize-correct : ∀ (M : Clos2.AST)
+  → Equivalent (Clos2ᵢ.sem M) (Clos3ᵢ.sem (concretize-program M))
+concretize-correct = ConcretizeFuel.concretize-correct
+
+split-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ᵢ.sem M) (Clos4ᵢ.sem (split M))
+split-correct = SplitFuel.split-correct
+
+hoist-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ᵢ.sem M) (Clos5ᵢ.sem (hoist M))
+hoist-correct = HoistFuel.hoist-correct
+
+{- remove complex operands, for well-scoped programs (which the compiler
+   produces) -}
+rco-correct : ∀ (P : Clos5.Program) → Scoped P
+  → Equivalent (Clos5ᵢ.sem P) (Clos5ᵢ.sem (rco-program P))
+rco-correct = RCOFuel.rco-correct
+
+{- lift locals, for programs in monadic normal form (which rco produces) -}
+lift-locals-correct : ∀ (P : Clos5.Program) (mp : MonProgram P)
+  → Equivalent (Clos5ᵢ.sem P) (Impᵢ.sem (lift-program P mp))
+lift-locals-correct = LiftLocalsFuel.lift-correct
+
+explicate-correct : ∀ (P : Imp.Program) → Equivalent (Impᵢ.sem P) (CFGᵢ.sem (explicate P))
+explicate-correct = ExplicateFuel.explicate-correct
+
+select-correct : ∀ (P : CFG.Program) → Equivalent (CFGᵢ.sem P) (X86ᵢ.sem (select P))
+select-correct = SelectFuel.select-correct
+
+{- The whole compiler, for closed programs ----------------------------------}
+
+compile-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (Clos5ᵢ.sem (compile M))
+compile-correct = CompilerFuel.compile-correct
+
+compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (Clos5ᵢ.sem (compile-mon M))
+compile-mon-correct = RCOFuel.compile-mon-correct
+
+compile-imp-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (Impᵢ.sem (compile-imp M))
+compile-imp-correct = LiftLocalsFuel.compile-imp-correct
+
+compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (CFGᵢ.sem (compile-cfg M))
+compile-cfg-correct = ExplicateFuel.compile-cfg-correct
+
+compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (X86ᵢ.sem (compile-x86 M))
+compile-x86-correct = SelectFuel.compile-x86-correct
+
+{- in particular, for compile: the compiled program terminates with the
+   same constants, terminates with an answer exactly when the original
+   does, errors exactly when it does, and diverges exactly when it
+   does -}
+
+compile-const : ∀ (M : ISWIM.AST) → Closed M → ∀ B k
+  → Terminates (ISWIMᵢ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵢ.sem (compile M)) (o-const B k)
+compile-const = CompilerFuel.compile-const
+
+compile-converges : ∀ (M : ISWIM.AST) → Closed M
+  → Converges (Terminates (ISWIMᵢ.sem M)) ⇔ Converges (Terminates (Clos5ᵢ.sem (compile M)))
+compile-converges = CompilerFuel.compile-converges
+
+compile-error : ∀ (M : ISWIM.AST) → Closed M
+  → Terminates (ISWIMᵢ.sem M) o-error ⇔ Terminates (Clos5ᵢ.sem (compile M)) o-error
+compile-error = CompilerFuel.compile-error
+
+compile-diverges : ∀ (M : ISWIM.AST) → Closed M
+  → Diverges (ISWIMᵢ.sem M) ⇔ Diverges (Clos5ᵢ.sem (compile M))
+compile-diverges = CompilerFuel.compile-diverges

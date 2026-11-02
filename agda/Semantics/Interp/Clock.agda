@@ -9,7 +9,7 @@
   Design note, for the interpreters of each language and the proof of
   each pass:
 
-  * Each language has an interpreter (Semantics/Interp/*.agda),
+  * Each language has an interpreter (ISWIM/Semantics/Interp/*.agda),
       eval : ℕ → Env → AST → Result Val
     a total function, by recursion on the clock and the term. Values and
     environments are those of the CEK machines: a function value is a

@@ -1,7 +1,7 @@
 {-
 
   The binders of the semantics of intrinsically typed syntax in the
-  graph model with errors (Semantics/GraphErr/Typed/), for any language:
+  graph model with errors (ISWIM/Semantics/GraphErr/Typed/), for any language:
 
   * n binds of sets of values, or of equal operands (binds-val-≃,
     binds-≃₂);

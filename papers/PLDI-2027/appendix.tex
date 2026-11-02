@@ -17,7 +17,7 @@ Appendix~\ref{app:alr-example} works through an example of the
 approximant logical relation of Section~\ref{sec:approx-lr}; and
 Appendix~\ref{app:other} gives the semantics of the source and target
 languages in the four other semantic styles of
-Section~\ref{sec:evaluation}, with their correctness theorems; and
+Section~\ref{sec:evaluation}, with their correctness results; and
 Appendix~\ref{app:scott-delay} gives the Scott-domain proof of
 \pass{split closure}. Each section begins with a line, marked ``Agda:'', that names the
 modules of the artifact that contain the section's definitions and proofs,
@@ -138,7 +138,7 @@ likewise for $\mathsf{right}$. A guard makes a set strict in other sets:
 
 \subsection{Monotonicity}
 \label{app:monotone}
-\agda{Mu/proof/Semantics/GraphModel/\{FPC,EnvClos,PairClos\}.agda}
+\agda{FPC/proof/Semantics/GraphModel/\{FPC,EnvClos,PairClos\}.agda}
 
 %% The first component of ok (Ok = Mono × Cont × consistency,
 %% proof/Framework/GraphModel/TypedOkBase.agda).
@@ -153,7 +153,7 @@ $\den{M}\rho \subseteq \den{M}\rho'$.
 \label{app:types}
 
 %% Typing: definitions.tex (Types and Languages) and
-%% agda/Mu/Language/*.agda. Semantics: agda/Mu/Semantics/GraphModel/*.agda.
+%% agda/FPC/Language/*.agda. Semantics: agda/FPC/Semantics/GraphModel/*.agda.
 This appendix gives, for each language of Section~\ref{sec:compiler} in the order of the pipeline, its type system and its semantics in the graph model. The type systems are those of our intrinsically typed Agda definitions, so every pass maps well-typed terms to well-typed terms; the semantics are the ones that Theorem~\ref{thm:compiler} and the proofs of Section~\ref{sec:compiler-proof} speak of. The base types
 are $\kw{Nat}$, $\kw{Int}$, $\kw{Bool}$, $\kw{Unit}$, and $\kw{Void}$.
 The result type $\mathit{out}(p)$ of a primitive is $\kw{Int}$ for
@@ -169,7 +169,7 @@ $\den{M} = \den{M}\rho_0$. The operators are those of
 Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 
 \subsection{The \fpc\ Language}
-\agda{Mu/Language/FPC.agda, Mu/Semantics/GraphModel/FPC.agda}
+\agda{FPC/Language/FPC.agda, FPC/Semantics/GraphModel/FPC.agda}
 
 \fpc\ is the source language, and the first pass, \pass{simplify}, maps it to itself. A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of variable types.
 \defhead{Typing of \fpc}{\Gamma \vdash M : A}
@@ -231,7 +231,7 @@ The semantics follows Section~\ref{sec:graph-models}, with the operators of Figu
 \]
 
 \subsection{The Clos and EnvClos Languages}
-\agda{Mu/Language/Clos.agda, Mu/Language/EnvClos.agda, Mu/Semantics/GraphModel/Clos.agda, Mu/Semantics/GraphModel/EnvClos.agda}
+\agda{FPC/Language/Clos.agda, FPC/Language/EnvClos.agda, FPC/Semantics/GraphModel/Clos.agda, FPC/Semantics/GraphModel/EnvClos.agda}
 
 Clos is the intermediate language between the steps of \pass{enclose}, whose closures bind a name for each captured value. EnvClos, the target of \pass{enclose} and the source of \pass{split closure}, stores the captured values of a closure in one tuple. Both type and interpret their other forms as \fpc\ does.
 A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
@@ -267,7 +267,7 @@ curried meaning of its code to the tuple of the captured values
 \]
 
 \subsection{The PairClos Language}
-\agda{Mu/Language/PairClos.agda, Mu/Semantics/GraphModel/PairClos.agda}
+\agda{FPC/Language/PairClos.agda, FPC/Semantics/GraphModel/PairClos.agda}
 
 PairClos, the target of \pass{split closure}, replaces closures and application with code, pairs, and calls, and types and interprets its other forms as \fpc\ does.
 \defhead{Typing of PairClos}{\Gamma \vdash M : A}
@@ -290,11 +290,11 @@ PairClos, the target of \pass{split closure}, replaces closures and application 
   \den{\kw{pair}\;L\;M}\rho = \mathsf{pair}(\den{L}\rho, \den{M}\rho)
 \]
 \[
-  \den{\kw{callc}\;L\;M}\rho = \den{L}\rho \callop \den{M}\rho
+  \den{\kw{callc}\;L\;M}\rho = (\car(\den{L}\rho) \app \cdr(\den{L}\rho)) \app \den{M}\rho
 \]
 
 \subsection{The GlobalFun and Mon Languages}
-\agda{Mu/Language/GlobalFun.agda, Mu/Language/Mon.agda, Mu/Semantics/GraphModel/GlobalFun.agda}
+\agda{FPC/Language/GlobalFun.agda, FPC/Language/Mon.agda, FPC/Semantics/GraphModel/GlobalFun.agda}
 
 GlobalFun, the target of \pass{hoist}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
 of the signatures $\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
@@ -327,7 +327,7 @@ and has the meaning of its embedding into GlobalFun, because an atom and an
 operation on atoms are GlobalFun terms already.
 
 \subsection{The Imp Language}
-\agda{Mu/Language/Imp.agda, Mu/Semantics/GraphModel/Imp.agda}
+\agda{FPC/Language/Imp.agda, FPC/Semantics/GraphModel/Imp.agda}
 
 Imp, the target of \pass{lift locals}, replaces variables by slots of a stack frame. A body runs in a frame of slots, typed by the list
 $\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
@@ -377,7 +377,7 @@ it assigns, like a $\kw{let}$.
 \]
 
 \subsection{The CFG Language}
-\agda{Mu/Language/CFG.agda, Mu/Semantics/GraphModel/CFG.agda}
+\agda{FPC/Language/CFG.agda, FPC/Semantics/GraphModel/CFG.agda}
 
 CFG, the target of \pass{explicate control}, organizes each function body as a control-flow graph. A function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the type $R$ of the function body's result, the list
 $\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
@@ -432,7 +432,7 @@ programs are given meaning as in Imp, with the function body in place of the
 expression and no continuation.
 
 \subsection{The \instr\ Language}
-\agda{Mu/Language/X86.agda, Mu/Semantics/GraphModel/X86.agda}
+\agda{FPC/Language/X86.agda, FPC/Semantics/GraphModel/X86.agda}
 
 \instr\ is the target language, produced by \pass{select instructions}; Section~\ref{sec:compiler} describes its instructions informally. An instruction is typed by the type of the machine state it starts in
 and the one it leaves. A state type
@@ -596,9 +596,9 @@ $\{\langle\rangle\}$.
 
 \section{The Compiler Passes}
 \label{app:passes}
-\agda{Mu/Compiler/Pipeline.agda (compile)}
+\agda{FPC/Compiler/Pipeline.agda (compile)}
 
-%% From definitions.tex (Compilation) and agda/Mu/Compiler/*.agda.
+%% From definitions.tex (Compilation) and agda/FPC/Compiler/*.agda.
 This appendix defines each pass of Section~\ref{sec:compiler} as a
 recursive function on the syntax of Figure~\ref{fig:grammars}. In each
 pass, the clauses not shown are homomorphic. They translate the
@@ -615,9 +615,9 @@ with one operand. The subsections follow the order of the pipeline; Sections~\re
 
 \subsection{\pass{simplify} (\fpc\ to \fpc)}
 \label{app:pass-simplify}
-\agda{Mu/Compiler/Simplify.agda (simplify)}
+\agda{FPC/Compiler/Simplify.agda (simplify)}
 
-%% agda/Mu/Compiler/Simplify.agda: Info, Known, self, info, under,
+%% agda/FPC/Compiler/Simplify.agda: Info, Known, self, info, under,
 %% known-as, value, small, simp, simp-app, simp-call, simp-let, simp-get,
 %% simp-case, simp-prim, simp-unfold, inline-fuel, inline-size.
 The pass works with \emph{syntactic values}, the terms
@@ -628,7 +628,7 @@ The pass works with \emph{syntactic values}, the terms
 A syntactic value is \emph{small} when it is a variable, a constant,
 $\langle\rangle$, or $\kw{inl}\;a$ or $\kw{inr}\;a$ of one of those;
 only small values are duplicated. On a term, \pass{simplify} returns a
-pair $(T, \theta)$ of the simplified term $T$ and the static information
+pair $(M', \theta)$ of the simplified term $M'$ and the static information
 $\theta$ about the term's value:
 \[
   \theta ::= V \mid \langle \lambda x.\, N, E \rangle \mid \bot
@@ -649,16 +649,16 @@ which inlines with one less:
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \pass{simp}_E(x) & = & E(x)\\
   \pass{simp}_E(\lambda x.\, N) & = &
-    (\lambda x.\, T, \langle \lambda x.\, N, E \rangle)\\
-  & & \quad \text{where } (T, \theta) = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)\\
+    (\lambda x.\, N', \langle \lambda x.\, N, E \rangle)\\
+  & & \quad \text{where } (N', \theta) = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)\\
   \pass{simp}_E(L\;M) & = & \pass{app}_E(L, \pass{simp}_E(M))\\
   \pass{simp}_E(c) & = & \mathit{self}(c)\\
   \pass{simp}_E(\kw{tuple}\;(M_1, \ldots, M_n)) & = &
-    \mathit{info}(\kw{tuple}\;(T_1, \ldots, T_n))\\
-  & & \quad \text{where } (T_i, \theta_i) = \pass{simp}_E(M_i)\\
+    \mathit{info}(\kw{tuple}\;(M'_1, \ldots, M'_n))\\
+  & & \quad \text{where } (M'_i, \theta_i) = \pass{simp}_E(M_i)\\
   \pass{simp}_E(\kw{get}_i\,L) & = & \pass{get}_i(\pass{simp}_E(L))\\
-  \pass{simp}_E(\kw{inl}\;M) & = & \mathit{info}(\kw{inl}\;T)
-    \quad \text{where } (T, \theta) = \pass{simp}_E(M)\\
+  \pass{simp}_E(\kw{inl}\;M) & = & \mathit{info}(\kw{inl}\;M')
+    \quad \text{where } (M', \theta) = \pass{simp}_E(M)\\
   & & \quad \text{and likewise for } \kw{inr} \text{ and } \kw{fold}\\
   \pass{simp}_E(\kw{case}\;L\;(x.\,M)\;(y.\,N)) & = &
     \pass{case}_E(\pass{simp}_E(L), x.\,M, y.\,N)\\
@@ -675,11 +675,11 @@ fuel left and its body, simplified at the call, has at most 24 nodes:
   \pass{app}_E(\lambda x.\, N, I) & = & \pass{let}_E(x.\,N, I)\\
   \pass{app}_E(L, I) & = & \pass{call}(\pass{simp}_E(L), I)
     \quad \text{otherwise}\\[4pt]
-  \pass{call}^{\phi+1}((T, \langle \lambda x.\, N, E_f \rangle), I) & = & P
+  \pass{call}^{\phi+1}((L', \langle \lambda x.\, N, E_f \rangle), I) & = & P
     \quad \text{if } |P| \leq 24, \text{ where } P = \pass{let}^{\phi}_{E_f}(x.\,N, I)\\
-  & = & (T\;T', \bot)
-    \quad \text{otherwise, where } I = (T', \theta')\\
-  \pass{call}^{\phi}((T, \theta), (T', \theta')) & = & (T\;T', \bot)
+  & = & (L'\;M', \bot)
+    \quad \text{otherwise, where } I = (M', \theta')\\
+  \pass{call}^{\phi}((L', \theta), (M', \theta')) & = & (L'\;M', \bot)
     \quad \text{in all other cases}
 \end{array}
 \]
@@ -688,41 +688,41 @@ operand, by $\kw{let}$, $\beta$, or inlining, substitutes the operand
 if it is small, and otherwise keeps it bound by a $\kw{let}$:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{let}_E(x.\,N, (T', \theta)) & = & \pass{simp}_{E[x:=(T', \theta)]}(N)
-    \quad \text{if } T' \text{ is a small syntactic value}\\
-  & = & (\kw{let}\;x = T'\;\kw{in}\;T, \bot)
-    \quad \text{if } T' \text{ is another syntactic value,}\\
-  & & \quad \text{where } (T, \theta'') = \pass{simp}_{E[x:=(x, \theta)]}(N)\\
-  & = & (\kw{let}\;x = T'\;\kw{in}\;T, \bot)
+  \pass{let}_E(x.\,N, (M', \theta)) & = & \pass{simp}_{E[x:=(M', \theta)]}(N)
+    \quad \text{if } M' \text{ is a small syntactic value}\\
+  & = & (\kw{let}\;x = M'\;\kw{in}\;N', \bot)
+    \quad \text{if } M' \text{ is another syntactic value,}\\
+  & & \quad \text{where } (N', \theta'') = \pass{simp}_{E[x:=(x, \theta)]}(N)\\
+  & = & (\kw{let}\;x = M'\;\kw{in}\;N', \bot)
     \quad \text{otherwise,}\\
-  & & \quad \text{where } (T, \theta'') = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)
+  & & \quad \text{where } (N', \theta'') = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)
 \end{array}
 \]
 A projection, $\kw{unfold}$, $\kw{case}$, or primitive on a known value
 reduces:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{get}_i((T, \kw{tuple}\;(\theta_1, \ldots, \theta_n))) & = & \mathit{self}(\theta_i)
+  \pass{get}_i((L', \kw{tuple}\;(\theta_1, \ldots, \theta_n))) & = & \mathit{self}(\theta_i)
     \quad \text{if } \theta_i \text{ is small}\\
-  & = & (\kw{get}_i\,T, \theta_i) \quad \text{otherwise}\\
-  \pass{get}_i((T, \theta)) & = & (\kw{get}_i\,T, \bot)
+  & = & (\kw{get}_i\,L', \theta_i) \quad \text{otherwise}\\
+  \pass{get}_i((L', \theta)) & = & (\kw{get}_i\,L', \bot)
     \quad \text{if } \theta \text{ is not a tuple}\\
-  \pass{unfold}((T, \kw{fold}\;\theta)) & = & \mathit{self}(\theta)
+  \pass{unfold}((L', \kw{fold}\;\theta)) & = & \mathit{self}(\theta)
     \quad \text{if } \theta \text{ is small}\\
-  & = & (\kw{unfold}\;T, \theta) \quad \text{otherwise}\\
-  \pass{unfold}((T, \theta)) & = & (\kw{unfold}\;T, \bot)
+  & = & (\kw{unfold}\;L', \theta) \quad \text{otherwise}\\
+  \pass{unfold}((L', \theta)) & = & (\kw{unfold}\;L', \bot)
     \quad \text{if } \theta \text{ is not a } \kw{fold}\\
-  \pass{case}_E((T, \kw{inl}\;\theta), x.\,M, y.\,N) & = & \pass{simp}_{E[x:=\mathit{self}(\theta)]}(M)
+  \pass{case}_E((L', \kw{inl}\;\theta), x.\,M, y.\,N) & = & \pass{simp}_{E[x:=\mathit{self}(\theta)]}(M)
     \quad \text{if } \theta \text{ is small}\\
   & & \quad \text{(and likewise for } \kw{inr}\text{)}\\
-  \pass{case}_E((T, \theta), x.\,M, y.\,N) & = &
-    (\kw{case}\;T\;(x.\,T_1)\;(y.\,T_2), \bot)
+  \pass{case}_E((L', \theta), x.\,M, y.\,N) & = &
+    (\kw{case}\;L'\;(x.\,M')\;(y.\,N'), \bot)
     \quad \text{otherwise,}\\
-  & & \quad \text{where } (T_1, \theta_1) = \pass{simp}_{E[x:=\mathit{self}(x)]}(M)\\
-  & & \quad \text{and } (T_2, \theta_2) = \pass{simp}_{E[y:=\mathit{self}(y)]}(N)\\
-  \pass{prim}_p((T_1, n), (T_2, m)) & = & \mathit{self}(\mathit{res}(\delta(p, n, m)))
+  & & \quad \text{where } (M', \theta_1) = \pass{simp}_{E[x:=\mathit{self}(x)]}(M)\\
+  & & \quad \text{and } (N', \theta_2) = \pass{simp}_{E[y:=\mathit{self}(y)]}(N)\\
+  \pass{prim}_p((L', n), (M', m)) & = & \mathit{self}(\mathit{res}(\delta(p, n, m)))
     \quad \text{if } n \text{ and } m \text{ are integers}\\
-  \pass{prim}_p((T_1, \theta_1), (T_2, \theta_2)) & = & (\kw{prim}_p\;T_1\;T_2, \bot)
+  \pass{prim}_p((L', \theta_1), (M', \theta_2)) & = & (\kw{prim}_p\;L'\;M', \bot)
     \quad \text{otherwise}
 \end{array}
 \]
@@ -730,8 +730,8 @@ Here $\mathit{res}(k) = k$ for an integer $k$,
 $\mathit{res}(\mathsf{true}) = \kw{inl}\;\langle\rangle$, and
 $\mathit{res}(\mathsf{false}) = \kw{inr}\;\langle\rangle$. Finally,
 \[
-  \pass{simplify}(M) = T
-  \quad \text{where } (T, \theta) = \pass{simp}^{4}_{E_0}(M)
+  \pass{simplify}(M) = M'
+  \quad \text{where } (M', \theta) = \pass{simp}^{4}_{E_0}(M)
   \text{ and } E_0(x) = \mathit{self}(x) \text{ for every } x.
 \]
 \pass{simplify} drops only evaluations whose value is known, which
@@ -741,7 +741,7 @@ $\kw{let}$.
 
 \subsection{\pass{enclose} (\fpc\ to EnvClos)}
 \label{app:pass-enclose}
-\agda{Mu/Compiler/\{Capture,Prune,Concretize,Pipeline\}.agda (capture, prune-program, concretize-program, enclose)}
+\agda{FPC/Compiler/\{Capture,Prune,Concretize,Pipeline\}.agda (capture, prune-program, concretize-program, enclose)}
 
 \pass{enclose} works in three steps, which go through the intermediate
 language Clos:
@@ -795,7 +795,7 @@ and a program starts with the empty map.
 
 \subsection{\pass{split closure} (EnvClos to PairClos)}
 \label{app:pass-delay}
-\agda{Mu/Compiler/Split.agda (split-program)}
+\agda{FPC/Compiler/Split.agda (split-program)}
 
 A closure becomes a pair of its code and the tuple of its captured
 values, and an application opens the closure and calls its code:
@@ -809,7 +809,7 @@ values, and an application opens the closure and calls its code:
 
 \subsection{\pass{hoist} (PairClos to GlobalFun)}
 \label{app:pass-globalize}
-\agda{Mu/Compiler/Hoist.agda (hoist)}
+\agda{FPC/Compiler/Hoist.agda (hoist)}
 
 The code of every function becomes a global definition, and the code
 itself a reference to it. The pass threads the list $\vec{d}$ of the
@@ -834,7 +834,7 @@ Each definition refers only to the definitions made before it.
 
 \subsection{\pass{remove complex operands} (GlobalFun to Mon)}
 \label{app:pass-rco}
-\agda{Mu/Compiler/RCO.agda (rco-program)}
+\agda{FPC/Compiler/RCO.agda (rco-program)}
 
 Every complex operand is bound to a fresh variable by a $\kw{let}$,
 from left to right, so the operands of every operation become atoms. A
@@ -866,7 +866,7 @@ where $o$ ranges over the operations of Mon (Figure~\ref{fig:grammars}).
 
 \subsection{\pass{lift locals} (Mon to Imp)}
 \label{app:pass-lift-locals}
-\agda{Mu/Compiler/LiftLocals.agda (lift-program)}
+\agda{FPC/Compiler/LiftLocals.agda (lift-program)}
 
 A $\kw{let}$ becomes an assignment to the next slot of the frame, and
 the variable a $\kw{case}$ binds becomes the slot its payload is
@@ -890,7 +890,7 @@ and every other form is a simple expression, unchanged.
 
 \subsection{\pass{explicate control} (Imp to CFG)}
 \label{app:pass-explicate}
-\agda{Mu/Compiler/Explicate.agda (explicate)}
+\agda{FPC/Compiler/Explicate.agda (explicate)}
 
 $\pass{tail}(e)$ translates $e$ in tail position, and
 $\pass{assign}(e, x, k)$ translates ``write $e$ to slot $x$, then run
@@ -922,7 +922,7 @@ a program.
 
 \subsection{\pass{select instructions} (CFG to \instr)}
 \label{app:pass-select}
-\agda{Mu/Compiler/Select.agda (select)}
+\agda{FPC/Compiler/Select.agda (select)}
 
 The code of a simple expression $r$ is selected in continuation-passing
 style. The code $\pass{sel}(r, \omega, k)$ sends the value of $r$ to
@@ -979,7 +979,7 @@ environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
 
 \section{Calculations for the Other Equational Passes}
 \label{app:calculations}
-\agda{Mu/proof/Correctness/GraphModel/, one file per pass or step (CaptureCorrect.agda, ...)}
+\agda{FPC/proof/Correctness/GraphModel/, one file per pass or step (CaptureCorrect.agda, ...)}
 
 This appendix gives the key case of the proofs of the first two steps of \pass{enclose} and of the five equational passes that Section~\ref{sec:equational} does not show, in the order of the pipeline. As there, each proof generalizes the equation to open terms under related environments, the other cases are congruences, and where a step needs a set to be nonempty we show the nonempty case.
 
@@ -1109,7 +1109,7 @@ of a label made earlier.
 The induction hypothesis says that a CFG tail $t$ means the same as
 its instructions $\pass{tail}(t)$, for any registers $R$ and flag $F$.
 A call $x \mathrel{:=} \kw{callc}\;y\;a;\; t$ writes the result
-$C = \sigma(y) \callop \mathcal{A}\den{a}\sigma$ to slot $x$. Let $s$ be
+$C = (\car(\sigma(y)) \app \cdr(\sigma(y))) \app \mathcal{A}\den{a}\sigma$ to slot $x$. Let $s$ be
 the sequence $\kw{movq}\;\%\kw{rax}, x;\; \pass{tail}(t)$, let $R_C$
 hold $C$ in $\kw{rax}$, and let $R_1$ be $R$ with the code of the
 closure in $\kw{rax}$, its environment in $\kw{rdi}$, and the argument
@@ -1126,19 +1126,19 @@ in $\kw{rsi}$:
     & = & \den{\kw{fst}\;y,\%\kw{rax};\; \kw{snd}\;y,\%\kw{rdi};\; \kw{movq}\;a,\%\kw{rsi};\; s}\,\sigma\,R\,F & \text{(meaning of the loads)}
 \end{array}
 \]}
-The step for $\kw{callq}$ holds because $(\car(\sigma(y)) \app
-\cdr(\sigma(y))) \app \mathcal{A}\den{a}\sigma$ is the definition of
-$\sigma(y) \callop \mathcal{A}\den{a}\sigma$, which is $C$.
+The step for $\kw{callq}$ holds because $\kw{callq}$ applies the code
+$\car(\sigma(y))$ in $\kw{rax}$ to the environment $\cdr(\sigma(y))$ in
+$\kw{rdi}$ and then to the argument $\mathcal{A}\den{a}\sigma$ in
+$\kw{rsi}$, which gives $C$.
 
 \section{An Example of the Approximant Logical Relation}
 \label{app:alr-example}
-\agda{Mu/proof/Correctness/GraphModel/ApproxLR.agda (the definitions; the example itself is not mechanized)}
+\agda{FPC/proof/Correctness/GraphModel/ApproxLR.agda (the definitions; the example itself is not mechanized)}
 
 This appendix works clause~3 of the approximant logical relation (Figure~\ref{fig:alr}) through the example of Section~\ref{sec:approx-lr}: $\lambda y.\, x + y$ with $x$ bound to $9$, whose source meaning $D$ contains $[1] \mapsto 10$. Take the one-element list
 $V = [\pairv{u}{9}]$ with $u = [9] \mapsto ([1] \mapsto 10)$. The
 environment $[9]$ of the code entry is in $\cdr(V)$, so
-$\entryin{[1]}{10}{V}$ is a usable entry, and $\callsto{V}{[1]}{[10]}$
-is a batch of calls. Clause~3 then asks that $D \app E \ALR [10]$ for
+$\entryin{[1]}{10}{V}$ is a usable entry, and $V$ maps $[1]$ to $[10]$. Clause~3 then asks that $D \app E \ALR [10]$ for
 every consistent $E$ related to $[1]$, that is, every $E$ that
 contains $1$. It holds because $D$ has the entry $[1] \mapsto 10$ and
 $[1] \subseteq E$, so $10 \in D \app E$, which is clause~1 for

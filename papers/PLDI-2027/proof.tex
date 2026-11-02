@@ -1,6 +1,6 @@
 %% Section 4 opening and 4.1: the whole-compiler theorem and the passes
-%% proved by an equation (RQ3). Sources: agda/Mu/Theorems/GraphModel.agda
-%% (the statements), agda/Mu/proof/Correctness/GraphModel/*Correct.agda (the
+%% proved by an equation (RQ3). Sources: agda/FPC/Theorems/CorrectWrtGraphModel.agda
+%% (the statements), agda/FPC/proof/Correctness/GraphModel/*Correct.agda (the
 %% proofs and their header comments), loc.md (Current counts; Simplify).
 %% Numbers come from loc.md (loc.py --mu) and will change; update them
 %% before submission.
@@ -8,71 +8,83 @@
 \section{Proving the Compiler Correct}
 \label{sec:compiler-proof}
 
-This section proves the following theorem about the whole compiler,
-in the graph model. For space, it presents the Scott-domain proof of
-the same compiler only briefly: Section~\ref{sec:scott-delay}
-summarizes its proof of \pass{split closure}, Appendix~\ref{app:scott} states
-its theorem (Theorem~\ref{thm:scott}), and
-Appendix~\ref{app:scott-delay} gives the proof of \pass{split closure} in full.
+This section proves the following two theorems about the whole
+compiler. For space, it presents the Scott-domain proof only briefly
+(Section~\ref{sec:scott-delay} and Appendices~\ref{app:scott}
+and~\ref{app:scott-delay}).
 
-
-
-\begin{theorem}[Compiler correctness]\label{thm:compiler}
+\begin{theorem}[Compiler correctness, graph model]\label{thm:compiler}
 Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every constant $c$,
 $c \in \den{M}$ if and only if $c \in \den{\pass{compile}(M)}$.
 Moreover, $\den{M} \neq \emptyset$ if and only if
 $\den{\pass{compile}(M)} \neq \emptyset$.
 \end{theorem}
 
-Theorem~\ref{thm:compiler}, which we mechanize in Agda, answers RQ1 affirmatively; with adequacy (Section~\ref{sec:adequacy}), it says that the compiler preserves and reflects divergence. The same statement holds for closed terms of every type; we state it for $\kw{Int}$, the type of a whole program's result, to align it with the operational theorems (Section~\ref{sec:evaluation}). The proof composes one result per pass: an equation for every pass but
-\pass{split closure}, and for \pass{split closure} the weaker statement of
-Theorem~\ref{thm:delay}. 
+\begin{theorem}[Compiler correctness, Scott domains]\label{thm:scott}
+Assume propositional truncation, function extensionality, and
+propositional extensionality. Let $M$ be a closed term of \fpc\ of
+type $\kw{Int}$. For every constant $c$,
+$\den{M}\rho_0 = \up{(c, ())}$ if and only if
+$\den{\pass{compile}(M)} = \up{(c, ())}$. Moreover, $\den{M}\rho_0$ is
+defined if and only if $\den{\pass{compile}(M)}$ is defined.
+\end{theorem}
 
-This section first shows how we prove the passes other than \pass{split closure} (Section~\ref{sec:equational}). These proofs give the denotational half of the answer to RQ3. The section then shows why \pass{split closure} needs more (Section~\ref{sec:approx-lr}), summarizes the Scott-domain proof of \pass{split closure} (Section~\ref{sec:scott-delay}), and ends with adequacy (Section~\ref{sec:adequacy}), which connects
-Theorem~\ref{thm:compiler} to running code.
+Theorems~\ref{thm:compiler} and~\ref{thm:scott}, which we mechanize in Agda, answer RQ1 affirmatively. The same statements hold for closed terms of every type; we state them for $\kw{Int}$, the type of a whole program's result, to align them with the operational correctness results (Section~\ref{sec:evaluation}). Each proof composes one result per pass: an equation for every pass but
+\pass{split closure} (Lemma~\ref{lem:equational} for the graph model), and for \pass{split closure} the weaker statement of
+Lemma~\ref{lem:delay} (Lemma~\ref{lem:scott-delay} for Scott domains).
+
+This section first shows how we prove the passes other than \pass{split closure} (Section~\ref{sec:equational}). These proofs give the denotational half of the answer to RQ3. The section then shows why \pass{split closure} needs more (Section~\ref{sec:approx-lr}) and summarizes the Scott-domain proof of \pass{split closure} (Section~\ref{sec:scott-delay}).
 
 \subsection{Passes Proved by an Equation}
 \label{sec:equational}
 
-For seven of the eight passes, the theorem is an equation between the
-meaning of a program and the meaning of its translation, such as
-$\den{M} = \den{\pass{simplify}(M)}$ or
-$\den{M} = \den{\pass{hoist}(M)}$. To apply induction, each proof
-generalizes the equation from closed programs to open terms. The
-generalized statement says that a term, in a source environment, means
-the same as its translation, in a related target environment. In every one of these passes, the relation on environments requires
-each variable to mean the same as its translation, with side
-conditions such as nonemptiness and consistency, and most cases of the
-induction need nothing else. Because every semantics is compositional and the passes
-translate most forms homomorphically, the case for such a form applies
-the same operator to equal arguments and is immediate. The real work
-is in the few cases that the pass changes, where an equation about the
-operators of the graph model replaces the source form with the target
-form. Below we show that case as a calculation for \pass{simplify} and for
-the last step of \pass{enclose}, with the justification of each step on the right;
-Appendix~\ref{app:calculations} gives the calculations for the other
-steps and passes, including \pass{select instructions}, whose key case turns a
-call into $\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and $\kw{callq}$
-instructions. Where a step needs a set to
-be nonempty, we show the nonempty case; otherwise both sides
-are empty.
+For seven of the eight passes, correctness is an equation between the
+meaning of a program and the meaning of its translation.
+
+\begin{lemma}[Passes proved by an equation]\label{lem:equational}
+Let $p$ be a pass other than \pass{split closure}, and let $M$ be a
+closed term of the source language of $p$. Then
+$\den{M} = \den{p(M)}$.
+\end{lemma}
+
+Each proof is by induction on the term, generalizing
+Lemma~\ref{lem:equational} to open terms in a source and a target
+environment in which each variable means the same as its translation,
+with side conditions such as nonemptiness and consistency. Every semantics is
+compositional and the passes translate most forms homomorphically, so
+most cases apply the same operator to equal arguments. The real work
+is in the few forms that a pass changes, where an equation about the
+operators of the graph model turns the source form into the target
+form. Below we give these calculations for \pass{simplify} and for the
+last step of \pass{enclose}. Appendix~\ref{app:calculations} gives the rest, including
+\pass{select instructions}, whose key case turns a call into
+$\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and $\kw{callq}$.
+Where a step needs a nonempty set, we show the nonempty case;
+otherwise both sides are empty.
 
 \paragraph{Simplify}
 
-The main lemma for \pass{simplify} carries the invariant that
-the static information of \pass{simplify} about each variable is true of the source
-environment $\rho$ and the target environment $\rho'$. If \pass{simplify} replaces a variable by the term $T$, the variable means $\den{T}\rho'$, and if \pass{simplify} knows it to be a function $\langle \lambda x.\, N, E_f \rangle$, it means
+For each variable, \pass{simplify} records the term that replaces it
+and, when it is bound to a statically known function, that function as
+a $\lambda$-abstraction $\langle \lambda x.\, N, E_f \rangle$ paired
+with the environment $E_f$ where it was defined
+(Appendix~\ref{app:pass-simplify}). The main lemma for
+\pass{simplify} carries the invariant that these records are true of
+the source environment $\rho$ and the target environment $\rho'$. If
+\pass{simplify} replaces a variable by the term $M'$, the variable
+means $\den{M'}\rho'$, and if \pass{simplify} records it as the
+function $\langle \lambda x.\, N, E_f \rangle$, it means
 $\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ of which
-$E_f$ is true. The key case is inlining. Suppose \pass{simplify} knows $L$ to be
+$E_f$ is true. The key case is inlining. Suppose $L$ is statically known to be the function
 $\langle \lambda x.\, N, E_f \rangle$, the operand $M$ simplifies to a
-small value, and the inlined body simplifies to $T''$. Then
+small value, and the inlined body simplifies to $N'$. Then
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
   \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho & \text{(meaning of application)}\\
     & = & \den{\lambda x.\,N}\rho_f \app \den{M}\rho & \text{(invariant for $L$)}\\
     & = & \den{N}\rho_f[x{:=}\den{M}\rho] & \text{(Lemma~\ref{lem:beta}, part 1)}\\
-    & = & \den{T''}\rho' & \text{(induction hypothesis for $N$)}
+    & = & \den{N'}\rho' & \text{(induction hypothesis for $N$)}
 \end{array}
 \]}
 The use of Lemma~\ref{lem:beta} needs $\den{M}\rho$ to be nonempty,
@@ -83,7 +95,8 @@ $(\lambda x.\, N)\;M$ is the same calculation without the second step.
 
 \paragraph{Enclose}
 
-The \pass{enclose} pass works in three steps (\S\ref{app:pass-enclose}).
+The \pass{enclose} pass works in three steps, $\mathit{capture}$,
+$\mathit{prune}$, and $\mathit{concretize}$ (\S\ref{app:pass-enclose}).
 The first two produce closures of an intermediate language, Clos,
 written $\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$, which bind a name
 $x_i$ for each captured value $M_i$. The last step, $\mathit{concretize}_\varphi$,
@@ -110,15 +123,17 @@ nonempty and consistent.
 
 \paragraph{Equations and RQ3}
 
-These calculations show why a pass whose correctness is an equation has a small denotational proof (RQ3). For each of the seven
-passes, each interesting case is a short chain of equations between
+These calculations show why a pass whose correctness is an equation
+has a small denotational proof (RQ3). For each of the seven passes,
+each interesting case is a short chain of equations between
 denotations: the meaning of the source form, a few laws of the graph
 model or the semantic equations, the induction hypothesis, and the
-meaning of the target form. The remaining cases are congruences. No
-proof mentions evaluation steps, machine states, or clocks.
+meaning of the target form. The remaining cases are congruences.
 Section~\ref{sec:evaluation} measures how concise these proofs are by
-comparing them with proofs of the same passes in four other styles. The exception is \pass{split closure}, the pass that changes the
-meaning of a closure from a function to a set of pairs of code and
-environment. Its correctness is not an equation, and its proof is the subject of Section~\ref{sec:approx-lr}.
+comparing them with proofs of the same passes in four other
+styles. The exception is \pass{split closure}, the pass that changes
+the meaning of a closure from a function to a set of pairs of code and
+environment. Its correctness is not an equation, and its proof is the
+subject of Section~\ref{sec:approx-lr}.
 
 \input{delay}

@@ -413,7 +413,7 @@ Split (a), row by row, against the two columns it draws on:
 | bridge at ISWIMμ (ISWIMμ's adequacy, shared with the graph model's) | — | 395 | — | — |
 | composition | — | 28 | 28 | 22 |
 | shared modules not used by all four proofs | — | 15 | — | 15 |
-| the ISWIM pipeline's modules it reuses (meaning of the primitives, framework instances) | — | 36 | 34 | 2 |
+| the modules it shares with the ISWIM pipeline (meaning of the primitives, framework instances) | — | 36 | 34 | 2 |
 | **total** | — | **1838** | 1806 | 1504 |
 | language-independent infrastructure used (not in the totals) | — | 1596 | 1567 | 436 |
 

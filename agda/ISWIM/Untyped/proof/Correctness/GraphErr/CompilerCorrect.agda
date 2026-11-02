@@ -1,0 +1,92 @@
+{-
+
+  The whole compiler in the graph model with errors: for a closed ISWIM
+  program, the compiled program (into Clos5, monadic Clos5, Imp, CFG and
+  X86) errs exactly when the source does, produces the same constants,
+  and produces a value exactly when the source does (Same). Every pass but
+  split preserves the meaning exactly (≃); split preserves and reflects
+  these three facts.
+
+-}
+
+module ISWIM.Untyped.proof.Correctness.GraphErr.CompilerCorrect where
+
+open import Framework.Primitives using (base-rep)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
+open import Framework.GraphModel.ErrorMonad using (val∈)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import Framework.Iff using (_⇔_)
+
+open import ISWIM.Semantics.GraphErr.ISWIM using (⟦_⟧)
+import ISWIM.Untyped.Semantics.GraphErr.Clos4 as S4
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import ISWIM.Untyped.Semantics.GraphErr.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
+open import ISWIM.Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import ISWIM.Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+
+open import ISWIM.proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.CaptureCorrect using (capture-correct)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.PruneCorrect using (prune-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.ConcretizeCorrect using (concretize-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.SplitPreserve
+  using (split-correct-error; split-correct-const; split-correct-val)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.HoistCorrect using (hoist-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.RCOCorrect using (rco-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.ExplicateCorrect using (explicate-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.SelectCorrect using (select-correct-compile)
+
+open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+
+{- two sets err together, have the same constants, and have values together -}
+Same : 𝒫 Value → 𝒫 Value → Set
+Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst c ∈ D) ⇔ (dconst c ∈ E))) × (val∈ D ⇔ val∈ E)
+
+≃→Same : ∀ {D E} → D ≃ E → Same D E
+≃→Same ⟨ D⊆ , E⊆ ⟩ =
+  ⟨ ⟨ D⊆ ω , E⊆ ω ⟩
+  , ⟨ (λ c → ⟨ D⊆ (dconst c) , E⊆ (dconst c) ⟩)
+    , ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊆ d d∈ , d≢ ⟩ ⟩ }) , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊆ d d∈ , d≢ ⟩ ⟩ }) ⟩ ⟩ ⟩
+
+⇔-trans : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
+⇔-trans ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
+
+Same-trans : ∀ {D E F} → Same D E → Same E F → Same D F
+Same-trans ⟨ e₁ , ⟨ c₁ , v₁ ⟩ ⟩ ⟨ e₂ , ⟨ c₂ , v₂ ⟩ ⟩ =
+  ⟨ ⇔-trans e₁ e₂ , ⟨ (λ c → ⇔-trans (c₁ c) (c₂ c)) , ⇔-trans v₁ v₂ ⟩ ⟩
+
+≃-sym′ : ∀ {D E : 𝒫 Value} → D ≃ E → E ≃ D
+≃-sym′ ⟨ a , b ⟩ = ⟨ b , a ⟩
+
+{- into Clos4, before hoist -}
+compile₄-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) (S4.⟦ compile₄ M ⟧ ρ₀)
+compile₄-same M c =
+  Same-trans (≃→Same (≃-trans (simplify-correct M c)
+               (≃-trans (capture-correct (simplify M) (simplify-closed M c))
+                 (≃-trans (prune-correct-compile M c)
+                   (concretize-correct-closed (prune-program (capture (simplify M))))))))
+    ⟨ split-correct-error C₃ , ⟨ split-correct-const C₃ , split-correct-val C₃ ⟩ ⟩
+  where C₃ = concretize-program (prune-program (capture (simplify M)))
+
+compile-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
+compile-same M c = Same-trans (compile₄-same M c) (≃→Same (hoist-correct-compile M c))
+
+compile-mon-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-mon M ⟧₅
+compile-mon-same M c = Same-trans (compile-same M c) (≃→Same (≃-sym′ (rco-correct-compile M c)))
+
+compile-imp-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
+compile-imp-same M c = Same-trans (compile-mon-same M c) (≃→Same (≃-sym′ (lift-correct-compile M c)))
+
+compile-cfg-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
+compile-cfg-same M c = Same-trans (compile-imp-same M c) (≃→Same (≃-sym′ (explicate-correct-compile M c)))
+
+compile-x86-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₓ
+compile-x86-same M c = Same-trans (compile-cfg-same M c) (≃→Same (≃-sym′ (select-correct-compile M c)))

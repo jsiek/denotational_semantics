@@ -1,16 +1,27 @@
 %% Section 5: adequacy, input by paper.tex after proof.tex. Sources:
-%% graph model, agda/Mu/Theorems/Adequacy.agda (the statements) and
-%% agda/Mu/proof/Adequacy/{FPC,Soundness,LogRel,X86*,EndToEnd}.agda;
-%% Scott domains, agda/Mu/Theorems/ScottDomainsAdequacy.agda and
-%% agda/Mu/proof/Adequacy/ScottDomains/. Sizes from loc.py --scott.
+%% graph model, agda/FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda (the statements) and
+%% agda/FPC/proof/Adequacy/{FPC,Soundness,LogRel,X86*,EndToEnd}.agda;
+%% CEK machines, Theorems/GraphModelAdequateWrtAbstractMachines.agda and
+%% proof/Adequacy/AbstractMachines/; reduction semantics,
+%% Theorems/GraphModelAdequateWrtReductionSemantics.agda and
+%% proof/Adequacy/ReductionSemantics/;
+%% Scott domains, agda/FPC/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda and
+%% agda/FPC/proof/Adequacy/ScottDomains/. Sizes from loc.py --mu and --scott.
 
 \section{Adequacy}
 \label{sec:adequacy}
 
-Theorem~\ref{thm:compiler} speaks of denotations. To
-connect it to running code, we prove that the graph-model and the Scott-domain semantics of \fpc\ and \instr\ are adequate for the clocked interpreters of Section~\ref{sec:evaluation} (Appendix~\ref{app:interp}).
+Each of our five correctness results speaks of a different semantics.
+To check that our mechanized semantics agree, we prove the graph model
+adequate with respect to the clocked interpreters, the CEK machines,
+and the reduction semantics (Appendices~\ref{app:interp},
+\ref{app:machines}, and~\ref{app:reduction}), and we prove the
+Scott-domain semantics adequate with respect to the clocked
+interpreters. We regard these proofs as checks on our definitions, not
+as contributions, because each one adapts a textbook proof. We state
+the proposition for the interpreters.
 
-\begin{theorem}[Adequacy]\label{thm:adequacy}
+\begin{proposition}[Adequacy]\label{prop:adequacy}
 Let $M$ be a closed term of \fpc. For every constant $c$,
 $c \in \den{M}$ if and only if the interpreter of \fpc\ terminates on
 $M$ with $c$, and $\den{M}$ is empty if and only if the interpreter
@@ -19,23 +30,42 @@ for \instr\ and $\pass{compile}(M)$. In the Scott-domain semantics,
 $\den{M}\rho_0 = \up{(c, ())}$ if and only if the interpreter
 terminates on $M$ with $c$, and $\den{M}\rho_0 = \bot$ if and only if
 the interpreter diverges on $M$, and the same holds for \instr.
-\end{theorem}
+\end{proposition}
 
-The proof for each language has two halves. Soundness says that if
-the interpreter returns a value at some clock, then that value denotes
-a part of the meaning of the program. Adequacy says that every element of the meaning is
-related to the value that the interpreter returns from some clock on,
-by a logical relation defined by recursion on the element, as in
-earlier adequacy proofs for graph and filter models
-\citep{Siek:2017ab,Wadler:2020aa}. For Scott domains, the proof
-follows the textbook approach
+The graph-model half of the proposition also holds with the CEK machines
+of \fpc\ and \instr\ in place of the interpreters, and with the
+reduction semantics of \fpc. These cover every semantics in our
+comparison, because the reduction-semantics proof of correctness uses
+the CEK machine of \instr\ as its target.
+
+Each proof has two halves. Soundness says that if the operational
+semantics returns a value, then that value denotes a part of the
+meaning of the program. Adequacy says that every element of the
+meaning is related to the value that the operational semantics
+returns, by a logical relation. For the reduction semantics, we follow
+\citet{Plotkin:1977oc}. Each reduction step preserves the meaning of
+a term, by a substitution lemma, and the logical relation relates
+elements to closed values. For the interpreters and the CEK machines,
+the logical relation relates elements to values with environments and
+is defined by recursion on the element, as in earlier adequacy proofs
+for graph and filter models \citep{Siek:2017ab,Wadler:2020aa}. For the
+machines, soundness gives a meaning to each continuation and shows
+that a step never enlarges the meaning of the machine state. For Scott
+domains, the proof follows the textbook approach
 \citep{Plotkin:1985aa,Winskel:1993uq,Pitts:1996aa}. The logical
 relation occurs negatively at recursive types, and we define it by
 recursion on the stages of the bilimit, as for \pass{split closure}
 (Section~\ref{sec:scott-delay}). It relates each approximation of a
-domain element to an interpreter value. Together with
-Theorem~\ref{thm:compiler}, Theorem~\ref{thm:adequacy} gives the
-theorem that the operational proofs state, namely that for a program
-of integer type the interpreters of \fpc\ and \instr\ terminate with
-the same integer or both diverge. The adequacy proofs are 1,529 lines of Agda for the graph model and
-1,886 for Scott domains; Section~\ref{sec:evaluation} explains why we report them separately.
+domain element to an interpreter value.
+
+Together with Theorems~\ref{thm:compiler} and~\ref{thm:scott},
+Proposition~\ref{prop:adequacy} gives the statements of the operational
+correctness results
+(Propositions~\ref{prop:interp}--\ref{prop:reduction}), namely that for
+a program of integer type the source and the target terminate with the
+same integer or both diverge. All five correctness results are
+therefore equivalent. For the graph model, the adequacy proofs take
+1,529 lines of Agda for the interpreters, 1,606 for the CEK machines,
+and 1,574 for the reduction semantics, and the proof for Scott domains
+takes 1,886 lines. Section~\ref{sec:evaluation} explains why we report
+them separately.

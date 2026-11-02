@@ -3,9 +3,9 @@
 # TypeTopology is vendored in vendor/TypeTopology/, so typechecking needs
 # no network access.
 #
-#   docker build -t iswim-mu .
-#   docker run --rm iswim-mu                 # make check check-scott tables
-#   docker run --rm iswim-mu make tables     # or any one target
+#   docker build -t fpc-compiler .
+#   docker run --rm fpc-compiler             # make check check-scott tables
+#   docker run --rm fpc-compiler make tables # or any one target
 
 FROM ubuntu:24.04
 

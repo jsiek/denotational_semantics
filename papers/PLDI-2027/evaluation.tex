@@ -47,18 +47,18 @@ the languages and passes, and each is our best effort in its style.
   (Appendix~\ref{app:reduction}),
   and we prove each pass by a simulation between reductions.
 \end{itemize}
-Appendix~\ref{app:other} states each style's theorem, with its
+Appendix~\ref{app:other} gives each style's
 semantics of \fpc\ and \instr.
 
-\paragraph{The correctness theorems and their proofs}
+\paragraph{The correctness results and their proofs}
 
 Each development proves the compiler correct with respect to its own
 semantics, for closed programs of integer type. The denotational
 theorems state that a program and its compilation produce the same
 integer and that one has a meaning exactly when the other does; the
-operational theorems state that both terminate with the same integer
+operational propositions state that both terminate with the same integer
 or both diverge, for three different operational semantics. All five
-are whole-program theorems, which say nothing about compiled code
+are whole-program results, which say nothing about compiled code
 linked with other code. We do not regard the operational or
 denotational formulation of correctness as more fundamental than the
 other. \citet{Scott:1971ab} proposed a mathematical semantics as ``the
@@ -66,10 +66,8 @@ standard against which to judge an implementation'', while
 \citet{Plotkin:1977oc} judged denotational semantics by their
 closeness to an operational one. Our adequacy proofs
 (Section~\ref{sec:adequacy}) make the choice immaterial. For programs
-of integer type, the graph-model theorem, the Scott-domain theorem, and
-the interpreter theorem are equivalent. We therefore count each
-development up to its own theorem and report adequacy, 1,529 lines for
-the graph model and 1,886 for Scott domains, separately.
+of integer type, the five results are equivalent. We therefore count
+each development up to its own correctness result and report adequacy separately.
 
 We measure each proof by its lines of Agda, not counting comments,
 blank lines, or imports. The counts include the semantics of the
@@ -89,7 +87,7 @@ not depend on trusting the AI. Agda checks every development in safe
 mode, with no postulates. However, the Scott-domain theorems take
 three standard axioms as hypotheses because it depends on
 TypeTopology. The authors checked all the definitions and every
-theorem statement.
+statement of a theorem, lemma, or proposition.
 
 \subsection{Results}
 
@@ -236,7 +234,7 @@ divergence as the empty set, the absence of evidence, and a forward
 relation cannot carry absence. Showing that a diverging program
 compiles to a diverging program is therefore a separate argument, and
 that argument is reflection. Second, reflection
-needs the finite lists, the batches of calls, and the lemma that
+needs the finite lists, the self-contained calls, and the lemma that
 extracts them from a target call. Third, the $\beta$-law of
 Lemma~\ref{lem:beta} holds only under side conditions of nonemptiness,
 consistency, and continuity, whereas a machine does not have such side
@@ -279,7 +277,7 @@ lines. Size also says little about difficulty, which depends on
 whether a proof has precedent in the literature or its authors must
 invent it. Because experience carries over from one development to the
 next, we gave every development a final cleanup pass under the same
-rules (shorten and clarify the proofs but change no theorem statement
+rules (shorten and clarify the proofs but change no statement
 and move nothing into the uncounted infrastructure). The cleanup pass
 did not change the order of the four other proofs; the Scott-domain proof,
 written last, shrank from 3,457 to 2,485 lines, which moved it ahead

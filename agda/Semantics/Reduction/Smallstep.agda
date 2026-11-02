@@ -9,7 +9,8 @@
 
   * Each language with binders (ISWIM, the source of cast insertion,
     and ISWIMᵀ, Clos2ᵀ–Clos5ᵀ) has a reduction semantics
-    (Reduction/ISWIM.agda, Reduction/Typed/*.agda): a state is a term,
+    (ISWIM/Semantics/Reduction/ISWIM.agda,
+    ISWIM/Semantics/Reduction/Typed/*.agda): a state is a term,
     and a step substitutes values for bound variables (β, case, let) or
     computes a primitive, inside an evaluation context. The step
     function red is written with congruence rules (step-in), call by
@@ -28,7 +29,7 @@
 
   * The first-order languages Impᵀ, CFGᵀ and X86ᵀ have no binders, so a
     reduction semantics for them would be the configuration-stepping
-    machines they already have (Semantics/CEK/Typed/{Imp,CFG,X86}.agda).
+    machines they already have (ISWIM/Semantics/CEK/Typed/{Imp,CFG,X86}.agda).
     Those machines, and the proofs of explicate control and select
     instructions between them, are shared with the CEK machine +
     simulation proof; lift locals is proved between the Clos5ᵀ

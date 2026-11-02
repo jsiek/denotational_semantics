@@ -2,7 +2,7 @@
 
   Monotone, continuous and consistent denotations (Ok), for semantics of
   intrinsically typed syntax in the graph model with errors, defined by
-  direct recursion on the terms (Semantics/GraphErr/Typed/): the
+  direct recursion on the terms (ISWIM/Semantics/GraphErr/Typed/): the
   analogue of GoodSemantics (SemanticsCore.agda) without an ABT, so a
   language proves Ok of each term by structural induction, one line per
   constructor, from the facts of this module:

@@ -1,3 +1,0 @@
-name: iswim-mu
-depend: standard-library
-include: agda

@@ -3,8 +3,9 @@ Denotational semantics based on graph and filter models
 
 ## The closure-conversion compiler
 
-`agda/All.agda` gathers a compiler from ISWIM to X86ᵀ, a typed assembly
-language, with closure conversion and intrinsically typed intermediate
+`agda/ISWIM/` holds a compiler from ISWIM to X86ᵀ, a typed assembly
+language (`agda/ISWIM/All.agda` gathers it, and `agda/All.agda`
+gathers it with the compiler of the PLDI 2027 paper, `agda/FPC/`), with closure conversion and intrinsically typed intermediate
 languages, and its
 correctness proofs, in five styles (denotational: graph model; CEK
 machine + simulation, after CompCert; clocked interpreter + value
@@ -31,7 +32,7 @@ start and end with, and its only check is `project`'s (`chk`), which
 stands for the X86 instruction that errs on a value of another kind.
 Without its types, the code is that of x86 with variables (untyped X86),
 which select emitted before (an assurance theorem,
-`agda/Theorems/X86Erasure.agda`).
+`agda/ISWIM/Theorems/X86Erasure.agda`).
 
 The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
 simplified version of Chez Scheme's cp0: constant folding, case of a
@@ -42,13 +43,15 @@ small); an operand that is not a value stays bound by a `let`.
 The untyped pipeline that preceded this one (ISWIM → Clos2 → … → Clos5
 → Imp → CFG → X86, with untyped intermediate languages whose semantics
 check kinds themselves) is preserved, with its proofs in the same five
-styles, in `agda/Untyped/`; `make check` checks it too.
+styles, in `agda/ISWIM/Untyped/`; `make check` checks it too.
 
-The public theorem statements are in `agda/Theorems/` (and
-`agda/Untyped/Theorems/`); with the definitions they use (everything
+The public theorem statements are in `agda/ISWIM/Theorems/` (and
+`agda/ISWIM/Untyped/Theorems/`); with the definitions they use (everything
 outside the `proof/` directories) they are what must be read to trust
-the results, and `agda/proof/` (and `agda/Untyped/proof/`) holds the
-proofs. See `agda/README.md`.
+the results, and `agda/ISWIM/proof/` (and `agda/ISWIM/Untyped/proof/`)
+holds the proofs. The modules that the ISWIM compilers share with
+`agda/FPC/` (the frameworks, the primitives, the observations) are
+directly in `agda/`. See `agda/README.md`.
 
 It needs only the Agda standard library, and is checked with `--safe`
 (so nothing postulated is used). From the root of the repository:
@@ -66,7 +69,7 @@ Line counts of the proofs, and their comparison, are in
 `--untyped` for the preserved pipeline).
 
 The denotational: Scott domains column (`agda/AllScott.agda`,
-`agda/Mu/Theorems/ScottDomains.agda`) also needs TypeTopology; check it with
+`agda/FPC/Theorems/CorrectWrtScottDomains.agda`) also needs TypeTopology; check it with
 
     make check-scott
 
@@ -75,28 +78,34 @@ patches it, and checks the column against it and the standard library.
 
 ## Reproducing the PLDI 2027 paper
 
-The paper's compiler (`agda/Mu/`) compiles FPC, Plotkin's Fixed Point
-Calculus (a call-by-value λ-calculus with iso-recursive types), in ten
-passes to X86μ.
+The paper's compiler (`agda/FPC/`) compiles FPC, Plotkin's Fixed Point
+Calculus (a call-by-value λ-calculus with iso-recursive types), in eight
+passes to Instrμ (`X86μ` in the Agda; the paper's enclose pass is the
+Agda's capture, prune and concretize).
 
 * Graph model, abstract machines, clocked interpreters, reduction
   semantics, and adequacy: `make check` (Agda 2.8.0, standard library
   2.4, `--safe`; about three minutes). `agda/All.agda` imports
-  `agda/Mu/All.agda`.
-* Scott domains: `make check-scott`. It fetches TypeTopology at commit
+  `agda/FPC/All.agda`.
+* Scott domains and their adequacy: `make check-scott`. It fetches TypeTopology at commit
   `17487fc910f3bb305c30001507fed5d41d52dc3c` into `_deps/`, applies
   `scott/typetopology-builtin-alias.patch` (Bool and List become
   aliases of Agda's builtins), and checks `agda/AllScott.agda` with
   `--safe` (about three more minutes). Its theorems take propositional
   truncation, function extensionality and propositional extensionality
   as module parameters.
-* Theorem statements, one file per style, named as in the paper:
-  `agda/Mu/Theorems/GraphModel.agda` (Theorems 4.1 and 4.4),
-  `ScottDomains.agda` (Theorem F.4), `AbstractMachines.agda` (Theorem
-  F.2), `ClockedInterpreters.agda` (Theorem F.1),
-  `ReductionSemantics.agda` (Theorem F.3), and `Adequacy.agda` (Theorem
-  4.5).
-* `agda/Mu/README.md` maps each theorem, lemma, definition and appendix
+* Theorem statements, one file per result: compiler correctness in
+  `agda/FPC/Theorems/CorrectWrtGraphModel.agda` (Theorem 4.1 and
+  Lemma 4.6), `CorrectWrtScottDomains.agda` (Theorem 4.2),
+  `CorrectWrtClockedInterpreters.agda` (Proposition F.1),
+  `CorrectWrtAbstractMachines.agda` (Proposition F.2) and
+  `CorrectWrtReductionSemantics.agda` (Proposition F.3); adequacy
+  (Proposition 5.1 and Section 5) in
+  `GraphModelAdequateWrtClockedInterpreters.agda`,
+  `GraphModelAdequateWrtAbstractMachines.agda`,
+  `GraphModelAdequateWrtReductionSemantics.agda` and
+  `ScottDomainsAdequateWrtClockedInterpreters.agda`.
+* `agda/FPC/README.md` maps each theorem, lemma, definition and appendix
   section of the paper to its Agda file and name, and lists the audit
   surface.
 * Tables 1 and 2: `python3 papers/PLDI-2027/loc.py --mu` (the four

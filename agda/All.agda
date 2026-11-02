@@ -1,69 +1,43 @@
 {-
 
-  The compiler and its correctness proofs, in five styles.
-
-    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
-          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --split--> Clos4ᵀ
-          --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
-
-  The intermediate languages and the target, the typed assembly
-  language X86ᵀ (Language/Typed/), are intrinsically typed; the source,
-  ISWIM, is untyped. The untyped
-  pipeline that preceded this one is preserved in Untyped/ (see
-  Untyped/All.agda), and checked too.
+  Everything that make check checks: the FPC compiler of the PLDI 2027
+  paper (FPC/, see FPC/All.agda and FPC/README.md), the ISWIM compilers
+  (ISWIM/, see ISWIM/All.agda), and the modules they share (the
+  language-independent frameworks, Framework/ and proof/Framework/, and
+  the primitives, observations and framework instances directly under
+  agda/).
 
   Check everything with
 
     agda --safe agda/All.agda
 
   (or make check, from the root of the repository, which also greps for
-  postulates and pragmas). See README.md for the layout: the theorem
-  statements (Theorems/) and the definitions they use (everything outside
-  proof/) are the audit surface; proof/ holds the proofs.
-
-  This file imports the theorem files, which reach the whole audit
-  surface, every module of proof/, and the preserved untyped pipeline.
+  postulates and pragmas). See README.md for the layout. The
+  Scott-domain column of FPC needs TypeTopology and is checked from
+  AllScott.agda instead (make check-scott).
 
 -}
 
 module All where
 
 {- ---------------------------------------------------------------------------
-   The public theorem statements
+   The ISWIM compilers: the typed pipeline and the untyped one that
+   preceded it
    --------------------------------------------------------------------------- -}
 
-import Theorems.Denotational
-import Theorems.Simulation
-import Theorems.Interpreter
-import Theorems.Reduction
-import Theorems.GraphErrors
-import Theorems.Adequacy
-
-{- assurance (not in the totals, nor in the comparison): erasing X86ᵀ to
-   X86 keeps the meaning of every program, in the CEK machines, and the
-   code select emits is, without its types, that of select into untyped
-   X86 -}
-import Theorems.X86Erasure
-import proof.Assurance.X86Agree
-import proof.Assurance.X86Erasure
+import ISWIM.All
 
 {- ---------------------------------------------------------------------------
-   The untyped pipeline, preserved
+   The FPC compiler (the compiler of the PLDI 2027 paper): FPC, a typed
+   λ-calculus with iso-recursive types, and its compiler to X86μ, in four
+   of the five styles (Scott domains: AllScott.agda), with its theorem
+   statements in FPC/Theorems/ (see
+   FPC/All.agda and FPC/README.md), and the experiments on it that are not
+   part of the paper (FPC/Experiments.agda)
    --------------------------------------------------------------------------- -}
 
-import Untyped.All
-
-{- ---------------------------------------------------------------------------
-   The ISWIMμ compiler (the main experiment of the size comparison): a
-   typed ISWIM with iso-recursive types and its compiler to X86μ, in the
-   four styles, with its theorem statements in Mu/Theorems/ (see
-   Mu/All.agda and Mu/README.md), and the experiments on it that are not
-   part of the paper (Mu/Experiments.agda)
-   --------------------------------------------------------------------------- -}
-
-import Mu.All
-import Mu.Experiments
+import FPC.All
+import FPC.Experiments
 
 {- ---------------------------------------------------------------------------
    proof/: language-independent lemmas: about tuples of the abt extract,
@@ -122,175 +96,12 @@ import proof.Framework.VecUtil
 import proof.Framework.abt.ScopedTuple
 
 {- ---------------------------------------------------------------------------
-   proof/: syntactic facts about the passes: simplify, cast insertion on
-   closed programs, hoist's references to older definitions, and the
-   definitions, labels and frames that select instructions relies on
+   proof/: the lemmas of the shared modules: the meaning of the primitives
+   in the graph model, and the instances of the small-step and clocked
+   frameworks at the compilers' observations
    --------------------------------------------------------------------------- -}
 
-import proof.Compiler.CastScope
-import proof.Compiler.HoistOlder
-import proof.Compiler.SelectErase
-import proof.Compiler.SimplifyFacts
-import proof.Compiler.SimplifyScope
-
-{- ---------------------------------------------------------------------------
-   proof/: the plain graph model: the lemmas about the semantics of each
-   language and the correctness of each pass
-   --------------------------------------------------------------------------- -}
-
-import proof.Correctness.Graph.CastCorrect
-import proof.Correctness.Graph.CompilerCorrect
-import proof.Correctness.Graph.ConcretizeCorrect
-import proof.Correctness.Graph.SplitCorrect
-import proof.Correctness.Graph.SplitPreserve
-import proof.Correctness.Graph.SplitReflect
-import proof.Correctness.Graph.SplitRel
-import proof.Correctness.Graph.CaptureCorrect
-import proof.Correctness.Graph.ExplicateCorrect
-import proof.Correctness.Graph.HoistCorrect
-import proof.Correctness.Graph.LiftLocalsCorrect
-import proof.Correctness.Graph.PruneCorrect
-import proof.Correctness.Graph.RCOCorrect
-import proof.Correctness.Graph.SelectCorrect
-import proof.Correctness.Graph.SimplifyCorrect
-import proof.Semantics.Graph.ISWIM
-import proof.Semantics.Graph.ISWIMContinuous
 import proof.Semantics.Graph.Prim
-import proof.Semantics.Graph.Typed.CFG
-import proof.Semantics.Graph.Typed.Clos2
-import proof.Semantics.Graph.Typed.Clos3
-import proof.Semantics.Graph.Typed.Clos4
-import proof.Semantics.Graph.Typed.Clos5
-import proof.Semantics.Graph.Typed.Ops
-
-{- ---------------------------------------------------------------------------
-   proof/: the CEK machines + simulations
-   --------------------------------------------------------------------------- -}
-
-import proof.Correctness.CEK.CastSim
-import proof.Correctness.CEK.CastSimLemmas
-import proof.Correctness.CEK.Clos5Common
-import proof.Correctness.CEK.Common
-import proof.Correctness.CEK.ConcretizeSim
-import proof.Correctness.CEK.SplitSim
-import proof.Correctness.CEK.CaptureSim
-import proof.Correctness.CEK.ExplicateSim
-import proof.Correctness.CEK.HoistSim
-import proof.Correctness.CEK.LiftLocalsSim
-import proof.Correctness.CEK.PruneSim
-import proof.Correctness.CEK.PipelineSim
-import proof.Correctness.CEK.RCOSim
-import proof.Correctness.CEK.SelectSim
-import proof.Correctness.CEK.SimplifySim
 import proof.Semantics.CEK.Simulation
 import proof.Semantics.CEK.Smallstep
-
-{- ---------------------------------------------------------------------------
-   proof/: the clocked interpreters + value relations
-   --------------------------------------------------------------------------- -}
-
-import proof.Correctness.Interp.CastFuel
-import proof.Correctness.Interp.CompilerFuel
-import proof.Correctness.Interp.ConcretizeFuel
-import proof.Correctness.Interp.SplitFuel
-import proof.Correctness.Interp.CaptureFuel
-import proof.Correctness.Interp.ExplicateFuel
-import proof.Correctness.Interp.HoistFuel
-import proof.Correctness.Interp.LiftLocalsFuel
-import proof.Correctness.Interp.PruneFuel
-import proof.Correctness.Interp.RCOFuel
-import proof.Correctness.Interp.SelectFuel
-import proof.Correctness.Interp.SimplifyFuel
 import proof.Semantics.Interp.Clock
-import proof.Semantics.Interp.Typed.Clos5
-import proof.Semantics.Interp.Typed.Rel
-
-{- ---------------------------------------------------------------------------
-   proof/: the reduction semantics + simulations (explicate control and
-   select instructions are the CEK column's)
-   --------------------------------------------------------------------------- -}
-
-import proof.Correctness.Reduction.CastRed
-import proof.Correctness.Reduction.ConcretizeRed
-import proof.Correctness.Reduction.SplitRed
-import proof.Correctness.Reduction.CaptureRed
-import proof.Correctness.Reduction.HoistRed
-import proof.Correctness.Reduction.LiftLocalsRed
-import proof.Correctness.Reduction.PruneRed
-import proof.Correctness.Reduction.PipelineRed
-import proof.Correctness.Reduction.RCORed
-import proof.Correctness.Reduction.SimplifyRed
-import proof.Semantics.Reduction.Typed.Clos2
-import proof.Semantics.Reduction.Typed.Clos3
-import proof.Semantics.Reduction.Typed.Clos4
-import proof.Semantics.Reduction.Typed.Clos5
-import proof.Semantics.Reduction.Typed.ISWIM
-
-{- ---------------------------------------------------------------------------
-   proof/: the graph model with errors
-   --------------------------------------------------------------------------- -}
-
-import proof.Correctness.GraphErr.CastCorrect
-import proof.Correctness.GraphErr.CompilerCorrect
-import proof.Correctness.GraphErr.ConcretizeCorrect
-import proof.Correctness.GraphErr.SplitCorrect
-import proof.Correctness.GraphErr.SplitPreserve
-import proof.Correctness.GraphErr.SplitReflect
-import proof.Correctness.GraphErr.SplitRel
-import proof.Correctness.GraphErr.CaptureCorrect
-import proof.Correctness.GraphErr.ExplicateCorrect
-import proof.Correctness.GraphErr.HoistCorrect
-import proof.Correctness.GraphErr.LiftLocalsCorrect
-import proof.Correctness.GraphErr.PruneCorrect
-import proof.Correctness.GraphErr.RCOCorrect
-import proof.Correctness.GraphErr.SelectCorrect
-import proof.Correctness.GraphErr.SimplifyCorrect
-import proof.Semantics.GraphErr.ISWIM
-import proof.Semantics.GraphErr.Prim
-import proof.Semantics.GraphErr.Typed.CFG
-import proof.Semantics.GraphErr.Typed.Clos2
-import proof.Semantics.GraphErr.Typed.Clos3
-import proof.Semantics.GraphErr.Typed.Clos4
-import proof.Semantics.GraphErr.Typed.Clos5
-import proof.Semantics.GraphErr.Typed.Imp
-import proof.Adequacy.GraphErr.X86Mono
-
-{- ---------------------------------------------------------------------------
-   proof/: adequacy of the plain graph model (ISWIM, Clos5ᵀ and X86ᵀ
-   machines) and of the graph model with errors (ISWIM and X86 machines;
-   Clos5ᵀ derived from the CEK column's simulation)
-   --------------------------------------------------------------------------- -}
-
-import proof.Adequacy.Clos5
-import proof.Adequacy.Clos5Common
-import proof.Adequacy.Clos5LogRel
-import proof.Adequacy.Clos5Soundness
-import proof.Adequacy.Clos5Values
-import proof.Adequacy.Common
-import proof.Adequacy.EndToEnd
-import proof.Adequacy.GraphErr.Agree
-import proof.Adequacy.GraphErr.EndToEnd
-import proof.Adequacy.GraphErr.ISWIM
-import proof.Adequacy.GraphErr.LogRel
-import proof.Adequacy.GraphErr.Simplify
-import proof.Adequacy.GraphErr.Soundness
-import proof.Adequacy.GraphErr.X86
-import proof.Adequacy.GraphErr.X86Common
-import proof.Adequacy.GraphErr.X86LogRel
-import proof.Adequacy.GraphErr.X86Soundness
-import proof.Adequacy.ISWIM
-import proof.Adequacy.LogRel
-import proof.Adequacy.Soundness
-import proof.Adequacy.X86
-import proof.Adequacy.X86Common
-import proof.Adequacy.X86Compiled
-import proof.Adequacy.X86LogRel
-import proof.Adequacy.X86Soundness
-
-{- ---------------------------------------------------------------------------
-   examples (smoke tests)
-   --------------------------------------------------------------------------- -}
-
-import proof.Compiler.Examples.CastExample
-import proof.Compiler.Examples.PipelineExample
-import proof.Compiler.Examples.SimplifyExample

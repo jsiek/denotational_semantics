@@ -1,0 +1,284 @@
+{-
+
+  The correctness of the compiler in the graph model with errors:
+  the public statements. The proofs are in ISWIM/proof/Correctness/GraphErr/
+  and ISWIM/proof/Adequacy/GraphErr/EndToEnd.agda; each theorem here is one of
+  them, with its type written out.
+
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
+          --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --split--> Clos4ᵀ
+          --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
+
+  To read them: the typed languages (ISWIM/Language/Typed/), the passes
+  (ISWIM/Compiler/), the semantics of each typed language
+  (ISWIM/Semantics/GraphErr/Typed/, X86ᵀ included; Monᵀ means its embedding
+  into Clos5ᵀ, ⌜_⌝ₚ), that of ISWIM (ISWIM/Semantics/GraphErr/), the machines
+  of ISWIM, Clos5ᵀ and X86ᵀ (ISWIM/Semantics/CEK/), and the domain and
+  operators they are built from (Framework/GraphModel/). An error is the
+  element ω; in the typed semantics only project (a cast from Any)
+  checks kinds and errs.
+
+  Every pass but split is an equation (≃), select instructions
+  included: X86ᵀ, like CFGᵀ, checks kinds only at project (chk).
+
+  Adequacy: for X86ᵀ, direct, that of its semantics for its machine
+  (Adequacy/GraphErr/X86.agda), on the programs of the compiler, whose
+  definitions' code depends only on the older ones and whose table is
+  consistent; for Clos5ᵀ, derived from the ISWIM machine's, Same, and
+  the simulation of the CEK column (ISWIM/Theorems/Simulation.agda).
+
+-}
+
+module ISWIM.Theorems.GraphErrors where
+
+open import Framework.Primitives using (base-rep)
+open import Framework.GraphModel.SetsAsPredicates using (𝒫; ⌈_⌉; _∈_; _≃_)
+open import Framework.GraphModel.Env using (Env)
+open import Framework.GraphModel.Domain using (Value; ω; const)
+open import Framework.GraphModel.ErrorMonad using (val∈)
+open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
+open import Semantics.CEK.Smallstep using (Terminates; Diverges)
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
+import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
+
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Language.Typed.Type using (Any)
+import ISWIM.Language.Typed.ISWIM as ISWIMᵀ
+import ISWIM.Language.Typed.Clos2 as Clos2ᵀ
+import ISWIM.Language.Typed.Clos3 as Clos3ᵀ
+import ISWIM.Language.Typed.Clos4 as Clos4ᵀ
+import ISWIM.Language.Typed.Clos5 as Clos5ᵀ
+import ISWIM.Language.Typed.Mon as Monᵀ
+open Monᵀ using (⌜_⌝ₚ)
+import ISWIM.Language.Typed.Imp as Impᵀ
+import ISWIM.Language.Typed.CFG as CFGᵀ
+open import ISWIM.Compiler.CaptureScope using (Closed)
+
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.Cast using (cast-closed)
+open import ISWIM.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Prune using (prune-program)
+open import ISWIM.Compiler.Concretize using (concretize-program)
+open import ISWIM.Compiler.Split using (split-program)
+open import ISWIM.Compiler.Hoist using (hoist)
+open import ISWIM.Compiler.RCO using (rco-program)
+open import ISWIM.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Compiler.Explicate using (explicate)
+open import ISWIM.Compiler.Select using (select)
+open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+
+open import ISWIM.Semantics.GraphErr.ISWIM using (⟦_⟧)
+open import ISWIM.Semantics.GraphErr.Typed.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵀ)
+open import ISWIM.Semantics.GraphErr.Typed.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)
+open import ISWIM.Semantics.GraphErr.Typed.Clos3 using () renaming (⟦_⟧ to ⟦_⟧₃)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄)
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
+open import ISWIM.Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
+
+import ISWIM.proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
+import ISWIM.proof.Correctness.GraphErr.CaptureCorrect as Capture
+import ISWIM.proof.Correctness.GraphErr.PruneCorrect as Prune
+import ISWIM.proof.Correctness.GraphErr.ConcretizeCorrect as Concretize
+import ISWIM.proof.Correctness.GraphErr.SplitCorrect as Split
+import ISWIM.proof.Correctness.GraphErr.HoistCorrect as Hoist
+import ISWIM.proof.Correctness.GraphErr.RCOCorrect as RCO
+import ISWIM.proof.Correctness.GraphErr.LiftLocalsCorrect as LiftLocals
+import ISWIM.proof.Correctness.GraphErr.ExplicateCorrect as Explicate
+import ISWIM.proof.Correctness.GraphErr.SelectCorrect as Select
+import ISWIM.proof.Correctness.GraphErr.CompilerCorrect as Compiler
+import ISWIM.proof.Adequacy.GraphErr.EndToEnd as Adequacy
+import ISWIM.proof.Adequacy.GraphErr.ISWIM as AdequacyISWIM
+import ISWIM.proof.Adequacy.GraphErr.Simplify as SimplifyMachine
+open Adequacy using (Agree)
+
+open import Data.List using ([])
+open import Data.Product using (Σ-syntax; _×_)
+open import Relation.Binary.PropositionalEquality using (_≢_)
+open import Relation.Nullary using (¬_)
+
+{- The environment of a closed program: every variable denotes {ω}, an
+   error, as a free variable is in the machines -}
+ρ₀ : Env Value
+ρ₀ = λ _ → ⌈ ω ⌉
+
+{- Each pass ------------------------------------------------------------------}
+
+{- every pass but split preserves the meaning of a program exactly (≃),
+   errors included -}
+
+simplify-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
+simplify-correct = SimplifyCorrect.simplify-correct
+
+cast-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ cast-closed M ⟧ᵀ ρ₀
+cast-correct = Compiler.cast-correct-closed
+
+capture-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → ⟦ M ⟧ᵀ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
+capture-correct = Capture.capture-correct
+
+prune-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ prune-program M ⟧₂ ρ₀
+prune-correct = Prune.prune-correct
+
+concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
+concretize-correct = Concretize.concretize-correct
+
+{- split preserves and reflects an error, the constants a program
+   produces, and whether it produces a value -}
+split-correct-error : ∀ (M : Clos3ᵀ.Tm [] Any)
+  → (ω ∈ ⟦ M ⟧₃ ρ₀ → ω ∈ ⟦ split-program M ⟧₄ ρ₀) × (ω ∈ ⟦ split-program M ⟧₄ ρ₀ → ω ∈ ⟦ M ⟧₃ ρ₀)
+split-correct-error = Split.split-correct-error
+
+split-correct-const : ∀ (M : Clos3ᵀ.Tm [] Any) {B} (c : base-rep B)
+  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ split-program M ⟧₄ ρ₀)
+  × (const c ∈ ⟦ split-program M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
+split-correct-const = Split.split-correct-const
+
+split-correct-val : ∀ (M : Clos3ᵀ.Tm [] Any)
+  → (val∈ (⟦ M ⟧₃ ρ₀) → val∈ (⟦ split-program M ⟧₄ ρ₀)) × (val∈ (⟦ split-program M ⟧₄ ρ₀) → val∈ (⟦ M ⟧₃ ρ₀))
+split-correct-val = Split.split-correct-val
+
+hoist-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ hoist M ⟧₅
+hoist-correct = Hoist.hoist-correct
+
+rco-correct : ∀ (P : Clos5ᵀ.Program) → ⟦ P ⟧₅ ≃ ⟦ ⌜ rco-program P ⌝ₚ ⟧₅
+rco-correct = RCO.rco-correct
+
+lift-locals-correct : ∀ (P : Monᵀ.Program) → ⟦ ⌜ P ⌝ₚ ⟧₅ ≃ ⟦ lift-program P ⟧ᵢ
+lift-locals-correct = LiftLocals.lift-locals-correct
+
+explicate-correct : ∀ (P : Impᵀ.Program) → ⟦ P ⟧ᵢ ≃ ⟦ explicate P ⟧ᶜ
+explicate-correct = Explicate.explicate-correct
+
+{- two meanings err together, hold the same constants, and hold a value
+   together -}
+Same : 𝒫 Value → 𝒫 Value → Set
+Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((const c ∈ D) ⇔ (const c ∈ E))) × (val∈ D ⇔ val∈ E)
+
+{- for every CFGᵀ program -}
+select-correct : ∀ (P : CFGᵀ.Program) → ⟦ P ⟧ᶜ ≃ ⟦ select P ⟧ₜ
+select-correct = Select.select-correct
+
+{- The whole compiler, for closed programs -------------------------------------}
+
+compile-correct : ∀ (M : ISWIM.AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
+compile-correct = Compiler.compile-same₅
+
+compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
+compile-mon-correct = Compiler.compile-mon-same
+
+compile-imp-correct : ∀ (M : ISWIM.AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
+compile-imp-correct = Compiler.compile-imp-same
+
+compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
+compile-cfg-correct = Compiler.compile-cfg-same
+
+compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
+compile-x86-correct = Compiler.compile-x86-same
+
+{- Adequacy: the denotation of a closed program tells all three outcomes
+   of its machine apart -------------------------------------------------------}
+
+{- the ISWIM machine -}
+iswim-error-iff : ∀ (M : ISWIM.AST) → Closed M
+  → (ω ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (ISWIMₘ.sem M) o-error
+iswim-error-iff = AdequacyISWIM.error-iff
+
+iswim-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
+  → (const k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (ISWIMₘ.sem M) (o-const B k)
+iswim-const-iff = AdequacyISWIM.const-iff
+
+iswim-converges-iff : ∀ (M : ISWIM.AST) → Closed M
+  → (Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω) ⇔ Converges (Terminates (ISWIMₘ.sem M))
+iswim-converges-iff = AdequacyISWIM.converges-iff
+
+iswim-diverges-iff : ∀ (M : ISWIM.AST) → Closed M
+  → Diverges (ISWIMₘ.sem M) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ M ⟧ ρ₀))
+iswim-diverges-iff = AdequacyISWIM.diverges-iff
+
+{- the Clos5ᵀ machine, for the programs compile produces -}
+clos5-error-iff : ∀ (M : ISWIM.AST) → Closed M
+  → (ω ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) o-error
+clos5-error-iff = Adequacy.clos5-error-iff
+
+clos5-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
+  → (const k ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
+clos5-const-iff = Adequacy.clos5-const-iff
+
+clos5-converges-iff : ∀ (M : ISWIM.AST) → Closed M
+  → (Σ[ d ∈ Value ] d ∈ ⟦ compile M ⟧₅ × d ≢ ω) ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
+clos5-converges-iff = Adequacy.clos5-converges-iff
+
+clos5-diverges-iff : ∀ (M : ISWIM.AST) → Closed M
+  → Diverges (Clos5ᵀₘ.sem (compile M)) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅))
+clos5-diverges-iff = Adequacy.clos5-diverges-iff
+
+{- the X86ᵀ machine, for the programs compile-x86 produces -}
+x86-error-iff : ∀ (M : ISWIM.AST) → Closed M
+  → (ω ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) o-error
+x86-error-iff = Adequacy.x86-error-iff
+
+x86-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
+  → (const k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
+x86-const-iff = Adequacy.x86-const-iff
+
+x86-converges-iff : ∀ (M : ISWIM.AST) → Closed M
+  → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₜ × d ≢ ω) ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
+x86-converges-iff = Adequacy.x86-converges-iff
+
+x86-diverges-iff : ∀ (M : ISWIM.AST) → Closed M
+  → Diverges (X86ᵀₘ.sem (compile-x86 M)) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile-x86 M ⟧ₜ))
+x86-diverges-iff = Adequacy.x86-diverges-iff
+
+{- The compiler, observed through the machines ---------------------------------}
+
+end-to-end-error : ∀ (M : ISWIM.AST) → Closed M
+  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) o-error
+end-to-end-error M c = Agree.error (Adequacy.end-to-end M c)
+
+end-to-end-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
+  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
+end-to-end-const M c = Agree.const (Adequacy.end-to-end M c)
+
+end-to-end-converges : ∀ (M : ISWIM.AST) → Closed M
+  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
+end-to-end-converges M c = Agree.converges (Adequacy.end-to-end M c)
+
+end-to-end-diverges : ∀ (M : ISWIM.AST) → Closed M
+  → Diverges (ISWIMₘ.sem M) ⇔ Diverges (Clos5ᵀₘ.sem (compile M))
+end-to-end-diverges M c = Agree.diverges (Adequacy.end-to-end M c)
+
+end-to-end-x86-error : ∀ (M : ISWIM.AST) → Closed M
+  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) o-error
+end-to-end-x86-error M c = Agree.error (Adequacy.end-to-end-x86 M c)
+
+end-to-end-x86-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
+  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
+end-to-end-x86-const M c = Agree.const (Adequacy.end-to-end-x86 M c)
+
+end-to-end-x86-converges : ∀ (M : ISWIM.AST) → Closed M
+  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
+end-to-end-x86-converges M c = Agree.converges (Adequacy.end-to-end-x86 M c)
+
+end-to-end-x86-diverges : ∀ (M : ISWIM.AST) → Closed M
+  → Diverges (ISWIMₘ.sem M) ⇔ Diverges (X86ᵀₘ.sem (compile-x86 M))
+end-to-end-x86-diverges M c = Agree.diverges (Adequacy.end-to-end-x86 M c)
+
+{- simplify, observed through the ISWIM machine -}
+simplify-machine-error : ∀ (M : ISWIM.AST) → Closed M
+  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (ISWIMₘ.sem (simplify M)) o-error
+simplify-machine-error = SimplifyMachine.simplify-error
+
+simplify-machine-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
+  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (ISWIMₘ.sem (simplify M)) (o-const B k)
+simplify-machine-const = SimplifyMachine.simplify-const
+
+simplify-machine-converges : ∀ (M : ISWIM.AST) → Closed M
+  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (ISWIMₘ.sem (simplify M)))
+simplify-machine-converges = SimplifyMachine.simplify-converges
+
+simplify-machine-diverges : ∀ (M : ISWIM.AST) → Closed M
+  → Diverges (ISWIMₘ.sem M) ⇔ Diverges (ISWIMₘ.sem (simplify M))
+simplify-machine-diverges = SimplifyMachine.simplify-diverges
