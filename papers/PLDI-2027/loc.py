@@ -2115,7 +2115,7 @@ def scott_report(c, M):
     print('| adequacy for the clocked interpreters (reported separately) | graph model | Scott domains |')
     print('|---|---:|---:|')
     for r, g, n in S['acells']:
-        print(f'| {r} | ' + ' | '.join(bold_min([g, n])) + ' |')
+        print(f'| {ml(r)} | ' + ' | '.join(bold_min([g, n])) + ' |')
     print('| reused from the graph model\'s adequacy (lemmas about the interpreters only) | — | '
           + str(c.lines(S['areused']) or '—') + ' |')
     print(f"| shared modules reached, not by the four columns | {c.lines(M['extra']['mu-adeq']) or '—'} | — |")
