@@ -150,8 +150,8 @@ are a parallel copy of the typed ISWIM pipeline's, without cast
 insertion, in the four styles.  Its main table is in the shape of the
 pipelines' (the four styles against each other, the lowest of each row
 in bold; each column's total counts the shared modules it reaches that
-the four do not all reach, and the ISWIM pipeline's modules it reuses,
-such as the meaning of the primitives and the frameworks' instances at
+the four do not all reach, and the modules it shares with the ISWIM
+pipeline, such as the meaning of the primitives and the frameworks' instances at
 this compiler's observations), then its adequacy (reported separately,
 against the ISWIM pipeline's), the no-error lemmas (in no total), the
 infrastructure by use, the audit surface and the shared modules; the
@@ -191,7 +191,7 @@ its own (it is not added to adequacy's, so the bridge is counted once in
 it): its own modules, the modules of the graph-model and interpreter
 columns it reaches (by row), the ISWIM row of adequacy (as the bridge),
 the shared modules it reaches that the four do not all reach, and the
-ISWIM pipeline's modules it reuses.  The script fails if it reaches a
+modules it shares with the ISWIM pipeline.  The script fails if it reaches a
 module of the CEK or reduction columns, or of adequacy outside its ISWIM
 row.  The splits that also prove hoist or explicate control in the
 graph model are estimated from the measured rows, each further bridge at
@@ -202,8 +202,8 @@ below) needs TypeTopology, so it is checked by `make check-scott`, not
 `make check`; its files are in no group and in none of the checks above.
 --scott prints it against the graph model, row by row, with the same
 rows; its total counts, as a column's does, the shared modules of
-FPC it reaches that the four do not all reach, and the ISWIM
-pipeline's modules it reuses; its infrastructure (domain theory on
+FPC it reaches that the four do not all reach, and the modules it
+shares with the ISWIM pipeline; its infrastructure (domain theory on
 TypeTopology: sums, lifting, functors, the solution of the domain
 equation, the domain of values and its operators, the combinators that
 build continuous meanings, the stages of the bilimit) is a separate
@@ -1661,7 +1661,7 @@ MU_LABELS = {'mu-den': 'denotational: graph model', 'mu-op': 'CEK machine + simu
              'mu-adeq': 'adequacy', 'mu-adeq-cek': 'adequacy for the CEK machines',
              'mu-adeq-red': 'adequacy for the reduction semantics'}
 SEM = 'semantics of the languages'
-MU_BORROWED = "the ISWIM pipeline's modules it reuses (meaning of the primitives, framework instances)"
+MU_BORROWED = "the modules it shares with the ISWIM pipeline (meaning of the primitives, framework instances)"
 # FPC as a pipeline, for the audit-surface table (it has no graph model
 # with errors)
 MU_P = dict(sides=MU_SIDES, gerr=None, adeq='mu-adeq',
@@ -1714,7 +1714,7 @@ def mu_main(c, T, M):
     print('| component (FPC) | ' + ' | '.join(MU_LABELS[s] for s in MU_SIDES) + ' |')
     print('|---|' + '---:|' * len(MU_SIDES))
     # the shared modules a column reaches that not all four do (the
-    # observations), and the ISWIM pipeline's modules it reuses (the meaning
+    # observations), and the modules it shares with the ISWIM pipeline (the meaning
     # of the primitives, framework instances), are counted in its semantics row
     for r in ROWS:
         ns = [c.counts.get((s, r)) for s in MU_SIDES]

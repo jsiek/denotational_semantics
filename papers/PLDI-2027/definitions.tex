@@ -223,16 +223,16 @@ closure is a pair of code and environment), and GlobalFun is
   intrinsically typed, to the typed assembly language $\Ml{X86}$, proved
   correct in the four styles, with adequacy, the lemmas that nothing errs,
   and one end-to-end theorem for a main program of type $\key{Int}$ common
-  to the four styles (\texttt{agda/Mu}, module prefix \texttt{Mu.};
+  to the four styles (\texttt{agda/FPC}, module prefix \texttt{FPC.};
   \texttt{papers/PLDI-2027/notes/iswim-mu-design.md}).
 \item Part~\ref{part:dyn}, what dynamic typing and errors add: the
   dynamically typed pipeline from untyped ISWIM through cast insertion to
-  $\Tl{X86}$ (\texttt{agda/}), the same compiler specialised to one
+  $\Tl{X86}$ (\texttt{agda/ISWIM}), the same compiler specialised to one
   recursive type $\TAny$, with the one operation that fails,
   $\key{project}$, and the graph model with errors that observing errors
   needs.
 \item Part~\ref{part:untyped}, history: the untyped pipeline that preceded
-  both (\texttt{agda/Untyped}), with the definitions all three share (the
+  both (\texttt{agda/ISWIM/Untyped}), with the definitions all three share (the
   graph model's domain and operators, machines, simulations, clocked
   programs, reductions as machines; untyped ISWIM and its simplify).
 \end{itemize}
@@ -241,8 +241,8 @@ closure is a pair of code and environment), and GlobalFun is
 %===============================================================================
 \part{ISWIM\texorpdfstring{$^{\mu}$}{-mu}: a Typed ISWIM with Recursive Types}\label{part:mu}
 
-The compiler of the main experiment (\texttt{agda/Mu}, module prefix
-\texttt{Mu.}; \texttt{agda/Mu/All.agda}):
+The compiler of the main experiment (\texttt{agda/FPC}, module prefix
+\texttt{FPC.}; \texttt{agda/FPC/All.agda}):
 \[
 \begin{array}{l}
 \Ml{ISWIM} \xrightarrow{\pass{simplify}} \Ml{ISWIM}
@@ -280,8 +280,8 @@ simulations, clocked programs, reductions as machines) are those of
 pipeline and are defined in Part~\ref{part:untyped}
 (Sections~\ref{sec:den-ops}, \ref{sec:obs}, \ref{sec:sims},
 \ref{sec:u-interp} and~\ref{sec:red}). Of the Agda's names, a module
-\texttt{Mu.X} is the file \texttt{agda/Mu/X.agda}, and the files named
-in this part are under \texttt{agda/Mu}, except the shared frameworks,
+\texttt{FPC.X} is the file \texttt{agda/FPC/X.agda}, and the files named
+in this part are under \texttt{agda/FPC}, except the shared frameworks,
 under \texttt{agda/Framework}, \texttt{agda/proof/Framework} and
 \texttt{agda/Semantics/Interp/Clock.agda}. Relations put the source on
 the left and the target on the right throughout.
@@ -3468,13 +3468,13 @@ $\pass{compile\text{-}cfg}$) and the passes hold at any type.
 
 \begin{sloppypar}
 \paragraph{The statements.} The public statements are in
-\texttt{agda/Mu/Theorems/}, one file per style and one for adequacy:
-\texttt{Denotational.agda}, \texttt{Simulation.agda},
-\texttt{Interpreter.agda}, \texttt{Reduction.agda} and
-\texttt{Adequacy.agda} (the latter with adequacy for the two interpreters
+\texttt{agda/FPC/Theorems/}, one file per style and one per adequacy result:
+\texttt{CorrectWrtGraphModel.agda}, \texttt{CorrectWrtAbstractMachines.agda},
+\texttt{CorrectWrtClockedInterpreters.agda}, \texttt{CorrectWrtReductionSemantics.agda} and
+\texttt{GraphModelAdequateWrtClockedInterpreters.agda} (the latter with adequacy for the two interpreters
 and the end-to-end theorem through them). Each theorem
 there has its full type written out and is defined as its proof, under
-\texttt{agda/Mu/proof}; all are imported by \texttt{agda/Mu/All.agda}.
+\texttt{agda/FPC/proof}; all are imported by \texttt{agda/FPC/All.agda}.
 The statements for $\pass{compile}_4$, the no-error lemmas and the
 alternative adequacy for the CEK machines are not among them;
 they are the top-level definitions named above, in the proof files.
@@ -3482,10 +3482,13 @@ they are the top-level definitions named above, in the proof files.
 %===============================================================================
 \part{Dynamic Typing and Errors}\label{part:dyn}
 
-The dynamically typed pipeline (\texttt{agda/}: the typed languages in
-\texttt{agda/Language/Typed}, the passes in \texttt{agda/Compiler}, the
+The dynamically typed pipeline (\texttt{agda/ISWIM}, module prefix
+\texttt{ISWIM.}: the typed languages in
+\texttt{agda/ISWIM/Language/Typed}, the passes in \texttt{agda/ISWIM/Compiler}, the
 semantics in the \texttt{Typed} subdirectories of
-\texttt{agda/Semantics/*}, the statements in \texttt{agda/Theorems}) compiles
+\texttt{agda/ISWIM/Semantics/*}, the statements in \texttt{agda/ISWIM/Theorems};
+the files named in this part are under \texttt{agda/ISWIM}, except the
+shared frameworks) compiles
 ISWIM, the untyped source of Part~\ref{part:untyped}, to the typed assembly
 language $\Tl{X86}$:
 \[
@@ -3723,7 +3726,7 @@ $\Tproject{t} (\Tinject{G} V) \to V$ if $G = \Tflatof{t}$, and is stuck
 states after an operator has been projected and after the first operand of
 a primitive is bound.
 
-\paragraph{The theorems} (\texttt{agda/Theorems/}). In the three operational
+\paragraph{The theorems} (\texttt{agda/ISWIM/Theorems/}). In the three operational
 columns each pass, and each prefix of the compiler, gives $\Equiv$
 semantics, which equates errors too: the compiled program terminates with
 the same constants, errs exactly when the source does, and diverges exactly
@@ -3827,8 +3830,8 @@ $\Tletv$ is $\texttt{let}^{\mathsf{t}}$, and $\mathit{val}(D)$ is
 This part presents the untyped pipeline, the one that preceded the
 dynamically typed pipeline of Part~\ref{part:dyn} and the $\Ml{ISWIM}$
 pipeline of Part~\ref{part:mu}. It is preserved, and checked by
-\texttt{make check}, in \texttt{agda/Untyped/} (module prefix
-\texttt{Untyped.}), whose paths mirror those of \texttt{agda/}; it is no
+\texttt{make check}, in \texttt{agda/ISWIM/Untyped/} (module prefix
+\texttt{ISWIM.Untyped.}), whose paths mirror those of \texttt{agda/ISWIM/}; it is no
 longer measured. Its intermediate languages are untyped, and their
 semantics check the kinds of values themselves:
 \[
@@ -3853,11 +3856,11 @@ shared with the dynamically typed pipeline (the $\Ml{ISWIM}$ pipeline has
 its own, typed, copies). X86 is this pipeline's target alone: the
 dynamically typed pipeline ends at $\Tl{X86}$ (Section~\ref{sec:t-x86}),
 whose erasure is X86 (Theorem~\ref{thm:t-erase}). X86's syntax
-(\texttt{agda/\allowbreak Language/\allowbreak X86.agda}) and its machine
-(\texttt{agda/\allowbreak Semantics/\allowbreak CEK/\allowbreak X86.agda}) stay
-outside \texttt{agda/\allowbreak Untyped/}; everything else here, the
+(\texttt{agda/\allowbreak ISWIM/\allowbreak Language/\allowbreak X86.agda}) and its machine
+(\texttt{agda/\allowbreak ISWIM/\allowbreak Semantics/\allowbreak CEK/\allowbreak X86.agda}) stay
+outside \texttt{agda/\allowbreak ISWIM/\allowbreak Untyped/}; everything else here, the
 semantics of X86 in the graph models and the interpreter and their
-adequacy included, is in \texttt{agda/Untyped/}. The part has the languages
+adequacy included, is in \texttt{agda/ISWIM/Untyped/}. The part has the languages
 (Section~\ref{sec:u-langs}) and the passes (Section~\ref{sec:u-passes}),
 and then one section per column, each with its semantics and the
 relations of its proofs: the graph model (Section~\ref{sec:u-den}), CEK
@@ -3870,9 +3873,9 @@ machines (Section~\ref{sec:u-cek}), clocked interpreters
 \addcontentsline{toc}{section}{Contents and notes of this part}
 
 The public theorem statements of this pipeline are in
-\texttt{agda/Untyped/Theorems}; they and the definitions they use
+\texttt{agda/ISWIM/Untyped/Theorems}; they and the definitions they use
 (everything outside the \texttt{proof} directories) are the audit surface,
-and the proofs are in \texttt{agda/Untyped/proof}, which mirrors the paths
+and the proofs are in \texttt{agda/ISWIM/Untyped/proof}, which mirrors the paths
 of the surface. The meaning of the primitives is in
 \texttt{Semantics/Graph/Prim.agda}.
 
@@ -7933,7 +7936,7 @@ apart: a trapped error denotes a set that holds the error value $\omega$
 (the value that $\rho_0$ already gives to a variable not in scope, and
 which is consistent only with itself), and divergence still denotes
 $\emptyset$. It is defined for every language of the compiler
-(\texttt{agda/Semantics/GraphErr/}); its operators are the graph model's
+(\texttt{agda/ISWIM/Semantics/GraphErr/}); its operators are the graph model's
 (Section~\ref{sec:den-ops}), under an error monad on sets of values
 (\texttt{agda/Framework/GraphModel/ErrorMonad.agda}). Each semantics errs
 exactly where its machine does (Section~\ref{sec:machines}).
