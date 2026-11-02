@@ -116,11 +116,13 @@ introduce a new kind of relation between denotations, the
 finite set of target graph elements (a finite approximation) to a
 possibly infinite source denotation, and to define the relation by
 recursion on the depth of the elements in the finite set
-(Section~\ref{sec:approx-lr} and Lemma~\ref{lem:delay}). Our second model uses Scott domains, in
+(Lemma~\ref{lem:delay} in Section~\ref{sec:approx-lr}).
+Our second model uses Scott domains, in
 which a program denotes an element of a universal domain of tagged
 values~\citep{Scott:1982aa}.  There we define the relation by
 recursion on the stages of the bilimit that constructs the domain
-(Section~\ref{sec:scott-delay} and Lemma~\ref{lem:scott-delay}), as \citet{Reynolds:1974aa} did to
+(Lemma~\ref{lem:scott-delay} in Section~\ref{sec:scott-delay}),
+as \citet{Reynolds:1974aa} did to
 relate the direct and continuation semantics of an untyped
 $\lambda$-calculus. Other styles of denotational semantics
 remain to be evaluated for compiler correctness and closure
@@ -159,30 +161,32 @@ we prove the graph model adequate with respect to the interpreters,
 the abstract machines, and the reduction semantics, and the
 Scott-domain semantics adequate with respect to the interpreters
 (Proposition~\ref{prop:adequacy}), so the five results are equivalent.
-These proofs adapt textbook proofs of adequacy
+These proofs adapt prior proofs of adequacy
 \citep{Plotkin:1977oc,Plotkin:1985aa,Siek:2017ab}.
 
-No one semantic style gives the smallest proof for every pass
-(RQ2), but for every pass, the smallest proof is either the
-graph-model proof or the interpreter proof. Counting each correctness proof together with the semantics of
-its languages, but not counting language-independent infrastructure,
-the clocked interpreters give the smallest proof, at 1,504 lines of
-Agda, and the graph model gives the second smallest, at 1,808, ahead
-of abstract machines, Scott domains, and reduction semantics. Two
-factors largely explain the sizes (RQ3). The size of a denotational
-proof tends to depend most on whether the pass preserves the meaning
-of a program exactly. The source optimizer, \pass{simplify}, does, and
-its graph-model and Scott-domain proofs take 349 and 411 lines,
-against 508 to 697 for the operational proofs
-(Section~\ref{sec:equational}).  \pass{split closure} does not, and
-its proofs take 450 and 723 lines in the graph model and in Scott domains,
-against 35 to 126 operationally. The size of an operational proof
-tends to depend instead on how closely the run of the target follows
-the run of the source.  The runs correspond closely for \pass{split
-  closure}, which is why its operational proofs are small, and differ
-more for \pass{simplify}, which inlines functions. Without \pass{split closure}, the graph-model proof would be
-the smallest of the five. The graph-model proofs are smaller than the
-Scott-domain proofs for all of the compiler passes
+No one semantic style gives the smallest proof for every pass (RQ2),
+but for every pass, the smallest proof is either the graph-model proof
+or the interpreter proof. Counting each correctness proof together
+with the semantics of its languages, but not counting
+language-independent infrastructure, the interpreters give the
+smallest proof, at 1,504 lines of Agda, and the graph model gives the
+second smallest, at 1,808, ahead of abstract machines, Scott domains,
+and reduction semantics. Two factors largely explain the sizes
+(RQ3). The size of a denotational proof tends to depend most on
+whether the pass preserves the meaning of a program exactly, as an
+equation on denotations. The source optimizer, \pass{simplify},
+preserves meaning exactly (Section~\ref{sec:equational}), and its
+graph-model and Scott-domain proofs take 349 and 411 lines, against
+508 to 697 for the operational proofs.  The \pass{split closure} pass
+does not, and its proofs take 450 and 723 lines in the graph model and
+in Scott domains, against 35 to 126 operationally. The size of an
+operational proof tends to depend instead on how closely the run of
+the target follows the run of the source.  The runs correspond closely
+for \pass{split closure}, which is why its operational proofs are
+small, and differ more for \pass{simplify}, which inlines
+functions. Without \pass{split closure}, the graph-model proof would
+be the smallest of the five. The graph-model proofs are smaller than
+the Scott-domain proofs for all of the compiler passes
 (Section~\ref{sec:evaluation}).
 
 The rest of the paper is organized as follows.
