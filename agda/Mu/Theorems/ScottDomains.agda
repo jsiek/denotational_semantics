@@ -1,10 +1,10 @@
 {-
 
   The correctness of the FPC compiler in Scott domains: the statement
-  of Theorem F.4 (correctness, Scott domains) of the paper. The proofs
-  are in Mu/proof/Correctness/ScottDomains/; each theorem here is one of
-  them, with its type written out, as Mu/Theorems/GraphModel.agda does
-  for the graph model.
+  of Theorem 4.2 (compiler correctness, Scott domains) of the paper.
+  The proofs are in Mu/proof/Correctness/ScottDomains/; each theorem
+  here is one of them, with its type written out, as
+  Mu/Theorems/GraphModel.agda does for the graph model.
 
   compile (Mu/Compiler/Pipeline.agda) is the composition of the ten
   passes. A term means an element of the domain
@@ -55,7 +55,7 @@ import Mu.proof.Correctness.ScottDomains.CompilerCorrect pt fe pe as Compiler
    tuple (Mu/Semantics/ScottDomains/Closed.agda). -}
 open import Mu.Semantics.ScottDomains.Closed pt fe pe public using (ρ₀)
 
-{- Theorem F.4 (Correctness, Scott domains) -----------------------------------}
+{- Theorem 4.2 (Compiler correctness, Scott domains) --------------------------}
 
 {- for a closed FPC term M of type Int, and every constant c:
    ⟦ M ⟧ ρ₀ = c() if and only if ⟦ compile M ⟧ = c() -}

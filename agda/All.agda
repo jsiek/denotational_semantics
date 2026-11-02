@@ -55,9 +55,10 @@ import proof.Assurance.X86Erasure
 import Untyped.All
 
 {- ---------------------------------------------------------------------------
-   The ISWIMμ compiler (the main experiment of the size comparison): a
-   typed ISWIM with iso-recursive types and its compiler to X86μ, in the
-   four styles, with its theorem statements in Mu/Theorems/ (see
+   The FPC compiler (the compiler of the PLDI 2027 paper): FPC, a typed
+   λ-calculus with iso-recursive types, and its compiler to X86μ, in four
+   of the five styles (Scott domains: AllScott.agda), with its theorem
+   statements in Mu/Theorems/ (see
    Mu/All.agda and Mu/README.md), and the experiments on it that are not
    part of the paper (Mu/Experiments.agda)
    --------------------------------------------------------------------------- -}

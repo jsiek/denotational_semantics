@@ -116,16 +116,19 @@ other than `--without-K`, failing if it finds any.
   `Untyped/All.agda` imports it, and `All.agda` imports that.
 * `Mu/`: FPC, the main experiment of the size comparison: Plotkin's
   Fixed Point Calculus with iso-recursive types (no recursion construct, no errors)
-  and its compiler to the typed assembly language X86μ,
+  and its compiler to the typed assembly language X86μ (the paper's
+  Instrμ; the paper groups capture, prune and concretize as one pass,
+  enclose, and so counts eight passes),
 
       FPC --simplify--> FPC --CC: capture--> Closμ --CC: prune--> Closμ
              --CC: concretize--> EnvClosμ --CC: split--> PairClosμ
              --CC: hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
              --explicate control--> CFGμ --select instructions--> X86μ
 
-  proved in the graph model (with its adequacy for the clocked
-  interpreters of FPC and X86μ), the CEK machines, the clocked
-  interpreters, the reduction semantics and Scott domains
+  proved in the graph model, the CEK machines, the clocked
+  interpreters, the reduction semantics and Scott domains, with the
+  adequacy of the graph model for the interpreters, the CEK machines
+  and the reduction semantics, and of Scott domains for the interpreters
   (`papers/PLDI-2027/notes/iswim-mu-design.md`); `Mu/README.md` is
   its road map from the PLDI 2027 paper.
   `Mu/` mirrors this directory as `Untyped/` does (module prefix `Mu.`,
@@ -159,7 +162,7 @@ languages, which only the proofs use).
     produces the same constants as the source and produces something
     exactly when the source does; and Lemma 4.6, the same for split;
   * `Mu/Theorems/AbstractMachines.agda`, `ClockedInterpreters.agda`,
-    `ReductionSemantics.agda`: Theorems F.2, F.1 and F.3, the source and
+    `ReductionSemantics.agda`: Propositions F.2, F.1 and F.3, the source and
     X86μ stop with the same integer, or both diverge
     (`compile-const`, `compile-diverges`), and are equivalent at
     every type (`compile-correct`);
@@ -169,7 +172,7 @@ languages, which only the proofs use).
     solution of 𝔻 ≅ 𝓛 (Σ t , Payload t 𝔻)), assuming propositional
     truncations, function extensionality and propositional
     extensionality (the parameters of the module);
-  * `Mu/Theorems/Adequacy.agda`: Proposition 5.1, the graph model is sound
+  * `Mu/Theorems/Adequacy.agda`: Proposition 5.1 for the graph model, which is sound
     and adequate for the FPC interpreter, and for the X86μ
     interpreter running compiled programs; with Theorem 4.1, for a main
     of type Int, the operational styles' end-to-end theorem
@@ -179,6 +182,10 @@ languages, which only the proofs use).
   * `Mu/Theorems/ReductionSemanticsAdequacy.agda`: the same for the
     reduction semantics of FPC, and, with the X86μ machine, the
     reduction column's end-to-end theorem.
+  * `Mu/Theorems/ScottDomainsAdequacy.agda` (checked by
+    `make check-scott`): Proposition 5.1 for Scott domains, which are
+    sound and adequate for the interpreters of FPC and X86μ; with
+    Theorem 4.2, the interpreters' end-to-end theorem.
   The per-pass theorems and the compiler's prefixes are proved in
   `Mu/proof/` but not restated. The definitions the statements use are
   those of `Mu/` outside `Mu/proof/` that they reach (its languages,
@@ -317,7 +324,9 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   `Mu/proof/Semantics/AbstractMachines/NoError.agda`; its alternative
   for FPC's reduction semantics, `Mu/proof/Adequacy/ReductionSemantics/`,
   is Plotkin's: a step preserves meaning, with a logical relation on
-  closed values; its Scott-domain
+  closed values; its Scott-domain adequacy,
+  `Mu/proof/Adequacy/ScottDomains/`, defines its logical relation by
+  recursion on the stages of the bilimit; its Scott-domain
   column is `Mu/proof/Correctness/ScottDomains/`, with lemmas shared by
   passes in `Mu/proof/Semantics/ScottDomains/`, and the
   language-independent lemmas in
@@ -333,8 +342,8 @@ earlier developments, not checked by `make check` (see the top-level
 README).
 
 The denotational: Scott domains column needs TypeTopology, so it is not
-part of `All.agda`: `AllScott.agda` imports its theorem file
-(`Mu/Theorems/ScottDomains.agda`) and proofs, and `make check-scott` fetches
+part of `All.agda`: `AllScott.agda` imports its theorem files
+(`Mu/Theorems/ScottDomains.agda`, `Mu/Theorems/ScottDomainsAdequacy.agda`) and proofs, and `make check-scott` fetches
 TypeTopology at a pinned commit into `_deps/` (not tracked;
 `scott/fetch-typetopology.sh`, which applies
 `scott/typetopology-builtin-alias.patch` so that TypeTopology and the

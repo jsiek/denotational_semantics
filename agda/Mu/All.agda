@@ -1,37 +1,43 @@
 {-
 
   FPC, Plotkin's Fixed Point Calculus, with iso-recursive types (no
-  recursion construct, no errors) and its compiler to the typed assembly language
-  X86μ, proved correct in five styles: the development of the PLDI 2027
-  paper. Mu/README.md is the road map from the paper to this code.
+  recursion construct, no errors) and its compiler to the typed assembly
+  language X86μ (the paper's Instrμ), proved correct in five styles: the
+  development of the PLDI 2027 paper. Mu/README.md is the road map from
+  the paper to this code.
 
     FPC --simplify--> FPC --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --split--> PairClosμ
            --hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 
+  The paper counts eight passes, because it groups capture, prune and
+  concretize as one pass, enclose.
+
   The theorem statements are in Mu/Theorems/, one file per style, each
   theorem with its type written out and defined as the corresponding
   theorem of Mu/proof/; they and the definitions they use (modules
   outside Mu/proof/) are FPC's audit surface.
 
-  * graph model: Mu/Theorems/GraphModel.agda (Theorems 4.1 and 4.4),
+  * graph model: Mu/Theorems/GraphModel.agda (Theorem 4.1 and Lemma 4.6),
     proved in Mu/proof/Correctness/GraphModel/, with split by the
     approximant logical relation (SplitRel.agda);
   * abstract machines + simulation: Mu/Theorems/AbstractMachines.agda
-    (Theorem F.2), Mu/proof/Correctness/AbstractMachines/;
+    (Proposition F.2), Mu/proof/Correctness/AbstractMachines/;
   * clocked interpreters + value relations:
-    Mu/Theorems/ClockedInterpreters.agda (Theorem F.1),
+    Mu/Theorems/ClockedInterpreters.agda (Proposition F.1),
     Mu/proof/Correctness/ClockedInterpreters/;
   * reduction semantics + simulation:
-    Mu/Theorems/ReductionSemantics.agda (Theorem F.3),
+    Mu/Theorems/ReductionSemantics.agda (Proposition F.3),
     Mu/proof/Correctness/ReductionSemantics/;
-  * Scott domains: Mu/Theorems/ScottDomains.agda (Theorem F.4),
+  * Scott domains: Mu/Theorems/ScottDomains.agda (Theorem 4.2),
     Mu/proof/Correctness/ScottDomains/; it needs TypeTopology, so it is
-    checked from agda/AllScott.agda (make check-scott), not from here;
+    checked from agda/AllScott.agda (make check-scott), not from here,
+    as is the Scott-domain half of Proposition 5.1
+    (Mu/Theorems/ScottDomainsAdequacy.agda, Mu/proof/Adequacy/ScottDomains/);
   * adequacy of the graph model for the clocked interpreters of FPC
-    and X86μ: Mu/Theorems/Adequacy.agda (Theorem 4.5),
-    Mu/proof/Adequacy/; an alternative, reported separately, against the
+    and X86μ: Mu/Theorems/Adequacy.agda (Proposition 5.1),
+    Mu/proof/Adequacy/; the same against the
     abstract machines instead: Mu/Theorems/AbstractMachinesAdequacy.agda,
     Mu/proof/Adequacy/AbstractMachines/; and another, against FPC's
     reduction semantics: Mu/Theorems/ReductionSemanticsAdequacy.agda,

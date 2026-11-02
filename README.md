@@ -76,14 +76,15 @@ patches it, and checks the column against it and the standard library.
 ## Reproducing the PLDI 2027 paper
 
 The paper's compiler (`agda/Mu/`) compiles FPC, Plotkin's Fixed Point
-Calculus (a call-by-value λ-calculus with iso-recursive types), in ten
-passes to X86μ.
+Calculus (a call-by-value λ-calculus with iso-recursive types), in eight
+passes to Instrμ (`X86μ` in the Agda; the paper's enclose pass is the
+Agda's capture, prune and concretize).
 
 * Graph model, abstract machines, clocked interpreters, reduction
   semantics, and adequacy: `make check` (Agda 2.8.0, standard library
   2.4, `--safe`; about three minutes). `agda/All.agda` imports
   `agda/Mu/All.agda`.
-* Scott domains: `make check-scott`. It fetches TypeTopology at commit
+* Scott domains and their adequacy: `make check-scott`. It fetches TypeTopology at commit
   `17487fc910f3bb305c30001507fed5d41d52dc3c` into `_deps/`, applies
   `scott/typetopology-builtin-alias.patch` (Bool and List become
   aliases of Agda's builtins), and checks `agda/AllScott.agda` with
@@ -91,11 +92,12 @@ passes to X86μ.
   truncation, function extensionality and propositional extensionality
   as module parameters.
 * Theorem statements, one file per style, named as in the paper:
-  `agda/Mu/Theorems/GraphModel.agda` (Theorems 4.1 and 4.4),
-  `ScottDomains.agda` (Theorem F.4), `AbstractMachines.agda` (Theorem
-  F.2), `ClockedInterpreters.agda` (Theorem F.1),
-  `ReductionSemantics.agda` (Theorem F.3), and `Adequacy.agda` (Theorem
-  4.5).
+  `agda/Mu/Theorems/GraphModel.agda` (Theorem 4.1 and Lemma 4.6),
+  `ScottDomains.agda` (Theorem 4.2), `AbstractMachines.agda`
+  (Proposition F.2), `ClockedInterpreters.agda` (Proposition F.1),
+  `ReductionSemantics.agda` (Proposition F.3), and Proposition 5.1
+  (adequacy) in `Adequacy.agda`, `AbstractMachinesAdequacy.agda`,
+  `ReductionSemanticsAdequacy.agda` and `ScottDomainsAdequacy.agda`.
 * `agda/Mu/README.md` maps each theorem, lemma, definition and appendix
   section of the paper to its Agda file and name, and lists the audit
   surface.

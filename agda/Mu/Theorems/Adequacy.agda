@@ -1,7 +1,8 @@
 {-
 
   The adequacy of the graph model for the clocked interpreters of FPC
-  and X86μ: the statement of Theorem 4.5 (adequacy) of the paper, and
+  and X86μ: the statement of the graph-model half of Proposition 5.1
+  (adequacy) of the paper, and
   the consequence the paper draws from it with Theorem 4.1, the
   theorem the operational proofs state. The proofs are in
   Mu/proof/Adequacy/.
@@ -42,7 +43,7 @@ open import Data.Integer using (ℤ)
 open import Data.List using ([])
 open import Relation.Nullary using (¬_)
 
-{- Theorem 4.5 (Adequacy) -----------------------------------------------------}
+{- Proposition 5.1 (Adequacy) -------------------------------------------------}
 
 {- for a closed FPC term M (of any type), and every constant c:
    c ∈ ⟦ M ⟧ if and only if the interpreter of FPC terminates on M
@@ -69,7 +70,7 @@ x86-diverges-iff = AdequacyX86.x86-diverges-iff
 {- With Theorem 4.1: the compiler, observed through the interpreters ---------}
 
 {- for a program of type Int, the theorem the operational proofs state
-   (Theorem F.1): the interpreters of FPC and X86μ terminate with the
+   (Proposition F.1): the interpreters of FPC and X86μ terminate with the
    same integer, or both diverge -}
 
 end-to-end-x86-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)

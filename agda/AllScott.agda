@@ -1,7 +1,7 @@
 {-
 
-  The denotational: Scott domains column, for the ISWIMμ compiler
-  (agda/Mu/). It needs TypeTopology besides the standard library, so it
+  The denotational: Scott domains column, and the adequacy of the
+  Scott-domain semantics, for the FPC compiler (agda/Mu/). It needs TypeTopology besides the standard library, so it
   is not part of All.agda; check it with
 
     make check-scott

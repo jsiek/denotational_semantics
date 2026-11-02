@@ -1,11 +1,13 @@
 # FPC: the Agda development of the PLDI 2027 paper
 
 This directory is the mechanization behind the paper. It defines the
-compiler of the paper, from FPC to x86μ in ten passes, and proves it
-correct in five semantic styles. The styles are the graph model (the
+compiler of the paper, from FPC to Instrμ in eight passes, and proves
+it correct in five semantic styles. The styles are the graph model (the
 paper's main result), Scott domains, abstract machines, clocked
 interpreters, and reduction semantics. It also proves the graph model
-adequate for the clocked interpreters. The source language is FPC
+adequate for the clocked interpreters, the abstract machines and the
+reduction semantics, and the Scott-domain semantics adequate for the
+clocked interpreters (Proposition 5.1). The source language is FPC
 (Plotkin's Fixed Point Calculus), and `Mu` is for its iso-recursive
 types: FPC is a call-by-value λ-calculus with base types, n-ary
 tuples, sums and iso-recursive types μX.A, with no recursion construct
@@ -16,8 +18,10 @@ and no errors.
            --hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 
-The Agda names carry a `μ` (`Closμ`, `X86μ`, ...) where the paper writes
-Clos, x86μ, and so on. Paths below are relative to this directory
+The Agda names carry a `μ` (`Closμ`, `EnvClosμ`, ...) where the paper
+writes Clos, EnvClos, and so on. The paper's target language Instrμ is
+`X86μ` (`Language/X86.agda`) in the Agda, and the paper's pass enclose
+is the Agda's three passes capture, prune and concretize. Paths below are relative to this directory
 (`agda/Mu/`).
 
 ## Checking
@@ -29,8 +33,8 @@ From the repository root:
   imports [`All.agda`](All.agda)) with `--safe`, and then runs
   `make pragma-check`. It needs Agda 2.8.0 and the standard library
   2.4, and takes about three minutes.
-* `make check-scott` checks the Scott-domain development
-  (`../AllScott.agda`) with `--safe`. It needs TypeTopology, which
+* `make check-scott` checks the Scott-domain development and its
+  adequacy (`../AllScott.agda`) with `--safe`. It needs TypeTopology, which
   `make scott-deps` fetches at a pinned commit into `_deps/` and patches
   (`../../scott/fetch-typetopology.sh`); `make check-scott` runs it
   first. It takes about three more minutes.
@@ -81,7 +85,7 @@ and the small-step, reduction and clocked frameworks.
 | Lemma 4.5 (Fundamental lemma) | `proof/Correctness/GraphModel/SplitReflect.agda` | `split-reflect` (related environments: `Envs`; the case of a call: `collect`; of a closure: `clos-app`) |
 | Lemma 4.6 (Correctness of split closure) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `split-correct-const`, `split-correct-nonempty` |
 | Lemma 4.6, proof | `proof/Correctness/GraphModel/SplitCorrect.agda` (reflection: `proof/Correctness/GraphModel/SplitReflect.agda`, `reflect-const`, `reflect-nonempty`; preservation: `proof/Correctness/GraphModel/SplitPreserve.agda`, `preserve-const`, `preserve-nonempty`) | `split-correct-const`, `split-correct-nonempty` |
-| Proposition 5.1 (Adequacy) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda) | FPC: `fpc-const-iff`, `fpc-diverges-iff`; x86μ: `x86-const-iff`, `x86-diverges-iff` |
+| Proposition 5.1 (Adequacy) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda) | FPC: `fpc-const-iff`, `fpc-diverges-iff`; Instrμ: `x86-const-iff`, `x86-diverges-iff` |
 | Proposition 5.1, proof | `proof/Adequacy/FPC.agda` (`const-iff`, `diverges-iff`), `proof/Adequacy/X86.agda` (`x86-const-iff`, `x86-diverges-iff`); soundness: `proof/Adequacy/Soundness.agda`, `proof/Adequacy/X86Soundness.agda`; the logical relations: `proof/Adequacy/LogRel.agda`, `proof/Adequacy/X86LogRel.agda` | |
 | Theorem 4.1 and Proposition 5.1 together: the operational theorem (§5) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda); proof `proof/Adequacy/EndToEnd.agda` | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
 | Adequacy, abstract machines (§5), and with Theorem 4.1 the operational theorem | [`Theorems/AbstractMachinesAdequacy.agda`](Theorems/AbstractMachinesAdequacy.agda); proofs in `proof/Adequacy/AbstractMachines/`: `FPC.agda`, `X86.agda`, `EndToEnd.agda`; soundness: `Soundness.agda`, `X86Soundness.agda`; the logical relations: `LogRel.agda`, `X86LogRel.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff`, `end-to-end-x86-const`, `end-to-end-x86-diverges` |
@@ -91,7 +95,7 @@ and the small-step, reduction and clocked frameworks.
 | Proposition F.1 (Correctness, clocked interpreters) | [`Theorems/ClockedInterpreters.agda`](Theorems/ClockedInterpreters.agda); proof `proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
 | Proposition F.2 (Correctness, abstract machines) | [`Theorems/AbstractMachines.agda`](Theorems/AbstractMachines.agda); proof `proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
 | Proposition F.3 (Correctness, reduction semantics) | [`Theorems/ReductionSemantics.agda`](Theorems/ReductionSemantics.agda); proof `proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
-| Theorem 4.2 (Correctness, Scott domains) | [`Theorems/ScottDomains.agda`](Theorems/ScottDomains.agda); proof `proof/Correctness/ScottDomains/CompilerCorrect.agda` | `compile-int-const`, `compile-int-defined`; every type: `compile-correct-const`, `compile-correct-defined` |
+| Theorem 4.2 (Compiler correctness, Scott domains) | [`Theorems/ScottDomains.agda`](Theorems/ScottDomains.agda); proof `proof/Correctness/ScottDomains/CompilerCorrect.agda` | `compile-int-const`, `compile-int-defined`; every type: `compile-correct-const`, `compile-correct-defined` |
 | Proposition 5.1, Scott domains, and with Theorem 4.2 the operational theorem | [`Theorems/ScottDomainsAdequacy.agda`](Theorems/ScottDomainsAdequacy.agda); proofs in `proof/Adequacy/ScottDomains/`: `FPC.agda`, `X86.agda`, `EndToEnd.agda`; soundness: `Soundness.agda`, `X86Soundness.agda` (and `X86Compiled.agda`, its premise for compiled programs); the logical relations, by the stages of the bilimit: `LogRel.agda`, `X86LogRel.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff`, `end-to-end-x86-const`, `end-to-end-x86-diverges` |
 | Table 1 (lines of the five proofs) | `../../papers/PLDI-2027/loc.py` | `python3 papers/PLDI-2027/loc.py --mu` (four columns), `--scott` (the Scott column) |
 | Table 2 (infrastructure) | `../../papers/PLDI-2027/loc.py` | `--mu` (its infrastructure table), `--scott` (the Scott infrastructure and TypeTopology; needs `make scott-deps`) |
@@ -125,7 +129,7 @@ those of capture, prune and concretize in
 | Mon | [`Language/Mon.agda`](Language/Mon.agda) | `Atm`, `Exp`, `Program`; its embedding into GlobalFun, `⌜_⌝ₚ` (Mon has no semantics of its own) |
 | Imp | [`Language/Imp.agda`](Language/Imp.agda) | `Simple`, `Exp`, `Program` |
 | CFG | [`Language/CFG.agda`](Language/CFG.agda) | `Tail`, `Blocks`, `Body`, `Program` |
-| x86μ | [`Language/X86.agda`](Language/X86.agda) | `RTy`, `Regs`, `St`, `Arg`, `Dst`, `Instr`, `Seq`, `Blocks`, `Body`, `Program` |
+| Instrμ | [`Language/X86.agda`](Language/X86.agda) | `RTy`, `Regs`, `St`, `Arg`, `Dst`, `Instr`, `Seq`, `Blocks`, `Body`, `Program` |
 
 The primitives and their δ are `../Language/Prim.agda` (`Prim`, `δ`)
 and the registers `../Language/Reg.agda`, shared with the other
@@ -145,7 +149,7 @@ pipelines.
 | remove complex operands (GlobalFun to Mon) | [`Compiler/RCO.agda`](Compiler/RCO.agda) | `rco-program` |
 | lift locals (Mon to Imp) | [`Compiler/LiftLocals.agda`](Compiler/LiftLocals.agda) | `lift-program` |
 | explicate control (Imp to CFG) | [`Compiler/Explicate.agda`](Compiler/Explicate.agda) | `explicate` |
-| select instructions (CFG to x86μ) | [`Compiler/Select.agda`](Compiler/Select.agda) | `select` (the frame's slots: `depth`) |
+| select instructions (CFG to Instrμ) | [`Compiler/Select.agda`](Compiler/Select.agda) | `select` (the frame's slots: `depth`) |
 | the compiler, `compile` | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `compile` (prefixes: `compile-to-PairClos`, `compile-to-GlobalFun`, `compile-to-Mon`, `compile-to-Imp`, `compile-to-CFG`) |
 
 ### Semantics, in each of the five styles
@@ -160,7 +164,7 @@ pipelines.
 | Mon | as its embedding `⌜_⌝ₚ` into GlobalFun, in every style | | | | |
 | Imp | `Semantics/GraphModel/Imp.agda`: `⟦_⟧ₚ` | `Semantics/ScottDomains/Imp.agda`: `⟦_⟧ₚ` | `Semantics/AbstractMachines/Imp.agda`: `sem` | `Semantics/ClockedInterpreters/Imp.agda`: `sem` | the abstract machine |
 | CFG | `Semantics/GraphModel/CFG.agda`: `⟦_⟧ₚ` | `Semantics/ScottDomains/CFG.agda`: `⟦_⟧ₚ` | `Semantics/AbstractMachines/CFG.agda`: `sem` | `Semantics/ClockedInterpreters/CFG.agda`: `sem` | the abstract machine |
-| x86μ | `Semantics/GraphModel/X86.agda`: `⟦_⟧ₜ` | `Semantics/ScottDomains/X86.agda`: `⟦_⟧ₜ` | `Semantics/AbstractMachines/X86.agda`: `State`, `sem` | `Semantics/ClockedInterpreters/X86.agda`: `run`, `sem` | the abstract machine |
+| Instrμ | `Semantics/GraphModel/X86.agda`: `⟦_⟧ₜ` | `Semantics/ScottDomains/X86.agda`: `⟦_⟧ₜ` | `Semantics/AbstractMachines/X86.agda`: `State`, `sem` | `Semantics/ClockedInterpreters/X86.agda`: `run`, `sem` | the abstract machine |
 
 Shared by a style's languages: the empty environment ρ₀
 (`Semantics/GraphModel/Closed.agda`, `Semantics/ScottDomains/Closed.agda`:
@@ -180,7 +184,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | D • E (application) | `../Framework/GraphModel/Ops.agda` | `⋆` (written `_●_` in `proof/Correctness/GraphModel/ApproxLR.agda`) |
 | Λ(F) | `../Framework/GraphModel/Ops.agda` | `Λ` (the curried form of Lemma 3.1, part 2: `ΛΛ`, `../proof/Framework/GraphModel/Ops.agda`) |
 | pair, car, cdr | `../Framework/GraphModel/Ops.agda` | `pair`, `car`, `cdr` |
-| D ⊙ E (call a closure) | `Semantics/GraphModel/PairClos.agda` (the meaning of `callc`), `proof/Correctness/GraphModel/SplitRel.agda` | `⟦ callc L M ⟧`, `_⊙_` |
+| a call on D′, (car(D′) • cdr(D′)) • E′ | `Semantics/GraphModel/PairClos.agda` (the meaning of `callc`), `proof/Correctness/GraphModel/SplitRel.agda` | `⟦ callc L M ⟧`, `_⊙_` |
 | 𝒯(D₁, …, Dₙ) | `../Framework/GraphModel/Ops.agda` | `𝒯` |
 | inl, inr | `../Framework/GraphModel/Ops.agda` | `inl`, `inr` |
 | π_t (t = tupᵢ, left, right) | `../Framework/GraphModel/Ops.agda`, `../proof/Framework/GraphModel/DomainUtilBase.agda` | `proj` (tupᵢ), `Untag` (any tag) |
@@ -190,7 +194,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | further operators (Appendix A.3): 𝒞, guard, prim, out, δ | `../Framework/GraphModel/Ops.agda`, `../Framework/GraphModel/OpsBase.agda`, `../Semantics/Graph/Prim.agda`, `../Language/Prim.agda` | `𝒞`, `guard-n`, `strict`, `ℬ` (constants), `primD`, `out`, `δ` |
 | finitary, monotone (Lemma 3.1) | `../proof/Framework/GraphModel/OpsBase.agda` | `Finitary`, `Mono₁` |
 
-### The proof of split closure (Section 4.2, Figures 3 and 4)
+### The proof of split closure (Section 4.2, Figures 4 and 5)
 
 | Paper | File | Agda |
 |---|---|---|
@@ -209,6 +213,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | A.1 Consistency | u ∼ v, V ≈ V′, con(D) | `../Framework/GraphModel/Domain.agda` (`_~_`, `_≈_`), `../proof/Framework/GraphModel/Domain.agda` (`Con`) |
 | A.2 Depth | depth of an element and a list | `../proof/Framework/GraphModel/DomainUtilBase.agda` (`depth`, `depths`) |
 | A.3 Further Operators | 𝒯(), prim, out, δ, 𝒞, guard | `../Framework/GraphModel/Ops.agda` (`𝒯`, `𝒞`, `guard-n`, `strict`), `../Framework/GraphModel/OpsBase.agda` (`ℬ`), `../Semantics/Graph/Prim.agda` (`primD`, `out`), `../Language/Prim.agda` (`δ`) |
+| A.4 Monotonicity | Lemma A.1 | `proof/Semantics/GraphModel/{FPC,EnvClos,PairClos}.agda` (`ok`, whose first component is monotonicity) |
 | B (opening) | base types, ρ₀, ⟦M⟧ = ⟦M⟧ρ₀ | `Language/Type.agda`, `Semantics/GraphModel/Closed.agda` (`ρ₀`) |
 | B.1 The FPC Language | typing, graph semantics | `Language/Type.agda`, `Language/FPC.agda`, `Semantics/GraphModel/FPC.agda` |
 | B.2 The Clos and EnvClos Languages | typing, graph semantics | `Language/Clos.agda`, `Language/EnvClos.agda`, `Semantics/GraphModel/Clos.agda`, `Semantics/GraphModel/EnvClos.agda` |
@@ -216,30 +221,35 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | B.4 The GlobalFun and Mon Languages | typing, graph semantics, the embedding of Mon | `Language/GlobalFun.agda`, `Language/Mon.agda` (`⌜_⌝ₚ`), `Semantics/GraphModel/GlobalFun.agda`, `Semantics/GraphModel/Ops.agda` (tables) |
 | B.5 The Imp Language | typing, graph semantics | `Language/Imp.agda`, `Semantics/GraphModel/Imp.agda` |
 | B.6 The CFG Language | typing, graph semantics | `Language/CFG.agda`, `Semantics/GraphModel/CFG.agda` |
-| B.7 The x86μ Language | typing, graph semantics | `Language/X86.agda`, `Semantics/GraphModel/X86.agda` |
+| B.7 The Instrμ Language | typing, graph semantics | `Language/X86.agda`, `Semantics/GraphModel/X86.agda` |
 | C (opening) | the composition `compile` | `Compiler/Pipeline.agda` (`compile`) |
 | C.1 simplify | | `Compiler/Simplify.agda` (`simplify`) |
-| C.2 capture | | `Compiler/Capture.agda` (`capture`) |
-| C.3 prune | | `Compiler/Prune.agda` (`prune-program`) |
-| C.4 concretize | | `Compiler/Concretize.agda` (`concretize-program`) |
-| C.5 split closure | | `Compiler/Split.agda` (`split-program`) |
-| C.6 hoist | | `Compiler/Hoist.agda` (`hoist`) |
-| C.7 remove complex operands | | `Compiler/RCO.agda` (`rco-program`) |
-| C.8 lift locals | | `Compiler/LiftLocals.agda` (`lift-program`) |
-| C.9 explicate control | | `Compiler/Explicate.agda` (`explicate`) |
-| C.10 select instructions | | `Compiler/Select.agda` (`select`) |
-| D, Capture | calculation | `proof/Correctness/GraphModel/CaptureCorrect.agda` (`capture-correct`) |
-| D, Prune | calculation | `proof/Correctness/GraphModel/PruneCorrect.agda` (`prune-correct`) |
+| C.2 enclose | capture, prune and concretize | `Compiler/Capture.agda` (`capture`), `Compiler/Prune.agda` (`prune-program`), `Compiler/Concretize.agda` (`concretize-program`), `Compiler/Pipeline.agda` (`enclose`) |
+| C.3 split closure | | `Compiler/Split.agda` (`split-program`) |
+| C.4 hoist | | `Compiler/Hoist.agda` (`hoist`) |
+| C.5 remove complex operands | | `Compiler/RCO.agda` (`rco-program`) |
+| C.6 lift locals | | `Compiler/LiftLocals.agda` (`lift-program`) |
+| C.7 explicate control | | `Compiler/Explicate.agda` (`explicate`) |
+| C.8 select instructions | | `Compiler/Select.agda` (`select`) |
+| D, Enclose: capture | calculation | `proof/Correctness/GraphModel/CaptureCorrect.agda` (`capture-correct`) |
+| D, Enclose: prune | calculation | `proof/Correctness/GraphModel/PruneCorrect.agda` (`prune-correct`) |
 | D, Hoist | calculation | `proof/Correctness/GraphModel/HoistCorrect.agda` (`hoist-correct`) |
 | D, Remove complex operands | calculation | `proof/Correctness/GraphModel/RCOCorrect.agda` (`rco-correct`) |
 | D, Lift locals | calculation | `proof/Correctness/GraphModel/LiftLocalsCorrect.agda` (`lift-locals-correct`) |
 | D, Explicate control | calculation | `proof/Correctness/GraphModel/ExplicateCorrect.agda` (`explicate-correct`) |
+| D, Select instructions | calculation | `proof/Correctness/GraphModel/SelectCorrect.agda` (`select-correct`) |
 | E An Example of the Approximant Logical Relation | clause 3 on λy. x + y (the example itself is not mechanized) | `proof/Correctness/GraphModel/ApproxLR.agda` (`UsableEntry`, `SelfContainedMaps`, `ApproxLRLayer.app-obs`) |
 | F.1 Values and Observations | values, obs, observations, machines, clocked interpreters, equivalence | `Semantics/AbstractMachines/Values.agda` and `Semantics/ClockedInterpreters/Values.agda` (`Val`, `obs`), `../Semantics/Observation.agda` (`Obs`), `../Framework/Smallstep.agda` (`Machine`, `Terminates`, `Diverges`, `Equivalent`), `../Framework/Clocked.agda` (`Result`, `Terminates`, `Diverges`, `Equivalent`) |
-| F.2 Clocked Interpreters | FPC and x86μ; Proposition F.1 | `Semantics/ClockedInterpreters/FPC.agda`, `Semantics/ClockedInterpreters/X86.agda`; `Theorems/ClockedInterpreters.agda` |
-| F.3 Abstract Machines | FPC and x86μ; Proposition F.2 | `Semantics/AbstractMachines/FPC.agda`, `Semantics/AbstractMachines/X86.agda`; `Theorems/AbstractMachines.agda` |
+| F.2 Clocked Interpreters | FPC and Instrμ; Proposition F.1 | `Semantics/ClockedInterpreters/FPC.agda`, `Semantics/ClockedInterpreters/X86.agda`; `Theorems/ClockedInterpreters.agda` |
+| F.3 Abstract Machines | FPC and Instrμ; Proposition F.2 | `Semantics/AbstractMachines/FPC.agda`, `Semantics/AbstractMachines/X86.agda`; `Theorems/AbstractMachines.agda` |
 | F.4 Reduction Semantics | FPC; Proposition F.3 | `Semantics/ReductionSemantics/FPC.agda`, `../Framework/Reduction.agda` (`Red`, `step-in`); `Theorems/ReductionSemantics.agda` |
-| F.5 Scott Domains | 𝔻, its operators, FPC and x86μ (Theorem 4.2) | `../Framework/Scott/Domain.agda` (`Tag`, `Payload`, `𝔻`, `roll`, `unroll`, `defined`), `../Framework/Scott/Ops.agda` (`Λ`, `app`, `tuple`, `proj`, `pair`, `component`, `inl`, `inr`, `cases`, `seq`), `../Framework/Scott/Semantics.agda`, `../Semantics/Scott/Prim.agda`, `Semantics/ScottDomains/FPC.agda`, `Semantics/ScottDomains/X86.agda`, `Semantics/ScottDomains/Closed.agda` (`ρ₀`); `Theorems/ScottDomains.agda` |
+| F.5 Scott Domains | 𝔻, its operators, FPC and Instrμ (Theorem 4.2) | `../Framework/Scott/Domain.agda` (`Tag`, `Payload`, `𝔻`, `roll`, `unroll`, `defined`), `../Framework/Scott/Ops.agda` (`Λ`, `app`, `tuple`, `proj`, `pair`, `component`, `inl`, `inr`, `cases`, `seq`), `../Framework/Scott/Semantics.agda`, `../Semantics/Scott/Prim.agda`, `Semantics/ScottDomains/FPC.agda`, `Semantics/ScottDomains/X86.agda`, `Semantics/ScottDomains/Closed.agda` (`ρ₀`); `Theorems/ScottDomains.agda` |
+| G, the relations (Figure 7) | the stage relations, Pres and Refl | `proof/Correctness/ScottDomains/SplitRel.agda` (`R`, `Match`, `Call`, `Rel`), `proof/Correctness/ScottDomains/SplitPreserve.agda` (`Pres`), `proof/Correctness/ScottDomains/SplitReflect.agda` (`Refl`) |
+| G, Lemma G.1 (Stages) | | `proof/Correctness/ScottDomains/SplitRel.agda` (`R-prop`, `R-mono`, `R-sup`, `R-π`, `R-ε`, `Rel-ε`) |
+| G, Lemma G.2 (Operators) | | `proof/Correctness/ScottDomains/SplitRel.agda` (`Rel-⊥`, `Rel-cases`, `Rel-seq`, and the other `Rel-` lemmas) |
+| G, Lemma G.3 (Closures and calls) | | `proof/Correctness/ScottDomains/SplitPreserve.agda` (`Pres-clos`, `Pres-call`), `proof/Correctness/ScottDomains/SplitReflect.agda` (`Refl-clos`, `Refl-call`); the stages: `../proof/Framework/Scott/Stages.agda`, `../proof/Framework/Scott/StageCall.agda` |
+| G, Lemma G.4 (Fundamental lemma) | | `proof/Correctness/ScottDomains/SplitTerms.agda` (module `Terms`: `ok`, `split-ok`) |
+| G, Lemma G.5 (Correctness of split closure, Scott domains) | | `proof/Correctness/ScottDomains/SplitCorrect.agda` (`split-correct-const`, `split-correct-defined`) |
 
 The semantics of the intermediate languages in the four other styles,
 which the paper leaves to the artifact, are in the table of semantics
@@ -279,7 +289,7 @@ statements other than those about Scott domains):
   `../Framework/Clocked.agda`, `../Semantics/Interp/Clock.agda`;
 * reduction semantics: `Semantics/ReductionSemantics/FPC.agda`,
   `../Framework/Reduction.agda`, `../Semantics/Reduction/Smallstep.agda`
-  (and the machine of x86μ, above);
+  (and the machine of Instrμ, above);
 * shared with the other pipelines: `../Semantics/Observation.agda`,
   `../Language/Prim.agda`, `../Language/Reg.agda`,
   `../Framework/{Primitives,Iff,Lookup,Membership}.agda`,
@@ -296,8 +306,9 @@ Everything under `proof/` (here and in `../proof/`) is proof.
 Every file is checked with `--safe`, and there are no postulates
 (`make pragma-check`). The development uses axiom K (it is not checked
 with `--without-K`, except the abt extract). The Scott-domain
-development, and so Theorem 4.2, takes three assumptions as module
-parameters of `Theorems/ScottDomains.agda`, those of TypeTopology's
+development, and so Theorem 4.2 and the Scott-domain half of
+Proposition 5.1, takes three assumptions as module parameters of
+`Theorems/ScottDomains.agda` and `Theorems/ScottDomainsAdequacy.agda`, those of TypeTopology's
 domain theory: propositional truncation
 (`pt : propositional-truncations-exist`), function extensionality
 (`fe : Fun-Ext`) and propositional extensionality

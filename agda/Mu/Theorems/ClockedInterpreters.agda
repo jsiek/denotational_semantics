@@ -1,7 +1,7 @@
 {-
 
   The correctness of the FPC compiler by clocked interpreters and
-  value relations: the statement of Theorem F.1 (correctness, clocked
+  value relations: the statement of Proposition F.1 (correctness, clocked
   interpreters) of the paper. The proofs (clock for clock; for
   simplify, which removes calls, clock-monotone) are in
   Mu/proof/Correctness/ClockedInterpreters/; each theorem here is one of
@@ -40,7 +40,7 @@ import Mu.proof.Correctness.ClockedInterpreters.CompilerFuel as CompilerFuel
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 
-{- Theorem F.1 (Correctness, clocked interpreters) ----------------------------}
+{- Proposition F.1 (Correctness, clocked interpreters) -----------------------}
 
 {- for a closed FPC term M of type Int, and every integer n: the
    interpreter of FPC on M terminates with n if and only if the

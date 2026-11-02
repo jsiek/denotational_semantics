@@ -1,7 +1,7 @@
 {-
 
   The correctness of the FPC compiler by reduction semantics and
-  simulations: the statement of Theorem F.3 (correctness, reduction
+  simulations: the statement of Proposition F.3 (correctness, reduction
   semantics) of the paper. The proofs (forward simulations) are in
   Mu/proof/Correctness/ReductionSemantics/ (explicate control and select
   instructions: the abstract-machine proofs,
@@ -42,7 +42,7 @@ import Mu.proof.Correctness.ReductionSemantics.PipelineRed as PipelineRed
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 
-{- Theorem F.3 (Correctness, reduction semantics) -----------------------------}
+{- Proposition F.3 (Correctness, reduction semantics) ------------------------}
 
 {- for a closed FPC term M of type Int, and every integer n: the
    reduction semantics of FPC on M terminates with n if and only if

@@ -1,8 +1,8 @@
 {-
 
   The correctness of the FPC compiler in the graph model: the
-  statements of Theorem 4.1 (compiler correctness) and Theorem 4.4
-  (correctness of split) of the paper. The proofs are in
+  statements of Theorem 4.1 (compiler correctness, graph model) and
+  Lemma 4.6 (correctness of split closure) of the paper. The proofs are in
   Mu/proof/Correctness/GraphModel/; each theorem here is one of them,
   with its type written out.
 
@@ -49,7 +49,7 @@ import Mu.proof.Correctness.GraphModel.CompilerCorrect as Compiler
 open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂)
 
-{- Theorem 4.1 (Compiler correctness) -----------------------------------------}
+{- Theorem 4.1 (Compiler correctness, graph model) ----------------------------}
 
 {- for a closed FPC term M of type Int, and every constant c:
    c ∈ ⟦ M ⟧ if and only if c ∈ ⟦ compile M ⟧ -}
@@ -77,7 +77,7 @@ compile-correct-nonempty : ∀ {A} (M : FPC.Tm [] A)
   × (nonempty ⟦ compile M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
 compile-correct-nonempty M = proj₂ (Compiler.compile-same M)
 
-{- Theorem 4.4 (Correctness of split) -----------------------------------------}
+{- Lemma 4.6 (Correctness of split closure) ---------------------------------}
 
 {- for a closed EnvClosμ term M, and every constant c:
    c ∈ ⟦ M ⟧ if and only if c ∈ ⟦ split M ⟧ -}

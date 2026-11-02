@@ -2,7 +2,7 @@
 
   The adequacy of the graph model for the abstract machines (CEK
   machines) of FPC and X86μ: the analogue, for the machines, of
-  Theorem 4.5 (adequacy) of the paper (Mu/Theorems/Adequacy.agda, for
+  Proposition 5.1 (adequacy) of the paper (Mu/Theorems/Adequacy.agda, for
   the clocked interpreters), and the consequence drawn from it with
   Theorem 4.1, the theorem the operational proofs state. It is an
   alternative to Mu/Theorems/Adequacy.agda, reported separately. The
@@ -77,7 +77,7 @@ x86-diverges-iff = AdequacyX86.x86-diverges-iff
 {- With Theorem 4.1: the compiler, observed through the machines ------------}
 
 {- for a program of type Int, the theorem the operational proofs state
-   (Theorem F.2): the machines of FPC and X86μ terminate with the same
+   (Proposition F.2): the machines of FPC and X86μ terminate with the same
    integer, or both diverge -}
 
 end-to-end-x86-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)

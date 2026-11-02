@@ -1,7 +1,7 @@
 {-
 
   The adequacy of the graph model for the reduction semantics of FPC:
-  the analogue, for reduction, of Theorem 4.5 (adequacy) of the paper
+  the analogue, for reduction, of Proposition 5.1 (adequacy) of the paper
   (Mu/Theorems/Adequacy.agda, for the clocked interpreters), and the
   consequence drawn from it with Theorem 4.1, for the pair the reduction
   column's theorem relates (Mu/Theorems/ReductionSemantics.agda): the
@@ -61,7 +61,7 @@ fpc-diverges-iff = AdequacyFPC.diverges-iff
 {- With Theorem 4.1: the compiler, observed through reduction and the X86μ machine -}
 
 {- for a program of type Int, the theorem the reduction column states
-   (Theorem F.3): the reduction semantics of FPC and the machine of
+   (Proposition F.3): the reduction semantics of FPC and the machine of
    X86μ terminate with the same integer, or both diverge -}
 
 end-to-end-x86-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)

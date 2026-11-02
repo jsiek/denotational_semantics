@@ -1,7 +1,7 @@
 {-
 
   The correctness of the FPC compiler by abstract machines (CEK
-  machines) and simulations: the statement of Theorem F.2 (correctness,
+  machines) and simulations: the statement of Proposition F.2 (correctness,
   abstract machines) of the paper. The proofs (forward simulations) are
   in Mu/proof/Correctness/AbstractMachines/; each theorem here is one of
   them, with its type written out.
@@ -38,7 +38,7 @@ import Mu.proof.Correctness.AbstractMachines.PipelineSim as PipelineSim
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 
-{- Theorem F.2 (Correctness, abstract machines) -------------------------------}
+{- Proposition F.2 (Correctness, abstract machines) --------------------------}
 
 {- for a closed FPC term M of type Int, and every integer n: the
    machine of FPC on M terminates with n if and only if the machine of

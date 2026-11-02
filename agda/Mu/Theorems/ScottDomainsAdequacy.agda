@@ -1,9 +1,9 @@
 {-
 
   The adequacy of the Scott-domain semantics for the clocked
-  interpreters of FPC and X86μ: the analogue, in Scott domains, of
-  Theorem 4.5 (adequacy) of the paper (Mu/Theorems/Adequacy.agda, for
-  the graph model), and the consequence drawn from it with compiler
+  interpreters of FPC and X86μ: the Scott-domain half of
+  Proposition 5.1 (adequacy) of the paper (Mu/Theorems/Adequacy.agda has
+  the graph-model half), and the consequence drawn from it with compiler
   correctness in Scott domains (Mu/Theorems/ScottDomains.agda), the
   theorem the operational proofs state. The proofs are in
   Mu/proof/Adequacy/ScottDomains/. The X86μ statements are for the
