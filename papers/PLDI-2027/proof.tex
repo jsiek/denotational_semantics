@@ -95,7 +95,8 @@ $(\lambda x.\, N)\;M$ is the same calculation without the second step.
 
 \paragraph{Enclose}
 
-The \pass{enclose} pass works in three steps (\S\ref{app:pass-enclose}).
+The \pass{enclose} pass works in three steps, $\mathit{capture}$,
+$\mathit{prune}$, and $\mathit{concretize}$ (\S\ref{app:pass-enclose}).
 The first two produce closures of an intermediate language, Clos,
 written $\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$, which bind a name
 $x_i$ for each captured value $M_i$. The last step, $\mathit{concretize}_\varphi$,
