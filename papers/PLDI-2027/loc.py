@@ -42,8 +42,9 @@ construct, no errors) and its compiler to the typed assembly language
 X86μ, FPC --simplify--> FPC --enclose--> ... --select--> X86μ,
 proved in four styles (sides 'mu-den', 'mu-op', 'mu-ck', 'mu-red', and
 the graph model's adequacy for the clocked interpreters, 'mu-adeq', with
-an alternative against the CEK machines, 'mu-adeq-cek', reported
-alongside it; see below).  The ISWIM pipeline (agda/), reported
+alternatives against the CEK machines, 'mu-adeq-cek', and against
+FPC's reduction semantics, 'mu-adeq-red', reported alongside it; see
+below).  The ISWIM pipeline (agda/), reported
 briefly by default and in full with --iswim, shows how dynamic typing
 and errors affect the comparison: ISWIM --simplify--> ISWIM --cast
 insertion--> ISWIMᵀ --enclose--> ... --select--> X86ᵀ, with
@@ -167,7 +168,11 @@ column's.  The adequacy for the CEK machines that preceded it
 alternative and shown beside it, row by row: the modules both use (the
 tuples of sets, the tables' lemmas, the well-formedness of compiled
 programs) are in groups of both sides ('mu-adeq+mu-adeq-cek'), counted
-in full in each.
+in full in each.  The adequacy for FPC's reduction semantics
+('mu-adeq-red', Mu/proof/Adequacy/ReductionSemantics/, in no total) is a
+second alternative: its target is the X86μ machine, as in the reduction
+column's end theorem, so its X86μ rows are the CEK alternative's
+('mu-adeq-cek+mu-adeq-red'), counted in full in each.
 
 Mixing semantics (side 'mu-mix', in no total of the four; --mixed, and a
 short table after FPC's in the default output): split (a) proves
@@ -653,20 +658,28 @@ GROUPS = [
     # alternative for the CEK machines ('mu-adeq-cek', in no total) shares
     # the tuples of sets, the tables' lemmas and the well-formedness of
     # compiled programs ('mu-adeq+mu-adeq-cek', counted in both)
-    ('mu-adeq+mu-adeq-cek', 'ISWIM', [MUP + 'Adequacy/Tuples.agda']),
+    ('mu-adeq+mu-adeq-cek+mu-adeq-red', 'ISWIM', [MUP + 'Adequacy/Tuples.agda']),
     ('mu-adeq', 'ISWIM', [MUP + 'Adequacy/' + x + '.agda' for x in ('Soundness', 'LogRel', 'FPC')]),
     # the values of the GlobalFunμ interpreter in the graph model and the
     # tables' lemmas, which X86μ adequacy uses (as X86ᵀ's uses Clos5ᵀ's)
-    ('mu-adeq+mu-adeq-cek', 'Clos5', [MUP + 'Adequacy/GlobalFunCommon.agda']),
+    ('mu-adeq+mu-adeq-cek+mu-adeq-red', 'Clos5', [MUP + 'Adequacy/GlobalFunCommon.agda']),
     ('mu-adeq', 'Clos5', [MUP + 'Adequacy/GlobalFunValues.agda']),
     ('mu-adeq', 'X86', [MUP + 'Adequacy/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
-    ('mu-adeq+mu-adeq-cek', 'well-formedness of compiled programs', [MUP + 'Adequacy/X86Compiled.agda']),
+    ('mu-adeq+mu-adeq-cek+mu-adeq-red', 'well-formedness of compiled programs', [MUP + 'Adequacy/X86Compiled.agda']),
     ('mu-adeq', 'end to end', [MUP + 'Adequacy/EndToEnd.agda']),
     # the alternative: adequacy for the CEK machines of FPC and X86μ
     ('mu-adeq-cek', 'ISWIM', [MUP + 'Adequacy/AbstractMachines/' + x + '.agda' for x in ('Soundness', 'LogRel', 'FPC')]),
-    ('mu-adeq-cek', 'Clos5', [MUP + 'Adequacy/AbstractMachines/GlobalFunValues.agda']),
-    ('mu-adeq-cek', 'X86', [MUP + 'Adequacy/AbstractMachines/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
+    ('mu-adeq-cek+mu-adeq-red', 'Clos5', [MUP + 'Adequacy/AbstractMachines/GlobalFunValues.agda']),
+    ('mu-adeq-cek+mu-adeq-red', 'X86', [MUP + 'Adequacy/AbstractMachines/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
     ('mu-adeq-cek', 'end to end', [MUP + 'Adequacy/AbstractMachines/EndToEnd.agda']),
+    # the alternative for the reduction semantics of FPC ('mu-adeq-red', in
+    # no total): its target is the X86μ machine, as in the reduction
+    # column's end theorem, so it shares the CEK alternative's X86μ rows
+    # (counted in both); X86μ's adequacy for the machine imports two
+    # three-line lemmas about machines from the CEK alternative's FPC row,
+    # which are not counted here
+    ('mu-adeq-red', 'ISWIM', [MUP + 'Adequacy/ReductionSemantics/' + x + '.agda' for x in ('Soundness', 'LogRel', 'FPC')]),
+    ('mu-adeq-red', 'end to end', [MUP + 'Adequacy/ReductionSemantics/EndToEnd.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
     # design experiments, in no total: the split relation on target sets of
     # bounded depth (the paper's design space for reflection, §4.2)
@@ -1410,7 +1423,7 @@ def mu_check(c):
         for un in reach[s]:
             side = c.group_of[un][0]
             if (set(sides_of(side)) & set(sides) and s not in sides_of(side)) \
-                    or set(sides_of(side)) & {'mu-adeq', 'mu-adeq-cek', 'mu-noerr', 'mu-examples', 'mu-mix'}:
+                    or set(sides_of(side)) & {'mu-adeq', 'mu-adeq-cek', 'mu-adeq-red', 'mu-noerr', 'mu-examples', 'mu-mix'}:
                 bad.add(un)
             ss = set(sides_of(side))
             if ss <= set(STYLE) and not (ss & typed and ss & untyped):
@@ -1621,10 +1634,11 @@ def mu_red_report(c):
 
 MU_SIDES = ('mu-den', 'mu-op', 'mu-ck', 'mu-red')
 # adequacy (for the interpreters), and its alternative for the CEK machines
-MU_ADEQ = ('mu-adeq', 'mu-adeq-cek')
+MU_ADEQ = ('mu-adeq', 'mu-adeq-cek', 'mu-adeq-red')
 MU_LABELS = {'mu-den': 'denotational: graph model', 'mu-op': 'CEK machine + simulation',
              'mu-ck': 'clocked interpreter + value relations', 'mu-red': 'reduction semantics + simulation',
-             'mu-adeq': 'adequacy', 'mu-adeq-cek': 'adequacy for the CEK machines'}
+             'mu-adeq': 'adequacy', 'mu-adeq-cek': 'adequacy for the CEK machines',
+             'mu-adeq-red': 'adequacy for the reduction semantics'}
 SEM = 'semantics of the languages'
 MU_BORROWED = "the ISWIM pipeline's modules it reuses (meaning of the primitives, framework instances)"
 # FPC as a pipeline, for the audit-surface table (it has no graph model
@@ -1633,7 +1647,8 @@ MU_P = dict(sides=MU_SIDES, gerr=None, adeq='mu-adeq',
             thm={'mu-den': MU + 'Theorems/GraphModel.agda', 'mu-op': MU + 'Theorems/AbstractMachines.agda',
                  'mu-ck': MU + 'Theorems/ClockedInterpreters.agda', 'mu-red': MU + 'Theorems/ReductionSemantics.agda',
                  'mu-adeq': MU + 'Theorems/Adequacy.agda',
-                 'mu-adeq-cek': MU + 'Theorems/AbstractMachinesAdequacy.agda'},
+                 'mu-adeq-cek': MU + 'Theorems/AbstractMachinesAdequacy.agda',
+                 'mu-adeq-red': MU + 'Theorems/ReductionSemanticsAdequacy.agda'},
             name='FPC')
 
 
@@ -1708,28 +1723,30 @@ def mu_main(c, T, M):
             ('well-formedness of compiled programs', 'well-formedness of compiled programs',
              'well-formedness of compiled programs'),
             ('end to end', 'end to end', 'end to end')]
+    adqs = ('mu-adeq-cek', 'mu-adeq-red', 'mu-adeq')
     print('| adequacy of the graph model (reported separately) | ISWIM pipeline: CEK machines '
-          '| FPC: CEK machines (alternative) | FPC: interpreters |')
-    print('|---|---:|---:|---:|')
+          '| FPC: CEK machines (alternative) | FPC: reduction semantics (alternative) | FPC: interpreters |')
+    print('|---|---:|---:|---:|---:|')
     for tr, label_, mr in rows:
-        print(f'| {label_} | ' + ' | '.join(bold_min([c.counts.get((TA, tr))] + [c.counts.get((a, mr)) for a in ('mu-adeq-cek', 'mu-adeq')])) + ' |')
+        print(f'| {label_} | ' + ' | '.join(bold_min([c.counts.get((TA, tr))] + [c.counts.get((a, mr)) for a in adqs])) + ' |')
     print(f'| {EXTRA}, nor by the graph model | '
           + ' | '.join(bold_min([c.lines(T['extra'][TA]) or None]
-                                + [c.lines(M['extra'][a]) or None for a in ('mu-adeq-cek', 'mu-adeq')])) + ' |')
+                                + [c.lines(M['extra'][a]) or None for a in adqs])) + ' |')
     print(f"| {MU_BORROWED.replace('it reuses', 'μ reuses')}, nor by the graph model | — | "
-          + ' | '.join(str(c.lines(M['borrowed'][a]) or '—') for a in ('mu-adeq-cek', 'mu-adeq')) + ' |')
-    print('| **total** | ' + ' | '.join(bold_min([T['adq'][TA], M['total']['mu-adeq-cek'], M['total']['mu-adeq']])) + ' |')
+          + ' | '.join(str(c.lines(M['borrowed'][a]) or '—') for a in adqs) + ' |')
+    print('| **total** | ' + ' | '.join(bold_min([T['adq'][TA]] + [M['total'][a] for a in adqs])) + ' |')
     print()
-    for a in ('mu-adeq', 'mu-adeq-cek'):
+    for a in ('mu-adeq', 'mu-adeq-cek', 'mu-adeq-red'):
         print(f'Counted in μ {MU_LABELS[a]}: '
               + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
                           for un in sorted(M['extra'][a] | M['borrowed'][a])) + '.')
     print()
     print('Only FPC\'s adequacy for the interpreters is in its totals (and in the graph model\'s '
           f"total to running code, {M['total']['mu-den']} + {M['total']['mu-adeq']} = "
-          f"{M['total']['mu-den'] + M['total']['mu-adeq']}); the alternative for the CEK machines is shown "
-          'for comparison. The tuples of sets, the tables\' lemmas and the well-formedness of compiled '
-          'programs are in both columns.')
+          f"{M['total']['mu-den'] + M['total']['mu-adeq']}); the alternatives for the CEK machines and for "
+          'the reduction semantics are shown for comparison. The tuples of sets, the tables\' lemmas and '
+          'the well-formedness of compiled programs are in all three columns, and the X86μ rows of the '
+          'two alternatives (the X86μ machine) are in both.')
     print()
     print('| no-error lemmas (not in any total) | lines |')
     print('|---|---:|')
