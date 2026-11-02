@@ -31,8 +31,7 @@ open import Mu.Language.Type using (base)
 open import Mu.Language.FPC using (Tm)
 open import Mu.Compiler.Pipeline using (compile)
 open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep
-  using (Machine; Terminates; Diverges; Star; Final; start; never-final-diverges; diverges-not-terminates)
+open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
 import Mu.Semantics.AbstractMachines.FPC as I
 import Mu.Semantics.AbstractMachines.X86 as X
 import Mu.proof.Adequacy.AbstractMachines.FPC as AI
@@ -40,12 +39,9 @@ import Mu.proof.Adequacy.AbstractMachines.X86 as AX
 open import Mu.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
 open import Mu.proof.Semantics.AbstractMachines.NoError using () renaming (fpc-no-error to fpc-ok; x86-no-error to x86-ok)
 
-open import Data.Empty using (⊥-elim)
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (refl)
-open import Relation.Nullary using (¬_)
 
 end-to-end-x86-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
   → Terminates (I.sem M) (o-const Int k) ⇔ Terminates (X.sem (compile M)) (o-const Int k)
@@ -59,18 +55,8 @@ end-to-end-x86-converges M =
   ⟨ (λ t → proj₁ (AX.x86-nonempty-iff M) (proj₁ (proj₂ (compile-same M)) (AI.sound-nonempty M t)))
   , (λ t → AI.adequacy-converges M (proj₂ (proj₂ (compile-same M)) (proj₂ (AX.x86-nonempty-iff M) t))) ⟩
 
-{- a machine that never stops with an error, and does not converge,
-   diverges -}
-private
-  diverges : ∀ (L : Machine) → ¬ Terminates L o-error → ¬ Converges (Terminates L) → Diverges L
-  diverges L ok nc = never-final-diverges λ {s} {o} σ fin →
-    nc ⟨ o , ⟨ (λ { refl → ok ⟨ s , ⟨ σ , fin ⟩ ⟩ }) , ⟨ s , ⟨ σ , fin ⟩ ⟩ ⟩ ⟩
-
-  not-converges : ∀ {L : Machine} → Diverges L → ¬ Converges (Terminates L)
-  not-converges div ⟨ o , ⟨ _ , t ⟩ ⟩ = diverges-not-terminates div t
-
 end-to-end-x86-diverges : ∀ (M : Tm [] (base Int))
   → Diverges (I.sem M) ⇔ Diverges (X.sem (compile M))
 end-to-end-x86-diverges M =
-  ⟨ (λ div → diverges _ (x86-ok (compile M)) λ c → not-converges div (proj₂ (end-to-end-x86-converges M) c))
-  , (λ div → diverges _ (fpc-ok M) λ c → not-converges div (proj₁ (end-to-end-x86-converges M) c)) ⟩
+  ⟨ (λ div → AI.no-error-diverges _ (x86-ok (compile M)) λ c → AI.diverges-not-converges div (proj₂ (end-to-end-x86-converges M) c))
+  , (λ div → AI.no-error-diverges _ (fpc-ok M) λ c → AI.diverges-not-converges div (proj₁ (end-to-end-x86-converges M) c)) ⟩

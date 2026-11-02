@@ -83,6 +83,7 @@ and the small-step, reduction and clocked frameworks.
 | Theorem 4.5 (Adequacy) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda) | FPC: `fpc-const-iff`, `fpc-diverges-iff`; x86μ: `x86-const-iff`, `x86-diverges-iff` |
 | Theorem 4.5, proof | `proof/Adequacy/FPC.agda` (`const-iff`, `diverges-iff`), `proof/Adequacy/X86.agda` (`x86-const-iff`, `x86-diverges-iff`); soundness: `proof/Adequacy/Soundness.agda`, `proof/Adequacy/X86Soundness.agda`; the logical relations: `proof/Adequacy/LogRel.agda`, `proof/Adequacy/X86LogRel.agda` | |
 | Theorems 4.1 and 4.5 together: the operational theorem (§4.3) | [`Theorems/Adequacy.agda`](Theorems/Adequacy.agda); proof `proof/Adequacy/EndToEnd.agda` | `end-to-end-x86-const`, `end-to-end-x86-diverges` |
+| Adequacy, abstract machines (not in the paper), and with Theorem 4.1 the operational theorem | [`Theorems/AbstractMachinesAdequacy.agda`](Theorems/AbstractMachinesAdequacy.agda); proofs in `proof/Adequacy/AbstractMachines/`: `FPC.agda`, `X86.agda`, `EndToEnd.agda`; soundness: `Soundness.agda`, `X86Soundness.agda`; the logical relations: `LogRel.agda`, `X86LogRel.agda` | `fpc-const-iff`, `fpc-diverges-iff`, `x86-const-iff`, `x86-diverges-iff`, `end-to-end-x86-const`, `end-to-end-x86-diverges` |
 | §4.2, "Which sides to relate": a finite source side fails the function clause (the Agda check) | `proof/Correctness/GraphModel/SplitDesignFiniteSource.agda` | example 3 of its header, the paper's (λf.f, the singletons of [n] ↦ n): `no-finite-source-ApproxLR′`, `finite-source′`; example 1: `no-finite-source-ApproxLR`; any such relation: `no-finite-source` |
 | §4.2, "Which sides to relate": a target set of bounded depth is related exactly when each finite sublist is (the Agda check) | `proof/Correctness/GraphModel/SplitDesignBoundedSets.agda` | `ApproxLRSet⇔` (from `ApproxLRSet⇒`, `ApproxLRSet⇐`) |
 | Theorem F.1 (Correctness, clocked interpreters) | [`Theorems/ClockedInterpreters.agda`](Theorems/ClockedInterpreters.agda); proof `proof/Correctness/ClockedInterpreters/CompilerFuel.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
@@ -257,7 +258,7 @@ styles other than Scott domains):
 * the theorem statements: `Theorems/GraphModel.agda`,
   `Theorems/AbstractMachines.agda`, `Theorems/ClockedInterpreters.agda`,
   `Theorems/ReductionSemantics.agda`, `Theorems/ScottDomains.agda`,
-  `Theorems/Adequacy.agda`;
+  `Theorems/Adequacy.agda`, `Theorems/AbstractMachinesAdequacy.agda`;
 * the languages and passes: `Language/*.agda` (all eleven files),
   `Compiler/*.agda` (all eleven files);
 * heterogeneous vectors: `Framework/AllUtil.agda`,
