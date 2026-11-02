@@ -197,7 +197,11 @@ pipeline's modules it reuses; its infrastructure (domain theory on
 TypeTopology: sums, lifting, functors, the solution of the domain
 equation, the domain of values and its operators, the combinators that
 build continuous meanings, the stages of the bilimit) is a separate
-table, as the graph model's is.
+table, as the graph model's is.  Its adequacy for the clocked
+interpreters (Mu/proof/Adequacy/ScottDomains/, in no total) is reported
+separately, against the graph model's ('mu-adeq'), by the same rows,
+with the modules of the graph model's adequacy that it reuses (lemmas
+about the interpreters only).
 
 The public theorem statements are new boilerplate (each restates a
 theorem of the proofs with its type), so they are not in the totals;
@@ -246,7 +250,8 @@ def ml(x):
 # the Scott-domain column (needs TypeTopology; see --scott)
 SCOTT = [A + 'AllScott.agda', W + 'Scott/*.agda', WP + 'Scott/*.agda', A + 'Semantics/Scott/*.agda',
          MU + 'Semantics/ScottDomains/*.agda', MU + 'proof/Semantics/ScottDomains/*.agda',
-         MU + 'proof/Correctness/ScottDomains/*.agda', MU + 'Theorems/ScottDomains.agda']
+         MU + 'proof/Correctness/ScottDomains/*.agda', MU + 'Theorems/ScottDomains.agda',
+         MU + 'proof/Adequacy/ScottDomains/*.agda', MU + 'Theorems/ScottDomainsAdequacy.agda']
 
 
 def scott_files():
@@ -1989,6 +1994,17 @@ SCOTT_ROWS = [
     ('select instructions', [SC + 'SelectCorrect.agda']),
     ('composition', [SC + 'CompilerCorrect.agda']),
 ]
+# the adequacy of the Scott-domain semantics for the clocked interpreters
+# (reported separately, as the graph model's 'mu-adeq' is), by the rows of
+# the graph model's adequacy
+SA = MU + 'proof/Adequacy/ScottDomains/'
+SCOTT_ADEQ_ROWS = [
+    ('ISWIM', [SA + x + '.agda' for x in ('Soundness', 'LogRel', 'FPC')]),
+    ('Clos5', []),
+    ('X86', [SA + 'X86' + x + '.agda' for x in ('Soundness', 'LogRel', '')]),
+    ('well-formedness of compiled programs', [SA + 'X86Compiled.agda']),
+    ('end to end', [SA + 'EndToEnd.agda']),
+]
 SCOTT_INFRA = [
     ('dcpos on TypeTopology: exponentials, products, powers, sums, lifting',
      [W + 'Scott/Base.agda', W + 'Scott/Sum.agda', W + 'Scott/Lift.agda', WP + 'Scott/Sum.agda',
@@ -2013,7 +2029,10 @@ def scott_analyze(c, M):
     rows = [(r, files(ps)) for r, ps in SCOTT_ROWS]
     infra = [(r, files(ps)) for r, ps in SCOTT_INFRA]
     thm = [MU + 'Theorems/ScottDomains.agda']
-    covered = {f for _, fs in rows + infra for f in fs} | set(thm) | {A + 'AllScott.agda'}
+    arows = [(r, files(ps)) for r, ps in SCOTT_ADEQ_ROWS]
+    athm = [MU + 'Theorems/ScottDomainsAdequacy.agda']
+    covered = ({f for _, fs in rows + infra + arows for f in fs} | set(thm) | set(athm)
+               | {A + 'AllScott.agda'})
     missing = sorted(sf - covered)
     if missing:
         sys.exit('Scott files in no row:\n  ' + '\n  '.join(missing))
@@ -2044,8 +2063,20 @@ def scott_analyze(c, M):
             n, g = n + nx + nb, (g or 0) + gx
         cells.append((r, g, n or None))
     icells = [(r, sum(code_lines(f) for f in fs)) for r, fs in infra]
+    # adequacy: its own modules by row, and the modules of the graph model's
+    # adequacy that it reuses (lemmas about the interpreters only)
+    seen, todo = set(), [f for _, fs in arows for f in fs]
+    while todo:
+        f = todo.pop()
+        if f not in seen:
+            seen.add(f)
+            todo.extend(g for g in imports(f) if g not in seen)
+    areused = {unit(f) for f in seen if f not in sf and f in c.every and 'mu-adeq' in sides_of(c.group_of[unit(f)][0])}
+    acells = [(r, c.counts.get(('mu-adeq', r)), sum(code_lines(f) for f in fs) or None) for r, fs in arows]
+    atotal = sum(n or 0 for _, _, n in acells) + c.lines(areused)
     return dict(cells=cells, total=stotal, extra=extra, borrowed=borrowed, infra=icells,
-                itotal=sum(n for _, n in icells), thm=sum(code_lines(f) for f in thm))
+                itotal=sum(n for _, n in icells), thm=sum(code_lines(f) for f in thm),
+                acells=acells, areused=areused, atotal=atotal, athm=sum(code_lines(f) for f in athm))
 
 
 def scott_report(c, M):
@@ -2080,6 +2111,22 @@ def scott_report(c, M):
     print(f"| **total** | {S['itotal']} |")
     print()
     print(f"Theorem statements (Mu/Theorems/ScottDomains.agda): {S['thm']} lines.")
+    print()
+    print('| adequacy for the clocked interpreters (reported separately) | graph model | Scott domains |')
+    print('|---|---:|---:|')
+    for r, g, n in S['acells']:
+        print(f'| {r} | ' + ' | '.join(bold_min([g, n])) + ' |')
+    print('| reused from the graph model\'s adequacy (lemmas about the interpreters only) | — | '
+          + str(c.lines(S['areused']) or '—') + ' |')
+    print(f"| shared modules reached, not by the four columns | {c.lines(M['extra']['mu-adeq']) or '—'} | — |")
+    print(f"| ISWIM pipeline's modules reused | {c.lines(M['borrowed']['mu-adeq']) or '—'} | — |")
+    print('| **total** | ' + ' | '.join(bold_min([M['total']['mu-adeq'], S['atotal']])) + ' |')
+    print()
+    if S['areused']:
+        print('Reused by the Scott column\'s adequacy: ' + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
+                                                               for un in sorted(S['areused'])) + '.')
+        print()
+    print(f"Theorem statements (Mu/Theorems/ScottDomainsAdequacy.agda): {S['athm']} lines.")
     print()
     typetopology_report()
 
