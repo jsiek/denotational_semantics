@@ -40,14 +40,13 @@ meaning of $\kw{code}\;(z, y.\,N)$ is the same curried function as before. The
 meaning of $\kw{pair}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
 $u$ from the code $L$ and $v$ from the environment $M$. A call applies
 the first components of the pairs to their second components and then
-to the argument, which is the operator $\callop$ of
-Figure~\ref{fig:graph-ops}:
+to the argument:
 \[
 \begin{array}{rcl}
     \den{\kw{code}\;(z, y.\,N)}\rho & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y]))\\
   \den{\kw{pair}\;L\;M}\rho & = &
     \{\, \pairv{u}{v} \mid u \in \den{L}\rho,\; v \in \den{M}\rho \,\}\\
-  \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
+  \den{\kw{callc}\;L\;M}\rho & = & (\car(\den{L}\rho) \app \cdr(\den{L}\rho)) \app \den{M}\rho
 \end{array}
 \]
 The \pass{split closure} pass translates each closure into a pair and each
@@ -71,7 +70,7 @@ homomorphically:
   (U \mapsto w) \sqsubseteq D' & = &
     (\exists u, t.\; \pairv{u}{t} \in D') \;\land\;
     \forall E'.\; \mathsf{con}(E') \land U \sqsubseteq^* E'
-      \Rightarrow w \sqsubseteq D' \callop E'\\
+      \Rightarrow w \sqsubseteq (\car(D') \app \cdr(D')) \app E'\\
   \nu \sqsubseteq D' & = & \exists u, t.\; \pairv{u}{t} \in D'\\
   t(v) \sqsubseteq D' & = & v \sqsubseteq \pi_t(D')
     \qquad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
@@ -159,7 +158,7 @@ $\mu X.\,A$ would be the relation at $A[\mu X.\,A/X]$, which is not a smaller ty
 
 \paragraph{The key insight}
 
-When a call $D' \callop E'$ produces a result $w$, it uses only
+When a call $(\car(D') \app \cdr(D')) \app E'$ produces a result $w$, it uses only
 finitely many pairs of $D'$. One supplies a code entry
 $U_e \mapsto (U_a \mapsto w)$, and others supply the environments in
 $U_e$. These pairs form a finite list $V \subseteq D'$ that contains
@@ -232,7 +231,7 @@ $\entryin{U_a}{w}{V}$ when such an entry is among the codes $\car(V)$
 $\cdr(V)$ that $V$ itself provides. The second condition makes the
 relation sound in the presence of junk. A code entry for an environment
 that the program never supplies, such as the entry for $[2]$ in the
-example above, is not usable. A call $D' \callop E'$ takes the code
+example above, is not usable. A call $(\car(D') \app \cdr(D')) \app E'$ takes the code
 from $\car(D')$ and the environment from $\cdr(D')$. In the same way,
 the code and the environment of a usable entry may come from different
 pairs of $V$.
@@ -309,7 +308,7 @@ its four clauses, with ${\ALR}$ at the recursive occurrences. The case of a vari
 
 \fbox{\emph{Case $M = L\;K$.}} Then
 $\pass{split}(M) = \kw{callc}\,\pass{split}(L)\,\pass{split}(K)$,
-so $V \subseteq D' \callop E'$ for
+so $V \subseteq (\car(D') \app \cdr(D')) \app E'$ for
 $D' = \den{\pass{split}(L)}\rho'$ and
 $E' = \den{\pass{split}(K)}\rho'$. Each element of $V$ is produced by
 a code entry from $\car(D')$, finitely many environments from

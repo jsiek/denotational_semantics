@@ -290,7 +290,7 @@ PairClos, the target of \pass{split closure}, replaces closures and application 
   \den{\kw{pair}\;L\;M}\rho = \mathsf{pair}(\den{L}\rho, \den{M}\rho)
 \]
 \[
-  \den{\kw{callc}\;L\;M}\rho = \den{L}\rho \callop \den{M}\rho
+  \den{\kw{callc}\;L\;M}\rho = (\car(\den{L}\rho) \app \cdr(\den{L}\rho)) \app \den{M}\rho
 \]
 
 \subsection{The GlobalFun and Mon Languages}
@@ -1109,7 +1109,7 @@ of a label made earlier.
 The induction hypothesis says that a CFG tail $t$ means the same as
 its instructions $\pass{tail}(t)$, for any registers $R$ and flag $F$.
 A call $x \mathrel{:=} \kw{callc}\;y\;a;\; t$ writes the result
-$C = \sigma(y) \callop \mathcal{A}\den{a}\sigma$ to slot $x$. Let $s$ be
+$C = (\car(\sigma(y)) \app \cdr(\sigma(y))) \app \mathcal{A}\den{a}\sigma$ to slot $x$. Let $s$ be
 the sequence $\kw{movq}\;\%\kw{rax}, x;\; \pass{tail}(t)$, let $R_C$
 hold $C$ in $\kw{rax}$, and let $R_1$ be $R$ with the code of the
 closure in $\kw{rax}$, its environment in $\kw{rdi}$, and the argument
@@ -1126,9 +1126,10 @@ in $\kw{rsi}$:
     & = & \den{\kw{fst}\;y,\%\kw{rax};\; \kw{snd}\;y,\%\kw{rdi};\; \kw{movq}\;a,\%\kw{rsi};\; s}\,\sigma\,R\,F & \text{(meaning of the loads)}
 \end{array}
 \]}
-The step for $\kw{callq}$ holds because $(\car(\sigma(y)) \app
-\cdr(\sigma(y))) \app \mathcal{A}\den{a}\sigma$ is the definition of
-$\sigma(y) \callop \mathcal{A}\den{a}\sigma$, which is $C$.
+The step for $\kw{callq}$ holds because $\kw{callq}$ applies the code
+$\car(\sigma(y))$ in $\kw{rax}$ to the environment $\cdr(\sigma(y))$ in
+$\kw{rdi}$ and then to the argument $\mathcal{A}\den{a}\sigma$ in
+$\kw{rsi}$, which gives $C$.
 
 \section{An Example of the Approximant Logical Relation}
 \label{app:alr-example}
