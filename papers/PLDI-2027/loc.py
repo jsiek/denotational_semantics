@@ -322,7 +322,7 @@ GROUPS = [
       W + 'Syntax/SigUtil.agda', W + 'Syntax/SyntaxUtil.agda']),
     ('infra', 'syntax lemmas (renaming, scoping, uses, substitution), list lookups',
      [W + 'Syntax/Uses.agda', W + 'Syntax/Scope.agda', W + 'Syntax/Rename.agda', W + 'Syntax/Subst.agda',
-      W + 'Syntax/ScopeDec.agda', W + 'Syntax/Kit.agda', WP + 'Syntax/*.agda',
+      W + 'Syntax/ScopeDec.agda', W + 'Syntax/Kit.agda', W + 'Syntax/TypedSubst.agda', WP + 'Syntax/*.agda',
       W + 'ListUtil.agda', WP + 'ListUtil.agda']),
     ('infra', 'base types, logical equivalence', [W + 'Primitives.agda', W + 'PrimitivesDec.agda', W + 'Iff.agda']),
     ('infra', 'typed indices, lookup in typed lists, vectors (collecting, selecting, projecting)',

@@ -3,10 +3,12 @@
   The values of the FPC reduction semantics
   (Mu/Semantics/ReductionSemantics/FPC.agda), which reduce to val, and the
   laws of its renaming and substitution, as for ISWIMᵀ
-  (proof/Semantics/Reduction/Typed/ISWIM.agda): two traversals fuse
-  into one (fuse), and substitution by variables is the identity
-  (sub-id); in particular a substitution under a binder and then one
-  for the bound variable is one substitution (exts-[]).
+  (proof/Semantics/Reduction/Typed/ISWIM.agda): the two by induction on
+  its terms, that two traversals fuse into one (fuse) and that
+  substitution by variables is the identity (sub-id), and from them the
+  rest (proof/Framework/Syntax/TypedSubst.agda); in particular a
+  substitution under a binder and then one for the bound variable is one
+  substitution (exts-[]).
 
 -}
 
@@ -19,9 +21,10 @@ open import Mu.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Observation using (Obs; o-error)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (val)
+open import proof.Framework.Syntax.TypedSubst Tm `_
 
 open import Data.List using ([]; _∷_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong₂)
 
 {- Values -------------------------------------------------------------------}
 
@@ -44,7 +47,9 @@ value-red (fold v) rewrite value-red v = refl
 values-red [] = refl
 values-red (v ∷ vs) rewrite value-red v | values-red vs = refl
 
-{- Fusion -------------------------------------------------------------------}
+{- Substitution: fusion and the identity, by induction on terms ------------}
+
+open Traversal trav (λ _ _ _ → refl) public
 
 module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
   (R : ∀ {Γ Δ Θ} → Sub 𝒦₁ Γ Δ → Sub 𝒦₂ Δ Θ → Sub 𝒦₃ Γ Θ → Set)
@@ -69,48 +74,8 @@ module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
   fuses r [] = refl
   fuses r (M ∷ Ms) = cong₂ _∷_ (fuse r M) (fuses r Ms)
 
-{- a renaming, then a traversal -}
-ren-trav : ∀ 𝒦 {Γ Δ Θ} {r : ∀ {B} → Γ ∋ B → Δ ∋ B} {σ : Sub 𝒦 Δ Θ} {τ : Sub 𝒦 Γ Θ} → (∀ {B} (x : Γ ∋ B) → σ (r x) ≡ τ x)
-  → ∀ {A} (M : Tm Γ A) → trav 𝒦 σ (ren r M) ≡ trav 𝒦 τ M
-ren-trav 𝒦 = fuse varK 𝒦 𝒦 (λ r σ τ → ∀ {B} (x : _ ∋ B) → σ (r x) ≡ τ x)
-  (λ { h Z → refl ; h (S x) → cong (Kit.wk 𝒦) (h x) }) (λ h x → cong (Kit.tm 𝒦) (h x))
-
-{- a substitution, then a renaming -}
-sub-ren : ∀ {Γ Δ Θ} {σ : ∀ {B} → Γ ∋ B → Tm Δ B} {r : ∀ {B} → Δ ∋ B → Θ ∋ B} {τ : ∀ {B} → Γ ∋ B → Tm Θ B}
-  → (∀ {B} (x : Γ ∋ B) → ren r (σ x) ≡ τ x) → ∀ {A} (M : Tm Γ A) → ren r (sub σ M) ≡ sub τ M
-sub-ren = fuse tmK varK tmK (λ σ r τ → ∀ {B} (x : _ ∋ B) → ren r (σ x) ≡ τ x)
-  (λ { h Z → refl
-     ; {σ₁ = σ} h (S x) → trans (ren-trav varK (λ _ → refl) (σ x))
-                              (trans (sym (ren-trav varK (λ _ → refl) (σ x))) (cong (ren S) (h x))) })
-  (λ h x → h x)
-
-{- what both kits satisfy -}
-record Laws (𝒦 : Kit) : Set where
-  field
-    tm-vr : ∀ {Γ A} (x : Γ ∋ A) → Kit.tm 𝒦 (Kit.vr 𝒦 x) ≡ ` x
-    exts-ren : ∀ {Γ Δ A B} (τ : Sub 𝒦 Γ Δ) (M : Tm Γ A) → trav 𝒦 (exts 𝒦 {B = B} τ) (ren S M) ≡ ren S (trav 𝒦 τ M)
-
-varL : Laws varK
-varL = record { tm-vr = λ _ → refl
-              ; exts-ren = λ τ M → trans (ren-trav varK (λ _ → refl) M) (sym (ren-trav varK (λ _ → refl) M)) }
-
-tmL : Laws tmK
-tmL = record { tm-vr = λ _ → refl
-             ; exts-ren = λ τ M → trans (ren-trav tmK (λ _ → refl) M) (sym (sub-ren (λ _ → refl) M)) }
-
-{- a substitution, then a traversal -}
-trav-sub : ∀ {𝒦} → Laws 𝒦 → ∀ {Γ Δ Θ} {σ : ∀ {B} → Γ ∋ B → Tm Δ B} {τ : Sub 𝒦 Δ Θ} {ρ : ∀ {B} → Γ ∋ B → Tm Θ B}
-  → (∀ {B} (x : Γ ∋ B) → trav 𝒦 τ (σ x) ≡ ρ x) → ∀ {A} (M : Tm Γ A) → trav 𝒦 τ (sub σ M) ≡ sub ρ M
-trav-sub {𝒦} L = fuse tmK 𝒦 tmK (λ σ τ ρ → ∀ {B} (x : _ ∋ B) → trav 𝒦 τ (σ x) ≡ ρ x)
-  (λ { h Z → Laws.tm-vr L Z ; {σ₁ = σ} {τ} h (S x) → trans (Laws.exts-ren L τ (σ x)) (cong (ren S) (h x)) })
-  (λ h x → h x)
-
-{- substituting variables for themselves -}
-sub-id : ∀ {Γ A} {σ : ∀ {B} → Γ ∋ B → Tm Γ B} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → (M : Tm Γ A) → sub σ M ≡ M
-sub-ids : ∀ {Γ Δ} {σ : ∀ {B} → Γ ∋ B → Tm Γ B} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → (Ms : All (Tm Γ) Δ) → travs tmK σ Ms ≡ Ms
-sub-id-exts : ∀ {Γ C} {σ : ∀ {B} → Γ ∋ B → Tm Γ B} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → ∀ {B} (x : (C ∷ Γ) ∋ B) → exts tmK σ x ≡ ` x
-sub-id-exts h Z = refl
-sub-id-exts h (S x) = cong (ren S) (h x)
+sub-id : SubId
+sub-ids : ∀ {Γ Δ} {σ : Sub tmK Γ Γ} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → (Ms : All (Tm Γ) Δ) → travs tmK σ Ms ≡ Ms
 sub-id h (` x) = h x
 sub-id h (lam N) = cong lam (sub-id (sub-id-exts h) N)
 sub-id h (app L M) = cong₂ app (sub-id h L) (sub-id h M)
@@ -127,10 +92,4 @@ sub-id h (unfold M) = cong unfold (sub-id h M)
 sub-ids h [] = refl
 sub-ids h (M ∷ Ms) = cong₂ _∷_ (sub-id h M) (sub-ids h Ms)
 
-{- a closed term, weakened and then substituted -}
-wk-[] : ∀ {A C} (V : Tm [] A) (W : Tm [] C) → ren S V [ W ] ≡ V
-wk-[] V W = trans (ren-trav tmK {τ = `_} (λ ()) V) (sub-id (λ ()) V)
-
-{- under a binder, then for the bound variable: closed values for the rest -}
-exts-[] : ∀ {Γ A C} (σ : ∀ {B} → Γ ∋ B → Tm [] B) (W : Tm [] C) (N : Tm (C ∷ Γ) A) → sub (exts tmK σ) N [ W ] ≡ sub (W • σ) N
-exts-[] σ W = trav-sub tmL λ { Z → refl ; (S x) → wk-[] (σ x) W }
+open Lemmas fuse sub-id public
