@@ -83,9 +83,9 @@ included), on a desktop workstation (Intel Core Ultra 9 285K, 64 GB):
 | Target | Time |
 |---|---|
 | `make check` | about 2 minutes |
-| `make check-scott` (after `make check`) | about 2.5 minutes |
+| `make check-scott` (after `make check`) | about 6.5 minutes |
 | `make tables` | under a second |
-| `make all` | about 4 minutes |
+| `make all` | about 8.5 minutes |
 
 ## The paper's claims
 
