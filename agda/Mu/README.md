@@ -72,7 +72,7 @@ and the small-step, reduction and clocked frameworks.
 |---|---|---|
 | Lemma 3.1 (β), part 1 | `../proof/Framework/GraphModel/Ops.agda` | `Λ-β` (Λ(F) • D is `letD`) |
 | Lemma 3.1 (β), part 2 | `../proof/Framework/GraphModel/Ops.agda` | `ΛΛ-β` |
-| Theorem 4.1 (Compiler correctness) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `compile-int-const`, `compile-int-nonempty`; every type: `compile-correct-const`, `compile-correct-nonempty` |
+| Theorem 4.1 (Compiler correctness, graph model) | [`Theorems/GraphModel.agda`](Theorems/GraphModel.agda) | `compile-int-const`, `compile-int-nonempty`; every type: `compile-correct-const`, `compile-correct-nonempty` |
 | Theorem 4.1, proof (composition of the passes) | `proof/Correctness/GraphModel/CompilerCorrect.agda` | `compile-int`, `compile-same` |
 | Lemma 4.3 (Passes proved by an equation) | `proof/Correctness/GraphModel/*Correct.agda` | `simplify-correct`, `enclose-correct`, `hoist-correct`, `rco-correct`, `lift-locals-correct`, `explicate-correct`, `select-correct` |
 | Lemma 4.4 (Depth irrelevance and unfolding), part 1 | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR-depth-irrelevant` (one direction; with k and j swapped, the other) |
