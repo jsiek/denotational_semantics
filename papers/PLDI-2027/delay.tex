@@ -97,9 +97,14 @@ homomorphically:
 
 \paragraph{Why preservation is easy and reflection is not}
 
-The correctness of \pass{split closure} is not an equation. Instead, a closed program
-and its translation produce the same constants, and one produces
-something exactly when the other does (Lemma~\ref{lem:delay}). The forward half,
+The correctness of \pass{split closure} is not an equation, because
+the pass changes the denotation of a function. In EnvClos, a closure
+denotes the graph of the function. In PairClos, it denotes pairs of
+the graph of the function curried over the values of its free
+variables and the tuple of those values. Lemma~\ref{lem:delay}
+therefore states only that a closed program and its translation
+produce the same constants and that one produces something exactly
+when the other does. The forward half,
 preservation, requires only a relation between a \emph{single} source
 element and the \emph{set} of target elements, defined by recursion on
 the source element (Figure~\ref{fig:preserve}), because a source
