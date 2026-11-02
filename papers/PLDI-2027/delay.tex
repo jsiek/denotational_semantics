@@ -114,7 +114,7 @@ closures gets in the way. To see how, consider the function
 $\lambda y.\, x + y$ in an environment where $x$ is $9$. In EnvClos,
 its meaning is a set of entries such as $[1] \mapsto 10$ and
 $[6] \mapsto 15$. After \pass{split closure}, its code takes the environment as an
-extra parameter. The meaning of the code is then a table with entries
+extra parameter. The meaning of the code is a table with entries
 for \emph{every} environment, such as the following two:
 \[
   [9] \mapsto ([1] \mapsto 10) \qquad
