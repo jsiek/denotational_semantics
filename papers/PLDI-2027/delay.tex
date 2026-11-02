@@ -192,7 +192,7 @@ junk. The finite list also makes the relation well founded.
   \mathsf{args}(V) \;=\; \{\, u \mid \entryin{U_a}{w}{V},\; u \in U_a \,\}
 \]
 
-\defhead{Batches of calls}{\callsto{V}{U}{W}}
+\defhead{Self-contained calls}{\callsto{V}{U}{W}}
 \[
   \callsto{V}{U}{W} \iff
     U \subseteq \mathsf{args}(V) \;\land\;
@@ -244,20 +244,20 @@ from $\cdr(D')$. In the same way,
 the code and the environment of a usable entry may come from different
 pairs of $V$.
 
-A \emph{batch of calls} $\callsto{V}{U}{W}$ says two things. The
-first conjunct, $U \subseteq \mathsf{args}(V)$, says that every
-argument in $U$ is taken by some usable entry of $V$. The second
-conjunct says that each result $w$ in $W$ is produced by a usable entry
-of $V$ whose arguments are among $U$.
+We write $\callsto{V}{U}{W}$, read ``$V$ maps $U$ to $W$'', when
+every argument in $U$ is taken by some usable entry of $V$ (the first
+conjunct, $U \subseteq \mathsf{args}(V)$) and each result $w$ in $W$
+is produced by a usable entry of $V$ whose arguments are among $U$. We
+call this a \emph{self-contained call}, because $V$ supplies both the
+code entries and the environments.
 
 The relation $D \ALR_{k+1} V$ has four clauses, which use ${\ALR_k}$
 at the recursive occurrences:
 \begin{enumerate}
   \item every constant in $V$ is in $D$;
   \item if $V$ is nonempty, then $D$ is nonempty;
-  \item for every batch of calls $\callsto{V}{U}{W}$ and every
-    consistent set $E$ related to $U$, the set $D \app E$ is related
-    to $W$; and
+  \item whenever $V$ maps $U$ to $W$ and $E$ is a consistent set
+    related to $U$, the set $D \app E$ is related to $W$; and
   \item every sublist of a projection of $V$ is related to the same
     projection of $D$.
 \end{enumerate}
@@ -270,7 +270,7 @@ Appendix~\ref{app:alr-example} works clause~3 through an example.
 The relation $D \ALR V$ is defined by recursion on the depth of
 $V$. Every recursive occurrence, including the negative one at the
 arguments of a call, is at a list shallower than $V$. The arguments $U$ are shallower than $V$
-because the first conjunct of a batch of calls requires $U \subseteq
+because the first conjunct of a self-contained call requires $U \subseteq
 \mathsf{args}(V)$; without that conjunct, $U$ could contain elements
 deeper than $V$. The results $W$ are shallower than $V$ because each
 of them is the output of an entry in $V$. Finally, the projections of
@@ -323,10 +323,10 @@ a code entry from $\car(D')$, finitely many environments from
 $\cdr(D')$, and finitely many arguments from $E'$. We collect the pairs
 of $D'$ that supply these codes and environments into a finite list
 $W \subseteq D'$, and the arguments into a finite list
-$U \subseteq E'$. Then $\callsto{W}{U}{V}$. The induction hypotheses
+$U \subseteq E'$. Then $W$ maps $U$ to $V$. The induction hypotheses
 give $\den{L}\rho \ALR W$ and $\den{K}\rho \ALR U$, and both
 $\den{K}\rho$ and $U$ are consistent. Clause~3 for
-$\den{L}\rho \ALR W$, applied to this batch of calls with
+$\den{L}\rho \ALR W$, applied to this self-contained call with
 $E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
 $\den{M}\rho \ALR V$.
 
@@ -347,7 +347,7 @@ $\den{K_i}\rho$ nonempty. Hence $t \in T$ for some $t$. Every $\Lambda(F)$
 contains $\nu$, so the code of the source closure contains the entry
 $[t] \mapsto \nu$, and applying that to $t \in T$ gives $\nu \in D$.
 
-Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
+Clause 3 is the heart of the proof. Suppose that $V$ maps $U$ to $W$
 and $E \ALR U$. The bodies of the source and target closures run in
 the environments $\rho_N = \rho_0[z{:=}T, y{:=}E]$ and
 $\rho'_N = \rho_0[z{:=}\cdr(V), y{:=}U]$. We show the two premises of

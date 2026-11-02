@@ -112,7 +112,7 @@ those of capture, prune and concretize in
 
 ## The paper's definitions
 
-### Languages (Figure 1, Section 2, Appendix B)
+### Languages (Figure 2, Section 2, Appendix B)
 
 | Language | File | Agda |
 |---|---|---|
@@ -171,11 +171,11 @@ interpreters (`Semantics/AbstractMachines/Values.agda`,
 meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 `out`) and `../Semantics/Scott/Prim.agda` (`primD`, `out`).
 
-### The graph model (Section 3, Figure 2, Appendix A)
+### The graph model (Section 3, Figure 3, Appendix A)
 
 | Paper | File | Agda |
 |---|---|---|
-| elements u, v, w (Figure 2) | `../Framework/GraphModel/Domain.agda` | `Value`: `const`, `_↦_`, `ν`, `⦅_,_⦆`, `tup[_]_`, `left`, `right`, `⟨⟩` (and `ω`, used only by the other pipelines' errors) |
+| elements u, v, w (Figure 3) | `../Framework/GraphModel/Domain.agda` | `Value`: `const`, `_↦_`, `ν`, `⦅_,_⦆`, `tup[_]_`, `left`, `right`, `⟨⟩` (and `ω`, used only by the other pipelines' errors) |
 | sets of elements, D ⊆ E, D = E | `../Framework/GraphModel/SetsAsPredicates.agda` | `𝒫`, `_∈_`, `_⊆_`, `_≃_`, `nonempty` |
 | D • E (application) | `../Framework/GraphModel/Ops.agda` | `⋆` (written `_●_` in `proof/Correctness/GraphModel/ApproxLR.agda`) |
 | Λ(F) | `../Framework/GraphModel/Ops.agda` | `Λ` (the curried form of Lemma 3.1, part 2: `ΛΛ`, `../proof/Framework/GraphModel/Ops.agda`) |
@@ -184,7 +184,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | 𝒯(D₁, …, Dₙ) | `../Framework/GraphModel/Ops.agda` | `𝒯` |
 | inl, inr | `../Framework/GraphModel/Ops.agda` | `inl`, `inr` |
 | π_t (t = tupᵢ, left, right) | `../Framework/GraphModel/Ops.agda`, `../proof/Framework/GraphModel/DomainUtilBase.agda` | `proj` (tupᵢ), `Untag` (any tag) |
-| consistency u ∼ v, V ≈ V′ (Appendix A.1, Figure 5) | `../Framework/GraphModel/Domain.agda` | `_~_`, `_≈_` |
+| consistency u ∼ v, V ≈ V′ (Appendix A.1, Figure 6) | `../Framework/GraphModel/Domain.agda` | `_~_`, `_≈_` |
 | con(D) (Appendix A.1) | `../proof/Framework/GraphModel/Domain.agda` | `Con` |
 | depth (Appendix A.2) | `../proof/Framework/GraphModel/DomainUtilBase.agda` | `depth`, `depths` (bounded depth: `Bnd`) |
 | further operators (Appendix A.3): 𝒞, guard, prim, out, δ | `../Framework/GraphModel/Ops.agda`, `../Framework/GraphModel/OpsBase.agda`, `../Semantics/Graph/Prim.agda`, `../Language/Prim.agda` | `𝒞`, `guard-n`, `strict`, `ℬ` (constants), `primD`, `out`, `δ` |
@@ -194,10 +194,10 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 
 | Paper | File | Agda |
 |---|---|---|
-| v ⊑ D′ and U ⊑* E′ (Figure 3) | `proof/Correctness/GraphModel/SplitPreserve.agda` | `_⊑_`, `_⊑*_`; preservation: `preserve` |
-| usable entry U_a ↦ w ∈ V (Figure 4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `UsableEntry` (constructor `usable-entry`) |
-| args(V) and a batch of calls (Figure 4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `Batch` (fields `results` and `args`) |
-| D ≼ₖ V and D ≼ V (Figure 4) | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR≤`, `ApproxLR` |
+| v ⊑ D′ and U ⊑* E′ (Figure 4) | `proof/Correctness/GraphModel/SplitPreserve.agda` | `_⊑_`, `_⊑*_`; preservation: `preserve` |
+| usable entry U_a ↦ w ∈ V (Figure 5) | `proof/Correctness/GraphModel/ApproxLR.agda` | `UsableEntry` (constructor `usable-entry`) |
+| args(V) and a self-contained call, V maps U to W (Figure 5) | `proof/Correctness/GraphModel/ApproxLR.agda` | `Batch` (fields `results` and `args`) |
+| D ≼ₖ V and D ≼ V (Figure 5) | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR≤`, `ApproxLR` |
 | its four clauses | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLRLayer`: `const-obs`, `nonempty-obs`, `app-obs`, `tag-obs` |
 | D related to every finite V ⊆ D′ | `proof/Correctness/GraphModel/SplitRel.agda` | `Approx` |
 | related environments (before Lemma 4.5) | `proof/Correctness/GraphModel/SplitReflect.agda` | `Envs` |

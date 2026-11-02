@@ -1138,8 +1138,7 @@ $\kw{rsi}$, which gives $C$.
 This appendix works clause~3 of the approximant logical relation (Figure~\ref{fig:alr}) through the example of Section~\ref{sec:approx-lr}: $\lambda y.\, x + y$ with $x$ bound to $9$, whose source meaning $D$ contains $[1] \mapsto 10$. Take the one-element list
 $V = [\pairv{u}{9}]$ with $u = [9] \mapsto ([1] \mapsto 10)$. The
 environment $[9]$ of the code entry is in $\cdr(V)$, so
-$\entryin{[1]}{10}{V}$ is a usable entry, and $\callsto{V}{[1]}{[10]}$
-is a batch of calls. Clause~3 then asks that $D \app E \ALR [10]$ for
+$\entryin{[1]}{10}{V}$ is a usable entry, and $V$ maps $[1]$ to $[10]$. Clause~3 then asks that $D \app E \ALR [10]$ for
 every consistent $E$ related to $[1]$, that is, every $E$ that
 contains $1$. It holds because $D$ has the entry $[1] \mapsto 10$ and
 $[1] \subseteq E$, so $10 \in D \app E$, which is clause~1 for
