@@ -69,11 +69,18 @@ are empty.
 
 \paragraph{Simplify}
 
-The main lemma for \pass{simplify} carries the invariant that
-the static information of \pass{simplify} about each variable is true of the source
-environment $\rho$ and the target environment $\rho'$. If \pass{simplify} replaces a variable by the term $M'$, the variable means $\den{M'}\rho'$, and if \pass{simplify} knows it to be a function $\langle \lambda x.\, N, E_f \rangle$, it means
+For each variable, \pass{simplify} records the term that replaces it
+and, when it is bound to a statically known function, that function as
+a $\lambda$-abstraction $\langle \lambda x.\, N, E_f \rangle$ paired
+with the environment $E_f$ where it was defined
+(Appendix~\ref{app:pass-simplify}). The main lemma for
+\pass{simplify} carries the invariant that these records are true of
+the source environment $\rho$ and the target environment $\rho'$. If
+\pass{simplify} replaces a variable by the term $M'$, the variable
+means $\den{M'}\rho'$, and if \pass{simplify} records it as the
+function $\langle \lambda x.\, N, E_f \rangle$, it means
 $\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ of which
-$E_f$ is true. The key case is inlining. Suppose \pass{simplify} knows $L$ to be
+$E_f$ is true. The key case is inlining. Suppose $L$ is statically known to be the function
 $\langle \lambda x.\, N, E_f \rangle$, the operand $M$ simplifies to a
 small value, and the inlined body simplifies to $N'$. Then
 {\small
