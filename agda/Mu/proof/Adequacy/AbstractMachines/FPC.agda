@@ -14,9 +14,11 @@
 
   So ⟦ M ⟧ ρ₀ contains const k exactly when the machine terminates with
   o-const B k, it is nonempty exactly when the machine terminates with
-  an answer, and it is empty when the machine diverges. Since the
-  machine is typed it never stops with o-error, so, unlike for ISWIM,
-  there is no statement about errors; as for Clos5ᵀ
+  an answer, and it is empty exactly when the machine diverges. Since the
+  machine is typed it never stops with o-error
+  (Mu/proof/Semantics/AbstractMachines/NoError.agda), a run that does
+  not stop with an answer diverges, and so, unlike for ISWIM, there is
+  no statement about errors; as for Clos5ᵀ
   (proof/Adequacy/Clos5.agda), the shape of an observation is read off
   the related value (𝕍-const, obs-answer) rather than off d.
 
@@ -32,7 +34,9 @@ open import Mu.Language.FPC using (Tm)
 open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
 open import Mu.Semantics.AbstractMachines.FPC using (sem; Val; ret; halt; obs)
 open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges; diverges-not-terminates)
+open import proof.Semantics.CEK.Smallstep
+  using (Machine; Terminates; Diverges; never-final-diverges; diverges-not-terminates)
+open import Mu.proof.Semantics.AbstractMachines.NoError using (fpc-no-error)
 import Mu.proof.Adequacy.AbstractMachines.Soundness as S
 open import Mu.proof.Adequacy.AbstractMachines.LogRel using (𝕍; adequate; 𝕍-const; obs-answer; ↠→star)
 
@@ -77,3 +81,18 @@ nonempty-iff M = ⟨ adequacy-converges M , sound-nonempty M ⟩
 diverges-empty : ∀ {A} (M : Tm [] A) → Diverges (sem M) → ∀ (d : Value) → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 diverges-empty M div d d∈ with adequacy M d∈
 ... | ⟨ v , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t
+
+{- a machine that never stops with an error, and does not converge,
+   diverges; and one that diverges does not converge -}
+no-error-diverges : ∀ (L : Machine) → ¬ Terminates L o-error → ¬ Converges (Terminates L) → Diverges L
+no-error-diverges L ok nc = never-final-diverges λ {s} {o} σ fin →
+  nc ⟨ o , ⟨ (λ { refl → ok ⟨ s , ⟨ σ , fin ⟩ ⟩ }) , ⟨ s , ⟨ σ , fin ⟩ ⟩ ⟩ ⟩
+
+diverges-not-converges : ∀ {L : Machine} → Diverges L → ¬ Converges (Terminates L)
+diverges-not-converges div ⟨ o , ⟨ _ , t ⟩ ⟩ = diverges-not-terminates div t
+
+{- ⟦ M ⟧ ρ₀ is empty exactly when the machine diverges -}
+diverges-iff : ∀ {A} (M : Tm [] A) → Diverges (sem M) ⇔ (¬ nonempty (⟦ M ⟧ ρ₀))
+diverges-iff M =
+  ⟨ (λ { div ⟨ d , d∈ ⟩ → diverges-empty M div d d∈ })
+  , (λ ne → no-error-diverges (sem M) (fpc-no-error M) (λ c → ne (sound-nonempty M c))) ⟩

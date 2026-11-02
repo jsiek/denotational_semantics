@@ -14,7 +14,9 @@
 
   So ⟦ P ⟧ₜ holds const k exactly when the machine terminates with
   o-const B k, and it is nonempty exactly when the machine terminates
-  with an answer; the programs that the compiler produces have such a
+  with an answer. Since the machine never stops with an error
+  (Mu/proof/Semantics/AbstractMachines/NoError.agda), ⟦ P ⟧ₜ is empty
+  exactly when the machine diverges. The programs that the compiler produces have such a
   table (X86Compiled.agda), so this holds of them, at any type, with no
   other precondition.
 
@@ -31,7 +33,9 @@ open import Mu.Language.FPC using (Tm)
 open import Mu.Compiler.Pipeline using (compile)
 open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep using (Terminates)
+open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
+open import Mu.proof.Semantics.AbstractMachines.NoError using (x86-no-error)
+open import Mu.proof.Adequacy.AbstractMachines.FPC using (no-error-diverges; diverges-not-converges)
 open import Mu.Semantics.AbstractMachines.X86 using (sem; obs; Val)
 open import Mu.proof.Adequacy.X86Compiled using (Contains; compiled)
 import Mu.proof.Adequacy.AbstractMachines.X86LogRel as LR
@@ -40,6 +44,7 @@ import Mu.proof.Adequacy.AbstractMachines.X86Soundness as S
 open import Data.List using ([])
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (sym; subst)
+open import Relation.Nullary using (¬_)
 
 adequacy : ∀ {A} (P : Program A) {d} → d ∈ ⟦ P ⟧ₜ
   → Σ[ v ∈ Val (Program.table P) A ] Terminates (sem P) (obs v) × LR.𝕍 (Program.defs P) d v
@@ -64,3 +69,8 @@ x86-const-iff M = const-iff (compile M) (proj₁ (compiled M)) (proj₂ (compile
 
 x86-nonempty-iff : ∀ {A} (M : Tm [] A) → nonempty ⟦ compile M ⟧ₜ ⇔ Converges (Terminates (sem (compile M)))
 x86-nonempty-iff M = nonempty-iff (compile M) (proj₁ (compiled M)) (proj₂ (compiled M))
+
+x86-diverges-iff : ∀ {A} (M : Tm [] A) → Diverges (sem (compile M)) ⇔ (¬ nonempty ⟦ compile M ⟧ₜ)
+x86-diverges-iff M =
+  ⟨ (λ div ne → diverges-not-converges div (proj₁ (x86-nonempty-iff M) ne))
+  , (λ ne → no-error-diverges (sem (compile M)) (x86-no-error (compile M)) (λ c → ne (proj₂ (x86-nonempty-iff M) c))) ⟩
