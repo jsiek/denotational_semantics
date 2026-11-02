@@ -46,9 +46,9 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 
 module Mu.proof.Correctness.GraphModel.SplitReflect where
 
-{- a target call V' ⊆ L' ⊙ N' is a batch of calls of a finite W ⊆ L' on a finite U ⊆ N' -}
+{- a target call V' ⊆ L' ⊙ N' is a self-contained call: a finite W ⊆ L' maps a finite U ⊆ N' to V' -}
 collect : ∀ (L' N' : 𝒫 Value) V' → mem V' ⊆ (L' ⊙ N')
-  → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ] mem W ⊆ L' × mem U ⊆ N' × Batch W U V'
+  → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ] mem W ⊆ L' × mem U ⊆ N' × SelfContainedMaps W U V'
 collect L' N' [] _ =
   ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
 collect L' N' (w ∷ V') V'⊆
@@ -58,9 +58,9 @@ collect L' N' (w ∷ V') V'⊆
     with cdr-witness FV FV⊆Cdr
 ... | ⟨ C , ⟨ C⊆L' , FV⊆C ⟩ ⟩ =
   ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ ++⊆ (λ { _ (here refl) → e∈L' ; d (there d∈) → C⊆L' d d∈ }) W⊆ , ⟨ ++⊆ U₀⊆N' U⊆
-  , Batch-++ (record { results = λ { _ (here refl) → ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
+  , SelfContainedMaps-++ (record { results = λ { _ (here refl) → ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
                      ; args = λ u u∈ → ⟨ U₀ , ⟨ w , ⟨ ent , u∈ ⟩ ⟩ ⟩ })
-             (Batch-⊆ (λ d d∈ → there (∈-++⁺ʳ C d∈)) cs) ⟩ ⟩ ⟩ ⟩
+             (SelfContainedMaps-⊆ (λ d d∈ → there (∈-++⁺ʳ C d∈)) cs) ⟩ ⟩ ⟩ ⟩
   where
   e = ⦅ FV ↦ (U₀ ↦ w) , t ⦆
   ent = usable-entry FV t (here refl) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆C d d∈ in ⟨ u , there (∈-++⁺ˡ i) ⟩)
@@ -183,7 +183,7 @@ split-reflect (clos {Δ} N Ms) {r} {ρ} {ρ'} E = Approx-fold (λ _ ()) (λ ne �
 
   clos-app : AppObs (⟦ clos N Ms ⟧ ρ) (⟦ split r (clos N Ms) ⟧' ρ')
   clos-app {W = []} _ _ _ _ _ _ = ApproxLR-∅ (λ _ ())
-  clos-app {V'} {U'} {w ∷ W'} V'⊆ cs Es cE U'~ rU with Batch.results cs w (here refl)
+  clos-app {V'} {U'} {w ∷ W'} V'⊆ cs Es cE U'~ rU with SelfContainedMaps.results cs w (here refl)
   ... | ⟨ U₀ , ⟨ usable-entry FV _ _ neFV FV⊆ , ⟨ neU₀ , U₀⊆ ⟩ ⟩ ⟩ =
     ApproxLR-mono (ΛΛ-β {F = λ X Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ⟨⟩ ⌉)} cT cE (fin₂ (S3.ok N) NE-T NE-E))
       (split-reflect N {r = λ x → x}
@@ -198,7 +198,7 @@ split-reflect (clos {Δ} N Ms) {r} {ρ} {ρ'} E = Approx-fold (λ _ ()) (λ ne �
     NE-E = ApproxLRLayer.nonempty-obs (unfoldᴬ rU) (ne-⊆ U₀⊆ neU₀)
     NE-T = Approx-ne (reflect-𝒯 Ms E) (ne-mem neFV (λ d d∈ → Cdrs⊆T' d (FV⊆ d d∈)))
     W⊆B : mem (w ∷ W') ⊆ ⟦ split (λ x → x) N ⟧' (mem U' • Cdrs V' • (λ _ → ⌈ ⟨⟩ ⌉))
-    W⊆B x x∈ with Batch.results cs x x∈
+    W⊆B x x∈ with SelfContainedMaps.results cs x x∈
     ... | ⟨ _ , ⟨ usable-entry _ _ e∈ _ FV⊆' , ⟨ _ , U₁⊆ ⟩ ⟩ ⟩ with V'⊆ _ e∈
     ... | ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ =
       proj₁ (S4.ok (split (λ x → x) N)) (λ { zero → U₁⊆ ; (suc zero) → FV⊆' ; (suc (suc y)) → λ d z → z }) x x∈B

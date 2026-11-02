@@ -1,13 +1,13 @@
 {-
 
-  The approximant logical relation of the paper (Section 4.2, Figure 4)
+  The approximant logical relation of the paper (Section 4.2, Figure 5)
   and Lemma 4.2 (depth irrelevance and unfolding), for the reflection
   half of split (EnvClosμ → PairClosμ) in the graph model.
 
   ApproxLR D V relates a set D of source (EnvClosμ) elements to a finite
   list V of target (PairClosμ) elements, by recursion on the depth of V,
   since a target closure is a set of pairs whose calls combine the codes
-  and environments of several pairs (Batch). ApproxLRLayer is the four
+  and environments of several pairs (SelfContainedMaps). ApproxLRLayer is the four
   clauses, with the recursive occurrence left open (Q); ApproxLR≤ k is
   the paper's ≼ₖ, and ApproxLR its ≼. The index is only a termination
   device: any index that bounds the depth of V gives the same relation
@@ -45,19 +45,19 @@ open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module Mu.proof.Correctness.GraphModel.ApproxLR where
 
-{- application, D • E (Figure 2) -}
+{- application, D • E (Figure 3) -}
 _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩
 
 ●-mono : ∀ {D₁ D₂ E₁ E₂} → D₁ ⊆ D₂ → E₁ ⊆ E₂ → (D₁ ● E₁) ⊆ (D₂ ● E₂)
 ●-mono D⊆ E⊆ w ⟨ V , ⟨ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩ = ⟨ V , ⟨ D⊆ _ V↦w∈ , ⟨ (λ v v∈ → E⊆ v (V⊆E v v∈)) , neV ⟩ ⟩ ⟩
 
-{- Usable entries and batches of calls -----------------------------------------}
+{- Usable entries and self-contained calls --------------------------------------}
 
 Cdrs : List Value → 𝒫 Value
 Cdrs V' = cdr ⟨ mem V' , ptt ⟩
 
-{- Figure 4: usable entries. UsableEntry V' U₀ w is an entry
+{- Figure 5: usable entries. UsableEntry V' U₀ w is an entry
    FV ↦ (U₀ ↦ w) of car(V'), with FV nonempty, whose environments FV are
    among cdr(V') -}
 record UsableEntry (V' U₀ : List Value) (w : Value) : Set where
@@ -79,38 +79,39 @@ Bnd-UsableEntry {U₀ = U₀}{w} bV (usable-entry FV t e∈ _ _) =
   , <-shrink (s≤s (≤-trans (m≤n⊔m (depths U₀) _) up)) (bV _ e∈) ⟩
   where up = ≤-trans (n≤1+n _) (≤-trans (m≤n⊔m (depths FV) _) (≤-trans (n≤1+n _) (m≤m⊔n _ (depth t))))
 
-{- Figure 4: arguments of usable entries, args(V), and batches of calls.
-   Batch V U W: each w in W is the result of a usable entry U₀ ↦ w of V
-   with U₀ nonempty and U₀ ⊆ U (results), and each u in U is an argument
-   of a usable entry, U ⊆ args(V) (args) -}
-record Batch (V U W : List Value) : Set where
+{- Figure 5: arguments of usable entries, args(V), and self-contained calls.
+   SelfContainedMaps V U W, read "V maps U to W", is a self-contained call: V supplies
+   both the code entries and the environments. Each w in W is the result
+   of a usable entry U₀ ↦ w of V with U₀ nonempty and U₀ ⊆ U (results),
+   and each u in U is an argument of a usable entry, U ⊆ args(V) (args) -}
+record SelfContainedMaps (V U W : List Value) : Set where
   field
     results : ∀ w → w ⋵ W → Σ[ U₀ ∈ List Value ] UsableEntry V U₀ w × U₀ ≢ [] × mem U₀ ⊆ mem U
     args : ∀ u → u ⋵ U → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] UsableEntry V U₀ w × u ⋵ U₀
 
-Batch-⊆ : ∀ {V₁ V₂ U W} → mem V₁ ⊆ mem V₂ → Batch V₁ U W → Batch V₂ U W
-Batch-⊆ s cs = record
-  { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = Batch.results cs w w∈ in ⟨ U₀ , ⟨ UsableEntry-⊆ s e , r ⟩ ⟩
-  ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = Batch.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ UsableEntry-⊆ s e , r ⟩ ⟩ ⟩
+SelfContainedMaps-⊆ : ∀ {V₁ V₂ U W} → mem V₁ ⊆ mem V₂ → SelfContainedMaps V₁ U W → SelfContainedMaps V₂ U W
+SelfContainedMaps-⊆ s cs = record
+  { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = SelfContainedMaps.results cs w w∈ in ⟨ U₀ , ⟨ UsableEntry-⊆ s e , r ⟩ ⟩
+  ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = SelfContainedMaps.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ UsableEntry-⊆ s e , r ⟩ ⟩ ⟩
   }
 
-Batch-none : ∀ {V U W} → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥) → Batch V U W → mem W ⊆ ∅
-Batch-none no cs w w∈ = no _ _ (UsableEntry.car∈ (proj₁ (proj₂ (Batch.results cs w w∈))))
+SelfContainedMaps-none : ∀ {V U W} → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥) → SelfContainedMaps V U W → mem W ⊆ ∅
+SelfContainedMaps-none no cs w w∈ = no _ _ (UsableEntry.car∈ (proj₁ (proj₂ (SelfContainedMaps.results cs w w∈))))
 
-Bnd-Batch-args : ∀ {k V U W} → Bnd (suc k) V → Batch V U W → Bnd k U
-Bnd-Batch-args bV cs u u∈ =
-  let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = Batch.args cs u u∈ in proj₁ (Bnd-UsableEntry bV e) u u∈U₀
+Bnd-SelfContainedMaps-args : ∀ {k V U W} → Bnd (suc k) V → SelfContainedMaps V U W → Bnd k U
+Bnd-SelfContainedMaps-args bV cs u u∈ =
+  let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = SelfContainedMaps.args cs u u∈ in proj₁ (Bnd-UsableEntry bV e) u u∈U₀
 
-Bnd-Batch-apps : ∀ {k V U W} → Bnd (suc k) V → Batch V U W → Bnd k W
-Bnd-Batch-apps bV cs w w∈ = proj₂ (Bnd-UsableEntry bV (proj₁ (proj₂ (Batch.results cs w w∈))))
+Bnd-SelfContainedMaps-apps : ∀ {k V U W} → Bnd (suc k) V → SelfContainedMaps V U W → Bnd k W
+Bnd-SelfContainedMaps-apps bV cs w w∈ = proj₂ (Bnd-UsableEntry bV (proj₁ (proj₂ (SelfContainedMaps.results cs w w∈))))
 
-{- Figure 4: the four clauses of the relation, ApproxLRLayer Q D V, with Q
+{- Figure 5: the four clauses of the relation, ApproxLRLayer Q D V, with Q
    at the recursive occurrences -}
 record ApproxLRLayer (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value) (V : List Value) : Set₁ where
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
     nonempty-obs : V ≢ [] → nonempty D
-    app-obs : ∀ {U W} → Batch V U W → ∀ E → Con E → Con (mem U) → Q E U → Q (D ● E) W
+    app-obs : ∀ {U W} → SelfContainedMaps V U W → ∀ E → Con E → Con (mem U) → Q E U → Q (D ● E) W
     tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q (Untag t D) W
 
 ApproxLRLayer-map : ∀ {k j Q₁ Q₂ D V} → Bnd (suc k) V → Bnd (suc j) V
@@ -120,18 +121,18 @@ ApproxLRLayer-map : ∀ {k j Q₁ Q₂ D V} → Bnd (suc k) V → Bnd (suc j) V
 ApproxLRLayer-map bk bj to from o = record
   { const-obs = const-obs
   ; nonempty-obs = nonempty-obs
-  ; app-obs = λ cs E cE gU rU → to (Bnd-Batch-apps bk cs) (Bnd-Batch-apps bj cs)
-      (app-obs cs E cE gU (from (Bnd-Batch-args bj cs) (Bnd-Batch-args bk cs) rU))
+  ; app-obs = λ cs E cE gU rU → to (Bnd-SelfContainedMaps-apps bk cs) (Bnd-SelfContainedMaps-apps bj cs)
+      (app-obs cs E cE gU (from (Bnd-SelfContainedMaps-args bj cs) (Bnd-SelfContainedMaps-args bk cs) rU))
   ; tag-obs = λ t W W⊆ → to (Bnd-Untag t bk W⊆) (Bnd-Untag t bj W⊆) (tag-obs t W W⊆)
   }
   where open ApproxLRLayer o
 
-{- Figure 4: D ≼ₖ V -}
+{- Figure 5: D ≼ₖ V -}
 ApproxLR≤ : ℕ → 𝒫 Value → List Value → Set₁
 ApproxLR≤ zero D V = pTrue
 ApproxLR≤ (suc k) D V = ApproxLRLayer (ApproxLR≤ k) D V
 
-{- Figure 4: D ≼ V, at an index one more than the depth of V -}
+{- Figure 5: D ≼ V, at an index one more than the depth of V -}
 ApproxLR : 𝒫 Value → List Value → Set₁
 ApproxLR D V = ApproxLR≤ (suc (depths V)) D V
 
@@ -142,7 +143,7 @@ private
   ApproxLR≤-data (suc k) dV = record
     { const-obs = λ c c∈ → proj₁ (dV _ c∈)
     ; nonempty-obs = λ ne → ne-mem ne (λ v v∈ → proj₁ (dV v v∈))
-    ; app-obs = λ cs _ _ _ _ → ApproxLR≤-data k (λ w w∈ → ⊥-elim (Batch-none (λ u v uv∈ → noflat (proj₂ (dV _ uv∈))) cs w w∈))
+    ; app-obs = λ cs _ _ _ _ → ApproxLR≤-data k (λ w w∈ → ⊥-elim (SelfContainedMaps-none (λ u v uv∈ → noflat (proj₂ (dV _ uv∈))) cs w w∈))
     ; tag-obs = λ t W W⊆ → ApproxLR≤-data k (λ d d∈ → let ⟨ d∈D , dd ⟩ = dV _ (W⊆ d d∈) in ⟨ d∈D , data-untag t dd ⟩)
     }
     where noflat : ∀ {u v} → Data ⦅ u , v ⦆ → ⊥
@@ -192,7 +193,7 @@ ApproxLR-⊆ : ∀ {D V₁ V₂} → mem V₁ ⊆ mem V₂ → ApproxLR D V₂ �
 ApproxLR-⊆ V₁⊆V₂ r = fold record
   { const-obs = λ c c∈ → const-obs c (V₁⊆V₂ _ c∈)
   ; nonempty-obs = λ ne → nonempty-obs (ne-⊆ V₁⊆V₂ ne)
-  ; app-obs = λ cs → app-obs (Batch-⊆ V₁⊆V₂ cs)
+  ; app-obs = λ cs → app-obs (SelfContainedMaps-⊆ V₁⊆V₂ cs)
   ; tag-obs = λ t W W⊆ → tag-obs t W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
   }
   where open ApproxLRLayer (unfold r)

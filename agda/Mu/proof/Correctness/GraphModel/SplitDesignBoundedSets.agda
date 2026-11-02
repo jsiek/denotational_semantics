@@ -10,8 +10,8 @@
   on the bound k, for T whose elements all have depth < k (the
   definition itself is total). The finite parts of a call stay lists,
   since they are parts of one graph value: the arguments U₀ and the
-  environments FV of a code entry FV ↦ (U₀ ↦ w). The batches of calls
-  become sets (BatchS T U W): the arguments U and the results W of the
+  environments FV of a code entry FV ↦ (U₀ ↦ w). The self-contained
+  calls become sets (SelfContainedMapsS T U W): the arguments U and the results W of the
   calls of T may be infinite, and they are bounded by k when T is
   bounded by k + 1. The projection clause relates Untag t D to the whole
   set Untag t T, so it needs no quantifier over its subsets.
@@ -24,8 +24,8 @@
 
   Each direction of the step uses the other direction at k, on the
   arguments of the calls, which are in negative position. (⇒) passes a
-  finite batch of calls of V ⊆ T to the set clause as the sets mem U and
-  mem W. (⇐) cuts an infinite batch into finite pieces: a finite W₀ ⊆ W
+  finite self-contained call of V ⊆ T to the set clause as the sets mem U
+  and mem W. (⇐) cuts an infinite call into finite pieces: a finite W₀ ⊆ W
   comes from finitely many code entries of T, whose pairs and the pairs
   that supply their environments (cdr-witness) form a finite V ⊆ T, and
   whose arguments form a finite U₁ ⊆ U (collectS); the relation of E to
@@ -68,7 +68,7 @@ Bnd𝒫-Untag (tupT i) bT d d∈ = <-shrink ≤-refl (bT _ d∈)
 Bnd𝒫-Untag leftT bT d d∈ = <-shrink ≤-refl (bT _ d∈)
 Bnd𝒫-Untag rightT bT d d∈ = <-shrink ≤-refl (bT _ d∈)
 
-{- The function entries of a target set, and batches of its calls --------------}
+{- The function entries of a target set, and its self-contained calls ----------}
 
 record UsableEntryS (T : 𝒫 Value) (U₀ : List Value) (w : Value) : Set where
   constructor usable-entryS
@@ -79,8 +79,8 @@ record UsableEntryS (T : 𝒫 Value) (U₀ : List Value) (w : Value) : Set where
     FV≢[] : FV ≢ []
     FV⊆ : mem FV ⊆ cdr ⟨ T , ptt ⟩
 
-{- a batch of calls of T, as in Batch, with sets of arguments U and results W -}
-record BatchS (T U W : 𝒫 Value) : Set where
+{- T maps U to W, as in SelfContainedMaps, with sets of arguments U and results W -}
+record SelfContainedMapsS (T U W : 𝒫 Value) : Set where
   field
     results : ∀ w → w ∈ W → Σ[ U₀ ∈ List Value ] UsableEntryS T U₀ w × U₀ ≢ [] × mem U₀ ⊆ U
     args : ∀ u → u ∈ U → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] UsableEntryS T U₀ w × u ⋵ U₀
@@ -90,10 +90,10 @@ UsableEntry→S : ∀ {V T U₀ w} → mem V ⊆ T → UsableEntry V U₀ w → 
 UsableEntry→S V⊆ (usable-entry FV t e∈ neFV FV⊆) =
   usable-entryS FV t (V⊆ _ e∈) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , V⊆ _ i ⟩)
 
-Batch→S : ∀ {V T U W} → mem V ⊆ T → Batch V U W → BatchS T (mem U) (mem W)
-Batch→S V⊆ cs = record
-  { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = Batch.results cs w w∈ in ⟨ U₀ , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩
-  ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = Batch.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩ ⟩
+SelfContainedMaps→S : ∀ {V T U W} → mem V ⊆ T → SelfContainedMaps V U W → SelfContainedMapsS T (mem U) (mem W)
+SelfContainedMaps→S V⊆ cs = record
+  { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = SelfContainedMaps.results cs w w∈ in ⟨ U₀ , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩
+  ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = SelfContainedMaps.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩ ⟩
   }
 
 {- an entry of T is one of a finite V ⊆ T: its pair and the pairs that
@@ -108,28 +108,28 @@ S→UsableEntry {T} {U₀} {w} (usable-entryS FV t e∈ neFV FV⊆) with cdr-wit
 Bnd-UsableEntryS : ∀ {k T U₀ w} → Bnd𝒫 (suc k) T → UsableEntryS T U₀ w → Bnd k U₀ × depth w < k
 Bnd-UsableEntryS bT e = let ⟨ V , ⟨ V⊆ , e' ⟩ ⟩ = S→UsableEntry e in Bnd-UsableEntry (Bnd𝒫-mem bT V⊆) e'
 
-Bnd-BatchS-args : ∀ {k T U W} → Bnd𝒫 (suc k) T → BatchS T U W → Bnd𝒫 k U
-Bnd-BatchS-args bT cs u u∈ =
-  let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = BatchS.args cs u u∈ in proj₁ (Bnd-UsableEntryS bT e) u u∈U₀
+Bnd-SelfContainedMapsS-args : ∀ {k T U W} → Bnd𝒫 (suc k) T → SelfContainedMapsS T U W → Bnd𝒫 k U
+Bnd-SelfContainedMapsS-args bT cs u u∈ =
+  let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = SelfContainedMapsS.args cs u u∈ in proj₁ (Bnd-UsableEntryS bT e) u u∈U₀
 
-Bnd-BatchS-apps : ∀ {k T U W} → Bnd𝒫 (suc k) T → BatchS T U W → Bnd𝒫 k W
-Bnd-BatchS-apps bT cs w w∈ = proj₂ (Bnd-UsableEntryS bT (proj₁ (proj₂ (BatchS.results cs w w∈))))
+Bnd-SelfContainedMapsS-apps : ∀ {k T U W} → Bnd𝒫 (suc k) T → SelfContainedMapsS T U W → Bnd𝒫 k W
+Bnd-SelfContainedMapsS-apps bT cs w w∈ = proj₂ (Bnd-UsableEntryS bT (proj₁ (proj₂ (SelfContainedMapsS.results cs w w∈))))
 
-{- the results W₀ ⊆ W, finitely many, of a batch of calls of T come from a
-   batch of calls of a finite V ⊆ T on finitely many arguments U₁ ⊆ U -}
-collectS : ∀ {T U W} → BatchS T U W → ∀ W₀ → mem W₀ ⊆ W
-  → Σ[ V ∈ List Value ] Σ[ U₁ ∈ List Value ] mem V ⊆ T × mem U₁ ⊆ U × Batch V U₁ W₀
+{- the results W₀ ⊆ W, finitely many, of a self-contained call of T come
+   from a finite V ⊆ T that maps finitely many arguments U₁ ⊆ U to W₀ -}
+collectS : ∀ {T U W} → SelfContainedMapsS T U W → ∀ W₀ → mem W₀ ⊆ W
+  → Σ[ V ∈ List Value ] Σ[ U₁ ∈ List Value ] mem V ⊆ T × mem U₁ ⊆ U × SelfContainedMaps V U₁ W₀
 collectS cs [] _ = ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
 collectS cs (w ∷ W₀) W₀⊆
-    with BatchS.results cs w (W₀⊆ w (here refl)) | collectS cs W₀ (λ d d∈ → W₀⊆ d (there d∈))
+    with SelfContainedMapsS.results cs w (W₀⊆ w (here refl)) | collectS cs W₀ (λ d d∈ → W₀⊆ d (there d∈))
 ... | ⟨ U₀ , ⟨ e , ⟨ neU₀ , U₀⊆U ⟩ ⟩ ⟩ | ⟨ V , ⟨ U₁ , ⟨ V⊆ , ⟨ U₁⊆ , cs' ⟩ ⟩ ⟩ ⟩
     with S→UsableEntry e
 ... | ⟨ P , ⟨ P⊆ , ent ⟩ ⟩ =
   ⟨ P ++ V , ⟨ U₀ ++ U₁ , ⟨ ++⊆ P⊆ V⊆ , ⟨ ++⊆ U₀⊆U U₁⊆
-  , Batch-++ (Batch-⊆ (λ d d∈ → ∈-++⁺ˡ d∈)
+  , SelfContainedMaps-++ (SelfContainedMaps-⊆ (λ d d∈ → ∈-++⁺ˡ d∈)
                 (record { results = λ { _ (here refl) → ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
                         ; args = λ u u∈ → ⟨ U₀ , ⟨ w , ⟨ ent , u∈ ⟩ ⟩ ⟩ }))
-             (Batch-⊆ (λ d d∈ → ∈-++⁺ʳ P d∈) cs') ⟩ ⟩ ⟩ ⟩
+             (SelfContainedMaps-⊆ (λ d d∈ → ∈-++⁺ʳ P d∈) cs') ⟩ ⟩ ⟩ ⟩
   where
   ++⊆ : ∀ {A B : List Value} {D} → mem A ⊆ D → mem B ⊆ D → mem (A ++ B) ⊆ D
   ++⊆ {A} A⊆ B⊆ d d∈ = [ A⊆ d , B⊆ d ]′ (∈-++⁻ A d∈)
@@ -140,7 +140,7 @@ record ApproxLRSetLayer (Q : 𝒫 Value → 𝒫 Value → Set₁) (D T : 𝒫 V
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ∈ T → const c ∈ D
     nonempty-obs : nonempty T → nonempty D
-    app-obs : ∀ {U W} → BatchS T U W → ∀ E → Con E → Con U → Q E U → Q (D ● E) W
+    app-obs : ∀ {U W} → SelfContainedMapsS T U W → ∀ E → Con E → Con U → Q E U → Q (D ● E) W
     tag-obs : ∀ t → Q (Untag t D) (Untag t T)
 
 ApproxLRSet≤ : ℕ → 𝒫 Value → 𝒫 Value → Set₁
@@ -157,9 +157,9 @@ ApproxLRSet⇒ (suc k) {D} {T} bT r V V⊆ = fold record
   { const-obs = λ c c∈ → const-obs c (V⊆ _ c∈)
   ; nonempty-obs = λ neV → nonempty-obs (ne-mem neV V⊆)
   ; app-obs = λ {U} {W} cs E cE cU rU →
-      ApproxLRSet⇒ k (Bnd𝒫-mem-inv (Bnd-Batch-apps bV cs))
-        (app-obs (Batch→S V⊆ cs) E cE cU
-           (ApproxLRSet⇐ k (Bnd𝒫-mem-inv (Bnd-Batch-args bV cs)) (λ U' U'⊆ → ApproxLR-⊆ U'⊆ rU)))
+      ApproxLRSet⇒ k (Bnd𝒫-mem-inv (Bnd-SelfContainedMaps-apps bV cs))
+        (app-obs (SelfContainedMaps→S V⊆ cs) E cE cU
+           (ApproxLRSet⇐ k (Bnd𝒫-mem-inv (Bnd-SelfContainedMaps-args bV cs)) (λ U' U'⊆ → ApproxLR-⊆ U'⊆ rU)))
         W (λ _ d∈ → d∈)
   ; tag-obs = λ t W W⊆ →
       ApproxLRSet⇒ k (Bnd𝒫-Untag t bT) (tag-obs t) W (λ d d∈ → V⊆ _ (W⊆ d d∈))
@@ -175,10 +175,10 @@ ApproxLRSet⇐ (suc k) {D} {T} bT r = record
   { const-obs = λ c c∈ → Approx-const r c∈
   ; nonempty-obs = Approx-ne r
   ; app-obs = λ {U} {W} cs E cE cU rU →
-      ApproxLRSet⇐ k (Bnd-BatchS-apps bT cs) λ W₀ W₀⊆ →
+      ApproxLRSet⇐ k (Bnd-SelfContainedMapsS-apps bT cs) λ W₀ W₀⊆ →
         let ⟨ V , ⟨ U₁ , ⟨ V⊆ , ⟨ U₁⊆ , cs₀ ⟩ ⟩ ⟩ ⟩ = collectS cs W₀ W₀⊆ in
         ApproxLRLayer.app-obs (unfold (r V V⊆)) cs₀ E cE (Con-⊆ cU U₁⊆)
-          (ApproxLRSet⇒ k (Bnd-BatchS-args bT cs) rU U₁ U₁⊆)
+          (ApproxLRSet⇒ k (Bnd-SelfContainedMapsS-args bT cs) rU U₁ U₁⊆)
   ; tag-obs = λ t → ApproxLRSet⇐ k (Bnd𝒫-Untag t bT) (Approx-untag t r)
   }
 

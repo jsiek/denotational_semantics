@@ -145,8 +145,8 @@ E-disjoint {n} {m} (here refl) (here eq) =
   inputs _ = 0
 
 {- every result of a call of U is 1, and 1 is among the arguments -}
-calls-U : ∀ {U' W w} → Batch U U' W → w ⋵ W → w ≡ one × one ⋵ U'
-calls-U cs w∈ with Batch.results cs _ w∈
+calls-U : ∀ {U' W w} → SelfContainedMaps U U' W → w ⋵ W → w ≡ one × one ⋵ U'
+calls-U cs w∈ with SelfContainedMaps.results cs _ w∈
 ... | ⟨ _ , ⟨ usable-entry _ _ (here refl) _ _ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ = ⟨ refl , U₀⊆ one (here refl) ⟩
 ... | ⟨ _ , ⟨ usable-entry _ _ (there ()) _ _ , _ ⟩ ⟩
 
@@ -158,7 +158,7 @@ E-related n = foldᴬ record
   ; tag-obs = λ t W W⊆ → ApproxLR-∅ (λ w w∈ → untag-U t (W⊆ w w∈))
   }
   where
-  app-E : ∀ {U' W} → Batch U U' W → ∀ E' → Con E' → Con (mem U') → ApproxLR E' U' → ApproxLR (E n ● E') W
+  app-E : ∀ {U' W} → SelfContainedMaps U U' W → ∀ E' → Con E' → Con (mem U') → ApproxLR E' U' → ApproxLR (E n ● E') W
   app-E cs E' _ _ rE = ApproxLR-data res
     where
     one∈E' : ∀ {w} → w ⋵ _ → one ∈ E'
@@ -207,7 +207,7 @@ W = u₁ ∷ []
 V⊆idC' : mem V ⊆ ⟦ split-program idC ⟧' ρ₀
 V⊆idC' _ (here refl) = ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , tt ⟩
 
-calls : Batch V U W
+calls : SelfContainedMaps V U W
 calls = record
   { results = λ { _ (here refl) → ⟨ U , ⟨ ent , ⟨ (λ ()) , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
   ; args = λ { _ (here refl) → ⟨ U , ⟨ u₁ , ⟨ ent , here refl ⟩ ⟩ ⟩ ; _ (there ()) }
@@ -263,14 +263,14 @@ finite-empty = finite-emptyBy inputs e e-big
 finite-source : ∀ (D₀ : List Value) → Σ[ n ∈ ℕ ] ¬ ApproxLR (mem D₀ ● E n) W
 finite-source D₀ = ⟨ suc (bound D₀) , (λ r → let ⟨ w , w∈ ⟩ = ApproxLRLayer.nonempty-obs (unfoldᴬ r) (λ ()) in finite-empty D₀ w w∈) ⟩
 
-{- so no finite list satisfies clause 3 for V's batch of calls on U, which
+{- so no finite list satisfies clause 3 for V mapping U to W, which
    the whole source denotation satisfies -}
 finite-source-clause3 : ∀ (D₀ : List Value) → ¬ (∀ n → ApproxLR (mem D₀ ● E n) W)
 finite-source-clause3 D₀ all = proj₂ (finite-source D₀) (all (proj₁ (finite-source D₀)))
 
 {- The same for any relation between finite source lists and finite target
    lists that relates each [s n] to U and has nonempty-obs: clause 3 for
-   the source list D₀ and a batch of calls on U with results W, with the
+   the source list D₀ and a self-contained call that maps U to W, with the
    result of the call any finite part S of D₀ ● E₀ -}
 FinClause3 : (List Value → List Value → Set₁) → List Value → List Value → List Value → Set₁
 FinClause3 R U W D₀ = ∀ E₀ → R E₀ U → Σ[ S ∈ List Value ] mem S ⊆ (mem D₀ ● mem E₀) × R S W
@@ -340,7 +340,7 @@ g-related : ∀ {E₁} → nonempty E₁ → ApproxLR E₁ (g ∷ [])
 g-related neE = foldᴬ record
   { const-obs = λ { c (here ()) ; c (there ()) }
   ; nonempty-obs = λ _ → neE
-  ; app-obs = λ cs _ _ _ _ → ApproxLR-∅ (λ w w∈ → no-car-g (proj₁ (proj₂ (Batch.results cs w w∈))))
+  ; app-obs = λ cs _ _ _ _ → ApproxLR-∅ (λ w w∈ → no-car-g (proj₁ (proj₂ (SelfContainedMaps.results cs w w∈))))
   ; tag-obs = λ t W W⊆ → ApproxLR-∅ (λ w w∈ → untag-g t (W⊆ w w∈))
   }
 
@@ -377,7 +377,7 @@ W′ = g ∷ []
 V′⊆idC' : mem V′ ⊆ ⟦ split-program idC ⟧' ρ₀
 V′⊆idC' _ (here refl) = ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , tt ⟩
 
-calls′ : Batch V′ U′ W′
+calls′ : SelfContainedMaps V′ U′ W′
 calls′ = record
   { results = λ { _ (here refl) → ⟨ U′ , ⟨ ent , ⟨ (λ ()) , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
   ; args = λ { _ (here refl) → ⟨ U′ , ⟨ g , ⟨ ent , here refl ⟩ ⟩ ⟩ ; _ (there ()) }
