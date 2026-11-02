@@ -33,7 +33,9 @@
     and X86μ: Mu/Theorems/Adequacy.agda (Theorem 4.5),
     Mu/proof/Adequacy/; an alternative, reported separately, against the
     abstract machines instead: Mu/Theorems/AbstractMachinesAdequacy.agda,
-    Mu/proof/Adequacy/AbstractMachines/;
+    Mu/proof/Adequacy/AbstractMachines/; and another, against FPC's
+    reduction semantics: Mu/Theorems/ReductionSemanticsAdequacy.agda,
+    Mu/proof/Adequacy/ReductionSemantics/;
   * the two Agda checks of the paper's §4.2 ("Which sides to relate"):
     a finite source side cannot satisfy the function clause of split's
     relation (Mu/proof/Correctness/GraphModel/SplitDesignFiniteSource.agda),
@@ -61,12 +63,14 @@ import Mu.Theorems.ClockedInterpreters
 import Mu.Theorems.ReductionSemantics
 import Mu.Theorems.Adequacy
 import Mu.Theorems.AbstractMachinesAdequacy
+import Mu.Theorems.ReductionSemanticsAdequacy
 import Mu.proof.Correctness.GraphModel.CompilerCorrect
 import Mu.proof.Correctness.AbstractMachines.PipelineSim
 import Mu.proof.Correctness.ClockedInterpreters.CompilerFuel
 import Mu.proof.Correctness.ReductionSemantics.PipelineRed
 import Mu.proof.Adequacy.EndToEnd
 import Mu.proof.Adequacy.AbstractMachines.EndToEnd
+import Mu.proof.Adequacy.ReductionSemantics.EndToEnd
 {- the Agda checks of §4.2, in no proof's total -}
 import Mu.proof.Correctness.GraphModel.SplitDesignFiniteSource
 import Mu.proof.Correctness.GraphModel.SplitDesignBoundedSets

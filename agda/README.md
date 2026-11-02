@@ -176,6 +176,9 @@ languages, which only the proofs use).
     (`end-to-end-x86-const`, `end-to-end-x86-diverges`);
   * `Mu/Theorems/AbstractMachinesAdequacy.agda`: the same, with the
     abstract machines of FPC and X86μ in place of the interpreters.
+  * `Mu/Theorems/ReductionSemanticsAdequacy.agda`: the same for the
+    reduction semantics of FPC, and, with the X86μ machine, the
+    reduction column's end-to-end theorem.
   The per-pass theorems and the compiler's prefixes are proved in
   `Mu/proof/` but not restated. The definitions the statements use are
   those of `Mu/` outside `Mu/proof/` that they reach (its languages,
@@ -311,7 +314,10 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   adequacy, `Mu/proof/Adequacy/`, is direct for the X86μ interpreter;
   its alternative for the machines, `Mu/proof/Adequacy/AbstractMachines/`,
   uses that neither machine stops with an error,
-  `Mu/proof/Semantics/AbstractMachines/NoError.agda`; its Scott-domain
+  `Mu/proof/Semantics/AbstractMachines/NoError.agda`; its alternative
+  for FPC's reduction semantics, `Mu/proof/Adequacy/ReductionSemantics/`,
+  is Plotkin's: a step preserves meaning, with a logical relation on
+  closed values; its Scott-domain
   column is `Mu/proof/Correctness/ScottDomains/`, with lemmas shared by
   passes in `Mu/proof/Semantics/ScottDomains/`, and the
   language-independent lemmas in
