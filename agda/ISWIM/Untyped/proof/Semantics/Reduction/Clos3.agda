@@ -1,14 +1,14 @@
 {-
 
-  The values of the Clos2 reduction semantics (Untyped.Semantics.Reduction.Clos3.agda):
+  The values of the Clos2 reduction semantics (ISWIM.Untyped.Semantics.Reduction.Clos3.agda):
   they reduce to val, and substitution keeps them values.
 
 -}
 
-module Untyped.proof.Semantics.Reduction.Clos3 where
+module ISWIM.Untyped.proof.Semantics.Reduction.Clos3 where
 
-open import Untyped.Semantics.Reduction.Clos3 public
-open import Untyped.Language.Clos3
+open import ISWIM.Untyped.Semantics.Reduction.Clos3 public
+open import ISWIM.Untyped.Language.Clos3
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Framework.Reduction Obs o-error using (val)
 open import proof.Framework.Reduction Obs o-error using (Each; []; _∷_) public

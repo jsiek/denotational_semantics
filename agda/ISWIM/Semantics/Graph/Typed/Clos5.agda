@@ -1,22 +1,22 @@
 {-
 
-  The semantics of Clos5ᵀ (Language/Typed/Clos5.agda) in the graph model,
-  as that of Clos4ᵀ (Semantics/Graph/Typed/Clos4.agda), given a table T of
+  The semantics of Clos5ᵀ (ISWIM/Language/Typed/Clos5.agda) in the graph model,
+  as that of Clos4ᵀ (ISWIM/Semantics/Graph/Typed/Clos4.agda), given a table T of
   the meanings of the global definitions: fun-ref f means T f. The
   definitions of a program are given meaning newest first, each with the
-  table of the older ones (tables, Semantics/Graph/Typed/Ops.agda), and
+  table of the older ones (tables, ISWIM/Semantics/Graph/Typed/Ops.agda), and
   main with the table of all of them.
 
 -}
 
-module Semantics.Graph.Typed.Clos5 where
+module ISWIM.Semantics.Graph.Typed.Clos5 where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Semantics.Graph.Typed.Ops
-open import Language.Typed.Type
-open import Language.Typed.Clos5
+open import ISWIM.Semantics.Graph.Typed.Ops
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos5
 
 open import Data.List using (List; replicate)
 open import Data.List.Relation.Unary.All using (All)

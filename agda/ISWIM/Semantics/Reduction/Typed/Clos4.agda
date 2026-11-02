@@ -1,19 +1,19 @@
 {-
 
-  A reduction semantics for Clos4ᵀ (Language/Typed/Clos4.agda), as for
-  Clos3ᵀ (Semantics/Reduction/Typed/Clos3.agda). Code is a value, and
+  A reduction semantics for Clos4ᵀ (ISWIM/Language/Typed/Clos4.agda), as for
+  Clos3ᵀ (ISWIM/Semantics/Reduction/Typed/Clos3.agda). Code is a value, and
   so is a pack of values; callc L M evaluates L and M, and then calls
   the code of the closure L with its environment and the argument.
 
 -}
 
-module Semantics.Reduction.Typed.Clos4 where
+module ISWIM.Semantics.Reduction.Typed.Clos4 where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos4
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos4
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
 open import Framework.ReductionVec Obs o-error using (red-∷)

@@ -1,25 +1,25 @@
 {-
 
-  A clocked interpreter for ISWIMᵀ (Language/Typed/ISWIM.agda), as the
-  one for ISWIM (Semantics/Interp/ISWIM.agda; see the design note in
+  A clocked interpreter for ISWIMᵀ (ISWIM/Language/Typed/ISWIM.agda), as the
+  one for ISWIM (ISWIM/Semantics/Interp/ISWIM.agda; see the design note in
   Semantics/Interp/Clock.agda): call by value, left to right, and only
   a call ticks the clock. Values and environments are typed
-  (Semantics/Interp/Typed/Values.agda), so the interpreter is a total
+  (ISWIM/Semantics/Interp/Typed/Values.agda), so the interpreter is a total
   function that errs only where a project fails. A function value is
   the closure of its body and the whole environment.
 
 -}
 
-module Semantics.Interp.Typed.ISWIM where
+module ISWIM.Semantics.Interp.Typed.ISWIM where
 
-open import Language.Typed.Type
-open import Language.Typed.ISWIM
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.ISWIM
 open import Semantics.Interp.Clock
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 
-open import Semantics.Interp.Typed.Values (λ k → Tm (suc k) Any) public
+open import ISWIM.Semantics.Interp.Typed.Values (λ k → Tm (suc k) Any) public
   hiding (Env)
 
 Env : ℕ → Set

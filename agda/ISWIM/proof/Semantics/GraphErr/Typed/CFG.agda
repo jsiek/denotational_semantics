@@ -1,26 +1,26 @@
 {-
 
   The semantics of CFGᵀ in the graph model with errors
-  (Semantics/GraphErr/Typed/CFG.agda) is monotone, continuous and
+  (ISWIM/Semantics/GraphErr/Typed/CFG.agda) is monotone, continuous and
   consistent (Ok), under a consistent table: a simple expression is a
   term of Clos5ᵀ, a slot binding is a let (letᵐ, letᵐ-unfold), and a
   tail that forgets slots reindexes its environment (Ok-η, Ok-skip).
 
 -}
 
-module proof.Semantics.GraphErr.Typed.CFG where
+module ISWIM.proof.Semantics.GraphErr.Typed.CFG where
 
 open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.Env using (•-~)
 open import proof.Framework.GraphModel.TypedOk using (Ok; ok-op; Ok-≃; Ok-η; Ok-skip)
-open import proof.Semantics.GraphErr.Typed.Clos2 using (case-good)
-open import proof.Semantics.GraphErr.Typed.Clos5 using (ok)
-open import Semantics.GraphErr.Typed.CFG
-open import Semantics.GraphErr.Typed.Imp using (⌞_⌟)
-open import Language.Typed.Type hiding (_≟_)
-import Language.Typed.Mon as M
-open import Language.Typed.CFG
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (case-good)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 using (ok)
+open import ISWIM.Semantics.GraphErr.Typed.CFG
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (⌞_⌟)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+import ISWIM.Language.Typed.Mon as M
+open import ISWIM.Language.Typed.CFG
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 
 open import Data.List using (List; []; _∷_)

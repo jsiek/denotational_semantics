@@ -33,20 +33,20 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase using (nthD-≃)
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
-open import proof.Semantics.GraphErr.Prim using (primᵐ-≃)
-open import Untyped.Language.Clos5 using (program; Args)
-import Untyped.Language.Clos5 as C5
-open import Untyped.Language.Mon
-import Untyped.Language.Imp as I
-import Language.ISWIM as ISWIM
-open import Untyped.Compiler.LiftLocals using (lift; height; lift-atom; lift-atoms; lift-defs; lift-program)
-open import Compiler.CaptureScope using (Closed)
-open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
-open import Untyped.Compiler.RCO using (rco-program-mon)
-open import Untyped.proof.Semantics.GraphErr.Clos5
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primᵐ-≃)
+open import ISWIM.Untyped.Language.Clos5 using (program; Args)
+import ISWIM.Untyped.Language.Clos5 as C5
+open import ISWIM.Untyped.Language.Mon
+import ISWIM.Untyped.Language.Imp as I
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift; height; lift-atom; lift-atoms; lift-defs; lift-program)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program-mon)
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos5
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; ⟦_⟧ₚ; ⟦⟧[]-monotone; Clos5ᵐ-con; table-con; body-mono; body-continuous)
   renaming (init to init₅)
-open import Untyped.Semantics.GraphErr.ImpK
+open import ISWIM.Untyped.Semantics.GraphErr.ImpK
   using (Store; read; _[_↦_]; frameᵐ; 𝒜; 𝒜s; frame; Kont; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ; init)
   renaming (table to tableᴷ)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
@@ -69,7 +69,7 @@ open import Level using (Lift) renaming (lift to up)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; subst)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect where
 
 {- Slots and stores ----------------------------------------------------------------}
 

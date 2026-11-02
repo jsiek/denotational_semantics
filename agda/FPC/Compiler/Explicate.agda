@@ -1,7 +1,7 @@
 {-
 
   Explicate control (Impμ → CFGμ), as typed explicate control
-  (Compiler/Explicate.agda): explicate-tail e translates e in tail
+  (ISWIM/Compiler/Explicate.agda): explicate-tail e translates e in tail
   position; explicate-assign e p k translates "slot k := e, then the
   tail k" in continuation-passing style, so a case becomes a case whose
   branches assign the slot and jump to a new block for k, the join
@@ -13,13 +13,13 @@
 
 -}
 
-module Mu.Compiler.Explicate where
+module FPC.Compiler.Explicate where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.Imp as I
-open import Mu.Language.CFG
-open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
+import FPC.Language.Imp as I
+open import FPC.Language.CFG
+open import FPC.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 
 open import Data.List using (List; []; _∷_)
 

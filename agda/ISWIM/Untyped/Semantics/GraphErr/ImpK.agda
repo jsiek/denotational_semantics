@@ -1,4 +1,4 @@
-module Untyped.Semantics.GraphErr.ImpK where
+module ISWIM.Untyped.Semantics.GraphErr.ImpK where
 {-
 
  The continuation-passing semantics of Imp (Language/Imp.agda) in the
@@ -18,8 +18,8 @@ module Untyped.Semantics.GraphErr.ImpK where
 open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.ErrorMonad
-open import Untyped.Semantics.GraphErr.Imp public
-open import Untyped.Language.Imp
+open import ISWIM.Untyped.Semantics.GraphErr.Imp public
+open import ISWIM.Untyped.Language.Imp
 
 open import Data.Nat using (ℕ; _⊔_)
 open import Data.List using (List)

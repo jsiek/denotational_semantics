@@ -28,20 +28,20 @@ open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos5
+open import ISWIM.Untyped.Language.Clos5
 open import proof.Framework.Syntax.Rename Op sig using (rename; rename-args; ext)
-open import Untyped.Compiler.RCO
+open import ISWIM.Untyped.Compiler.RCO
   using (rco; rco-args; rco-program; atom?; lift; case-on)
-open import Untyped.Semantics.Graph.Clos5Iswim
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ; init)
-open import Untyped.proof.Semantics.Graph.Clos5IswimContinuous
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos5IswimContinuous
   using (Clos5-Semantics; let-β; Clos5-con; table-con)
 import proof.Framework.GraphModel.RenameSem Op sig as RenameSem
-open import Untyped.proof.Correctness.Graph.CompilerCorrect
+open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect
   using (Same; Same-trans; ≃→Same; compile-same)
-open import Untyped.Compiler.Pipeline using (compile; compile-mon)
-open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
-import Language.ISWIM as ISWIM
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon)
+open import ISWIM.proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
+import ISWIM.Language.ISWIM as ISWIM
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 open import Framework.Primitives using (base-rep)
@@ -61,7 +61,7 @@ open import Level using (lower) renaming (lift to up)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; subst)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.Graph.RCOCorrect where
+module ISWIM.Untyped.proof.Correctness.Graph.RCOCorrect where
 
 open import proof.Framework.GraphModel.Strict
 

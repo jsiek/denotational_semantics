@@ -1,19 +1,19 @@
 {-
 
   The values of the Closμ reduction semantics
-  (Mu/Semantics/ReductionSemantics/Clos.agda), which reduce to val and which
+  (FPC/Semantics/ReductionSemantics/Clos.agda), which reduce to val and which
   renaming and substitution keep.
 
 -}
 
-module Mu.proof.Semantics.ReductionSemantics.Clos where
+module FPC.proof.Semantics.ReductionSemantics.Clos where
 
-open import Mu.Semantics.ReductionSemantics.Clos public
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.Clos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Semantics.ReductionSemantics.Clos public
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.Clos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-error)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (val)
 
 open import Data.List using ([]; _∷_)

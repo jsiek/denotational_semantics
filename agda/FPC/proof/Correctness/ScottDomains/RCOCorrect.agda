@@ -1,9 +1,9 @@
 {-
 
   Correctness of remove complex operands (GlobalFunμ → Monμ) in Scott
-  domains (Mu/Semantics/ScottDomains/GlobalFun.agda; Monμ means its embedding ⌜_⌝
+  domains (FPC/Semantics/ScottDomains/GlobalFun.agda; Monμ means its embedding ⌜_⌝
   into GlobalFunμ), as in the graph model
-  (Mu/proof/Correctness/GraphModel/RCOCorrect.agda): the embedding of the
+  (FPC/proof/Correctness/GraphModel/RCOCorrect.agda): the embedding of the
   output means what the input means,
 
     rco-sem : ⟦ N ⟧[ T ] γ ＝ ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] σ
@@ -27,18 +27,18 @@ open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
 open import Framework.Primitives using (Nat; Int; 𝔹; Unit; Void; Blame)
-open import Mu.Language.Type using (_∋_; Z; S; idx; _⇒_)
-open import Mu.Language.GlobalFun
-import Mu.Language.Mon as M
+open import FPC.Language.Type using (_∋_; Z; S; idx; _⇒_)
+open import FPC.Language.GlobalFun
+import FPC.Language.Mon as M
 open M using (Atm; Exp; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Mu.Compiler.RCO
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
+open import FPC.Compiler.RCO
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
 open import Framework.abt.GSubst using (_•_)
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; length)
 
-module Mu.proof.Correctness.ScottDomains.RCOCorrect
+module FPC.proof.Correctness.ScottDomains.RCOCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -53,9 +53,9 @@ open import proof.Framework.Scott.Ops pt fe pe renaming (pair to pairᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD; prim-br₁; prim-br₂)
 open import proof.Framework.Scott.Values pt fe pe using (app-arg-⊥)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
-open import Mu.Semantics.ScottDomains.GlobalFun pt fe pe
-open import Mu.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (below-if; codeᶜ-cong; tables-cons)
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
+open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe
+open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (below-if; codeᶜ-cong; tables-cons)
 
 {- seq d e is e when e defined implies d defined ------------------------------------}
 

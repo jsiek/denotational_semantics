@@ -2,7 +2,7 @@
 
   Correctness of select instructions (CFG → X86, Compiler/Select.agda) in
   the graph model with errors: the meaning of the X86 program
-  (Untyped/Semantics/GraphErr/X86.agda) is that of the CFG program
+  (ISWIM/Untyped/Semantics/GraphErr/X86.agda) is that of the CFG program
   (Semantics/GraphErr/CFG.agda).
 
     select-correct : ⟦ select P ⟧ₚ ≃ ⟪ P ⟫ₚ
@@ -34,22 +34,22 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig using (Results; results-rel-pres)
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Semantics.GraphErr.Prim using (primᵐ; primᵐ-≃; primᵐ-good)
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primᵐ; primᵐ-≃; primᵐ-good)
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import Framework.GraphModel.Ops using (⋆)
-open import Untyped.Language.Imp as I using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim)
+open import ISWIM.Untyped.Language.Imp as I using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim)
 import Language.Prim as P
-import Untyped.Language.CFG as C
-import Language.ISWIM as ISWIM
-open import Language.X86 hiding (fst; snd; get)
-open import Untyped.Compiler.Select
-open import Untyped.Compiler.Pipeline using (compile-x86; compile-cfg)
-open import Compiler.CaptureScope using (Closed)
-open import Untyped.Semantics.GraphErr.Imp using (𝒜; 𝒜s; 𝒮; frame)
-open import Untyped.Semantics.GraphErr.CFG
+import ISWIM.Untyped.Language.CFG as C
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Language.X86 hiding (fst; snd; get)
+open import ISWIM.Untyped.Compiler.Select
+open import ISWIM.Untyped.Compiler.Pipeline using (compile-x86; compile-cfg)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Semantics.GraphErr.Imp using (𝒜; 𝒜s; 𝒮; frame)
+open import ISWIM.Untyped.Semantics.GraphErr.CFG
   using () renaming (⟦_⟧[_] to ⟪_⟫[_]; Blocks to Blocksₜ; blocks to blocksₜ; table to tableₜ; code to codeₜ; ⟦_⟧ₚ to ⟪_⟫ₚ)
-open import Untyped.Semantics.GraphErr.X86
-open import Untyped.proof.Correctness.GraphErr.ExplicateCorrect using (module Agreeing; frameᵐ-≃)
+open import ISWIM.Untyped.Semantics.GraphErr.X86
+open import ISWIM.Untyped.proof.Correctness.GraphErr.ExplicateCorrect using (module Agreeing; frameᵐ-≃)
 open import Framework.Primitives using (Int)
 open import Framework.GraphModel.OpsBase using (ℬ)
 
@@ -68,7 +68,7 @@ open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; cong₂)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.GraphErr.SelectCorrect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.SelectCorrect where
 
 primᵐ-ω : ∀ p {D E} → ω ∈ D → ω ∈ primᵐ p ⟨ D , ⟨ E , ptt ⟩ ⟩
 primᵐ-ω p ω∈ = inj₁ ⟨ refl , ω∈ ⟩

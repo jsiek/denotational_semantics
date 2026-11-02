@@ -1,19 +1,19 @@
 {-
 
   The values of the EnvClosμ reduction semantics
-  (Mu/Semantics/ReductionSemantics/EnvClos.agda), which reduce to val and which
+  (FPC/Semantics/ReductionSemantics/EnvClos.agda), which reduce to val and which
   renaming and substitution keep.
 
 -}
 
-module Mu.proof.Semantics.ReductionSemantics.EnvClos where
+module FPC.proof.Semantics.ReductionSemantics.EnvClos where
 
-open import Mu.Semantics.ReductionSemantics.EnvClos public
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.EnvClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Semantics.ReductionSemantics.EnvClos public
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.EnvClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-error)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (val)
 
 open import Data.List using ([]; _∷_)

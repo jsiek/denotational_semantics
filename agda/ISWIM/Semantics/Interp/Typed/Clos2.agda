@@ -1,22 +1,22 @@
 {-
 
-  A clocked interpreter for Clos2ᵀ (Language/Typed/Clos2.agda), as the
-  one for ISWIMᵀ (Semantics/Interp/Typed/ISWIM.agda), except that a
+  A clocked interpreter for Clos2ᵀ (ISWIM/Language/Typed/Clos2.agda), as the
+  one for ISWIMᵀ (ISWIM/Semantics/Interp/Typed/ISWIM.agda), except that a
   closure evaluates its free variables, left to right, and keeps their
   values as its environment.
 
 -}
 
-module Semantics.Interp.Typed.Clos2 where
+module ISWIM.Semantics.Interp.Typed.Clos2 where
 
-open import Language.Typed.Type
-open import Language.Typed.Clos2
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos2
 open import Semantics.Interp.Clock
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 
-open import Semantics.Interp.Typed.Values (λ k → Tm (suc k) Any) public
+open import ISWIM.Semantics.Interp.Typed.Values (λ k → Tm (suc k) Any) public
   hiding (Env)
 
 Env : ℕ → Set

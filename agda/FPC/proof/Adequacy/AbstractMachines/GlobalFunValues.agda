@@ -1,8 +1,8 @@
 {-
 
-  The values of the GlobalFunμ machine (Mu/Semantics/AbstractMachines/GlobalFun.agda) in the
+  The values of the GlobalFunμ machine (FPC/Semantics/AbstractMachines/GlobalFun.agda) in the
   graph model, for the adequacy proof of the X86μ machine, which shares
-  them (Mu/proof/Adequacy/AbstractMachines/X86.agda), as GlobalFunValues.agda is for the
+  them (FPC/proof/Adequacy/AbstractMachines/X86.agda), as GlobalFunValues.agda is for the
   typed pipeline:
 
   * Rel Run: the logical relation 𝕍 d v, by recursion on the
@@ -18,7 +18,7 @@
 
 -}
 
-module Mu.proof.Adequacy.AbstractMachines.GlobalFunValues where
+module FPC.proof.Adequacy.AbstractMachines.GlobalFunValues where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq; δ; int; bool)
@@ -28,14 +28,14 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
   using (ℬ; 𝒯; nthD; Λ; ℬ-consis; pair-consis; inl-consis; inr-consis) renaming (pair to dpair; inl to inlD; inr to inrD)
 open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun using (DSig; sig)
-open import Mu.proof.Semantics.GraphModel.Ops using (Table; tables; ConT; init)
-open import Mu.Semantics.AbstractMachines.GlobalFun
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun using (DSig; sig)
+open import FPC.proof.Semantics.GraphModel.Ops using (Table; tables; ConT; init)
+open import FPC.Semantics.AbstractMachines.GlobalFun
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import Semantics.Observation using (Obs; o-const; Answer)
-open import Mu.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con)
-open import Mu.proof.Adequacy.GlobalFunCommon using (lvl<)
+open import FPC.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con)
+open import FPC.proof.Adequacy.GlobalFunCommon using (lvl<)
 import proof.Framework.GraphModel.Env as E
 
 open import Data.Bool using (true; false)

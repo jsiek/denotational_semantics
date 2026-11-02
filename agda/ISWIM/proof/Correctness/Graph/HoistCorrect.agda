@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed hoist (Clos4ᵀ → Clos5ᵀ) in the graph model
-  (Semantics/Graph/Typed/{Clos4,Clos5}.agda): the pass preserves
+  (ISWIM/Semantics/Graph/Typed/{Clos4,Clos5}.agda): the pass preserves
   denotations exactly.
 
   The definitions made so far (Made, each over the older ones) have
@@ -17,20 +17,20 @@
 
 -}
 
-module proof.Correctness.Graph.HoistCorrect where
+module ISWIM.proof.Correctness.Graph.HoistCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import proof.Semantics.Graph.Typed.Ops
-open import Semantics.Graph.Typed.Clos5
-open import proof.Semantics.Graph.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
-open import Language.Typed.Type hiding (_≟_)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops
+open import ISWIM.Semantics.Graph.Typed.Clos5
+open import ISWIM.proof.Semantics.Graph.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Language.Typed.Clos4 as S
-open import Language.Typed.Clos5
-open import Compiler.Hoist
+import ISWIM.Language.Typed.Clos4 as S
+open import ISWIM.Language.Typed.Clos5
+open import ISWIM.Compiler.Hoist
 open import proof.Framework.Lookup using (lvl-<; lvl-⊑; ⊑-∋-trans)
 
 open import Data.Empty using (⊥-elim)

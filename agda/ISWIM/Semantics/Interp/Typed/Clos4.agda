@@ -1,17 +1,17 @@
 {-
 
-  A clocked interpreter for Clos4ᵀ (Language/Typed/Clos4.agda), as the
-  one for Clos3ᵀ (Semantics/Interp/Typed/Clos3.agda), with the same
+  A clocked interpreter for Clos4ᵀ (ISWIM/Language/Typed/Clos4.agda), as the
+  one for Clos3ᵀ (ISWIM/Semantics/Interp/Typed/Clos3.agda), with the same
   values: code is a value, pack pairs it with an environment, and
   callc L M runs the code of the closure L with its environment and
   the argument M, after both are evaluated.
 
 -}
 
-module Semantics.Interp.Typed.Clos4 where
+module ISWIM.Semantics.Interp.Typed.Clos4 where
 
-open import Language.Typed.Type
-open import Language.Typed.Clos4
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos4
 open import Semantics.Interp.Clock
 open import Framework.Lookup using (_!_)
 
@@ -20,7 +20,7 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Vec using (Vec; []; _∷_)
 open import Data.List.Relation.Unary.All using ([]; _∷_)
 
-open import Semantics.Interp.Typed.Values (λ n → Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any) public
+open import ISWIM.Semantics.Interp.Typed.Values (λ n → Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any) public
 
 eval : ∀ {Γ A} → ℕ → Env Γ → Tm Γ A → Result (Val A)
 evals : ∀ {Γ n} → ℕ → Env Γ → Vec (Tm Γ Any) n → Result (Vec (Val Any) n)

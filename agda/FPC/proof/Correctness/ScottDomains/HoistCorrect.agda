@@ -1,8 +1,8 @@
 {-
 
   Correctness of hoist (PairClosμ → GlobalFunμ) in Scott domains
-  (Mu/Semantics/ScottDomains/{PairClos,GlobalFun}.agda), as in the graph model
-  (Mu/proof/Correctness/GraphModel/HoistCorrect.agda), with equality of
+  (FPC/Semantics/ScottDomains/{PairClos,GlobalFun}.agda), as in the graph model
+  (FPC/proof/Correctness/GraphModel/HoistCorrect.agda), with equality of
   values in place of equality of sets: the pass preserves meanings
   exactly.
 
@@ -35,12 +35,12 @@ open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
 open import Framework.Primitives using (Int)
-open import Mu.Language.Type renaming (unroll to unrollᵗ)
+open import FPC.Language.Type renaming (unroll to unrollᵗ)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.PairClos as S
-open import Mu.Language.GlobalFun
-open import Mu.Compiler.Hoist
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+import FPC.Language.PairClos as S
+open import FPC.Language.GlobalFun
+open import FPC.Compiler.Hoist
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import proof.Framework.Lookup using (lvl-<; lvl-⊑; ⊑-∋-trans)
 open import Framework.abt.GSubst using (_•_)
 
@@ -49,7 +49,7 @@ open import Data.List using (List; []; _∷_; length)
 open import Data.Nat.Properties using (<-irrefl)
 import Relation.Binary.PropositionalEquality as Eq
 
-module Mu.proof.Correctness.ScottDomains.HoistCorrect
+module FPC.proof.Correctness.ScottDomains.HoistCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -59,10 +59,10 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; case to caseᵈ; pair to pairᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
-open import Mu.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
-open import Mu.Semantics.ScottDomains.GlobalFun pt fe pe
-open import Mu.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong)
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
+open import FPC.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
+open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe
+open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong)
 
 ≡→＝ : ∀ {A : Set} {x y : A} → x Eq.≡ y → x ＝ y
 ≡→＝ Eq.refl = refl

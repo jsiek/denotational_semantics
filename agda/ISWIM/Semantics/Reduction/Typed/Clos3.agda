@@ -1,19 +1,19 @@
 {-
 
-  A reduction semantics for Clos3ᵀ (Language/Typed/Clos3.agda), as for
-  Clos2ᵀ (Semantics/Reduction/Typed/Clos2.agda), with variables typed
+  A reduction semantics for Clos3ᵀ (ISWIM/Language/Typed/Clos3.agda), as for
+  Clos2ᵀ (ISWIM/Semantics/Reduction/Typed/Clos2.agda), with variables typed
   by a context. Applying a closure to a value W substitutes W and the
   tuple of its free variables for the two variables of its code.
 
 -}
 
-module Semantics.Reduction.Typed.Clos3 where
+module ISWIM.Semantics.Reduction.Typed.Clos3 where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos3
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos3
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
 open import Framework.ReductionVec Obs o-error using (red-∷)

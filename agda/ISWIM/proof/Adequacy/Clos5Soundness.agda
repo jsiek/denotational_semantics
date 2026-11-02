@@ -3,9 +3,9 @@
   Soundness of the Clos5ᵀ machine with respect to the graph model: what
   the machine computes is in the denotation of the program, for a
   program whose definitions refer only to older ones (OlderDefs,
-  proof/Compiler/HoistOlder.agda).
+  ISWIM/proof/Compiler/HoistOlder.agda).
 
-  As for untyped Clos5 (Untyped/proof/Adequacy/Clos5Soundness.agda), each state
+  As for untyped Clos5 (ISWIM/Untyped/proof/Adequacy/Clos5Soundness.agda), each state
   denotes a set of values (𝒮) that a step can only shrink (step-⊆), a
   value denoting 𝒱 v (Clos5Values.agda, shared with X86ᵀ).
   Every reference exists, so the states are interpreted with the table
@@ -20,11 +20,11 @@
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc; _<_)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos5
-open import proof.Compiler.HoistOlder using (Older; Olders; OlderDefs)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos5
+open import ISWIM.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs)
 
-module proof.Adequacy.Clos5Soundness {Σ : List ℕ} (ds : All (Code Σ) Σ) (od : OlderDefs ds) where
+module ISWIM.proof.Adequacy.Clos5Soundness {Σ : List ℕ} (ds : All (Code Σ) Σ) (od : OlderDefs ds) where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq; δ; int; bool)
@@ -41,14 +41,14 @@ open import proof.Framework.GraphModel.ContinuityBase using (Good; mono)
 open import proof.Framework.GraphModel.Env using (•-~)
 import proof.Framework.GraphModel.Env as E
 open import proof.Semantics.Graph.Prim using (primD; primD-good) renaming (out to dout)
-open import proof.Semantics.Graph.Typed.Ops
+open import ISWIM.proof.Semantics.Graph.Typed.Ops
   using (Table; tables; ConT; tables-con; accepts; fun₄; projectᵍ; project-good; init; Ok; fin₁; fin₂; callc-good)
-open import proof.Semantics.Graph.Typed.Clos5 using (⟦_⟧[_]; ⟦_⟧s[_]; code′; table; ok; code-con; table-con)
-open import Semantics.CEK.Typed.Clos5
+open import ISWIM.proof.Semantics.Graph.Typed.Clos5 using (⟦_⟧[_]; ⟦_⟧s[_]; code′; table; ok; code-con; table-con)
+open import ISWIM.Semantics.CEK.Typed.Clos5
 open import Framework.Lookup using (_!_)
-open import proof.Adequacy.Clos5Common ds
-open import proof.Adequacy.Clos5Values using (module Den)
-open import proof.Adequacy.Soundness using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
+open import ISWIM.proof.Adequacy.Clos5Common ds
+open import ISWIM.proof.Adequacy.Clos5Values using (module Den)
+open import ISWIM.proof.Adequacy.Soundness using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)

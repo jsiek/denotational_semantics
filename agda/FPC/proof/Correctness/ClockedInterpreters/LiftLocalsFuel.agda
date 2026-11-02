@@ -1,7 +1,7 @@
 {-
 
   Correctness of lift locals (Monμ → Impμ), clock for clock, as for
-  typed lift locals (proof/Correctness/Interp/LiftLocalsFuel.agda). A
+  typed lift locals (ISWIM/proof/Correctness/Interp/LiftLocalsFuel.agda). A
   Monμ program means its embedding into GlobalFunμ; the Impμ frame of a body
   is the GlobalFunμ environment of its embedding, and the values are the
   same, so the two programs give the same result for every clock: where
@@ -10,17 +10,17 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.LiftLocalsFuel where
+module FPC.proof.Correctness.ClockedInterpreters.LiftLocalsFuel where
 
-open import Mu.Language.Type
-open import Mu.Language.Mon
-open import Mu.Compiler.LiftLocals
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
+open import FPC.Language.Type
+open import FPC.Language.Mon
+open import FPC.Compiler.LiftLocals
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.GlobalFun as C
-import Mu.Semantics.ClockedInterpreters.Imp as I
-open import Mu.Semantics.ClockedInterpreters.Imp using (atom)
-open import Mu.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; atm-bind; eval-atom; atoms-bind; either-cong)
+import FPC.Semantics.ClockedInterpreters.GlobalFun as C
+import FPC.Semantics.ClockedInterpreters.Imp as I
+open import FPC.Semantics.ClockedInterpreters.Imp using (atom)
+open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; atm-bind; eval-atom; atoms-bind; either-cong)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)

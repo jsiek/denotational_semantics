@@ -1,8 +1,8 @@
 {-
 
-  Soundness of the X86μ interpreter (Mu/Semantics/ClockedInterpreters/X86.agda)
+  Soundness of the X86μ interpreter (FPC/Semantics/ClockedInterpreters/X86.agda)
   with respect to the Scott-domain semantics of X86μ
-  (Mu/Semantics/ScottDomains/X86.agda): what the interpreter returns, at
+  (FPC/Semantics/ScottDomains/X86.agda): what the interpreter returns, at
   any clock, means what the program means, and the interpreter never
   errs; for a table that contains the code of each definition
   interpreted with the whole table (closed), as the table of a compiled
@@ -34,15 +34,15 @@ open import Framework.abt.GSubst using (_•_)
 open import Framework.Lookup using (forget)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋)
 open import Language.Prim using (sub; eq; bool) renaming (δ to δᴾ)
-open import Mu.Language.Type using (Type; Ctx; base; tup; _⊹_; _⇒_; μ; code; _∋_; Z; S; idx)
-open import Mu.Language.X86
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import Mu.Semantics.ClockedInterpreters.X86
+open import FPC.Language.Type using (Type; Ctx; base; tup; _⊹_; _⇒_; μ; code; _∋_; Z; S; idx)
+open import FPC.Language.X86
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.ClockedInterpreters.X86
   using (RV; MV; RegVals; rv; Flag; Mach; regs; frame; clo; flag; _⦅_⦆; _[_≔_]; cast; forgetᵥ; wipeᵣ;
          arg; args; put; obj; equal; bit; size; code-of; env-of; run; jump; call)
   renaming (⟨_,_,_,_⟩ to mach)
-open import Mu.proof.Adequacy.X86Common using (OpR; none; agree)
+open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
 open import Semantics.Interp.Clock using (Result; timeout; error; ret; _>>=_)
 open import Semantics.Observation using (o-const)
 
@@ -53,7 +53,7 @@ open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Unit using (tt)
 open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to ≡-refl)
 
-module Mu.proof.Adequacy.ScottDomains.X86Soundness
+module FPC.proof.Adequacy.ScottDomains.X86Soundness
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -64,12 +64,12 @@ open import proof.Framework.Scott.Ops pt fe pe hiding (Val)
   renaming (Env to Envᵈ; app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; pair to pairᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe using (Den; abs; init; init-defined; code₂-β; module Over)
 open import Semantics.Scott.Prim pt fe pe using (primD; out)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe using (Table; tables)
-open import Mu.Semantics.ScottDomains.CFG pt fe pe using (drop)
-open import Mu.Semantics.ScottDomains.X86 pt fe pe
+open import FPC.Semantics.ScottDomains.Ops pt fe pe using (Table; tables)
+open import FPC.Semantics.ScottDomains.CFG pt fe pe using (drop)
+open import FPC.Semantics.ScottDomains.X86 pt fe pe
   using (RegsD; 𝕊; Kont; regsᶜ; flagᶜ; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs)
   renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to runₛ)
-open import Mu.proof.Adequacy.ScottDomains.Soundness pt fe pe using (Holds; timeout; ret; bind-holds; inj-tag; con-inj; not-con)
+open import FPC.proof.Adequacy.ScottDomains.Soundness pt fe pe using (Holds; timeout; ret; bind-holds; inj-tag; con-inj; not-con)
 open Over 𝕊 using (op₁; op₂)
 
 module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where

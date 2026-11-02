@@ -21,19 +21,19 @@
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig using (Results; RRs; RRs-refl)
 open import proof.Framework.GraphModel.Domain
-open import Untyped.Language.Clos5 using (Args)
-open import Untyped.Language.Mon
-import Untyped.Language.Imp as I
-open import Untyped.Compiler.LiftLocals using (lift-atom; lift-atoms; lift-defs; lift-program)
-open import Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; init)
-open import Untyped.Semantics.Graph.Imp using (Store; read; _[_↦_]; 𝒜; 𝒜s; frame)
-open import Untyped.proof.Correctness.Graph.RCOCorrect using (compile-mon-same)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
-open import Untyped.Compiler.Pipeline using (compile; compile-imp)
-open import Untyped.Compiler.RCO using (rco-program-mon)
-open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
-import Language.ISWIM as ISWIM
+open import ISWIM.Untyped.Language.Clos5 using (Args)
+open import ISWIM.Untyped.Language.Mon
+import ISWIM.Untyped.Language.Imp as I
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-atom; lift-atoms; lift-defs; lift-program)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; init)
+open import ISWIM.Untyped.Semantics.Graph.Imp using (Store; read; _[_↦_]; 𝒜; 𝒜s; frame)
+open import ISWIM.Untyped.proof.Correctness.Graph.RCOCorrect using (compile-mon-same)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
+open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-imp)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program-mon)
+open import ISWIM.proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
+import ISWIM.Language.ISWIM as ISWIM
 open import proof.Framework.GraphModel.Env using (Env)
 open import Framework.Primitives using (base-rep)
 
@@ -48,7 +48,7 @@ open import Level using () renaming (lift to up)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.Graph.LiftLocalsCommon where
+module ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCommon where
 
 {- Slots and stores ----------------------------------------------------------------}
 

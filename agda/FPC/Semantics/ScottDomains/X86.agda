@@ -1,7 +1,7 @@
 {-
 
-  The semantics of X86μ (Mu/Language/X86.agda) in Scott domains, as in
-  the graph model (Mu/Semantics/GraphModel/X86.agda). What runs next (a
+  The semantics of X86μ (FPC/Language/X86.agda) in Scott domains, as in
+  the graph model (FPC/Semantics/GraphModel/X86.agda). What runs next (a
   continuation, Kont) is a continuous map of the machine state: the
   frame, the registers and the flag (𝕊). The frame is the environment,
   as in CFGμ: slot x is position idx x, and writing slot k forgets the
@@ -31,13 +31,13 @@ open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
-open import Mu.Language.X86
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.X86
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import Data.List using (List; length)
 open import Framework.Membership using (_⊑_)
 
-module Mu.Semantics.ScottDomains.X86
+module FPC.Semantics.ScottDomains.X86
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -49,9 +49,9 @@ open import Framework.Scott.Ops pt fe pe using (Env; ext; proj; car; cdr; seq; �
   renaming (app to appᵈ; pair to pairᵈ; inl to inlᵈ; inr to inrᵈ)
 open import Framework.Scott.Semantics pt fe pe hiding (litᶜ; op₁; op₂; Dens; nil; cons; tupleᶜ; casesᶜ; _∷ᶠ_)
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
-open import Mu.Semantics.ScottDomains.Imp pt fe pe using (𝒜)
-open import Mu.Semantics.ScottDomains.CFG pt fe pe using (Meanings; drop)
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
+open import FPC.Semantics.ScottDomains.Imp pt fe pe using (𝒜)
+open import FPC.Semantics.ScottDomains.CFG pt fe pe using (Meanings; drop)
 
 {- the registers, and the machine state: frame, registers and flag -}
 RegsD : DCPO₁

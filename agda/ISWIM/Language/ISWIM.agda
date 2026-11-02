@@ -1,4 +1,4 @@
-module Language.ISWIM where
+module ISWIM.Language.ISWIM where
 
 {-
  The source language: ISWIM, an untyped lambda calculus with constants,

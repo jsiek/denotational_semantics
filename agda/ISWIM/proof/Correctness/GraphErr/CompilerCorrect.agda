@@ -1,6 +1,6 @@
 {-
 
-  The typed compiler (Compiler/Pipeline.agda) in the graph model
+  The typed compiler (ISWIM/Compiler/Pipeline.agda) in the graph model
   with errors: for a closed ISWIM program, the compiled program errs
   exactly when the source does, produces the same constants, and
   produces a value exactly when the source does (Same). Simplify, cast
@@ -11,50 +11,50 @@
 
 -}
 
-module proof.Correctness.GraphErr.CompilerCorrect where
+module ISWIM.proof.Correctness.GraphErr.CompilerCorrect where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
 open import Framework.GraphModel.ErrorMonad using (val∈)
 open import Framework.Iff using (_⇔_)
-open import Language.ISWIM using (AST; Op; sig)
+open import ISWIM.Language.ISWIM using (AST; Op; sig)
 open import Framework.Syntax.Scope Op sig using (WS)
-open import Compiler.Cast using (cast-program)
-open import Compiler.Capture using (capture)
-open import Compiler.Prune using (prune-program)
-open import Compiler.Concretize using (concretize-program)
-open import Compiler.Split using (split-program)
-open import Semantics.GraphErr.ISWIM using (⟦_⟧)
-import Semantics.GraphErr.Typed.Clos3
-import Semantics.GraphErr.Typed.ISWIM
-open import proof.Compiler.SimplifyScope using (closed-ws)
-import Semantics.GraphErr.Typed.Clos4 as S4
-open import proof.Correctness.GraphErr.CastCorrect using (cast-correct)
-open import proof.Correctness.GraphErr.CaptureCorrect using (capture-correct)
-open import proof.Correctness.GraphErr.PruneCorrect using (prune-correct)
-open import proof.Correctness.GraphErr.ConcretizeCorrect using (concretize-correct)
-open import proof.Correctness.GraphErr.SplitCorrect
+open import ISWIM.Compiler.Cast using (cast-program)
+open import ISWIM.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Prune using (prune-program)
+open import ISWIM.Compiler.Concretize using (concretize-program)
+open import ISWIM.Compiler.Split using (split-program)
+open import ISWIM.Semantics.GraphErr.ISWIM using (⟦_⟧)
+import ISWIM.Semantics.GraphErr.Typed.Clos3
+import ISWIM.Semantics.GraphErr.Typed.ISWIM
+open import ISWIM.proof.Compiler.SimplifyScope using (closed-ws)
+import ISWIM.Semantics.GraphErr.Typed.Clos4 as S4
+open import ISWIM.proof.Correctness.GraphErr.CastCorrect using (cast-correct)
+open import ISWIM.proof.Correctness.GraphErr.CaptureCorrect using (capture-correct)
+open import ISWIM.proof.Correctness.GraphErr.PruneCorrect using (prune-correct)
+open import ISWIM.proof.Correctness.GraphErr.ConcretizeCorrect using (concretize-correct)
+open import ISWIM.proof.Correctness.GraphErr.SplitCorrect
   using (split-correct-error; split-correct-const; split-correct-val)
 
 open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (sym; cong)
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.Simplify using (simplify)
-open import Compiler.Cast using (cast-closed)
-open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
-open import proof.Compiler.CastScope using (simplify-ws; cast-closed-≡)
-open import proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
-open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅)
-open import Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
-open import Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
-open import Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
-open import Language.Typed.Mon using (⌜_⌝ₚ)
-open import proof.Correctness.GraphErr.HoistCorrect using (hoist-correct)
-open import proof.Correctness.GraphErr.RCOCorrect using (rco-correct)
-open import proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-locals-correct)
-open import proof.Correctness.GraphErr.ExplicateCorrect using (explicate-correct)
-open import proof.Correctness.GraphErr.SelectCorrect using (select-correct)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.Cast using (cast-closed)
+open import ISWIM.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.proof.Compiler.CastScope using (simplify-ws; cast-closed-≡)
+open import ISWIM.proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
+open import ISWIM.Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
+open import ISWIM.Language.Typed.Mon using (⌜_⌝ₚ)
+open import ISWIM.proof.Correctness.GraphErr.HoistCorrect using (hoist-correct)
+open import ISWIM.proof.Correctness.GraphErr.RCOCorrect using (rco-correct)
+open import ISWIM.proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-locals-correct)
+open import ISWIM.proof.Correctness.GraphErr.ExplicateCorrect using (explicate-correct)
+open import ISWIM.proof.Correctness.GraphErr.SelectCorrect using (select-correct)
 
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst c ∈ D) ⇔ (dconst c ∈ E))) × (val∈ D ⇔ val∈ E)
@@ -70,7 +70,7 @@ compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (capture-correct 
   M₁ = cast-program M w
   M₂ = prune-program (capture M₁)
   M₃ = concretize-program M₂
-  go : ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀ → Same (⟦ M ⟧ ρ₀) (S4.⟦ split-program M₃ ⟧ ρ₀)
+  go : ⟦ M ⟧ ρ₀ ≃ ISWIM.Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀ → Same (⟦ M ⟧ ρ₀) (S4.⟦ split-program M₃ ⟧ ρ₀)
   go ⟨ D⊆ , E⊆ ⟩ =
     ⟨ ⇔∘ ⟨ D⊆ ω , E⊆ ω ⟩ (split-correct-error M₃)
     , ⟨ (λ c → ⇔∘ ⟨ D⊆ (dconst c) , E⊆ (dconst c) ⟩ (split-correct-const M₃ c))
@@ -111,5 +111,5 @@ compile-x86-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ com
 compile-x86-same M c = ≃-Same (compile-cfg-same M c) (select-correct (compile-cfg M))
 
 {- cast insertion on closed programs (cast-closed) -}
-cast-correct-closed : ∀ (M : AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.ISWIM.⟦ cast-closed M ⟧ ρ₀
+cast-correct-closed : ∀ (M : AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ISWIM.Semantics.GraphErr.Typed.ISWIM.⟦ cast-closed M ⟧ ρ₀
 cast-correct-closed M c rewrite cast-closed-≡ M (closed-ws {M} c) = cast-correct M (closed-ws {M} c)

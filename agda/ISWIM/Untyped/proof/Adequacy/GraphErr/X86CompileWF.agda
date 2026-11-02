@@ -8,23 +8,23 @@
 
 -}
 
-module Untyped.proof.Adequacy.GraphErr.X86CompileWF where
+module ISWIM.Untyped.proof.Adequacy.GraphErr.X86CompileWF where
 
 
-open import Language.X86
-import Untyped.Language.Clos4 as C4
-import Untyped.Language.Clos5 as C5
-import Untyped.Language.Mon as Mo
-import Untyped.Language.Imp as I
-import Untyped.Language.CFG as G
+open import ISWIM.Language.X86
+import ISWIM.Untyped.Language.Clos4 as C4
+import ISWIM.Untyped.Language.Clos5 as C5
+import ISWIM.Untyped.Language.Mon as Mo
+import ISWIM.Untyped.Language.Imp as I
+import ISWIM.Untyped.Language.CFG as G
 import Language.Prim as P
-open import Untyped.Compiler.Hoist using (Defs; glob; glob-arg; glob-args)
-open import Untyped.Compiler.RCO using (lets; binds; atoms; atomize; atom?; lift; case-on; rco; rco-args; rco-program; rco-program-mon)
-open import Untyped.Compiler.LiftLocals using (lift-atom; lift-atoms; lift-body; lift-defs; lift-program) renaming (lift to liftL)
-open import Untyped.Compiler.Explicate using (explicate-assign; explicate-tail; explicate-body; explicate)
-open import Untyped.Compiler.Select using (select-atm; select-simple; select-tail; prologue; select-body; select)
-open import Untyped.Compiler.Pipeline using (compile; compile₄; compile-x86)
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Compiler.Hoist using (Defs; glob; glob-arg; glob-args)
+open import ISWIM.Untyped.Compiler.RCO using (lets; binds; atoms; atomize; atom?; lift; case-on; rco; rco-args; rco-program; rco-program-mon)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-atom; lift-atoms; lift-body; lift-defs; lift-program) renaming (lift to liftL)
+open import ISWIM.Untyped.Compiler.Explicate using (explicate-assign; explicate-tail; explicate-body; explicate)
+open import ISWIM.Untyped.Compiler.Select using (select-atm; select-simple; select-tail; prologue; select-body; select)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile₄; compile-x86)
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import proof.Framework.Syntax.Rename C5.Op C5.sig using (rename; rename-arg; rename-args; ext)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Framework.abt.Sig using (■)
@@ -38,15 +38,15 @@ open import Data.Product using (_×_; _,_; proj₁; proj₂; Σ-syntax)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
-open import Untyped.proof.Adequacy.GraphErr.X86WF
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86WF
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω) renaming (const to dconst)
-open import Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import ISWIM.Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
-import Semantics.CEK.X86 as X86ₘ
-open import Untyped.proof.Adequacy.GraphErr.X86 using (error-iff; const-iff; converges-iff; diverges-iff)
+import ISWIM.Semantics.CEK.X86 as X86ₘ
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86 using (error-iff; const-iff; converges-iff; diverges-iff)
 open import Relation.Binary.PropositionalEquality using (_≢_)
 open import Relation.Nullary using (¬_)
 

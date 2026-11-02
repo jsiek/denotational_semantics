@@ -14,12 +14,12 @@
 
 -}
 
-module Untyped.Semantics.Reduction.Clos4 where
+module ISWIM.Untyped.Semantics.Reduction.Clos4 where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos4
+open import ISWIM.Untyped.Language.Clos4
 open import Semantics.Observation
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction; ret?; red-cons)
 open import Framework.Syntax.Subst Op sig using (_[_]; sub; ids)

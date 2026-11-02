@@ -1,22 +1,22 @@
 {-
 
   Lemmas about the semantics of Clos5ᵀ in the graph model
-  (Semantics/Graph/Typed/Clos5.agda): with a consistent table, its
+  (ISWIM/Semantics/Graph/Typed/Clos5.agda): with a consistent table, its
   denotations are Ok, by induction on the term, one line per construct
   (a reference is a constant); the table of a program is consistent.
 
 -}
 
-module proof.Semantics.Graph.Typed.Clos5 where
+module ISWIM.proof.Semantics.Graph.Typed.Clos5 where
 
-open import Semantics.Graph.Typed.Clos5 public
-open import proof.Semantics.Graph.Typed.Ops
+open import ISWIM.Semantics.Graph.Typed.Clos5 public
+open import ISWIM.proof.Semantics.Graph.Typed.Ops
 
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Continuity
 open import proof.Semantics.Graph.Prim using (primD-good)
-open import Language.Typed.Type using (Any; idx)
-open import Language.Typed.Clos5
+open import ISWIM.Language.Typed.Type using (Any; idx)
+open import ISWIM.Language.Typed.Clos5
 
 open import Data.List using (replicate)
 open import Data.List.Relation.Unary.All using (All)

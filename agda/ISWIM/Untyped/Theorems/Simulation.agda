@@ -21,63 +21,63 @@
 
   To read them: the languages (Language/), the passes
   (Compiler/), the machines, the observations, and the
-  preconditions: Closed (Compiler/CaptureScope.agda), WS
+  preconditions: Closed (ISWIM/Compiler/CaptureScope.agda), WS
   (Framework/Syntax/Scope.agda), Scoped (Compiler/PipelineScope.agda)
   and MonProgram (Language/Mon.agda).
 
 -}
 
-module Untyped.Theorems.Simulation where
+module ISWIM.Untyped.Theorems.Simulation where
 
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges; Equivalent)
 
-import Language.ISWIM as ISWIM
-import Untyped.Language.Clos2 as Clos2
-import Untyped.Language.Clos3 as Clos3
-import Untyped.Language.Clos4 as Clos4
-import Untyped.Language.Clos5 as Clos5
-open import Untyped.Language.Mon using (MonProgram)
-import Untyped.Language.Imp as Imp
-import Untyped.Language.CFG as CFG
+import ISWIM.Language.ISWIM as ISWIM
+import ISWIM.Untyped.Language.Clos2 as Clos2
+import ISWIM.Untyped.Language.Clos3 as Clos3
+import ISWIM.Untyped.Language.Clos4 as Clos4
+import ISWIM.Untyped.Language.Clos5 as Clos5
+open import ISWIM.Untyped.Language.Mon using (MonProgram)
+import ISWIM.Untyped.Language.Imp as Imp
+import ISWIM.Untyped.Language.CFG as CFG
 
-open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.Compiler.Prune using (prune-program)
-open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Split using (split)
-open import Untyped.Compiler.Hoist using (hoist)
-open import Untyped.Compiler.RCO using (rco-program)
-open import Untyped.Compiler.LiftLocals using (lift-program)
-open import Untyped.Compiler.Explicate using (explicate)
-open import Untyped.Compiler.Select using (select)
-open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Split using (split)
+open import ISWIM.Untyped.Compiler.Hoist using (hoist)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Untyped.Compiler.Explicate using (explicate)
+open import ISWIM.Untyped.Compiler.Select using (select)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
-open import Untyped.Compiler.PipelineScope using (Scoped)
+open import ISWIM.Untyped.Compiler.PipelineScope using (Scoped)
 
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Untyped.Semantics.CEK.Clos2 as Clos2ₘ
-import Untyped.Semantics.CEK.Clos3 as Clos3ₘ
-import Untyped.Semantics.CEK.Clos4 as Clos4ₘ
-import Untyped.Semantics.CEK.Clos5 as Clos5ₘ
-import Untyped.Semantics.CEK.Imp as Impₘ
-import Untyped.Semantics.CEK.CFG as CFGₘ
-import Semantics.CEK.X86 as X86ₘ
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Untyped.Semantics.CEK.Clos2 as Clos2ₘ
+import ISWIM.Untyped.Semantics.CEK.Clos3 as Clos3ₘ
+import ISWIM.Untyped.Semantics.CEK.Clos4 as Clos4ₘ
+import ISWIM.Untyped.Semantics.CEK.Clos5 as Clos5ₘ
+import ISWIM.Untyped.Semantics.CEK.Imp as Impₘ
+import ISWIM.Untyped.Semantics.CEK.CFG as CFGₘ
+import ISWIM.Semantics.CEK.X86 as X86ₘ
 
-import proof.Correctness.CEK.SimplifySim as SimplifySim
-import Untyped.proof.Correctness.CEK.CaptureSim as CaptureSim
-import Untyped.proof.Correctness.CEK.PruneSim as PruneSim
-import Untyped.proof.Correctness.CEK.ConcretizeSim as ConcretizeSim
-import Untyped.proof.Correctness.CEK.SplitSim as SplitSim
-import Untyped.proof.Correctness.CEK.HoistSim as HoistSim
-import Untyped.proof.Correctness.CEK.RCOSim as RCOSim
-import Untyped.proof.Correctness.CEK.LiftLocalsSim as LiftLocalsSim
-import Untyped.proof.Correctness.CEK.ExplicateSim as ExplicateSim
-import Untyped.proof.Correctness.CEK.SelectSim as SelectSim
-import Untyped.proof.Correctness.CEK.CompilerSim as CompilerSim
-import Untyped.proof.Correctness.CEK.CompilerX86Sim as CompilerX86Sim
+import ISWIM.proof.Correctness.CEK.SimplifySim as SimplifySim
+import ISWIM.Untyped.proof.Correctness.CEK.CaptureSim as CaptureSim
+import ISWIM.Untyped.proof.Correctness.CEK.PruneSim as PruneSim
+import ISWIM.Untyped.proof.Correctness.CEK.ConcretizeSim as ConcretizeSim
+import ISWIM.Untyped.proof.Correctness.CEK.SplitSim as SplitSim
+import ISWIM.Untyped.proof.Correctness.CEK.HoistSim as HoistSim
+import ISWIM.Untyped.proof.Correctness.CEK.RCOSim as RCOSim
+import ISWIM.Untyped.proof.Correctness.CEK.LiftLocalsSim as LiftLocalsSim
+import ISWIM.Untyped.proof.Correctness.CEK.ExplicateSim as ExplicateSim
+import ISWIM.Untyped.proof.Correctness.CEK.SelectSim as SelectSim
+import ISWIM.Untyped.proof.Correctness.CEK.CompilerSim as CompilerSim
+import ISWIM.Untyped.proof.Correctness.CEK.CompilerX86Sim as CompilerX86Sim
 
 {- Each pass ------------------------------------------------------------------}
 

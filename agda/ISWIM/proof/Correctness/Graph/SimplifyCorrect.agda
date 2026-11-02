@@ -21,17 +21,17 @@
 
 -}
 
-module proof.Correctness.Graph.SimplifyCorrect where
+module ISWIM.proof.Correctness.Graph.SimplifyCorrect where
 
 open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Language.Prim using (Prim; Out; int; bool; δ)
-open import proof.Semantics.Graph.ISWIM
-open import proof.Compiler.SimplifyFacts as P
+open import ISWIM.proof.Semantics.Graph.ISWIM
+open import ISWIM.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; val; fun; Facts; self; info; under; known-as; shift-info; shift-known;
          simp; simp-args; simp-app; lam?; is-lam; other; simp-call; simp-let; size; inline-size; inline-fuel;
          simp-get; simp-case; simp-prim; simplify; small; value; component; branch; int-of; prim-term;

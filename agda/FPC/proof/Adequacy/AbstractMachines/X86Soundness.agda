@@ -1,8 +1,8 @@
 {-
 
-  Soundness of the X86μ machine (Mu/Semantics/AbstractMachines/X86.agda) with
-  respect to the graph model (Mu/Semantics/GraphModel/X86.agda), as for X86ᵀ
-  (proof/Adequacy/X86Soundness.agda): what the machine computes is in
+  Soundness of the X86μ machine (FPC/Semantics/AbstractMachines/X86.agda) with
+  respect to the graph model (FPC/Semantics/GraphModel/X86.agda), as for X86ᵀ
+  (ISWIM/proof/Adequacy/X86Soundness.agda): what the machine computes is in
   the denotation of the program, for a table that is consistent (cT)
   and contains the code of each definition interpreted with the whole
   table (closed), as the table of a compiled program does
@@ -32,18 +32,18 @@
 -}
 
 open import Data.List using (List)
-open import Mu.Language.X86
-open import Mu.Framework.AllUtil using (All; lookup)
+open import FPC.Language.X86
+open import FPC.Framework.AllUtil using (All; lookup)
 open import Framework.Membership using (_∋_)
 open import proof.Framework.GraphModel.SetsAsPredicates using (_⊆_)
-open import Mu.proof.Semantics.GraphModel.Ops using (ConT; tables)
-open import Mu.Semantics.GraphModel.X86 using (codeₜ)
+open import FPC.proof.Semantics.GraphModel.Ops using (ConT; tables)
+open import FPC.Semantics.GraphModel.X86 using (codeₜ)
 
-module Mu.proof.Adequacy.AbstractMachines.X86Soundness {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ)
+module FPC.proof.Adequacy.AbstractMachines.X86Soundness {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ)
   (cT : ConT (tables codeₜ ds)) (closed : ∀ {s} (f : Σ ∋ s) → codeₜ (tables codeₜ ds) (lookup ds f) ⊆ tables codeₜ ds f) where
 
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type hiding (_[_])
+open import FPC.Language.Type hiding (_[_])
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
@@ -54,19 +54,19 @@ open import proof.Framework.GraphModel.Ops
   renaming (car to carD; cdr to cdrD; proj to projD)
 open import proof.Framework.GraphModel.Env using (Env; _⊆ₑ_; •-~)
 open import proof.Semantics.Graph.Prim using (primD; primD-mono)
-open import Mu.proof.Semantics.GraphModel.Ops using (Table; init)
-open import Mu.proof.Semantics.GraphModel.CFG using (Meanings; drop; drop-mono; 𝒜-mono)
-open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs; RegsD; Kont)
+open import FPC.proof.Semantics.GraphModel.Ops using (Table; init)
+open import FPC.proof.Semantics.GraphModel.CFG using (Meanings; drop; drop-mono; 𝒜-mono)
+open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs; RegsD; Kont)
   renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to runₛ)
-open import Mu.Semantics.AbstractMachines.X86
+open import FPC.Semantics.AbstractMachines.X86
 open import Semantics.Observation using (Obs; Answer)
 open import proof.Semantics.CEK.Smallstep using (Star; Terminates; Next; next; stop)
 open import Framework.Lookup using (forget)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Mu.Framework.AllUtil using ([]; _∷_; pos)
-open import Mu.proof.Adequacy.AbstractMachines.X86Common ds
-open import Mu.proof.Adequacy.AbstractMachines.GlobalFunValues using (module Den; pair-inv; inl-inv; inr-inv; 𝒯L[]-inv)
-open import Mu.proof.Adequacy.Tuples using (At; 𝒯L; At-length)
+open import FPC.Framework.AllUtil using ([]; _∷_; pos)
+open import FPC.proof.Adequacy.AbstractMachines.X86Common ds
+open import FPC.proof.Adequacy.AbstractMachines.GlobalFunValues using (module Den; pair-inv; inl-inv; inr-inv; 𝒯L[]-inv)
+open import FPC.proof.Adequacy.Tuples using (At; 𝒯L; At-length)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥-elim)

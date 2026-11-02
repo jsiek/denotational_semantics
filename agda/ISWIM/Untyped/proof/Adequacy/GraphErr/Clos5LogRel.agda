@@ -5,7 +5,7 @@
   by a run of the machine, for the table ds of its global definitions,
   and ω by a run that stops with an error.
 
-  As for ISWIM (proof/Adequacy/GraphErr/LogRel.agda), 𝕍 d v relates
+  As for ISWIM (ISWIM/proof/Adequacy/GraphErr/LogRel.agda), 𝕍 d v relates
   denotational values to machine values, and ℂ d c lifts it to
   computations: ω is related to a computation that stops with an error,
   any other value to one that returns a related value. The lifting goes
@@ -25,9 +25,9 @@
 -}
 
 open import Data.List using (List; []; _∷_; length; replicate; reverse)
-open import Untyped.Language.Clos5 using (AST)
+open import ISWIM.Untyped.Language.Clos5 using (AST)
 
-module Untyped.proof.Adequacy.GraphErr.Clos5LogRel (ds : List AST) where
+module ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5LogRel (ds : List AST) where
 
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
@@ -38,22 +38,22 @@ open import proof.Framework.GraphModel.OpsBase using (nthD)
 open import proof.Framework.GraphModel.Ops using (𝒯; ⋆; 𝒞) renaming (proj to projD; inl to inlD; inr to inrD; pair to pairD; car to carD; cdr to cdrD)
 open import proof.Framework.GraphModel.DOpSig using (Results)
 open import proof.Framework.GraphModel.ErrorMonad hiding (Val)
-open import proof.Semantics.GraphErr.Prim using (primD) renaming (out to dout)
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primD) renaming (out to dout)
 open import Language.Prim using (int; bool; δ)
-open import Untyped.Language.Clos5 hiding (AST)
-open import Untyped.Semantics.GraphErr.Clos5 using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
+open import ISWIM.Untyped.Language.Clos5 hiding (AST)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5 using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import proof.Framework.ListUtil
 open import Semantics.Observation
-open import Untyped.Semantics.CEK.Clos5
+open import ISWIM.Untyped.Semantics.CEK.Clos5
 open import proof.Semantics.CEK.Smallstep using (next; stop)
-open import Untyped.proof.Compiler.HoistTable using (_⊑_; ∷-⊑; global-⊑)
-open import proof.Adequacy.Common using (ShapeOf; ShapeAt; has-length→length; length→has-length)
-open import proof.Adequacy.GraphErr.LogRel using (δ?-nothing₁; δ?-nothing₂)
-open import Untyped.proof.Adequacy.GraphErr.Clos5Soundness using (vkind)
-open import Untyped.proof.Adequacy.GraphErr.Clos5WF using (DefsWF; RB; RB-args)
-open import Untyped.proof.Adequacy.GraphErr.Clos5Common ds
+open import ISWIM.Untyped.proof.Compiler.HoistTable using (_⊑_; ∷-⊑; global-⊑)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; ShapeAt; has-length→length; length→has-length)
+open import ISWIM.proof.Adequacy.GraphErr.LogRel using (δ?-nothing₁; δ?-nothing₂)
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5Soundness using (vkind)
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5WF using (DefsWF; RB; RB-args)
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5Common ds
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)

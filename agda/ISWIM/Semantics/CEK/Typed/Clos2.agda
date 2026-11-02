@@ -1,18 +1,18 @@
 {-
 
-  A CEK machine for Clos2ᵀ (Language/Typed/Clos2.agda), as the one for
-  ISWIMᵀ (Semantics/CEK/Typed/ISWIM.agda): a closure evaluates its free
+  A CEK machine for Clos2ᵀ (ISWIM/Language/Typed/Clos2.agda), as the one for
+  ISWIMᵀ (ISWIM/Semantics/CEK/Typed/ISWIM.agda): a closure evaluates its free
   variables left to right, as a tuple, and its value is its code with
   their values, the environment of its code.
 
 -}
 
-module Semantics.CEK.Typed.Clos2 where
+module ISWIM.Semantics.CEK.Typed.Clos2 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos2
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos2
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import Framework.VecUtil using (_+ʳ_; _<><_)

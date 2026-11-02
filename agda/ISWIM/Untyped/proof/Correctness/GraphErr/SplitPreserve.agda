@@ -21,17 +21,17 @@ open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; �
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
-open import proof.Semantics.GraphErr.Prim using (primD; out)
-open import Untyped.Language.Clos3
-import Untyped.Language.Clos4 as L4
-open import Untyped.proof.Semantics.GraphErr.Clos3 as S3
-import Untyped.proof.Semantics.GraphErr.Clos4 as S4
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primD; out)
+open import ISWIM.Untyped.Language.Clos3
+import ISWIM.Untyped.Language.Clos4 as L4
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos3 as S3
+import ISWIM.Untyped.proof.Semantics.GraphErr.Clos4 as S4
 open S4 using (Clos4ᵐ-con) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧₊ to ⟦_⟧₊')
-open import Untyped.Compiler.Split using (split; del-map-args)
+open import ISWIM.Untyped.Compiler.Split using (split; del-map-args)
 open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
-open import Untyped.proof.Correctness.GraphErr.SplitRel using (Env; _⊙_; ⊙-mono-l; tgt; tgt-inj; out-data)
-open import Untyped.proof.Correctness.GraphErr.SplitApp using (let-app-≃)
-import Untyped.proof.Correctness.GraphErr.SplitReflect as Reflect
+open import ISWIM.Untyped.proof.Correctness.GraphErr.SplitRel using (Env; _⊙_; ⊙-mono-l; tgt; tgt-inj; out-data)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.SplitApp using (let-app-≃)
+import ISWIM.Untyped.proof.Correctness.GraphErr.SplitReflect as Reflect
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -46,7 +46,7 @@ open import Level using (Lift; lift; lower) renaming (suc to lsuc; zero to lzero
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; subst)
 open import Language.Prim using (δ)
 
-module Untyped.proof.Correctness.GraphErr.SplitPreserve where
+module ISWIM.Untyped.proof.Correctness.GraphErr.SplitPreserve where
 
 {- The relation -----------------------------------------------------------------}
 

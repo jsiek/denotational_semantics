@@ -1,9 +1,9 @@
 {-
 
-  The values of the X86 machine (Semantics/CEK/Values.agda), which the
+  The values of the X86 machine (ISWIM/Semantics/CEK/Values.agda), which the
   untyped Clos5 machine shares, in the graph model; used by the adequacy
   proof for X86 (Adequacy/X86.agda) and by that for the preserved
-  untyped Clos5 (agda/Untyped/).
+  untyped Clos5 (agda/ISWIM/Untyped/).
 
   * Den T: for soundness, the denotation 𝒱 v of a machine value, where a
     code pointer code k denotes the entry T k of a table whose entries
@@ -19,7 +19,7 @@
 
 -}
 
-module Untyped.proof.Adequacy.Values where
+module ISWIM.Untyped.proof.Adequacy.Values where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (int; bool; δ)
@@ -30,14 +30,14 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops using (ℬ; inl; inr; pair-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (pair to dpair)
 open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
-open import Untyped.Semantics.Graph.Frames using (Table)
+open import ISWIM.Untyped.Semantics.Graph.Frames using (Table)
 open import Semantics.Observation
 open import proof.Framework.ListUtil using (proj; has-length)
-open import Semantics.CEK.Values using (Val; code; pair; const; tup; obs; obs-list; out)
-import Semantics.CEK.Values as T using (inl; inr)
-open import proof.Adequacy.Common
+open import ISWIM.Semantics.CEK.Values using (Val; code; pair; const; tup; obs; obs-list; out)
+import ISWIM.Semantics.CEK.Values as T using (inl; inr)
+open import ISWIM.proof.Adequacy.Common
   using (ShapeOf; ShapeAt; has-length→length; length→has-length; δ?-inv)
-open import proof.Adequacy.Soundness using (At; AllNE; 𝒯L; AllCon; 𝒯L-con)
+open import ISWIM.proof.Adequacy.Soundness using (At; AllNE; 𝒯L; AllCon; 𝒯L-con)
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥)

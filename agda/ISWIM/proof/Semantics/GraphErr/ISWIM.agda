@@ -1,15 +1,15 @@
-module proof.Semantics.GraphErr.ISWIM where
+module ISWIM.proof.Semantics.GraphErr.ISWIM where
 
 open import proof.Framework.GraphModel.ContinuityBase using (Good; ℬ-good)
 open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Semantics.GraphErr.Prim
-open import Language.ISWIM
-open import Semantics.GraphErr.ISWIM public hiding (⟦_⟧; init)
+open import ISWIM.proof.Semantics.GraphErr.Prim
+open import ISWIM.Language.ISWIM
+open import ISWIM.Semantics.GraphErr.ISWIM public hiding (⟦_⟧; init)
 open import proof.Framework.GraphModel.SemanticsCore Op sig using (module GoodSemantics)
 
 open import Data.Unit using (⊤; tt)
 
-{- The semantics of Semantics/GraphErr/ISWIM.agda as an instance of the
+{- The semantics of ISWIM/Semantics/GraphErr/ISWIM.agda as an instance of the
    generic Semantics record: its operators are Good. -}
 
 private

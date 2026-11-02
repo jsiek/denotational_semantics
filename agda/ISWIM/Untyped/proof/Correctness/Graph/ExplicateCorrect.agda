@@ -48,18 +48,18 @@ open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Imp as I
+open import ISWIM.Untyped.Language.Imp as I
   using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim; simple; case; assign; body; program)
-import Untyped.Language.CFG as C
-open import Untyped.Compiler.Explicate
-open import Untyped.proof.Semantics.Graph.ImpDirect
+import ISWIM.Untyped.Language.CFG as C
+open import ISWIM.Untyped.Compiler.Explicate
+open import ISWIM.Untyped.proof.Semantics.Graph.ImpDirect
   using (Store; _[_↦_]; 𝒜; 𝒜s; 𝒮; Table; zeros; frame; caseₛ; letₛ; _↓_)
   renaming (⟦_⟧[_] to ℐ⟦_⟧[_]; checked to checkedᵢ; table to tableᵢ; code to codeᵢ; ⟦_⟧ₚ to ℐ⟦_⟧ₚ)
-open import Untyped.Semantics.Graph.CFG
+open import ISWIM.Untyped.Semantics.Graph.CFG
   using (blocks; checked; ⟦_⟧ₚ)
   renaming (⟦_⟧[_] to ⟪_⟫[_]; table to tableₜ; code to codeₜ)
-open import Untyped.proof.Correctness.Graph.LiftLocalsCorrect using (compile-imp-same)
-open import Untyped.proof.Correctness.Graph.ExplicateCommon
+open import ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCorrect using (compile-imp-same)
+open import ISWIM.Untyped.proof.Correctness.Graph.ExplicateCommon
 
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
@@ -76,7 +76,7 @@ open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl; sym; trans; cong)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.Graph.ExplicateCorrect where
+module ISWIM.Untyped.proof.Correctness.Graph.ExplicateCorrect where
 
 {- Stores ----------------------------------------------------------------------}
 

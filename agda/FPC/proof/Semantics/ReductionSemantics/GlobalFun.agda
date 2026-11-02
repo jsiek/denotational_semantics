@@ -1,23 +1,23 @@
 {-
 
   The values of the GlobalFunμ reduction semantics
-  (Mu/Semantics/ReductionSemantics/GlobalFun.agda), which reduce to val, and the
+  (FPC/Semantics/ReductionSemantics/GlobalFun.agda), which reduce to val, and the
   laws of its substitution, as for Clos5ᵀ
-  (proof/Semantics/Reduction/Typed/Clos5.agda): two traversals fuse
+  (ISWIM/proof/Semantics/Reduction/Typed/Clos5.agda): two traversals fuse
   into one, substitution by variables is the identity, and so a
   substitution under a binder and then one for the bound variable is
   one substitution (exts-[]).
 
 -}
 
-module Mu.proof.Semantics.ReductionSemantics.GlobalFun where
+module FPC.proof.Semantics.ReductionSemantics.GlobalFun where
 
-open import Mu.Semantics.ReductionSemantics.GlobalFun public
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.GlobalFun hiding (wk; wks)
-open import Mu.Framework.AllUtil using (All; []; _∷_)
+open import FPC.Semantics.ReductionSemantics.GlobalFun public
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.GlobalFun hiding (wk; wks)
+open import FPC.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Observation using (Obs; o-error)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (val)
 open import proof.Framework.ReductionVec Obs o-error using (cong₃)
 

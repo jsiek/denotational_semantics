@@ -1,7 +1,7 @@
 {-
 
   Backward (reflect) direction of split (EnvClosμ → PairClosμ) in the graph
-  model, as for typed split (proof/Correctness/Graph/SplitReflect.agda),
+  model, as for typed split (ISWIM/proof/Correctness/Graph/SplitReflect.agda),
   with the approximant logical relation ApproxLR of SplitRel (source
   sets against finite target approximants). The target call (callc) is
   the source application on the calls collected from finitely many
@@ -11,24 +11,24 @@
 -}
 
 open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; pair; car; cdr; nthD; 𝒞-left; 𝒞-right; Λ-β; ΛΛ-β; letD-collect)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
-open import Mu.proof.Semantics.GraphModel.Binders using (body-mono)
-open import Mu.Language.Type using (Ctx; Type; tup; _⊹_; _∋_; Z; S; idx)
-open import Mu.Language.EnvClos
-import Mu.Language.PairClos as T
-import Mu.proof.Semantics.GraphModel.EnvClos as S3
-import Mu.proof.Semantics.GraphModel.PairClos as S4
+open import FPC.proof.Semantics.GraphModel.Binders using (body-mono)
+open import FPC.Language.Type using (Ctx; Type; tup; _⊹_; _∋_; Z; S; idx)
+open import FPC.Language.EnvClos
+import FPC.Language.PairClos as T
+import FPC.proof.Semantics.GraphModel.EnvClos as S3
+import FPC.proof.Semantics.GraphModel.PairClos as S4
 open S3 using (⟦_⟧; ⟦_⟧s)
 open S4 using () renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
 open import proof.Framework.GraphModel.TypedOkBase using (fin₁; fin₂)
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
-open import Mu.Compiler.Split using (Ren; ext; split; splits; split-program)
-open import Mu.proof.Correctness.GraphModel.SplitRel renaming (fold to foldᴬ; unfold to unfoldᴬ)
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Compiler.Split using (Ren; ext; split; splits; split-program)
+open import FPC.proof.Correctness.GraphModel.SplitRel renaming (fold to foldᴬ; unfold to unfoldᴬ)
 open import Language.Prim using (δ)
 
 open import Data.Nat using (zero; suc)
@@ -44,7 +44,7 @@ open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 
-module Mu.proof.Correctness.GraphModel.SplitReflect where
+module FPC.proof.Correctness.GraphModel.SplitReflect where
 
 {- a target call V' ⊆ L' ⊙ N' is a self-contained call: a finite W ⊆ L' maps a finite U ⊆ N' to V' -}
 collect : ∀ (L' N' : 𝒫 Value) V' → mem V' ⊆ (L' ⊙ N')

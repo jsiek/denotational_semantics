@@ -1,11 +1,11 @@
 {-
 
   Select instructions into untyped X86 (CFGᵀ → X86), after Essentials
-  of Compilation, as the untyped pass (Untyped/Compiler/Select.agda):
+  of Compilation, as the untyped pass (ISWIM/Untyped/Compiler/Select.agda):
   the pass of the typed pipeline before it ended at X86ᵀ (PR #58). Not a
   pass of the compiler: the reference that typed select emits the same
-  instructions once the types are erased (Language/Typed/X86Erase.agda,
-  proof/Compiler/SelectErase.agda, Theorems/X86Erasure.agda).
+  instructions once the types are erased (ISWIM/Language/Typed/X86Erase.agda,
+  ISWIM/proof/Compiler/SelectErase.agda, ISWIM/Theorems/X86Erasure.agda).
 
   * A slot is the X86 variable at its level (its position from the
     oldest slot, Framework/Membership.lvl); a reference to a definition,
@@ -26,16 +26,16 @@
 
 -}
 
-module Compiler.SelectX86 where
+module ISWIM.Compiler.SelectX86 where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; lvl)
-open import Language.Typed.CFG as CFG using (Tail; return; seq; goto; case; Blocks; _▷_)
-import Language.Typed.Imp as I
+open import ISWIM.Language.Typed.CFG as CFG using (Tail; return; seq; goto; case; Blocks; _▷_)
+import ISWIM.Language.Typed.Imp as I
 open I using (var; lit; ref)
-open import Language.X86
+open import ISWIM.Language.X86
 
 open import Data.Fin using (zero)
 open import Data.Integer using (0ℤ)

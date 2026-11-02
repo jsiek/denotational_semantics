@@ -2,7 +2,7 @@
 
   Correctness of remove complex operands (GlobalFunμ → Monμ) by a forward
   simulation of the GlobalFunμ reduction semantics by itself, as for typed
-  rco (proof/Correctness/Reduction/RCORed.agda): the source runs with
+  rco (ISWIM/proof/Correctness/Reduction/RCORed.agda): the source runs with
   its definitions ds, the target, the embedding of the Monμ program
   (⌜_⌝ₚ), with the definitions rco makes of them.
 
@@ -19,20 +19,20 @@
 
 -}
 
-module Mu.proof.Correctness.ReductionSemantics.RCORed where
+module FPC.proof.Correctness.ReductionSemantics.RCORed where
 
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.GlobalFun hiding (wk; wks)
-import Mu.Language.Mon as Mon
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.GlobalFun hiding (wk; wks)
+import FPC.Language.Mon as Mon
 open Mon using (Atm; var; lit; ref; atm; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Mu.Compiler.RCO
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to All-map)
-open import Mu.proof.Framework.AllProp using (lookup-map)
+open import FPC.Compiler.RCO
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to All-map)
+open import FPC.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_; each-lookup)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_; each-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Mu.proof.Semantics.ReductionSemantics.GlobalFun as T
+import FPC.proof.Semantics.ReductionSemantics.GlobalFun as T
 open T using (Value; value-red; sub; exts; tmK; _•_; ∅; _[_])
 
 open import Data.List using (List; []; _∷_)

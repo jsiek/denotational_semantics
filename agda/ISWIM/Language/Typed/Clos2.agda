@@ -1,20 +1,20 @@
 {-
 
   Clos2ᵀ: Clos2, intrinsically typed. The output of typed capture
-  (Compiler/Capture.agda).
+  (ISWIM/Compiler/Capture.agda).
 
   A closure clos N (M₀ ∷ … ∷ Mₙ₋₁) has closed code N in a context of
   n + 1 variables: variable 0 is the argument and variable suc i the
   value of Mᵢ, its i-th free variable. Otherwise as ISWIMᵀ
-  (Language/Typed/ISWIM.agda).
+  (ISWIM/Language/Typed/ISWIM.agda).
 
 -}
 
-module Language.Typed.Clos2 where
+module ISWIM.Language.Typed.Clos2 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 
 open import Data.Fin using (Fin)
 open import Data.Nat using (ℕ; suc)

@@ -21,11 +21,11 @@
 
 -}
 
-module proof.Correctness.CEK.PruneSim where
+module ISWIM.proof.Correctness.CEK.PruneSim where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos2
-open import Compiler.Prune
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos2
+open import ISWIM.Compiler.Prune
 open import Framework.VecSelect
 open import proof.Framework.VecSelect
 open import Framework.VecUtil using (_+ʳ_; _<><_)
@@ -33,8 +33,8 @@ open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.VecUtil using (_<><₂_)
-open import proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
-import Semantics.CEK.Typed.Clos2 as C
+open import ISWIM.proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
+import ISWIM.Semantics.CEK.Typed.Clos2 as C
 
 open import Data.Bool using (Bool; true; false; T)
 open import Data.Fin using (Fin; zero; suc)

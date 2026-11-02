@@ -2,7 +2,7 @@
 
   Correctness of prune (Closμ → Closμ) by a forward simulation of
   the Closμ machine by itself, as for typed prune
-  (proof/Correctness/CEK/PruneSim.agda).
+  (ISWIM/proof/Correctness/CEK/PruneSim.agda).
 
   The machines run in lock step, except while building a closure: the
   source also evaluates the free variables that the target dropped (two
@@ -22,18 +22,18 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.PruneSim where
+module FPC.proof.Correctness.AbstractMachines.PruneSim where
 
-open import Mu.Language.Type
-open import Mu.Language.Clos
-open import Mu.Compiler.Prune
-open import Mu.Framework.AllUtil
+open import FPC.Language.Type
+open import FPC.Language.Clos
+open import FPC.Compiler.Prune
+open import FPC.Framework.AllUtil
   using (All; []; _∷_; lookup; _<><_; _<><ᵃ_; Flags; kept; select; Kept; squeeze; ∨-l; ∨-r;
          All₂; lookup₂; _<><₂_; Thin; keep; drop; thin-lookup)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-import Mu.Semantics.AbstractMachines.Clos as C
+import FPC.Semantics.AbstractMachines.Clos as C
 
 open import Data.Bool using (Bool; true; false; T)
 open import Data.Integer using (_≟_)

@@ -1,7 +1,7 @@
 {-
 
   The typed compiler in the graph model, observed through the machines,
-  as Untyped/proof/Adequacy/EndToEnd.agda: for a closed ISWIM program M,
+  as ISWIM/Untyped/proof/Adequacy/EndToEnd.agda: for a closed ISWIM program M,
 
     ISWIM machine  ⇔  ⟦ M ⟧ ρ₀              (Adequacy/ISWIM.agda, unchanged)
                    ⇔  ⟦ compile M ⟧₅         (Correctness/Graph/CompilerCorrect.agda)
@@ -14,25 +14,25 @@
 
 -}
 
-module proof.Adequacy.EndToEnd where
+module ISWIM.proof.Adequacy.EndToEnd where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
-open import Language.ISWIM using (AST)
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.Pipeline using (compile; compile₄; compile-x86)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Pipeline using (compile; compile₄; compile-x86)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
-open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-import Semantics.CEK.ISWIM as I
-import Semantics.CEK.Typed.Clos5 as C5
-import Semantics.CEK.Typed.X86 as X
-import proof.Adequacy.ISWIM as AI
-import proof.Adequacy.Clos5 as A5
-import proof.Adequacy.X86 as AX
-open import proof.Compiler.HoistOlder using (hoist-older)
-open import proof.Correctness.Graph.CompilerCorrect using (compile-same; compile-x86-same)
+open import ISWIM.Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+import ISWIM.Semantics.CEK.ISWIM as I
+import ISWIM.Semantics.CEK.Typed.Clos5 as C5
+import ISWIM.Semantics.CEK.Typed.X86 as X
+import ISWIM.proof.Adequacy.ISWIM as AI
+import ISWIM.proof.Adequacy.Clos5 as A5
+import ISWIM.proof.Adequacy.X86 as AX
+open import ISWIM.proof.Compiler.HoistOlder using (hoist-older)
+open import ISWIM.proof.Correctness.Graph.CompilerCorrect using (compile-same; compile-x86-same)
 
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 

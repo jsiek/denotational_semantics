@@ -24,7 +24,7 @@
 
 -}
 
-module Untyped.proof.Adequacy.Clos5Soundness where
+module ISWIM.Untyped.proof.Adequacy.Clos5Soundness where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (int; bool; δ)
@@ -36,25 +36,25 @@ open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono)
   renaming (proj to dproj; pair to dpair)
 open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
-open import Untyped.Language.Clos5
-open import Untyped.Semantics.Graph.Clos5Iswim
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; table; init) renaming (code to codeD)
-open import Untyped.proof.Correctness.Graph.HoistCorrect using (stab; Agree)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (stab; Agree)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Star; Terminates; next; stop)
 open import proof.Framework.ListUtil
-open import Untyped.Semantics.CEK.Clos5 hiding (inl; inr)
-import Untyped.Semantics.CEK.Clos5 as T using (inl; inr)
-open import Untyped.proof.Compiler.HoistTable using (_⊑_; ∷-⊑)
-open import proof.Adequacy.Common using (ShapeOf)
-open import proof.Adequacy.Soundness
+open import ISWIM.Untyped.Semantics.CEK.Clos5 hiding (inl; inr)
+import ISWIM.Untyped.Semantics.CEK.Clos5 as T using (inl; inr)
+open import ISWIM.Untyped.proof.Compiler.HoistTable using (_⊑_; ∷-⊑)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf)
+open import ISWIM.proof.Adequacy.Soundness
   using (At; AllNE; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆)
-open import Untyped.proof.Adequacy.Clos5WF using (WF; DefsWF)
-open import Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (⟦⟧[]-monotone; term-continuous; table-con)
-import Untyped.proof.Adequacy.Clos5Common as Common
-open import Untyped.proof.Adequacy.Values using (module Den)
+open import ISWIM.Untyped.proof.Adequacy.Clos5WF using (WF; DefsWF)
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (⟦⟧[]-monotone; term-continuous; table-con)
+import ISWIM.Untyped.proof.Adequacy.Clos5Common as Common
+open import ISWIM.Untyped.proof.Adequacy.Values using (module Den)
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)

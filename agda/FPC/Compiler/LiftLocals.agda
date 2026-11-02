@@ -1,18 +1,18 @@
 {-
 
   Lift locals (Monμ → Impμ), as typed lift locals
-  (Compiler/LiftLocals.agda): a let becomes an assignment to the next
+  (ISWIM/Compiler/LiftLocals.agda): a let becomes an assignment to the next
   slot of the frame, and the variable a case binds the slot its payload
   is assigned to. The variables and atoms stay as they are.
 
 -}
 
-module Mu.Compiler.LiftLocals where
+module FPC.Compiler.LiftLocals where
 
-open import Mu.Language.Type
-import Mu.Language.Mon as M
-open import Mu.Language.Imp
-open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
+open import FPC.Language.Type
+import FPC.Language.Mon as M
+open import FPC.Language.Imp
+open import FPC.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 
 open import Data.List using ([]; _∷_)
 

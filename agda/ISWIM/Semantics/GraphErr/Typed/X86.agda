@@ -1,10 +1,10 @@
 {-
 
-  The semantics of X86ᵀ (Language/Typed/X86.agda) in the graph model
-  with errors: that of untyped X86 (Untyped/Semantics/GraphErr/X86.agda)
+  The semantics of X86ᵀ (ISWIM/Language/Typed/X86.agda) in the graph model
+  with errors: that of untyped X86 (ISWIM/Untyped/Semantics/GraphErr/X86.agda)
   with the typed operators of the typed
-  languages (Semantics/GraphErr/Typed/Ops.agda), which check nothing.
-  The frame is the environment, as in CFGᵀ (Semantics/GraphErr/Typed/CFG.agda):
+  languages (ISWIM/Semantics/GraphErr/Typed/Ops.agda), which check nothing.
+  The frame is the environment, as in CFGᵀ (ISWIM/Semantics/GraphErr/Typed/CFG.agda):
   slot x is position idx x, and writing slot k forgets the slots after
   it (drop). A label means its block, under the meanings of the older
   blocks.
@@ -22,18 +22,18 @@
 
 -}
 
-module Semantics.GraphErr.Typed.X86 where
+module ISWIM.Semantics.GraphErr.Typed.X86 where
 
 open import Framework.GraphModel.ErrorPrelude
 open import Framework.GraphModel.Ops using (⋆; car; cdr; payloadD)
-open import Semantics.GraphErr.Typed.Ops
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import Semantics.GraphErr.Typed.Clos5 using (tbl)
-open import Semantics.GraphErr.Typed.Imp using (Table; 𝒜; letᵗ)
-open import Semantics.GraphErr.Typed.CFG using (BEnv; drop)
+open import ISWIM.Semantics.GraphErr.Typed.Ops
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (tbl)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (Table; 𝒜; letᵗ)
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (BEnv; drop)
 open import Language.Prim using (sub; eq)
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.X86
 
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Nat using (ℕ)

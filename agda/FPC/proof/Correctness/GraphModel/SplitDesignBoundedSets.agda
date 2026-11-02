@@ -39,7 +39,7 @@ open import Framework.Primitives
 open import proof.Framework.GraphModel.Ops using (cdr)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness)
-open import Mu.proof.Correctness.GraphModel.SplitRel
+open import FPC.proof.Correctness.GraphModel.SplitRel
 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
 open import Data.Nat.Properties using (n≮0; ≤-refl)
@@ -53,7 +53,7 @@ open import Data.Empty using (⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
-module Mu.proof.Correctness.GraphModel.SplitDesignBoundedSets where
+module FPC.proof.Correctness.GraphModel.SplitDesignBoundedSets where
 
 {- Bounded sets ------------------------------------------------------------------}
 

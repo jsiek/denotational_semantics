@@ -1,8 +1,8 @@
 {-
 
   Definitions shared by the soundness and adequacy proofs for the X86μ
-  machine (see Mu/proof/Adequacy/AbstractMachines/X86.agda), as for X86ᵀ
-  (proof/Adequacy/X86Common.agda): runs of the machine of the
+  machine (see FPC/proof/Adequacy/AbstractMachines/X86.agda), as for X86ᵀ
+  (ISWIM/proof/Adequacy/X86Common.agda): runs of the machine of the
   definitions ds from any state, the state that a call of code c starts
   in (start), on any stack of its result type, and how the open
   closure is related to its slot (OpR): the machine keeps the types η
@@ -12,16 +12,16 @@
 -}
 
 open import Data.List using (List)
-open import Mu.Language.X86
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Language.X86
+open import FPC.Framework.AllUtil using (All)
 
-module Mu.proof.Adequacy.AbstractMachines.X86Common {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
+module FPC.proof.Adequacy.AbstractMachines.X86Common {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
 
-open import Mu.Language.Type
-open import Mu.Semantics.AbstractMachines.X86
+open import FPC.Language.Type
+open import FPC.Semantics.AbstractMachines.X86
 open import proof.Semantics.CEK.Smallstep using (next)
 open import proof.Framework.Runs using (module Runs)
-open import Mu.Framework.AllUtil using (lookup; [])
+open import FPC.Framework.AllUtil using (lookup; [])
 
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Unit using (⊤; tt)

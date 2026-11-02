@@ -1,20 +1,20 @@
 {-
 
-  A reduction semantics for Clos2ᵀ (Language/Typed/Clos2.agda), as for
-  ISWIMᵀ (Semantics/Reduction/Typed/ISWIM.agda). A closure evaluates its
+  A reduction semantics for Clos2ᵀ (ISWIM/Language/Typed/Clos2.agda), as for
+  ISWIMᵀ (ISWIM/Semantics/Reduction/Typed/ISWIM.agda). A closure evaluates its
   free variables left to right; applying it to a value W substitutes W
   and their values for the variables of its code, which no other
   substitution enters.
 
 -}
 
-module Semantics.Reduction.Typed.Clos2 where
+module ISWIM.Semantics.Reduction.Typed.Clos2 where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos2
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos2
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
 open import Framework.ReductionVec Obs o-error using (red-∷)

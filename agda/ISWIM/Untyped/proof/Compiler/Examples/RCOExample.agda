@@ -6,14 +6,14 @@
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
-open import Untyped.Language.Clos5
-open import Untyped.Compiler.RCO using (rco)
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Compiler.RCO using (rco)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 
 open import Data.Integer using (+_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module Untyped.proof.Compiler.Examples.RCOExample where
+module ISWIM.Untyped.proof.Compiler.Examples.RCOExample where
 
 one : AST
 one = lit Int (+ 1) ⦅ Nil ⦆

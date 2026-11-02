@@ -15,7 +15,7 @@
 
 -}
 
-module proof.Adequacy.Soundness where
+module ISWIM.proof.Adequacy.Soundness where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Out; int; bool; δ)
@@ -31,17 +31,17 @@ open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Relation.Nullary using (yes; no)
 open import Level using (lift; lower)
-open import Language.ISWIM
-open import proof.Semantics.Graph.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone; ISWIM-con-env)
-open import proof.Semantics.Graph.ISWIMContinuous using (body-continuous)
+open import ISWIM.Language.ISWIM
+open import ISWIM.proof.Semantics.Graph.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone; ISWIM-con-env)
+open import ISWIM.proof.Semantics.Graph.ISWIMContinuous using (body-continuous)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Star; Terminates; next; stop)
 open import proof.Framework.ListUtil
-open import Semantics.CEK.ISWIM hiding (inl; inr)
-import Semantics.CEK.ISWIM as T using (inl; inr)
-open import proof.Adequacy.Common
+open import ISWIM.Semantics.CEK.ISWIM hiding (inl; inr)
+import ISWIM.Semantics.CEK.ISWIM as T using (inl; inr)
+open import ISWIM.proof.Adequacy.Common
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)

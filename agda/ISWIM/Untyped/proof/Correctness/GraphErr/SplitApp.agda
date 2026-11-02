@@ -18,19 +18,19 @@ open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.OpsBase using (mono-≃)
 open import proof.Framework.GraphModel.Ops using (⋆)
-open import Untyped.Language.Clos4
+open import ISWIM.Untyped.Language.Clos4
 open import proof.Framework.Syntax.Rename Op sig using (shift)
-open import Untyped.proof.Semantics.GraphErr.Clos4
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos4
 open import proof.Framework.GraphModel.RenameSem Op sig using (shift-≃)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env)
-open import Untyped.proof.Correctness.GraphErr.SplitRel using (_⊙_)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.SplitRel using (_⊙_)
 
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (tt; ⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift)
 
-module Untyped.proof.Correctness.GraphErr.SplitApp where
+module ISWIM.Untyped.proof.Correctness.GraphErr.SplitApp where
 
 let-app : AST → AST → AST
 let-app L' N' =

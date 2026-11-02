@@ -1,6 +1,6 @@
 {-
 
-  The semantics of Clos4ᵀ (Language/Typed/Clos4.agda) in the graph model
+  The semantics of Clos4ᵀ (ISWIM/Language/Typed/Clos4.agda) in the graph model
   with errors. Code is a closed function of two arguments (ΛΛᵐ); a closure
   is a pair of code and environment. callc binds the closure and the
   argument and applies the closure's code (car) to its environment (cdr)
@@ -9,13 +9,13 @@
 
 -}
 
-module Semantics.GraphErr.Typed.Clos4 where
+module ISWIM.Semantics.GraphErr.Typed.Clos4 where
 
 open import Framework.GraphModel.ErrorPrelude
 open import Framework.GraphModel.Ops using (⋆; car; cdr)
-open import Semantics.GraphErr.Typed.Ops
-open import Language.Typed.Type
-open import Language.Typed.Clos4
+open import ISWIM.Semantics.GraphErr.Typed.Ops
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos4
 
 open import Data.List using (replicate)
 open import Data.Nat using (ℕ)

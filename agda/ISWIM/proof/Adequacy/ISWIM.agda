@@ -1,7 +1,7 @@
 {-
 
-  Soundness and adequacy of the graph model (Semantics/Graph/ISWIM.agda) with respect
-  to the ISWIM machine (Semantics/CEK/ISWIM.agda), for closed
+  Soundness and adequacy of the graph model (ISWIM/Semantics/Graph/ISWIM.agda) with respect
+  to the ISWIM machine (ISWIM/Semantics/CEK/ISWIM.agda), for closed
   programs M (bound M ≡ 0), started in the environment ρ₀ of a closed
   program on the denotational side and in the empty environment on the
   machine side.
@@ -25,7 +25,7 @@
     set of values, through denotations of machine values, environments
     and continuations, and each step can only shrink it. The β steps
     (application, case) use the continuity of the ISWIM semantics
-    (proof/Semantics/Graph/ISWIMContinuous.agda) and that every value denotes a nonempty
+    (ISWIM/proof/Semantics/Graph/ISWIMContinuous.agda) and that every value denotes a nonempty
     set.
 
   * Adequacy (Adequacy/LogRel.agda): a logical relation between
@@ -37,22 +37,22 @@
 
 -}
 
-module proof.Adequacy.ISWIM where
+module ISWIM.proof.Adequacy.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
-open import Language.ISWIM
-open import proof.Semantics.Graph.ISWIM using (⟦_⟧)
+open import ISWIM.Language.ISWIM
+open import ISWIM.proof.Semantics.Graph.ISWIM using (⟦_⟧)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; terminates-det; next; stop)
-open import Semantics.CEK.ISWIM
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.Semantics.CEK.ISWIM
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
-open import proof.Adequacy.Common
-open import proof.Adequacy.Soundness using (soundness) public
-open import proof.Adequacy.LogRel
+open import ISWIM.proof.Adequacy.Common
+open import ISWIM.proof.Adequacy.Soundness using (soundness) public
+open import ISWIM.proof.Adequacy.LogRel
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using ([])

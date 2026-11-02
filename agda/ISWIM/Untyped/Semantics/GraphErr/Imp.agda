@@ -1,4 +1,4 @@
-module Untyped.Semantics.GraphErr.Imp where
+module ISWIM.Untyped.Semantics.GraphErr.Imp where
 {-
 
  What the semantics of Imp, CFG and X86 in the graph model with errors
@@ -21,9 +21,9 @@ open import Framework.GraphModel.DOpSig
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
-open import Semantics.GraphErr.Prim
-open import Untyped.Language.Imp
-open import Untyped.Semantics.GraphErr.Frames public
+open import ISWIM.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Imp
+open import ISWIM.Untyped.Semantics.GraphErr.Frames public
 
 open import Data.Integer using (+_)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<?_)

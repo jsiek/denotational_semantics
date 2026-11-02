@@ -15,35 +15,35 @@
 
 -}
 
-module proof.Adequacy.X86Compiled where
+module ISWIM.proof.Adequacy.X86Compiled where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; Con-⊆; Con-•; Con-⌈⌉; ≈⇒Con; _•_)
 open import proof.Framework.GraphModel.Ops using (Λ-≃; ΛΛ-≃; ΛΛ-mono)
 open import proof.Framework.GraphModel.Env using (extend-nonempty-env; •-~)
 open import proof.Framework.Lookup using (map-!)
-open import proof.Semantics.Graph.Typed.Ops using (Table; ConT; tables; tables-con; init)
-open import proof.Semantics.Graph.Typed.Clos5 using (ok; code-con; table-con)
-open import Semantics.Graph.Typed.Clos5 using (code′; table)
-open import Semantics.Graph.Typed.Imp using () renaming (code′ to codeᵢ)
-open import Semantics.Graph.Typed.X86 using (codeₜ)
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.Clos5 using (Code; program)
-open import Language.Typed.X86 using (Program)
-open import Language.ISWIM using (AST)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; ConT; tables; tables-con; init)
+open import ISWIM.proof.Semantics.Graph.Typed.Clos5 using (ok; code-con; table-con)
+open import ISWIM.Semantics.Graph.Typed.Clos5 using (code′; table)
+open import ISWIM.Semantics.Graph.Typed.Imp using () renaming (code′ to codeᵢ)
+open import ISWIM.Semantics.Graph.Typed.X86 using (codeₜ)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Clos5 using (Code; program)
+open import ISWIM.Language.Typed.X86 using (Program)
+open import ISWIM.Language.ISWIM using (AST)
 open import Framework.Lookup using (_!_)
-open import Compiler.Pipeline using (compile; compile₄; compile-x86)
-open import Compiler.RCO using (rco)
-open import Compiler.LiftLocals using () renaming (lift to liftₗ)
-open import Compiler.Explicate using (explicate-body)
-open import Compiler.Select using (def-body)
-open import proof.Compiler.HoistOlder using (OlderDefs; hoist-older)
-import proof.Adequacy.Clos5Common as C5
-import proof.Adequacy.Clos5Soundness as S5
-open import proof.Correctness.Graph.RCOCorrect using (rco-sem; table-rco)
-open import proof.Correctness.Graph.LiftLocalsCorrect using (lift-sem; table-lift)
-open import proof.Correctness.Graph.ExplicateCorrect using (body-≃; table-explicate)
-open import proof.Correctness.Graph.SelectCorrect using (code-≃; table-≃)
+open import ISWIM.Compiler.Pipeline using (compile; compile₄; compile-x86)
+open import ISWIM.Compiler.RCO using (rco)
+open import ISWIM.Compiler.LiftLocals using () renaming (lift to liftₗ)
+open import ISWIM.Compiler.Explicate using (explicate-body)
+open import ISWIM.Compiler.Select using (def-body)
+open import ISWIM.proof.Compiler.HoistOlder using (OlderDefs; hoist-older)
+import ISWIM.proof.Adequacy.Clos5Common as C5
+import ISWIM.proof.Adequacy.Clos5Soundness as S5
+open import ISWIM.proof.Correctness.Graph.RCOCorrect using (rco-sem; table-rco)
+open import ISWIM.proof.Correctness.Graph.LiftLocalsCorrect using (lift-sem; table-lift)
+open import ISWIM.proof.Correctness.Graph.ExplicateCorrect using (body-≃; table-explicate)
+open import ISWIM.proof.Correctness.Graph.SelectCorrect using (code-≃; table-≃)
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All) renaming (map to All-map)
@@ -52,7 +52,7 @@ open import Data.Nat using (ℕ)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
-open import Language.Typed.Mon using (⌜_⌝)
+open import ISWIM.Language.Typed.Mon using (⌜_⌝)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 
 {- the table contains the code of each definition, with the whole table -}
@@ -73,7 +73,7 @@ clos5-closed ds od f d d∈ =
 compiled : ∀ (M : AST) → let ds = Program.defs (compile-x86 M) in ConT (tables codeₜ ds) × Contains codeₜ ds
 compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , closed ⟩
   where
-  ds₅ = Language.Typed.Clos5.Program.defs (compile M)
+  ds₅ = ISWIM.Language.Typed.Clos5.Program.defs (compile M)
   dsₘ = All-map (λ D → rco D (λ x → x)) ds₅
   dsᵢ = All-map liftₗ dsₘ
   ds꜀ = All-map explicate-body dsᵢ

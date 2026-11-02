@@ -18,18 +18,18 @@
 open import Framework.Syntax.SyntaxUtil
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
-open import Untyped.Language.Clos4
+open import ISWIM.Untyped.Language.Clos4
 open import proof.Framework.Syntax.Rename Op sig using (shift)
-open import Untyped.proof.Semantics.Graph.Clos4Iswim
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos4Iswim
 open import proof.Framework.GraphModel.RenameSem Op sig using (shift-≃)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; _●_; Car; Cdr; _⊙_; Cdr-mono; cdr-witness)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; _●_; Car; Cdr; _⊙_; Cdr-mono; cdr-witness)
 
 open import Data.List using (_∷_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (refl)
 
-module Untyped.proof.Correctness.Graph.SplitApp where
+module ISWIM.Untyped.proof.Correctness.Graph.SplitApp where
 
 {- the application, with the closure bound by a let -}
 let-app : AST → AST → AST

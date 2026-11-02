@@ -1,24 +1,24 @@
 {-
 
-  A CEK machine for EnvClosμ (Mu/Language/EnvClos.agda), as the one for
-  Closμ (Mu/Semantics/AbstractMachines/Clos.agda): a closure evaluates the tuple of
+  A CEK machine for EnvClosμ (FPC/Language/EnvClos.agda), as the one for
+  Closμ (FPC/Semantics/AbstractMachines/Clos.agda): a closure evaluates the tuple of
   its free variables, and its code runs with the argument and that
   tuple.
 
 -}
 
-module Mu.Semantics.AbstractMachines.EnvClos where
+module FPC.Semantics.AbstractMachines.EnvClos where
 
 open import Framework.Primitives using (Int)
-open import Mu.Language.Type
-open import Mu.Language.EnvClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
+open import FPC.Language.Type
+open import FPC.Language.EnvClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([]; _∷_)
 
-open import Mu.Semantics.AbstractMachines.Values (λ Δ A B → Tm (A ∷ tup Δ ∷ []) B) public
+open import FPC.Semantics.AbstractMachines.Values (λ Δ A B → Tm (A ∷ tup Δ ∷ []) B) public
 
 data Cont : Type → Set where
   halt : ∀ {A} → Cont A

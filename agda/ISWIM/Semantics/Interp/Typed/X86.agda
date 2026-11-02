@@ -1,14 +1,14 @@
 {-
 
-  A clocked interpreter for X86ᵀ (Language/Typed/X86.agda), the output
+  A clocked interpreter for X86ᵀ (ISWIM/Language/Typed/X86.agda), the output
   of select instructions, with the values of the Clos5ᵀ interpreter
-  (Semantics/Interp/Typed/Clos5.agda), on the typed states of the X86ᵀ
-  machine (Semantics/CEK/Typed/X86.agda): the registers, frame, open
+  (ISWIM/Semantics/Interp/Typed/Clos5.agda), on the typed states of the X86ᵀ
+  machine (ISWIM/Semantics/CEK/Typed/X86.agda): the registers, frame, open
   closure and flag (Mach) have the types of the start of the sequence
   that runs in them; η is α, the length of the open closure's
   environment, so a register of type codeα holds code η. The frame
   holds the slots assigned so far, as in CFGᵀ
-  (Semantics/Interp/Typed/CFG.agda); an unset register, an unset flag
+  (ISWIM/Semantics/Interp/Typed/CFG.agda); an unset register, an unset flag
   and the open closure (when there is none) hold nothing (⊤).
 
   The instructions of a sequence run in order, each passing its state
@@ -23,16 +23,16 @@
 
 -}
 
-module Semantics.Interp.Typed.X86 where
+module ISWIM.Semantics.Interp.Typed.X86 where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub)
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.X86
 open import Framework.Lookup using (_!_; forget)
 open import Semantics.Interp.Clock
-open import Semantics.Interp.Typed.Clos5 using (module Vals)
-open import Semantics.Interp.Typed.Imp using () renaming (atom to value-of)
+open import ISWIM.Semantics.Interp.Typed.Clos5 using (module Vals)
+open import ISWIM.Semantics.Interp.Typed.Imp using () renaming (atom to value-of)
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Integer using (_≟_)

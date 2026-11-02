@@ -2,7 +2,7 @@
 
   Correctness of typed lift locals (Monᵀ → Impᵀ) by a forward simulation
   of the Clos5ᵀ reduction semantics of the Monᵀ program (its embedding,
-  ⌜_⌝ₚ) by the Impᵀ machine (Semantics/CEK/Typed/Imp.agda).
+  ⌜_⌝ₚ) by the Impᵀ machine (ISWIM/Semantics/CEK/Typed/Imp.agda).
 
   A machine state decodes to a term (D): its expression, with the values
   of its frame substituted for the slots (env), in the stack of lets of
@@ -15,27 +15,27 @@
 
 -}
 
-module proof.Correctness.Reduction.LiftLocalsRed where
+module ISWIM.proof.Correctness.Reduction.LiftLocalsRed where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Framework.Lookup using (_!_)
 open import proof.Framework.Lookup using (map-!)
-import Language.Typed.Clos5 as C
+import ISWIM.Language.Typed.Clos5 as C
 open C using (Tm; Code)
-import Language.Typed.Mon as Mon
+import ISWIM.Language.Typed.Mon as Mon
 open Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ₚ)
-open import Language.Typed.Imp
-open import Compiler.LiftLocals using (lift; lift-program)
+open import ISWIM.Language.Typed.Imp
+open import ISWIM.Compiler.LiftLocals using (lift; lift-program)
 open import Semantics.Observation
 open import Framework.Smallstep Obs using (Machine; Next; next; stop; Step; Steps; zero; suc; ε; _◅_)
 open import proof.Framework.Smallstep Obs using (plus; step⁺)
 open import proof.Framework.Simulation Obs using (Answers≺; stops; steps; stutters; runs; Lag; lag; lag-fsim; equivalent; answers-at)
 open import proof.Framework.Reduction Obs o-error using (Red; val; error; to; step-in; toNext; Frame; frame; frame-id; frame-∘; val-in; step-in-to; error-in)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import proof.Semantics.Reduction.Typed.Clos5 as T
+import ISWIM.proof.Semantics.Reduction.Typed.Clos5 as T
 open T using (Value; value-red; sub; exts; tmK; _•_; ∅; _[_])
-import Semantics.CEK.Typed.Imp as I
-import Semantics.CEK.Typed.Clos5 as C5ₘ
+import ISWIM.Semantics.CEK.Typed.Imp as I
+import ISWIM.Semantics.CEK.Typed.Clos5 as C5ₘ
 open I using (Val; code; pack; const; tup; inl; inr; dyn; Env; Res; value; fail; call; Cont; halt; assignK; State; eval)
 import Language.Prim as P
 import Data.Fin as Fin

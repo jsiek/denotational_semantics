@@ -18,19 +18,19 @@
 
 -}
 
-module proof.Correctness.CEK.SplitSim where
+module ISWIM.proof.Correctness.CEK.SplitSim where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos3
-import Language.Typed.Clos4 as C4
-open import Compiler.Split
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos3
+import ISWIM.Language.Typed.Clos4 as C4
+open import ISWIM.Compiler.Split
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.VecUtil using (_<><₂_)
-open import proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
-import Semantics.CEK.Typed.Clos3 as Src
-import Semantics.CEK.Typed.Clos4 as Tgt
+open import ISWIM.proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
+import ISWIM.Semantics.CEK.Typed.Clos3 as Src
+import ISWIM.Semantics.CEK.Typed.Clos4 as Tgt
 
 open import Data.Bool using (true; false)
 open import Data.Integer using (_≟_)

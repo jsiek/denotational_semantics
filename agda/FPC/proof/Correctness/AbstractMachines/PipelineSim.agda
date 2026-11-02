@@ -1,39 +1,39 @@
 {-
 
-  The FPC compiler (Mu/Compiler/Pipeline.agda) is correct on
+  The FPC compiler (FPC/Compiler/Pipeline.agda) is correct on
   the machines: the FPC machine on a closed program M and the machine
   of each later language on its compilation are Equivalent, by
   composing the passes, as for the typed pipeline
-  (proof/Correctness/CEK/PipelineSim.agda). A program may have any
+  (ISWIM/proof/Correctness/CEK/PipelineSim.agda). A program may have any
   type; for a main of type Int, the machines of FPC and X86μ stop
   with the same constant, or both diverge (nothing stops with an error).
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.PipelineSim where
+module FPC.proof.Correctness.AbstractMachines.PipelineSim where
 
 open import Framework.Primitives using (Int)
-open import Mu.Language.Type using (base)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Language.Mon using (⌜_⌝ₚ)
-open import Mu.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
+open import FPC.Language.Type using (base)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Language.Mon using (⌜_⌝ₚ)
+open import FPC.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equiv-trans)
-open import Mu.proof.Correctness.AbstractMachines.SimplifySim using (simplify-correct)
-open import Mu.proof.Correctness.AbstractMachines.CaptureSim using (capture-correct)
-open import Mu.proof.Correctness.AbstractMachines.PruneSim using (prune-correct)
-open import Mu.proof.Correctness.AbstractMachines.ConcretizeSim using (concretize-correct)
-open import Mu.proof.Correctness.AbstractMachines.SplitSim using (split-correct)
-open import Mu.proof.Correctness.AbstractMachines.HoistSim using (hoist-correct)
-open import Mu.proof.Correctness.AbstractMachines.RCOSim using (rco-correct)
-open import Mu.proof.Correctness.AbstractMachines.LiftLocalsSim using (lift-locals-correct)
-open import Mu.proof.Correctness.AbstractMachines.ExplicateSim using (explicate-correct)
-open import Mu.proof.Correctness.AbstractMachines.SelectSim using (select-correct)
-import Mu.Semantics.AbstractMachines.FPC as FPCₘ
-import Mu.Semantics.AbstractMachines.PairClos as PairClosμₘ
-import Mu.Semantics.AbstractMachines.GlobalFun as GlobalFunμₘ
-import Mu.Semantics.AbstractMachines.Imp as Impμₘ
-import Mu.Semantics.AbstractMachines.CFG as CFGμₘ
-import Mu.Semantics.AbstractMachines.X86 as X86μₘ
+open import FPC.proof.Correctness.AbstractMachines.SimplifySim using (simplify-correct)
+open import FPC.proof.Correctness.AbstractMachines.CaptureSim using (capture-correct)
+open import FPC.proof.Correctness.AbstractMachines.PruneSim using (prune-correct)
+open import FPC.proof.Correctness.AbstractMachines.ConcretizeSim using (concretize-correct)
+open import FPC.proof.Correctness.AbstractMachines.SplitSim using (split-correct)
+open import FPC.proof.Correctness.AbstractMachines.HoistSim using (hoist-correct)
+open import FPC.proof.Correctness.AbstractMachines.RCOSim using (rco-correct)
+open import FPC.proof.Correctness.AbstractMachines.LiftLocalsSim using (lift-locals-correct)
+open import FPC.proof.Correctness.AbstractMachines.ExplicateSim using (explicate-correct)
+open import FPC.proof.Correctness.AbstractMachines.SelectSim using (select-correct)
+import FPC.Semantics.AbstractMachines.FPC as FPCₘ
+import FPC.Semantics.AbstractMachines.PairClos as PairClosμₘ
+import FPC.Semantics.AbstractMachines.GlobalFun as GlobalFunμₘ
+import FPC.Semantics.AbstractMachines.Imp as Impμₘ
+import FPC.Semantics.AbstractMachines.CFG as CFGμₘ
+import FPC.Semantics.AbstractMachines.X86 as X86μₘ
 
 open import Semantics.Observation using (o-const; _⇔_)
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)

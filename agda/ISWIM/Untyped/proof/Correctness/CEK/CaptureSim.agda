@@ -21,21 +21,21 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.CaptureSim where
+module ISWIM.Untyped.proof.Correctness.CEK.CaptureSim where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.ISWIM
-import Untyped.Language.Clos2 as C
+open import ISWIM.Language.ISWIM
+import ISWIM.Untyped.Language.Clos2 as C
 open import proof.Framework.Syntax.Uses Op sig
-open import Untyped.Compiler.Prune using (bind-n-ast)
-open import Untyped.Compiler.Capture
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Compiler.Prune using (bind-n-ast)
+open import ISWIM.Untyped.Compiler.Capture
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.ListUtil
-import Semantics.CEK.ISWIM as S
-import Untyped.Semantics.CEK.Clos2 as T
+import ISWIM.Semantics.CEK.ISWIM as S
+import ISWIM.Untyped.Semantics.CEK.Clos2 as T
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin)

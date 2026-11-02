@@ -2,16 +2,16 @@
 
   A reduction semantics for ISWIM (call by value, left to right), by
   substitution. The values are functions, literals, tuples of values and
-  injections of values. See the design note in Smallstep.agda.
+  injections of values. See the design note in Semantics/Reduction/Smallstep.agda.
 
 -}
 
-module Semantics.Reduction.ISWIM where
+module ISWIM.Semantics.Reduction.ISWIM where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Semantics.Observation
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction; ret?; red-cons)
 open import Framework.Syntax.Subst Op sig using (_[_])

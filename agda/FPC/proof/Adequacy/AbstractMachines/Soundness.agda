@@ -1,16 +1,16 @@
 {-
 
-  Soundness of the FPC machine (Mu/Semantics/AbstractMachines/FPC.agda) with
-  respect to the graph model (Mu/Semantics/GraphModel/FPC.agda): what the
+  Soundness of the FPC machine (FPC/Semantics/AbstractMachines/FPC.agda) with
+  respect to the graph model (FPC/Semantics/GraphModel/FPC.agda): what the
   machine computes is in the denotation of the program.
 
-  As for ISWIM (proof/Adequacy/Soundness.agda): each machine state
+  As for ISWIM (ISWIM/proof/Adequacy/Soundness.agda): each machine state
   denotes a set of values (𝒮), through denotations of machine values
   (𝒱; a closure denotes its λ in the denotation of its environment, 𝓔),
   and of continuations, the contexts their frames stand for (𝒦); every
   step can only shrink it (step-⊆). The β steps (application, case,
   let) use the continuity of the semantics (fin₁, from
-  Mu/proof/Semantics/GraphModel/FPC.agda) and that every value denotes a
+  FPC/proof/Semantics/GraphModel/FPC.agda) and that every value denotes a
   nonempty, consistent set. fold v denotes 𝒱 v, and foldK and unfoldK
   are the identity, as fold and unfold are in the semantics. The
   machine is typed, so no step is stuck, and the only final state
@@ -18,13 +18,13 @@
 
 -}
 
-module Mu.proof.Adequacy.AbstractMachines.Soundness where
+module FPC.proof.Adequacy.AbstractMachines.Soundness where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; sub; eq; δ)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain hiding (ρ₀) renaming (const to dconst)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; 𝒞; Λ; proj; Λ-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (inl to inlD; inr to inrD)
@@ -35,12 +35,12 @@ open import proof.Framework.GraphModel.TypedOkBase using (fin₁)
 import proof.Framework.GraphModel.Env as E
 open import proof.Semantics.Graph.Prim using (primD; primD-good) renaming (out to dout)
 open import proof.Framework.Runs using (module Runs)
-open import Mu.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; ok; con)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos; _<><_; _<><ᵃ_)
-open import Mu.Semantics.AbstractMachines.FPC
+open import FPC.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; ok; con)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos; _<><_; _<><ᵃ_)
+open import FPC.Semantics.AbstractMachines.FPC
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.CEK.Smallstep using (Star; Terminates; next; stop)
 

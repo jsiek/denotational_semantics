@@ -1,6 +1,6 @@
 {-
 
-  Adequacy of the graph model with errors (Semantics/GraphErr/Typed/X86.agda)
+  Adequacy of the graph model with errors (ISWIM/Semantics/GraphErr/Typed/X86.agda)
   for the X86ᵀ machine: every element of the denotation of a program is
   witnessed by a run of the machine of its definitions ds, and ω by a run
   that stops with an error, when the code of each definition depends only
@@ -31,9 +31,9 @@
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ)
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.X86
 
-module proof.Adequacy.GraphErr.X86LogRel {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
+module ISWIM.proof.Adequacy.GraphErr.X86LogRel {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Language.Prim using (Prim; sub; eq; δ)
@@ -45,19 +45,19 @@ open import Framework.GraphModel.DOpSig using (Results; ■)
 open import Framework.GraphModel.Ops using (𝒯; ⋆; car; cdr; 𝒞; payloadD) renaming (proj to projD) renaming (pair to pairD; inl to inlD; inr to inrD)
 open import Framework.GraphModel.ErrorMonad using (Kind; kind; binds; isinlD; _≫=_; ⌊_⌋; Conv; _⇂_; ValPayload)
 open import Semantics.Graph.Prim using (primD) renaming (out to dout)
-open import Semantics.GraphErr.Typed.Ops using (init; kindᶠ; projectᵠ; primᵗ; checkedᵠ; keep)
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import Semantics.GraphErr.Typed.Imp using (Table)
-open import Semantics.GraphErr.Typed.CFG using (BEnv)
-open import Semantics.GraphErr.Typed.X86 using (𝒪; 𝒪s; object; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; called-regs)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (init; kindᶠ; projectᵠ; primᵗ; checkedᵠ; keep)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (Table)
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (BEnv)
+open import ISWIM.Semantics.GraphErr.Typed.X86 using (𝒪; 𝒪s; object; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; called-regs)
   renaming (put to putᴰ; putˢ to putˢᴰ; field′ to fieldᴰ; blocks to blocksᴰ; run to runᴰ; args to argsᴰ)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Framework.Lookup using (_!_)
 open import proof.Framework.Lookup using (lvl-<)
 open import Semantics.Observation using (Obs; o-const; o-error)
 open import Semantics.CEK.Smallstep using (next; stop)
-open import Semantics.CEK.Typed.X86
-open import proof.Adequacy.GraphErr.X86Common ds
+open import ISWIM.Semantics.CEK.Typed.X86
+open import ISWIM.proof.Adequacy.GraphErr.X86Common ds
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Empty using (⊥; ⊥-elim)

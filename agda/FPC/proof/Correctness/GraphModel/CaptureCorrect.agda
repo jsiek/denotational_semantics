@@ -1,8 +1,8 @@
 {-
 
   Correctness of capture (FPC → Closμ) in the graph model
-  (Mu/Semantics/GraphModel/{FPC,Clos}.agda), as for typed capture
-  (proof/Correctness/Graph/CaptureCorrect.agda).
+  (FPC/Semantics/GraphModel/{FPC,Clos}.agda), as for typed capture
+  (ISWIM/proof/Correctness/Graph/CaptureCorrect.agda).
 
   ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ' when the environments agree on the
   variables in scope and ρ' is nonempty there (Rel). Every case but the
@@ -13,20 +13,20 @@
 
 -}
 
-module Mu.proof.Correctness.GraphModel.CaptureCorrect where
+module FPC.proof.Correctness.GraphModel.CaptureCorrect where
 
 open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-import Mu.Language.Clos as T
-open import Mu.Semantics.GraphModel.FPC
-open import Mu.proof.Semantics.GraphModel.Clos using (fv-env) renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
-open import Mu.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; guard-yes)
-open import Mu.Framework.AllUtil using (All; []; _∷_; tab; pos)
-open import Mu.Compiler.Capture
+open import FPC.Language.Type
+open import FPC.Language.FPC
+import FPC.Language.Clos as T
+open import FPC.Semantics.GraphModel.FPC
+open import FPC.proof.Semantics.GraphModel.Clos using (fv-env) renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
+open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; guard-yes)
+open import FPC.Framework.AllUtil using (All; []; _∷_; tab; pos)
+open import FPC.Compiler.Capture
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; length)

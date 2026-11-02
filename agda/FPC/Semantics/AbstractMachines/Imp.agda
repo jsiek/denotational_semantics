@@ -1,8 +1,8 @@
 {-
 
-  A machine for Impμ (Mu/Language/Imp.agda), with the values of the
-  GlobalFunμ machine (Mu/Semantics/AbstractMachines/GlobalFun.agda), as the Impᵀ machine
-  (Semantics/CEK/Typed/Imp.agda). An expression runs in a frame of
+  A machine for Impμ (FPC/Language/Imp.agda), with the values of the
+  GlobalFunμ machine (FPC/Semantics/AbstractMachines/GlobalFun.agda), as the Impᵀ machine
+  (ISWIM/Semantics/CEK/Typed/Imp.agda). An expression runs in a frame of
   slots typed by its frame context Δ (slot 0 last), so an atom always
   has a value (atom).
 
@@ -17,13 +17,13 @@
 
 -}
 
-module Mu.Semantics.AbstractMachines.Imp where
+module FPC.Semantics.AbstractMachines.Imp where
 
-open import Mu.Language.Type
-open import Mu.Language.Imp
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
+open import FPC.Language.Type
+open import FPC.Language.Imp
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import Mu.Semantics.AbstractMachines.GlobalFun
+open import FPC.Semantics.AbstractMachines.GlobalFun
   using (Val; code; pack; const; tup; inl; inr; fold; Env; obs; int; elems; choose; unfoldᵥ; δᵀ) public
 
 open import Data.List using (List; []; _∷_)

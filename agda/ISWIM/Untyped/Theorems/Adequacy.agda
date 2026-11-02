@@ -22,7 +22,7 @@
 
 -}
 
-module Untyped.Theorems.Adequacy where
+module ISWIM.Untyped.Theorems.Adequacy where
 
 open import Framework.Primitives using (base-rep)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
@@ -30,25 +30,25 @@ open import Framework.GraphModel.Domain using (Value; const)
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
 
-import Language.ISWIM as ISWIM
-open import Untyped.Compiler.Pipeline using (compile; compile-x86)
-open import Compiler.CaptureScope using (Closed)
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-x86)
+open import ISWIM.Compiler.CaptureScope using (Closed)
 
-open import Untyped.Theorems.Denotational using (ρ₀)
-open import Semantics.Graph.ISWIM using (⟦_⟧)
-open import Untyped.Semantics.Graph.Clos5Iswim using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Untyped.Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import ISWIM.Untyped.Theorems.Denotational using (ρ₀)
+open import ISWIM.Semantics.Graph.ISWIM using (⟦_⟧)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import ISWIM.Untyped.Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Untyped.Semantics.CEK.Clos5 as Clos5ₘ
-import Semantics.CEK.X86 as X86ₘ
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Untyped.Semantics.CEK.Clos5 as Clos5ₘ
+import ISWIM.Semantics.CEK.X86 as X86ₘ
 
-import proof.Adequacy.ISWIM as AdequacyISWIM
-import Untyped.proof.Adequacy.ISWIMCompile as ISWIMCompile
-import Untyped.proof.Adequacy.Clos5 as AdequacyClos5
-import Untyped.proof.Adequacy.X86 as AdequacyX86
-open import Untyped.proof.Adequacy.X86CompileWF using (compile-x86-wf)
-import Untyped.proof.Adequacy.EndToEnd as EndToEnd
+import ISWIM.proof.Adequacy.ISWIM as AdequacyISWIM
+import ISWIM.Untyped.proof.Adequacy.ISWIMCompile as ISWIMCompile
+import ISWIM.Untyped.proof.Adequacy.Clos5 as AdequacyClos5
+import ISWIM.Untyped.proof.Adequacy.X86 as AdequacyX86
+open import ISWIM.Untyped.proof.Adequacy.X86CompileWF using (compile-x86-wf)
+import ISWIM.Untyped.proof.Adequacy.EndToEnd as EndToEnd
 
 open import Data.Product using (_,_)
 open import Relation.Nullary using (¬_)

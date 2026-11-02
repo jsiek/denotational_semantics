@@ -1,45 +1,45 @@
 {-
 
   Soundness and adequacy of the graph model of FPC
-  (Mu/Semantics/GraphModel/FPC.agda) with respect to its clocked
-  interpreter (Mu/Semantics/ClockedInterpreters/FPC.agda), for closed programs of
+  (FPC/Semantics/GraphModel/FPC.agda) with respect to its clocked
+  interpreter (FPC/Semantics/ClockedInterpreters/FPC.agda), for closed programs of
   any type, started in ρ₀ on the denotational side and in the empty
-  environment on the interpreter's, as Mu/proof/Adequacy/AbstractMachines/FPC.agda
+  environment on the interpreter's, as FPC/proof/Adequacy/AbstractMachines/FPC.agda
   is for the FPC machine:
 
-    soundness (Mu/proof/Adequacy/Soundness.agda): what the interpreter
+    soundness (FPC/proof/Adequacy/Soundness.agda): what the interpreter
       returns at some clock denotes a part of ⟦ M ⟧ ρ₀, and it never
       errs;
-    adequacy (Mu/proof/Adequacy/LogRel.agda): every d ∈ ⟦ M ⟧ ρ₀ is
+    adequacy (FPC/proof/Adequacy/LogRel.agda): every d ∈ ⟦ M ⟧ ρ₀ is
       related to the value the interpreter returns from some clock on.
 
   So ⟦ M ⟧ ρ₀ contains const k exactly when the interpreter terminates
   with o-const B k (const-iff), and it is empty exactly when the
   interpreter diverges (diverges-iff). This is the source half of the
-  graph model's end-to-end theorem (Mu/proof/Adequacy/EndToEnd.agda),
+  graph model's end-to-end theorem (FPC/proof/Adequacy/EndToEnd.agda),
   and the bridge at FPC of the mixed proof, which joins a pass
   proved in the graph model to passes proved by the interpreters
-  (Mu/proof/Mixed/CompilerMixed.agda).
+  (FPC/proof/Mixed/CompilerMixed.agda).
 
 -}
 
-module Mu.proof.Adequacy.FPC where
+module FPC.proof.Adequacy.FPC where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome; Terminates; Diverges)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-open import Mu.Semantics.ClockedInterpreters.FPC using (Val; eval; sem; obs)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+open import FPC.Semantics.ClockedInterpreters.FPC using (Val; eval; sem; obs)
 open import Semantics.Observation using (o-const; _⇔_)
-open import Mu.proof.Adequacy.Soundness using (timeout; ret; Sound; sound; 𝒱-const; 𝒱-ne)
-open import Mu.proof.Adequacy.LogRel using (𝕍; adequate; 𝕍-const)
+open import FPC.proof.Adequacy.Soundness using (timeout; ret; Sound; sound; 𝒱-const; 𝒱-ne)
+open import FPC.proof.Adequacy.LogRel using (𝕍; adequate; 𝕍-const)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using ([])
-open import Mu.Framework.AllUtil using ([])
+open import FPC.Framework.AllUtil using ([])
 open import Data.Maybe using (just)
 open import Data.Nat.Properties using (≤-refl)
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)

@@ -8,10 +8,9 @@ interpreters, and reduction semantics. It also proves the graph model
 adequate for the clocked interpreters, the abstract machines and the
 reduction semantics, and the Scott-domain semantics adequate for the
 clocked interpreters (Proposition 5.1). The source language is FPC
-(Plotkin's Fixed Point Calculus), and `Mu` is for its iso-recursive
-types: FPC is a call-by-value λ-calculus with base types, n-ary
-tuples, sums and iso-recursive types μX.A, with no recursion construct
-and no errors.
+(Plotkin's Fixed Point Calculus): a call-by-value λ-calculus with base
+types, n-ary tuples, sums and iso-recursive types μX.A, with no
+recursion construct and no errors.
 
     FPC --simplify--> FPC --capture--> Closμ --prune--> Closμ
            --concretize--> EnvClosμ --split--> PairClosμ
@@ -22,7 +21,7 @@ The Agda names carry a `μ` (`Closμ`, `EnvClosμ`, ...) where the paper
 writes Clos, EnvClos, and so on. The paper's target language Instrμ is
 `X86μ` (`Language/X86.agda`) in the Agda, and the paper's pass enclose
 is the Agda's three passes capture, prune and concretize. Paths below are relative to this directory
-(`agda/Mu/`).
+(`agda/FPC/`).
 
 ## Checking
 

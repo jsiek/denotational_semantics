@@ -1,8 +1,8 @@
 {-
 
   Lemmas about the semantics of Clos2ᵀ in the graph model with errors
-  (Semantics/GraphErr/Typed/Clos2.agda), and about the typed operators it
-  shares with ISWIMᵀ and Clos3ᵀ (Semantics/GraphErr/Typed/Ops.agda):
+  (ISWIM/Semantics/GraphErr/Typed/Clos2.agda), and about the typed operators it
+  shares with ISWIMᵀ and Clos3ᵀ (ISWIM/Semantics/GraphErr/Typed/Ops.agda):
 
   * the typed operators are the error monad's kernels under binds, with
     no check, so they are Good (monotone, consistent, continuous) by the
@@ -13,9 +13,9 @@
 
 -}
 
-module proof.Semantics.GraphErr.Typed.Clos2 where
+module ISWIM.proof.Semantics.GraphErr.Typed.Clos2 where
 
-open import Semantics.GraphErr.Typed.Clos2 public
+open import ISWIM.Semantics.GraphErr.Typed.Clos2 public
 open import proof.Framework.GraphModel.TypedBinders using (⌊⌋-≃; binds-val-≃; binds-≃₂) public
 open import proof.Framework.GraphModel.TypedOk using (check-kind-good)
 
@@ -24,8 +24,8 @@ open import proof.Framework.GraphModel.Continuity using (⋆-good; proj-good; �
 open import proof.Framework.GraphModel.ContinuityBase using (Good; mono; VEnv; Cont; Approx; env; one; approx-init)
 open import proof.Framework.GraphModel.Env using (nonempty-env)
 open import proof.Semantics.Graph.Prim using (primD-good)
-open import Language.Typed.Type using (Flat; Tag; ttup; tfun; tsum; tint; flat)
-open import Semantics.GraphErr.Typed.Ops
+open import ISWIM.Language.Typed.Type using (Flat; Tag; ttup; tfun; tsum; tint; flat)
+open import ISWIM.Semantics.GraphErr.Typed.Ops
 
 open import Data.Fin using (Fin; zero; suc; toℕ)
 open import Data.List using (_∷_; [])

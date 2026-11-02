@@ -1,18 +1,18 @@
 {-
 
-  A CEK machine for Clos3ᵀ (Language/Typed/Clos3.agda), as the one for
-  Clos2ᵀ (Semantics/CEK/Typed/Clos2.agda), with environments typed by
+  A CEK machine for Clos3ᵀ (ISWIM/Language/Typed/Clos3.agda), as the one for
+  Clos2ᵀ (ISWIM/Semantics/CEK/Typed/Clos2.agda), with environments typed by
   contexts of types: a closure evaluates the tuple of its free
   variables, and its code runs with the argument and that tuple.
 
 -}
 
-module Semantics.CEK.Typed.Clos3 where
+module ISWIM.Semantics.CEK.Typed.Clos3 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos3
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos3
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import Framework.VecUtil using (_+ʳ_; _<><_)

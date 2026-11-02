@@ -1,9 +1,9 @@
 {-
 
-  The semantics of X86ᵀ (Language/Typed/X86.agda) in the graph model,
+  The semantics of X86ᵀ (ISWIM/Language/Typed/X86.agda) in the graph model,
   as that in the graph model with errors
-  (Semantics/GraphErr/Typed/X86.agda) with the operators of the plain
-  model, as the semantics of CFGᵀ (Semantics/Graph/Typed/CFG.agda) is.
+  (ISWIM/Semantics/GraphErr/Typed/X86.agda) with the operators of the plain
+  model, as the semantics of CFGᵀ (ISWIM/Semantics/Graph/Typed/CFG.agda) is.
   What runs next (Kont) is given the frame, the registers and the flag.
   The frame is the environment, as in CFGᵀ: slot x is position idx x,
   and writing slot k forgets the slots after it (drop). A label means
@@ -29,18 +29,18 @@
 
 -}
 
-module Semantics.Graph.Typed.X86 where
+module ISWIM.Semantics.Graph.Typed.X86 where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.DOpSig using (Results)
 open import Framework.GraphModel.Ops renaming (pair to pairD; inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Semantics.Graph.Typed.Ops
-open import Semantics.Graph.Typed.Imp using (𝒜)
-open import Semantics.Graph.Typed.CFG using (Meanings; drop)
+open import ISWIM.Semantics.Graph.Typed.Ops
+open import ISWIM.Semantics.Graph.Typed.Imp using (𝒜)
+open import ISWIM.Semantics.Graph.Typed.CFG using (Meanings; drop)
 open import Language.Prim using (sub; eq)
-open import Language.Typed.Type
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.X86
 
 open import Data.List using (List; replicate)
 open import Data.Nat using (ℕ)

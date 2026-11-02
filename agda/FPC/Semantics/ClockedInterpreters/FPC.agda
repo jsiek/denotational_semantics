@@ -1,27 +1,27 @@
 {-
 
-  A clocked interpreter for FPC (Mu/Language/FPC.agda), as the one
-  for ISWIMᵀ (Semantics/Interp/Typed/ISWIM.agda; see the design note in
+  A clocked interpreter for FPC (FPC/Language/FPC.agda), as the one
+  for ISWIMᵀ (ISWIM/Semantics/Interp/Typed/ISWIM.agda; see the design note in
   Semantics/Interp/Clock.agda): call by value, left to right, and only
   a call ticks the clock. Values and environments are typed
-  (Mu/Semantics/ClockedInterpreters/Values.agda), so the interpreter is a total
+  (FPC/Semantics/ClockedInterpreters/Values.agda), so the interpreter is a total
   function that never errs: it only times out. A function value is the
   closure of its body and the whole environment; unfold takes a fold
   apart.
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.FPC where
+module FPC.Semantics.ClockedInterpreters.FPC where
 
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
 
 open import Data.List using ([]; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 
-open import Mu.Semantics.ClockedInterpreters.Values (λ Δ A B → Tm (A ∷ Δ) B) public
+open import FPC.Semantics.ClockedInterpreters.Values (λ Δ A B → Tm (A ∷ Δ) B) public
 
 eval : ∀ {Γ A} → ℕ → Env Γ → Tm Γ A → Result (Val A)
 evals : ∀ {Γ Δ} → ℕ → Env Γ → All (Tm Γ) Δ → Result (All Val Δ)

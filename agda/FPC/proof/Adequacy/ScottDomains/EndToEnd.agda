@@ -1,7 +1,7 @@
 {-
 
   The FPC compiler in Scott domains, observed through the clocked
-  interpreters, as the graph model's Mu/proof/Adequacy/EndToEnd.agda:
+  interpreters, as the graph model's FPC/proof/Adequacy/EndToEnd.agda:
   for a closed FPC program M,
 
     FPC interpreter  ⇔  ⟦ M ⟧ ρ₀             (FPC.agda)
@@ -22,19 +22,19 @@ open import UF.PropTrunc
 open import UF.Subsingletons
 
 open import Framework.Primitives using (Int)
-open import Mu.Language.Type using (base)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Compiler.Pipeline using (compile)
+open import FPC.Language.Type using (base)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Compiler.Pipeline using (compile)
 open import Semantics.Observation using (o-const; _⇔_)
 open import Semantics.Interp.Clock using (Terminates; Diverges)
-import Mu.Semantics.ClockedInterpreters.FPC as I
-import Mu.Semantics.ClockedInterpreters.X86 as X
+import FPC.Semantics.ClockedInterpreters.FPC as I
+import FPC.Semantics.ClockedInterpreters.X86 as X
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 import Data.Product as P
 
-module Mu.proof.Adequacy.ScottDomains.EndToEnd
+module FPC.proof.Adequacy.ScottDomains.EndToEnd
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -43,12 +43,12 @@ module Mu.proof.Adequacy.ScottDomains.EndToEnd
 open import Framework.Scott.Base pt fe hiding (_>>=_)
 open import proof.Framework.Scott.Ops pt fe pe using (𝔻; const; ⊥𝔻; defined; ⊥-undefined)
 open import proof.Framework.Scott.Values pt fe pe using (undefined-⊥)
-open import Mu.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
-open import Mu.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
-open import Mu.Semantics.ScottDomains.Closed pt fe pe using (ρ₀)
-open import Mu.proof.Correctness.ScottDomains.CompilerCorrect pt fe pe using (compile-same)
-import Mu.proof.Adequacy.ScottDomains.FPC pt fe pe as AI
-import Mu.proof.Adequacy.ScottDomains.X86 pt fe pe as AX
+open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
+open import FPC.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
+open import FPC.Semantics.ScottDomains.Closed pt fe pe using (ρ₀)
+open import FPC.proof.Correctness.ScottDomains.CompilerCorrect pt fe pe using (compile-same)
+import FPC.proof.Adequacy.ScottDomains.FPC pt fe pe as AI
+import FPC.proof.Adequacy.ScottDomains.X86 pt fe pe as AX
 
 private
  {- ⊥ exactly when not defined -}

@@ -25,22 +25,22 @@
 
 -}
 
-module Untyped.proof.Correctness.Interp.ConcretizeFuel where
+module ISWIM.Untyped.proof.Correctness.Interp.ConcretizeFuel where
 
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-import Untyped.Language.Clos2 as C2
+import ISWIM.Untyped.Language.Clos2 as C2
 open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op; prim; let-op;
                cons; clear; bind; ast; ν; ■; Var; Args)
-open import Untyped.Compiler.Concretize
+open import ISWIM.Untyped.Compiler.Concretize
 open import Semantics.Observation
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
 open import proof.Framework.ListUtil
   using (_‼_; proj; has-length; proj-pw; ‼-snoc-<; ‼-snoc-length; ‼-≥; length-snoc)
 open import proof.Semantics.Interp.Clock
-import Untyped.Semantics.Interp.Clos2 as S
-import Untyped.Semantics.Interp.Clos3 as T
+import ISWIM.Untyped.Semantics.Interp.Clos2 as S
+import ISWIM.Untyped.Semantics.Interp.Clos3 as T
 
 open import Data.Bool using (true)
 open import Data.Empty using (⊥-elim)

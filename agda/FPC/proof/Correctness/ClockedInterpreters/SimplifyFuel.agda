@@ -2,7 +2,7 @@
 
   Correctness of the simplify pass (FPC → FPC) for the clocked
   interpreters, as for the untyped simplify
-  (proof/Correctness/Interp/SimplifyFuel.agda; see the design note in
+  (ISWIM/proof/Correctness/Interp/SimplifyFuel.agda; see the design note in
   Semantics/Interp/Clock.agda).
 
   Not clock for clock: the clock ticks at each call, and simplify removes
@@ -32,21 +32,21 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.SimplifyFuel where
+module FPC.proof.Correctness.ClockedInterpreters.SimplifyFuel where
 
 open import Framework.Primitives using (Int)
 import Language.Prim as Pr
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Language.FPCSubst using (ren; travs; varK)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
-open import Mu.proof.Compiler.SimplifyFacts as P
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Language.FPCSubst using (ren; travs; varK)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
+open import FPC.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; Facts; self; under; known-as; shift-info; shift-known; simp; simps;
          simp-call; simp-let; lam?; is-lam; other; size; inline-size; inline-fuel; simplify; small; atom; value;
          values; component; branch; unfolded; int-of; prim-term; comp-inv; int-inv; branch-inl; branch-inr; unfold-inv)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.FPC as S
+import FPC.Semantics.ClockedInterpreters.FPC as S
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Empty using (⊥; ⊥-elim)

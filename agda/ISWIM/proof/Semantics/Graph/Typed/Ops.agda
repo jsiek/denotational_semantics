@@ -1,21 +1,21 @@
 {-
 
   Lemmas about what the typed languages share in the graph model
-  (Semantics/Graph/Typed/Ops.agda): project is Good (a guard,
+  (ISWIM/Semantics/Graph/Typed/Ops.agda): project is Good (a guard,
   proof/Framework/GraphModel/TypedGuard.agda), and a table is consistent
   when the meaning of each definition is, given a consistent table.
 
 -}
 
-module proof.Semantics.Graph.Typed.Ops where
+module ISWIM.proof.Semantics.Graph.Typed.Ops where
 
-open import Semantics.Graph.Typed.Ops public
+open import ISWIM.Semantics.Graph.Typed.Ops public
 open import proof.Framework.GraphModel.TypedGuard using (guardᵖ-good; guardᵖ-≃) public
 open import proof.Framework.GraphModel.TypedOkBase public
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.ContinuityBase using (Good)
-open import Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length)

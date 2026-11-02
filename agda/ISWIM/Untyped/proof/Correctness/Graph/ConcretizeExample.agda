@@ -17,14 +17,14 @@ open import Framework.Syntax.SyntaxUtil
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
-open import Untyped.Language.Clos2
-open import Untyped.proof.Semantics.Graph.Clos2Iswim
-import Untyped.proof.Semantics.Graph.Clos4Iswim as S4
-open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Split using (split)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import Untyped.proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct-closed)
-open import Untyped.proof.Correctness.Graph.SplitPreserve using (split-correct-const)
+open import ISWIM.Untyped.Language.Clos2
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim
+import ISWIM.Untyped.proof.Semantics.Graph.Clos4Iswim as S4
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Split using (split)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
+open import ISWIM.Untyped.proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitPreserve using (split-correct-const)
 
 open import Data.Nat using (ℕ)
 open import Data.Fin using (zero)
@@ -34,7 +34,7 @@ open import Data.Product using (proj₁) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁)
 open import Relation.Binary.PropositionalEquality using (refl)
 
-module Untyped.proof.Correctness.Graph.ConcretizeExample where
+module ISWIM.Untyped.proof.Correctness.Graph.ConcretizeExample where
 
 lit-nat : ℕ → AST
 lit-nat k = lit Nat k ⦅ Nil ⦆

@@ -2,16 +2,16 @@
 
   A CEK-style abstract machine for ISWIM (call by value, left to right).
   A function value is a closure of the function's body and the whole
-  environment it was created in. See the design note in Smallstep.agda.
+  environment it was created in. See the design note in Semantics/CEK/Smallstep.agda.
 
 -}
 
-module Semantics.CEK.ISWIM where
+module ISWIM.Semantics.CEK.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
 open import Framework.ListUtil

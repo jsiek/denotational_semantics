@@ -1,10 +1,10 @@
 {-
 
-  A clocked interpreter for CFGμ (Mu/Language/CFG.agda), the output of
-  explicate control, as the one for CFGᵀ (Semantics/Interp/Typed/CFG.agda).
+  A clocked interpreter for CFGμ (FPC/Language/CFG.agda), the output of
+  explicate control, as the one for CFGᵀ (ISWIM/Semantics/Interp/Typed/CFG.agda).
   A tail runs in a frame typed by its context and returns a value of the
   body's result type: return s gives the value of s (as in Impμ,
-  Mu/Semantics/ClockedInterpreters/Imp.agda); seq p s t assigns the value of s to the
+  FPC/Semantics/ClockedInterpreters/Imp.agda); seq p s t assigns the value of s to the
   slot after those of Δ' (p : Δ' ⊑ Δ), forgetting the newer ones, and
   runs t; case a p l₁ l₂ does so with the payload of a and jumps to l₁
   or l₂. A tail runs with the blocks it may jump to, and block l with
@@ -13,15 +13,15 @@
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.CFG where
+module FPC.Semantics.ClockedInterpreters.CFG where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Lookup using (forget)
-open import Mu.Language.CFG
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.CFG
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import Mu.Semantics.ClockedInterpreters.Imp using (atom; eval-simple)
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.ClockedInterpreters.Imp using (atom; eval-simple)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)

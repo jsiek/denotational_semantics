@@ -38,7 +38,7 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.SplitSim where
+module ISWIM.Untyped.proof.Correctness.CEK.SplitSim where
 
 open import Data.Fin using (Fin)
 open import Data.List using ([]; _∷_; replicate)
@@ -51,15 +51,15 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; _,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos3
-import Untyped.Language.Clos4 as C4
-open import Untyped.Compiler.Split
+open import ISWIM.Untyped.Language.Clos3
+import ISWIM.Untyped.Language.Clos4 as C4
+open import ISWIM.Untyped.Compiler.Split
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.ListUtil
-import Untyped.Semantics.CEK.Clos3 as S
-import Untyped.Semantics.CEK.Clos4 as T
+import ISWIM.Untyped.Semantics.CEK.Clos3 as S
+import ISWIM.Untyped.Semantics.CEK.Clos4 as T
 
 open import proof.Framework.Syntax.Rename C4.Op C4.sig
   using (ext; rename; rename-args; shift; rename-fuse; rename-id)

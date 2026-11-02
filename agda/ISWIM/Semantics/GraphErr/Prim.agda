@@ -7,7 +7,7 @@
 
 -}
 
-module Semantics.GraphErr.Prim where
+module ISWIM.Semantics.GraphErr.Prim where
 
 open import Framework.Primitives using (Int)
 open import Framework.GraphModel.ErrorPrelude

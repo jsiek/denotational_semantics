@@ -1,18 +1,18 @@
 {-
 
-  The semantics of Clos3ᵀ (Language/Typed/Clos3.agda) in the graph model
+  The semantics of Clos3ᵀ (ISWIM/Language/Typed/Clos3.agda) in the graph model
   with errors: a closure evaluates the tuple of its free variables and is
   its code, a closed function of two arguments (ΛΛᵐ), applied to that
   tuple. Variable x is position idx x of the environment.
 
 -}
 
-module Semantics.GraphErr.Typed.Clos3 where
+module ISWIM.Semantics.GraphErr.Typed.Clos3 where
 
 open import Framework.GraphModel.ErrorPrelude
-open import Semantics.GraphErr.Typed.Ops
-open import Language.Typed.Type
-open import Language.Typed.Clos3
+open import ISWIM.Semantics.GraphErr.Typed.Ops
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos3
 
 open import Data.List using (replicate)
 open import Data.Vec using (Vec; []; _∷_)

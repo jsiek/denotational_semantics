@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed capture (ISWIMᵀ → Clos2ᵀ) in the graph model with
-  errors (Semantics/GraphErr/Typed/{ISWIM,Clos2}.agda).
+  errors (ISWIM/Semantics/GraphErr/Typed/{ISWIM,Clos2}.agda).
 
   ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ' when the environments agree on the k
   variables in scope and ρ' holds values there (Rel). Every case but
@@ -14,17 +14,17 @@
 
 -}
 
-module proof.Correctness.GraphErr.CaptureCorrect where
+module ISWIM.proof.Correctness.GraphErr.CaptureCorrect where
 
 open import proof.Framework.GraphModel.ErrorPrelude
-open import Language.Typed.Type
-open import Language.Typed.ISWIM
-import Language.Typed.Clos2 as T
-open import Semantics.GraphErr.Typed.ISWIM
-open import proof.Semantics.GraphErr.Typed.Clos2
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.ISWIM
+import ISWIM.Language.Typed.Clos2 as T
+open import ISWIM.Semantics.GraphErr.Typed.ISWIM
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2
   using (appᵗ-≃; getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃; binds-val-≃; fv-env-nth; fv-env)
   renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
-open import Compiler.Capture
+open import ISWIM.Compiler.Capture
 
 open import Data.Fin using (Fin; zero; suc; toℕ)
 open import Data.Nat using (suc)

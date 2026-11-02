@@ -4,7 +4,7 @@
   every element of the denotation of a closed program is witnessed by a
   run of the machine, and ω by a run that stops with an error.
 
-  As in proof/Adequacy/GraphErr/LogRel.agda, 𝕍 d v relates denotational
+  As in ISWIM/proof/Adequacy/GraphErr/LogRel.agda, 𝕍 d v relates denotational
   values to machine values, and ℂ d c lifts it to computations (c, a
   state for any continuation): ω is related to a computation that stops
   with an error, any other value to one that returns a related value.
@@ -18,7 +18,7 @@
 
 -}
 
-module proof.Adequacy.GraphErr.LogRel where
+module ISWIM.proof.Adequacy.GraphErr.LogRel where
 
 open import Framework.Primitives using (Base; base-rep; Int; Nat; 𝔹; Unit; Void; Blame)
 open import proof.Framework.GraphModel.SetsAsPredicates
@@ -29,19 +29,19 @@ open import proof.Framework.GraphModel.OpsBase using (nthD)
 open import proof.Framework.GraphModel.Ops using (𝒯; ⋆; 𝒞) renaming (proj to projD; inl to inlD; inr to inrD)
 open import proof.Framework.GraphModel.DOpSig using (Results)
 open import proof.Framework.GraphModel.ErrorMonad hiding (Val)
-open import proof.Semantics.GraphErr.Prim using (primD) renaming (out to dout)
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primD) renaming (out to dout)
 open import Language.Prim using (int; bool; δ)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import proof.Framework.Syntax.Uses Op sig
-open import proof.Semantics.GraphErr.ISWIM using (⟦_⟧; ⟦_⟧₊)
-open import proof.Adequacy.GraphErr.Soundness using (vkind)
+open import ISWIM.proof.Semantics.GraphErr.ISWIM using (⟦_⟧; ⟦_⟧₊)
+open import ISWIM.proof.Adequacy.GraphErr.Soundness using (vkind)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import proof.Framework.ListUtil
 open import Semantics.Observation
-open import Semantics.CEK.ISWIM
+open import ISWIM.Semantics.CEK.ISWIM
 open import proof.Semantics.CEK.Smallstep using (next; stop)
-open import proof.Adequacy.Common
+open import ISWIM.proof.Adequacy.Common
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)

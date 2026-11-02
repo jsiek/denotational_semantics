@@ -10,17 +10,17 @@
 
 -}
 
-module proof.Correctness.Interp.CaptureFuel where
+module ISWIM.proof.Correctness.Interp.CaptureFuel where
 
 open import Data.Nat using (ℕ; zero; suc)
-open import Language.Typed.Type
-open import Language.Typed.ISWIM
-import Language.Typed.Clos2 as C2
-open import Compiler.Capture
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.ISWIM
+import ISWIM.Language.Typed.Clos2 as C2
+open import ISWIM.Compiler.Capture
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Typed.ISWIM as S
-import Semantics.Interp.Typed.Clos2 as T
-open import proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ k → C2.Tm (suc k) Any}
+import ISWIM.Semantics.Interp.Typed.ISWIM as S
+import ISWIM.Semantics.Interp.Typed.Clos2 as T
+open import ISWIM.proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ k → C2.Tm (suc k) Any}
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Vec using (Vec; []; _∷_; tabulate)

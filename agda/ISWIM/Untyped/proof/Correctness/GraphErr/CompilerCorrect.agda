@@ -9,40 +9,40 @@
 
 -}
 
-module Untyped.proof.Correctness.GraphErr.CompilerCorrect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.CompilerCorrect where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
 open import Framework.GraphModel.ErrorMonad using (val∈)
-open import Language.ISWIM using (AST)
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.Compiler.Prune using (prune-program)
-open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 open import Framework.Iff using (_⇔_)
 
-open import Semantics.GraphErr.ISWIM using (⟦_⟧)
-import Untyped.Semantics.GraphErr.Clos4 as S4
-open import Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Untyped.Semantics.GraphErr.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
-open import Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import ISWIM.Semantics.GraphErr.ISWIM using (⟦_⟧)
+import ISWIM.Untyped.Semantics.GraphErr.Clos4 as S4
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import ISWIM.Untyped.Semantics.GraphErr.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
+open import ISWIM.Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import ISWIM.Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
-open import proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
-open import Untyped.proof.Correctness.GraphErr.CaptureCorrect using (capture-correct)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
-open import Untyped.proof.Correctness.GraphErr.PruneCorrect using (prune-correct-compile)
-open import Untyped.proof.Correctness.GraphErr.ConcretizeCorrect using (concretize-correct-closed)
-open import Untyped.proof.Correctness.GraphErr.SplitPreserve
+open import ISWIM.proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.CaptureCorrect using (capture-correct)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.PruneCorrect using (prune-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.ConcretizeCorrect using (concretize-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.SplitPreserve
   using (split-correct-error; split-correct-const; split-correct-val)
-open import Untyped.proof.Correctness.GraphErr.HoistCorrect using (hoist-correct-compile)
-open import Untyped.proof.Correctness.GraphErr.RCOCorrect using (rco-correct-compile)
-open import Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-correct-compile)
-open import Untyped.proof.Correctness.GraphErr.ExplicateCorrect using (explicate-correct-compile)
-open import Untyped.proof.Correctness.GraphErr.SelectCorrect using (select-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.HoistCorrect using (hoist-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.RCOCorrect using (rco-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.ExplicateCorrect using (explicate-correct-compile)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.SelectCorrect using (select-correct-compile)
 
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 

@@ -2,50 +2,50 @@
 
   The adequacy of the graph model for the abstract machines (CEK
   machines) of FPC and X86μ: the analogue, for the machines, of
-  Proposition 5.1 (adequacy) of the paper (Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for
+  Proposition 5.1 (adequacy) of the paper (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for
   the clocked interpreters), and the consequence drawn from it with
   Theorem 4.1, the theorem the operational proofs state. It is an
-  alternative to Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported separately. The
-  proofs are in Mu/proof/Adequacy/AbstractMachines/.
+  alternative to FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported separately. The
+  proofs are in FPC/proof/Adequacy/AbstractMachines/.
 
-  compile is Mu/Compiler/Pipeline.agda's. The X86μ statements are for
+  compile is FPC/Compiler/Pipeline.agda's. The X86μ statements are for
   the programs the compiler produces, so that their preconditions (in
-  Mu/proof/) need not be audited.
+  FPC/proof/) need not be audited.
 
   A machine terminates with an observation when a run from its start
   state reaches a final state with that observation, and it diverges
   when it has a run of every length (Framework/Smallstep.agda); these
   replace the interpreters' clocked Terminates and Diverges
   (Semantics/Interp/Clock.agda). The statements are otherwise those of
-  Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda.
+  FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda.
 
-  To read them: those of Mu/Theorems/CorrectWrtGraphModel.agda, the machines of
-  FPC and X86μ (Mu/Semantics/AbstractMachines/FPC.agda and X86.agda),
+  To read them: those of FPC/Theorems/CorrectWrtGraphModel.agda, the machines of
+  FPC and X86μ (FPC/Semantics/AbstractMachines/FPC.agda and X86.agda),
   their transition systems (Semantics/CEK/Smallstep.agda,
   Framework/Smallstep.agda) and the observations
   (Semantics/Observation.agda).
 
 -}
 
-module Mu.Theorems.GraphModelAdequateWrtAbstractMachines where
+module FPC.Theorems.GraphModelAdequateWrtAbstractMachines where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
 open import Framework.GraphModel.Domain using (const)
 open import Semantics.Observation using (o-const; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
-open import Mu.Language.Type using (base)
-import Mu.Language.FPC as FPC
-open import Mu.Compiler.Pipeline using (compile)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
-import Mu.Semantics.AbstractMachines.FPC as FPCₘ
-import Mu.Semantics.AbstractMachines.X86 as X86μₘ
+open import FPC.Language.Type using (base)
+import FPC.Language.FPC as FPC
+open import FPC.Compiler.Pipeline using (compile)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
+import FPC.Semantics.AbstractMachines.FPC as FPCₘ
+import FPC.Semantics.AbstractMachines.X86 as X86μₘ
 
-import Mu.proof.Adequacy.AbstractMachines.FPC as AdequacyFPC
-import Mu.proof.Adequacy.AbstractMachines.X86 as AdequacyX86
-import Mu.proof.Adequacy.AbstractMachines.EndToEnd as EndToEnd
+import FPC.proof.Adequacy.AbstractMachines.FPC as AdequacyFPC
+import FPC.proof.Adequacy.AbstractMachines.X86 as AdequacyX86
+import FPC.proof.Adequacy.AbstractMachines.EndToEnd as EndToEnd
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

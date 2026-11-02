@@ -2,24 +2,24 @@
 
   The adequacy of the Scott-domain semantics for the clocked
   interpreters of FPC and X86μ: the Scott-domain half of
-  Proposition 5.1 (adequacy) of the paper (Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda has
+  Proposition 5.1 (adequacy) of the paper (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda has
   the graph-model half), and the consequence drawn from it with compiler
-  correctness in Scott domains (Mu/Theorems/CorrectWrtScottDomains.agda), the
+  correctness in Scott domains (FPC/Theorems/CorrectWrtScottDomains.agda), the
   theorem the operational proofs state. The proofs are in
-  Mu/proof/Adequacy/ScottDomains/. The X86μ statements are for the
+  FPC/proof/Adequacy/ScottDomains/. The X86μ statements are for the
   programs the compiler produces, so that their precondition (in
-  Mu/proof/) need not be audited.
+  FPC/proof/) need not be audited.
 
   A term means an element of the domain of values 𝔻
   (Framework/Scott/Domain.agda); const B c is the constant c() and ⊥𝔻
-  means divergence. As in Mu/Theorems/CorrectWrtScottDomains.agda, the theorems
+  means divergence. As in FPC/Theorems/CorrectWrtScottDomains.agda, the theorems
   are stated under the assumptions of TypeTopology's domain theory
   (propositional truncations, function extensionality and propositional
   extensionality), the parameters of this module.
 
-  To read them: those of Mu/Theorems/CorrectWrtScottDomains.agda, the FPC
-  interpreter (Mu/Semantics/ClockedInterpreters/FPC.agda), the X86μ
-  interpreter (Mu/Semantics/ClockedInterpreters/X86.agda), the clocked
+  To read them: those of FPC/Theorems/CorrectWrtScottDomains.agda, the FPC
+  interpreter (FPC/Semantics/ClockedInterpreters/FPC.agda), the X86μ
+  interpreter (FPC/Semantics/ClockedInterpreters/X86.agda), the clocked
   semantics (Semantics/Interp/Clock.agda) and the observations
   (Semantics/Observation.agda).
 
@@ -31,18 +31,18 @@ open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
 open import Framework.Primitives using (Base; base-rep; Int)
-open import Mu.Language.Type using (base)
-open import Mu.Compiler.Pipeline using (compile)
+open import FPC.Language.Type using (base)
+open import FPC.Compiler.Pipeline using (compile)
 open import Semantics.Observation using (o-const; _⇔_)
 open import Semantics.Interp.Clock using (Terminates; Diverges)
-import Mu.Language.FPC as FPC
-import Mu.Semantics.ClockedInterpreters.FPC as FPCᵢ
-import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
+import FPC.Language.FPC as FPC
+import FPC.Semantics.ClockedInterpreters.FPC as FPCᵢ
+import FPC.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
 open import Data.List using ([])
 open import Data.Integer using (ℤ)
 
-module Mu.Theorems.ScottDomainsAdequateWrtClockedInterpreters
+module FPC.Theorems.ScottDomainsAdequateWrtClockedInterpreters
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -50,13 +50,13 @@ module Mu.Theorems.ScottDomainsAdequateWrtClockedInterpreters
 
 open import Framework.Scott.Base pt fe using (_·_)
 open import Framework.Scott.Ops pt fe pe using (const; ⊥𝔻)
-open import Mu.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
-open import Mu.Semantics.ScottDomains.Closed pt fe pe using (ρ₀)
-open import Mu.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
+open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
+open import FPC.Semantics.ScottDomains.Closed pt fe pe using (ρ₀)
+open import FPC.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
 
-import Mu.proof.Adequacy.ScottDomains.FPC pt fe pe as AdequacyFPC
-import Mu.proof.Adequacy.ScottDomains.X86 pt fe pe as AdequacyX86
-import Mu.proof.Adequacy.ScottDomains.EndToEnd pt fe pe as EndToEnd
+import FPC.proof.Adequacy.ScottDomains.FPC pt fe pe as AdequacyFPC
+import FPC.proof.Adequacy.ScottDomains.X86 pt fe pe as AdequacyX86
+import FPC.proof.Adequacy.ScottDomains.EndToEnd pt fe pe as EndToEnd
 
 {- Adequacy, Scott domains -----------------------------------------------------}
 
@@ -86,7 +86,7 @@ x86-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
   × (⟦ compile M ⟧ₜ ＝ ⊥𝔻 → Diverges (X86μᵢ.sem (compile M)))
 x86-diverges-iff = AdequacyX86.x86-diverges-iff
 
-{- With compiler correctness (Mu/Theorems/CorrectWrtScottDomains.agda): the compiler,
+{- With compiler correctness (FPC/Theorems/CorrectWrtScottDomains.agda): the compiler,
    observed through the interpreters ----------------------------------------}
 
 {- for a program of type Int, the theorem the operational proofs state:

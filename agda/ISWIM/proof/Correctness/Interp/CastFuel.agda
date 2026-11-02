@@ -13,27 +13,27 @@
 
 -}
 
-module proof.Correctness.Interp.CastFuel where
+module ISWIM.proof.Correctness.Interp.CastFuel where
 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s; z≤n)
 import Data.Nat as N
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Framework.Primitives using (Nat; Int; 𝔹; Unit; Void; Blame)
 open import Language.Prim using (sub; eq)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import Language.Typed.Type
-import Language.Typed.ISWIM as I
-open import Compiler.Cast
-open import Compiler.CaptureScope using (Closed)
-open import proof.Compiler.SimplifyScope using (closed-ws)
-open import proof.Compiler.CastScope using (cast-closed-≡)
+open import ISWIM.Language.Typed.Type
+import ISWIM.Language.Typed.ISWIM as I
+open import ISWIM.Compiler.Cast
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.proof.Compiler.SimplifyScope using (closed-ws)
+open import ISWIM.proof.Compiler.CastScope using (cast-closed-≡)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import Framework.ListUtil using (_‼_; proj; has-length)
 open import proof.Semantics.Interp.Clock
 open import proof.Framework.VecProj using (proj-pw; proj-bad)
-import Semantics.Interp.ISWIM as S
-import Semantics.Interp.Typed.ISWIM as T
+import ISWIM.Semantics.Interp.ISWIM as S
+import ISWIM.Semantics.Interp.Typed.ISWIM as T
 
 open import Data.Bool using (true; false)
 import Data.Integer as Z

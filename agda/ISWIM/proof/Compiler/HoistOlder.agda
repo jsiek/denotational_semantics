@@ -5,7 +5,7 @@
 
   A Clos5ᵀ definition is typed over the whole table, but a graph
   semantics gives each definition the meanings of the older ones only
-  (as Untyped/Semantics/Graph/Clos5Iswim.agda does), so it needs that a
+  (as ISWIM/Untyped/Semantics/Graph/Clos5Iswim.agda does), so it needs that a
   definition refers only to older ones. Older k M: every reference f in
   M has a level (its position from the oldest definition, lvl) below k.
   OlderDefs ds: each definition refers only to the definitions after
@@ -14,12 +14,12 @@
 
 -}
 
-module proof.Compiler.HoistOlder where
+module ISWIM.proof.Compiler.HoistOlder where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import Language.Typed.Clos5
-open import Compiler.Hoist using (Made; []; _▷_; out; glob; close; hoist)
+open import ISWIM.Language.Typed.Clos5
+open import ISWIM.Compiler.Hoist using (Made; []; _▷_; out; glob; close; hoist)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

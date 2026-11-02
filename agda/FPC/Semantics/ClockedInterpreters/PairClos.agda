@@ -1,24 +1,24 @@
 {-
 
-  A clocked interpreter for PairClosμ (Mu/Language/PairClos.agda), as the one
-  for EnvClosμ (Mu/Semantics/ClockedInterpreters/EnvClos.agda), with the same values:
+  A clocked interpreter for PairClosμ (FPC/Language/PairClos.agda), as the one
+  for EnvClosμ (FPC/Semantics/ClockedInterpreters/EnvClos.agda), with the same values:
   code is a value, pair L M pairs it with an environment, and callc L M runs
   the code of the closure L with its environment and the argument M,
   after both are evaluated.
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.PairClos where
+module FPC.Semantics.ClockedInterpreters.PairClos where
 
-open import Mu.Language.Type
-open import Mu.Language.PairClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type
+open import FPC.Language.PairClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
 
 open import Data.List using ([]; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 
-open import Mu.Semantics.ClockedInterpreters.Values (λ Δ A B → Tm (A ∷ tup Δ ∷ []) B) public
+open import FPC.Semantics.ClockedInterpreters.Values (λ Δ A B → Tm (A ∷ tup Δ ∷ []) B) public
 
 eval : ∀ {Γ A} → ℕ → Env Γ → Tm Γ A → Result (Val A)
 evals : ∀ {Γ Δ} → ℕ → Env Γ → All (Tm Γ) Δ → Result (All Val Δ)

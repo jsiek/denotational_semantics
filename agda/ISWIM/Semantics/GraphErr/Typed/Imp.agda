@@ -1,8 +1,8 @@
 {-
 
-  The semantics of Impᵀ (Language/Typed/Imp.agda) in the graph model
+  The semantics of Impᵀ (ISWIM/Language/Typed/Imp.agda) in the graph model
   with errors, continuation-passing, as that of Imp
-  (Untyped/Semantics/GraphErr/ImpK.agda). The frame is the environment: slot x
+  (ISWIM/Untyped/Semantics/GraphErr/ImpK.agda). The frame is the environment: slot x
   is position idx x, as variable x is in Clos5ᵀ, so the frame needs no
   checks. A simple expression means what it means as an expression of
   Monᵀ, that is, in Clos5ᵀ (𝒮). x := e₁; e₂ runs e₁ with the
@@ -12,14 +12,14 @@
 
 -}
 
-module Semantics.GraphErr.Typed.Imp where
+module ISWIM.Semantics.GraphErr.Typed.Imp where
 
 open import Framework.GraphModel.ErrorPrelude
-open import Semantics.GraphErr.Typed.Ops
-open import Semantics.GraphErr.Typed.Clos5 using (Table; ⟦_⟧[_]; tbl) public
-open import Language.Typed.Type hiding (_≟_)
-import Language.Typed.Mon as M
-open import Language.Typed.Imp
+open import ISWIM.Semantics.GraphErr.Typed.Ops
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (Table; ⟦_⟧[_]; tbl) public
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+import ISWIM.Language.Typed.Mon as M
+open import ISWIM.Language.Typed.Imp
 
 open import Data.List using ([]; _∷_)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

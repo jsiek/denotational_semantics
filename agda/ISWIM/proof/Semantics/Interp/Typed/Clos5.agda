@@ -1,23 +1,23 @@
 {-
 
-  Lemmas about the interpreter of Clos5ᵀ (Semantics/Interp/Typed/Clos5.agda)
-  on the embedding of Monᵀ (Language/Typed/Mon.agda), shared by the
+  Lemmas about the interpreter of Clos5ᵀ (ISWIM/Semantics/Interp/Typed/Clos5.agda)
+  on the embedding of Monᵀ (ISWIM/Language/Typed/Mon.agda), shared by the
   proofs of rco and lift locals: an embedded atom evaluates, without
   calling anything, to its value as Impᵀ reads it
-  (Semantics/Interp/Typed/Imp.agda), and a definition of a mapped table
+  (ISWIM/Semantics/Interp/Typed/Imp.agda), and a definition of a mapped table
   is the mapped definition.
 
 -}
 
-module proof.Semantics.Interp.Typed.Clos5 where
+module ISWIM.proof.Semantics.Interp.Typed.Clos5 where
 
-open import Language.Typed.Type
-open import Language.Typed.Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
-import Language.Typed.Clos5 as C
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
+import ISWIM.Language.Typed.Clos5 as C
 open import proof.Semantics.Interp.Clock
-open import Semantics.Interp.Typed.Clos5 using (module Vals; eval; evals)
+open import ISWIM.Semantics.Interp.Typed.Clos5 using (module Vals; eval; evals)
 open import Framework.Lookup using (_!_)
-open import Semantics.Interp.Typed.Imp using (atom)
+open import ISWIM.Semantics.Interp.Typed.Imp using (atom)
 
 open import Data.List using (List)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

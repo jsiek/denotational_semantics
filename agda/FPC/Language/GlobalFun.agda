@@ -1,8 +1,8 @@
 {-
 
   GlobalFunμ: GlobalFun, intrinsically typed, with recursive types. The output
-  of hoist (Mu/Compiler/Hoist.agda); as Clos5ᵀ
-  (Language/Typed/Clos5.agda), with the types of PairClosμ.
+  of hoist (FPC/Compiler/Hoist.agda); as Clos5ᵀ
+  (ISWIM/Language/Typed/Clos5.agda), with the types of PairClosμ.
 
   The code of every function is a global definition. A program has a
   table Σ, the signatures of its definitions (newest first): a
@@ -16,12 +16,12 @@
 
 -}
 
-module Mu.Language.GlobalFun where
+module FPC.Language.GlobalFun where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Mu.Language.Type
-open import Mu.Framework.AllUtil using (All; []; _∷_)
+open import FPC.Language.Type
+open import FPC.Framework.AllUtil using (All; []; _∷_)
 
 open import Data.List using (List; []; _∷_)
 

@@ -1,8 +1,8 @@
 {-
 
-  The FPC compiler (Mu/Compiler/Pipeline.agda) in the plain
+  The FPC compiler (FPC/Compiler/Pipeline.agda) in the plain
   graph model, as for the typed pipeline
-  (proof/Correctness/Graph/CompilerCorrect.agda): for a closed FPC
+  (ISWIM/proof/Correctness/Graph/CompilerCorrect.agda): for a closed FPC
   program, the compiled program, in PairClosμ, GlobalFunμ, Monμ (by its
   embedding), Impμ, CFGμ and X86μ, produces the same constants as the
   source, and produces something exactly when the source does (Same).
@@ -13,38 +13,38 @@
 
 -}
 
-module Mu.proof.Correctness.GraphModel.CompilerCorrect where
+module FPC.proof.Correctness.GraphModel.CompilerCorrect where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.Iff using (_⇔_)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
-open import Mu.Language.Type using (base)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Language.Mon using (⌜_⌝ₚ)
-open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Capture using (capture)
-open import Mu.Compiler.Prune using (prune-program)
-open import Mu.Compiler.Pipeline
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-open import Mu.Semantics.GraphModel.EnvClos using () renaming (⟦_⟧ to ⟦_⟧₃)
-open import Mu.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧₄)
-open import Mu.Semantics.GraphModel.GlobalFun using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Mu.Semantics.GraphModel.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
-open import Mu.Semantics.GraphModel.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
-open import Mu.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-correct)
-open import Mu.proof.Correctness.GraphModel.CaptureCorrect using (capture-correct)
-open import Mu.proof.Correctness.GraphModel.PruneCorrect using (prune-correct)
-open import Mu.proof.Correctness.GraphModel.ConcretizeCorrect using (concretize-correct)
-open import Mu.proof.Correctness.GraphModel.SplitCorrect using (split-correct-const; split-correct-nonempty)
-open import Mu.proof.Correctness.GraphModel.HoistCorrect using (hoist-correct)
-open import Mu.proof.Correctness.GraphModel.RCOCorrect using (rco-correct)
-open import Mu.proof.Correctness.GraphModel.LiftLocalsCorrect using (lift-locals-correct)
-open import Mu.proof.Correctness.GraphModel.ExplicateCorrect using (explicate-correct)
-open import Mu.proof.Correctness.GraphModel.SelectCorrect using (select-correct)
-open import Mu.proof.Semantics.GraphModel.Binders using (ne-≃)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Language.Type using (base)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Language.Mon using (⌜_⌝ₚ)
+open import FPC.Compiler.Simplify using (simplify)
+open import FPC.Compiler.Capture using (capture)
+open import FPC.Compiler.Prune using (prune-program)
+open import FPC.Compiler.Pipeline
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+open import FPC.Semantics.GraphModel.EnvClos using () renaming (⟦_⟧ to ⟦_⟧₃)
+open import FPC.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧₄)
+open import FPC.Semantics.GraphModel.GlobalFun using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import FPC.Semantics.GraphModel.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
+open import FPC.Semantics.GraphModel.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
+open import FPC.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-correct)
+open import FPC.proof.Correctness.GraphModel.CaptureCorrect using (capture-correct)
+open import FPC.proof.Correctness.GraphModel.PruneCorrect using (prune-correct)
+open import FPC.proof.Correctness.GraphModel.ConcretizeCorrect using (concretize-correct)
+open import FPC.proof.Correctness.GraphModel.SplitCorrect using (split-correct-const; split-correct-nonempty)
+open import FPC.proof.Correctness.GraphModel.HoistCorrect using (hoist-correct)
+open import FPC.proof.Correctness.GraphModel.RCOCorrect using (rco-correct)
+open import FPC.proof.Correctness.GraphModel.LiftLocalsCorrect using (lift-locals-correct)
+open import FPC.proof.Correctness.GraphModel.ExplicateCorrect using (explicate-correct)
+open import FPC.proof.Correctness.GraphModel.SelectCorrect using (select-correct)
+open import FPC.proof.Semantics.GraphModel.Binders using (ne-≃)
 
 open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)

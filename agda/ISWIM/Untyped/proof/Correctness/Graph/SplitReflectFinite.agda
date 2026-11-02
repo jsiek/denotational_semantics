@@ -21,19 +21,19 @@ open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos3 as L3
-open import Untyped.Language.Clos4 as L4
+open import ISWIM.Untyped.Language.Clos3 as L3
+open import ISWIM.Untyped.Language.Clos4 as L4
   renaming (AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
             _⦅_⦆ to _⦅_⦆'; ast to ast'; bind to bind'; clear to clear')
-open import Untyped.proof.Semantics.Graph.Clos3Iswim as S3
-open import Untyped.proof.Semantics.Graph.Clos4Iswim as S4 renaming
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos3Iswim as S3
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos4Iswim as S4 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
-open import Untyped.Compiler.Split using (split; del-map-args)
+open import ISWIM.Untyped.Compiler.Split using (split; del-map-args)
 open import proof.Framework.GraphModel.Env using (nonempty-env; •-~; extend-nonempty-env)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon
-open import Untyped.proof.Correctness.Graph.SplitFiniteRel
-open import Untyped.proof.Correctness.Graph.SplitApp using (let-app-≃)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteRel
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitApp using (let-app-≃)
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -51,7 +51,7 @@ open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 open import Level using (lift; lower)
 open import Language.Prim using (δ)
 
-module Untyped.proof.Correctness.Graph.SplitReflectFinite where
+module ISWIM.Untyped.proof.Correctness.Graph.SplitReflectFinite where
 
 {- Collecting the finite witnesses of a target application -------------------}
 

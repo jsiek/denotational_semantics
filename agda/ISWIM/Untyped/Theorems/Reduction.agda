@@ -23,64 +23,64 @@
 
   To read them: the languages (Language/), the passes
   (Compiler/), the semantics, the observations, and the
-  preconditions: Closed (Compiler/CaptureScope.agda), WS
+  preconditions: Closed (ISWIM/Compiler/CaptureScope.agda), WS
   (Framework/Syntax/Scope.agda), Scoped
   (Compiler/PipelineScope.agda) and MonProgram
   (Language/Mon.agda).
 
 -}
 
-module Untyped.Theorems.Reduction where
+module ISWIM.Untyped.Theorems.Reduction where
 
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.Reduction.Smallstep using (Terminates; Diverges; Equivalent)
 
-import Language.ISWIM as ISWIM
-import Untyped.Language.Clos2 as Clos2
-import Untyped.Language.Clos3 as Clos3
-import Untyped.Language.Clos4 as Clos4
-import Untyped.Language.Clos5 as Clos5
-open import Untyped.Language.Mon using (MonProgram)
-import Untyped.Language.Imp as Imp
-import Untyped.Language.CFG as CFG
+import ISWIM.Language.ISWIM as ISWIM
+import ISWIM.Untyped.Language.Clos2 as Clos2
+import ISWIM.Untyped.Language.Clos3 as Clos3
+import ISWIM.Untyped.Language.Clos4 as Clos4
+import ISWIM.Untyped.Language.Clos5 as Clos5
+open import ISWIM.Untyped.Language.Mon using (MonProgram)
+import ISWIM.Untyped.Language.Imp as Imp
+import ISWIM.Untyped.Language.CFG as CFG
 
-open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.Compiler.Prune using (prune-program)
-open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Split using (split)
-open import Untyped.Compiler.Hoist using (hoist)
-open import Untyped.Compiler.RCO using (rco-program)
-open import Untyped.Compiler.LiftLocals using (lift-program)
-open import Untyped.Compiler.Explicate using (explicate)
-open import Untyped.Compiler.Select using (select)
-open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Split using (split)
+open import ISWIM.Untyped.Compiler.Hoist using (hoist)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Untyped.Compiler.Explicate using (explicate)
+open import ISWIM.Untyped.Compiler.Select using (select)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
-open import Untyped.Compiler.PipelineScope using (Scoped)
+open import ISWIM.Untyped.Compiler.PipelineScope using (Scoped)
 
-import Semantics.Reduction.ISWIM as ISWIMᵣ
-import Untyped.Semantics.Reduction.Clos2 as Clos2ᵣ
-import Untyped.Semantics.Reduction.Clos3 as Clos3ᵣ
-import Untyped.Semantics.Reduction.Clos4 as Clos4ᵣ
-import Untyped.Semantics.Reduction.Clos5 as Clos5ᵣ
-import Untyped.Semantics.CEK.Imp as Impₘ
-import Untyped.Semantics.CEK.CFG as CFGₘ
-import Semantics.CEK.X86 as X86ₘ
+import ISWIM.Semantics.Reduction.ISWIM as ISWIMᵣ
+import ISWIM.Untyped.Semantics.Reduction.Clos2 as Clos2ᵣ
+import ISWIM.Untyped.Semantics.Reduction.Clos3 as Clos3ᵣ
+import ISWIM.Untyped.Semantics.Reduction.Clos4 as Clos4ᵣ
+import ISWIM.Untyped.Semantics.Reduction.Clos5 as Clos5ᵣ
+import ISWIM.Untyped.Semantics.CEK.Imp as Impₘ
+import ISWIM.Untyped.Semantics.CEK.CFG as CFGₘ
+import ISWIM.Semantics.CEK.X86 as X86ₘ
 
-import proof.Correctness.Reduction.SimplifyRed as SimplifyRed
-import Untyped.proof.Correctness.Reduction.CaptureRed as CaptureRed
-import Untyped.proof.Correctness.Reduction.PruneRed as PruneRed
-import Untyped.proof.Correctness.Reduction.ConcretizeRed as ConcretizeRed
-import Untyped.proof.Correctness.Reduction.SplitRed as SplitRed
-import Untyped.proof.Correctness.Reduction.HoistRed as HoistRed
-import Untyped.proof.Correctness.Reduction.CompilerRed as CompilerRed
-import Untyped.proof.Correctness.Reduction.RCORed as RCORed
-import Untyped.proof.Correctness.Reduction.LiftLocalsRed as LiftLocalsRed
-import Untyped.proof.Correctness.CEK.ExplicateSim as ExplicateSim
-import Untyped.proof.Correctness.CEK.SelectSim as SelectSim
-import Untyped.proof.Correctness.Reduction.CompilerX86Red as CompilerX86Red
+import ISWIM.proof.Correctness.Reduction.SimplifyRed as SimplifyRed
+import ISWIM.Untyped.proof.Correctness.Reduction.CaptureRed as CaptureRed
+import ISWIM.Untyped.proof.Correctness.Reduction.PruneRed as PruneRed
+import ISWIM.Untyped.proof.Correctness.Reduction.ConcretizeRed as ConcretizeRed
+import ISWIM.Untyped.proof.Correctness.Reduction.SplitRed as SplitRed
+import ISWIM.Untyped.proof.Correctness.Reduction.HoistRed as HoistRed
+import ISWIM.Untyped.proof.Correctness.Reduction.CompilerRed as CompilerRed
+import ISWIM.Untyped.proof.Correctness.Reduction.RCORed as RCORed
+import ISWIM.Untyped.proof.Correctness.Reduction.LiftLocalsRed as LiftLocalsRed
+import ISWIM.Untyped.proof.Correctness.CEK.ExplicateSim as ExplicateSim
+import ISWIM.Untyped.proof.Correctness.CEK.SelectSim as SelectSim
+import ISWIM.Untyped.proof.Correctness.Reduction.CompilerX86Red as CompilerX86Red
 
 {- Each pass ------------------------------------------------------------------}
 

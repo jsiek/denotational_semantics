@@ -24,12 +24,12 @@
 
 -}
 
-module Untyped.Semantics.CEK.CFG where
+module ISWIM.Untyped.Semantics.CEK.CFG where
 
-open import Untyped.Language.CFG
+open import ISWIM.Untyped.Language.CFG
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import Untyped.Semantics.CEK.Imp
+open import ISWIM.Untyped.Semantics.CEK.Imp
   using (Val; inl; inr; obs; Frame; Frm; atom; _[_]≔_; zeros; Res; operand; value; apply; first; resume)
   public
 open import Framework.ListUtil using (_‼_)

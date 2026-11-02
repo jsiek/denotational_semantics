@@ -1,16 +1,16 @@
 {-
 
-  A clocked interpreter for Clos3ᵀ (Language/Typed/Clos3.agda), as the
-  one for Clos2ᵀ (Semantics/Interp/Typed/Clos2.agda), except that the
+  A clocked interpreter for Clos3ᵀ (ISWIM/Language/Typed/Clos3.agda), as the
+  one for Clos2ᵀ (ISWIM/Semantics/Interp/Typed/Clos2.agda), except that the
   code of a closure runs with the argument and the tuple of its free
   variables, and that environments are typed by contexts.
 
 -}
 
-module Semantics.Interp.Typed.Clos3 where
+module ISWIM.Semantics.Interp.Typed.Clos3 where
 
-open import Language.Typed.Type
-open import Language.Typed.Clos3
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos3
 open import Semantics.Interp.Clock
 open import Framework.Lookup using (_!_)
 
@@ -19,7 +19,7 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Vec using (Vec; []; _∷_)
 open import Data.List.Relation.Unary.All using ([]; _∷_)
 
-open import Semantics.Interp.Typed.Values (λ n → Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any) public
+open import ISWIM.Semantics.Interp.Typed.Values (λ n → Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any) public
 
 eval : ∀ {Γ A} → ℕ → Env Γ → Tm Γ A → Result (Val A)
 evals : ∀ {Γ n} → ℕ → Env Γ → Vec (Tm Γ Any) n → Result (Vec (Val Any) n)

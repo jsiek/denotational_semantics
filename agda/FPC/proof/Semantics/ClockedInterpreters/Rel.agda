@@ -1,8 +1,8 @@
 {-
 
   Relations between the values of two interpreters of FPC
-  (Mu/Semantics/ClockedInterpreters/Values.agda, with codes C₁ and C₂), for the
-  proofs of the passes, as proof/Semantics/Interp/Typed/Rel.agda: values
+  (FPC/Semantics/ClockedInterpreters/Values.agda, with codes C₁ and C₂), for the
+  proofs of the passes, as ISWIM/proof/Semantics/Interp/Typed/Rel.agda: values
   are related (_≈_) when they have the same shape, codes are related by
   Code, and a closure of code c and environment vs is related to one of
   code c' and environment ws when vs is related pointwise to some vs'
@@ -12,17 +12,17 @@
 
 -}
 
-open import Mu.Language.Type using (Ctx; Type)
+open import FPC.Language.Type using (Ctx; Type)
 
-module Mu.proof.Semantics.ClockedInterpreters.Rel {C₁ C₂ : Ctx → Type → Type → Set} where
+module FPC.proof.Semantics.ClockedInterpreters.Rel {C₁ C₂ : Ctx → Type → Type → Set} where
 
 open import Framework.Primitives using (base-rep)
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
-open import Mu.Framework.AllUtil using (All; []; _∷_; All₂; lookup₂)
+open import FPC.Language.Type
+open import FPC.Framework.AllUtil using (All; []; _∷_; All₂; lookup₂)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.Interp.Clock using (Result; RelResult)
-import Mu.Semantics.ClockedInterpreters.Values as V
+import FPC.Semantics.ClockedInterpreters.Values as V
 private
   module S = V C₁
   module T = V C₂

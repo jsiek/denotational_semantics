@@ -1,19 +1,19 @@
 {-
 
-  A reduction semantics for Clos5ᵀ (Language/Typed/Clos5.agda), as for
-  Clos4ᵀ (Semantics/Reduction/Typed/Clos4.agda), for a program's table of
+  A reduction semantics for Clos5ᵀ (ISWIM/Language/Typed/Clos5.agda), as for
+  Clos4ᵀ (ISWIM/Semantics/Reduction/Typed/Clos4.agda), for a program's table of
   definitions ds: a reference to a definition is a value, and callc
   calls the definition it refers to. A let binds a value of any type.
 
 -}
 
-module Semantics.Reduction.Typed.Clos5 where
+module ISWIM.Semantics.Reduction.Typed.Clos5 where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos5 hiding (wk; wks)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos5 hiding (wk; wks)
 open import Framework.Lookup using (_!_)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)

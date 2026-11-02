@@ -1,9 +1,9 @@
 {-
 
-  Select instructions (CFGᵀ → X86ᵀ, Compiler/Select.agda) is correct in
-  the graph model: the X86ᵀ program (Semantics/Graph/Typed/X86.agda)
+  Select instructions (CFGᵀ → X86ᵀ, ISWIM/Compiler/Select.agda) is correct in
+  the graph model: the X86ᵀ program (ISWIM/Semantics/Graph/Typed/X86.agda)
   means exactly what the CFGᵀ program does (≃,
-  Semantics/Graph/Typed/CFG.agda), for every CFGᵀ program; the compiler
+  ISWIM/Semantics/Graph/Typed/CFG.agda), for every CFGᵀ program; the compiler
   to X86ᵀ, Same, is in CompilerCorrect.agda.
 
   The X86ᵀ frame is the CFGᵀ frame, a slot write binds as CFGᵀ's seq
@@ -23,27 +23,27 @@
 
 -}
 
-module proof.Correctness.Graph.SelectCorrect where
+module ISWIM.proof.Correctness.Graph.SelectCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops using (⋆; Λ; 𝒞; 𝒯; payloadD; strict; Mono₁; Λ-≃; ⋆-≃; Λ-β)
 open import proof.Framework.GraphModel.Laws using (strict-≃; ⋆-ne)
-open import proof.Semantics.Graph.Typed.Ops using (Table; tables; init)
-open import proof.Semantics.Graph.Typed.CFG using (⟦_⟧ᵗ; Meanings; drop; 𝒮; 𝒮-≃; tail-mono; blocks-mono)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; tables; init)
+open import ISWIM.proof.Semantics.Graph.Typed.CFG using (⟦_⟧ᵗ; Meanings; drop; 𝒮; 𝒮-≃; tail-mono; blocks-mono)
   renaming (code′ to codeᶜ; ⟦_⟧ₚ to ⟦_⟧ᶜ)
-import proof.Semantics.Graph.Typed.CFG as GC
-open import Semantics.Graph.Typed.Imp using (𝒜s)
-import Semantics.Graph.Typed.X86 as X
+import ISWIM.proof.Semantics.Graph.Typed.CFG as GC
+open import ISWIM.Semantics.Graph.Typed.Imp using (𝒜s)
+import ISWIM.Semantics.Graph.Typed.X86 as X
 open X using (isinl)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Language.Typed.Type hiding (_≟_)
-import Language.Typed.Imp as I
-import Language.Typed.CFG as C
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+import ISWIM.Language.Typed.Imp as I
+import ISWIM.Language.Typed.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
-open import Language.Typed.X86 using (Seq; Atm; var; rax; St; called)
+open import ISWIM.Language.Typed.X86 using (Seq; Atm; var; rax; St; called)
 open import Data.Bool using (false)
 open import Data.Maybe using (nothing)
-open import Compiler.Select using (Out; ret; to; after; dst; sel; tail; atms; depth; blocks-depth; def-body; select)
+open import ISWIM.Compiler.Select using (Out; ret; to; after; dst; sel; tail; atms; depth; blocks-depth; def-body; select)
   renaming (blocks to sel-blocks)
 open import Language.Prim using (sub; eq)
 

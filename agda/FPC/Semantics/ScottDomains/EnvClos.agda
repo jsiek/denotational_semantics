@@ -1,10 +1,10 @@
 {-
 
-  The semantics of EnvClosμ (Mu/Language/EnvClos.agda) in Scott domains, as
-  in the graph model (Mu/Semantics/GraphModel/EnvClos.agda): a closure is its
+  The semantics of EnvClosμ (FPC/Language/EnvClos.agda) in Scott domains, as
+  in the graph model (FPC/Semantics/GraphModel/EnvClos.agda): a closure is its
   code, a closed function of the tuple of its free variables and of the
   argument (codeᶜ, Framework/Scott/Semantics.agda), applied to that
-  tuple; otherwise as FPC (Mu/Semantics/ScottDomains/FPC.agda).
+  tuple; otherwise as FPC (FPC/Semantics/ScottDomains/FPC.agda).
 
 -}
 
@@ -13,12 +13,12 @@ open import UF.FunExt using (Fun-Ext)
 open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
-open import Mu.Language.Type
-open import Mu.Language.EnvClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.EnvClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import Data.List using (length)
 
-module Mu.Semantics.ScottDomains.EnvClos
+module FPC.Semantics.ScottDomains.EnvClos
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)

@@ -1,7 +1,7 @@
 {-
 
   Lemmas about the semantics of Clos5ᵀ in the graph model with errors
-  (Semantics/GraphErr/Typed/Clos5.agda):
+  (ISWIM/Semantics/GraphErr/Typed/Clos5.agda):
 
   * wk-≃: a term over a table, weakened to a bigger one, means the same
     under tables that agree on its references and environments that are
@@ -14,9 +14,9 @@
 
 -}
 
-module proof.Semantics.GraphErr.Typed.Clos5 where
+module ISWIM.proof.Semantics.GraphErr.Typed.Clos5 where
 
-open import Semantics.GraphErr.Typed.Clos5 public
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 public
 open import proof.Framework.GraphModel.TypedOk using (Ok; Oks; ok-op; var-ok; const-ok; let-ok; split; ok-vec) public
 open import proof.Framework.GraphModel.TypedBinders using (code-ok; callc-good; callcᵈ)
 
@@ -25,11 +25,11 @@ open import proof.Framework.GraphModel.Continuity using (ℬ-good)
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.Env using (Env; _~ₑ[_]_; •-~)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
-open import proof.Semantics.GraphErr.Typed.Clos2
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2
   using (get-good; case-good; prim-good; project-good; getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃)
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.Clos5
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Clos5
 
 open import Data.Fin using (zero; suc)
 open import Data.List using (List; _∷_; length; replicate)

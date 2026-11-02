@@ -1,15 +1,15 @@
 {-
 
-  Lemmas about lookup in heterogeneous vectors (Mu/Framework/AllUtil.agda),
+  Lemmas about lookup in heterogeneous vectors (FPC/Framework/AllUtil.agda),
   as proof/Framework/Lookup.agda's map-! for _!_: lookup commutes with
   map.
 
 -}
 
-module Mu.proof.Framework.AllProp where
+module FPC.proof.Framework.AllProp where
 
 open import Framework.Membership using (_∋_; Z; S)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 
 open import Data.List using (List)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)

@@ -1,7 +1,7 @@
 {-
 
   Correctness of split (EnvClosμ → PairClosμ), clock for clock, as for typed
-  split (proof/Correctness/Interp/SplitFuel.agda; see the design note in
+  split (ISWIM/proof/Correctness/Interp/SplitFuel.agda; see the design note in
   Semantics/Interp/Clock.agda): clos N Ms becomes
   pair (code N') (tuple Ms'), and app becomes callc, which calls as app
   does. The pass renames variables (the identity for a program), so
@@ -11,18 +11,18 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.SplitFuel where
+module FPC.proof.Correctness.ClockedInterpreters.SplitFuel where
 
 open import Data.List using ([]; _∷_)
-open import Mu.Language.Type
-open import Mu.Language.EnvClos
-import Mu.Language.PairClos as C4
-open import Mu.Compiler.Split
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂)
+open import FPC.Language.Type
+open import FPC.Language.EnvClos
+import FPC.Language.PairClos as C4
+open import FPC.Compiler.Split
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; All₂)
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.EnvClos as S
-import Mu.Semantics.ClockedInterpreters.PairClos as T
-open import Mu.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B}
+import FPC.Semantics.ClockedInterpreters.EnvClos as S
+import FPC.Semantics.ClockedInterpreters.PairClos as T
+open import FPC.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B}
 
 open import Data.Nat using (zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)

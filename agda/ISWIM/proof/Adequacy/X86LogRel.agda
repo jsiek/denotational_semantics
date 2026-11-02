@@ -1,9 +1,9 @@
 {-
 
-  Adequacy of the graph model of X86ᵀ (Semantics/Graph/Typed/X86.agda)
-  for the X86ᵀ machine (Semantics/CEK/Typed/X86.agda): every element of
+  Adequacy of the graph model of X86ᵀ (ISWIM/Semantics/Graph/Typed/X86.agda)
+  for the X86ᵀ machine (ISWIM/Semantics/CEK/Typed/X86.agda): every element of
   the denotation of a program is witnessed by a run of the machine. As
-  for untyped X86 (Untyped/proof/Adequacy/X86LogRel.agda), with the
+  for untyped X86 (ISWIM/Untyped/proof/Adequacy/X86LogRel.agda), with the
   logical relation 𝕍 of the Clos5ᵀ values (Clos5Values.agda), code f
   being related to Λ X. Λ Y. w when the machine runs definition f on
   values related to X and Y, on any stack, to a return of a value
@@ -25,28 +25,28 @@
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ)
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.X86
 
-module proof.Adequacy.X86LogRel {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
+module ISWIM.proof.Adequacy.X86LogRel {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
-open import Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; _↦_; ν; ⦅_,_⦆; left; right; ⟨⟩; _•_) renaming (const to dconst)
 open import proof.Framework.GraphModel.Ops using (nthD; ⋆) renaming (car to carD)
 open import proof.Semantics.Graph.Prim using (primD)
-open import proof.Semantics.Graph.Typed.Ops using (Table; tables; fun₄; projectᵍ; init)
-open import Semantics.Graph.Typed.CFG using (drop)
-open import Semantics.Graph.Typed.X86 using (⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; isinl; called-regs; RegsD)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; tables; fun₄; projectᵍ; init)
+open import ISWIM.Semantics.Graph.Typed.CFG using (drop)
+open import ISWIM.Semantics.Graph.Typed.X86 using (⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; isinl; called-regs; RegsD)
   renaming (put to putₛ; field′ to fieldₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ)
-open import Semantics.CEK.Typed.X86
+open import ISWIM.Semantics.CEK.Typed.X86
 open import Semantics.Observation using (Obs)
 open import proof.Semantics.CEK.Smallstep using (Terminates; next)
 open import Framework.Lookup using (_!_; forget)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import proof.Adequacy.X86Common ds
-open import proof.Adequacy.Clos5Values using (module Rel; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv; proj?-ok)
+open import ISWIM.proof.Adequacy.X86Common ds
+open import ISWIM.proof.Adequacy.Clos5Values using (module Rel; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv; proj?-ok)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥-elim)

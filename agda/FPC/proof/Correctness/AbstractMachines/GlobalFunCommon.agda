@@ -1,24 +1,24 @@
 {-
 
-  Lemmas about the GlobalFunμ machine (Mu/Semantics/AbstractMachines/GlobalFun.agda) on the
-  embedding of Monμ atoms (Mu/Language/Mon.agda), shared by the
+  Lemmas about the GlobalFunμ machine (FPC/Semantics/AbstractMachines/GlobalFun.agda) on the
+  embedding of Monμ atoms (FPC/Language/Mon.agda), shared by the
   simulation proofs of remove complex operands and lift locals, as
-  proof/Correctness/CEK/Clos5Common.agda: an atom evaluates to its value
-  (atom, Mu/Semantics/AbstractMachines/Imp.agda) in one step, and the rest of a tuple
+  ISWIM/proof/Correctness/CEK/Clos5Common.agda: an atom evaluates to its value
+  (atom, FPC/Semantics/AbstractMachines/Imp.agda) in one step, and the rest of a tuple
   of atoms to the values so far followed by theirs. Since the machine
   collects a tuple's values newest first in front of the types still to
   come (_<><_), this needs no equation about lengths.
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.GlobalFunCommon where
+module FPC.proof.Correctness.AbstractMachines.GlobalFunCommon where
 
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun using (DSig; Program; program; Code; Tm)
-open import Mu.Language.Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
-open import Mu.Framework.AllUtil using (All; []; _∷_; map; _<><_; _<><ᵃ_)
-open import Mu.Semantics.AbstractMachines.GlobalFun
-open import Mu.Semantics.AbstractMachines.Imp using (atom)
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun using (DSig; Program; program; Code; Tm)
+open import FPC.Language.Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
+open import FPC.Framework.AllUtil using (All; []; _∷_; map; _<><_; _<><ᵃ_)
+open import FPC.Semantics.AbstractMachines.GlobalFun
+open import FPC.Semantics.AbstractMachines.Imp using (atom)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_)
 
 open import Data.List using (List; []; _∷_)

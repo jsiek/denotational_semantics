@@ -2,7 +2,7 @@
 
   Hoist (PairClosμ → GlobalFunμ): the code of every function becomes a
   global definition, and the code itself a reference to it, as typed
-  hoist (Compiler/Hoist.agda) does.
+  hoist (ISWIM/Compiler/Hoist.agda) does.
 
   The pass threads the definitions made so far, newest first, each typed
   over the table of the older ones (Made), from left to right; for code
@@ -13,13 +13,13 @@
 
 -}
 
-module Mu.Compiler.Hoist where
+module FPC.Compiler.Hoist where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.PairClos as S
-open import Mu.Language.GlobalFun
-open import Mu.Framework.AllUtil using (All; []; _∷_)
+import FPC.Language.PairClos as S
+open import FPC.Language.GlobalFun
+open import FPC.Framework.AllUtil using (All; []; _∷_)
 
 open import Data.List using (List; []; _∷_)
 

@@ -16,10 +16,10 @@
 
 -}
 
-module Untyped.proof.Adequacy.Clos5WF where
+module ISWIM.Untyped.proof.Adequacy.Clos5WF where
 
-open import Untyped.Language.Clos5
-open import Untyped.proof.Correctness.Graph.HoistCorrect using (RB) public
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (RB) public
 open import proof.Framework.Syntax.ScopeRename Op sig public
 
 open import Data.List using (List; []; _∷_; length)

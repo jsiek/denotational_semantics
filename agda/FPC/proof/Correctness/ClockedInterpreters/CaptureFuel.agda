@@ -1,7 +1,7 @@
 {-
 
   Correctness of capture (FPC → Closμ), clock for clock, as for
-  typed capture (proof/Correctness/Interp/CaptureFuel.agda; see the
+  typed capture (ISWIM/proof/Correctness/Interp/CaptureFuel.agda; see the
   design note in Semantics/Interp/Clock.agda): a term and the
   capture of it, in related environments, both time out or return related
   values, for every clock (neither errs). A closure captures every
@@ -11,18 +11,18 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.CaptureFuel where
+module FPC.proof.Correctness.ClockedInterpreters.CaptureFuel where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Data.List using ([]; _∷_)
-open import Mu.Language.FPC
-import Mu.Language.Clos as C2
-open import Mu.Compiler.Capture
-open import Mu.Framework.AllUtil using (All; []; _∷_; tab; lookup; All₂; lookup₂; tab-lookup₂)
+open import FPC.Language.FPC
+import FPC.Language.Clos as C2
+open import FPC.Compiler.Capture
+open import FPC.Framework.AllUtil using (All; []; _∷_; tab; lookup; All₂; lookup₂; tab-lookup₂)
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.FPC as S
-import Mu.Semantics.ClockedInterpreters.Clos as T
-open import Mu.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C2.Tm (A ∷ Δ) B}
+import FPC.Semantics.ClockedInterpreters.FPC as S
+import FPC.Semantics.ClockedInterpreters.Clos as T
+open import FPC.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C2.Tm (A ∷ Δ) B}
 
 open import Data.Nat using (zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)

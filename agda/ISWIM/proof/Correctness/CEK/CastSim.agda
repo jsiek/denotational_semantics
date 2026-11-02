@@ -20,22 +20,22 @@
 
 -}
 
-module proof.Correctness.CEK.CastSim where
+module ISWIM.proof.Correctness.CEK.CastSim where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-import Language.Typed.ISWIM as I
-open import Compiler.Cast
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+import ISWIM.Language.Typed.ISWIM as I
+open import ISWIM.Compiler.Cast
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import Framework.ListUtil using (_‼_; proj; args→list)
 open import Framework.VecUtil using (_<><_)
-open import proof.Correctness.CEK.CastSimLemmas using (length→has-length; δ?-nothing₁; δ?-nothing₂; proj-just-length)
-import Semantics.CEK.ISWIM as S
-import Semantics.CEK.Typed.ISWIM as T
+open import ISWIM.proof.Correctness.CEK.CastSimLemmas using (length→has-length; δ?-nothing₁; δ?-nothing₂; proj-just-length)
+import ISWIM.Semantics.CEK.ISWIM as S
+import ISWIM.Semantics.CEK.Typed.ISWIM as T
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; sub; eq; δ)
 

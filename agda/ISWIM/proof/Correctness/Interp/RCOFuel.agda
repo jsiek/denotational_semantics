@@ -14,20 +14,20 @@
 
 -}
 
-module proof.Correctness.Interp.RCOFuel where
+module ISWIM.proof.Correctness.Interp.RCOFuel where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Primitives using (Int)
-open import Language.Typed.Clos5
-import Language.Typed.Mon as M
+open import ISWIM.Language.Typed.Clos5
+import ISWIM.Language.Typed.Mon as M
 open M using (Atm; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Compiler.RCO
+open import ISWIM.Compiler.RCO
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Typed.Clos5 as C
+import ISWIM.Semantics.Interp.Typed.Clos5 as C
 open C using (eval; evals; call)
 open import Framework.Lookup using (_!_)
-open import Semantics.Interp.Typed.Imp using (atom)
-open import proof.Semantics.Interp.Typed.Clos5 using (def-map; atm-bind; atoms-bind; either-cong)
+open import ISWIM.Semantics.Interp.Typed.Imp using (atom)
+open import ISWIM.proof.Semantics.Interp.Typed.Clos5 using (def-map; atm-bind; atoms-bind; either-cong)
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

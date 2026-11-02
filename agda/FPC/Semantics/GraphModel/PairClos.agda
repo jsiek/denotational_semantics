@@ -1,21 +1,21 @@
 {-
 
-  The semantics of PairClosμ (Mu/Language/PairClos.agda) in the graph model,
-  as that of Clos4ᵀ (Semantics/Graph/Typed/Clos4.agda): code is a closed
+  The semantics of PairClosμ (FPC/Language/PairClos.agda) in the graph model,
+  as that of Clos4ᵀ (ISWIM/Semantics/Graph/Typed/Clos4.agda): code is a closed
   function of two arguments, a closure the pair of code and
   environment, and callc applies the closure's code (car) to its
   environment (cdr) and the argument; fold and unfold are the identity.
 
 -}
 
-module Mu.Semantics.GraphModel.PairClos where
+module FPC.Semantics.GraphModel.PairClos where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to pairD)
 open import Semantics.Graph.Prim using (primD)
-open import Mu.Language.Type
-open import Mu.Language.PairClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.PairClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

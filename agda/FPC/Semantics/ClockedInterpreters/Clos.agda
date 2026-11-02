@@ -1,23 +1,23 @@
 {-
 
-  A clocked interpreter for Closμ (Mu/Language/Clos.agda), as the one
-  for FPC (Mu/Semantics/ClockedInterpreters/FPC.agda), except that a closure
+  A clocked interpreter for Closμ (FPC/Language/Clos.agda), as the one
+  for FPC (FPC/Semantics/ClockedInterpreters/FPC.agda), except that a closure
   evaluates its free variables, left to right, and keeps their values
   as its environment.
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.Clos where
+module FPC.Semantics.ClockedInterpreters.Clos where
 
-open import Mu.Language.Type
-open import Mu.Language.Clos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type
+open import FPC.Language.Clos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
 
 open import Data.List using ([]; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 
-open import Mu.Semantics.ClockedInterpreters.Values (λ Δ A B → Tm (A ∷ Δ) B) public
+open import FPC.Semantics.ClockedInterpreters.Values (λ Δ A B → Tm (A ∷ Δ) B) public
 
 eval : ∀ {Γ A} → ℕ → Env Γ → Tm Γ A → Result (Val A)
 evals : ∀ {Γ Δ} → ℕ → Env Γ → All (Tm Γ) Δ → Result (All Val Δ)

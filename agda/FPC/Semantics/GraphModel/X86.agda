@@ -1,7 +1,7 @@
 {-
 
-  The semantics of X86μ (Mu/Language/X86.agda) in the graph model, as
-  that of X86ᵀ (Semantics/Graph/Typed/X86.agda). What runs next (Kont)
+  The semantics of X86μ (FPC/Language/X86.agda) in the graph model, as
+  that of X86ᵀ (ISWIM/Semantics/Graph/Typed/X86.agda). What runs next (Kont)
   is given the frame, the registers and the flag. The frame is the
   environment, as in CFGμ: slot x is position idx x, and writing slot k
   forgets the slots after it (drop). A label means its block, under the
@@ -24,19 +24,19 @@
 
 -}
 
-module Mu.Semantics.GraphModel.X86 where
+module FPC.Semantics.GraphModel.X86 where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.DOpSig using (Results)
 open import Framework.GraphModel.Ops renaming (pair to pairD; inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Mu.Semantics.GraphModel.Ops
-open import Mu.Semantics.GraphModel.Imp using (𝒜)
-open import Mu.Semantics.GraphModel.CFG using (Meanings; drop)
+open import FPC.Semantics.GraphModel.Ops
+open import FPC.Semantics.GraphModel.Imp using (𝒜)
+open import FPC.Semantics.GraphModel.CFG using (Meanings; drop)
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
-open import Mu.Language.X86
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.X86
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (List; length; replicate)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

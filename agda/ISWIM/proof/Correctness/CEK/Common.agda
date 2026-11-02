@@ -1,12 +1,12 @@
 {-
 
   A lemma shared by the simulation proofs of the typed closure-conversion
-  passes (proof/Correctness/CEK/*Sim.agda): two machines that both stop
+  passes (ISWIM/proof/Correctness/CEK/*Sim.agda): two machines that both stop
   with the same observation or both step to related states (Lock).
 
 -}
 
-module proof.Correctness.CEK.Common where
+module ISWIM.proof.Correctness.CEK.Common where
 
 open import proof.Semantics.CEK.Smallstep
 

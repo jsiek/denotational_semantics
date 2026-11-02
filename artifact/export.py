@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Export the anonymized artifact of the PLDI 2027 paper: FPC (agda/Mu/).
+"""Export the anonymized artifact of the PLDI 2027 paper: FPC (agda/FPC/).
 
     python3 artifact/export.py OUTDIR        (from the repository root)
 
 OUTDIR must not exist, or be empty.  The artifact gets
 
-  * the import closure of agda/Mu/All.agda and agda/AllScott.agda (and so
-    none of the other pipelines, agda/old/, agda/Mu/Experiments.agda or
-    agda/Mu/proof/Mixed/), at the same paths under agda/, so that the
+  * the import closure of agda/FPC/All.agda and agda/AllScott.agda (and so
+    none of the ISWIM pipelines, agda/ISWIM/, nor agda/old/,
+    agda/FPC/Experiments.agda or agda/FPC/proof/Mixed/), at the same paths
+    under agda/, so that the
     paper's "Agda:" lines (paths relative to agda/) stay valid;
   * the TypeTopology modules in that closure, vendored, already patched
     with scott/typetopology-builtin-alias.patch, under vendor/TypeTopology/,
@@ -28,8 +29,8 @@ artifact (informational).
 import hashlib, os, re, shutil, subprocess, sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROOTS = ['agda/Mu/All.agda', 'agda/AllScott.agda']
-EXCLUDED = ['agda/Mu/Experiments.agda', 'agda/Mu/proof/Mixed/', 'agda/old/', 'agda/Untyped/']
+ROOTS = ['agda/FPC/All.agda', 'agda/AllScott.agda']
+EXCLUDED = ['agda/FPC/Experiments.agda', 'agda/FPC/proof/Mixed/', 'agda/old/', 'agda/ISWIM/']
 TT = os.path.join(REPO, '_deps', 'TypeTopology')
 TT_COMMIT = '17487fc910f3bb305c30001507fed5d41d52dc3c'
 TT_URL = 'https://github.com/martinescardo/TypeTopology'
@@ -102,24 +103,25 @@ ABT = (r'Extracted from the abt library \(github\.com/jsiek/abstract-binding-tre
        'Extracted from a library of abstract binding trees (not named, for\n   anonymous review)')
 REWRITES = [
     (None, ABT[0], ABT[1], None),
-    ('agda/Mu/All.agda',
+    ('agda/FPC/All.agda',
      r'\n  The experiment of mixing semantics is not part of the paper; it is\n'
-     r'  checked from Mu/Experiments\.agda\.\n', '', 1),
-    ('agda/Mu/All.agda',
-     r'  agda/Mu/ mirrors agda/: Mu/X\.agda corresponds to X\.agda \(with\n'
-     r'  Language/Typed/ as Mu/Language/ and Semantics/<style>/Typed/ as\n'
-     r'  Mu/Semantics/<style>/\), and the module Mu\.X to X\. It reuses the\n'
+     r'  checked from FPC/Experiments\.agda\.\n', '', 1),
+    ('agda/FPC/All.agda',
+     r'  agda/FPC/ mirrors agda/ISWIM/: FPC/X\.agda corresponds to ISWIM/X\.agda\n'
+     r'  \(with ISWIM/Language/Typed/ as FPC/Language/ and\n'
+     r'  ISWIM/Semantics/<style>/Typed/ as FPC/Semantics/<style>/\), and the\n'
+     r'  module FPC\.X to ISWIM\.X\. It reuses the\n'
      r'  frameworks of agda/Framework/ unchanged;',
      '  FPC uses the language-independent frameworks of agda/Framework/\n'
      '  (and their lemmas, agda/proof/Framework/);', 1),
-    ('agda/Mu/proof/Adequacy/FPC.agda',
-     r'graph model\'s end-to-end theorem \(Mu/proof/Adequacy/EndToEnd\.agda\),\n'
+    ('agda/FPC/proof/Adequacy/FPC.agda',
+     r'graph model\'s end-to-end theorem \(FPC/proof/Adequacy/EndToEnd\.agda\),\n'
      r'  and the bridge at FPC of the mixed proof, which joins a pass\n'
      r'  proved in the graph model to passes proved by the interpreters\n'
-     r'  \(Mu/proof/Mixed/CompilerMixed\.agda\)\.',
-     "graph model's end-to-end theorem (Mu/proof/Adequacy/EndToEnd.agda).", 1),
-    ('agda/Mu/proof/Compiler/HoistOlder.agda',
-     r'older ones only\n  \(as Untyped/Semantics/Graph/Clos5Iswim\.agda does\), so it needs',
+     r'  \(FPC/proof/Mixed/CompilerMixed\.agda\)\.',
+     "graph model's end-to-end theorem (FPC/proof/Adequacy/EndToEnd.agda).", 1),
+    ('agda/FPC/proof/Compiler/HoistOlder.agda',
+     r'older ones only\n  \(as ISWIM/Untyped/Semantics/Graph/Clos5Iswim\.agda does\), so it needs',
      'older ones only,\n  so it needs', 1),
     ('agda/Framework/GraphModel/Prelude.agda', r'papers/PLDI-2027/loc\.py', 'loc.py', 1),
     ('agda/AllScott.agda',
@@ -137,7 +139,7 @@ LOC_REWRITES = [
     (r'the preserved untyped one', 'the untyped one', 1),
 ]
 
-# agda/Mu/README.md, the road map: the checking section is the artifact's,
+# agda/FPC/README.md, the road map: the checking section is the artifact's,
 # and the experiments that the artifact leaves out are not mentioned
 README_REWRITES = [
     (r'## Checking\n.*?(?=## Layout)',
@@ -214,7 +216,7 @@ def anonymity_check(out):
 
 def dangling(out):
     """Paths ending in .agda that comments of the exported Agda files mention
-    but that are not in the artifact (relative to agda/, agda/Mu/, the
+    but that are not in the artifact (relative to agda/, agda/FPC/, the
     mentioning file's directory, or the artifact's root)."""
     refs = {}
     for root, _, files in os.walk(os.path.join(out, 'agda')):
@@ -224,9 +226,9 @@ def dangling(out):
                 r = m.group(0)
                 if '<' in r or '*' in r:
                     continue
-                cands = [os.path.join(out, 'agda', r), os.path.join(out, 'agda', 'Mu', r),
+                cands = [os.path.join(out, 'agda', r), os.path.join(out, 'agda', 'FPC', r),
                          os.path.join(root, r), os.path.join(out, r),
-                         os.path.join(out, 'agda', 'proof', r), os.path.join(out, 'agda', 'Mu', 'proof', r)]
+                         os.path.join(out, 'agda', 'proof', r), os.path.join(out, 'agda', 'FPC', 'proof', r)]
                 if not any(os.path.exists(c) for c in cands):
                     refs.setdefault(r, set()).add(os.path.relpath(path, out))
     return refs
@@ -283,7 +285,7 @@ Run from the root of the artifact:  python3 loc.py --artifact
 (or `make tables`), which prints Tables 1 and 2 of the paper.
 
 This is the script that measures the full development; the artifact holds
-only FPC's part of it (the import closure of agda/Mu/All.agda and
+only FPC's part of it (the import closure of agda/FPC/All.agda and
 agda/AllScott.agda), so it is run with --artifact.  In that mode the
 groups of modules that belong to the other parts are empty and skipped,
 and the checks about them are skipped too; the checks about FPC still
@@ -337,12 +339,12 @@ def main():
             sys.exit(f'export: rewrite {pat!r} matched nowhere')
 
     # the road map
-    text = open('agda/Mu/README.md', encoding='utf-8').read()
+    text = open('agda/FPC/README.md', encoding='utf-8').read()
     for pat, rep, n in README_REWRITES:
         text, k = re.subn(pat, rep, text, flags=re.S)
         if k != n:
             sys.exit(f'export: README rewrite {pat!r} matched {k} times, expected {n}')
-    open(os.path.join(out, 'agda/Mu/README.md'), 'w', encoding='utf-8').write(text)
+    open(os.path.join(out, 'agda/FPC/README.md'), 'w', encoding='utf-8').write(text)
 
     # TypeTopology
     vt = os.path.join(out, 'vendor', 'TypeTopology')

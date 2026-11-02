@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed prune (Clos2ᵀ → Clos2ᵀ) in the graph model
-  (Semantics/Graph/Typed/Clos2.agda).
+  (ISWIM/Semantics/Graph/Typed/Clos2.agda).
 
   ⟦ M ⟧ ρ ≃ ⟦ opt r M ⟧ ρ' when ρ and ρ' agree through r on the
   variables that M uses (Agree), and ρ is nonempty on all variables in
@@ -13,17 +13,17 @@
 
 -}
 
-module proof.Correctness.Graph.PruneCorrect where
+module ISWIM.proof.Correctness.Graph.PruneCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.TypedGraph using (guard-≃)
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import Language.Typed.Type
-open import Language.Typed.Clos2
-open import proof.Semantics.Graph.Typed.Ops using (project-≃)
-open import proof.Semantics.Graph.Typed.Clos2 using (⟦_⟧; ⟦_⟧s; fv-env; fv-env-nth)
-open import Compiler.Prune
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos2
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (project-≃)
+open import ISWIM.proof.Semantics.Graph.Typed.Clos2 using (⟦_⟧; ⟦_⟧s; fv-env; fv-env-nth)
+open import ISWIM.Compiler.Prune
 open import Framework.VecSelect
 open import proof.Framework.VecSelect
 

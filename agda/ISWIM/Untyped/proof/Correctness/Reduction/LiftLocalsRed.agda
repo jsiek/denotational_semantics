@@ -26,30 +26,30 @@
 
 -}
 
-module Untyped.proof.Correctness.Reduction.LiftLocalsRed where
+module ISWIM.Untyped.proof.Correctness.Reduction.LiftLocalsRed where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos5 using (AST; Args; ■; program; `_; _⦅_⦆; fun-ref; app; lit; pair-op; fst-op; snd-op;
+open import ISWIM.Untyped.Language.Clos5 using (AST; Args; ■; program; `_; _⦅_⦆; fun-ref; app; lit; pair-op; fst-op; snd-op;
   tuple; get; inl-op; inr-op; case-op; prim; let-op; cons; nil; ast; bind)
-import Untyped.Language.Clos5 as L5
-import Untyped.Language.Imp as Imp
+import ISWIM.Untyped.Language.Clos5 as L5
+import ISWIM.Untyped.Language.Imp as Imp
 open Imp using (simple; atm)
-open import Untyped.Language.Mon
-open import Untyped.Compiler.LiftLocals
-open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
-open import Untyped.Compiler.RCO using (rco-program-mon)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Language.Mon
+open import ISWIM.Untyped.Compiler.LiftLocals
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program-mon)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error using (Red; val; error; to; step-in; toNext; Frame; frame; frame-id; frame-∘; val-in; ret?; pre; pre⋆; any-i)
 open import Framework.Smallstep Obs using (Machine; Next; next; stop; Star; ε; _◅_; Step)
 open import proof.Framework.Smallstep Obs using (Plus; plus)
 open import proof.Framework.Simulation Obs using (FSim; Answers≺; stops; steps; runs; stutters; equivalent; equiv-trans)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Untyped.proof.Semantics.Reduction.Clos5 as S
-import Semantics.Reduction.ISWIM as ISWIMᵣ
-import Untyped.Semantics.CEK.Imp as I
-import Semantics.CEK.Values as Vl
-open import Untyped.proof.Correctness.Reduction.RCORed using (compile-mon-correct)
+import ISWIM.Untyped.proof.Semantics.Reduction.Clos5 as S
+import ISWIM.Semantics.Reduction.ISWIM as ISWIMᵣ
+import ISWIM.Untyped.Semantics.CEK.Imp as I
+import ISWIM.Semantics.CEK.Values as Vl
+open import ISWIM.Untyped.proof.Correctness.Reduction.RCORed using (compile-mon-correct)
 open import proof.Framework.Syntax.Subst L5.Op L5.sig using (Subst; sub; sub-args; exts; ids; _•_; _[_]; sub-id; exts-[])
 open import proof.Framework.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj; proj-pw; ‼-pw)
 

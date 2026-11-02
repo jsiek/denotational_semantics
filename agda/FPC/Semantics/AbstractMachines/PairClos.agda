@@ -1,25 +1,25 @@
 {-
 
-  A CEK machine for PairClosμ (Mu/Language/PairClos.agda), as the one for
-  EnvClosμ (Mu/Semantics/AbstractMachines/EnvClos.agda). The value of code is the code;
+  A CEK machine for PairClosμ (FPC/Language/PairClos.agda), as the one for
+  EnvClosμ (FPC/Semantics/AbstractMachines/EnvClos.agda). The value of code is the code;
   a closure is a packed pair of code and an environment of the same
   types Δ. callc L M evaluates the closure and the argument, then runs
   the closure's code with its environment and the argument.
 
 -}
 
-module Mu.Semantics.AbstractMachines.PairClos where
+module FPC.Semantics.AbstractMachines.PairClos where
 
 open import Framework.Primitives using (Int)
-open import Mu.Language.Type
-open import Mu.Language.PairClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
+open import FPC.Language.Type
+open import FPC.Language.PairClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([]; _∷_)
 
-open import Mu.Semantics.AbstractMachines.Values (λ Δ A B → Tm (A ∷ tup Δ ∷ []) B) public
+open import FPC.Semantics.AbstractMachines.Values (λ Δ A B → Tm (A ∷ tup Δ ∷ []) B) public
 
 data Cont : Type → Set where
   halt : ∀ {A} → Cont A

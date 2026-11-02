@@ -23,30 +23,30 @@
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ; suc; _<_; _≟_; _<?_)
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.X86
 
-module proof.Adequacy.GraphErr.X86Common {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
+module ISWIM.proof.Adequacy.GraphErr.X86Common {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; ν; Con; Con-⌈⌉; _•_)
 open import proof.Framework.GraphModel.ErrorMonad using (ΛΛᵐ-val; errcode-con) renaming (Val to Valᴰ)
 open import Framework.GraphModel.Env using (Env)
 open import Framework.GraphModel.ErrorMonad using (errcode)
-open import Semantics.GraphErr.Typed.Ops using (init; kindᶠ)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (init; kindᶠ)
 open import Framework.GraphModel.ErrorMonad using (Kind)
-open import Semantics.GraphErr.Typed.Imp using (Table)
-open import Semantics.GraphErr.Typed.Clos5 using (tbl)
-open import Semantics.GraphErr.Typed.X86 using (RegsD; called-regs; codeₜ) renaming (_[_≔_] to _[_≔ˢ_])
-open import proof.Semantics.GraphErr.Typed.Clos5 using (tbl-val)
-open import Language.Typed.Type hiding (_≟_)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (Table)
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (tbl)
+open import ISWIM.Semantics.GraphErr.Typed.X86 using (RegsD; called-regs; codeₜ) renaming (_[_≔_] to _[_≔ˢ_])
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 using (tbl-val)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import Framework.Membership using (_⊑_; ⊑-∋)
 open import Framework.Lookup using (_!_; forget)
 open import proof.Framework.Lookup using (forget-!; lvl-<)
-open import proof.Correctness.GraphErr.SelectCorrect using (drop-idx)
-open import Semantics.GraphErr.Typed.CFG using (drop)
+open import ISWIM.proof.Correctness.GraphErr.SelectCorrect using (drop-idx)
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (drop)
 open import Semantics.Observation using (Obs; o-error)
 open import Semantics.CEK.Smallstep using (Next; next; stop)
-open import Semantics.CEK.Typed.X86
+open import ISWIM.Semantics.CEK.Typed.X86
 open import proof.Framework.Runs using (module Runs)
 
 open import Data.Bool using (Bool; true; false)

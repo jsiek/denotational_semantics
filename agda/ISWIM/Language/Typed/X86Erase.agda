@@ -1,22 +1,22 @@
 {-
 
-  The erasure of X86ᵀ (Language/Typed/X86.agda) into X86
-  (Language/X86.agda): not a pass of the compiler, which ends at X86ᵀ,
+  The erasure of X86ᵀ (ISWIM/Language/Typed/X86.agda) into X86
+  (ISWIM/Language/X86.agda): not a pass of the compiler, which ends at X86ᵀ,
   but for the statement that select emits the instructions of select
-  into untyped X86 (Compiler/SelectX86.agda; Theorems/X86Erasure.agda,
-  proof/Compiler/SelectErase.agda). The
+  into untyped X86 (ISWIM/Compiler/SelectX86.agda; ISWIM/Theorems/X86Erasure.agda,
+  ISWIM/proof/Compiler/SelectErase.agda). The
   types, the proofs about registers and frame bounds and the operand
   coercion ↑ disappear; chk t x, d is X86's test of t on x and the move
-  (check, Compiler/SelectX86.agda); a slot is its level.
+  (check, ISWIM/Compiler/SelectX86.agda); a slot is its level.
 
 -}
 
-module Language.Typed.X86Erase where
+module ISWIM.Language.Typed.X86Erase where
 
-open import Language.Typed.Type
-open import Language.Typed.X86
-import Language.X86 as L
-open import Compiler.SelectX86 using (check; select-atm)
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.X86
+import ISWIM.Language.X86 as L
+open import ISWIM.Compiler.SelectX86 using (check; select-atm)
 
 open import Data.List using (List; []; _∷_; _++_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

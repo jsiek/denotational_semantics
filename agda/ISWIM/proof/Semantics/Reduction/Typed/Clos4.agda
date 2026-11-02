@@ -1,15 +1,15 @@
 {-
 
   The values of the Clos4ᵀ reduction semantics
-  (Semantics/Reduction/Typed/Clos4.agda), which reduce to val.
+  (ISWIM/Semantics/Reduction/Typed/Clos4.agda), which reduce to val.
 
 -}
 
-module proof.Semantics.Reduction.Typed.Clos4 where
+module ISWIM.proof.Semantics.Reduction.Typed.Clos4 where
 
-open import Semantics.Reduction.Typed.Clos4 public
-open import Language.Typed.Type
-open import Language.Typed.Clos4
+open import ISWIM.Semantics.Reduction.Typed.Clos4 public
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos4
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Framework.Reduction Obs o-error using (val)
 

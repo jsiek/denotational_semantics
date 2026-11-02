@@ -1,9 +1,9 @@
 {-
 
   Soundness and adequacy of the Scott-domain semantics of FPC
-  (Mu/Semantics/ScottDomains/FPC.agda) with respect to its clocked
-  interpreter (Mu/Semantics/ClockedInterpreters/FPC.agda), for closed
-  programs of any type, as Mu/proof/Adequacy/FPC.agda is for the graph
+  (FPC/Semantics/ScottDomains/FPC.agda) with respect to its clocked
+  interpreter (FPC/Semantics/ClockedInterpreters/FPC.agda), for closed
+  programs of any type, as FPC/proof/Adequacy/FPC.agda is for the graph
   model:
 
     soundness (Soundness.agda): what the interpreter returns at some
@@ -26,20 +26,20 @@ open import UF.PropTrunc
 open import UF.Subsingletons
 
 open import Framework.Primitives using (Base; base-rep)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Semantics.ClockedInterpreters.FPC using (eval; sem; obs) renaming (Val to Value)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Semantics.ClockedInterpreters.FPC using (eval; sem; obs) renaming (Val to Value)
 open import Semantics.Interp.Clock using (Result; timeout; error; ret; outcome; Terminates; Diverges)
 open import Semantics.Observation using (o-const)
 open import Naturals.ExitTruncation using (module exit-truncations)
 
 open import Data.List using ([])
-open import Mu.Framework.AllUtil using ([])
+open import FPC.Framework.AllUtil using ([])
 open import Data.Maybe using (just)
 open import Data.Nat.Properties using (≤-refl)
 open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to ≡-refl; trans to ≡-trans; sym to ≡-sym; cong to ≡-cong)
 import Data.Product as P
 
-module Mu.proof.Adequacy.ScottDomains.FPC
+module FPC.proof.Adequacy.ScottDomains.FPC
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -48,10 +48,10 @@ module Mu.proof.Adequacy.ScottDomains.FPC
 open import Framework.Scott.Base pt fe hiding (_>>=_)
 open import proof.Framework.Scott.Ops pt fe pe using (const; ⊥𝔻; defined; const-defined; ⊥-undefined)
 open import proof.Framework.Scott.Values pt fe pe using (undefined-⊥)
-open import Mu.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
-open import Mu.Semantics.ScottDomains.Closed pt fe pe using (ρ₀)
-open import Mu.proof.Adequacy.ScottDomains.Soundness pt fe pe using (𝒱; 𝒱-defined; 𝒱-const; const-𝒱; Holds; timeout; ret; sound)
-open import Mu.proof.Adequacy.ScottDomains.LogRel pt fe pe using (adequate; run)
+open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
+open import FPC.Semantics.ScottDomains.Closed pt fe pe using (ρ₀)
+open import FPC.proof.Adequacy.ScottDomains.Soundness pt fe pe using (𝒱; 𝒱-defined; 𝒱-const; const-𝒱; Holds; timeout; ret; sound)
+open import FPC.proof.Adequacy.ScottDomains.LogRel pt fe pe using (adequate; run)
 open exit-truncations pt using (exit-truncation)
 
 private

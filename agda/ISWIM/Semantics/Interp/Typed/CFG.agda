@@ -1,9 +1,9 @@
 {-
 
-  A clocked interpreter for CFGᵀ (Language/Typed/CFG.agda), the output
+  A clocked interpreter for CFGᵀ (ISWIM/Language/Typed/CFG.agda), the output
   of typed explicate control. A tail runs in a frame typed by its
   context and returns a value: return s gives the value of s (as in
-  Impᵀ, Semantics/Interp/Typed/Imp.agda); seq p s t assigns the value
+  Impᵀ, ISWIM/Semantics/Interp/Typed/Imp.agda); seq p s t assigns the value
   of s to the slot after those of Δ' (p : Δ' ⊑ Δ), forgetting the newer
   ones (forget), and runs t; case a p l₁ l₂ does so with the payload
   of a and jumps to l₁ or l₂. A tail runs with the blocks it may jump
@@ -13,14 +13,14 @@
 
 -}
 
-module Semantics.Interp.Typed.CFG where
+module ISWIM.Semantics.Interp.Typed.CFG where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Language.Typed.CFG
+open import ISWIM.Language.Typed.CFG
 open import Semantics.Interp.Clock
-open import Semantics.Interp.Typed.Clos5 using (module Vals)
-open import Semantics.Interp.Typed.Imp using (atom; eval-simple)
+open import ISWIM.Semantics.Interp.Typed.Clos5 using (module Vals)
+open import ISWIM.Semantics.Interp.Typed.Imp using (atom; eval-simple)
 open import Framework.Lookup using (_!_; forget)
 
 open import Data.List using (List; []; _∷_)

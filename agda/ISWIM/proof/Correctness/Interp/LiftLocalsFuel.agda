@@ -10,18 +10,18 @@
 
 -}
 
-module proof.Correctness.Interp.LiftLocalsFuel where
+module ISWIM.proof.Correctness.Interp.LiftLocalsFuel where
 
-open import Language.Typed.Type
-open import Language.Typed.Mon
-import Language.Typed.Imp as Imp
-open import Compiler.LiftLocals
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Mon
+import ISWIM.Language.Typed.Imp as Imp
+open import ISWIM.Compiler.LiftLocals
 open import proof.Semantics.Interp.Clock
 open import Framework.Lookup using (_!_)
-import Semantics.Interp.Typed.Clos5 as C
-import Semantics.Interp.Typed.Imp as I
-open import Semantics.Interp.Typed.Imp using (atom)
-open import proof.Semantics.Interp.Typed.Clos5 using (def-map; atm-bind; eval-atom; atoms-bind; either-cong)
+import ISWIM.Semantics.Interp.Typed.Clos5 as C
+import ISWIM.Semantics.Interp.Typed.Imp as I
+open import ISWIM.Semantics.Interp.Typed.Imp using (atom)
+open import ISWIM.proof.Semantics.Interp.Typed.Clos5 using (def-map; atm-bind; eval-atom; atoms-bind; either-cong)
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

@@ -28,7 +28,7 @@
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon
 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
 open import Data.Nat.Properties using (≤-trans; m≤m⊔n; m≤n⊔m; n≤1+n)
@@ -39,7 +39,7 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality using (_≢_)
 
-module Untyped.proof.Correctness.Graph.SplitFiniteRel where
+module ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteRel where
 
 {- The function entries of a finite list of target values --------------------}
 

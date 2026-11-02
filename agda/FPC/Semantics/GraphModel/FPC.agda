@@ -1,7 +1,7 @@
 {-
 
-  The semantics of FPC (Mu/Language/FPC.agda) in the graph model,
-  as that of ISWIMᵀ (Semantics/Graph/Typed/ISWIM.agda): fold and unfold
+  The semantics of FPC (FPC/Language/FPC.agda) in the graph model,
+  as that of ISWIMᵀ (ISWIM/Semantics/Graph/Typed/ISWIM.agda): fold and unfold
   are the identity (a value of a recursive type is a value of its
   unfolding), and there is no project. Recursion needs no fixed point:
   self-application, through a recursive type, gives it, as in untyped
@@ -10,14 +10,14 @@
 
 -}
 
-module Mu.Semantics.GraphModel.FPC where
+module FPC.Semantics.GraphModel.FPC where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

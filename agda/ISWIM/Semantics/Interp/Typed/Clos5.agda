@@ -1,21 +1,21 @@
 {-
 
-  A clocked interpreter for Clos5ᵀ (Language/Typed/Clos5.agda), as the
-  one for Clos4ᵀ (Semantics/Interp/Typed/Clos4.agda), except that a
+  A clocked interpreter for Clos5ᵀ (ISWIM/Language/Typed/Clos5.agda), as the
+  one for Clos4ᵀ (ISWIM/Semantics/Interp/Typed/Clos4.agda), except that a
   program runs with its table of definitions: the code of a closure is
   a reference to a definition (fun-ref f evaluates to code f), and a
   call runs definition f. A reference to a missing definition cannot be
   written, so a call cannot fail.
 
   Monᵀ has no interpreter of its own: a Monᵀ program runs as its
-  embedding into Clos5ᵀ (Language/Typed/Mon.agda).
+  embedding into Clos5ᵀ (ISWIM/Language/Typed/Mon.agda).
 
 -}
 
-module Semantics.Interp.Typed.Clos5 where
+module ISWIM.Semantics.Interp.Typed.Clos5 where
 
-open import Language.Typed.Type
-open import Language.Typed.Clos5
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos5
 open import Semantics.Interp.Clock
 open import Framework.Lookup using (_!_)
 
@@ -24,8 +24,8 @@ open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Vec using (Vec; []; _∷_)
 
-import Semantics.Interp.Typed.Values
-module Vals (Σ : List ℕ) = Semantics.Interp.Typed.Values (Σ ∋_)
+import ISWIM.Semantics.Interp.Typed.Values
+module Vals (Σ : List ℕ) = ISWIM.Semantics.Interp.Typed.Values (Σ ∋_)
 
 module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
   open Vals Σ

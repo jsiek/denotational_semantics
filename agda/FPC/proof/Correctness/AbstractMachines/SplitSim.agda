@@ -2,7 +2,7 @@
 
   Correctness of split (EnvClosμ → PairClosμ) by a forward simulation between
   the typed machines, as for typed split
-  (proof/Correctness/CEK/SplitSim.agda).
+  (ISWIM/proof/Correctness/CEK/SplitSim.agda).
 
   The machines run in lock step, except that building a closure takes
   three more PairClosμ steps (the code, then the tuple of free variables,
@@ -17,22 +17,22 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.SplitSim where
+module FPC.proof.Correctness.AbstractMachines.SplitSim where
 
-open import Mu.Language.Type
-open import Mu.Language.EnvClos
-import Mu.Language.PairClos as C4
-open import Mu.Compiler.Split
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
+open import FPC.Language.Type
+open import FPC.Language.EnvClos
+import FPC.Language.PairClos as C4
+open import FPC.Compiler.Split
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-import Mu.Semantics.AbstractMachines.EnvClos as Src
-import Mu.Semantics.AbstractMachines.PairClos as Tgt
+import FPC.Semantics.AbstractMachines.EnvClos as Src
+import FPC.Semantics.AbstractMachines.PairClos as Tgt
 
 open import Data.List using ([]; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 
-open import Mu.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B} (split (λ x → x))
+open import FPC.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B} (split (λ x → x))
 
 {- The simulation relation -----------------------------------------------------}
 

@@ -1,10 +1,10 @@
 {-
 
-  The semantics of CFGμ (Mu/Language/CFG.agda) in the graph model, as
-  that of CFGᵀ (Semantics/Graph/Typed/CFG.agda). A tail runs in a frame
+  The semantics of CFGμ (FPC/Language/CFG.agda) in the graph model, as
+  that of CFGᵀ (ISWIM/Semantics/Graph/Typed/CFG.agda). A tail runs in a frame
   σ, given the meanings B of the blocks it can see (by their typed
   labels), and means a set of values. Atoms and simple expressions are
-  Impμ's (Mu/Semantics/GraphModel/Imp.agda).
+  Impμ's (FPC/Semantics/GraphModel/Imp.agda).
 
   * seq p s t is strict in s, like an assignment in Impμ: ⋆ ⟨ Λ F , D ⟩,
     where D is the value of s and F X runs t with X in the next slot of
@@ -17,16 +17,16 @@
 
 -}
 
-module Mu.Semantics.GraphModel.CFG where
+module FPC.Semantics.GraphModel.CFG where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Mu.Semantics.GraphModel.Ops
-open import Mu.Semantics.GraphModel.Imp using (𝒜; 𝒮) public
-open import Mu.Language.Type
-open import Mu.Language.CFG
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Semantics.GraphModel.Ops
+open import FPC.Semantics.GraphModel.Imp using (𝒜; 𝒮) public
+open import FPC.Language.Type
+open import FPC.Language.CFG
+open import FPC.Framework.AllUtil using (All)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (suc)

@@ -3,7 +3,7 @@
   Backward (reflect) direction of typed split (Clos3ᵀ → Clos4ᵀ) in the
   graph model, with the approximant logical relation ApproxLR of SplitRel
   (source sets against finite target approximants), as for untyped split
-  (Untyped/proof/Correctness/Graph/SplitReflectFinite.agda). The target call
+  (ISWIM/Untyped/proof/Correctness/Graph/SplitReflectFinite.agda). The target call
   (callc) is the source application on the calls collected from finitely
   many pairs (collect); project is a guard on both sides, and a target
   value it accepts is reflected by a source value it accepts
@@ -17,16 +17,16 @@ open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; pair; car; cdr; nth
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
-open import Language.Typed.Type using (Any; ⟪_⟫; tup; sum; _∋_; Z; S; idx; tfun; tsum; tint; ttup)
-open import Language.Typed.Clos3
-import Language.Typed.Clos4 as T
-import proof.Semantics.Graph.Typed.Clos3 as S3
-import proof.Semantics.Graph.Typed.Clos4 as S4
+open import ISWIM.Language.Typed.Type using (Any; ⟪_⟫; tup; sum; _∋_; Z; S; idx; tfun; tsum; tint; ttup)
+open import ISWIM.Language.Typed.Clos3
+import ISWIM.Language.Typed.Clos4 as T
+import ISWIM.proof.Semantics.Graph.Typed.Clos3 as S3
+import ISWIM.proof.Semantics.Graph.Typed.Clos4 as S4
 open S3 using (⟦_⟧; ⟦_⟧s)
 open S4 using () renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
-open import proof.Semantics.Graph.Typed.Ops using (Ok; fin₁; fin₂; accepts; fun₂; fun₄)
-open import Compiler.Split using (Ren; ext; split; splits; split-program)
-open import proof.Correctness.Graph.SplitRel
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Ok; fin₁; fin₂; accepts; fun₂; fun₄)
+open import ISWIM.Compiler.Split using (Ren; ext; split; splits; split-program)
+open import ISWIM.proof.Correctness.Graph.SplitRel
 open import Language.Prim using (δ)
 
 open import Data.Nat using (zero; suc)
@@ -43,7 +43,7 @@ open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 
-module proof.Correctness.Graph.SplitReflect where
+module ISWIM.proof.Correctness.Graph.SplitReflect where
 
 {- a body is monotone in its argument -}
 mono₁ : ∀ {E} → Ok E → ∀ ρ → Mono₁ (λ X → E (X • ρ))

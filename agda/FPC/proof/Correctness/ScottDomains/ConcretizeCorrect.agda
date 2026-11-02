@@ -1,8 +1,8 @@
 {-
 
   Correctness of concretize (Closμ → EnvClosμ) in Scott domains
-  (Mu/Semantics/ScottDomains/{Clos,EnvClos}.agda), as in the graph model
-  (Mu/proof/Correctness/GraphModel/ConcretizeCorrect.agda), with equality of
+  (FPC/Semantics/ScottDomains/{Clos,EnvClos}.agda), as in the graph model
+  (FPC/proof/Correctness/GraphModel/ConcretizeCorrect.agda), with equality of
   values in place of equality of sets, and without consistency.
 
   ⟦ M ⟧ ρ₂ = ⟦ concretize φ M ⟧₃ ρ₃ when each variable x of M means in
@@ -12,7 +12,7 @@
   is its code, a function value, applied to their tuple T: it is
   seq T (the function of the code's body on T) (app-Λ), and a guard on
   the free variables is a seq on their tuple (guard-seq,
-  Mu/proof/Semantics/ScottDomains/PruneLemmas.agda). When the free
+  FPC/proof/Semantics/ScottDomains/PruneLemmas.agda). When the free
   variables are defined, the code finds free variable i as get i of T
   (proj-tuple).
 
@@ -24,16 +24,16 @@ open import UF.PropTrunc
 open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
-open import Mu.Language.Type
-open import Mu.Language.Clos
-import Mu.Language.EnvClos as T
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
-open import Mu.Compiler.Concretize
+open import FPC.Language.Type
+open import FPC.Language.Clos
+import FPC.Language.EnvClos as T
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Compiler.Concretize
 open import Framework.abt.GSubst using (_•_)
 open import Data.List using (List; []; _∷_; length)
 open import Data.Fin using (Fin; zero; suc)
 
-module Mu.proof.Correctness.ScottDomains.ConcretizeCorrect
+module FPC.proof.Correctness.ScottDomains.ConcretizeCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -43,9 +43,9 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.Clos pt fe pe
-open import Mu.Semantics.ScottDomains.EnvClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
-open import Mu.proof.Semantics.ScottDomains.PruneLemmas pt fe pe using (guard-seq)
+open import FPC.Semantics.ScottDomains.Clos pt fe pe
+open import FPC.Semantics.ScottDomains.EnvClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
+open import FPC.proof.Semantics.ScottDomains.PruneLemmas pt fe pe using (guard-seq)
 
 {- each variable means what its reference means -}
 EnvRel : ∀ {Γ Γ'} → Refs Γ Γ' → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇

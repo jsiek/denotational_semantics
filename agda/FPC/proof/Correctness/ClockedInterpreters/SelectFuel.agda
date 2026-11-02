@@ -2,7 +2,7 @@
 
   Correctness of select instructions (CFGμ → X86μ) by clocked
   interpreters, clock for clock, with no value relation, as for typed
-  select (proof/Correctness/Interp/SelectFuel.agda): the two
+  select (ISWIM/proof/Correctness/Interp/SelectFuel.agda): the two
   interpreters hold the same values in the same frame, so for every
   clock the X86μ program gives exactly the result of the CFGμ one
   (clocked-≡).
@@ -18,23 +18,23 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.SelectFuel where
+module FPC.proof.Correctness.ClockedInterpreters.SelectFuel where
 
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
-import Mu.Language.CFG as C
+open import FPC.Language.Type
+import FPC.Language.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
-import Mu.Language.Imp as I
-open import Mu.Language.X86
-open import Mu.Compiler.Select
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
+import FPC.Language.Imp as I
+open import FPC.Language.X86
+open import FPC.Compiler.Select
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import proof.Semantics.Interp.Clock
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import Mu.Semantics.ClockedInterpreters.Imp using (eval-simple) renaming (atom to value-of)
-import Mu.Semantics.ClockedInterpreters.CFG as G
-import Mu.Semantics.ClockedInterpreters.X86 as X
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.ClockedInterpreters.Imp using (eval-simple) renaming (atom to value-of)
+import FPC.Semantics.ClockedInterpreters.CFG as G
+import FPC.Semantics.ClockedInterpreters.X86 as X
 open X using (⟨_,_,_,_⟩; put)
-open import Mu.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; either-cong)
+open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; either-cong)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)

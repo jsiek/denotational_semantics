@@ -1,8 +1,8 @@
 {-
 
-  The FPC compiler (Mu/Compiler/Pipeline.agda) is correct by
+  The FPC compiler (FPC/Compiler/Pipeline.agda) is correct by
   clocked interpreters, as the typed one
-  (proof/Correctness/Interp/CompilerFuel.agda): each pass is proved
+  (ISWIM/proof/Correctness/Interp/CompilerFuel.agda): each pass is proved
   clock for clock (simplify, which removes calls, clock-monotone), and the end theorems compose (equiv-trans), from
   FPC to PairClosμ (compile-to-PairClos), GlobalFunμ (compile-to-GlobalFun), Monμ run as GlobalFunμ
   (compile-to-Mon), Impμ, CFGμ and X86μ. A program is a closed term of any
@@ -12,36 +12,36 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.CompilerFuel where
+module FPC.proof.Correctness.ClockedInterpreters.CompilerFuel where
 
 open import Framework.Primitives using (Int)
-open import Mu.Language.Type using (base)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Language.Mon using (⌜_⌝ₚ)
-open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Capture using (capture)
-open import Mu.Compiler.Prune using (prune-program)
-open import Mu.Compiler.Concretize using (concretize-program)
-open import Mu.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
+open import FPC.Language.Type using (base)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Language.Mon using (⌜_⌝ₚ)
+open import FPC.Compiler.Simplify using (simplify)
+open import FPC.Compiler.Capture using (capture)
+open import FPC.Compiler.Prune using (prune-program)
+open import FPC.Compiler.Concretize using (concretize-program)
+open import FPC.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.FPC as FPCᵢ
-import Mu.Semantics.ClockedInterpreters.PairClos as PairClosμᵢ
-import Mu.Semantics.ClockedInterpreters.GlobalFun as GlobalFunμᵢ
-import Mu.Semantics.ClockedInterpreters.Imp as Impμᵢ
-import Mu.Semantics.ClockedInterpreters.CFG as CFGμᵢ
-import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
+import FPC.Semantics.ClockedInterpreters.FPC as FPCᵢ
+import FPC.Semantics.ClockedInterpreters.PairClos as PairClosμᵢ
+import FPC.Semantics.ClockedInterpreters.GlobalFun as GlobalFunμᵢ
+import FPC.Semantics.ClockedInterpreters.Imp as Impμᵢ
+import FPC.Semantics.ClockedInterpreters.CFG as CFGμᵢ
+import FPC.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
-open import Mu.proof.Correctness.ClockedInterpreters.SimplifyFuel using (simplify-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.CaptureFuel using (capture-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.PruneFuel using (prune-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.ConcretizeFuel using (concretize-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.SplitFuel using (split-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.HoistFuel using (hoist-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.RCOFuel using (rco-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.LiftLocalsFuel using (lift-locals-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.ExplicateFuel using (explicate-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.SelectFuel using (select-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.SimplifyFuel using (simplify-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.CaptureFuel using (capture-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.PruneFuel using (prune-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.ConcretizeFuel using (concretize-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.SplitFuel using (split-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.HoistFuel using (hoist-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.RCOFuel using (rco-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.LiftLocalsFuel using (lift-locals-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.ExplicateFuel using (explicate-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.SelectFuel using (select-correct)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

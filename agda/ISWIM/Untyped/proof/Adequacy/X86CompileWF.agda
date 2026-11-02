@@ -20,32 +20,32 @@
 
 -}
 
-module Untyped.proof.Adequacy.X86CompileWF where
+module ISWIM.Untyped.proof.Adequacy.X86CompileWF where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Con-⊆)
-open import Untyped.Language.Clos5 as C5
+open import ISWIM.Untyped.Language.Clos5 as C5
   using (AST; Arg; Args; `_; _⦅_⦆; ast; bind; clear; nil; cons; fun-ref; app; lit; pair-op; fst-op; snd-op; tuple; get; inl-op; inr-op; case-op; prim; let-op)
-open import Untyped.Language.Mon as Mo using (Mon; Atom; Atoms; []; _∷_)
-open import Untyped.Language.Imp as I using (Exp; Simple; simple; assign; case)
-import Untyped.Language.CFG as G
-open import Language.X86 using (Block; body; program; reg; var)
+open import ISWIM.Untyped.Language.Mon as Mo using (Mon; Atom; Atoms; []; _∷_)
+open import ISWIM.Untyped.Language.Imp as I using (Exp; Simple; simple; assign; case)
+import ISWIM.Untyped.Language.CFG as G
+open import ISWIM.Language.X86 using (Block; body; program; reg; var)
 import Language.Prim as P
-open import Untyped.Compiler.RCO
-open import Untyped.Compiler.LiftLocals renaming (lift to liftL)
-open import Untyped.Compiler.Explicate
-open import Untyped.Compiler.Select
-open import Untyped.Compiler.Pipeline using (compile; compile-x86)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
-open import Untyped.proof.Correctness.Graph.HoistCorrect using (RB; RB-arg; RB-args)
-open import Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (table-con)
-open import Untyped.proof.Correctness.Graph.RCOCorrect using (table-rco)
-open import Untyped.proof.Correctness.Graph.LiftLocalsCorrectK using (table-lift)
-import Untyped.proof.Correctness.Graph.ExplicateCorrectK as EK
-import Untyped.proof.Correctness.Graph.SelectCorrect as SC
-import Untyped.proof.Adequacy.Clos5WF as F
-open import Untyped.proof.Adequacy.CompileWF using (compile-wf)
-open import Untyped.proof.Adequacy.X86WF
+open import ISWIM.Untyped.Compiler.RCO
+open import ISWIM.Untyped.Compiler.LiftLocals renaming (lift to liftL)
+open import ISWIM.Untyped.Compiler.Explicate
+open import ISWIM.Untyped.Compiler.Select
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-x86)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (RB; RB-arg; RB-args)
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (table-con)
+open import ISWIM.Untyped.proof.Correctness.Graph.RCOCorrect using (table-rco)
+open import ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCorrectK using (table-lift)
+import ISWIM.Untyped.proof.Correctness.Graph.ExplicateCorrectK as EK
+import ISWIM.Untyped.proof.Correctness.Graph.SelectCorrect as SC
+import ISWIM.Untyped.proof.Adequacy.Clos5WF as F
+open import ISWIM.Untyped.proof.Adequacy.CompileWF using (compile-wf)
+open import ISWIM.Untyped.proof.Adequacy.X86WF
 open import proof.Framework.Syntax.Rename C5.Op C5.sig using (rename; rename-arg; rename-args; ext)
 open import proof.Framework.Syntax.ScopeRename C5.Op C5.sig using (WS; WS-args; Fits; fits-ext; ws-rename; ws-rename-args)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
@@ -206,7 +206,7 @@ module _ (K n : ℕ) where
     (oa , oa , tt) , t₂ ∷ ab₄
 
   ex-tail : ∀ e bs → ExpOK e → All TailOK bs → TailOK (proj₁ (explicate-tail e bs)) × All TailOK (proj₂ (explicate-tail e bs))
-  ex-tail (simple s) bs ok ab = ok (reg Language.X86.rax) , ab
+  ex-tail (simple s) bs ok ab = ok (reg ISWIM.Language.X86.rax) , ab
   ex-tail (assign x e₁ e₂) bs (o₁ , o₂) ab = let (t , ab₁) = ex-tail e₂ bs o₂ ab in ex-assign e₁ x _ _ o₁ t ab₁
   ex-tail (case a x e₁ e₂) bs (oa , o₁ , o₂) ab =
     let (t₁ , ab₁) = ex-tail e₁ bs o₁ ab

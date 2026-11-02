@@ -2,7 +2,7 @@
 
   Typed hoist (Clos4ᵀ → Clos5ᵀ): the code of every function becomes a
   global definition, and the code itself a reference to it, as the
-  untyped pass (Untyped/Compiler/Hoist.agda) does.
+  untyped pass (ISWIM/Untyped/Compiler/Hoist.agda) does.
 
   The pass threads the definitions made so far, newest first, each typed
   over the table of the older ones (Made), from left to right; for code
@@ -13,12 +13,12 @@
 
 -}
 
-module Compiler.Hoist where
+module ISWIM.Compiler.Hoist where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Language.Typed.Clos4 as S
-open import Language.Typed.Clos5
+import ISWIM.Language.Typed.Clos4 as S
+open import ISWIM.Language.Typed.Clos5
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

@@ -1,11 +1,11 @@
 {-
 
-  The semantics of Closμ (Mu/Language/Clos.agda) in Scott domains, as
-  in the graph model (Mu/Semantics/GraphModel/Clos.agda): a closure is
+  The semantics of Closμ (FPC/Language/Clos.agda) in Scott domains, as
+  in the graph model (FPC/Semantics/GraphModel/Clos.agda): a closure is
   strict in its free variables (guard) and is the function of the
   argument whose body sees the argument and the values of the free
   variables (closureᶜ, Framework/Scott/Semantics.agda); otherwise as
-  FPC (Mu/Semantics/ScottDomains/FPC.agda).
+  FPC (FPC/Semantics/ScottDomains/FPC.agda).
 
 -}
 
@@ -14,13 +14,13 @@ open import UF.FunExt using (Fun-Ext)
 open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
-open import Mu.Language.Type
-open import Mu.Language.Clos
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.Clos
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import Data.List using (length)
 open import Data.Fin using (Fin)
 
-module Mu.Semantics.ScottDomains.Clos
+module FPC.Semantics.ScottDomains.Clos
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)

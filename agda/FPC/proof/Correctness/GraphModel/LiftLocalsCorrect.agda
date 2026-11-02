@@ -1,8 +1,8 @@
 {-
 
   Correctness of lift locals (Monμ → Impμ) in the graph model, as for
-  the typed pass (proof/Correctness/Graph/LiftLocalsCorrect.agda): the
-  continuation-passing meaning of the output (Mu/Semantics/GraphModel/Imp.agda)
+  the typed pass (ISWIM/proof/Correctness/Graph/LiftLocalsCorrect.agda): the
+  continuation-passing meaning of the output (FPC/Semantics/GraphModel/Imp.agda)
   is the meaning of the input (its embedding into GlobalFunμ) given to the
   continuation.
 
@@ -16,7 +16,7 @@
 
 -}
 
-module Mu.proof.Correctness.GraphModel.LiftLocalsCorrect where
+module FPC.proof.Correctness.GraphModel.LiftLocalsCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
@@ -24,17 +24,17 @@ open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.Env using (Env; •-~)
 open import proof.Framework.GraphModel.Laws using (K⟨_⟩; K-≃; let-law; case-law)
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import Mu.proof.Semantics.GraphModel.Ops
-open import Mu.proof.Semantics.GraphModel.GlobalFun using (ok; con; code-con; table-con)
-open import Mu.Semantics.GraphModel.GlobalFun
-import Mu.Semantics.GraphModel.Imp as I
+open import FPC.proof.Semantics.GraphModel.Ops
+open import FPC.proof.Semantics.GraphModel.GlobalFun using (ok; con; code-con; table-con)
+open import FPC.Semantics.GraphModel.GlobalFun
+import FPC.Semantics.GraphModel.Imp as I
 open I using (⟦_⟧ᴷ; 𝒜; 𝒜s; 𝒮)
-open import Mu.Language.Type
-import Mu.Language.Mon as M
+open import FPC.Language.Type
+import FPC.Language.Mon as M
 open M using (DSig; Args; Atm; var; lit; ref; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Mu.Compiler.LiftLocals
-open import Mu.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; body-mono)
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
+open import FPC.Compiler.LiftLocals
+open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; body-mono)
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
 
 open import Data.Fin using (zero; suc)
 open import Data.List using (List; []; _∷_; length)

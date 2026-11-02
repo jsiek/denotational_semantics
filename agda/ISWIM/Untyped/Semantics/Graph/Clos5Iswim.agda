@@ -1,4 +1,4 @@
-module Untyped.Semantics.Graph.Clos5Iswim where
+module ISWIM.Untyped.Semantics.Graph.Clos5Iswim where
 {-
 
  The semantics of Clos5, the language after the 'hoist' pass.
@@ -15,8 +15,8 @@ open import Framework.GraphModel.DOpSig
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
-open import Untyped.Semantics.Graph.Frames using (Table; init) public
-open import Untyped.Language.Clos5
+open import ISWIM.Untyped.Semantics.Graph.Frames using (Table; init) public
+open import ISWIM.Untyped.Language.Clos5
 open import Framework.abt.Fold2 Op sig using (fold; fold-arg; fold-args)
 open import Framework.abt.ScopedTuple using (Tuple)
 open import Framework.abt.Sig using (Result)

@@ -1,4 +1,4 @@
-module Untyped.Semantics.GraphErr.Clos5 where
+module ISWIM.Untyped.Semantics.GraphErr.Clos5 where
 {-
 
  The semantics of Clos5 (and of its monadic normal form, a sublanguage)
@@ -18,8 +18,8 @@ open import Framework.GraphModel.DOpSig
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
-open import Semantics.GraphErr.Prim
-open import Untyped.Language.Clos5
+open import ISWIM.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Clos5
 open import Framework.abt.Fold2 Op sig using (fold; fold-arg; fold-args)
 open import Framework.abt.ScopedTuple using (Tuple)
 open import Framework.abt.Sig using (Result)

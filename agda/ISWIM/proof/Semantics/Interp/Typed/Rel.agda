@@ -1,7 +1,7 @@
 {-
 
   Relations between the values of two typed interpreters
-  (Semantics/Interp/Typed/Values.agda, with codes C₁ and C₂), for the
+  (ISWIM/Semantics/Interp/Typed/Values.agda, with codes C₁ and C₂), for the
   proofs of the passes between typed languages: values are related
   (_≈_) when they have the same shape, codes are related by Code, and
   a closure of code c and environment vs is related to one of code c'
@@ -14,14 +14,14 @@
 
 open import Data.Nat using (ℕ)
 
-module proof.Semantics.Interp.Typed.Rel {C₁ C₂ : ℕ → Set} where
+module ISWIM.proof.Semantics.Interp.Typed.Rel {C₁ C₂ : ℕ → Set} where
 
 open import Framework.Primitives using (base-rep)
 open import Language.Prim using (sub; eq)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.Interp.Clock using (Result; RelResult; ret; error)
-import Semantics.Interp.Typed.Values as V
+import ISWIM.Semantics.Interp.Typed.Values as V
 private
   module S = V C₁
   module T = V C₂

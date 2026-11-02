@@ -1,44 +1,44 @@
 {-
 
   Soundness and adequacy of the graph model of FPC
-  (Mu/Semantics/GraphModel/FPC.agda) with respect to the FPC machine
-  (Mu/Semantics/AbstractMachines/FPC.agda), for closed programs of any type,
+  (FPC/Semantics/GraphModel/FPC.agda) with respect to the FPC machine
+  (FPC/Semantics/AbstractMachines/FPC.agda), for closed programs of any type,
   started in ρ₀ on the denotational side and in the empty environment
-  on the machine side, as for ISWIM (proof/Adequacy/ISWIM.agda):
+  on the machine side, as for ISWIM (ISWIM/proof/Adequacy/ISWIM.agda):
 
-    soundness (Mu/proof/Adequacy/AbstractMachines/Soundness.agda): if the machine
+    soundness (FPC/proof/Adequacy/AbstractMachines/Soundness.agda): if the machine
       terminates with o, it returns a value v observed as o, and the
       denotation of v is part of ⟦ M ⟧ ρ₀;
-    adequacy (Mu/proof/Adequacy/AbstractMachines/LogRel.agda): every d ∈ ⟦ M ⟧ ρ₀ is
+    adequacy (FPC/proof/Adequacy/AbstractMachines/LogRel.agda): every d ∈ ⟦ M ⟧ ρ₀ is
       related to the value the machine returns.
 
   So ⟦ M ⟧ ρ₀ contains const k exactly when the machine terminates with
   o-const B k, it is nonempty exactly when the machine terminates with
   an answer, and it is empty exactly when the machine diverges. Since the
   machine is typed it never stops with o-error
-  (Mu/proof/Semantics/AbstractMachines/NoError.agda), a run that does
+  (FPC/proof/Semantics/AbstractMachines/NoError.agda), a run that does
   not stop with an answer diverges, and so, unlike for ISWIM, there is
   no statement about errors; as for Clos5ᵀ
-  (proof/Adequacy/Clos5.agda), the shape of an observation is read off
+  (ISWIM/proof/Adequacy/Clos5.agda), the shape of an observation is read off
   the related value (𝕍-const, obs-answer) rather than off d.
 
 -}
 
-module Mu.proof.Adequacy.AbstractMachines.FPC where
+module FPC.proof.Adequacy.AbstractMachines.FPC where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-open import Mu.Semantics.AbstractMachines.FPC using (sem; Val; ret; halt; obs)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+open import FPC.Semantics.AbstractMachines.FPC using (sem; Val; ret; halt; obs)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Machine; Terminates; Diverges; never-final-diverges; diverges-not-terminates)
-open import Mu.proof.Semantics.AbstractMachines.NoError using (fpc-no-error)
-import Mu.proof.Adequacy.AbstractMachines.Soundness as S
-open import Mu.proof.Adequacy.AbstractMachines.LogRel using (𝕍; adequate; 𝕍-const; obs-answer; ↠→star)
+open import FPC.proof.Semantics.AbstractMachines.NoError using (fpc-no-error)
+import FPC.proof.Adequacy.AbstractMachines.Soundness as S
+open import FPC.proof.Adequacy.AbstractMachines.LogRel using (𝕍; adequate; 𝕍-const; obs-answer; ↠→star)
 
 open import Data.List using ([])
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)

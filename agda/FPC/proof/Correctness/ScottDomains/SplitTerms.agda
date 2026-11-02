@@ -16,15 +16,15 @@ open import UF.Base using (transport₂)
 
 open import Framework.Primitives using (Base; base-rep)
 open import Language.Prim using (Prim)
-open import Mu.Language.Type
-open import Mu.Language.EnvClos
-open import Mu.Compiler.Split
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.EnvClos
+open import FPC.Compiler.Split
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import Framework.abt.GSubst using (_•_)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; length)
 
-module Mu.proof.Correctness.ScottDomains.SplitTerms
+module FPC.proof.Correctness.ScottDomains.SplitTerms
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -35,11 +35,11 @@ open import proof.Framework.Scott.Ops pt fe pe
   hiding (ext) renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; pair to pairᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.EnvClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
-open import Mu.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
-open import Mu.proof.Correctness.ScottDomains.SplitRel pt fe pe
-open import Mu.proof.Correctness.ScottDomains.SplitPreserve pt fe pe using (Pres; Pres-clos; Pres-call)
-open import Mu.proof.Correctness.ScottDomains.SplitReflect pt fe pe using (Refl; Refl-clos; Refl-call)
+open import FPC.Semantics.ScottDomains.EnvClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
+open import FPC.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
+open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
+open import FPC.proof.Correctness.ScottDomains.SplitPreserve pt fe pe using (Pres; Pres-clos; Pres-call)
+open import FPC.proof.Correctness.ScottDomains.SplitReflect pt fe pe using (Refl; Refl-clos; Refl-call)
 
 module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
   (S-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩} → t ∼ t' → (∀ {X X' Y Y'} → X ∼ X' → Y ∼ Y' → B · env₂ X Y ∼ B' · env₂ X' Y')

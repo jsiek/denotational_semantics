@@ -1,21 +1,21 @@
 {-
 
-  The semantics of Clos2ᵀ (Language/Typed/Clos2.agda) in the graph model,
-  as that of Clos2 (Untyped/Semantics/Graph/Clos2Iswim.agda): a closure is strict
+  The semantics of Clos2ᵀ (ISWIM/Language/Typed/Clos2.agda) in the graph model,
+  as that of Clos2 (ISWIM/Untyped/Semantics/Graph/Clos2Iswim.agda): a closure is strict
   in its free variables (guard-n) and is the function of the argument
   whose body sees the argument and the meanings of the free variables;
-  otherwise as ISWIMᵀ (Semantics/Graph/Typed/ISWIM.agda).
+  otherwise as ISWIMᵀ (ISWIM/Semantics/Graph/Typed/ISWIM.agda).
 
 -}
 
-module Semantics.Graph.Typed.Clos2 where
+module ISWIM.Semantics.Graph.Typed.Clos2 where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Semantics.Graph.Typed.Ops
-open import Language.Typed.Type
-open import Language.Typed.Clos2
+open import ISWIM.Semantics.Graph.Typed.Ops
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos2
 
 open import Data.Fin using (toℕ)
 open import Data.List using (replicate)

@@ -28,18 +28,18 @@ open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Semantics.GraphErr.Prim
-open import Untyped.Language.Clos2
-open import Untyped.proof.Semantics.GraphErr.Clos2
-open import Untyped.Compiler.Prune
+open import ISWIM.proof.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Clos2
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos2
+open import ISWIM.Untyped.Compiler.Prune
 open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args)
 open import proof.Framework.GraphModel.Env using (Env)
-import Language.ISWIM as ISWIM
-open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Capture using (capture)
-open import Compiler.CaptureScope using (Closed)
-open import Untyped.proof.Compiler.CaptureScope using (capture-closed)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (capture-closed)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_; s≤s; z≤n)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; +-comm; ≤-pred)
@@ -55,7 +55,7 @@ open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; subst; sym)
 open import Relation.Nullary using (Dec; yes; no)
 
-module Untyped.proof.Correctness.GraphErr.PruneCorrect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.PruneCorrect where
 
 {- Helpers --------------------------------------------------------------------}
 

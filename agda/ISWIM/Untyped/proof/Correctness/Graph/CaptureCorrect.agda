@@ -20,17 +20,17 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import proof.Framework.Syntax.Uses Op sig
-open import proof.Semantics.Graph.ISWIM
-open import Untyped.proof.Semantics.Graph.Clos2Iswim as S2 renaming
+open import ISWIM.proof.Semantics.Graph.ISWIM
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim as S2 renaming
   (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂)
-open import Untyped.Compiler.Prune using (bind-n-ast)
-open import Untyped.Compiler.Capture
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; ρ₀)
-open import Untyped.proof.Correctness.Graph.ConcretizeCorrect
+open import ISWIM.Untyped.Compiler.Prune using (bind-n-ast)
+open import ISWIM.Untyped.Compiler.Capture
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; ρ₀)
+open import ISWIM.Untyped.proof.Correctness.Graph.ConcretizeCorrect
   using (init₀; push; apply-push; push-plus)
-open import Untyped.proof.Correctness.Graph.PruneCorrect using (unbind-bind; push-ne)
+open import ISWIM.Untyped.proof.Correctness.Graph.PruneCorrect using (unbind-bind; push-ne)
 open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _<?_; _∸_)
@@ -44,7 +44,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.Graph.CaptureCorrect where
+module ISWIM.Untyped.proof.Correctness.Graph.CaptureCorrect where
 
 {- The captured free variables ------------------------------------------------}
 

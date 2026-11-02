@@ -1,8 +1,8 @@
 {-
 
-  The semantics of CFGᵀ (Language/Typed/CFG.agda) in the graph model
-  with errors, as that of CFG (Untyped/Semantics/GraphErr/CFG.agda). The frame
-  is the environment, as in Impᵀ (Semantics/GraphErr/Typed/Imp.agda);
+  The semantics of CFGᵀ (ISWIM/Language/Typed/CFG.agda) in the graph model
+  with errors, as that of CFG (ISWIM/Untyped/Semantics/GraphErr/CFG.agda). The frame
+  is the environment, as in Impᵀ (ISWIM/Semantics/GraphErr/Typed/Imp.agda);
   a tail that forgets the slots of a finished scope (p : Δ' ⊑ Δ) sees
   the environment without them (drop). A label means the block it
   indexes, under the meanings of the older blocks (blocks), so a jump
@@ -10,14 +10,14 @@
 
 -}
 
-module Semantics.GraphErr.Typed.CFG where
+module ISWIM.Semantics.GraphErr.Typed.CFG where
 
 open import Framework.GraphModel.ErrorPrelude
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Semantics.GraphErr.Typed.Ops
-open import Semantics.GraphErr.Typed.Imp using (Table; tbl; 𝒜; 𝒮; letᵗ) public
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.CFG
+open import ISWIM.Semantics.GraphErr.Typed.Ops
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (Table; tbl; 𝒜; 𝒮; letᵗ) public
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.CFG
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (suc)

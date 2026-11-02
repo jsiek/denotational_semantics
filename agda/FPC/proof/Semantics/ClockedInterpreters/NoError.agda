@@ -9,19 +9,19 @@
 
 -}
 
-module Mu.proof.Semantics.ClockedInterpreters.NoError where
+module FPC.proof.Semantics.ClockedInterpreters.NoError where
 
-open import Mu.Language.Type
-open import Mu.Language.FPC using (Tm)
-open import Mu.Language.X86 using (DSig; sig; called; Program; program; body; Body; Blocks; _▷_; Seq; _∷_; retq; jmp; case;
+open import FPC.Language.Type
+open import FPC.Language.FPC using (Tm)
+open import FPC.Language.X86 using (DSig; sig; called; Program; program; body; Body; Blocks; _▷_; Seq; _∷_; retq; jmp; case;
   movq; subq; cmpq; sete; alloc; load; loadfst; loadsnd; callq)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-error; Answer)
 open import Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.Values as Values
-import Mu.Semantics.ClockedInterpreters.FPC as I
-import Mu.Semantics.ClockedInterpreters.GlobalFun as C5
-import Mu.Semantics.ClockedInterpreters.X86 as X
+import FPC.Semantics.ClockedInterpreters.Values as Values
+import FPC.Semantics.ClockedInterpreters.FPC as I
+import FPC.Semantics.ClockedInterpreters.GlobalFun as C5
+import FPC.Semantics.ClockedInterpreters.X86 as X
 
 open import Data.List using (List; []; _∷_)
 open import Data.Maybe using (just; nothing)
@@ -72,7 +72,7 @@ module Ans (C : Ctx → Type → Type → Set) where
 {- FPC ----------------------------------------------------------------------}
 
 module _ where
-  open import Mu.Language.FPC
+  open import FPC.Language.FPC
   open I
   open Ans (λ Δ A B → Tm (A ∷ Δ) B)
 

@@ -1,8 +1,8 @@
 {-
 
   Correctness of prune (Closμ → Closμ) in Scott domains
-  (Mu/Semantics/ScottDomains/Clos.agda), as in the graph model
-  (Mu/proof/Correctness/GraphModel/PruneCorrect.agda), with equality of
+  (FPC/Semantics/ScottDomains/Clos.agda), as in the graph model
+  (FPC/proof/Correctness/GraphModel/PruneCorrect.agda), with equality of
   values in place of equality of sets and defined for nonempty.
 
   ⟦ M ⟧ ρ = ⟦ opt M r ⟧ ρ' when ρ and ρ' agree through r on the
@@ -11,7 +11,7 @@
   variables of a closure and the kept ones are related by the selection
   (Th): a kept one is equal, a dropped one is a variable, so defined.
   Hence the two closures' guards hold together (guard-iff,
-  Mu/proof/Semantics/ScottDomains/PruneLemmas.agda), and under them the
+  FPC/proof/Semantics/ScottDomains/PruneLemmas.agda), and under them the
   environments of the codes agree through squeeze on the variables the
   code uses.
 
@@ -29,10 +29,10 @@ open import UF.PropTrunc
 open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
-open import Mu.Language.Type
-open import Mu.Language.Clos
-open import Mu.Compiler.Prune renaming (ext to ext-ren)
-open import Mu.Framework.AllUtil using (All; []; _∷_; Flags; kept; select; sq; squeeze; pos; ∨-l; ∨-r; lookup)
+open import FPC.Language.Type
+open import FPC.Language.Clos
+open import FPC.Compiler.Prune renaming (ext to ext-ren)
+open import FPC.Framework.AllUtil using (All; []; _∷_; Flags; kept; select; sq; squeeze; pos; ∨-l; ∨-r; lookup)
 open import Framework.abt.GSubst using (_•_)
 open import Data.Bool using (Bool; true; false; T)
 open import Data.List using (List; []; _∷_; length)
@@ -40,7 +40,7 @@ open import Data.Fin using (Fin; zero; suc)
 import Relation.Binary.PropositionalEquality as Eq
 open import Relation.Nullary.Decidable using (fromWitness)
 
-module Mu.proof.Correctness.ScottDomains.PruneCorrect
+module FPC.proof.Correctness.ScottDomains.PruneCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -50,8 +50,8 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.Clos pt fe pe
-open import Mu.proof.Semantics.ScottDomains.PruneLemmas pt fe pe using (All-defined; guard-iff)
+open import FPC.Semantics.ScottDomains.Clos pt fe pe
+open import FPC.proof.Semantics.ScottDomains.PruneLemmas pt fe pe using (All-defined; guard-iff)
 
 NE : Ctx → ⟨ Env ⟩ → 𝓤₀ ̇
 NE Γ ρ = ∀ {C} (x : Γ ∋ C) → defined (ρ (idx x))

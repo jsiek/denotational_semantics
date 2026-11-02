@@ -2,7 +2,7 @@
 
   What the languages of FPC from GlobalFunμ on share in the graph
   model: the tables of global definitions, as in
-  Semantics/Graph/Typed/Ops.agda (which also has project, which
+  ISWIM/Semantics/Graph/Typed/Ops.agda (which also has project, which
   FPC does not have).
 
   A table gives each definition of a program (Σ ∋ s) its meaning. The
@@ -12,11 +12,11 @@
 
 -}
 
-module Mu.Semantics.GraphModel.Ops where
+module FPC.Semantics.GraphModel.Ops where
 
 open import Framework.GraphModel.Prelude
-open import Mu.Language.Type using (_∋_; lvl)
-open import Mu.Language.GlobalFun using (DSig)
+open import FPC.Language.Type using (_∋_; lvl)
+open import FPC.Language.GlobalFun using (DSig)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

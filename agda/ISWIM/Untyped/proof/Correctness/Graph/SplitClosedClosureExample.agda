@@ -14,12 +14,12 @@ open import Framework.Syntax.SyntaxUtil
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
-open import Untyped.Language.Clos3
-open import Untyped.proof.Semantics.Graph.Clos3Iswim
-import Untyped.proof.Semantics.Graph.Clos4Iswim as S4
-open import Untyped.Compiler.Split using (split)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import Untyped.proof.Correctness.Graph.SplitPreserve using (preserve-const)
+open import ISWIM.Untyped.Language.Clos3
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos3Iswim
+import ISWIM.Untyped.proof.Semantics.Graph.Clos4Iswim as S4
+open import ISWIM.Untyped.Compiler.Split using (split)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitPreserve using (preserve-const)
 
 open import Data.List using ([]; _∷_)
 open import Data.List.Relation.Unary.Any using (here)
@@ -27,7 +27,7 @@ open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (tt)
 open import Relation.Binary.PropositionalEquality using (refl)
 
-module Untyped.proof.Correctness.Graph.SplitClosedClosureExample where
+module ISWIM.Untyped.proof.Correctness.Graph.SplitClosedClosureExample where
 
 {- the identity function, as a closure with no free variables -}
 id-clos : AST

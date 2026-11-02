@@ -1,4 +1,4 @@
-module Untyped.Language.Mon where
+module ISWIM.Untyped.Language.Mon where
 {-
 
  Monadic normal form, a sublanguage of Clos5: the output of the
@@ -12,7 +12,7 @@ module Untyped.Language.Mon where
 
 -}
 
-open import Untyped.Language.Clos5
+open import ISWIM.Untyped.Language.Clos5
 open import Framework.Syntax.Rename Op sig using (rename; rename-args; ext)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 

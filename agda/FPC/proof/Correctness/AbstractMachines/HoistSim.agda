@@ -1,8 +1,8 @@
 {-
 
-  Correctness of hoist (PairClosμ → GlobalFunμ, Mu/Compiler/Hoist.agda)
+  Correctness of hoist (PairClosμ → GlobalFunμ, FPC/Compiler/Hoist.agda)
   by a forward simulation between the machines, as for typed hoist
-  (proof/Correctness/CEK/HoistSim.agda).
+  (ISWIM/proof/Correctness/CEK/HoistSim.agda).
 
   The machines run in lock step. A PairClosμ term is related to a GlobalFunμ
   term over the final table (Top ⊢ M ⇝ M') when they agree, except that
@@ -22,20 +22,20 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.HoistSim where
+module FPC.proof.Correctness.AbstractMachines.HoistSim where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.PairClos as S
-open import Mu.Language.GlobalFun
-open import Mu.Compiler.Hoist
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
+import FPC.Language.PairClos as S
+open import FPC.Language.GlobalFun
+open import FPC.Compiler.Hoist
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
 open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-import Mu.Semantics.AbstractMachines.PairClos as Sₘ
-import Mu.Semantics.AbstractMachines.GlobalFun as Tₘ
+import FPC.Semantics.AbstractMachines.PairClos as Sₘ
+import FPC.Semantics.AbstractMachines.GlobalFun as Tₘ
 
 open import Data.Bool using (true; false)
 open import Data.Integer using (_≟_)

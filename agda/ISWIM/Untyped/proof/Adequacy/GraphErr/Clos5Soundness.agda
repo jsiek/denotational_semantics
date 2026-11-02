@@ -5,7 +5,7 @@
   is in the denotation of the (well-formed) program, and when it stops
   with an error, ω is.
 
-  As for ISWIM (proof/Adequacy/GraphErr/Soundness.agda), each machine
+  As for ISWIM (ISWIM/proof/Adequacy/GraphErr/Soundness.agda), each machine
   state denotes a set (𝒮), each step can only shrink it (step-⊆), a
   continuation passes on ω (𝒦-ω: an erring operand errs in its bind),
   and a check of the machine fails on a value of another kind (𝒱-bad:
@@ -19,7 +19,7 @@
 
 -}
 
-module Untyped.proof.Adequacy.GraphErr.Clos5Soundness where
+module ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5Soundness where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Out; int; bool; δ)
@@ -33,26 +33,26 @@ open import proof.Framework.GraphModel.ErrorMonad renaming (Val to Valᴰ)
 open import proof.Framework.GraphModel.ContinuityBase using (mono; consis; Good)
 open import Framework.abt.Sig using (■)
 open import proof.Framework.GraphModel.DOpSig using (Results)
-open import proof.Semantics.GraphErr.Prim using (primᵐ; primᵐ-good) renaming (out to dout)
-open import Untyped.Language.Clos5
-open import Untyped.Semantics.GraphErr.Clos5
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primᵐ; primᵐ-good) renaming (out to dout)
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; table; init) renaming (code to codeD)
-open import Untyped.proof.Semantics.GraphErr.Clos5
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos5
   using (⟦⟧[]-monotone; body-mono; body-continuous; body2-continuous; table-con; Clos5ᵐ-con)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates; next; stop)
 open import proof.Framework.ListUtil
-open import Untyped.Semantics.CEK.Clos5
-import Untyped.Semantics.CEK.Clos5 as T using (inl; inr)
-open import Untyped.proof.Compiler.HoistTable using (∷-⊑)
-open import proof.Adequacy.Common using (ShapeOf; δ?-inv; has-length→length; length→has-length)
-open import proof.Adequacy.GraphErr.Soundness
+open import ISWIM.Untyped.Semantics.CEK.Clos5
+import ISWIM.Untyped.Semantics.CEK.Clos5 as T using (inl; inr)
+open import ISWIM.Untyped.proof.Compiler.HoistTable using (∷-⊑)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; δ?-inv; has-length→length; length→has-length)
+open import ISWIM.proof.Adequacy.GraphErr.Soundness
   using (At; AllNE; 𝒯P; bindL; 𝒯L; _⊆L_; ⊆L-refl; bindL-mono; 𝒯P-mono; Vals; 𝒯L-β; errsL; errsL-ω;
          At-length; At-[]; 𝒯P-kind; Vals⇒AllNE; shape-ω; AllCon; 𝒯P-con; δ?-none)
-open import Untyped.proof.Adequacy.GraphErr.Clos5WF using (WF; DefsWF)
-import Untyped.proof.Adequacy.GraphErr.Clos5Common as Common
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5WF using (WF; DefsWF)
+import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5Common as Common
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)

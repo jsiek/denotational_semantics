@@ -1,7 +1,7 @@
 {-
 
   Clos4ᵀ: Clos4, intrinsically typed. The output of typed split
-  (Compiler/Split.agda).
+  (ISWIM/Compiler/Split.agda).
 
   A closure is a pair of closed code and the tuple of its free
   variables, packed so that its type ⟪ fun ⟫ hides the length n of the
@@ -22,11 +22,11 @@
 
 -}
 
-module Language.Typed.Clos4 where
+module ISWIM.Language.Typed.Clos4 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 
 open import Data.Fin using (Fin)
 open import Data.List using ([]; _∷_)

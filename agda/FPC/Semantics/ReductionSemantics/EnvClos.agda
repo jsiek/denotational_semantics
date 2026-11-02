@@ -1,24 +1,24 @@
 {-
 
-  A reduction semantics for EnvClosμ (Mu/Language/EnvClos.agda), as for
-  Closμ (Mu/Semantics/ReductionSemantics/Clos.agda) and Clos3ᵀ
-  (Semantics/Reduction/Typed/Clos3.agda). Applying a closure to a value
+  A reduction semantics for EnvClosμ (FPC/Language/EnvClos.agda), as for
+  Closμ (FPC/Semantics/ReductionSemantics/Clos.agda) and Clos3ᵀ
+  (ISWIM/Semantics/Reduction/Typed/Clos3.agda). Applying a closure to a value
   W substitutes W and the tuple of its free variables for the two
   variables of its code.
 
 -}
 
-module Mu.Semantics.ReductionSemantics.EnvClos where
+module FPC.Semantics.ReductionSemantics.EnvClos where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.EnvClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.EnvClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
-open import Mu.Framework.ReductionAll Obs o-error using (red-∷)
+open import FPC.Framework.ReductionAll Obs o-error using (red-∷)
 
 open import Data.Bool using (if_then_else_)
 open import Data.Integer using (ℤ; _-_; _≟_)

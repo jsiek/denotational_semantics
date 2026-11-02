@@ -1,9 +1,9 @@
 {-
 
   Soundness of the ISWIM machine with respect to the graph model
-  with errors (Semantics/GraphErr/ISWIM.agda): what the machine computes
+  with errors (ISWIM/Semantics/GraphErr/ISWIM.agda): what the machine computes
   is in the denotation of the program, and when it stops with an error,
-  ω is. The structure is that of proof/Adequacy/GraphErr/Soundness.agda:
+  ω is. The structure is that of ISWIM/proof/Adequacy/GraphErr/Soundness.agda:
   each machine state denotes a set (𝒮), each step can only shrink it.
 
   The monad does the error bookkeeping:
@@ -17,7 +17,7 @@
 
 -}
 
-module proof.Adequacy.GraphErr.Soundness where
+module ISWIM.proof.Adequacy.GraphErr.Soundness where
 
 open import Framework.Primitives using (Base; base-rep; Int; Nat; 𝔹; Unit; Void; Blame)
 open import Language.Prim using (Out; int; bool; δ)
@@ -28,23 +28,23 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase using (ℬ; nthD; ℬ-consis)
 open import proof.Framework.GraphModel.ErrorMonad renaming (Val to Valᴰ)
 open import proof.Framework.GraphModel.ContinuityBase using (mono; consis)
-open import proof.Semantics.GraphErr.Prim using (primᵐ; primᵐ-good) renaming (out to dout)
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primᵐ; primᵐ-good) renaming (out to dout)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.DOpSig using (Results)
 open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Relation.Nullary using (yes; no; ¬_)
 open import Level using (lift; lower)
-open import Language.ISWIM
-open import proof.Semantics.GraphErr.ISWIM
+open import ISWIM.Language.ISWIM
+open import ISWIM.proof.Semantics.GraphErr.ISWIM
   using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone; ISWIMᵐ-con-env; body-mono; body-continuous)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Star; Terminates; next; stop)
 open import proof.Framework.ListUtil
-open import Semantics.CEK.ISWIM hiding (inl; inr)
-import Semantics.CEK.ISWIM as T using (inl; inr)
-open import proof.Adequacy.Common
+open import ISWIM.Semantics.CEK.ISWIM hiding (inl; inr)
+import ISWIM.Semantics.CEK.ISWIM as T using (inl; inr)
+open import ISWIM.proof.Adequacy.Common
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)

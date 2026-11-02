@@ -14,7 +14,7 @@
 
 -}
 
-module proof.Adequacy.Common where
+module ISWIM.proof.Adequacy.Common where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; Out; δ)
@@ -23,7 +23,7 @@ open import proof.Framework.GraphModel.Domain
 open import Semantics.Observation
 open import proof.Framework.Runs using (module Runs)
 open import proof.Framework.ListUtil using (has-length)
-open import Semantics.CEK.ISWIM
+open import ISWIM.Semantics.CEK.ISWIM
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)

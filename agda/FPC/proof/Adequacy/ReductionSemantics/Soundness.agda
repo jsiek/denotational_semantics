@@ -1,15 +1,15 @@
 {-
 
   Soundness of the reduction semantics of FPC
-  (Mu/Semantics/ReductionSemantics/FPC.agda) with respect to the graph
-  model (Mu/Semantics/GraphModel/FPC.agda), as Plotkin's for PCF: one
+  (FPC/Semantics/ReductionSemantics/FPC.agda) with respect to the graph
+  model (FPC/Semantics/GraphModel/FPC.agda), as Plotkin's for PCF: one
   step of reduction preserves the meaning of a closed term (step-≃),
   so a run does too (run-≃); and a closed term that does not reduce is
   a value (progress), which denotes a nonempty set (val-ne).
 
   A step is a congruence, whose meaning follows from the congruences of
   the graph model's operators (as for simplify,
-  Mu/proof/Correctness/GraphModel/SimplifyCorrect.agda), or a redex.
+  FPC/proof/Correctness/GraphModel/SimplifyCorrect.agda), or a redex.
   The redexes that bind (β, let, case) substitute a value for a
   variable, which the substitution lemma (sub-≃) turns into binding the
   value's denotation in the environment, and the graph model's β laws
@@ -20,32 +20,32 @@
 
 -}
 
-module Mu.proof.Adequacy.ReductionSemantics.Soundness where
+module FPC.proof.Adequacy.ReductionSemantics.Soundness where
 
 open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; nthD)
 open import proof.Framework.GraphModel.TypedGraph using (proj-𝒯)
 open import proof.Framework.GraphModel.Env using (nonempty-env)
 open import proof.Semantics.Graph.Prim using (primD-≃)
 import Language.Prim as P
 open import Framework.Primitives using (Int)
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.FPC
-open import Mu.Language.FPCSubst using (exts; tmK; travs)
-open import Mu.Compiler.Simplify using (prim-term)
-open import Mu.proof.Compiler.SimplifyFacts using (SV; SVs)
-import Mu.proof.Compiler.SimplifyFacts as F
-open import Mu.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; con)
-open import Mu.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃)
-open import Mu.proof.Correctness.GraphModel.SimplifyCorrect
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.FPC
+open import FPC.Language.FPCSubst using (exts; tmK; travs)
+open import FPC.Compiler.Simplify using (prim-term)
+open import FPC.proof.Compiler.SimplifyFacts using (SV; SVs)
+import FPC.proof.Compiler.SimplifyFacts as F
+open import FPC.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; con)
+open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃)
+open import FPC.proof.Correctness.GraphModel.SimplifyCorrect
   using (shift-≃; let-β; case-inl; case-inr; sv-ne; svs-ne; nth-lookup; prim-term-≃; prim-fold)
-open import Mu.proof.Semantics.ReductionSemantics.FPC
+open import FPC.proof.Semantics.ReductionSemantics.FPC
   using (red; reds; sub; _[_]; β; get?; case?; prim?; unfold?; out; value-red; lam; lit; tuple; inl; inr; fold)
   renaming (Value to Val; _•_ to _•ₛ_; ∅ to ∅ₛ)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import Semantics.Observation using (Obs; o-error)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (Red; val; error; to; step-in)
 open import proof.Framework.Reduction Obs o-error using (Star*; ε; _◅_; val-in)
 
@@ -59,7 +59,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 
 {- The substitution lemma --------------------------------------------------------}
 
-{- as renaming (ren-≃, Mu/proof/Correctness/GraphModel/SimplifyCorrect.agda):
+{- as renaming (ren-≃, FPC/proof/Correctness/GraphModel/SimplifyCorrect.agda):
    a substitution σ, in an environment ρ', means binding each variable x
    to the meaning of σ x in ρ' -}
 sub-≃ : ∀ {Γ Δ A} (σ : ∀ {B} → Γ ∋ B → Tm Δ B) (M : Tm Γ A) {ρ ρ'}

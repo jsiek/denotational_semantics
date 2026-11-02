@@ -1,20 +1,20 @@
 {-
 
-  Lemmas about the Clos5ᵀ machine (Semantics/CEK/Typed/Clos5.agda) on
-  the embedding of Monᵀ atoms (Language/Typed/Mon.agda), shared by the
+  Lemmas about the Clos5ᵀ machine (ISWIM/Semantics/CEK/Typed/Clos5.agda) on
+  the embedding of Monᵀ atoms (ISWIM/Language/Typed/Mon.agda), shared by the
   simulation proofs of remove complex operands and lift locals: an atom
-  evaluates to its value (atom, Semantics/CEK/Typed/Imp.agda) in one
+  evaluates to its value (atom, ISWIM/Semantics/CEK/Typed/Imp.agda) in one
   step, and a tuple of atoms to the tuple of their values.
 
 -}
 
-module proof.Correctness.CEK.Clos5Common where
+module ISWIM.proof.Correctness.CEK.Clos5Common where
 
-open import Language.Typed.Type
-open import Language.Typed.Clos5 using (Program; program; Code; Tm)
-open import Language.Typed.Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
-open import Semantics.CEK.Typed.Clos5
-open import Semantics.CEK.Typed.Imp using (atom)
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos5 using (Program; program; Code; Tm)
+open import ISWIM.Language.Typed.Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
+open import ISWIM.Semantics.CEK.Typed.Clos5
+open import ISWIM.Semantics.CEK.Typed.Imp using (atom)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_)
 open import Framework.VecUtil using (_<><_)
 

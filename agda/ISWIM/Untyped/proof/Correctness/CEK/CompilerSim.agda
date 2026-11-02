@@ -12,7 +12,7 @@
   program terminates with the same observation as the original,
   errors exactly when it does, and diverges exactly when it does.
 
-  The compiler is Untyped.Compiler.Pipeline.compile, the one of the
+  The compiler is ISWIM.Untyped.Compiler.Pipeline.compile, the one of the
   denotational end-to-end theorem (CompilerCorrect), and it is
   definitionally the composition of the passes as the simulations state
   them. The only precondition is that of capture: the ISWIM program is
@@ -21,23 +21,23 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.CompilerSim where
+module ISWIM.Untyped.proof.Correctness.CEK.CompilerSim where
 
-open import Untyped.Compiler.Pipeline using (compile)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-open import Untyped.proof.Compiler.CaptureScope using (Closed; capture-closed)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
-open import Compiler.Simplify using (simplify)
-open import proof.Correctness.CEK.SimplifySim using (simplify-correct)
-open import Untyped.proof.Correctness.CEK.CaptureSim using (capture-correct)
-open import Untyped.proof.Correctness.CEK.PruneSim using (prune-correct)
-open import Untyped.proof.Correctness.CEK.ConcretizeSim using (concretize-correct)
-open import Untyped.proof.Correctness.CEK.SplitSim using (split-correct)
-open import Untyped.proof.Correctness.CEK.HoistSim using (hoist-correct)
-import Semantics.CEK.ISWIM as S
-import Untyped.Semantics.CEK.Clos5 as T
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed; capture-closed)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.proof.Correctness.CEK.SimplifySim using (simplify-correct)
+open import ISWIM.Untyped.proof.Correctness.CEK.CaptureSim using (capture-correct)
+open import ISWIM.Untyped.proof.Correctness.CEK.PruneSim using (prune-correct)
+open import ISWIM.Untyped.proof.Correctness.CEK.ConcretizeSim using (concretize-correct)
+open import ISWIM.Untyped.proof.Correctness.CEK.SplitSim using (split-correct)
+open import ISWIM.Untyped.proof.Correctness.CEK.HoistSim using (hoist-correct)
+import ISWIM.Semantics.CEK.ISWIM as S
+import ISWIM.Untyped.Semantics.CEK.Clos5 as T
 
 open import Data.Product using (_,_; proj₁; proj₂)
 

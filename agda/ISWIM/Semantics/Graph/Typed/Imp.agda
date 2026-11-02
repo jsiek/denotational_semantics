@@ -1,12 +1,12 @@
 {-
 
-  The semantics of Impᵀ (Language/Typed/Imp.agda) in the graph model, in
-  continuation-passing style, as Untyped/Semantics/Graph/ImpK.agda. The frame σ
+  The semantics of Impᵀ (ISWIM/Language/Typed/Imp.agda) in the graph model, in
+  continuation-passing style, as ISWIM/Untyped/Semantics/Graph/ImpK.agda. The frame σ
   gives each slot (a typed index, position idx) a meaning; since the
   frame is typed, an expression never changes the slots it can see, so
   a continuation κ takes only the value of the expression. Atoms and
   simple expressions (𝒜, 𝒮, shared with CFGᵀ) are the operators of
-  Clos5ᵀ on atoms (Semantics/Graph/Typed/Clos5.agda).
+  Clos5ᵀ on atoms (ISWIM/Semantics/Graph/Typed/Clos5.agda).
 
   x := e₁; e₂ runs e₁ with the continuation that is strict in its value
   D like let in Clos5ᵀ: ⋆ ⟨ Λ F , D ⟩, where F X runs e₂ with X in the
@@ -17,14 +17,14 @@
 
 -}
 
-module Semantics.Graph.Typed.Imp where
+module ISWIM.Semantics.Graph.Typed.Imp where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Semantics.Graph.Typed.Ops
-open import Language.Typed.Type
-open import Language.Typed.Imp
+open import ISWIM.Semantics.Graph.Typed.Ops
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Imp
 
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.List.Relation.Unary.All using (All)

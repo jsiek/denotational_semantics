@@ -1,17 +1,17 @@
 {-
 
   An assurance, not part of the compiler or of the comparison: erasing
-  X86ᵀ (Language/Typed/X86.agda) to X86 (erase,
-  Language/Typed/X86Erase.agda) keeps the meaning of every X86ᵀ
-  program, in the CEK column's machines (Semantics/CEK/Typed/X86.agda,
-  Semantics/CEK/X86.agda). The statements are in
-  Theorems/X86Erasure.agda.
+  X86ᵀ (ISWIM/Language/Typed/X86.agda) to X86 (erase,
+  ISWIM/Language/Typed/X86Erase.agda) keeps the meaning of every X86ᵀ
+  program, in the CEK column's machines (ISWIM/Semantics/CEK/Typed/X86.agda,
+  ISWIM/Semantics/CEK/X86.agda). The statements are in
+  ISWIM/Theorems/X86Erasure.agda.
 
   A simulation of the X86ᵀ machine by the X86 machine (Both,
   proof/Framework/Both.agda): one X86ᵀ instruction or jump is matched by
   its erased instructions, one each but chk's, whose test errs exactly
   when chk does (ck-ok). An X86 value is the erasure of a typed value
-  (⌊_⌋, proof/Assurance/X86Agree.agda). The match (MAg) says
+  (⌊_⌋, ISWIM/proof/Assurance/X86Agree.agda). The match (MAg) says
   * the X86 frame holds the erasure of each typed slot at its level
     (Agree), and has at least the body's n slots, so a
     write to a slot below n, the only ones X86ᵀ writes, succeeds: X86's
@@ -31,14 +31,14 @@
 
 -}
 
-module proof.Assurance.X86Erasure where
+module ISWIM.proof.Assurance.X86Erasure where
 
 open import Framework.Primitives using (Nat; Int; 𝔹; Unit; Void; Blame)
 open import Language.Prim using (sub)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.X86
-open import Language.Typed.X86Erase
-open import Compiler.SelectX86 using (check)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.X86
+open import ISWIM.Language.Typed.X86Erase
+open import ISWIM.Compiler.SelectX86 using (check)
 open import Framework.Lookup using (_!_)
 open import Framework.ListUtil using (_‼_)
 open import proof.Framework.Lookup using (lvl-<)
@@ -48,12 +48,12 @@ open import proof.Semantics.CEK.Smallstep
   using (Machine; Next; next; stop; Final; Star; ε; _◅_; Plus; step⁺; star-plus)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)
 open import proof.Framework.Both Obs using (Both; halt; move; both-fsim)
-open import proof.Assurance.X86Agree using (⌊_⌋; ⌊_⌋*; obs-⌊⌋; Agree; agree; arg-ok; write; proj-ok; proj-bad; len-⌊⌋)
-import Language.X86 as L
-import Semantics.CEK.X86 as X
-import Semantics.CEK.Values as XV
-import Semantics.CEK.Typed.X86 as T
-import Semantics.CEK.Typed.Clos5 as V
+open import ISWIM.proof.Assurance.X86Agree using (⌊_⌋; ⌊_⌋*; obs-⌊⌋; Agree; agree; arg-ok; write; proj-ok; proj-bad; len-⌊⌋)
+import ISWIM.Language.X86 as L
+import ISWIM.Semantics.CEK.X86 as X
+import ISWIM.Semantics.CEK.Values as XV
+import ISWIM.Semantics.CEK.Typed.X86 as T
+import ISWIM.Semantics.CEK.Typed.Clos5 as V
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥; ⊥-elim)

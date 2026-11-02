@@ -1,7 +1,7 @@
 {-
 
   Clos5ᵀ: Clos5, intrinsically typed. The output of typed hoist
-  (Compiler/Hoist.agda).
+  (ISWIM/Compiler/Hoist.agda).
 
   The code of every function is a global definition. A program has a
   table Σ, the lengths of the environments of its definitions (newest
@@ -10,17 +10,17 @@
   type code n, so a reference to a missing definition cannot be written.
   Every definition is typed over the whole table (it may refer to any
   definition, itself included; hoist makes only references to older
-  ones). Otherwise as Clos4ᵀ (Language/Typed/Clos4.agda), except that
+  ones). Otherwise as Clos4ᵀ (ISWIM/Language/Typed/Clos4.agda), except that
   let binds a value of any type (remove complex operands binds operands
   of any type: code, environments, …).
 
 -}
 
-module Language.Typed.Clos5 where
+module ISWIM.Language.Typed.Clos5 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_)

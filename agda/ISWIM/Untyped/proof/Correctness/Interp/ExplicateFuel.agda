@@ -20,21 +20,21 @@
 
 -}
 
-module Untyped.proof.Correctness.Interp.ExplicateFuel where
+module ISWIM.Untyped.proof.Correctness.Interp.ExplicateFuel where
 
-open import Untyped.Language.Imp as Imp using (simple; assign)
-open import Untyped.Language.CFG using (Body; Tail; goto; case)
-open import Untyped.Compiler.Explicate
-open import Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Language.Imp as Imp using (simple; assign)
+open import ISWIM.Untyped.Language.CFG using (Body; Tail; goto; case)
+open import ISWIM.Untyped.Compiler.Explicate
+open import ISWIM.Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import proof.Semantics.Interp.Clock
-import Untyped.Semantics.Interp.Imp as I
-import Untyped.Semantics.Interp.CFG as G
-open import Untyped.Semantics.Interp.Imp using (Frame; _[_]≔_; set; eval-simple; value; here)
-open import Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr)
-import Semantics.Interp.ISWIM as ISWIM
+import ISWIM.Untyped.Semantics.Interp.Imp as I
+import ISWIM.Untyped.Semantics.Interp.CFG as G
+open import ISWIM.Untyped.Semantics.Interp.Imp using (Frame; _[_]≔_; set; eval-simple; value; here)
+open import ISWIM.Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr)
+import ISWIM.Semantics.Interp.ISWIM as ISWIM
 open import proof.Framework.ListUtil using (‼-pw)
-open import Untyped.proof.Correctness.Interp.LiftLocalsFuel using (compile-imp-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.LiftLocalsFuel using (compile-imp-correct)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length; map)

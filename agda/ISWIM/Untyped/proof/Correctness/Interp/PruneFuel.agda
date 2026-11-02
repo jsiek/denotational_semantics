@@ -23,23 +23,23 @@
 
 -}
 
-module Untyped.proof.Correctness.Interp.PruneFuel where
+module ISWIM.Untyped.proof.Correctness.Interp.PruneFuel where
 
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos2
-open import Untyped.Compiler.Prune hiding (bound; bound-arg; bound-args)
-open import Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Language.Clos2
+open import ISWIM.Untyped.Compiler.Prune hiding (bound; bound-arg; bound-args)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; ws-uses)
-open import Untyped.proof.Compiler.CaptureScope using (Closed; capture-closed)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed; capture-closed)
 open import Semantics.Observation
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
 open import proof.Framework.ListUtil using (_‼_; proj-pw)
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.ISWIM as S
-import Untyped.Semantics.Interp.Clos2 as T
-import Untyped.proof.Correctness.Interp.CaptureFuel as EF
+import ISWIM.Semantics.Interp.ISWIM as S
+import ISWIM.Untyped.Semantics.Interp.Clos2 as T
+import ISWIM.Untyped.proof.Correctness.Interp.CaptureFuel as EF
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using ([]; _∷_; replicate)

@@ -10,7 +10,7 @@
 
 -}
 
-module Mu.Semantics.GraphModel.Closed where
+module FPC.Semantics.GraphModel.Closed where
 
 open import Framework.GraphModel.Prelude
 

@@ -9,13 +9,13 @@
 
 -}
 
-module Untyped.Semantics.Interp.Clos2 where
+module ISWIM.Untyped.Semantics.Interp.Clos2 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
-open import Untyped.Language.Clos2
+open import ISWIM.Untyped.Language.Clos2
 open import Semantics.Observation
 open import Framework.ListUtil using (_‼_; proj)
 open import Semantics.Interp.Clock

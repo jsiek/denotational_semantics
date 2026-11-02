@@ -1,8 +1,8 @@
 {-
 
   Impμ: Imp, intrinsically typed, with recursive types. The output of
-  lift locals (Mu/Compiler/LiftLocals.agda); as Impᵀ
-  (Language/Typed/Imp.agda), with the types of Monμ.
+  lift locals (FPC/Compiler/LiftLocals.agda); as Impᵀ
+  (ISWIM/Language/Typed/Imp.agda), with the types of Monμ.
 
   A body runs in a frame of slots typed by a context Δ (slot 0, the
   oldest, last); x := e₁; e₂ (assign) assigns the value of e₁ to the
@@ -12,12 +12,12 @@
 
 -}
 
-module Mu.Language.Imp where
+module FPC.Language.Imp where
 
 open import Language.Prim using (Prim)
-open import Mu.Language.Type
-open import Mu.Language.Mon using (DSig; sig; Args; Atm; var; lit; ref) public
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Language.Type
+open import FPC.Language.Mon using (DSig; sig; Args; Atm; var; lit; ref) public
+open import FPC.Framework.AllUtil using (All)
 
 open import Data.List using (List; []; _∷_)
 open import Framework.Primitives using (Int)

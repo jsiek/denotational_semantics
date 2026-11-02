@@ -29,7 +29,7 @@ open import Data.Nat using (_+_)
 open import Naturals.Order
 open import Notation.Order
 
-module Mu.proof.Correctness.ScottDomains.SplitReflect
+module FPC.proof.Correctness.ScottDomains.SplitReflect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -42,7 +42,7 @@ open import proof.Framework.Scott.Stages pt fe pe
 open import proof.Framework.Scott.StageCall pt fe pe
 open import proof.Framework.Scott.Values pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe
-open import Mu.proof.Correctness.ScottDomains.SplitRel pt fe pe
+open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
 
 Refl : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
 Refl d d' = Rel reflect d' d

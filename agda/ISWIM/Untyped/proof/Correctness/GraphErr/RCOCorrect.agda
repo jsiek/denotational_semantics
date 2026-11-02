@@ -29,24 +29,24 @@ open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.ErrorMonad hiding (Bound)
-open import proof.Semantics.GraphErr.Prim
+open import ISWIM.proof.Semantics.GraphErr.Prim
 open import proof.Semantics.Graph.Prim using (primD-mono)
-open import Untyped.Language.Clos5
-open import Untyped.Language.Mon using (Atom; var; lit; ref)
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Language.Mon using (Atom; var; lit; ref)
 open import proof.Framework.Syntax.Rename Op sig using (rename; rename-args; ext)
-open import Untyped.Compiler.RCO
+open import ISWIM.Untyped.Compiler.RCO
   using (rco; rco-args; rco-program; atom?; lift; case-on; lets; atomize; atoms; Bound; bound)
   renaming (binds to bindsᵣ)
-open import Untyped.proof.Semantics.GraphErr.Clos5
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos5
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ; init; Clos5ᵐ-Semantics; Clos5ᵐ-con; table-con;
          body-mono; body-continuous)
 import proof.Framework.GraphModel.RenameSem Op sig as RenameSem
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import Untyped.Compiler.PipelineScope using (Scoped)
-open import Untyped.proof.Compiler.PipelineScope using (compile-scoped)
-open import Compiler.CaptureScope using (Closed)
-open import Untyped.Compiler.Pipeline using (compile; compile-mon)
-import Language.ISWIM as ISWIM
+open import ISWIM.Untyped.Compiler.PipelineScope using (Scoped)
+open import ISWIM.Untyped.proof.Compiler.PipelineScope using (compile-scoped)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon)
+import ISWIM.Language.ISWIM as ISWIM
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 open import Framework.Primitives using (Int)
@@ -67,7 +67,7 @@ open import Level using (lower) renaming (lift to up)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; subst; cong)
 open import Relation.Nullary using (Dec; yes; no)
 
-module Untyped.proof.Correctness.GraphErr.RCOCorrect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.RCOCorrect where
 
 {- the primitives, as a kernel under binds -}
 prim-k : ∀ p → Kernel 2

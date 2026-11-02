@@ -3,7 +3,7 @@
   Adequacy of the graph model for the Clos5ᵀ machine: every element of
   the denotation of a program is witnessed by a run of the machine, for
   the table ds of its definitions. As for untyped Clos5
-  (Untyped/proof/Adequacy/Clos5LogRel.agda): a logical relation 𝕍 d v, by
+  (ISWIM/Untyped/proof/Adequacy/Clos5LogRel.agda): a logical relation 𝕍 d v, by
   recursion on the denotational value d (and on the injections dyn of v;
   Clos5Values.agda, shared with X86ᵀ, which runs definitions otherwise),
   and the fundamental lemma (adequate) by induction on the term, with the
@@ -19,10 +19,10 @@
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc; _≟_)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos5
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos5
 
-module proof.Adequacy.Clos5LogRel {Σ : List ℕ} (ds : All (Code Σ) Σ) where
+module ISWIM.proof.Adequacy.Clos5LogRel {Σ : List ℕ} (ds : All (Code Σ) Σ) where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq; δ; int; bool)
@@ -31,13 +31,13 @@ open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _•_) renaming (const to dconst)
 open import proof.Framework.GraphModel.Ops using (nthD)
 open import proof.Semantics.Graph.Prim using () renaming (out to dout)
-open import Semantics.Graph.Typed.Ops using (Table; tables; accepts; fun₄; init)
-open import Semantics.Graph.Typed.Clos5 using (⟦_⟧[_]; ⟦_⟧s[_]; code′)
-open import Semantics.CEK.Typed.Clos5
+open import ISWIM.Semantics.Graph.Typed.Ops using (Table; tables; accepts; fun₄; init)
+open import ISWIM.Semantics.Graph.Typed.Clos5 using (⟦_⟧[_]; ⟦_⟧s[_]; code′)
+open import ISWIM.Semantics.CEK.Typed.Clos5
 open import Semantics.Observation using (Obs; o-const; Answer)
 open import Framework.Lookup using (_!_)
-open import proof.Adequacy.Clos5Common ds
-open import proof.Adequacy.Clos5Values using (module Rel; proj?-ok)
+open import ISWIM.proof.Adequacy.Clos5Common ds
+open import ISWIM.proof.Adequacy.Clos5Values using (module Rel; proj?-ok)
 import proof.Framework.GraphModel.Env as E
 
 open import Data.Bool using (true; false)

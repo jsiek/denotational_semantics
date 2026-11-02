@@ -1,9 +1,9 @@
-module Untyped.proof.Semantics.Graph.Clos3Iswim where
+module ISWIM.Untyped.proof.Semantics.Graph.Clos3Iswim where
 
 open import proof.Framework.GraphModel.Continuity
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos3
-open import Untyped.Semantics.Graph.Clos3Iswim public hiding (⟦_⟧; init)
+open import ISWIM.Untyped.Language.Clos3
+open import ISWIM.Untyped.Semantics.Graph.Clos3Iswim public hiding (⟦_⟧; init)
 open import proof.Framework.GraphModel.SemanticsUtil Op sig using (module GoodSemantics)
 
 open import Data.Unit using (⊤; tt)

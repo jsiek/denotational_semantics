@@ -1,24 +1,24 @@
 {-
 
-  A clocked interpreter for Impμ (Mu/Language/Imp.agda), the output of
-  lift locals, as the one for Impᵀ (Semantics/Interp/Typed/Imp.agda). A
+  A clocked interpreter for Impμ (FPC/Language/Imp.agda), the output of
+  lift locals, as the one for Impᵀ (ISWIM/Semantics/Interp/Typed/Imp.agda). A
   body runs in a frame typed by its context, the values of the slots
   assigned so far (Env Δ); assign e₁ e₂ assigns the value of e₁ to the
   next slot, which e₂ sees, and case assigns the payload to the next
   slot. An atom is read from the frame. The values are those of GlobalFunμ
-  (Mu/Semantics/ClockedInterpreters/GlobalFun.agda), and as there a call runs definition
+  (FPC/Semantics/ClockedInterpreters/GlobalFun.agda), and as there a call runs definition
   f, in a frame of its argument and environment. Simple expressions are
-  shared with CFGμ (Mu/Semantics/ClockedInterpreters/CFG.agda).
+  shared with CFGμ (FPC/Semantics/ClockedInterpreters/CFG.agda).
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.Imp where
+module FPC.Semantics.ClockedInterpreters.Imp where
 
-open import Mu.Language.Type
-open import Mu.Language.Imp
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
+open import FPC.Language.Type
+open import FPC.Language.Imp
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import Semantics.Interp.Clock
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)

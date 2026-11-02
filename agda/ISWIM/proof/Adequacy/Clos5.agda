@@ -1,10 +1,10 @@
 {-
 
   Soundness and adequacy of the graph model of Clos5ᵀ
-  (Semantics/Graph/Typed/Clos5.agda, ⟦_⟧ₚ) with respect to the Clos5ᵀ
-  machine (Semantics/CEK/Typed/Clos5.agda), for programs whose
+  (ISWIM/Semantics/Graph/Typed/Clos5.agda, ⟦_⟧ₚ) with respect to the Clos5ᵀ
+  machine (ISWIM/Semantics/CEK/Typed/Clos5.agda), for programs whose
   definitions refer only to older ones (OlderDefs), which hoist
-  produces (proof/Compiler/HoistOlder.agda):
+  produces (ISWIM/proof/Compiler/HoistOlder.agda):
 
     soundness (Clos5Soundness): if the machine stops with an answer,
       the value it returns denotes a part of ⟦ P ⟧ₚ;
@@ -17,20 +17,20 @@
 
 -}
 
-module proof.Adequacy.Clos5 where
+module ISWIM.proof.Adequacy.Clos5 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
-open import Language.Typed.Clos5 using (Program; program)
-open import Semantics.Graph.Typed.Clos5 using (⟦_⟧ₚ)
+open import ISWIM.Language.Typed.Clos5 using (Program; program)
+open import ISWIM.Semantics.Graph.Typed.Clos5 using (⟦_⟧ₚ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges; diverges-not-terminates; terminates-det)
-open import Semantics.CEK.Typed.Clos5 using (sem; ret; halt; obs)
-open import proof.Compiler.HoistOlder using (OlderDefs)
-import proof.Adequacy.Clos5Common as C
-import proof.Adequacy.Clos5LogRel as LR
-import proof.Adequacy.Clos5Soundness as S
+open import ISWIM.Semantics.CEK.Typed.Clos5 using (sem; ret; halt; obs)
+open import ISWIM.proof.Compiler.HoistOlder using (OlderDefs)
+import ISWIM.proof.Adequacy.Clos5Common as C
+import ISWIM.proof.Adequacy.Clos5LogRel as LR
+import ISWIM.proof.Adequacy.Clos5Soundness as S
 
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)

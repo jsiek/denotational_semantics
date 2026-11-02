@@ -6,15 +6,15 @@
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (eq)
-open import Untyped.Language.Imp as Imp using (simple; atm; var; lit; assign)
-open import Untyped.Language.CFG
-open import Untyped.Compiler.Explicate using (explicate-body)
+open import ISWIM.Untyped.Language.Imp as Imp using (simple; atm; var; lit; assign)
+open import ISWIM.Untyped.Language.CFG
+open import ISWIM.Untyped.Compiler.Explicate using (explicate-body)
 
 open import Data.Integer using (+_)
 open import Data.List using ([]; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module Untyped.proof.Compiler.Examples.ExplicateExample where
+module ISWIM.Untyped.proof.Compiler.Examples.ExplicateExample where
 
 {- the output of lift locals in LiftLocalsExample:
      x := 1; t := (x = 1); case t: z := the payload; inl ⇒ x | inr ⇒ z

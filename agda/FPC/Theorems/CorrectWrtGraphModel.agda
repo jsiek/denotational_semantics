@@ -3,7 +3,7 @@
   The correctness of the FPC compiler in the graph model: the
   statements of Theorem 4.1 (compiler correctness, graph model) and
   Lemma 4.6 (correctness of split closure) of the paper. The proofs are in
-  Mu/proof/Correctness/GraphModel/; each theorem here is one of them,
+  FPC/proof/Correctness/GraphModel/; each theorem here is one of them,
   with its type written out.
 
     FPC --simplify--> FPC --capture--> Closμ --prune--> Closμ
@@ -11,40 +11,40 @@
            --hoist--> GlobalFunμ --rco--> Monμ --lift locals--> Impμ
            --explicate control--> CFGμ --select instructions--> X86μ
 
-  compile (Mu/Compiler/Pipeline.agda) is the composition of the ten
+  compile (FPC/Compiler/Pipeline.agda) is the composition of the ten
   passes. A denotation is a set of graph elements
   (Framework/GraphModel/Domain.agda): c ∈ D is const c ∈ D, D ≠ ∅ is
   nonempty D, and the empty environment of a closed term is ρ₀
-  (Mu/Semantics/GraphModel/Closed.agda: every variable denotes {⟨⟩}).
+  (FPC/Semantics/GraphModel/Closed.agda: every variable denotes {⟨⟩}).
 
-  To read them: the languages (Mu/Language/), the passes
-  (Mu/Compiler/), the graph-model semantics of FPC, EnvClosμ,
-  PairClosμ and X86μ (Mu/Semantics/GraphModel/), and the domain and
+  To read them: the languages (FPC/Language/), the passes
+  (FPC/Compiler/), the graph-model semantics of FPC, EnvClosμ,
+  PairClosμ and X86μ (FPC/Semantics/GraphModel/), and the domain and
   operators they are built from (Framework/GraphModel/).
 
 -}
 
-module Mu.Theorems.CorrectWrtGraphModel where
+module FPC.Theorems.CorrectWrtGraphModel where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
 open import Framework.GraphModel.Domain using (const)
 
-open import Mu.Language.Type using (base)
-import Mu.Language.FPC as FPC
-import Mu.Language.EnvClos as EnvClosμ
+open import FPC.Language.Type using (base)
+import FPC.Language.FPC as FPC
+import FPC.Language.EnvClos as EnvClosμ
 
-open import Mu.Compiler.Split using (split-program)
-open import Mu.Compiler.Pipeline using (compile)
+open import FPC.Compiler.Split using (split-program)
+open import FPC.Compiler.Pipeline using (compile)
 
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-open import Mu.Semantics.GraphModel.EnvClos using () renaming (⟦_⟧ to ⟦_⟧ᵉ)
-open import Mu.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧ᶠ)
-open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
-open import Mu.Semantics.GraphModel.Closed public using (ρ₀)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+open import FPC.Semantics.GraphModel.EnvClos using () renaming (⟦_⟧ to ⟦_⟧ᵉ)
+open import FPC.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧ᶠ)
+open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
+open import FPC.Semantics.GraphModel.Closed public using (ρ₀)
 
-import Mu.proof.Correctness.GraphModel.SplitCorrect as Split
-import Mu.proof.Correctness.GraphModel.CompilerCorrect as Compiler
+import FPC.proof.Correctness.GraphModel.SplitCorrect as Split
+import FPC.proof.Correctness.GraphModel.CompilerCorrect as Compiler
 
 open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂)

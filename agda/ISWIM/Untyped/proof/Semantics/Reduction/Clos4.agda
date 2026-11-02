@@ -5,10 +5,10 @@
 
 -}
 
-module Untyped.proof.Semantics.Reduction.Clos4 where
+module ISWIM.Untyped.proof.Semantics.Reduction.Clos4 where
 
-open import Untyped.Semantics.Reduction.Clos4 public
-open import Untyped.Language.Clos4
+open import ISWIM.Untyped.Semantics.Reduction.Clos4 public
+open import ISWIM.Untyped.Language.Clos4
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Framework.Reduction Obs o-error using (val)
 open import proof.Framework.Reduction Obs o-error using (Each; []; _∷_) public

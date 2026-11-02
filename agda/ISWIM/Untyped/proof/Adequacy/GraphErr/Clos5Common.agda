@@ -15,9 +15,9 @@
 -}
 
 open import Data.List using (List; []; _∷_; _++_; length; reverse)
-open import Untyped.Language.Clos5 using (AST; global)
+open import ISWIM.Untyped.Language.Clos5 using (AST; global)
 
-module Untyped.proof.Adequacy.GraphErr.Clos5Common (ds : List AST) where
+module ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5Common (ds : List AST) where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ν; _↦_)
@@ -25,15 +25,15 @@ open import proof.Framework.GraphModel.ErrorMonad
   using (errcode; Clean; ΛΛᵐ-val; ΛΛᵐ-fun; ΛΛᵐ; kind; Kind; fun; callᵐ-good; pairᵐ-good; carᵐ-good; cdrᵐ-good; 𝒯ᵐ-good; projᵐ-good;
          inlᵐ-good; inrᵐ-good; 𝒞ᵐ-good; letᵐ-good)
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
-open import proof.Semantics.GraphErr.Prim using (primᵐ-good)
-open import Untyped.Language.Clos5 hiding (AST; global)
-open import Untyped.Semantics.GraphErr.Clos5 using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; table; code; init)
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primᵐ-good)
+open import ISWIM.Untyped.Language.Clos5 hiding (AST; global)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5 using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; table; code; init)
 open import proof.Framework.GraphModel.DOpSig using (result-rel-pres; results-rel-pres)
 open import proof.Framework.GraphModel.Env using (Env; •-~)
 open import proof.Framework.ListUtil using (reverse-‼-split; _‼_)
-open import Untyped.Semantics.CEK.Clos5 using (step)
-open import Untyped.proof.Compiler.HoistTable using (_⊑_)
-open import Untyped.proof.Adequacy.GraphErr.Clos5WF using (DefsWF; RB; RB-arg; RB-args)
+open import ISWIM.Untyped.Semantics.CEK.Clos5 using (step)
+open import ISWIM.Untyped.proof.Compiler.HoistTable using (_⊑_)
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5WF using (DefsWF; RB; RB-arg; RB-args)
 open import proof.Framework.Runs using (module Runs)
 
 open import Data.List.Properties using (length-reverse; length-++)

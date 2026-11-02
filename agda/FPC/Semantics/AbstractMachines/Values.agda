@@ -1,8 +1,8 @@
 {-
 
   The values of the CEK machines of FPC and Closμ–PairClosμ
-  (Mu/Semantics/AbstractMachines/), indexed by their type, as those of the clocked
-  interpreters (Mu/Semantics/ClockedInterpreters/Values.agda); C Δ A B is what the
+  (FPC/Semantics/AbstractMachines/), indexed by their type, as those of the clocked
+  interpreters (FPC/Semantics/ClockedInterpreters/Values.agda); C Δ A B is what the
   code of a closure with free variables of types Δ, an argument of type
   A and a result of type B is in each language.
 
@@ -15,14 +15,14 @@
 
 -}
 
-open import Mu.Language.Type using (Ctx; Type)
+open import FPC.Language.Type using (Ctx; Type)
 
-module Mu.Semantics.AbstractMachines.Values (C : Ctx → Type → Type → Set) where
+module FPC.Semantics.AbstractMachines.Values (C : Ctx → Type → Type → Set) where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
-open import Mu.Language.Type
-open import Mu.Framework.AllUtil using (All; []; _∷_)
+open import FPC.Language.Type
+open import FPC.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
 
 open import Data.Bool using (if_then_else_)

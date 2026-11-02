@@ -30,18 +30,18 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.ExplicateSim where
+module ISWIM.Untyped.proof.Correctness.CEK.ExplicateSim where
 
-open import Untyped.Language.Imp as Imp using (Atm; Exp; simple; atm; case; assign; body; program)
-open import Untyped.Language.CFG using (Tail; goto; block)
-open import Untyped.Compiler.Explicate
+open import ISWIM.Untyped.Language.Imp as Imp using (Atm; Exp; simple; atm; case; assign; body; program)
+open import ISWIM.Untyped.Language.CFG using (Tail; goto; block)
+open import ISWIM.Untyped.Compiler.Explicate
 
 open import proof.Framework.ListUtil using (_‼_; reverse-map-‼)
 open import proof.Semantics.CEK.Smallstep using (Machine; next; plus; Star; ε; _◅_; Reach)
 open import proof.Semantics.CEK.Simulation
   using (Answers≺; stops; steps; stutters; steps₁≺; after≺; FSim; Equivalent; equivalent; equiv-trans)
-import Untyped.Semantics.CEK.Imp as I
-import Untyped.Semantics.CEK.CFG as G
+import ISWIM.Untyped.Semantics.CEK.Imp as I
+import ISWIM.Untyped.Semantics.CEK.CFG as G
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length; map; reverse)

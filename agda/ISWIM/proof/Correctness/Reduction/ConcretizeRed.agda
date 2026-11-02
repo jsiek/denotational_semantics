@@ -15,18 +15,18 @@
 
 -}
 
-module proof.Correctness.Reduction.ConcretizeRed where
+module ISWIM.proof.Correctness.Reduction.ConcretizeRed where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos2
-import Language.Typed.Clos3 as C
-open import Compiler.Concretize
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos2
+import ISWIM.Language.Typed.Clos3 as C
+open import ISWIM.Compiler.Concretize
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import proof.Framework.ReductionVec Obs o-error using (ans-∷; all-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import proof.Semantics.Reduction.Typed.Clos2 as S
-import proof.Semantics.Reduction.Typed.Clos3 as T
+import ISWIM.proof.Semantics.Reduction.Typed.Clos2 as S
+import ISWIM.proof.Semantics.Reduction.Typed.Clos3 as T
 open T using (Value; value-red)
 import Language.Prim as P
 

@@ -19,7 +19,7 @@
 
 -}
 
-module proof.Adequacy.LogRel where
+module ISWIM.proof.Adequacy.LogRel where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
@@ -29,15 +29,15 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops using (nthD)
 open import proof.Semantics.Graph.Prim using () renaming (out to dout)
 open import Language.Prim using (int; bool; δ)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import proof.Framework.Syntax.Uses Op sig
-open import proof.Semantics.Graph.ISWIM using (⟦_⟧; ⟦_⟧₊)
+open import ISWIM.proof.Semantics.Graph.ISWIM using (⟦_⟧; ⟦_⟧₊)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import proof.Framework.ListUtil
-open import Semantics.CEK.ISWIM
+open import ISWIM.Semantics.CEK.ISWIM
 open import proof.Semantics.CEK.Smallstep using (next; stop)
-open import proof.Adequacy.Common
+open import ISWIM.proof.Adequacy.Common
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)

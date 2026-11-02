@@ -1,10 +1,10 @@
 {-
 
-  Soundness and adequacy of the graph model (Untyped/Semantics/Graph/X86.agda, ⟦_⟧ₚ) with
-  respect to the X86 machine (Semantics/CEK/X86.agda), for
+  Soundness and adequacy of the graph model (ISWIM/Untyped/Semantics/Graph/X86.agda, ⟦_⟧ₚ) with
+  respect to the X86 machine (ISWIM/Semantics/CEK/X86.agda), for
   well-formed programs (WF, Adequacy/X86WF.agda), which the compiler
   produces from closed ISWIM programs (compile-x86-wf,
-  Adequacy/X86CompileWF.agda). As for Clos5 (Untyped/proof/Adequacy/Clos5.agda):
+  Adequacy/X86CompileWF.agda). As for Clos5 (ISWIM/Untyped/proof/Adequacy/Clos5.agda):
 
     soundness : if the machine terminates with an answer o, then
       ⟦ P ⟧ₚ has an element of the shape of o (Adequacy/X86Soundness.agda);
@@ -23,21 +23,21 @@
 
 -}
 
-module Untyped.proof.Adequacy.X86 where
+module ISWIM.Untyped.proof.Adequacy.X86 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
-open import Language.X86 using (program; body)
-open import Untyped.Semantics.Graph.X86 using (⟦_⟧ₚ)
+open import ISWIM.Language.X86 using (program; body)
+open import ISWIM.Untyped.Semantics.Graph.X86 using (⟦_⟧ₚ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
-open import Semantics.CEK.X86 using (sem; obs; halt?; halt)
-open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
-open import Untyped.proof.Adequacy.X86WF using (WF) public
-open import Untyped.proof.Adequacy.X86Soundness using (soundness) public
-import Untyped.proof.Adequacy.X86Common as C
-import Untyped.proof.Adequacy.X86LogRel as LR
+open import ISWIM.Semantics.CEK.X86 using (sem; obs; halt?; halt)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
+open import ISWIM.Untyped.proof.Adequacy.X86WF using (WF) public
+open import ISWIM.Untyped.proof.Adequacy.X86Soundness using (soundness) public
+import ISWIM.Untyped.proof.Adequacy.X86Common as C
+import ISWIM.Untyped.proof.Adequacy.X86LogRel as LR
 
 open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (refl; cong; subst)

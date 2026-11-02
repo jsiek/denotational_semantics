@@ -12,17 +12,17 @@
 
 -}
 
-module proof.Correctness.Interp.PruneFuel where
+module ISWIM.proof.Correctness.Interp.PruneFuel where
 
 open import Data.Nat using (ℕ; zero; suc)
-open import Language.Typed.Type
-open import Language.Typed.Clos2
-open import Compiler.Prune
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos2
+open import ISWIM.Compiler.Prune
 open import Framework.VecSelect
 open import proof.Framework.VecSelect
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Typed.Clos2 as C
-open import proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ k → Tm (suc k) Any}
+import ISWIM.Semantics.Interp.Typed.Clos2 as C
+open import ISWIM.proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ k → Tm (suc k) Any}
 
 open import Data.Bool using (Bool; true; false; T)
 open import Data.Empty using (⊥)

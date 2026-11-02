@@ -20,17 +20,17 @@
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops using (RRs; mono-≃; pair-mono; car-mono; cdr-mono; nthD-≃; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃)
-open import Untyped.Language.Imp as I
+open import ISWIM.Untyped.Language.Imp as I
   using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim; simple; case; assign)
-import Untyped.Language.CFG as C
-open import Untyped.Compiler.Explicate
-open import Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
-open import Untyped.Semantics.Graph.Imp using (Store; checked; 𝒜; 𝒜s; 𝒮; Table)
-open import Untyped.Semantics.Graph.CFG using (Blocks; blocks; ⟦_⟧ₚ) renaming (⟦_⟧[_] to ⟪_⟫[_])
-open import Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
-import Language.ISWIM as ISWIM
+import ISWIM.Untyped.Language.CFG as C
+open import ISWIM.Untyped.Compiler.Explicate
+open import ISWIM.Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
+open import ISWIM.Untyped.Semantics.Graph.Imp using (Store; checked; 𝒜; 𝒜s; 𝒮; Table)
+open import ISWIM.Untyped.Semantics.Graph.CFG using (Blocks; blocks; ⟦_⟧ₚ) renaming (⟦_⟧[_] to ⟪_⟫[_])
+open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
+open import ISWIM.proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
+import ISWIM.Language.ISWIM as ISWIM
 open import Framework.Primitives using (base-rep)
 open import proof.Semantics.Graph.Prim using (primD-≃)
 
@@ -45,7 +45,7 @@ open import Level using (lift)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.Graph.ExplicateCommon where
+module ISWIM.Untyped.proof.Correctness.Graph.ExplicateCommon where
 
 {- Blocks -----------------------------------------------------------------------------}
 

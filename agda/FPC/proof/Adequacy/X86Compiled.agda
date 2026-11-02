@@ -2,14 +2,14 @@
 
   The table of the X86μ program that the compiler produces satisfies the
   premises of soundness (X86Soundness.agda), as for X86ᵀ
-  (proof/Adequacy/X86Compiled.agda): it is consistent, and it contains
+  (ISWIM/proof/Adequacy/X86Compiled.agda): it is consistent, and it contains
   the code of each definition interpreted with the whole table
   (Contains), not only with the table of the older ones, as the
   semantics interprets it.
 
   Both hold of the GlobalFunμ program that hoist produces, whose
   definitions refer only to older ones
-  (Mu/proof/Compiler/HoistOlder.agda), and pass to X86μ through the
+  (FPC/proof/Compiler/HoistOlder.agda), and pass to X86μ through the
   lemmas of the denotational proofs of remove complex operands, lift
   locals, explicate control and select instructions: the tables of the
   two programs agree, and so does the code of each definition,
@@ -17,36 +17,36 @@
 
 -}
 
-module Mu.proof.Adequacy.X86Compiled where
+module FPC.proof.Adequacy.X86Compiled where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ⟨⟩; Con-⊆; Con-•; Con-⌈⌉; ≈⇒Con; _•_)
 open import proof.Framework.GraphModel.Ops using (Λ-≃; ΛΛ-≃; ΛΛ-mono)
 open import proof.Framework.GraphModel.Env using (extend-nonempty-env; •-~)
-open import Mu.proof.Semantics.GraphModel.Ops using (Table; ConT; tables; tables-con; init)
-open import Mu.proof.Semantics.GraphModel.GlobalFun using (ok; code-con; table-con)
-open import Mu.Semantics.GraphModel.GlobalFun using (code′; table)
-open import Mu.Semantics.GraphModel.Imp using () renaming (code′ to codeᵢ)
-open import Mu.Semantics.GraphModel.X86 using (codeₜ)
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun using (DSig; Code; program)
-import Mu.Language.GlobalFun as GlobalFun
-open import Mu.Language.X86 using (Program)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Language.Mon using (⌜_⌝)
-open import Mu.Framework.AllUtil using (All; lookup) renaming (map to All-map)
-open import Mu.proof.Framework.AllProp using (lookup-map)
-open import Mu.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-PairClos; compile)
-open import Mu.Compiler.RCO using (rco)
-open import Mu.Compiler.LiftLocals using () renaming (lift to liftₗ)
-open import Mu.Compiler.Explicate using (explicate-body)
-open import Mu.Compiler.Select using (def-body)
-open import Mu.proof.Compiler.HoistOlder using (OlderDefs; hoist-older)
-open import Mu.proof.Adequacy.GlobalFunCommon using (table-at; agree; tbl-mono; olderAt)
-open import Mu.proof.Correctness.GraphModel.RCOCorrect using (code-rco; table-rco)
-open import Mu.proof.Correctness.GraphModel.LiftLocalsCorrect using (code-lift; table-lift)
-open import Mu.proof.Correctness.GraphModel.ExplicateCorrect using (body-≃; table-explicate)
-open import Mu.proof.Correctness.GraphModel.SelectCorrect using (code-≃; table-≃)
+open import FPC.proof.Semantics.GraphModel.Ops using (Table; ConT; tables; tables-con; init)
+open import FPC.proof.Semantics.GraphModel.GlobalFun using (ok; code-con; table-con)
+open import FPC.Semantics.GraphModel.GlobalFun using (code′; table)
+open import FPC.Semantics.GraphModel.Imp using () renaming (code′ to codeᵢ)
+open import FPC.Semantics.GraphModel.X86 using (codeₜ)
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun using (DSig; Code; program)
+import FPC.Language.GlobalFun as GlobalFun
+open import FPC.Language.X86 using (Program)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Language.Mon using (⌜_⌝)
+open import FPC.Framework.AllUtil using (All; lookup) renaming (map to All-map)
+open import FPC.proof.Framework.AllProp using (lookup-map)
+open import FPC.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-PairClos; compile)
+open import FPC.Compiler.RCO using (rco)
+open import FPC.Compiler.LiftLocals using () renaming (lift to liftₗ)
+open import FPC.Compiler.Explicate using (explicate-body)
+open import FPC.Compiler.Select using (def-body)
+open import FPC.proof.Compiler.HoistOlder using (OlderDefs; hoist-older)
+open import FPC.proof.Adequacy.GlobalFunCommon using (table-at; agree; tbl-mono; olderAt)
+open import FPC.proof.Correctness.GraphModel.RCOCorrect using (code-rco; table-rco)
+open import FPC.proof.Correctness.GraphModel.LiftLocalsCorrect using (code-lift; table-lift)
+open import FPC.proof.Correctness.GraphModel.ExplicateCorrect using (body-≃; table-explicate)
+open import FPC.proof.Correctness.GraphModel.SelectCorrect using (code-≃; table-≃)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Maybe using (nothing)

@@ -1,4 +1,4 @@
-module Untyped.Compiler.LiftLocals where
+module ISWIM.Untyped.Compiler.LiftLocals where
 {-
 
  The lift-locals pass (monadic Clos5 → Imp), after Essentials of
@@ -22,9 +22,9 @@ module Untyped.Compiler.LiftLocals where
 
 -}
 
-open import Untyped.Language.Clos5 as C5 using (AST)
-open import Untyped.Language.Mon
-open import Untyped.Language.Imp
+open import ISWIM.Untyped.Language.Clos5 as C5 using (AST)
+open import ISWIM.Untyped.Language.Mon
+open import ISWIM.Untyped.Language.Imp
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

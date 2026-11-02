@@ -1,41 +1,41 @@
 {-
 
   An assurance, not part of the compiler or of the comparison (not in
-  the totals): X86ᵀ (Language/Typed/X86.agda) is X86 (Language/X86.agda)
-  with types. Erasing the types (erase, Language/Typed/X86Erase.agda)
+  the totals): X86ᵀ (ISWIM/Language/Typed/X86.agda) is X86 (ISWIM/Language/X86.agda)
+  with types. Erasing the types (erase, ISWIM/Language/Typed/X86Erase.agda)
   keeps the meaning of every X86ᵀ program, with no precondition but its
-  typing, in the CEK column's machines (Semantics/CEK/Typed/X86.agda,
-  Semantics/CEK/X86.agda): they are Equivalent (the same observations,
+  typing, in the CEK column's machines (ISWIM/Semantics/CEK/Typed/X86.agda,
+  ISWIM/Semantics/CEK/X86.agda): they are Equivalent (the same observations,
   o-error included, and divergence together). And the erased program
   errs only where X86ᵀ runs a chk that fails: none of X86's other
   trapped errors (a missing slot, label or definition, an unset
   register or flag, a value of the wrong kind) is reached. The proof is
-  proof/Assurance/X86Erasure.agda.
+  ISWIM/proof/Assurance/X86Erasure.agda.
 
   And the code select emits is, without its types, that of select into
   untyped X86, the target of the typed pipeline before X86ᵀ
-  (Compiler/SelectX86.agda): the erasure drops the types, the proofs
+  (ISWIM/Compiler/SelectX86.agda): the erasure drops the types, the proofs
   about registers and frame bounds and the coercion ↑, and expands
   chk t x, d to X86's test of t on x and the move
-  (proof/Compiler/SelectErase.agda).
+  (ISWIM/proof/Compiler/SelectErase.agda).
 
 -}
 
-module Theorems.X86Erasure where
+module ISWIM.Theorems.X86Erasure where
 
 open import Semantics.Observation using (o-error)
 open import Semantics.CEK.Smallstep using (Equivalent; Terminates; Star; State; start)
-open import Language.Typed.Type using (Tag; flat; Any; ⟪_⟫; _∋_)
-open import Language.Typed.X86
-open import Language.Typed.X86Erase using (erase)
+open import ISWIM.Language.Typed.Type using (Tag; flat; Any; ⟪_⟫; _∋_)
+open import ISWIM.Language.Typed.X86
+open import ISWIM.Language.Typed.X86Erase using (erase)
 open import Framework.Lookup using (_!_)
-import Semantics.CEK.Typed.X86 as X86ᵀₘ
-import Semantics.CEK.X86 as X86ₘ
-import proof.Assurance.X86Erasure as Proof
-import Language.Typed.CFG as CFGᵀ
-open import Compiler.Select using (select)
-import Compiler.SelectX86 as SelectX86
-import proof.Compiler.SelectErase as SelectErase
+import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
+import ISWIM.Semantics.CEK.X86 as X86ₘ
+import ISWIM.proof.Assurance.X86Erasure as Proof
+import ISWIM.Language.Typed.CFG as CFGᵀ
+open import ISWIM.Compiler.Select using (select)
+import ISWIM.Compiler.SelectX86 as SelectX86
+import ISWIM.proof.Compiler.SelectErase as SelectErase
 
 open import Data.Bool using (false)
 open import Data.List using (List)

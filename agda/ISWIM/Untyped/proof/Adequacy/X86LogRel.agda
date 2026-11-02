@@ -4,7 +4,7 @@
   denotation of a well-formed program is witnessed by a run of the
   machine of its global definitions ds.
 
-  As for Clos5 (Untyped/proof/Adequacy/Clos5LogRel.agda), a logical relation 𝕍 d v
+  As for Clos5 (ISWIM/Untyped/proof/Adequacy/Clos5LogRel.agda), a logical relation 𝕍 d v
   (Values.agda) relates denotational values to machine values, and the
   code of a definition, Λ X. Λ Y. …, is related to code k when the
   machine runs definition k on values related to X and Y, on any stack,
@@ -22,9 +22,9 @@
 -}
 
 open import Data.List using (List; []; _∷_; _++_; [_]; length; reverse)
-open import Language.X86 using (Body)
+open import ISWIM.Language.X86 using (Body)
 
-module Untyped.proof.Adequacy.X86LogRel (ds : List Body) where
+module ISWIM.Untyped.proof.Adequacy.X86LogRel (ds : List Body) where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (δ; sub; eq)
@@ -33,23 +33,23 @@ open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩) renaming (const to dconst)
 open import proof.Framework.GraphModel.Ops using (⋆; ℬ; nthD; inl; inr; Λ) renaming (pair to dpair)
 open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
-open import Language.X86
+open import ISWIM.Language.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
   hiding (Body)
-open import Untyped.Semantics.Graph.X86
+open import ISWIM.Untyped.Semantics.Graph.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (next)
 open import proof.Framework.ListUtil using (_‼_)
-open import Semantics.CEK.X86
+open import ISWIM.Semantics.CEK.X86
   using (Val; code; pair; const; tup; out; prim?; Frame; State; Stack; halt; retK; run; step; block-at; global; get-field; build; is-inl; cmp; bit; zeros; arg; args; halt?; regs; upd; goto; callq?; back; test)
   renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])
-import Semantics.CEK.X86 as T using (inl; inr)
-open import Untyped.proof.Adequacy.Values using (module Rel)
-open import Untyped.proof.Adequacy.X86WF
-open import Untyped.proof.Adequacy.X86Common ds
-open import Untyped.proof.Adequacy.X86Soundness using (_≟R_; ↦ₘ-here; ↦ₘ-other; ≔-here; ≔-other)
+import ISWIM.Semantics.CEK.X86 as T using (inl; inr)
+open import ISWIM.Untyped.proof.Adequacy.Values using (module Rel)
+open import ISWIM.Untyped.proof.Adequacy.X86WF
+open import ISWIM.Untyped.proof.Adequacy.X86Common ds
+open import ISWIM.Untyped.proof.Adequacy.X86Soundness using (_≟R_; ↦ₘ-here; ↦ₘ-other; ≔-here; ≔-other)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Integer using (0ℤ)

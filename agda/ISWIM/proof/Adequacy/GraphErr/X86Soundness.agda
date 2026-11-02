@@ -1,13 +1,13 @@
 {-
 
   Soundness of the X86ᵀ machine with respect to the graph model with
-  errors (Semantics/GraphErr/Typed/X86.agda): what the machine of the
+  errors (ISWIM/Semantics/GraphErr/Typed/X86.agda): what the machine of the
   definitions ds computes is in the denotation of the program, and when
   it stops with an error, ω is, when the code of each definition
   depends only on the older ones and the table is consistent (see
   GraphErr/X86.agda).
 
-  As for untyped X86 (Untyped/proof/Adequacy/GraphErr/X86Soundness.agda),
+  As for untyped X86 (ISWIM/Untyped/proof/Adequacy/GraphErr/X86Soundness.agda),
   each state denotes a set (𝒮) that a step can only shrink (step-⊆):
   the meaning of its sequence on finite parts (Ap) of the meanings 𝒱 v
   of the values v in its slots, registers and flag (those its type has,
@@ -27,37 +27,37 @@
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ)
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.X86
 
-module proof.Adequacy.GraphErr.X86Soundness {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
+module ISWIM.proof.Adequacy.GraphErr.X86Soundness {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
 
-open import proof.Adequacy.GraphErr.X86Common ds
+open import ISWIM.proof.Adequacy.GraphErr.X86Common ds
 open import Framework.Primitives using (base-rep; Int)
 open import Language.Prim using (Prim; sub; eq; δ)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _•_; _~_; _≈_; Con; Every⇒≈; ≈-single) renaming (const to dconst)
 open import proof.Framework.GraphModel.ErrorMonad using (≫=-mono; binds-intro; conv-⌊⌋s; ΛΛᵐ-entry; ΛΛᵐ-val; ⌊_⌋s)
-open import proof.Semantics.GraphErr.Typed.Clos5 using (tbl-val)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 using (tbl-val)
 open import Framework.GraphModel.ErrorMonad using (Kind; kind; _≫=_; ⌊_⌋; isinlD; ValPayload; _⇂_; strictᵐ; NoErr; Conv)
 open import Framework.GraphModel.DOpSig using (Results; ■)
 open import Framework.GraphModel.OpsBase using (ℬ; nthD)
 open import Framework.GraphModel.Ops using (𝒯; ⋆; car; cdr; payloadD)
 open import Framework.GraphModel.Env using (Env)
 open import Semantics.Graph.Prim using () renaming (out to dout)
-open import Semantics.GraphErr.Typed.Ops using (init; kindᶠ; hit; projectᵠ; primᵗ)
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import Semantics.GraphErr.Typed.CFG using (drop; letᵗ)
-open import Semantics.GraphErr.Typed.X86 using (RegsD; called-regs; 𝒪; 𝒪s; object; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (init; kindᶠ; hit; projectᵠ; primᵗ)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (drop; letᵗ)
+open import ISWIM.Semantics.GraphErr.Typed.X86 using (RegsD; called-regs; 𝒪; 𝒪s; object; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ)
   renaming (_[_≔_] to _[_≔ˢ_]; put to putᴰ; putˢ to putˢᴰ; field′ to fieldᴰ; blocks to blocksᴰ; run to runᴰ; args to argsᴰ)
-open import proof.Adequacy.GraphErr.X86Mono using (Le; le; mono-seq; blocks-mono; le-ret; le-entry; le-reg; putˢ-mono)
-open import proof.Correctness.GraphErr.SelectCorrect using (drop-idx)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.proof.Adequacy.GraphErr.X86Mono using (Le; le; mono-seq; blocks-mono; le-ret; le-entry; le-reg; putˢ-mono)
+open import ISWIM.proof.Correctness.GraphErr.SelectCorrect using (drop-idx)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋)
 open import Framework.Lookup using (_!_; forget)
 open import Semantics.Observation using (Obs; o-error; o-const)
 open import Semantics.CEK.Smallstep using (next; stop)
-open import Semantics.CEK.Typed.X86
+open import ISWIM.Semantics.CEK.Typed.X86
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥; ⊥-elim)

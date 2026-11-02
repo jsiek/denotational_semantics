@@ -1,7 +1,7 @@
 {-
 
   EnvClosμ: EnvClos, intrinsically typed, with recursive types. The output
-  of concretize (Mu/Compiler/Concretize.agda).
+  of concretize (FPC/Compiler/Concretize.agda).
 
   A closure clos N Ms, with Ms : All (Tm Γ) Δ its free variables, has
   closed code N with two variables: the argument (variable Z, of type
@@ -11,12 +11,12 @@
 
 -}
 
-module Mu.Language.EnvClos where
+module FPC.Language.EnvClos where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Mu.Language.Type
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Language.Type
+open import FPC.Framework.AllUtil using (All)
 
 open import Data.List using ([]; _∷_)
 

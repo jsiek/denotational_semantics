@@ -11,33 +11,33 @@
   compile₄ goes to Clos4ᵀ, compile to Clos5ᵀ, and compile-mon,
   compile-imp, compile-cfg and compile-x86 continue, as the untyped
   compositions of the preserved untyped pipeline do
-  (Untyped/Compiler/Pipeline.agda; compile-x86 ends at X86ᵀ, where the
+  (ISWIM/Untyped/Compiler/Pipeline.agda; compile-x86 ends at X86ᵀ, where the
   untyped one ends at X86). Simplify stays on untyped ISWIM; cast
   insertion (cast-closed) needs a closed program.
 
 -}
 
-module Compiler.Pipeline where
+module ISWIM.Compiler.Pipeline where
 
-open import Language.ISWIM using (AST)
-open import Language.Typed.Type using (Any)
-import Language.Typed.Clos4 as Clos4ᵀ
-import Language.Typed.Clos5 as Clos5ᵀ
-import Language.Typed.Mon as Monᵀ
-import Language.Typed.Imp as Impᵀ
-import Language.Typed.CFG as CFGᵀ
-import Language.Typed.X86 as X86ᵀ
-open import Compiler.Simplify using (simplify)
-open import Compiler.Cast using (cast-closed)
-open import Compiler.Capture using (capture)
-open import Compiler.Prune using (prune-program)
-open import Compiler.Concretize using (concretize-program)
-open import Compiler.Split using (split-program)
-open import Compiler.Hoist using (hoist)
-open import Compiler.RCO using (rco-program)
-open import Compiler.LiftLocals using (lift-program)
-open import Compiler.Explicate using (explicate)
-open import Compiler.Select using (select)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Language.Typed.Type using (Any)
+import ISWIM.Language.Typed.Clos4 as Clos4ᵀ
+import ISWIM.Language.Typed.Clos5 as Clos5ᵀ
+import ISWIM.Language.Typed.Mon as Monᵀ
+import ISWIM.Language.Typed.Imp as Impᵀ
+import ISWIM.Language.Typed.CFG as CFGᵀ
+import ISWIM.Language.Typed.X86 as X86ᵀ
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.Cast using (cast-closed)
+open import ISWIM.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Prune using (prune-program)
+open import ISWIM.Compiler.Concretize using (concretize-program)
+open import ISWIM.Compiler.Split using (split-program)
+open import ISWIM.Compiler.Hoist using (hoist)
+open import ISWIM.Compiler.RCO using (rco-program)
+open import ISWIM.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Compiler.Explicate using (explicate)
+open import ISWIM.Compiler.Select using (select)
 
 open import Data.List using ([])
 

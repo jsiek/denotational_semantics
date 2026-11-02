@@ -1,18 +1,18 @@
 {-
 
   Lemmas about the semantics of CFGμ in the graph model
-  (Mu/Semantics/GraphModel/CFG.agda), and about the simple expressions it
+  (FPC/Semantics/GraphModel/CFG.agda), and about the simple expressions it
   shares with Impμ, as for CFGᵀ: a simple expression is monotone in its
   atoms (𝒮-⊆, hence a congruence in the table, 𝒮-≃), and a tail and the
   blocks are monotone in the frame (tail-mono, blocks-mono).
 
 -}
 
-module Mu.proof.Semantics.GraphModel.CFG where
+module FPC.proof.Semantics.GraphModel.CFG where
 
-open import Mu.Semantics.GraphModel.CFG public
-open import Mu.Semantics.GraphModel.Imp using (𝒜s)
-open import Mu.Semantics.GraphModel.Ops using (Table)
+open import FPC.Semantics.GraphModel.CFG public
+open import FPC.Semantics.GraphModel.Imp using (𝒜s)
+open import FPC.Semantics.GraphModel.Ops using (Table)
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
@@ -20,10 +20,10 @@ open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.Env using (_⊆ₑ_; •-~)
 open import proof.Semantics.Graph.Prim using (primD-mono)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Mu.Language.Type
-open import Mu.Language.CFG
-open import Mu.Language.Imp using (var; lit; ref; atm; pair; callc; tuple; get; inl; inr; prim; fold; unfold)
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.CFG
+open import FPC.Language.Imp using (var; lit; ref; atm; pair; callc; tuple; get; inl; inr; prim; fold; unfold)
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.Nat using (suc)

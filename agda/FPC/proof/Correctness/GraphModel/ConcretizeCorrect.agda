@@ -1,8 +1,8 @@
 {-
 
   Correctness of concretize (Closμ → EnvClosμ) in the graph model
-  (Mu/Semantics/GraphModel/{Clos,EnvClos}.agda), as for typed concretize
-  (proof/Correctness/Graph/ConcretizeCorrect.agda).
+  (FPC/Semantics/GraphModel/{Clos,EnvClos}.agda), as for typed concretize
+  (ISWIM/proof/Correctness/Graph/ConcretizeCorrect.agda).
 
   ⟦ M ⟧ ρ₂ ≃ ⟦ concretize φ M ⟧₃ ρ₃ when each variable x of M means in ρ₂
   what its reference φ x (a variable, or a component of a tuple) means
@@ -15,23 +15,23 @@
 
 -}
 
-module Mu.proof.Correctness.GraphModel.ConcretizeCorrect where
+module FPC.proof.Correctness.GraphModel.ConcretizeCorrect where
 
 open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.Env using (Env; •-~)
 open import proof.Framework.GraphModel.TypedGraph using (ΛΛ-⋆; 𝒯-ne; 𝒯-intro; proj-𝒯)
 open import proof.Framework.GraphModel.TypedOkBase using (fin-code)
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import Mu.Language.Type
-open import Mu.Language.Clos
-import Mu.Language.EnvClos as T
-open import Mu.proof.Semantics.GraphModel.Clos using (⟦_⟧; ⟦_⟧s; fv-env; fv-env-pos)
-open import Mu.proof.Semantics.GraphModel.EnvClos using (ok; con) renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
-open import Mu.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; ne-≃; guard-yes)
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
-open import Mu.Compiler.Concretize
+open import FPC.Language.Type
+open import FPC.Language.Clos
+import FPC.Language.EnvClos as T
+open import FPC.proof.Semantics.GraphModel.Clos using (⟦_⟧; ⟦_⟧s; fv-env; fv-env-pos)
+open import FPC.proof.Semantics.GraphModel.EnvClos using (ok; con) renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
+open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; ne-≃; guard-yes)
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Compiler.Concretize
 
 open import Data.Fin using (zero; suc)
 open import Data.List using (List; []; _∷_; length)

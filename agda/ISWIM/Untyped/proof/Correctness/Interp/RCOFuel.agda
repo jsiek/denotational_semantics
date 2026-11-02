@@ -33,25 +33,25 @@
 
 -}
 
-module Untyped.proof.Correctness.Interp.RCOFuel where
+module ISWIM.Untyped.proof.Correctness.Interp.RCOFuel where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos5
-import Untyped.Language.Mon as Mon
-open import Untyped.Compiler.RCO
+open import ISWIM.Untyped.Language.Clos5
+import ISWIM.Untyped.Language.Mon as Mon
+open import ISWIM.Untyped.Compiler.RCO
 open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-args)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import proof.Framework.ListUtil using (_‼_; ‼-<; ‼-++; length-snoc; ‼-pw)
 open import proof.Semantics.Interp.Clock
-open import Untyped.Semantics.Interp.Clos5
+open import ISWIM.Untyped.Semantics.Interp.Clos5
   using (Val; Env; code; pair; const; tup; inl; inr; eval; eval-args; call; code?; branch;
          first; second; project; prim?)
-import Untyped.Semantics.Interp.Clos5 as T
-import Semantics.Interp.ISWIM as ISWIM
-open import Untyped.Compiler.Pipeline using (compile; compile-mon)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
-open import Untyped.proof.Correctness.Interp.CompilerFuel using (compile-correct)
-open import Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
+import ISWIM.Untyped.Semantics.Interp.Clos5 as T
+import ISWIM.Semantics.Interp.ISWIM as ISWIM
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.proof.Correctness.Interp.CompilerFuel using (compile-correct)
+open import ISWIM.Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
 
 open import Data.List using (List; []; _∷_; _++_; _∷ʳ_; [_]; length; replicate; reverse; map)
 open import Data.List.Properties using (++-assoc)

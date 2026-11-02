@@ -1,9 +1,9 @@
 {-
 
-  Correctness of select instructions (CFGμ → X86μ, Mu/Compiler/Select.agda):
+  Correctness of select instructions (CFGμ → X86μ, FPC/Compiler/Select.agda):
   a simulation of the CFGμ machine by the X86μ machine (Both,
   proof/Framework/Both.agda), as for typed select instructions
-  (proof/Correctness/CEK/SelectSim.agda).
+  (ISWIM/proof/Correctness/CEK/SelectSim.agda).
 
   Both machines hold the same values, and the X86μ frame is the CFGμ
   frame, so a state of CFGμ is matched by the code selected for its
@@ -16,25 +16,25 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.SelectSim where
+module FPC.proof.Correctness.AbstractMachines.SelectSim where
 
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_)
 open import Framework.Lookup using (forget)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
-open import Mu.proof.Framework.AllProp using (lookup-map)
-import Mu.Language.CFG as C
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
+open import FPC.proof.Framework.AllProp using (lookup-map)
+import FPC.Language.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
-import Mu.Language.Imp as I
-open import Mu.Language.X86
-open import Mu.Compiler.Select
+import FPC.Language.Imp as I
+open import FPC.Language.X86
+open import FPC.Compiler.Select
 open import Semantics.Observation using (Obs)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; _◅◅_; Plus; plus; step⁺; star-plus; plus-star; plus→star)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)
 open import proof.Framework.Both Obs using (Both; halt; move; both-fsim)
-import Mu.Semantics.AbstractMachines.X86 as X
-import Mu.Semantics.AbstractMachines.CFG as G
+import FPC.Semantics.AbstractMachines.X86 as X
+import FPC.Semantics.AbstractMachines.CFG as G
 open G using (Res; value; call; pack; code; choose)
 open X using (inl; inr; ⟨_,_,_,_⟩)
 

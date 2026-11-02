@@ -1,7 +1,7 @@
 {-
 
   The types of FPC and of the typed intermediate languages of its
-  compiler (agda/Mu/): base types (Base of Framework/Primitives.agda:
+  compiler (agda/FPC/): base types (Base of Framework/Primitives.agda:
   Nat, Int, 𝔹, Unit, Void and Blame), functions, n-ary tuples, binary
   sums and iso-recursive types μX.A, with type variables as de Bruijn
   indices (Ty n has n free type variables). The body of a μ is unrestricted:
@@ -17,13 +17,13 @@
   * A primitive's result: sub gives an integer, eq a boolean, the sum
     tup [] ⊹ tup [] (inl ⟨⟩ for true).
 
-  Unlike Language/Typed/Type.agda there is no type Any of tagged values,
+  Unlike ISWIM/Language/Typed/Type.agda there is no type Any of tagged values,
   no flat types, no tags, and no decidable equality: nothing tests a
   type at run time.
 
 -}
 
-module Mu.Language.Type where
+module FPC.Language.Type where
 
 open import Framework.Primitives using (Base; Int)
 open import Language.Prim using (Prim; sub; eq)

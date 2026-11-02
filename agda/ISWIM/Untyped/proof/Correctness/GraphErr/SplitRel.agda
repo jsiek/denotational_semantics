@@ -24,7 +24,7 @@ open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.DomainUtilBase
-open import proof.Semantics.GraphErr.Prim using (out)
+open import ISWIM.proof.Semantics.GraphErr.Prim using (out)
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
 import proof.Framework.GraphModel.Env
@@ -42,7 +42,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong)
 
-module Untyped.proof.Correctness.GraphErr.SplitRel where
+module ISWIM.Untyped.proof.Correctness.GraphErr.SplitRel where
 
 {- Shorthands ----------------------------------------------------------------}
 

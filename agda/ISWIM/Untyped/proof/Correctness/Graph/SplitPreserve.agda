@@ -26,18 +26,18 @@ open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos3
-import Untyped.Language.Clos4 as L4
-open import Untyped.proof.Semantics.Graph.Clos3Iswim as S3
-import Untyped.proof.Semantics.Graph.Clos4Iswim as S4
+open import ISWIM.Untyped.Language.Clos3
+import ISWIM.Untyped.Language.Clos4 as L4
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos3Iswim as S3
+import ISWIM.Untyped.proof.Semantics.Graph.Clos4Iswim as S4
 open S4 using (Clos4-con) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧₊ to ⟦_⟧₊')
-open import Untyped.Compiler.Split using (split; del-map-args)
+open import ISWIM.Untyped.Compiler.Split using (split; del-map-args)
 open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon
   using (Env; _⊙_; Nth; Lefts; Rights; Init; ρ₀; ⊙-mono-l; ne-mem; ℬ-flat; Untag-con; leftT; rightT;
          Data; flat-data; out-data)
-open import Untyped.proof.Correctness.Graph.SplitApp using (let-app-≃)
-import Untyped.proof.Correctness.Graph.SplitReflectFinite as Reflect
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitApp using (let-app-≃)
+import ISWIM.Untyped.proof.Correctness.Graph.SplitReflectFinite as Reflect
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -52,7 +52,7 @@ open import Level using (Lift; lift; lower) renaming (suc to lsuc; zero to lzero
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 open import Language.Prim using (δ)
 
-module Untyped.proof.Correctness.Graph.SplitPreserve where
+module ISWIM.Untyped.proof.Correctness.Graph.SplitPreserve where
 
 {- The relation -----------------------------------------------------------------}
 

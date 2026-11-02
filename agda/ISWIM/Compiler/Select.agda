@@ -2,9 +2,9 @@
 
   Typed select instructions (CFGᵀ → X86ᵀ), after Essentials of
   Compilation: the instructions of select into untyped X86
-  (Compiler/SelectX86.agda), typed (Language/Typed/X86.agda). Without
+  (ISWIM/Compiler/SelectX86.agda), typed (ISWIM/Language/Typed/X86.agda). Without
   the types they are the same instructions
-  (proof/Compiler/SelectErase.agda, Theorems/X86Erasure.agda).
+  (ISWIM/proof/Compiler/SelectErase.agda, ISWIM/Theorems/X86Erasure.agda).
 
   * A slot is the typed index of CFGᵀ; the frame of a body has as many
     slots as the deepest level its tails write (depth),
@@ -19,15 +19,15 @@
 
 -}
 
-module Compiler.Select where
+module ISWIM.Compiler.Select where
 
 open import Language.Prim using (sub; eq)
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑)
-import Language.Typed.CFG as C
+import ISWIM.Language.Typed.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
-import Language.Typed.Imp as I
-open import Language.Typed.X86
+import ISWIM.Language.Typed.Imp as I
+open import ISWIM.Language.Typed.X86
 
 open import Data.Bool using (Bool)
 open import Data.List using (List; []; _∷_; length)

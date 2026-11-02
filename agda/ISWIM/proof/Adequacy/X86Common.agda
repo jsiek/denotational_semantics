@@ -1,7 +1,7 @@
 {-
 
   Definitions shared by the soundness and adequacy proofs for the X86ᵀ
-  machine (see proof/Adequacy/X86.agda): runs of the machine of the
+  machine (see ISWIM/proof/Adequacy/X86.agda): runs of the machine of the
   definitions ds from any state, and the state that a call of code c
   starts in (start), on any stack, and how the open closure is related
   to its slot (OpR).
@@ -11,12 +11,12 @@
 open import Data.List using (List)
 open import Data.List.Relation.Unary.All using (All)
 open import Data.Nat using (ℕ)
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.X86
 
-module proof.Adequacy.X86Common {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
+module ISWIM.proof.Adequacy.X86Common {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
 
-open import Language.Typed.Type hiding (_≟_; _∋_)
-open import Semantics.CEK.Typed.X86
+open import ISWIM.Language.Typed.Type hiding (_≟_; _∋_)
+open import ISWIM.Semantics.CEK.Typed.X86
 open import proof.Semantics.CEK.Smallstep using (next)
 open import Framework.Lookup using (_!_)
 open import Framework.Membership using (_∋_)

@@ -1,9 +1,9 @@
 {-
 
-  Correctness of cast insertion (ISWIM → ISWIMᵀ, Compiler/Cast.agda)
+  Correctness of cast insertion (ISWIM → ISWIMᵀ, ISWIM/Compiler/Cast.agda)
   in the graph model with errors: the untyped semantics
-  (Semantics/GraphErr/ISWIM.agda) and the typed one
-  (Semantics/GraphErr/Typed/ISWIM.agda) are equal.
+  (ISWIM/Semantics/GraphErr/ISWIM.agda) and the typed one
+  (ISWIM/Semantics/GraphErr/Typed/ISWIM.agda) are equal.
 
   By induction on the term, for environments that agree up to the
   renaming r of the pass. The kind errors move: the untyped operators
@@ -23,23 +23,23 @@
 
 -}
 
-module proof.Correctness.GraphErr.CastCorrect where
+module ISWIM.proof.Correctness.GraphErr.CastCorrect where
 
 open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil
 open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.Ops using (⋆; proj; 𝒞; ⋆-mono; proj-mono)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
-open import proof.Semantics.GraphErr.Prim
+open import ISWIM.proof.Semantics.GraphErr.Prim
 open import proof.Semantics.Graph.Prim using (primD-mono)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import proof.Semantics.GraphErr.ISWIM
-open import Language.Typed.Type using (Flat; base; tup; sum; fun; _≟_; tint; tfun; tsum; ttup) renaming (flat to flatT)
-open import Semantics.GraphErr.Typed.Ops using (kindᶠ; projectᵗ; primᵗ; appᵗ; getᵗ; caseᵗ; hit; keep)
+open import ISWIM.proof.Semantics.GraphErr.ISWIM
+open import ISWIM.Language.Typed.Type using (Flat; base; tup; sum; fun; _≟_; tint; tfun; tsum; ttup) renaming (flat to flatT)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (kindᶠ; projectᵗ; primᵗ; appᵗ; getᵗ; caseᵗ; hit; keep)
 open import Data.Unit using (tt)
-import Semantics.GraphErr.Typed.ISWIM as T
-open import Compiler.Cast
+import ISWIM.Semantics.GraphErr.Typed.ISWIM as T
+open import ISWIM.Compiler.Cast
 
 open import Data.Nat using (suc)
 open import Data.Fin using (Fin; zero; suc; toℕ)

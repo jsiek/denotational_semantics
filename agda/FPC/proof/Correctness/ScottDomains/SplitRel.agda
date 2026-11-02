@@ -50,7 +50,7 @@ import Data.Nat as Nat
 open import Relation.Nullary using (Dec; yes; no)
 import Relation.Binary.PropositionalEquality as Eq
 
-module Mu.proof.Correctness.ScottDomains.SplitRel
+module FPC.proof.Correctness.ScottDomains.SplitRel
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)

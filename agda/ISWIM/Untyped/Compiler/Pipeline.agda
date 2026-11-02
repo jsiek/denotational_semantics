@@ -16,24 +16,24 @@
 
 -}
 
-open import Language.ISWIM using (AST)
-import Untyped.Language.Clos4 as L4
-import Untyped.Language.Clos5 as L5
-open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.Compiler.Prune using (prune-program)
-open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Split using (split)
-open import Untyped.Compiler.Hoist using (hoist)
-open import Untyped.Compiler.RCO using (rco-program; rco-program-mon)
-open import Untyped.Compiler.LiftLocals using (lift-program)
-import Untyped.Language.Imp as Imp
-import Untyped.Language.CFG as CFG
-open import Untyped.Compiler.Explicate using (explicate)
-import Language.X86 as X86
-open import Untyped.Compiler.Select using (select)
+open import ISWIM.Language.ISWIM using (AST)
+import ISWIM.Untyped.Language.Clos4 as L4
+import ISWIM.Untyped.Language.Clos5 as L5
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Split using (split)
+open import ISWIM.Untyped.Compiler.Hoist using (hoist)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program; rco-program-mon)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-program)
+import ISWIM.Untyped.Language.Imp as Imp
+import ISWIM.Untyped.Language.CFG as CFG
+open import ISWIM.Untyped.Compiler.Explicate using (explicate)
+import ISWIM.Language.X86 as X86
+open import ISWIM.Untyped.Compiler.Select using (select)
 
-module Untyped.Compiler.Pipeline where
+module ISWIM.Untyped.Compiler.Pipeline where
 
 compile₄ : AST → L4.AST
 compile₄ M = split (concretize-program (prune-program (capture (simplify M))))

@@ -1,20 +1,20 @@
 {-
 
-  The semantics of EnvClosμ (Mu/Language/EnvClos.agda) in the graph model,
-  as that of Clos3ᵀ (Semantics/Graph/Typed/Clos3.agda): a closure is its
+  The semantics of EnvClosμ (FPC/Language/EnvClos.agda) in the graph model,
+  as that of Clos3ᵀ (ISWIM/Semantics/Graph/Typed/Clos3.agda): a closure is its
   code, a closed function of the tuple of its free variables and of the
   argument, applied to that tuple; fold and unfold are the identity.
 
 -}
 
-module Mu.Semantics.GraphModel.EnvClos where
+module FPC.Semantics.GraphModel.EnvClos where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Mu.Language.Type
-open import Mu.Language.EnvClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.EnvClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

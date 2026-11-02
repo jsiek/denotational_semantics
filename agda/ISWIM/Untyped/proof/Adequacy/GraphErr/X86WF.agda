@@ -1,10 +1,10 @@
 {-
 
   Well-formed X86 programs, for the graph model with errors
-  (Untyped/Semantics/GraphErr/X86.agda): the precondition of soundness and
+  (ISWIM/Untyped/Semantics/GraphErr/X86.agda): the precondition of soundness and
   adequacy for the X86 machine (GraphErr/X86.agda); the compilers produce
   them from closed ISWIM programs (Adequacy/GraphErr/EndToEnd.agda; for the
-  preserved untyped compiler, GraphErr/X86CompileWF.agda in agda/Untyped/).
+  preserved untyped compiler, GraphErr/X86CompileWF.agda in agda/ISWIM/Untyped/).
 
   Each label refers to an older definition (L): the semantics interprets
   each definition with the table of the older ones only, while the
@@ -20,9 +20,9 @@
 
 -}
 
-module Untyped.proof.Adequacy.GraphErr.X86WF where
+module ISWIM.Untyped.proof.Adequacy.GraphErr.X86WF where
 
-open import Language.X86
+open import ISWIM.Language.X86
 
 open import Data.List using (List; []; _∷_; _++_; length; map; replicate)
 open import Data.List.Properties using (length-map; length-++; ++-assoc)

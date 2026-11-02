@@ -1,20 +1,20 @@
 {-
 
-  A CEK machine for ISWIMᵀ (Language/Typed/ISWIM.agda), with typed
+  A CEK machine for ISWIMᵀ (ISWIM/Language/Typed/ISWIM.agda), with typed
   values, environments and continuations: a state is well typed by
   construction, so the machine has no case for a value of the wrong
   kind or an unbound variable. It stops with an error only when a
   project finds a value of another flat type. Call by value, left to
-  right, as the ISWIM machine (Semantics/CEK/ISWIM.agda).
+  right, as the ISWIM machine (ISWIM/Semantics/CEK/ISWIM.agda).
 
 -}
 
-module Semantics.CEK.Typed.ISWIM where
+module ISWIM.Semantics.CEK.Typed.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.ISWIM
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.ISWIM
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import Framework.VecUtil using (_+ʳ_; _<><_)

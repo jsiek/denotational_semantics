@@ -1,18 +1,18 @@
 {-
 
-  The semantics of Clos2ᵀ (Language/Typed/Clos2.agda) in the graph model
-  with errors, as that of ISWIMᵀ (Semantics/GraphErr/Typed/ISWIM.agda): a
+  The semantics of Clos2ᵀ (ISWIM/Language/Typed/Clos2.agda) in the graph model
+  with errors, as that of ISWIMᵀ (ISWIM/Semantics/GraphErr/Typed/ISWIM.agda): a
   closure binds its free variables left to right and is a function of
   the argument, whose body sees the argument and the free variables.
 
 -}
 
-module Semantics.GraphErr.Typed.Clos2 where
+module ISWIM.Semantics.GraphErr.Typed.Clos2 where
 
 open import Framework.GraphModel.ErrorPrelude
-open import Semantics.GraphErr.Typed.Ops
-open import Language.Typed.Type
-open import Language.Typed.Clos2
+open import ISWIM.Semantics.GraphErr.Typed.Ops
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos2
 
 open import Data.Fin using (toℕ)
 open import Data.List using (replicate)

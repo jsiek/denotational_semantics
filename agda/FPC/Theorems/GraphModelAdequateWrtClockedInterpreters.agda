@@ -5,39 +5,39 @@
   (adequacy) of the paper, and
   the consequence the paper draws from it with Theorem 4.1, the
   theorem the operational proofs state. The proofs are in
-  Mu/proof/Adequacy/.
+  FPC/proof/Adequacy/.
 
-  compile is Mu/Compiler/Pipeline.agda's. The
+  compile is FPC/Compiler/Pipeline.agda's. The
   X86μ statements are for the programs the compiler produces, so that
-  their preconditions (in Mu/proof/) need not be audited.
+  their preconditions (in FPC/proof/) need not be audited.
 
-  To read them: those of Mu/Theorems/CorrectWrtGraphModel.agda, the FPC
-  interpreter (Mu/Semantics/ClockedInterpreters/FPC.agda), the X86μ
-  interpreter (Mu/Semantics/ClockedInterpreters/X86.agda), the clocked
+  To read them: those of FPC/Theorems/CorrectWrtGraphModel.agda, the FPC
+  interpreter (FPC/Semantics/ClockedInterpreters/FPC.agda), the X86μ
+  interpreter (FPC/Semantics/ClockedInterpreters/X86.agda), the clocked
   semantics (Semantics/Interp/Clock.agda) and the observations
   (Semantics/Observation.agda).
 
 -}
 
-module Mu.Theorems.GraphModelAdequateWrtClockedInterpreters where
+module FPC.Theorems.GraphModelAdequateWrtClockedInterpreters where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
 open import Framework.GraphModel.Domain using (const)
 open import Semantics.Observation using (o-const; _⇔_)
 open import Semantics.Interp.Clock using (Terminates; Diverges)
-open import Mu.Language.Type using (base)
-import Mu.Language.FPC as FPC
-open import Mu.Compiler.Pipeline using (compile)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
-import Mu.Semantics.ClockedInterpreters.FPC as FPCᵢ
-import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
+open import FPC.Language.Type using (base)
+import FPC.Language.FPC as FPC
+open import FPC.Compiler.Pipeline using (compile)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
+import FPC.Semantics.ClockedInterpreters.FPC as FPCᵢ
+import FPC.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
-import Mu.proof.Adequacy.FPC as AdequacyFPC
-import Mu.proof.Adequacy.X86 as AdequacyX86
-import Mu.proof.Adequacy.EndToEnd as EndToEnd
+import FPC.proof.Adequacy.FPC as AdequacyFPC
+import FPC.proof.Adequacy.X86 as AdequacyX86
+import FPC.proof.Adequacy.EndToEnd as EndToEnd
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

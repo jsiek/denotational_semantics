@@ -1,7 +1,7 @@
 {-
 
   Forward (preserve) direction of split (EnvClosμ → PairClosμ) in the graph
-  model, as for typed split (proof/Correctness/Graph/SplitPreserve.agda),
+  model, as for typed split (ISWIM/proof/Correctness/Graph/SplitPreserve.agda),
   by the logical relation between single source values and target sets
   (v ⊑ D'), by recursion on the value: a source function is exhibited
   by a target closure, a set with a pair, whose calls (⊙, callc)
@@ -11,24 +11,24 @@
 -}
 
 open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Ops using (⋆; Λ; 𝒯; nthD; pair; car; cdr; 𝒞-left; 𝒞-right; Λ-β; ΛΛ-β; ⋆₂-mono)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
 open import proof.Semantics.Graph.Prim using (out)
-open import Mu.Language.Type using (Ctx; _∋_; Z; S; idx)
-open import Mu.Language.EnvClos
-import Mu.Language.PairClos as T
-import Mu.proof.Semantics.GraphModel.EnvClos as S3
-import Mu.proof.Semantics.GraphModel.PairClos as S4
+open import FPC.Language.Type using (Ctx; _∋_; Z; S; idx)
+open import FPC.Language.EnvClos
+import FPC.Language.PairClos as T
+import FPC.proof.Semantics.GraphModel.EnvClos as S3
+import FPC.proof.Semantics.GraphModel.PairClos as S4
 open S3 using (⟦_⟧; ⟦_⟧s)
 open S4 using () renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
 open import proof.Framework.GraphModel.TypedOkBase using (fin₁; fin₂)
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
-open import Mu.Compiler.Split using (Ren; ext; split; splits; split-program)
-open import Mu.proof.Correctness.GraphModel.SplitRel using (_●_; _⊙_; ●-mono)
-open import Mu.proof.Semantics.GraphModel.Binders using (body-mono)
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Compiler.Split using (Ren; ext; split; splits; split-program)
+open import FPC.proof.Correctness.GraphModel.SplitRel using (_●_; _⊙_; ●-mono)
+open import FPC.proof.Semantics.GraphModel.Binders using (body-mono)
 open import Language.Prim using (δ; int; bool)
 open import Data.Bool using (true; false)
 
@@ -43,7 +43,7 @@ open import Data.Unit.Polymorphic using () renaming (⊤ to pTrue; tt to ptt)
 open import Level using (Lift; lift; lower) renaming (suc to lsuc; zero to lzero)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
-module Mu.proof.Correctness.GraphModel.SplitPreserve where
+module FPC.proof.Correctness.GraphModel.SplitPreserve where
 
 {- The relation -----------------------------------------------------------------}
 

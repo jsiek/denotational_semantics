@@ -29,26 +29,26 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.LiftLocalsSim where
+module ISWIM.Untyped.proof.Correctness.CEK.LiftLocalsSim where
 
-open import Untyped.Language.Clos5 using (AST; program; Args; ■)
-import Untyped.Language.Clos5 as L5
-import Untyped.Language.Imp as Imp
-open import Untyped.Language.Mon
-open import Untyped.Compiler.LiftLocals
+open import ISWIM.Untyped.Language.Clos5 using (AST; program; Args; ■)
+import ISWIM.Untyped.Language.Clos5 as L5
+import ISWIM.Untyped.Language.Imp as Imp
+open import ISWIM.Untyped.Language.Mon
+open import ISWIM.Untyped.Compiler.LiftLocals
 open import proof.Framework.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj; ‼-pw)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Machine; next; plus; Star; ε; _◅_; Answers; stops; steps; Reach; steps₁; after; next?-same)
 open import proof.Semantics.CEK.Simulation
   using (Equivalent; equivalent; plus-simulation; equiv-trans)
-import Untyped.Semantics.CEK.Clos5 as C
-import Untyped.Semantics.CEK.Imp as I
-import Semantics.CEK.ISWIM as S
-open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
-open import Untyped.Compiler.RCO using (rco-program-mon)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
-open import Untyped.proof.Correctness.CEK.RCOSim using (compile-mon-correct)
+import ISWIM.Untyped.Semantics.CEK.Clos5 as C
+import ISWIM.Untyped.Semantics.CEK.Imp as I
+import ISWIM.Semantics.CEK.ISWIM as S
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program-mon)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.proof.Correctness.CEK.RCOSim using (compile-mon-correct)
 
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin)

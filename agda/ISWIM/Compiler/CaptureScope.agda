@@ -4,13 +4,13 @@
   capture and of the whole compiler: those whose bound is 0, that is,
   that use no variables (bound, Framework/Syntax/Uses.agda). (That
   capture produces well-scoped Clos2 programs from them is in
-  Untyped/proof/Compiler/CaptureScope.agda.)
+  ISWIM/Untyped/proof/Compiler/CaptureScope.agda.)
 
 -}
 
-module Compiler.CaptureScope where
+module ISWIM.Compiler.CaptureScope where
 
-import Language.ISWIM as I
+import ISWIM.Language.ISWIM as I
 open import Framework.Syntax.Uses I.Op I.sig using (bound)
 
 open import Relation.Binary.PropositionalEquality using (_≡_)

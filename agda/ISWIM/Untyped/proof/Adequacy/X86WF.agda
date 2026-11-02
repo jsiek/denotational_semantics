@@ -20,12 +20,12 @@
 
 -}
 
-module Untyped.proof.Adequacy.X86WF where
+module ISWIM.Untyped.proof.Adequacy.X86WF where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Con)
-open import Language.X86
-open import Untyped.Semantics.Graph.X86 using (table)
+open import ISWIM.Language.X86
+open import ISWIM.Untyped.Semantics.Graph.X86 using (table)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All)

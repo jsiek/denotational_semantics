@@ -1,10 +1,10 @@
 {-
 
-  The correctness of the compiler (Compiler/Pipeline.agda), by CEK machines and
+  The correctness of the compiler (ISWIM/Compiler/Pipeline.agda), by CEK machines and
   simulations: the public statements. The proofs (forward simulations)
-  are in proof/Correctness/CEK/; each theorem here is one of them,
+  are in ISWIM/proof/Correctness/CEK/; each theorem here is one of them,
   with its type written out, so that it can be read without opening
-  proof/.
+  ISWIM/proof/.
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
           --prune--> Clos2ᵀ --concretize--> Clos3ᵀ --split--> Clos4ᵀ
@@ -12,76 +12,76 @@
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   Each language has a small-step machine (here Lₘ.sem for language L):
-  untyped ISWIM (Semantics/CEK/ISWIM.agda), and the typed ones
-  (Semantics/CEK/Typed/), down to the typed assembly language X86ᵀ.
+  untyped ISWIM (ISWIM/Semantics/CEK/ISWIM.agda), and the typed ones
+  (ISWIM/Semantics/CEK/Typed/), down to the typed assembly language X86ᵀ.
   Monᵀ has no machine: a Monᵀ program runs as its embedding ⌜ P ⌝ₚ
-  (Language/Typed/Mon.agda) on the Clos5ᵀ machine. A machine terminates
+  (ISWIM/Language/Typed/Mon.agda) on the Clos5ᵀ machine. A machine terminates
   with an observation (Semantics/Observation.agda) or diverges. Two
   machines are Equivalent (Framework/Smallstep.agda) when each
   terminates with o exactly when the other does (o-error, an error,
   included), and one diverges exactly when the other does.
 
-  To read them: the languages (Language/, Language/Typed/), the passes
-  (Compiler/), the machines, the observations, and the
-  precondition Closed (Compiler/CaptureScope.agda), for the untyped
+  To read them: the languages (ISWIM/Language/, ISWIM/Language/Typed/), the passes
+  (ISWIM/Compiler/), the machines, the observations, and the
+  precondition Closed (ISWIM/Compiler/CaptureScope.agda), for the untyped
   source only.
 
 -}
 
-module Theorems.Simulation where
+module ISWIM.Theorems.Simulation where
 
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges; Equivalent)
 
-import Language.ISWIM as ISWIM
-open import Language.Typed.Type using (Any)
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Language.Typed.Type using (Any)
 open import Data.List using ([])
-import Language.Typed.ISWIM as ISWIMᵀ
-import Language.Typed.Clos2 as Clos2ᵀ
-import Language.Typed.Clos3 as Clos3ᵀ
-import Language.Typed.Clos4 as Clos4ᵀ
-import Language.Typed.Clos5 as Clos5ᵀ
-import Language.Typed.Mon as Monᵀ
+import ISWIM.Language.Typed.ISWIM as ISWIMᵀ
+import ISWIM.Language.Typed.Clos2 as Clos2ᵀ
+import ISWIM.Language.Typed.Clos3 as Clos3ᵀ
+import ISWIM.Language.Typed.Clos4 as Clos4ᵀ
+import ISWIM.Language.Typed.Clos5 as Clos5ᵀ
+import ISWIM.Language.Typed.Mon as Monᵀ
 open Monᵀ using (⌜_⌝ₚ)
-import Language.Typed.Imp as Impᵀ
-import Language.Typed.CFG as CFGᵀ
+import ISWIM.Language.Typed.Imp as Impᵀ
+import ISWIM.Language.Typed.CFG as CFGᵀ
 
-open import Compiler.Simplify using (simplify)
-open import Compiler.Cast using (cast-closed)
-open import Compiler.Capture using (capture)
-open import Compiler.Prune using (prune-program)
-open import Compiler.Concretize using (concretize-program)
-open import Compiler.Split using (split-program)
-open import Compiler.Hoist using (hoist)
-open import Compiler.RCO using (rco-program)
-open import Compiler.LiftLocals using (lift-program)
-open import Compiler.Explicate using (explicate)
-open import Compiler.Select using (select)
-open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.Cast using (cast-closed)
+open import ISWIM.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Prune using (prune-program)
+open import ISWIM.Compiler.Concretize using (concretize-program)
+open import ISWIM.Compiler.Split using (split-program)
+open import ISWIM.Compiler.Hoist using (hoist)
+open import ISWIM.Compiler.RCO using (rco-program)
+open import ISWIM.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Compiler.Explicate using (explicate)
+open import ISWIM.Compiler.Select using (select)
+open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.CaptureScope using (Closed)
 
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Semantics.CEK.Typed.ISWIM as ISWIMᵀₘ
-import Semantics.CEK.Typed.Clos2 as Clos2ᵀₘ
-import Semantics.CEK.Typed.Clos3 as Clos3ᵀₘ
-import Semantics.CEK.Typed.Clos4 as Clos4ᵀₘ
-import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
-import Semantics.CEK.Typed.Imp as Impᵀₘ
-import Semantics.CEK.Typed.CFG as CFGᵀₘ
-import Semantics.CEK.Typed.X86 as X86ᵀₘ
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Semantics.CEK.Typed.ISWIM as ISWIMᵀₘ
+import ISWIM.Semantics.CEK.Typed.Clos2 as Clos2ᵀₘ
+import ISWIM.Semantics.CEK.Typed.Clos3 as Clos3ᵀₘ
+import ISWIM.Semantics.CEK.Typed.Clos4 as Clos4ᵀₘ
+import ISWIM.Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
+import ISWIM.Semantics.CEK.Typed.Imp as Impᵀₘ
+import ISWIM.Semantics.CEK.Typed.CFG as CFGᵀₘ
+import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
 
-import proof.Correctness.CEK.SimplifySim as SimplifySim
-import proof.Correctness.CEK.CaptureSim as CaptureSim
-import proof.Correctness.CEK.PruneSim as PruneSim
-import proof.Correctness.CEK.ConcretizeSim as ConcretizeSim
-import proof.Correctness.CEK.SplitSim as SplitSim
-import proof.Correctness.CEK.HoistSim as HoistSim
-import proof.Correctness.CEK.RCOSim as RCOSim
-import proof.Correctness.CEK.LiftLocalsSim as LiftLocalsSim
-import proof.Correctness.CEK.ExplicateSim as ExplicateSim
-import proof.Correctness.CEK.SelectSim as SelectSim
-import proof.Correctness.CEK.PipelineSim as PipelineSim
+import ISWIM.proof.Correctness.CEK.SimplifySim as SimplifySim
+import ISWIM.proof.Correctness.CEK.CaptureSim as CaptureSim
+import ISWIM.proof.Correctness.CEK.PruneSim as PruneSim
+import ISWIM.proof.Correctness.CEK.ConcretizeSim as ConcretizeSim
+import ISWIM.proof.Correctness.CEK.SplitSim as SplitSim
+import ISWIM.proof.Correctness.CEK.HoistSim as HoistSim
+import ISWIM.proof.Correctness.CEK.RCOSim as RCOSim
+import ISWIM.proof.Correctness.CEK.LiftLocalsSim as LiftLocalsSim
+import ISWIM.proof.Correctness.CEK.ExplicateSim as ExplicateSim
+import ISWIM.proof.Correctness.CEK.SelectSim as SelectSim
+import ISWIM.proof.Correctness.CEK.PipelineSim as PipelineSim
 
 {- Each pass ------------------------------------------------------------------}
 

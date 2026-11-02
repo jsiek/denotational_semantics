@@ -1,7 +1,7 @@
 {-
 
   Correctness of concretize (Closμ → EnvClosμ), clock for clock, as for
-  typed concretize (proof/Correctness/Interp/ConcretizeFuel.agda; see
+  typed concretize (ISWIM/proof/Correctness/Interp/ConcretizeFuel.agda; see
   the design note in Semantics/Interp/Clock.agda). Each Closμ variable
   x lives in EnvClosμ where φ x says (a variable, or a component of a
   tuple held in a variable), so environments are related through φ
@@ -10,18 +10,18 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.ConcretizeFuel where
+module FPC.proof.Correctness.ClockedInterpreters.ConcretizeFuel where
 
 open import Data.List using ([]; _∷_)
-open import Mu.Language.Type
-open import Mu.Language.Clos
-import Mu.Language.EnvClos as C3
-open import Mu.Compiler.Concretize
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
+open import FPC.Language.Type
+open import FPC.Language.Clos
+import FPC.Language.EnvClos as C3
+open import FPC.Compiler.Concretize
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.Clos as S
-import Mu.Semantics.ClockedInterpreters.EnvClos as T
-open import Mu.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C3.Tm (A ∷ tup Δ ∷ []) B}
+import FPC.Semantics.ClockedInterpreters.Clos as S
+import FPC.Semantics.ClockedInterpreters.EnvClos as T
+open import FPC.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C3.Tm (A ∷ tup Δ ∷ []) B}
 
 open import Data.Nat using (zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)

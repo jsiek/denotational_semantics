@@ -1,19 +1,19 @@
 {-
 
   Lemmas about the tables of FPC in the graph model
-  (Mu/Semantics/GraphModel/Ops.agda): a table is consistent when the meaning
+  (FPC/Semantics/GraphModel/Ops.agda): a table is consistent when the meaning
   of each definition is, given a consistent table.
 
 -}
 
-module Mu.proof.Semantics.GraphModel.Ops where
+module FPC.proof.Semantics.GraphModel.Ops where
 
-open import Mu.Semantics.GraphModel.Ops public
+open import FPC.Semantics.GraphModel.Ops public
 open import proof.Framework.GraphModel.TypedOkBase public
 
 open import proof.Framework.GraphModel.Prelude
-open import Mu.Language.Type using (_∋_; lvl)
-open import Mu.Language.GlobalFun using (DSig)
+open import FPC.Language.Type using (_∋_; lvl)
+open import FPC.Language.GlobalFun using (DSig)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed remove complex operands (Clos5ᵀ → Monᵀ,
-  Compiler/RCO.agda) in the graph model with errors: a Monᵀ
+  ISWIM/Compiler/RCO.agda) in the graph model with errors: a Monᵀ
   program means its embedding into Clos5ᵀ, which means what the source
   means, for every program.
 
@@ -16,7 +16,7 @@
 
 -}
 
-module proof.Correctness.GraphErr.RCOCorrect where
+module ISWIM.proof.Correctness.GraphErr.RCOCorrect where
 
 open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.OpsBase using (nthD; ℬ)
@@ -27,15 +27,15 @@ open import proof.Framework.GraphModel.TypedBinders using (binds-val-≃; callc�
 open import proof.Framework.GraphModel.TypedOk using (check-kind-good)
 open import proof.Semantics.Graph.Prim using (primD-good)
 open import Semantics.Graph.Prim using (primD)
-open import Semantics.GraphErr.Typed.Ops using (caseᵗ; checkedᵠ; keep; hit; kindᶠ)
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import proof.Semantics.GraphErr.Typed.Clos2 using (⌊⌋-≃; hit-mono; hit-fin)
-open import proof.Semantics.GraphErr.Typed.Clos5
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.Clos5
-import Language.Typed.Mon as M
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (caseᵗ; checkedᵠ; keep; hit; kindᶠ)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (⌊⌋-≃; hit-mono; hit-fin)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Clos5
+import ISWIM.Language.Typed.Mon as M
 open M using (Atm; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Compiler.RCO
+open import ISWIM.Compiler.RCO
 
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin; zero; suc)

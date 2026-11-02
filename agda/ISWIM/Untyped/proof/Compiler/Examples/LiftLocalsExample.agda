@@ -7,17 +7,17 @@
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (eq)
-open import Untyped.Language.Clos5
-open import Untyped.Language.Imp as Imp using (body; assign; case; simple; atm; var; lit)
-open import Untyped.Compiler.RCO using (rco; rco-mon)
-open import Untyped.Compiler.LiftLocals using (lift-body)
-open import Untyped.proof.Compiler.Examples.RCOExample using (one; test)
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Language.Imp as Imp using (body; assign; case; simple; atm; var; lit)
+open import ISWIM.Untyped.Compiler.RCO using (rco; rco-mon)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-body)
+open import ISWIM.Untyped.proof.Compiler.Examples.RCOExample using (one; test)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 
 open import Data.Integer using (+_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module Untyped.proof.Compiler.Examples.LiftLocalsExample where
+module ISWIM.Untyped.proof.Compiler.Examples.LiftLocalsExample where
 
 {- let x = 1 in case (x = 1) of inl _ ⇒ x | inr z ⇒ z -}
 main : AST

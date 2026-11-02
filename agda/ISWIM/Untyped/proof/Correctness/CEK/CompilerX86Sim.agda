@@ -8,17 +8,17 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.CompilerX86Sim where
+module ISWIM.Untyped.proof.Correctness.CEK.CompilerX86Sim where
 
-open import Untyped.Compiler.Pipeline using (compile-imp; compile-cfg; compile-x86)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equiv-trans)
-open import Untyped.proof.Correctness.CEK.LiftLocalsSim using (compile-imp-correct)
-open import Untyped.proof.Correctness.CEK.ExplicateSim using (explicate-correct)
-open import Untyped.proof.Correctness.CEK.SelectSim using (select-correct)
-import Semantics.CEK.ISWIM as S
-import Untyped.Semantics.CEK.CFG as G
-import Semantics.CEK.X86 as X
+open import ISWIM.Untyped.proof.Correctness.CEK.LiftLocalsSim using (compile-imp-correct)
+open import ISWIM.Untyped.proof.Correctness.CEK.ExplicateSim using (explicate-correct)
+open import ISWIM.Untyped.proof.Correctness.CEK.SelectSim using (select-correct)
+import ISWIM.Semantics.CEK.ISWIM as S
+import ISWIM.Untyped.Semantics.CEK.CFG as G
+import ISWIM.Semantics.CEK.X86 as X
 
 compile-cfg-correct : ∀ M → Closed M → Equivalent (S.sem M) (G.sem (compile-cfg M))
 compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))

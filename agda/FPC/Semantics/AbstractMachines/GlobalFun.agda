@@ -1,10 +1,10 @@
 {-
 
-  A CEK machine for GlobalFunμ (Mu/Language/GlobalFun.agda), as the one for
-  PairClosμ (Mu/Semantics/AbstractMachines/PairClos.agda), except for code: a program
+  A CEK machine for GlobalFunμ (FPC/Language/GlobalFun.agda), as the one for
+  PairClosμ (FPC/Semantics/AbstractMachines/PairClos.agda), except for code: a program
   runs with its table of definitions, fun-ref f evaluates to the code
   pointer code f, and a call runs definition f, as the Clos5ᵀ machine
-  (Semantics/CEK/Typed/Clos5.agda) does. Values, environments and
+  (ISWIM/Semantics/CEK/Typed/Clos5.agda) does. Values, environments and
   continuations are indexed by the table Σ.
 
   The machine takes its values apart with total functions (int, elems,
@@ -14,13 +14,13 @@
 
 -}
 
-module Mu.Semantics.AbstractMachines.GlobalFun where
+module FPC.Semantics.AbstractMachines.GlobalFun where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 

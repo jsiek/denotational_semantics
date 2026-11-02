@@ -12,7 +12,7 @@
 
 -}
 
-module Untyped.proof.Semantics.Graph.Clos5IswimContinuous where
+module ISWIM.Untyped.proof.Semantics.Graph.Clos5IswimContinuous where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DenotProperties using (Every)
@@ -20,8 +20,8 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops using (ΛΛ-con)
 open import proof.Framework.GraphModel.Continuity
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos5
-open import Untyped.Semantics.Graph.Clos5Iswim using (Table; 𝕆-Clos5; ⟦_⟧[_]; table)
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; 𝕆-Clos5; ⟦_⟧[_]; table)
 open import proof.Framework.GraphModel.Env using (_⊆ₑ_; •-~)
 open import proof.Framework.GraphModel.Semantics Op sig using (Semantics; ⟦⟧-monotone)
 open import proof.Framework.GraphModel.SemanticsUtil Op sig using (module GoodSemantics)

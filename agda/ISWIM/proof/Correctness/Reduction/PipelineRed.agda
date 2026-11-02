@@ -1,40 +1,40 @@
 {-
 
-  The typed compiler (Compiler/Pipeline.agda) is correct on the
+  The typed compiler (ISWIM/Compiler/Pipeline.agda) is correct on the
   reduction semantics, for closed programs: each pass is Equivalent
-  (proof/Correctness/Reduction/*Red.agda) and equivalence composes.
+  (ISWIM/proof/Correctness/Reduction/*Red.agda) and equivalence composes.
   Simplify's proof is the untyped one; Impᵀ, CFGᵀ and X86ᵀ have no
   binders and keep their machines, with the CEK column's proofs of
   explicate control and select instructions.
 
 -}
 
-module proof.Correctness.Reduction.PipelineRed where
+module ISWIM.proof.Correctness.Reduction.PipelineRed where
 
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.Simplify using (simplify)
-open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
-open import Language.Typed.Mon using (⌜_⌝ₚ)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Language.Typed.Mon using (⌜_⌝ₚ)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
 open import Semantics.Observation
 open import Semantics.Reduction.Smallstep using (Equivalent; Terminates; Diverges)
 open import proof.Framework.Simulation Obs using (equiv-trans)
-open import proof.Correctness.Reduction.SimplifyRed using (simplify-correct)
-open import proof.Correctness.Reduction.CastRed using (cast-correct)
-open import proof.Correctness.Reduction.CaptureRed using (capture-correct)
-open import proof.Correctness.Reduction.PruneRed using (prune-correct)
-open import proof.Correctness.Reduction.ConcretizeRed using (concretize-correct)
-open import proof.Correctness.Reduction.SplitRed using (split-correct)
-open import proof.Correctness.Reduction.HoistRed using (hoist-correct)
-open import proof.Correctness.Reduction.RCORed using (rco-correct)
-open import proof.Correctness.Reduction.LiftLocalsRed using (lift-locals-correct)
-open import proof.Correctness.CEK.ExplicateSim using (explicate-correct)
-open import proof.Correctness.CEK.SelectSim using (select-correct)
-import Semantics.Reduction.ISWIM as S
-import Semantics.Reduction.Typed.Clos5 as T
-import Semantics.CEK.Typed.Imp as Impᵀₘ
-import Semantics.CEK.Typed.CFG as CFGᵀₘ
-import Semantics.CEK.Typed.X86 as X86ᵀₘ
+open import ISWIM.proof.Correctness.Reduction.SimplifyRed using (simplify-correct)
+open import ISWIM.proof.Correctness.Reduction.CastRed using (cast-correct)
+open import ISWIM.proof.Correctness.Reduction.CaptureRed using (capture-correct)
+open import ISWIM.proof.Correctness.Reduction.PruneRed using (prune-correct)
+open import ISWIM.proof.Correctness.Reduction.ConcretizeRed using (concretize-correct)
+open import ISWIM.proof.Correctness.Reduction.SplitRed using (split-correct)
+open import ISWIM.proof.Correctness.Reduction.HoistRed using (hoist-correct)
+open import ISWIM.proof.Correctness.Reduction.RCORed using (rco-correct)
+open import ISWIM.proof.Correctness.Reduction.LiftLocalsRed using (lift-locals-correct)
+open import ISWIM.proof.Correctness.CEK.ExplicateSim using (explicate-correct)
+open import ISWIM.proof.Correctness.CEK.SelectSim using (select-correct)
+import ISWIM.Semantics.Reduction.ISWIM as S
+import ISWIM.Semantics.Reduction.Typed.Clos5 as T
+import ISWIM.Semantics.CEK.Typed.Imp as Impᵀₘ
+import ISWIM.Semantics.CEK.Typed.CFG as CFGᵀₘ
+import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 open import Data.Product using (_,_; proj₁; proj₂)
 

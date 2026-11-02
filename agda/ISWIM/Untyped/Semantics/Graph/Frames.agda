@@ -1,10 +1,10 @@
-module Untyped.Semantics.Graph.Frames where
+module ISWIM.Untyped.Semantics.Graph.Frames where
 {-
 
  Tables of global definitions and stores of frame slots in the graph
- model, which the semantics of X86 (Untyped/Semantics/Graph/X86.agda) uses, and
+ model, which the semantics of X86 (ISWIM/Untyped/Semantics/Graph/X86.agda) uses, and
  which the semantics of the preserved untyped Clos5, Imp and CFG
- (agda/Untyped/) share with it.
+ (agda/ISWIM/Untyped/) share with it.
 
  A table T gives the meaning of each global definition, by its
  reference. A store σ gives each slot of the frame a meaning, a set of

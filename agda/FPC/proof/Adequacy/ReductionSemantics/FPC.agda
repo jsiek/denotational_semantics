@@ -1,15 +1,15 @@
 {-
 
   Soundness and adequacy of the graph model of FPC
-  (Mu/Semantics/GraphModel/FPC.agda) with respect to its reduction
-  semantics (Mu/Semantics/ReductionSemantics/FPC.agda), for closed
+  (FPC/Semantics/GraphModel/FPC.agda) with respect to its reduction
+  semantics (FPC/Semantics/ReductionSemantics/FPC.agda), for closed
   programs of any type, started in ρ₀ on the denotational side, as
-  Mu/proof/Adequacy/FPC.agda is for the clocked interpreter:
+  FPC/proof/Adequacy/FPC.agda is for the clocked interpreter:
 
-    soundness (Mu/proof/Adequacy/ReductionSemantics/Soundness.agda): a
+    soundness (FPC/proof/Adequacy/ReductionSemantics/Soundness.agda): a
       step preserves the meaning of a term, and a value denotes a
       nonempty set, and a term that is not a value takes a step;
-    adequacy (Mu/proof/Adequacy/ReductionSemantics/LogRel.agda): every
+    adequacy (FPC/proof/Adequacy/ReductionSemantics/LogRel.agda): every
       d ∈ ⟦ M ⟧ ρ₀ is related to the value M reduces to.
 
   So ⟦ M ⟧ ρ₀ contains const k exactly when the reduction terminates
@@ -20,24 +20,24 @@
 
 -}
 
-module Mu.proof.Adequacy.ReductionSemantics.FPC where
+module FPC.proof.Adequacy.ReductionSemantics.FPC where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-open import Mu.proof.Semantics.ReductionSemantics.FPC
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+open import FPC.proof.Semantics.ReductionSemantics.FPC
   using (red; obs; sem; sub-id; value-red; lam; lit; tuple; inl; inr; fold)
   renaming (Value to Val; ∅ to ∅ₛ)
 open import Semantics.Observation using (Obs; o-const; o-error; _⇔_)
 open import Semantics.Reduction.Smallstep using (Terminates; Diverges; Star; ε; _◅_; Final; Steps; zero; suc; val; error; to; toNext; stop)
 open import proof.Framework.Smallstep Obs using (diverges-not-terminates)
 open import proof.Framework.Reduction Obs o-error using (Star*; toNext-to) renaming (ε to ε*; _◅_ to _◅*_)
-open import Mu.proof.Semantics.GraphModel.Binders using (ne-≃)
-open import Mu.proof.Adequacy.ReductionSemantics.Soundness using (progress; val-value; val-ne; step-≃; run-≃)
-open import Mu.proof.Adequacy.ReductionSemantics.LogRel using (_⇓_; 𝕍; adequate; 𝕍-const)
+open import FPC.proof.Semantics.GraphModel.Binders using (ne-≃)
+open import FPC.proof.Adequacy.ReductionSemantics.Soundness using (progress; val-value; val-ne; step-≃; run-≃)
+open import FPC.proof.Adequacy.ReductionSemantics.LogRel using (_⇓_; 𝕍; adequate; 𝕍-const)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using ([])

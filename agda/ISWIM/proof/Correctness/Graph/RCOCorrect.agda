@@ -16,7 +16,7 @@
 
 -}
 
-module proof.Correctness.Graph.RCOCorrect where
+module ISWIM.proof.Correctness.Graph.RCOCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
@@ -24,14 +24,14 @@ open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import proof.Framework.GraphModel.Strict
 open import proof.Semantics.Graph.Prim using (primD; primD-mono)
-open import proof.Semantics.Graph.Typed.Ops
-open import proof.Semantics.Graph.Typed.Clos5 using (ok; con; table-con; code-con)
-open import Semantics.Graph.Typed.Clos5
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.Clos5
-import Language.Typed.Mon as M
+open import ISWIM.proof.Semantics.Graph.Typed.Ops
+open import ISWIM.proof.Semantics.Graph.Typed.Clos5 using (ok; con; table-con; code-con)
+open import ISWIM.Semantics.Graph.Typed.Clos5
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Clos5
+import ISWIM.Language.Typed.Mon as M
 open M using (Atm; Exp; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Compiler.RCO
+open import ISWIM.Compiler.RCO
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

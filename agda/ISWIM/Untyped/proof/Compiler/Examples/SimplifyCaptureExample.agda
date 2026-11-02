@@ -1,23 +1,23 @@
 {-
 
-  An example of simplify (Compiler/Simplify.agda) followed by the
+  An example of simplify (ISWIM/Compiler/Simplify.agda) followed by the
   untyped capture (Compiler/Capture.agda).
 
 -}
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub)
-open import Language.ISWIM
-open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Capture using (capture)
-import Untyped.Language.Clos2 as L2
+open import ISWIM.Language.ISWIM
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+import ISWIM.Untyped.Language.Clos2 as L2
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; !_,,_; Nil)
-open import proof.Compiler.Examples.SimplifyExample using (inline-let-src)
+open import ISWIM.proof.Compiler.Examples.SimplifyExample using (inline-let-src)
 
 open import Data.Integer using (+_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module Untyped.proof.Compiler.Examples.SimplifyCaptureExample where
+module ISWIM.Untyped.proof.Compiler.Examples.SimplifyCaptureExample where
 
 {- End to end: that let stays a let through capture, so no closure is
    allocated for it (before let, it was the call (λ x. x - 1) (g 3) of a

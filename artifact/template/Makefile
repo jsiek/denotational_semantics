@@ -2,13 +2,13 @@ AGDA ?= agda
 PYTHON ?= python3
 
 # Check the graph model, abstract machines, clocked interpreters, reduction
-# semantics and adequacy (agda/Mu/All.agda) with --safe, using only the
+# semantics and adequacy (agda/FPC/All.agda) with --safe, using only the
 # standard library; then check that no checked file postulates or has a
 # pragma (other than the --without-K of the abt extract).
 check: agda pragma-check
 
 agda:
-	$(AGDA) --safe agda/Mu/All.agda
+	$(AGDA) --safe agda/FPC/All.agda
 
 pragma-check:
 	@! grep -rnE --include='*.agda' '\bpostulate\b|\{-#' agda \

@@ -11,7 +11,7 @@
   arguments, returns related results; at a recursive type the relation
   is defined in terms of itself, negatively, so it cannot be defined by
   recursion on types (nor on the untyped values of 𝔻). As for split
-  (Mu/proof/Correctness/ScottDomains/SplitRel.agda), it is defined by
+  (FPC/proof/Correctness/ScottDomains/SplitRel.agda), it is defined by
   recursion on the stages of the bilimit 𝔻 (proof/Framework/Scott/Stages.agda):
   R n s v relates an approximation s : 𝓓 n of depth n to a value v; at a
   function, the argument is at the same depth n, and the result of the
@@ -42,11 +42,11 @@ open import UF.Base using (ap₂)
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Framework.abt.GSubst using (_•_)
 open import Language.Prim using (Prim; sub; eq; int; bool) renaming (δ to δᴾ)
-open import Mu.Language.Type using (Type; Ctx; _⇒_; tup; _⊹_; μ; base; out-ty; _∋_; Z; S; idx)
+open import FPC.Language.Type using (Type; Ctx; _⇒_; tup; _⊹_; μ; base; out-ty; _∋_; Z; S; idx)
   renaming (unroll to unrollᵗ)
-open import Mu.Language.FPC
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos; All₂)
-open import Mu.Semantics.ClockedInterpreters.FPC
+open import FPC.Language.FPC
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos; All₂)
+open import FPC.Semantics.ClockedInterpreters.FPC
   renaming (Val to Value; Env to Envᵢ; const to cv; δ to δᵥ)
 open import proof.Semantics.Interp.Clock using (Result; ret; _>>=_; Stable; st-now; st-bind; stable-unique)
 
@@ -63,7 +63,7 @@ import Data.Nat as Nat
 import Data.Empty
 import Data.Product as P
 
-module Mu.proof.Adequacy.ScottDomains.LogRel
+module FPC.proof.Adequacy.ScottDomains.LogRel
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -79,8 +79,8 @@ open import proof.Framework.Scott.Stages pt fe pe
 open import proof.Framework.Scott.Values pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe using (abs; letᶜ-β)
 open import Semantics.Scott.Prim pt fe pe using (primD; out; prim-br₁; prim-br₂)
-open import Mu.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧; ⟦_⟧s)
-open import Mu.Semantics.ScottDomains.Closed pt fe pe using (ρ₀)
+open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧; ⟦_⟧s)
+open import FPC.Semantics.ScottDomains.Closed pt fe pe using (ρ₀)
 
 {- Evaluation ------------------------------------------------------------------------}
 

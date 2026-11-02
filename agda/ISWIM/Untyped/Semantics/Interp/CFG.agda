@@ -20,13 +20,13 @@
 
 -}
 
-module Untyped.Semantics.Interp.CFG where
+module ISWIM.Untyped.Semantics.Interp.CFG where
 
-open import Untyped.Language.CFG
+open import ISWIM.Untyped.Language.CFG
 open import Framework.ListUtil using (_‼_)
 open import Semantics.Interp.Clock
-open import Untyped.Semantics.Interp.Clos5 using (Val; code; obs)
-open import Untyped.Semantics.Interp.Imp using (Frame; zero-val; atom; eval-simple; inj?; set)
+open import ISWIM.Untyped.Semantics.Interp.Clos5 using (Val; code; obs)
+open import ISWIM.Untyped.Semantics.Interp.Imp using (Frame; zero-val; atom; eval-simple; inj?; set)
 
 open import Data.List using (List; []; _∷_; reverse; replicate; length)
 open import Data.Maybe using (Maybe; just; nothing)

@@ -18,15 +18,15 @@
 
 -}
 
-module Untyped.Semantics.Interp.Imp where
+module ISWIM.Untyped.Semantics.Interp.Imp where
 
 open import Framework.Primitives using (Int)
-open import Untyped.Language.Imp
+open import ISWIM.Untyped.Language.Imp
 open import Framework.ListUtil using (_‼_)
 open import Semantics.Interp.Clock
-open import Untyped.Semantics.Interp.Clos5
+open import ISWIM.Untyped.Semantics.Interp.Clos5
   using (Val; code; pair; const; tup; inl; inr; obs; prim?; project; first; second)
-open import Untyped.Semantics.Interp.Values using (Frame; zero-val; _[_]≔_) public
+open import ISWIM.Untyped.Semantics.Interp.Values using (Frame; zero-val; _[_]≔_) public
 
 open import Data.Integer using (+_)
 open import Data.List using (List; []; _∷_; reverse; replicate)

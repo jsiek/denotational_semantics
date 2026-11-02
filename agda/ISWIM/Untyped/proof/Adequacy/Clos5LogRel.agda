@@ -32,9 +32,9 @@
 -}
 
 open import Data.List using (List; []; _∷_; length; replicate; reverse)
-open import Untyped.Language.Clos5 using (AST)
+open import ISWIM.Untyped.Language.Clos5 using (AST)
 
-module Untyped.proof.Adequacy.Clos5LogRel (ds : List AST) where
+module ISWIM.Untyped.proof.Adequacy.Clos5LogRel (ds : List AST) where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
@@ -43,17 +43,17 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops using (nthD)
 open import Language.Prim using (int; bool; δ)
 open import Framework.Primitives using (Int)
-open import Untyped.Language.Clos5 hiding (AST)
-open import Untyped.Semantics.Graph.Clos5Iswim
+open import ISWIM.Untyped.Language.Clos5 hiding (AST)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import proof.Framework.ListUtil
-open import Untyped.Semantics.CEK.Clos5
-open import Untyped.proof.Compiler.HoistTable using (_⊑_; ∷-⊑; global-⊑)
-open import Untyped.proof.Adequacy.Clos5WF using (WS; WS-args; DefsWF)
-open import Untyped.proof.Adequacy.Clos5Common ds
-open import Untyped.proof.Adequacy.Values using (module Rel)
+open import ISWIM.Untyped.Semantics.CEK.Clos5
+open import ISWIM.Untyped.proof.Compiler.HoistTable using (_⊑_; ∷-⊑; global-⊑)
+open import ISWIM.Untyped.proof.Adequacy.Clos5WF using (WS; WS-args; DefsWF)
+open import ISWIM.Untyped.proof.Adequacy.Clos5Common ds
+open import ISWIM.Untyped.proof.Adequacy.Values using (module Rel)
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)

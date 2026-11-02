@@ -7,7 +7,7 @@
            --lift locals--> Impμ --explicate control--> CFGμ
            --select instructions--> X86μ
 
-  as the typed pipeline's (Compiler/Pipeline.agda), without cast insertion:
+  as the typed pipeline's (ISWIM/Compiler/Pipeline.agda), without cast insertion:
   enclose (FPC → EnvClosμ), the closure-conversion pass, is made of
   three steps, enclose = concretize ∘ prune ∘ capture. compile is the
   whole compiler, into X86μ; its prefixes compile-to-PairClos,
@@ -17,27 +17,27 @@
 
 -}
 
-module Mu.Compiler.Pipeline where
+module FPC.Compiler.Pipeline where
 
-open import Mu.Language.Type using (Type)
-import Mu.Language.FPC as FPC
-import Mu.Language.EnvClos as EnvClosμ
-import Mu.Language.PairClos as PairClosμ
-import Mu.Language.GlobalFun as GlobalFunμ
-import Mu.Language.Mon as Monμ
-import Mu.Language.Imp as Impμ
-import Mu.Language.CFG as CFGμ
-import Mu.Language.X86 as X86μ
-open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Capture using (capture)
-open import Mu.Compiler.Prune using (prune-program)
-open import Mu.Compiler.Concretize using (concretize-program)
-open import Mu.Compiler.Split using (split-program)
-open import Mu.Compiler.Hoist using (hoist)
-open import Mu.Compiler.RCO using (rco-program)
-open import Mu.Compiler.LiftLocals using (lift-program)
-open import Mu.Compiler.Explicate using (explicate)
-open import Mu.Compiler.Select using (select)
+open import FPC.Language.Type using (Type)
+import FPC.Language.FPC as FPC
+import FPC.Language.EnvClos as EnvClosμ
+import FPC.Language.PairClos as PairClosμ
+import FPC.Language.GlobalFun as GlobalFunμ
+import FPC.Language.Mon as Monμ
+import FPC.Language.Imp as Impμ
+import FPC.Language.CFG as CFGμ
+import FPC.Language.X86 as X86μ
+open import FPC.Compiler.Simplify using (simplify)
+open import FPC.Compiler.Capture using (capture)
+open import FPC.Compiler.Prune using (prune-program)
+open import FPC.Compiler.Concretize using (concretize-program)
+open import FPC.Compiler.Split using (split-program)
+open import FPC.Compiler.Hoist using (hoist)
+open import FPC.Compiler.RCO using (rco-program)
+open import FPC.Compiler.LiftLocals using (lift-program)
+open import FPC.Compiler.Explicate using (explicate)
+open import FPC.Compiler.Select using (select)
 
 open import Data.List using ([])
 

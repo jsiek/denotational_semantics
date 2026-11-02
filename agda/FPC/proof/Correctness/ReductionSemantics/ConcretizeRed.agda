@@ -2,7 +2,7 @@
 
   Correctness of concretize (Closμ → EnvClosμ) by a forward simulation
   between their reduction semantics, as for typed concretize
-  (proof/Correctness/Reduction/ConcretizeRed.agda).
+  (ISWIM/proof/Correctness/Reduction/ConcretizeRed.agda).
 
   The relation on terms (_⊢_≈_) relates a variable x to where it lives,
   φ x (a variable, or a component of a tuple in a variable); it is a
@@ -16,19 +16,19 @@
 
 -}
 
-module Mu.proof.Correctness.ReductionSemantics.ConcretizeRed where
+module FPC.proof.Correctness.ReductionSemantics.ConcretizeRed where
 
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.Clos
-import Mu.Language.EnvClos as C
-open import Mu.Compiler.Concretize
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.Clos
+import FPC.Language.EnvClos as C
+open import FPC.Compiler.Concretize
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_; each-lookup)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_; each-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Mu.proof.Semantics.ReductionSemantics.Clos as S
-import Mu.proof.Semantics.ReductionSemantics.EnvClos as T
+import FPC.proof.Semantics.ReductionSemantics.Clos as S
+import FPC.proof.Semantics.ReductionSemantics.EnvClos as T
 open T using (Value; value-red)
 import Language.Prim as P
 

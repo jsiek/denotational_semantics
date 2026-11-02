@@ -15,21 +15,21 @@
                      inject (out-flat p) (prim p (project tint x) (project tint y)).
 
   The pass is defined on well-scoped terms (WS k M: a closed program is
-  WS 0, Compiler/CaptureScope.agda), so every variable becomes a typed
+  WS 0, ISWIM/Compiler/CaptureScope.agda), so every variable becomes a typed
   one. It carries a renaming r of the variables, for the variable that
   the let of a primitive adds around its second operand.
 
 -}
 
-module Compiler.Cast where
+module ISWIM.Compiler.Cast where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import Framework.Syntax.ScopeDec Op sig using (ws?)
 open import Relation.Nullary using (yes; no)
-open import Language.Typed.Type
-import Language.Typed.ISWIM as T
+open import ISWIM.Language.Typed.Type
+import ISWIM.Language.Typed.ISWIM as T
 
 open import Data.Fin using (Fin; zero; suc; fromℕ<)
 open import Data.List using (replicate)
@@ -74,7 +74,7 @@ cast-program = cast (λ x → x)
    insertion cannot type) becomes one that stops with an error at once,
    the application of an empty tuple; the theorems are for closed
    programs, for which cast-closed M is cast-program M w for every w
-   (proof/Compiler/CastScope.agda) -}
+   (ISWIM/proof/Compiler/CastScope.agda) -}
 cast-closed : AST → T.Tm 0 Any
 cast-closed M with ws? 0 M
 ... | yes w = cast-program M w

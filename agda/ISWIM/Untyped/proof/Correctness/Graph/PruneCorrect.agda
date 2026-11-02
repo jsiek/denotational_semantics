@@ -21,11 +21,11 @@ open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos2
-open import Untyped.proof.Semantics.Graph.Clos2Iswim
-open import Untyped.Compiler.Prune
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; Init; ρ₀)
-open import Untyped.proof.Correctness.Graph.ConcretizeCorrect
+open import ISWIM.Untyped.Language.Clos2
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim
+open import ISWIM.Untyped.Compiler.Prune
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; Init; ρ₀)
+open import ISWIM.Untyped.proof.Correctness.Graph.ConcretizeCorrect
   using (init₀; push; apply-push)
 open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
 
@@ -42,7 +42,7 @@ open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; subst)
 open import Relation.Nullary using (Dec; yes; no)
 
-module Untyped.proof.Correctness.Graph.PruneCorrect where
+module ISWIM.Untyped.proof.Correctness.Graph.PruneCorrect where
 
 {- Helpers --------------------------------------------------------------------}
 

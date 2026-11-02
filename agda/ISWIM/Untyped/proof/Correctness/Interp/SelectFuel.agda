@@ -20,26 +20,26 @@
 
 -}
 
-module Untyped.proof.Correctness.Interp.SelectFuel where
+module ISWIM.Untyped.proof.Correctness.Interp.SelectFuel where
 
 open import Framework.Primitives using (Int)
-open import Untyped.Language.Imp as Imp using (var; lit; fun-ref)
+open import ISWIM.Untyped.Language.Imp as Imp using (var; lit; fun-ref)
 open import Language.Prim using (sub; eq; int; bool)
-open import Untyped.Language.CFG as CFG using (return; seq; goto; case)
-open import Language.X86 using (Block; Body; var; reg; rax; retq)
-open import Untyped.Compiler.Select
-open import Untyped.Compiler.Pipeline using (compile-cfg; compile-x86)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Language.CFG as CFG using (return; seq; goto; case)
+open import ISWIM.Language.X86 using (Block; Body; var; reg; rax; retq)
+open import ISWIM.Untyped.Compiler.Select
+open import ISWIM.Untyped.Compiler.Pipeline using (compile-cfg; compile-x86)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Semantics.Observation using (o-const; δ?)
 open import proof.Framework.ListUtil using (_‼_; ‼-pw)
 open import proof.Semantics.Interp.Clock
-open import Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs; out; first; second; project; prim?)
-open import Untyped.Semantics.Interp.Imp using (_[_]≔_; atom; atoms; eval-simple)
-import Untyped.Semantics.Interp.CFG as G
-import Untyped.Semantics.Interp.X86 as X
+open import ISWIM.Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs; out; first; second; project; prim?)
+open import ISWIM.Untyped.Semantics.Interp.Imp using (_[_]≔_; atom; atoms; eval-simple)
+import ISWIM.Untyped.Semantics.Interp.CFG as G
+import ISWIM.Untyped.Semantics.Interp.X86 as X
 open X using (regs; arg; args; write; bool?)
-import Semantics.Interp.ISWIM as ISWIM
-open import Untyped.proof.Correctness.Interp.ExplicateFuel using (compile-cfg-correct)
+import ISWIM.Semantics.Interp.ISWIM as ISWIM
+open import ISWIM.Untyped.proof.Correctness.Interp.ExplicateFuel using (compile-cfg-correct)
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥-elim)

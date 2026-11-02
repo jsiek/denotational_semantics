@@ -33,14 +33,14 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos5 using (program)
-open import Untyped.Language.Mon
-open import Untyped.Compiler.LiftLocals using (lift-atom; lift; height; lift-defs; lift-program)
-open import Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; ⟦_⟧ₚ)
-open import Untyped.proof.Semantics.Graph.ImpDirect
+open import ISWIM.Untyped.Language.Clos5 using (program)
+open import ISWIM.Untyped.Language.Mon
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-atom; lift; height; lift-defs; lift-program)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; ⟦_⟧ₚ)
+open import ISWIM.Untyped.proof.Semantics.Graph.ImpDirect
   using (Store; _[_↦_]; 𝒜; caseₛ; letₛ)
   renaming (⟦_⟧[_] to ℐ⟦_⟧[_]; table to tableᵢ; ⟦_⟧ₚ to ℐ⟦_⟧ₚ)
-open import Untyped.proof.Correctness.Graph.LiftLocalsCommon
+open import ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCommon
 open import proof.Framework.GraphModel.Env using (Env)
 
 open import Data.Nat using (ℕ; suc; _+_; _⊔_; _≤_; _≟_; _<?_)
@@ -56,7 +56,7 @@ open import Level using () renaming (lift to up)
 open import Relation.Binary.PropositionalEquality using (sym; trans)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.Graph.LiftLocalsCorrect where
+module ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCorrect where
 
 {- The invariant ---------------------------------------------------------------------}
 

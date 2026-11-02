@@ -26,7 +26,7 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.SplitBackSim where
+module ISWIM.Untyped.proof.Correctness.CEK.SplitBackSim where
 
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
@@ -37,16 +37,16 @@ open import Data.Product using (Σ-syntax; _,_; proj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos3
-import Untyped.Language.Clos4 as C4
-open import Untyped.Compiler.Split
+open import ISWIM.Untyped.Language.Clos3
+import ISWIM.Untyped.Language.Clos4 as C4
+open import ISWIM.Untyped.Compiler.Split
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
-open import Untyped.proof.Semantics.CEK.Backward
+open import ISWIM.Untyped.proof.Semantics.CEK.Backward
 open import proof.Framework.ListUtil
-import Untyped.Semantics.CEK.Clos3 as S
-import Untyped.Semantics.CEK.Clos4 as T
-open import Untyped.proof.Correctness.CEK.SplitSim
+import ISWIM.Untyped.Semantics.CEK.Clos3 as S
+import ISWIM.Untyped.Semantics.CEK.Clos4 as T
+open import ISWIM.Untyped.proof.Correctness.CEK.SplitSim
   using (_≈_; clos≈; const≈; tup≈; inl≈; inr≈; EnvRel; env; Del; snd0; app-body;
          _≈k_; halt; appL; appR; tupK; closK; getK; inlK; inrK; caseK;
          primL; primR; letK; obs≈; prim≈; look; env-ext; env-skip; env-body; del-args)

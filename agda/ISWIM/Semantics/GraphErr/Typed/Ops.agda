@@ -1,6 +1,6 @@
 {-
 
-  The operators of the typed languages (Language/Typed/) in the graph
+  The operators of the typed languages (ISWIM/Language/Typed/) in the graph
   model with errors: the graph model's operators (Framework/GraphModel/Ops)
   under the binds of the error monad (Framework/GraphModel/ErrorMonad),
   in the machines' order, with no check of the kind of an operand: a
@@ -13,12 +13,12 @@
     elements of the right kind (so a denotation stays consistent). The
     kind of a flat type is kindᶠ; a language may see the kinds of its
     values through a map φ (projectᵠ): a closure of Clos4ᵀ, a pair, has
-    the kind of a function (Semantics/GraphErr/Typed/Clos4.agda).
+    the kind of a function (ISWIM/Semantics/GraphErr/Typed/Clos4.agda).
   * let x = M in N is the bind of N.
 
 -}
 
-module Semantics.GraphErr.Typed.Ops where
+module ISWIM.Semantics.GraphErr.Typed.Ops where
 
 open import Framework.Primitives using (Int)
 open import Framework.GraphModel.ErrorPrelude
@@ -26,7 +26,7 @@ open import Framework.GraphModel.Ops using (⋆; proj; 𝒞)
 open import Framework.GraphModel.TypedCheck using (checkedᵠ) public
 open import Semantics.Graph.Prim using (primD)
 open import Language.Prim using (Prim)
-open import Language.Typed.Type using (Flat; base; tup; sum; fun; Tag; tfun; tsum; tint; ttup; flat)
+open import ISWIM.Language.Typed.Type using (Flat; base; tup; sum; fun; Tag; tfun; tsum; tint; ttup; flat)
 
 open import Data.Fin using (Fin)
 open import Data.Nat using (suc)

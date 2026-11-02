@@ -29,18 +29,18 @@
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
-open import Untyped.Language.Imp as I
+open import ISWIM.Untyped.Language.Imp as I
   using (simple; case; assign; body; program)
-import Untyped.Language.CFG as C
-open import Untyped.Compiler.Explicate
-open import Untyped.Semantics.Graph.ImpK
+import ISWIM.Untyped.Language.CFG as C
+open import ISWIM.Untyped.Compiler.Explicate
+open import ISWIM.Untyped.Semantics.Graph.ImpK
   using (Store; _[_↦_]; checked; Table; zeros; frame; Kont; halt; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ)
   renaming (table to tableᴷ)
-open import Untyped.Semantics.Graph.CFG
+open import ISWIM.Untyped.Semantics.Graph.CFG
   using (⟦_⟧ₚ)
   renaming (⟦_⟧[_] to ⟪_⟫[_]; table to tableₜ)
-open import Untyped.proof.Correctness.Graph.LiftLocalsCorrectK using (compile-imp-same)
-open import Untyped.proof.Correctness.Graph.ExplicateCommon
+open import ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCorrectK using (compile-imp-same)
+open import ISWIM.Untyped.proof.Correctness.Graph.ExplicateCommon
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length; map)
@@ -51,7 +51,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (refl; sym; trans; cong)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.Graph.ExplicateCorrectK where
+module ISWIM.Untyped.proof.Correctness.Graph.ExplicateCorrectK where
 
 {- The continuations ------------------------------------------------------------------}
 

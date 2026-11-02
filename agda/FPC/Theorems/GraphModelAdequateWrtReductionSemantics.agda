@@ -2,27 +2,27 @@
 
   The adequacy of the graph model for the reduction semantics of FPC:
   the analogue, for reduction, of Proposition 5.1 (adequacy) of the paper
-  (Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for the clocked interpreters), and the
+  (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for the clocked interpreters), and the
   consequence drawn from it with Theorem 4.1, for the pair the reduction
-  column's theorem relates (Mu/Theorems/CorrectWrtReductionSemantics.agda): the
+  column's theorem relates (FPC/Theorems/CorrectWrtReductionSemantics.agda): the
   reduction semantics of FPC and the machine of X86μ. It is an
-  alternative to Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported separately. The
-  proofs are in Mu/proof/Adequacy/ReductionSemantics/ (and, for X86μ,
-  Mu/proof/Adequacy/AbstractMachines/, as in
-  Mu/Theorems/GraphModelAdequateWrtAbstractMachines.agda).
+  alternative to FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported separately. The
+  proofs are in FPC/proof/Adequacy/ReductionSemantics/ (and, for X86μ,
+  FPC/proof/Adequacy/AbstractMachines/, as in
+  FPC/Theorems/GraphModelAdequateWrtAbstractMachines.agda).
 
-  compile is Mu/Compiler/Pipeline.agda's. The reduction semantics
+  compile is FPC/Compiler/Pipeline.agda's. The reduction semantics
   terminates with an observation when a run of reductions from M
   reaches a term that stops with that observation, and it diverges
   when it has a run of every length (Framework/Smallstep.agda), as in
-  Mu/Theorems/CorrectWrtReductionSemantics.agda.
+  FPC/Theorems/CorrectWrtReductionSemantics.agda.
 
-  To read them: those of Mu/Theorems/CorrectWrtGraphModel.agda and of
-  Mu/Theorems/CorrectWrtReductionSemantics.agda.
+  To read them: those of FPC/Theorems/CorrectWrtGraphModel.agda and of
+  FPC/Theorems/CorrectWrtReductionSemantics.agda.
 
 -}
 
-module Mu.Theorems.GraphModelAdequateWrtReductionSemantics where
+module FPC.Theorems.GraphModelAdequateWrtReductionSemantics where
 
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
@@ -30,16 +30,16 @@ open import Framework.GraphModel.Domain using (const)
 open import Semantics.Observation using (o-const; _⇔_)
 import Semantics.Reduction.Smallstep as R
 import Semantics.CEK.Smallstep as C
-open import Mu.Language.Type using (base)
-import Mu.Language.FPC as FPC
-open import Mu.Compiler.Pipeline using (compile)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-import Mu.Semantics.ReductionSemantics.FPC as FPCᵣ
-import Mu.Semantics.AbstractMachines.X86 as X86μₘ
+open import FPC.Language.Type using (base)
+import FPC.Language.FPC as FPC
+open import FPC.Compiler.Pipeline using (compile)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+import FPC.Semantics.ReductionSemantics.FPC as FPCᵣ
+import FPC.Semantics.AbstractMachines.X86 as X86μₘ
 
-import Mu.proof.Adequacy.ReductionSemantics.FPC as AdequacyFPC
-import Mu.proof.Adequacy.ReductionSemantics.EndToEnd as EndToEnd
+import FPC.proof.Adequacy.ReductionSemantics.FPC as AdequacyFPC
+import FPC.proof.Adequacy.ReductionSemantics.EndToEnd as EndToEnd
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

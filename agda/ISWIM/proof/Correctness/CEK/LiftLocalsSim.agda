@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed lift locals (Monᵀ → Impᵀ,
-  Compiler/LiftLocals.agda): the Impᵀ machine on lift-program P
+  ISWIM/Compiler/LiftLocals.agda): the Impᵀ machine on lift-program P
   and the Clos5ᵀ machine on the embedding ⌜ P ⌝ₚ (the meaning of a Monᵀ
   program) are Equivalent.
 
@@ -16,21 +16,21 @@
 
 -}
 
-module proof.Correctness.CEK.LiftLocalsSim where
+module ISWIM.proof.Correctness.CEK.LiftLocalsSim where
 
-open import Language.Typed.Type
-import Language.Typed.Mon as M
+open import ISWIM.Language.Typed.Type
+import ISWIM.Language.Typed.Mon as M
 open M using (atm; pack; callc; tuple; get; inl; inr; case; prim; let′; inject; project; ⌜_⌝; ⌜_⌝ₚ)
-open import Language.Typed.Imp using (Program)
-open import Compiler.LiftLocals using (lift; lift-program)
+open import ISWIM.Language.Typed.Imp using (Program)
+open import ISWIM.Compiler.LiftLocals using (lift; lift-program)
 open import proof.Framework.Lookup using (map-!)
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; Star; ε; _◅_; Plus; plus; plus-star; star-plus; step⁺; plus→star)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent; equiv-sym)
 open import proof.Framework.Both Obs using (Both; halt; move; ends; both-fsim)
-open import proof.Correctness.CEK.Clos5Common using (atm-step; tuple-atoms)
-import Semantics.CEK.Typed.Clos5 as C
-import Semantics.CEK.Typed.Imp as I
+open import ISWIM.proof.Correctness.CEK.Clos5Common using (atm-step; tuple-atoms)
+import ISWIM.Semantics.CEK.Typed.Clos5 as C
+import ISWIM.Semantics.CEK.Typed.Imp as I
 
 open import Data.List using (List; []; _∷_)
 open import Function using (flip)

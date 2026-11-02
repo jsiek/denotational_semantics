@@ -1,4 +1,4 @@
-module Untyped.Language.Clos5 where
+module ISWIM.Untyped.Language.Clos5 where
 {-
 
  In this language the code of every function is a global definition.

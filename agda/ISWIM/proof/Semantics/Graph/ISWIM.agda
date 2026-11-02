@@ -1,14 +1,14 @@
-module proof.Semantics.Graph.ISWIM where
+module ISWIM.proof.Semantics.Graph.ISWIM where
 
 open import proof.Framework.GraphModel.Continuity
 open import proof.Semantics.Graph.Prim
-open import Language.ISWIM
-open import Semantics.Graph.ISWIM public hiding (⟦_⟧; init)
+open import ISWIM.Language.ISWIM
+open import ISWIM.Semantics.Graph.ISWIM public hiding (⟦_⟧; init)
 open import proof.Framework.GraphModel.SemanticsUtil Op sig using (module GoodSemantics)
 
 open import Data.Unit using (⊤; tt)
 
-{- The semantics of Semantics/Graph/ISWIM.agda as an instance of the
+{- The semantics of ISWIM/Semantics/Graph/ISWIM.agda as an instance of the
    generic Semantics record (proof/Framework/GraphModel/Semantics.agda),
    whose ⟦_⟧ is by definition the ⟦_⟧ there: its operators are Good. -}
 

@@ -2,7 +2,7 @@
 
   The approximant logical relation, for the backward (reflect) direction
   of split (EnvClosμ → PairClosμ) in the graph model: that of typed split
-  (proof/Correctness/Graph/SplitRel.agda) without its clause for
+  (ISWIM/proof/Correctness/Graph/SplitRel.agda) without its clause for
   project (fun-obs), which FPC does not have. The relation itself and
   Lemma 4.2 are in ApproxLR.agda (re-exported here); this module adds the
   call of a closure (_⊙_), the union of self-contained calls, and Approx, the form of
@@ -52,9 +52,9 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
-module Mu.proof.Correctness.GraphModel.SplitRel where
+module FPC.proof.Correctness.GraphModel.SplitRel where
 
-open import Mu.proof.Correctness.GraphModel.ApproxLR public
+open import FPC.proof.Correctness.GraphModel.ApproxLR public
 
 {- Shorthands -----------------------------------------------------------------}
 

@@ -32,15 +32,15 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos5 using (program)
-open import Untyped.Language.Mon
-open import Untyped.Compiler.LiftLocals using (lift; height; lift-defs; lift-program)
-open import Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; ⟦_⟧ₚ)
-open import Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (⟦⟧[]-monotone; Clos5-con; table-con)
-open import Untyped.Semantics.Graph.ImpK
+open import ISWIM.Untyped.Language.Clos5 using (program)
+open import ISWIM.Untyped.Language.Mon
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift; height; lift-defs; lift-program)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; ⟦_⟧ₚ)
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (⟦⟧[]-monotone; Clos5-con; table-con)
+open import ISWIM.Untyped.Semantics.Graph.ImpK
   using (_[_↦_]; checked; Kont; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ)
   renaming (table to tableᴷ)
-open import Untyped.proof.Correctness.Graph.LiftLocalsCommon
+open import ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCommon
 
 open import Data.Nat using (zero; suc; _+_; _⊔_; _<_; _≤_; _≟_; _<?_; s≤s)
 open import Data.Nat.Properties using (≤-refl)
@@ -57,7 +57,7 @@ open import Level using () renaming (lift to up)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl; sym; trans)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.Graph.LiftLocalsCorrectK where
+module ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCorrectK where
 
 open import proof.Framework.GraphModel.Laws
 

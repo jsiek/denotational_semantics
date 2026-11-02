@@ -1,10 +1,10 @@
 {-
 
-  Select instructions (CFGμ → X86μ, Mu/Compiler/Select.agda) is correct
+  Select instructions (CFGμ → X86μ, FPC/Compiler/Select.agda) is correct
   in the graph model, as for the typed pass
-  (proof/Correctness/Graph/SelectCorrect.agda): the X86μ program
-  (Mu/Semantics/GraphModel/X86.agda) means exactly what the CFGμ program does
-  (≃, Mu/Semantics/GraphModel/CFG.agda), for every CFGμ program.
+  (ISWIM/proof/Correctness/Graph/SelectCorrect.agda): the X86μ program
+  (FPC/Semantics/GraphModel/X86.agda) means exactly what the CFGμ program does
+  (≃, FPC/Semantics/GraphModel/CFG.agda), for every CFGμ program.
 
   The X86μ frame is the CFGμ frame, a slot write binds as CFGμ's seq
   does, and a register write is a substitution, so the code selected
@@ -22,27 +22,27 @@
 
 -}
 
-module Mu.proof.Correctness.GraphModel.SelectCorrect where
+module FPC.proof.Correctness.GraphModel.SelectCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops using (⋆; Λ; 𝒞; 𝒯; strict; Mono₁; Λ-≃; ⋆-≃; Λ-β; 𝒞-≃)
 open import proof.Framework.GraphModel.Laws using (strict-≃; ⋆-ne)
-open import Mu.Semantics.GraphModel.Ops using (Table; tables; init)
-open import Mu.proof.Semantics.GraphModel.CFG using (⟦_⟧ᵗ; Meanings; drop; 𝒮; 𝒮-≃; tail-mono; blocks-mono)
+open import FPC.Semantics.GraphModel.Ops using (Table; tables; init)
+open import FPC.proof.Semantics.GraphModel.CFG using (⟦_⟧ᵗ; Meanings; drop; 𝒮; 𝒮-≃; tail-mono; blocks-mono)
   renaming (code′ to codeᶜ; ⟦_⟧ₚ to ⟦_⟧ᶜ)
-import Mu.proof.Semantics.GraphModel.CFG as GC
-open import Mu.Semantics.GraphModel.Imp using (𝒜s)
-import Mu.Semantics.GraphModel.X86 as X
-open import Mu.Language.Type
-import Mu.Language.Imp as I
-import Mu.Language.CFG as C
+import FPC.proof.Semantics.GraphModel.CFG as GC
+open import FPC.Semantics.GraphModel.Imp using (𝒜s)
+import FPC.Semantics.GraphModel.X86 as X
+open import FPC.Language.Type
+import FPC.Language.Imp as I
+import FPC.Language.CFG as C
 open C using (DSig; Args; Tail; return; seq; goto; case; _▷_)
-open import Mu.Language.X86 using (Seq; Atm; var; rax; St; called)
-open import Mu.proof.Semantics.GraphModel.Binders using (let-≃; case-≃)
-open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
+open import FPC.Language.X86 using (Seq; Atm; var; rax; St; called)
+open import FPC.proof.Semantics.GraphModel.Binders using (let-≃; case-≃)
+open import FPC.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 open import Data.Bool using (false)
 open import Data.Maybe using (nothing)
-open import Mu.Compiler.Select using (Out; ret; to; after; dst; sel; tail; atms; depth; blocks-depth; def-body; select)
+open import FPC.Compiler.Select using (Out; ret; to; after; dst; sel; tail; atms; depth; blocks-depth; def-body; select)
   renaming (blocks to sel-blocks)
 open import Language.Prim using (sub; eq)
 

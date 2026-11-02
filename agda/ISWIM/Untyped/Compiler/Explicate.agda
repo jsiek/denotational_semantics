@@ -1,4 +1,4 @@
-module Untyped.Compiler.Explicate where
+module ISWIM.Untyped.Compiler.Explicate where
 {-
 
  The explicate-control pass (Imp → CFG), after Essentials of
@@ -20,8 +20,8 @@ module Untyped.Compiler.Explicate where
 
 -}
 
-open import Untyped.Language.Imp as Imp using (Exp; simple; case; assign)
-open import Untyped.Language.CFG
+open import ISWIM.Untyped.Language.Imp as Imp using (Exp; simple; case; assign)
+open import ISWIM.Untyped.Language.CFG
 
 open import Data.List using (List; []; _∷_; length; map)
 open import Data.Nat using (ℕ)

@@ -9,21 +9,21 @@
 
   Observations: as in Clos4, code pointers and pairs (closures) are
   observed as functions (o-fun). The values, their observations and the
-  primitives are in Semantics/CEK/Values.agda, shared with the machines of Imp,
+  primitives are in ISWIM/Semantics/CEK/Values.agda, shared with the machines of Imp,
   CFG and X86.
 
 -}
 
-module Untyped.Semantics.CEK.Clos5 where
+module ISWIM.Untyped.Semantics.CEK.Clos5 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
-open import Untyped.Language.Clos5
+open import ISWIM.Untyped.Language.Clos5
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
 open import Framework.ListUtil
-open import Semantics.CEK.Values public
+open import ISWIM.Semantics.CEK.Values public
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; reverse)

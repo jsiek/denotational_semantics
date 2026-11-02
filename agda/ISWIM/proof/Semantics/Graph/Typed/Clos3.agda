@@ -1,22 +1,22 @@
 {-
 
   Lemmas about the semantics of Clos3ᵀ in the graph model
-  (Semantics/Graph/Typed/Clos3.agda): its denotations are Ok, by
+  (ISWIM/Semantics/Graph/Typed/Clos3.agda): its denotations are Ok, by
   induction on the term, one line per construct (a closure is code, a
   closed function of two arguments, applied to a tuple).
 
 -}
 
-module proof.Semantics.Graph.Typed.Clos3 where
+module ISWIM.proof.Semantics.Graph.Typed.Clos3 where
 
-open import Semantics.Graph.Typed.Clos3 public
-open import proof.Semantics.Graph.Typed.Ops
+open import ISWIM.Semantics.Graph.Typed.Clos3 public
+open import ISWIM.proof.Semantics.Graph.Typed.Ops
 
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Continuity
 open import proof.Semantics.Graph.Prim using (primD-good)
-open import Language.Typed.Type using (Any; idx)
-open import Language.Typed.Clos3
+open import ISWIM.Language.Typed.Type using (Any; idx)
+open import ISWIM.Language.Typed.Clos3
 
 open import Data.List using (replicate)
 open import Data.Vec using (Vec; []; _∷_)

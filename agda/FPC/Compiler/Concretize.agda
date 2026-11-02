@@ -1,7 +1,7 @@
 {-
 
   Concretize (Closμ → EnvClosμ), as typed concretize
-  (Compiler/Concretize.agda): each closure stores its free variables in
+  (ISWIM/Compiler/Concretize.agda): each closure stores its free variables in
   one tuple, and inside its code the free variable i becomes get i of
   that tuple (variable S Z of the code).
 
@@ -10,12 +10,12 @@
 
 -}
 
-module Mu.Compiler.Concretize where
+module FPC.Compiler.Concretize where
 
-open import Mu.Language.Type
-open import Mu.Language.Clos
-import Mu.Language.EnvClos as T
-open import Mu.Framework.AllUtil using (All; []; _∷_)
+open import FPC.Language.Type
+open import FPC.Language.Clos
+import FPC.Language.EnvClos as T
+open import FPC.Framework.AllUtil using (All; []; _∷_)
 
 open import Data.List using ([]; _∷_)
 

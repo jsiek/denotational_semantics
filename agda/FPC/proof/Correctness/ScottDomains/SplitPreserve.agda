@@ -25,7 +25,7 @@ open import UF.Base using (transport₂; ap₂)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Nat using (_+_)
 
-module Mu.proof.Correctness.ScottDomains.SplitPreserve
+module FPC.proof.Correctness.ScottDomains.SplitPreserve
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -37,7 +37,7 @@ open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; pair to 
 open import proof.Framework.Scott.Stages pt fe pe
 open import proof.Framework.Scott.Values pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe
-open import Mu.proof.Correctness.ScottDomains.SplitRel pt fe pe
+open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
 
 Pres : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
 Pres = Rel preserve

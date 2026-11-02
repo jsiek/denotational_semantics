@@ -1,22 +1,22 @@
 {-
 
-  A clocked interpreter for EnvClosμ (Mu/Language/EnvClos.agda), as the one
-  for Closμ (Mu/Semantics/ClockedInterpreters/Clos.agda), except that the code of a
+  A clocked interpreter for EnvClosμ (FPC/Language/EnvClos.agda), as the one
+  for Closμ (FPC/Semantics/ClockedInterpreters/Clos.agda), except that the code of a
   closure runs with the argument and the tuple of its free variables.
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.EnvClos where
+module FPC.Semantics.ClockedInterpreters.EnvClos where
 
-open import Mu.Language.Type
-open import Mu.Language.EnvClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type
+open import FPC.Language.EnvClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
 
 open import Data.List using ([]; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 
-open import Mu.Semantics.ClockedInterpreters.Values (λ Δ A B → Tm (A ∷ tup Δ ∷ []) B) public
+open import FPC.Semantics.ClockedInterpreters.Values (λ Δ A B → Tm (A ∷ tup Δ ∷ []) B) public
 
 eval : ∀ {Γ A} → ℕ → Env Γ → Tm Γ A → Result (Val A)
 evals : ∀ {Γ Δ} → ℕ → Env Γ → All (Tm Γ) Δ → Result (All Val Δ)

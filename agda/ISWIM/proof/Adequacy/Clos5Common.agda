@@ -1,7 +1,7 @@
 {-
 
   Definitions shared by the soundness and adequacy proofs for the Clos5ᵀ
-  machine (see proof/Adequacy/Clos5.agda):
+  machine (see ISWIM/proof/Adequacy/Clos5.agda):
 
   * runs of the machine of a table ds from any state, evaluation of a
     term to a value (⇓) and its determinism, observed at every type
@@ -18,18 +18,18 @@
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc; _<_; _≟_)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos5
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos5
 
-module proof.Adequacy.Clos5Common {Σ : List ℕ} (ds : All (Code Σ) Σ) where
+module ISWIM.proof.Adequacy.Clos5Common {Σ : List ℕ} (ds : All (Code Σ) Σ) where
 
 open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩) renaming (const to dconst)
 open import proof.Framework.GraphModel.Ops using (ℬ; pair; 𝒯; nthD) renaming (inl to inlD; inr to inrD)
-open import Semantics.Graph.Typed.Ops using (Table; tables)
-open import Semantics.CEK.Typed.Clos5
+open import ISWIM.Semantics.Graph.Typed.Ops using (Table; tables)
+open import ISWIM.Semantics.CEK.Typed.Clos5
 open import Framework.Lookup using (_!_)
 open import proof.Framework.Runs using (module Runs)
 
@@ -46,7 +46,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 open import Relation.Nullary using (yes; no)
 
 open Runs (step ds) public
-open import proof.Adequacy.Clos5Values using (lvl<; lvl-inj; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv) public
+open import ISWIM.proof.Adequacy.Clos5Values using (lvl<; lvl-inj; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv) public
 
 {- The older definitions ---------------------------------------------------------}
 

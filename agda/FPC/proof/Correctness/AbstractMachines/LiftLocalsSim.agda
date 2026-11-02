@@ -1,9 +1,9 @@
 {-
 
-  Correctness of lift locals (Monμ → Impμ, Mu/Compiler/LiftLocals.agda):
+  Correctness of lift locals (Monμ → Impμ, FPC/Compiler/LiftLocals.agda):
   the Impμ machine on lift-program P and the GlobalFunμ machine on the
   embedding ⌜ P ⌝ₚ (the meaning of a Monμ program) are Equivalent, as
-  for typed lift locals (proof/Correctness/CEK/LiftLocalsSim.agda).
+  for typed lift locals (ISWIM/proof/Correctness/CEK/LiftLocalsSim.agda).
 
   The pass is structural, and the frame of the Impμ machine is the
   environment of the GlobalFunμ machine, so the two run on the same values
@@ -16,21 +16,21 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.LiftLocalsSim where
+module FPC.proof.Correctness.AbstractMachines.LiftLocalsSim where
 
-open import Mu.Language.Type
-import Mu.Language.Mon as M
+open import FPC.Language.Type
+import FPC.Language.Mon as M
 open M using (DSig; Args; atm; pair; callc; tuple; get; inl; inr; case; prim; let′; fold; unfold; ⌜_⌝; ⌜_⌝ₚ)
-open import Mu.Compiler.LiftLocals using (lift; lift-program)
-open import Mu.Framework.AllUtil using (All; []; _∷_; map)
-open import Mu.proof.Framework.AllProp using (lookup-map)
+open import FPC.Compiler.LiftLocals using (lift; lift-program)
+open import FPC.Framework.AllUtil using (All; []; _∷_; map)
+open import FPC.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation using (Obs)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; Plus; plus; plus-star; star-plus; step⁺; plus→star)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent; equiv-sym)
 open import proof.Framework.Both Obs using (Both; halt; move; both-fsim)
-open import Mu.proof.Correctness.AbstractMachines.GlobalFunCommon using (atm-step; tuple-atoms)
-import Mu.Semantics.AbstractMachines.GlobalFun as C
-import Mu.Semantics.AbstractMachines.Imp as I
+open import FPC.proof.Correctness.AbstractMachines.GlobalFunCommon using (atm-step; tuple-atoms)
+import FPC.Semantics.AbstractMachines.GlobalFun as C
+import FPC.Semantics.AbstractMachines.Imp as I
 
 open import Data.List using (List; []; _∷_)
 open import Function using (flip)

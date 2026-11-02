@@ -1,8 +1,8 @@
 {-
 
   Correctness of capture (FPC → Closμ) in Scott domains
-  (Mu/Semantics/ScottDomains/{FPC,Clos}.agda), as in the graph model
-  (Mu/proof/Correctness/GraphModel/CaptureCorrect.agda), with equality of
+  (FPC/Semantics/ScottDomains/{FPC,Clos}.agda), as in the graph model
+  (FPC/proof/Correctness/GraphModel/CaptureCorrect.agda), with equality of
   values in place of equality of sets.
 
   ⟦ M ⟧ ρ = ⟦ capture M ⟧₂ ρ' when the environments agree on the
@@ -22,16 +22,16 @@ open import UF.PropTrunc
 open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
-open import Mu.Language.Type
-open import Mu.Language.FPC
-import Mu.Language.Clos as T
-open import Mu.Framework.AllUtil using (All; []; _∷_; tab; pos)
-open import Mu.Compiler.Capture
+open import FPC.Language.Type
+open import FPC.Language.FPC
+import FPC.Language.Clos as T
+open import FPC.Framework.AllUtil using (All; []; _∷_; tab; pos)
+open import FPC.Compiler.Capture
 open import Framework.abt.GSubst using (_•_)
 open import Data.List using (List; []; _∷_; length)
 open import Data.Fin using (Fin; zero; suc)
 
-module Mu.proof.Correctness.ScottDomains.CaptureCorrect
+module FPC.proof.Correctness.ScottDomains.CaptureCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -41,8 +41,8 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.FPC pt fe pe
-open import Mu.Semantics.ScottDomains.Clos pt fe pe renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
+open import FPC.Semantics.ScottDomains.FPC pt fe pe
+open import FPC.Semantics.ScottDomains.Clos pt fe pe renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
 
 Rel : Ctx → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇
 Rel Γ ρ ρ' = ∀ {C} (x : Γ ∋ C) → (ρ (idx x) ＝ ρ' (idx x)) × defined (ρ' (idx x))

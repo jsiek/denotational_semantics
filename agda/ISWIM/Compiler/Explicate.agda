@@ -1,7 +1,7 @@
 {-
 
   Typed explicate control (Impᵀ → CFGᵀ), after Essentials of Compilation,
-  as the untyped pass (Untyped/Compiler/Explicate.agda): explicate-tail e
+  as the untyped pass (ISWIM/Untyped/Compiler/Explicate.agda): explicate-tail e
   translates e in tail position; explicate-assign e p k translates
   "slot k := e, then the tail k" in continuation-passing style, so a
   case becomes a case whose branches assign the slot and jump to a new
@@ -13,12 +13,12 @@
 
 -}
 
-module Compiler.Explicate where
+module ISWIM.Compiler.Explicate where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Language.Typed.Imp as I
-open import Language.Typed.CFG
+import ISWIM.Language.Typed.Imp as I
+open import ISWIM.Language.Typed.CFG
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

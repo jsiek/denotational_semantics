@@ -1,12 +1,12 @@
 {-
 
   Hoist makes only references to older definitions, for FPC
-  (agda/Mu/), as for the typed pipeline (proof/Compiler/HoistOlder.agda);
-  X86μ adequacy needs it (Mu/proof/Adequacy/X86Compiled.agda).
+  (agda/FPC/), as for the typed pipeline (ISWIM/proof/Compiler/HoistOlder.agda);
+  X86μ adequacy needs it (FPC/proof/Adequacy/X86Compiled.agda).
 
   A GlobalFunμ definition is typed over the whole table, but a graph
   semantics gives each definition the meanings of the older ones only
-  (as Untyped/Semantics/Graph/Clos5Iswim.agda does), so it needs that a
+  (as ISWIM/Untyped/Semantics/Graph/Clos5Iswim.agda does), so it needs that a
   definition refers only to older ones. Older k M: every reference f in
   M has a level (its position from the oldest definition, lvl) below k.
   OlderDefs ds: each definition refers only to the definitions after
@@ -15,12 +15,12 @@
 
 -}
 
-module Mu.proof.Compiler.HoistOlder where
+module FPC.proof.Compiler.HoistOlder where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import Mu.Language.GlobalFun
-open import Mu.Compiler.Hoist using (Made; []; _▷_; out; glob; close; hoist)
+open import FPC.Language.GlobalFun
+open import FPC.Compiler.Hoist using (Made; []; _▷_; out; glob; close; hoist)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
@@ -28,7 +28,7 @@ open import Data.Nat using (ℕ; _<_)
 open import proof.Framework.Lookup using (lvl-<)
 open import Data.Product using (_×_; _,_)
 open import Data.Unit using (⊤; tt)
-import Mu.Language.PairClos as S
+import FPC.Language.PairClos as S
 
 Older : ∀ {Σ Γ A} → ℕ → Tm Σ Γ A → Set
 Olders : ∀ {Σ Γ Δ} → ℕ → All (Tm Σ Γ) Δ → Set

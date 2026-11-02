@@ -5,7 +5,7 @@
   source runs with its definitions ds, the target, the embedding of the
   Monᵀ program (⌜_⌝ₚ), with the definitions rco makes of them.
 
-  As for the untyped pass (Untyped/proof/Correctness/Reduction/RCORed.agda):
+  As for the untyped pass (ISWIM/Untyped/proof/Correctness/Reduction/RCORed.agda):
   values contain no code, so both compute the same values. A complex
   operand M in the context h of the source is reduced by the target
   under a let (letc≈); once it is a value W, the target substitutes it,
@@ -18,19 +18,19 @@
 
 -}
 
-module proof.Correctness.Reduction.RCORed where
+module ISWIM.proof.Correctness.Reduction.RCORed where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Framework.Lookup using (_!_)
 open import proof.Framework.Lookup using (map-!)
-open import Language.Typed.Clos5 hiding (wk; wks)
-import Language.Typed.Mon as Mon
+open import ISWIM.Language.Typed.Clos5 hiding (wk; wks)
+import ISWIM.Language.Typed.Mon as Mon
 open Mon using (Atm; var; lit; ref; atm; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Compiler.RCO
+open import ISWIM.Compiler.RCO
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import proof.Semantics.Reduction.Typed.Clos5 as T
+import ISWIM.proof.Semantics.Reduction.Typed.Clos5 as T
 open T using (Value; value-red; sub; exts; tmK; _•_; ∅; _[_])
 
 open import Data.List using (List; []; _∷_)

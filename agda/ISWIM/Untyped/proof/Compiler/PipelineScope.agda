@@ -22,26 +22,26 @@
 
 -}
 
-module Untyped.proof.Compiler.PipelineScope where
+module ISWIM.Untyped.proof.Compiler.PipelineScope where
 
-open import Untyped.Compiler.PipelineScope public using (Scoped)
+open import ISWIM.Untyped.Compiler.PipelineScope public using (Scoped)
 
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_; !_,,_)
-import Untyped.Language.Clos2 as C2
-import Untyped.Language.Clos3 as C3
-import Untyped.Language.Clos4 as C4
-import Untyped.Language.Clos5 as C5
+import ISWIM.Untyped.Language.Clos2 as C2
+import ISWIM.Untyped.Language.Clos3 as C3
+import ISWIM.Untyped.Language.Clos4 as C4
+import ISWIM.Untyped.Language.Clos5 as C5
 import proof.Framework.Syntax.Scope
 import proof.Framework.Syntax.ScopeRename
-import Untyped.proof.Compiler.CaptureScope as ES
+import ISWIM.Untyped.proof.Compiler.CaptureScope as ES
 open ES using (Closed)
-open import Untyped.Compiler.Capture using (capture)
-open import Compiler.Simplify using (simplify)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
-import Untyped.Compiler.Prune
-import Untyped.Compiler.Concretize
-open import Untyped.Compiler.Pipeline using (compile; compile₄)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
+import ISWIM.Untyped.Compiler.Prune
+import ISWIM.Untyped.Compiler.Concretize
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile₄)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; replicate)
@@ -68,7 +68,7 @@ split< (s≤s le) = m≤n⇒m<n∨m≡n le
 
 module Opt where
   open C2
-  open import Untyped.Compiler.Prune
+  open import ISWIM.Untyped.Compiler.Prune
   open W2 using (WS; WS-arg; WS-args; ws-uses)
 
   module _ (r : Var → Var) {U : ℕ → Set} (dec : ∀ j → Dec (U j)) where
@@ -191,7 +191,7 @@ module Opt where
 
 module Conc where
   open C2
-  open import Untyped.Compiler.Concretize
+  open import ISWIM.Untyped.Compiler.Concretize
   open W2 using (WS; WS-arg; WS-args)
 
   RefOK : ℕ → Ref → Set
@@ -254,7 +254,7 @@ module Conc where
 
 module Del where
   open C3
-  open import Untyped.Compiler.Split
+  open import ISWIM.Untyped.Compiler.Split
   open W3
 
   split-ws : ∀ {k} M → WS k M → W4.WS k (split M)
@@ -284,7 +284,7 @@ module Del where
 
 module Glob where
   open C4
-  open import Untyped.Compiler.Hoist
+  open import ISWIM.Untyped.Compiler.Hoist
   open W4
 
   glob-ws : ∀ {k} M ds → WS k M → All (W5.WS 2) ds
@@ -330,8 +330,8 @@ compile₄-closed M c =
   Del.split-ws M₃ (Conc.concretize-closed M₂' (Opt.prune-closed M₂ (ES.capture-closed (simplify M) (simplify-closed M c))))
   where
   M₂ = capture (simplify M)
-  M₂' = Untyped.Compiler.Prune.prune-program M₂
-  M₃ = Untyped.Compiler.Concretize.concretize-program M₂'
+  M₂' = ISWIM.Untyped.Compiler.Prune.prune-program M₂
+  M₃ = ISWIM.Untyped.Compiler.Concretize.concretize-program M₂'
 
 compile-scoped : ∀ M → Closed M → Scoped (compile M)
 compile-scoped M c = proj₂ G , proj₁ G

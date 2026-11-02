@@ -1,7 +1,7 @@
 {-
 
   The relation between the values of two CEK machines
-  (Mu/Semantics/AbstractMachines/Values.agda, with codes C₁ and C₂) for a pass that
+  (FPC/Semantics/AbstractMachines/Values.agda, with codes C₁ and C₂) for a pass that
   maps the code of each closure by f (capture, concretize, split), as
   proof/Semantics/ClockedInterpreters/Rel.agda for the interpreters: values are
   related (_≈_) when they have the same shape, except that a closure of
@@ -10,16 +10,16 @@
 
 -}
 
-open import Mu.Language.Type using (Ctx; Type)
+open import FPC.Language.Type using (Ctx; Type)
 
-module Mu.proof.Semantics.AbstractMachines.Rel {C₁ C₂ : Ctx → Type → Type → Set} (f : ∀ {Δ A B} → C₁ Δ A B → C₂ Δ A B) where
+module FPC.proof.Semantics.AbstractMachines.Rel {C₁ C₂ : Ctx → Type → Type → Set} (f : ∀ {Δ A B} → C₁ Δ A B → C₂ Δ A B) where
 
 open import Framework.Primitives using (base-rep)
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
-open import Mu.Framework.AllUtil using (All; []; _∷_; All₂)
+open import FPC.Language.Type
+open import FPC.Framework.AllUtil using (All; []; _∷_; All₂)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
-import Mu.Semantics.AbstractMachines.Values as V
+import FPC.Semantics.AbstractMachines.Values as V
 private
   module S = V C₁
   module T = V C₂

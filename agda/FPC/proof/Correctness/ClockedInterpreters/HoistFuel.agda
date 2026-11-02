@@ -1,7 +1,7 @@
 {-
 
   Correctness of hoist (PairClosμ → GlobalFunμ), clock for clock, as for
-  typed hoist (proof/Correctness/Interp/HoistFuel.agda):
+  typed hoist (ISWIM/proof/Correctness/Interp/HoistFuel.agda):
   hoist maps each callc to one callc, so the interpreters call in
   lock step.
 
@@ -16,19 +16,19 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.HoistFuel where
+module FPC.proof.Correctness.ClockedInterpreters.HoistFuel where
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.PairClos as S
-open import Mu.Language.GlobalFun
-open import Mu.Compiler.Hoist
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
+import FPC.Language.PairClos as S
+open import FPC.Language.GlobalFun
+open import FPC.Compiler.Hoist
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.PairClos as S4
-import Mu.Semantics.ClockedInterpreters.GlobalFun as T
+import FPC.Semantics.ClockedInterpreters.PairClos as S4
+import FPC.Semantics.ClockedInterpreters.GlobalFun as T
 open import proof.Framework.Lookup using (⊑-∋-trans)
 
 open import Data.Product using (Σ-syntax; _×_; _,_)
@@ -154,7 +154,7 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
       contains : Contains (Out.made o) r
       is-def : lookup dsf f ≡ wk r (Out.res o)
 
-  open import Mu.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → S.Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → Σf ∋ sig Δ A B}
+  open import FPC.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → S.Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → Σf ∋ sig Δ A B}
   open Rel GCode (Same GCode) public
 
   run≈ : ∀ ck {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) {r : Ren (Out.Σ' (glob M D)) Σf} {ρ₁ ρ₂}

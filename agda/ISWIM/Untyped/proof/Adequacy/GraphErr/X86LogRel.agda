@@ -1,6 +1,6 @@
 {-
 
-  Adequacy of the graph model with errors (Untyped/Semantics/GraphErr/X86.agda)
+  Adequacy of the graph model with errors (ISWIM/Untyped/Semantics/GraphErr/X86.agda)
   for the X86 machine: every element of the denotation of a well-formed
   program is witnessed by a run of the machine of its global definitions
   ds, and ω by a run that stops with an error.
@@ -23,9 +23,9 @@
 -}
 
 open import Data.List using (List; []; _∷_; _++_; [_]; length; reverse; replicate)
-open import Language.X86 using (Body)
+open import ISWIM.Language.X86 using (Body)
 
-module Untyped.proof.Adequacy.GraphErr.X86LogRel (ds : List Body) where
+module ISWIM.Untyped.proof.Adequacy.GraphErr.X86LogRel (ds : List Body) where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; δ; sub; eq; int; bool)
@@ -37,26 +37,26 @@ open import proof.Framework.GraphModel.DOpSig using (■; Results)
 open import proof.Framework.GraphModel.ErrorMonad
   hiding (K⟨_⟩; KOK; K-mono; K-≃; K-fin; K-ok; let-law; case-law) renaming (Val to Valᴰ)
 open import Framework.GraphModel.Ops using (𝒯; car; cdr; payloadD) renaming (proj to projD; pair to pairD; inl to inlD; inr to inrD)
-open import proof.Semantics.GraphErr.Prim using (primᵐ; primD) renaming (out to dout)
-open import Language.X86
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primᵐ; primD) renaming (out to dout)
+open import ISWIM.Language.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
   hiding (Body)
-open import Untyped.Semantics.GraphErr.X86
+open import ISWIM.Untyped.Semantics.GraphErr.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Next; next; stop)
 open import proof.Framework.ListUtil using (_‼_; proj; has-length)
-open import Semantics.CEK.Values using (obs-list)
-open import Semantics.CEK.X86
+open import ISWIM.Semantics.CEK.Values using (obs-list)
+open import ISWIM.Semantics.CEK.X86
   using (Val; code; pair; const; tup; obs; out; prim?; Frame; State; Stack; halt; retK; run; step; block-at; global; get-field; build; is-inl; cmp; bit; zeros; arg; args; halt?; regs; upd; goto; callq?; back; test)
   renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])
-import Semantics.CEK.X86 as T using (inl; inr)
-open import proof.Adequacy.Common using (ShapeOf; ShapeAt; has-length→length; length→has-length; δ?-inv)
-open import proof.Adequacy.GraphErr.LogRel using (δ?-nothing₁; δ?-nothing₂)
-open import Untyped.proof.Adequacy.GraphErr.X86WF
-open import Untyped.proof.Adequacy.GraphErr.X86Common ds
-open import Untyped.proof.Adequacy.GraphErr.X86Soundness using ( _≟R_; ↦ₘ-here; ↦ₘ-other; ≔-here; ≔-other; args-inv; length-obs-list)
+import ISWIM.Semantics.CEK.X86 as T using (inl; inr)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; ShapeAt; has-length→length; length→has-length; δ?-inv)
+open import ISWIM.proof.Adequacy.GraphErr.LogRel using (δ?-nothing₁; δ?-nothing₂)
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86WF
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86Common ds
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86Soundness using ( _≟R_; ↦ₘ-here; ↦ₘ-other; ≔-here; ≔-other; args-inv; length-obs-list)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Integer using (0ℤ)

@@ -15,14 +15,14 @@ open import Framework.Syntax.SyntaxUtil
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
-open import Language.ISWIM
-open import proof.Semantics.Graph.ISWIM
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.Compiler.Prune using (prune-program)
-import Untyped.Language.Clos2 as L2
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
-open import Untyped.proof.Correctness.Graph.CompilerCorrect
+open import ISWIM.Language.ISWIM
+open import ISWIM.proof.Semantics.Graph.ISWIM
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+import ISWIM.Untyped.Language.Clos2 as L2
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
+open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect
 
 open import Data.Nat using (ℕ)
 open import Data.List using ([]; _∷_)
@@ -30,7 +30,7 @@ open import Data.List.Relation.Unary.Any using (here)
 open import Data.Product using (proj₁) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module Untyped.proof.Correctness.Graph.PipelineExample where
+module ISWIM.Untyped.proof.Correctness.Graph.PipelineExample where
 
 lit-nat : ℕ → AST
 lit-nat k = lit Nat k ⦅ Nil ⦆

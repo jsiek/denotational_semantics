@@ -17,20 +17,20 @@
 
 -}
 
-module proof.Correctness.CEK.CaptureSim where
+module ISWIM.proof.Correctness.CEK.CaptureSim where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.ISWIM
-import Language.Typed.Clos2 as C2
-open import Compiler.Capture
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.ISWIM
+import ISWIM.Language.Typed.Clos2 as C2
+open import ISWIM.Compiler.Capture
 open import Framework.VecUtil using (_<><_)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.VecUtil using (_<><₂_)
-open import proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
-import Semantics.CEK.Typed.ISWIM as Src
-import Semantics.CEK.Typed.Clos2 as Tgt
+open import ISWIM.proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
+import ISWIM.Semantics.CEK.Typed.ISWIM as Src
+import ISWIM.Semantics.CEK.Typed.Clos2 as Tgt
 
 open import Data.Bool using (true; false)
 open import Data.Fin using (Fin)

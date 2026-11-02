@@ -17,21 +17,21 @@
 
 -}
 
-module Untyped.proof.Correctness.Interp.CaptureFuel where
+module ISWIM.Untyped.proof.Correctness.Interp.CaptureFuel where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import proof.Framework.Syntax.Uses Op sig
-open import Untyped.Compiler.Prune using (bind-n-ast)
-open import Untyped.Compiler.Capture
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Compiler.Prune using (bind-n-ast)
+open import ISWIM.Untyped.Compiler.Capture
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Semantics.Observation
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
 open import proof.Framework.ListUtil using (_‼_; ‼-<; proj-pw)
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.ISWIM as S
-import Untyped.Semantics.Interp.Clos2 as T
+import ISWIM.Semantics.Interp.ISWIM as S
+import ISWIM.Untyped.Semantics.Interp.Clos2 as T
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using (List; []; _∷_; length; replicate)

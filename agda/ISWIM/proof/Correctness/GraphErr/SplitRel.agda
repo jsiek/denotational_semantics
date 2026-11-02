@@ -2,7 +2,7 @@
 
   The approximant logical relation, for the backward (reflect) direction
   of the correctness of typed split (Clos3ᵀ → Clos4ᵀ) in the graph model
-  with errors, as in Untyped/proof/Correctness/GraphErr/SplitRel.agda.
+  with errors, as in ISWIM/Untyped/proof/Correctness/GraphErr/SplitRel.agda.
   ApproxLR D V' relates an arbitrary source denotation D (a set of Clos3ᵀ
   values) to a finite target approximant V' (a list of Clos4ᵀ values), by
   recursion on the depth of V', since a target closure is a set of pairs
@@ -26,11 +26,11 @@
 open import proof.Framework.GraphModel.ErrorPrelude
 open import Framework.Primitives
 open import proof.Framework.GraphModel.DomainUtilBase
-open import proof.Semantics.GraphErr.Prim using (out)
+open import ISWIM.proof.Semantics.GraphErr.Prim using (out)
 open import Language.Prim using (int; bool)
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import Semantics.GraphErr.Typed.Ops using (checkedᵠ; hit; keep; kindᶠ)
-open import Language.Typed.Type using (ttup; tfun; tsum; tint; flat)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (checkedᵠ; hit; keep; kindᶠ)
+open import ISWIM.Language.Typed.Type using (ttup; tfun; tsum; tint; flat)
 open import Data.Bool using (true; false)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
@@ -46,7 +46,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong)
 
-module proof.Correctness.GraphErr.SplitRel where
+module ISWIM.proof.Correctness.GraphErr.SplitRel where
 
 {- the kernel of a source application, once its operator is bound -}
 _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value

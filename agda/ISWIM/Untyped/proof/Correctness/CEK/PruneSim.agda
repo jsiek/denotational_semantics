@@ -27,23 +27,23 @@
   The program must be well scoped (WS 0 M): every variable is bound, so
   in particular a closure's code uses only its parameter and free
   variables. capture produces such programs from closed ISWIM programs
-  (capture-closed, in Compiler.CaptureScope).
+  (capture-closed, in ISWIM.Compiler.CaptureScope).
 
 -}
 
-module Untyped.proof.Correctness.CEK.PruneSim where
+module ISWIM.Untyped.proof.Correctness.CEK.PruneSim where
 
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_; !_,,_)
-open import Untyped.Language.Clos2
-open import Untyped.Compiler.Prune hiding (bound; bound-arg; bound-args)
+open import ISWIM.Untyped.Language.Clos2
+open import ISWIM.Untyped.Compiler.Prune hiding (bound; bound-arg; bound-args)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args; ws-uses)
-import Untyped.proof.Correctness.CEK.CaptureSim as E
+import ISWIM.Untyped.proof.Correctness.CEK.CaptureSim as E
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.ListUtil
-import Untyped.Semantics.CEK.Clos2 as T
+import ISWIM.Untyped.Semantics.CEK.Clos2 as T
 
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin)

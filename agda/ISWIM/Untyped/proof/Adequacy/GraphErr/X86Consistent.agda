@@ -1,7 +1,7 @@
 {-
 
   The table of every X86 program is consistent in the graph model with
-  errors (Untyped/Semantics/GraphErr/X86.agda): table-con. Soundness
+  errors (ISWIM/Untyped/Semantics/GraphErr/X86.agda): table-con. Soundness
   (GraphErr/X86Soundness.agda) binds finite parts of the denotations of
   machine values, and code pointers denote entries of the table, so these
   must be consistent.
@@ -15,7 +15,7 @@
 
 -}
 
-module Untyped.proof.Adequacy.GraphErr.X86Consistent where
+module ISWIM.Untyped.proof.Adequacy.GraphErr.X86Consistent where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
@@ -25,13 +25,13 @@ open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres; ■)
 open import proof.Framework.GraphModel.OpsBase using (ℬ; ℬ-consis)
 open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Semantics.GraphErr.Prim using (primᵐ-good)
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primᵐ-good)
 open import proof.Framework.GraphModel.ContinuityBase using (consis)
 open import Framework.GraphModel.Ops using (payloadD)
 open import proof.Framework.GraphModel.Domain using (~-refl)
-open import Language.X86
+open import ISWIM.Language.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
-open import Untyped.Semantics.GraphErr.X86
+open import ISWIM.Untyped.Semantics.GraphErr.X86
 
 open import Data.Empty using (⊥-elim)
 open import Data.Integer using (+_)

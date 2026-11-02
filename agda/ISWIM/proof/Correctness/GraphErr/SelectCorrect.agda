@@ -1,6 +1,6 @@
 {-
 
-  Select instructions (CFGᵀ → X86ᵀ, Compiler/Select.agda) is correct in
+  Select instructions (CFGᵀ → X86ᵀ, ISWIM/Compiler/Select.agda) is correct in
   the graph model with errors: the X86ᵀ program means exactly what the
   CFGᵀ program does (≃), for every CFGᵀ program; the compiler to X86ᵀ,
   Same, is in CompilerCorrect.agda.
@@ -24,30 +24,30 @@
 
 -}
 
-module proof.Correctness.GraphErr.SelectCorrect where
+module ISWIM.proof.Correctness.GraphErr.SelectCorrect where
 
 open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.OpsBase using (Mono₁; Finitary)
 open import proof.Framework.GraphModel.Ops using (⋆; car; cdr; payloadD; Λ; 𝒞)
-open import proof.Semantics.GraphErr.Typed.Clos2 using (caseᵗ-≃)
-open import proof.Semantics.GraphErr.Typed.Clos5 using (tm-≃; tbl-map; tbl-con; map-id; tbl)
-open import proof.Semantics.GraphErr.Typed.Imp using (letᵗ-≃)
-open import proof.Semantics.GraphErr.Typed.CFG using (run-ok; codeᶜ-con)
-open import Semantics.GraphErr.Typed.Ops using (init; caseᵗ)
-open import Semantics.GraphErr.Typed.Imp using (Table; 𝒮; 𝒜; letᵗ; ⌞_⌟)
-import Semantics.GraphErr.Typed.CFG as GC
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (caseᵗ-≃)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 using (tm-≃; tbl-map; tbl-con; map-id; tbl)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Imp using (letᵗ-≃)
+open import ISWIM.proof.Semantics.GraphErr.Typed.CFG using (run-ok; codeᶜ-con)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (init; caseᵗ)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (Table; 𝒮; 𝒜; letᵗ; ⌞_⌟)
+import ISWIM.Semantics.GraphErr.Typed.CFG as GC
 open GC using (BEnv; drop)
-import Semantics.GraphErr.Typed.X86 as GX
+import ISWIM.Semantics.GraphErr.Typed.X86 as GX
 open GX using (RegsD; _[_≔_]; args)
-open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧s[_])
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (⟦_⟧s[_])
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋)
-open import Language.Typed.Type hiding (_≟_)
-import Language.Typed.Mon as M
-import Language.Typed.Imp as I
-import Language.Typed.CFG as C
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+import ISWIM.Language.Typed.Mon as M
+import ISWIM.Language.Typed.Imp as I
+import ISWIM.Language.Typed.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
-open import Language.Typed.X86
-open import Compiler.Select
+open import ISWIM.Language.Typed.X86
+open import ISWIM.Compiler.Select
 open import Language.Prim using (sub; eq)
 
 open import Data.Empty using (⊥; ⊥-elim)

@@ -1,29 +1,29 @@
 {-
 
-  A clocked interpreter for GlobalFunμ (Mu/Language/GlobalFun.agda), as the one
-  for Clos5ᵀ (Semantics/Interp/Typed/Clos5.agda): a program runs with
+  A clocked interpreter for GlobalFunμ (FPC/Language/GlobalFun.agda), as the one
+  for Clos5ᵀ (ISWIM/Semantics/Interp/Typed/Clos5.agda): a program runs with
   its table of definitions, the code of a closure is a reference to a
   definition (fun-ref f evaluates to code f), and a call runs definition
   f. A reference to a missing definition cannot be written, so a call
   cannot fail.
 
   Monμ has no interpreter of its own: a Monμ program runs as its
-  embedding into GlobalFunμ (Mu/Language/Mon.agda).
+  embedding into GlobalFunμ (FPC/Language/Mon.agda).
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.GlobalFun where
+module FPC.Semantics.ClockedInterpreters.GlobalFun where
 
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 
-import Mu.Semantics.ClockedInterpreters.Values
-module Vals (Σ : List DSig) = Mu.Semantics.ClockedInterpreters.Values (λ Δ A B → Σ ∋ sig Δ A B)
+import FPC.Semantics.ClockedInterpreters.Values
+module Vals (Σ : List DSig) = FPC.Semantics.ClockedInterpreters.Values (λ Δ A B → Σ ∋ sig Δ A B)
 
 module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
   open Vals Σ

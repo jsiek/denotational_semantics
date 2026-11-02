@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed lift locals (Monᵀ → Impᵀ) in the graph model: the
-  continuation-passing meaning of the output (Semantics/Graph/Typed/Imp.agda)
+  continuation-passing meaning of the output (ISWIM/Semantics/Graph/Typed/Imp.agda)
   is the meaning of the input (its embedding into Clos5ᵀ) given to the
   continuation.
 
@@ -15,7 +15,7 @@
 
 -}
 
-module proof.Correctness.Graph.LiftLocalsCorrect where
+module ISWIM.proof.Correctness.Graph.LiftLocalsCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
@@ -23,15 +23,15 @@ open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.Env using (Env; •-~)
 open import proof.Framework.GraphModel.Laws using (K⟨_⟩; K-≃; let-law; case-law)
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import proof.Semantics.Graph.Typed.Ops
-open import proof.Semantics.Graph.Typed.Clos5 using (ok; con; code-con; table-con)
-open import Semantics.Graph.Typed.Clos5
-import Semantics.Graph.Typed.Imp as I
+open import ISWIM.proof.Semantics.Graph.Typed.Ops
+open import ISWIM.proof.Semantics.Graph.Typed.Clos5 using (ok; con; code-con; table-con)
+open import ISWIM.Semantics.Graph.Typed.Clos5
+import ISWIM.Semantics.Graph.Typed.Imp as I
 open I using (⟦_⟧ᴷ; 𝒜; 𝒜s; 𝒮)
-open import Language.Typed.Type hiding (_≟_)
-import Language.Typed.Mon as M
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+import ISWIM.Language.Typed.Mon as M
 open M using (Atm; var; lit; ref; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Compiler.LiftLocals
+open import ISWIM.Compiler.LiftLocals
 
 open import Data.Fin using (zero; suc)
 open import Data.List using (List; []; _∷_; length)

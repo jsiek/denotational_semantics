@@ -1,27 +1,27 @@
 {-
 
-  Select instructions (Compiler/Select.agda) emits the instructions of
-  select into untyped X86 (Compiler/SelectX86.agda), once the types are
-  erased (Language/Typed/X86Erase.agda; Theorems/X86Erasure.agda): the
+  Select instructions (ISWIM/Compiler/Select.agda) emits the instructions of
+  select into untyped X86 (ISWIM/Compiler/SelectX86.agda), once the types are
+  erased (ISWIM/Language/Typed/X86Erase.agda; ISWIM/Theorems/X86Erasure.agda): the
   same blocks, the same frame sizes, the same
   code for every statement, chk being the test of project and the move.
 
 -}
 
-module proof.Compiler.SelectErase where
+module ISWIM.proof.Compiler.SelectErase where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑)
-import Language.Typed.CFG as C
+import ISWIM.Language.Typed.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
-import Language.Typed.Imp as I
+import ISWIM.Language.Typed.Imp as I
 import Language.Prim
 import Data.Nat
-open import Language.Typed.X86
-open import Language.Typed.X86Erase
-import Language.X86 as L
-import Compiler.SelectX86 as U
-import Compiler.Select as T
+open import ISWIM.Language.Typed.X86
+open import ISWIM.Language.Typed.X86Erase
+import ISWIM.Language.X86 as L
+import ISWIM.Compiler.SelectX86 as U
+import ISWIM.Compiler.Select as T
 open T using (Out; ret; to)
 
 open import Data.List using (List; []; _∷_; _++_; length)

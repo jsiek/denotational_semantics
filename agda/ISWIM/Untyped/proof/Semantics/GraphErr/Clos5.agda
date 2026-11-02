@@ -1,13 +1,13 @@
-module Untyped.proof.Semantics.GraphErr.Clos5 where
+module ISWIM.Untyped.proof.Semantics.GraphErr.Clos5 where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.ContinuityBase
 open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Semantics.GraphErr.Prim
-open import Untyped.Language.Clos5
-open import Untyped.Semantics.GraphErr.Clos5 public
+open import ISWIM.proof.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5 public
 open import proof.Framework.GraphModel.Env using (_⊆ₑ_; •-~)
 open import proof.Framework.GraphModel.Semantics Op sig using (Semantics; ⟦⟧-monotone)
 open import proof.Framework.GraphModel.SemanticsCore Op sig using (module GoodSemantics)

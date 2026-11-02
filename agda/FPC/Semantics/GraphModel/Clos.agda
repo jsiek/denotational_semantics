@@ -1,21 +1,21 @@
 {-
 
-  The semantics of Closμ (Mu/Language/Clos.agda) in the graph model,
-  as that of Clos2ᵀ (Semantics/Graph/Typed/Clos2.agda): a closure is
+  The semantics of Closμ (FPC/Language/Clos.agda) in the graph model,
+  as that of Clos2ᵀ (ISWIM/Semantics/Graph/Typed/Clos2.agda): a closure is
   strict in its free variables (guard-n) and is the function of the
   argument whose body sees the argument and the meanings of the free
-  variables; otherwise as FPC (Mu/Semantics/GraphModel/FPC.agda).
+  variables; otherwise as FPC (FPC/Semantics/GraphModel/FPC.agda).
 
 -}
 
-module Mu.Semantics.GraphModel.Clos where
+module FPC.Semantics.GraphModel.Clos where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Mu.Language.Type
-open import Mu.Language.Clos
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.Clos
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)
 open import Data.Nat using (ℕ; zero; suc)

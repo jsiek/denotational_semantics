@@ -1,6 +1,6 @@
 {-
 
-  Correctness of typed hoist (Clos4ᵀ → Clos5ᵀ, Compiler/Hoist.agda)
+  Correctness of typed hoist (Clos4ᵀ → Clos5ᵀ, ISWIM/Compiler/Hoist.agda)
   in the graph model with errors: the pass moves the code of each
   function into the table, so it preserves meanings exactly.
 
@@ -15,21 +15,21 @@
 
 -}
 
-module proof.Correctness.GraphErr.HoistCorrect where
+module ISWIM.proof.Correctness.GraphErr.HoistCorrect where
 
 open import proof.Framework.GraphModel.ErrorPrelude hiding (_▷_)
 open import proof.Framework.GraphModel.OpsBase using (nthD)
 open import proof.Framework.GraphModel.Env using (Env; _~ₑ[_]_; •-~)
 open import proof.Framework.Lookup using (lvl-⊑; ⊑-len)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import Language.Typed.Type hiding (_≟_)
-import Language.Typed.Clos4 as S
-open import Language.Typed.Clos5
-open import Compiler.Hoist
-open import Semantics.GraphErr.Typed.Ops using (getᵗ; primᵗ; projectᵠ)
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄) renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
-open import proof.Semantics.GraphErr.Typed.Clos5
-open import proof.Semantics.GraphErr.Typed.Clos2 using (getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+import ISWIM.Language.Typed.Clos4 as S
+open import ISWIM.Language.Typed.Clos5
+open import ISWIM.Compiler.Hoist
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (getᵗ; primᵗ; projectᵠ)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄) renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃)
 
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (zero; suc)

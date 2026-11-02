@@ -2,11 +2,11 @@
 
   The correctness of the FPC compiler in Scott domains: the statement
   of Theorem 4.2 (compiler correctness, Scott domains) of the paper.
-  The proofs are in Mu/proof/Correctness/ScottDomains/; each theorem
+  The proofs are in FPC/proof/Correctness/ScottDomains/; each theorem
   here is one of them, with its type written out, as
-  Mu/Theorems/CorrectWrtGraphModel.agda does for the graph model.
+  FPC/Theorems/CorrectWrtGraphModel.agda does for the graph model.
 
-  compile (Mu/Compiler/Pipeline.agda) is the composition of the ten
+  compile (FPC/Compiler/Pipeline.agda) is the composition of the ten
   passes. A term means an element of the domain
   of values 𝔻, a solution of 𝔻 ≅ 𝓛 (Σ t , Payload t 𝔻)
   (Framework/Scott/Domain.agda), whose least element means divergence;
@@ -17,9 +17,9 @@
   assumptions, which are the parameters of this module (consistent with
   the axiom K that this development uses).
 
-  To read them: the languages (Mu/Language/), the passes
-  (Mu/Compiler/), the semantics of FPC and X86μ
-  (Mu/Semantics/ScottDomains/), and the domain, its operators and the
+  To read them: the languages (FPC/Language/), the passes
+  (FPC/Compiler/), the semantics of FPC and X86μ
+  (FPC/Semantics/ScottDomains/), and the domain, its operators and the
   combinators the semantics are built with (Framework/Scott/).
 
 -}
@@ -30,13 +30,13 @@ open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
 open import Framework.Primitives using (Base; base-rep; Int)
-open import Mu.Language.Type using (base)
-import Mu.Language.FPC as FPC
-open import Mu.Compiler.Pipeline using (compile)
+open import FPC.Language.Type using (base)
+import FPC.Language.FPC as FPC
+open import FPC.Compiler.Pipeline using (compile)
 
 open import Data.List using ([])
 
-module Mu.Theorems.CorrectWrtScottDomains
+module FPC.Theorems.CorrectWrtScottDomains
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -46,14 +46,14 @@ open import Framework.Scott.Base pt fe using (_·_)
 open import Framework.Scott.Domain pt fe pe using (defined)
 open import Framework.Scott.Ops pt fe pe using (const)
 
-open import Mu.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
-open import Mu.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
+open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
+open import FPC.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
 
-import Mu.proof.Correctness.ScottDomains.CompilerCorrect pt fe pe as Compiler
+import FPC.proof.Correctness.ScottDomains.CompilerCorrect pt fe pe as Compiler
 
 {- The environment of a closed program: every variable means the empty
-   tuple (Mu/Semantics/ScottDomains/Closed.agda). -}
-open import Mu.Semantics.ScottDomains.Closed pt fe pe public using (ρ₀)
+   tuple (FPC/Semantics/ScottDomains/Closed.agda). -}
+open import FPC.Semantics.ScottDomains.Closed pt fe pe public using (ρ₀)
 
 {- Theorem 4.2 (Compiler correctness, Scott domains) --------------------------}
 

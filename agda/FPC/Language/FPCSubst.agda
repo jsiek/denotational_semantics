@@ -1,18 +1,18 @@
 {-
 
-  Renaming and substitution of FPC (Mu/Language/FPC.agda): one
+  Renaming and substitution of FPC (FPC/Language/FPC.agda): one
   traversal with a kit (Framework/Syntax/Kit.agda), over contexts that
-  are lists of types, as for Clos4ᵀ (Semantics/Reduction/Typed/Clos4.agda).
-  The simplify pass (Mu/Compiler/Simplify.agda) renames, and the
-  reduction semantics (Mu/Semantics/ReductionSemantics/FPC.agda) substitutes.
+  are lists of types, as for Clos4ᵀ (ISWIM/Semantics/Reduction/Typed/Clos4.agda).
+  The simplify pass (FPC/Compiler/Simplify.agda) renames, and the
+  reduction semantics (FPC/Semantics/ReductionSemantics/FPC.agda) substitutes.
 
 -}
 
-module Mu.Language.FPCSubst where
+module FPC.Language.FPCSubst where
 
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Framework.AllUtil using (All; []; _∷_)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Framework.AllUtil using (All; []; _∷_)
 
 open import Data.List using (_∷_)
 

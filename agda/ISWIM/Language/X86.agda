@@ -1,11 +1,11 @@
-module Language.X86 where
+module ISWIM.Language.X86 where
 {-
 
  X86, the language after the select-instructions pass
- (Compiler/Select.agda): x86 with variables, after Essentials of
+ (ISWIM/Compiler/Select.agda): x86 with variables, after Essentials of
  Compilation, over abstract values.
 
- A body is a control-flow graph of blocks, as in CFGᵀ (Language/Typed/CFG.agda),
+ A body is a control-flow graph of blocks, as in CFGᵀ (ISWIM/Language/Typed/CFG.agda),
  but a block is a sequence of instructions ending in a jump. The
  locations are the slots of the current frame (the variables) and the
  registers %rax, %rdi and %rsi; an operand is a location, an immediate,

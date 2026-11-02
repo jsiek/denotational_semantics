@@ -15,18 +15,18 @@
 
 -}
 
-module proof.Correctness.Interp.HoistFuel where
+module ISWIM.proof.Correctness.Interp.HoistFuel where
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Language.Typed.Clos4 as S
-open import Language.Typed.Clos5
-open import Compiler.Hoist
+import ISWIM.Language.Typed.Clos4 as S
+open import ISWIM.Language.Typed.Clos5
+open import ISWIM.Compiler.Hoist
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Typed.Clos4 as S4
-import Semantics.Interp.Typed.Clos5 as T
+import ISWIM.Semantics.Interp.Typed.Clos4 as S4
+import ISWIM.Semantics.Interp.Typed.Clos5 as T
 open import Framework.Lookup using (_!_)
 open import proof.Framework.Lookup using (⊑-∋-trans)
 
@@ -156,7 +156,7 @@ module G {Σf : List ℕ} (dsf : All (Code Σf) Σf) where
       contains : Contains (Out.made o) r
       is-def : dsf ! f ≡ wk r (Out.res o)
 
-  open import proof.Semantics.Interp.Typed.Rel {λ n → S.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any} {Σf ∋_}
+  open import ISWIM.proof.Semantics.Interp.Typed.Rel {λ n → S.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any} {Σf ∋_}
   open Rel GCode (Same GCode) public
 
   Env≈ : ∀ {Γ} → S4.Env Γ → TEnv Γ → Set

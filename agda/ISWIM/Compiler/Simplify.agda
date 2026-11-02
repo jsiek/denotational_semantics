@@ -2,7 +2,7 @@
 
   The simplify pass (ISWIM → ISWIM), a simplified version of the source
   optimizer cp0 of Chez Scheme, the first pass of compile
-  (Compiler/Pipeline.agda).
+  (ISWIM/Compiler/Pipeline.agda).
 
   In one recursive pass, simp carries what it knows about each variable
   (Facts): the term that replaces it, and what it is known to be, if
@@ -46,9 +46,9 @@
 
 -}
 
-module Compiler.Simplify where
+module ISWIM.Compiler.Simplify where
 
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Language.Prim using (Prim; Out; int; bool; δ)
 open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)

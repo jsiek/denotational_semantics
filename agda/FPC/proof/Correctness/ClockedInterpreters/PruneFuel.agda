@@ -1,7 +1,7 @@
 {-
 
   Correctness of prune (Closμ → Closμ), clock for clock, as for
-  typed prune (proof/Correctness/Interp/PruneFuel.agda; see the
+  typed prune (ISWIM/proof/Correctness/Interp/PruneFuel.agda; see the
   design note in Semantics/Interp/Clock.agda).
 
   The pass renames the variables a term uses, so environments agree
@@ -13,17 +13,17 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.PruneFuel where
+module FPC.proof.Correctness.ClockedInterpreters.PruneFuel where
 
 open import Data.List using ([]; _∷_)
-open import Mu.Language.Type
-open import Mu.Language.Clos
-open import Mu.Compiler.Prune
-open import Mu.Framework.AllUtil
+open import FPC.Language.Type
+open import FPC.Language.Clos
+open import FPC.Compiler.Prune
+open import FPC.Framework.AllUtil
   using (All; []; _∷_; lookup; Flags; kept; select; Kept; squeeze; ∨-l; ∨-r; All₂; lookup₂; Thin; keep; drop; thin-lookup)
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.Clos as C
-open import Mu.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → Tm (A ∷ Δ) B}
+import FPC.Semantics.ClockedInterpreters.Clos as C
+open import FPC.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → Tm (A ∷ Δ) B}
 
 open import Data.Bool using (Bool; true; false; T)
 open import Data.Empty using (⊥)

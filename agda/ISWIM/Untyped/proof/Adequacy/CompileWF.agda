@@ -3,7 +3,7 @@
   The compiler produces well-formed Clos5 programs (Clos5WF.agda) from
   closed ISWIM programs: compile-wf.
 
-  Well-scopedness is compile-scoped (Untyped.Compiler.PipelineScope). The
+  Well-scopedness is compile-scoped (ISWIM.Untyped.Compiler.PipelineScope). The
   rest is that each definition refers only to older ones, and main to
   existing ones (RB): hoist adds the code of a function as a
   definition after the definitions made from the functions nested in it,
@@ -11,16 +11,16 @@
 
 -}
 
-module Untyped.proof.Adequacy.CompileWF where
+module ISWIM.Untyped.proof.Adequacy.CompileWF where
 
-open import Untyped.Language.Clos4
-import Untyped.Language.Clos5 as C5
-import Untyped.proof.Adequacy.Clos5WF as F
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
-open import Untyped.Compiler.Hoist
-open import Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
-open import Untyped.proof.Correctness.Graph.HoistCorrect using (RB; glob-shape)
-open import Untyped.Compiler.Pipeline using (compile; compile₄)
+open import ISWIM.Untyped.Language.Clos4
+import ISWIM.Untyped.Language.Clos5 as C5
+import ISWIM.Untyped.proof.Adequacy.Clos5WF as F
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Compiler.Hoist
+open import ISWIM.Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (RB; glob-shape)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile₄)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

@@ -1,7 +1,7 @@
 {-
 
   Monᵀ: monadic normal form of Clos5ᵀ, intrinsically. The output of
-  typed remove complex operands (Compiler/RCO.agda).
+  typed remove complex operands (ISWIM/Compiler/RCO.agda).
 
   An atom is a variable, a literal or a reference to a definition. The
   operands of every operation, and the scrutinee of case, are atoms; the
@@ -13,12 +13,12 @@
 
 -}
 
-module Language.Typed.Mon where
+module ISWIM.Language.Typed.Mon where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Language.Typed.Type
-import Language.Typed.Clos5 as C
+open import ISWIM.Language.Typed.Type
+import ISWIM.Language.Typed.Clos5 as C
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_)

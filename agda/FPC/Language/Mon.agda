@@ -1,8 +1,8 @@
 {-
 
   Monμ: monadic normal form of GlobalFunμ, intrinsically. The output of
-  remove complex operands (Mu/Compiler/RCO.agda); as Monᵀ
-  (Language/Typed/Mon.agda), with the types of GlobalFunμ.
+  remove complex operands (FPC/Compiler/RCO.agda); as Monᵀ
+  (ISWIM/Language/Typed/Mon.agda), with the types of GlobalFunμ.
 
   An atom is a variable, a literal or a reference to a definition. The
   operands of every operation, and the scrutinee of case, are atoms; the
@@ -11,14 +11,14 @@
 
 -}
 
-module Mu.Language.Mon where
+module FPC.Language.Mon where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun using (DSig; sig; Args) public
-import Mu.Language.GlobalFun as C
-open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun using (DSig; sig; Args) public
+import FPC.Language.GlobalFun as C
+open import FPC.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 
 open import Data.List using (List; []; _∷_)
 

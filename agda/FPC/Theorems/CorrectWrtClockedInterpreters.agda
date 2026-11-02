@@ -4,12 +4,12 @@
   value relations: the statement of Proposition F.1 (correctness, clocked
   interpreters) of the paper. The proofs (clock for clock; for
   simplify, which removes calls, clock-monotone) are in
-  Mu/proof/Correctness/ClockedInterpreters/; each theorem here is one of
+  FPC/proof/Correctness/ClockedInterpreters/; each theorem here is one of
   them, with its type written out.
 
-  compile (Mu/Compiler/Pipeline.agda) is the composition of the ten
+  compile (FPC/Compiler/Pipeline.agda) is the composition of the ten
   passes. Each language has an interpreter with a
-  clock (here Lᵢ.sem for language L, Mu/Semantics/ClockedInterpreters/);
+  clock (here Lᵢ.sem for language L, FPC/Semantics/ClockedInterpreters/);
   those of FPC and X86μ are the ones these statements use. A program
   terminates with an observation (Semantics/Observation.agda) when, for
   some clock, it returns a value observed as o, and diverges when it
@@ -17,25 +17,25 @@
   (Framework/Clocked.agda) when each terminates with o exactly when the
   other does, and one diverges exactly when the other does.
 
-  To read them: the languages (Mu/Language/), the passes (Mu/Compiler/),
+  To read them: the languages (FPC/Language/), the passes (FPC/Compiler/),
   the interpreters of FPC and X86μ, and the observations.
 
 -}
 
-module Mu.Theorems.CorrectWrtClockedInterpreters where
+module FPC.Theorems.CorrectWrtClockedInterpreters where
 
 open import Framework.Primitives using (Int)
 open import Semantics.Observation using (o-const; _⇔_)
 open import Semantics.Interp.Clock using (Terminates; Diverges; Equivalent)
 
-open import Mu.Language.Type using (base)
-import Mu.Language.FPC as FPC
-open import Mu.Compiler.Pipeline using (compile)
+open import FPC.Language.Type using (base)
+import FPC.Language.FPC as FPC
+open import FPC.Compiler.Pipeline using (compile)
 
-import Mu.Semantics.ClockedInterpreters.FPC as FPCᵢ
-import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
+import FPC.Semantics.ClockedInterpreters.FPC as FPCᵢ
+import FPC.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
-import Mu.proof.Correctness.ClockedInterpreters.CompilerFuel as CompilerFuel
+import FPC.proof.Correctness.ClockedInterpreters.CompilerFuel as CompilerFuel
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

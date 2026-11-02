@@ -1,4 +1,4 @@
-module Untyped.proof.Semantics.Graph.Clos2Iswim where
+module ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim where
 
 open import Framework.Syntax.SigUtil
 open import proof.Framework.GraphModel.DOpSig
@@ -7,8 +7,8 @@ open import proof.Framework.GraphModel.DenotProperties
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos2
-open import Untyped.Semantics.Graph.Clos2Iswim public hiding (⟦_⟧; init)
+open import ISWIM.Untyped.Language.Clos2
+open import ISWIM.Untyped.Semantics.Graph.Clos2Iswim public hiding (⟦_⟧; init)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
 open import Data.List using (List; []; _∷_; replicate)

@@ -1,8 +1,8 @@
 {-
 
   What the graph model makes of the table of a GlobalFunμ program, for the
-  adequacy of X86μ (Mu/proof/Adequacy/X86Compiled.agda), as
-  in the typed pipeline (proof/Adequacy/Clos5Common.agda and
+  adequacy of X86μ (FPC/proof/Adequacy/X86Compiled.agda), as
+  in the typed pipeline (ISWIM/proof/Adequacy/Clos5Common.agda and
   Clos5Soundness.agda), without the GlobalFun machine:
 
   * the definitions older than a definition f (older f, drop f);
@@ -15,7 +15,7 @@
 
 -}
 
-module Mu.proof.Adequacy.GlobalFunCommon where
+module FPC.proof.Adequacy.GlobalFunCommon where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ■; _•_)
@@ -25,12 +25,12 @@ open import proof.Framework.GraphModel.ContinuityBase using (Good; mono)
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
 open import proof.Framework.GraphModel.Env using (•-~)
 open import proof.Semantics.Graph.Prim using (primD-good)
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun
-open import Mu.proof.Semantics.GraphModel.Ops using (Table; tables; ConT; callc-good)
-open import Mu.proof.Semantics.GraphModel.GlobalFun using (⟦_⟧[_]; ⟦_⟧s[_]; ok)
-open import Mu.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun
+open import FPC.proof.Semantics.GraphModel.Ops using (Table; tables; ConT; callc-good)
+open import FPC.proof.Semantics.GraphModel.GlobalFun using (⟦_⟧[_]; ⟦_⟧s[_]; ok)
+open import FPC.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length; replicate)

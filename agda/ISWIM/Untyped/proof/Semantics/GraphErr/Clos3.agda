@@ -1,10 +1,10 @@
-module Untyped.proof.Semantics.GraphErr.Clos3 where
+module ISWIM.Untyped.proof.Semantics.GraphErr.Clos3 where
 
 open import proof.Framework.GraphModel.ContinuityBase using (Good; ℬ-good)
 open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Semantics.GraphErr.Prim
-open import Untyped.Language.Clos3
-open import Untyped.Semantics.GraphErr.Clos3 public hiding (⟦_⟧; init)
+open import ISWIM.proof.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Clos3
+open import ISWIM.Untyped.Semantics.GraphErr.Clos3 public hiding (⟦_⟧; init)
 open import proof.Framework.GraphModel.SemanticsCore Op sig using (module GoodSemantics)
 
 open import Data.Unit using (⊤; tt)

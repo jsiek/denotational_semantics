@@ -1,21 +1,21 @@
 {-
 
-  The semantics of Clos3ᵀ (Language/Typed/Clos3.agda) in the graph model,
-  as that of Clos3 (Untyped/Semantics/Graph/Clos3Iswim.agda): a closure is its
+  The semantics of Clos3ᵀ (ISWIM/Language/Typed/Clos3.agda) in the graph model,
+  as that of Clos3 (ISWIM/Untyped/Semantics/Graph/Clos3Iswim.agda): a closure is its
   code, a closed function of the tuple of its free variables and of the
   argument, applied to that tuple; otherwise as ISWIMᵀ. Variable x is
   position idx x of the environment.
 
 -}
 
-module Semantics.Graph.Typed.Clos3 where
+module ISWIM.Semantics.Graph.Typed.Clos3 where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Semantics.Graph.Typed.Ops
-open import Language.Typed.Type
-open import Language.Typed.Clos3
+open import ISWIM.Semantics.Graph.Typed.Ops
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos3
 
 open import Data.List using (replicate)
 open import Data.Vec using (Vec; []; _∷_)

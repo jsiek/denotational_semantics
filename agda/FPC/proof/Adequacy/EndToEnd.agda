@@ -18,23 +18,23 @@
 
 -}
 
-module Mu.proof.Adequacy.EndToEnd where
+module FPC.proof.Adequacy.EndToEnd where
 
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
-open import Mu.Language.Type using (base)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
-open import Mu.Compiler.Pipeline using (compile)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Language.Type using (base)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
+open import FPC.Compiler.Pipeline using (compile)
 open import Semantics.Observation using (o-const; _⇔_)
 open import proof.Semantics.Interp.Clock using (Terminates; Diverges)
-import Mu.Semantics.ClockedInterpreters.FPC as I
-import Mu.Semantics.ClockedInterpreters.X86 as X
-import Mu.proof.Adequacy.FPC as AI
-import Mu.proof.Adequacy.X86 as AX
-open import Mu.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
+import FPC.Semantics.ClockedInterpreters.FPC as I
+import FPC.Semantics.ClockedInterpreters.X86 as X
+import FPC.proof.Adequacy.FPC as AI
+import FPC.proof.Adequacy.X86 as AX
+open import FPC.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

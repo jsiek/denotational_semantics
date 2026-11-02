@@ -1,8 +1,8 @@
 {-
 
   Adequacy of the Scott-domain semantics of X86μ
-  (Mu/Semantics/ScottDomains/X86.agda) for the X86μ interpreter
-  (Mu/Semantics/ClockedInterpreters/X86.agda): if the meaning of a
+  (FPC/Semantics/ScottDomains/X86.agda) for the X86μ interpreter
+  (FPC/Semantics/ClockedInterpreters/X86.agda): if the meaning of a
   program is defined, the interpreter returns a value from some clock
   on. For every program (no premise on its table).
 
@@ -23,7 +23,7 @@
   The fundamental lemma (adequate) is by induction on the sequence, given
   that the blocks it may jump to are adequate (AdeqB) and that the table
   is related to the code pointers (𝕋), as for the graph model
-  (Mu/proof/Adequacy/X86LogRel.agda): the frame, the registers and the
+  (FPC/proof/Adequacy/X86LogRel.agda): the frame, the registers and the
   flag of the semantics are related to those of the interpreter
   (RelState), and the open closure is that of its slot (OpR). The table
   of the program is related (tab): each definition is related to its
@@ -44,15 +44,15 @@ open import Framework.abt.GSubst using (_•_)
 open import Framework.Lookup using (forget)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import Language.Prim using (Prim; sub; eq; int; bool) renaming (δ to δᴾ)
-open import Mu.Language.Type using (Type; Ctx; base; tup; _⊹_; _⇒_; μ; code; _∋_; Z; S; idx; lvl) renaming (unroll to unrollᵗ)
-open import Mu.Language.X86
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import Mu.Semantics.ClockedInterpreters.X86
+open import FPC.Language.Type using (Type; Ctx; base; tup; _⊹_; _⇒_; μ; code; _∋_; Z; S; idx; lvl) renaming (unroll to unrollᵗ)
+open import FPC.Language.X86
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.ClockedInterpreters.X86
   using (RV; MV; RegVals; rv; Flag; Mach; regs; frame; clo; flag; _⦅_⦆; _[_≔_]; cast; forgetᵥ; wipeᵣ;
          arg; args; put; equal; bit; size; code-of; env-of; run; jump; call)
   renaming (⟨_,_,_,_⟩ to mach; obj to objᵢ)
-open import Mu.proof.Adequacy.X86Common using (OpR; none; agree)
+open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
 open import proof.Semantics.Interp.Clock using (Result; ret; _>>=_; Stable; st-now; st-bind; stable-unique)
 open import proof.Framework.Lookup using (lvl-<)
 
@@ -72,7 +72,7 @@ import Data.Nat as Nat
 import Data.Empty
 import Data.Product as P
 
-module Mu.proof.Adequacy.ScottDomains.X86LogRel
+module FPC.proof.Adequacy.ScottDomains.X86LogRel
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -89,9 +89,9 @@ open import proof.Framework.Scott.Stages pt fe pe
 open import proof.Framework.Scott.Values pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe using (Den; abs; init; init-defined; code₂; module Over)
 open import Semantics.Scott.Prim pt fe pe using (primD; out; prim-br₁; prim-br₂)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe using (Table; tables; tables-yes; tables-no)
-open import Mu.Semantics.ScottDomains.CFG pt fe pe using (drop)
-open import Mu.Semantics.ScottDomains.X86 pt fe pe
+open import FPC.Semantics.ScottDomains.Ops pt fe pe using (Table; tables; tables-yes; tables-no)
+open import FPC.Semantics.ScottDomains.CFG pt fe pe using (drop)
+open import FPC.Semantics.ScottDomains.X86 pt fe pe
   using (RegsD; 𝕊; Kont; regsᶜ; flagᶜ; argsᶜ; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs)
   renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to runₛ)
 open Over 𝕊 using (op₁; op₂)

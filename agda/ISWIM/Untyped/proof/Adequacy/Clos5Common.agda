@@ -11,18 +11,18 @@
 -}
 
 open import Data.List using (List; []; _∷_; _++_; length)
-open import Untyped.Language.Clos5 using (AST; global)
+open import ISWIM.Untyped.Language.Clos5 using (AST; global)
 
-module Untyped.proof.Adequacy.Clos5Common (ds : List AST) where
+module ISWIM.Untyped.proof.Adequacy.Clos5Common (ds : List AST) where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (ν)
-open import Untyped.Semantics.Graph.Clos5Iswim using (table) renaming (code to codeD)
-open import Untyped.proof.Correctness.Graph.HoistCorrect using (table-ext; table-top)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (table) renaming (code to codeD)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (table-ext; table-top)
 open import proof.Framework.ListUtil using (reverse-‼-split)
-open import Untyped.Semantics.CEK.Clos5
-open import Untyped.proof.Compiler.HoistTable using (_⊑_)
-open import Untyped.proof.Adequacy.Clos5WF using (DefsWF)
+open import ISWIM.Untyped.Semantics.CEK.Clos5
+open import ISWIM.Untyped.proof.Compiler.HoistTable using (_⊑_)
+open import ISWIM.Untyped.proof.Adequacy.Clos5WF using (DefsWF)
 open import proof.Framework.Runs using (module Runs)
 
 open import Data.List.Properties

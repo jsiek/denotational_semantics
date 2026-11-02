@@ -1,24 +1,24 @@
 {-
 
-  A reduction semantics for PairClosμ (Mu/Language/PairClos.agda), as for
-  EnvClosμ (Mu/Semantics/ReductionSemantics/EnvClos.agda) and Clos4ᵀ
-  (Semantics/Reduction/Typed/Clos4.agda). Code is a value, and so is a
+  A reduction semantics for PairClosμ (FPC/Language/PairClos.agda), as for
+  EnvClosμ (FPC/Semantics/ReductionSemantics/EnvClos.agda) and Clos4ᵀ
+  (ISWIM/Semantics/Reduction/Typed/Clos4.agda). Code is a value, and so is a
   pair of values; callc L M evaluates L and M, and then calls the code
   of the closure L with its environment and the argument.
 
 -}
 
-module Mu.Semantics.ReductionSemantics.PairClos where
+module FPC.Semantics.ReductionSemantics.PairClos where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.PairClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.PairClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
-open import Mu.Framework.ReductionAll Obs o-error using (red-∷)
+open import FPC.Framework.ReductionAll Obs o-error using (red-∷)
 
 open import Data.Bool using (if_then_else_)
 open import Data.Integer using (ℤ; _-_; _≟_)

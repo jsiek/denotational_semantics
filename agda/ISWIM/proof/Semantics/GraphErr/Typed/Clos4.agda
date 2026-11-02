@@ -1,9 +1,9 @@
 {-
 
   Lemmas about the semantics of Clos4ᵀ in the graph model with errors
-  (Semantics/GraphErr/Typed/Clos4.agda): its denotations are monotone,
+  (ISWIM/Semantics/GraphErr/Typed/Clos4.agda): its denotations are monotone,
   continuous and consistent (Ok, as for Clos3ᵀ in
-  proof/Semantics/GraphErr/Typed/Clos3.agda), by induction on the term
+  ISWIM/proof/Semantics/GraphErr/Typed/Clos3.agda), by induction on the term
   from the facts of proof/Framework/GraphModel/{TypedOk,TypedBinders}.agda:
   each operator is Good, callc too (callc-good), and code is a closed
   function (code-ok). Bodies
@@ -12,9 +12,9 @@
 
 -}
 
-module proof.Semantics.GraphErr.Typed.Clos4 where
+module ISWIM.proof.Semantics.GraphErr.Typed.Clos4 where
 
-open import Semantics.GraphErr.Typed.Clos4 public
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 public
 open import proof.Framework.GraphModel.TypedOk using (Ok; Oks; ok-op; Ok-≃; var-ok; const-ok; let-ok; split; ok-vec; fin₁; fin₂) public
 open import proof.Framework.GraphModel.TypedBinders using (code-ok; ΛΛᵐ-call; callc-good) public
 
@@ -23,9 +23,9 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.Continuity using (ℬ-good)
 open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Semantics.GraphErr.Typed.Clos2 using (get-good; case-good; prim-good; project-good)
-open import Language.Typed.Type using (Any; idx)
-open import Language.Typed.Clos4
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (get-good; case-good; prim-good; project-good)
+open import ISWIM.Language.Typed.Type using (Any; idx)
+open import ISWIM.Language.Typed.Clos4
 
 open import Data.List using (_∷_; replicate)
 open import Data.Vec using (Vec; []; _∷_)

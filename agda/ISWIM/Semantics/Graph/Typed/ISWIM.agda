@@ -1,21 +1,21 @@
 {-
 
-  The semantics of ISWIMᵀ (Language/Typed/ISWIM.agda) in the graph model,
+  The semantics of ISWIMᵀ (ISWIM/Language/Typed/ISWIM.agda) in the graph model,
   with the graph model's operators, as that of ISWIM
-  (Semantics/Graph/ISWIM.agda): inject is the identity and project a
-  guard (Semantics/Graph/Typed/Ops.agda). Defined by recursion on typed
+  (ISWIM/Semantics/Graph/ISWIM.agda): inject is the identity and project a
+  guard (ISWIM/Semantics/Graph/Typed/Ops.agda). Defined by recursion on typed
   terms; variable x is position toℕ x of the environment.
 
 -}
 
-module Semantics.Graph.Typed.ISWIM where
+module ISWIM.Semantics.Graph.Typed.ISWIM where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import Semantics.Graph.Prim using (primD)
-open import Semantics.Graph.Typed.Ops
-open import Language.Typed.Type
-open import Language.Typed.ISWIM
+open import ISWIM.Semantics.Graph.Typed.Ops
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.ISWIM
 
 open import Data.Fin using (toℕ)
 open import Data.List using (replicate)

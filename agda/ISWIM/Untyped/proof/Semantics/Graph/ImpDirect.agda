@@ -1,4 +1,4 @@
-module Untyped.proof.Semantics.Graph.ImpDirect where
+module ISWIM.Untyped.proof.Semantics.Graph.ImpDirect where
 {-
 
  The direct semantics of Imp (Language/Imp.agda), an alternative to the
@@ -25,9 +25,9 @@ module Untyped.proof.Semantics.Graph.ImpDirect where
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
-open import Untyped.Semantics.Graph.Imp
+open import ISWIM.Untyped.Semantics.Graph.Imp
   using (Table; init; Store; read; _[_↦_]; 𝒜; 𝒜s; 𝒮; zeros; frame; tables) public
-open import Untyped.Language.Imp
+open import ISWIM.Untyped.Language.Imp
 
 open import Data.Nat using (ℕ; _<?_)
 open import Data.List using (List)

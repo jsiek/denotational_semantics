@@ -20,25 +20,25 @@
 
 -}
 
-module Untyped.proof.Correctness.Interp.LiftLocalsFuel where
+module ISWIM.Untyped.proof.Correctness.Interp.LiftLocalsFuel where
 
-open import Untyped.Language.Clos5 using (AST; program)
-import Untyped.Language.Clos5 as C5
-open import Untyped.Language.Mon
-open import Untyped.Language.Imp using (Body)
-import Untyped.Language.Imp as Imp
-open import Untyped.Compiler.LiftLocals
+open import ISWIM.Untyped.Language.Clos5 using (AST; program)
+import ISWIM.Untyped.Language.Clos5 as C5
+open import ISWIM.Untyped.Language.Mon
+open import ISWIM.Untyped.Language.Imp using (Body)
+import ISWIM.Untyped.Language.Imp as Imp
+open import ISWIM.Untyped.Compiler.LiftLocals
 open import proof.Framework.ListUtil using (_‼_; ‼-++; ‼-≥; ‼-pw)
 open import proof.Semantics.Interp.Clock
-import Untyped.Semantics.Interp.Clos5 as C
-import Untyped.Semantics.Interp.Imp as I
-open import Untyped.Semantics.Interp.Imp using (Frame; zero-val; _[_]≔_; here)
-open import Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs)
-import Semantics.Interp.ISWIM as ISWIM
-open import Untyped.proof.Correctness.Interp.RCOFuel using (compile-mon-correct)
-open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
-open import Untyped.Compiler.RCO using (rco-program-mon)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
+import ISWIM.Untyped.Semantics.Interp.Clos5 as C
+import ISWIM.Untyped.Semantics.Interp.Imp as I
+open import ISWIM.Untyped.Semantics.Interp.Imp using (Frame; zero-val; _[_]≔_; here)
+open import ISWIM.Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs)
+import ISWIM.Semantics.Interp.ISWIM as ISWIM
+open import ISWIM.Untyped.proof.Correctness.Interp.RCOFuel using (compile-mon-correct)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program-mon)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; _ʳ++_; _++_; length; reverse; replicate)

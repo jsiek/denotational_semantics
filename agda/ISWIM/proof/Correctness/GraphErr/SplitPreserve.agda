@@ -2,7 +2,7 @@
 
   Forward (preserve) direction of the correctness of typed split
   (Clos3ᵀ → Clos4ᵀ) in the graph model with errors, by the logical
-  relation of Untyped/proof/Correctness/GraphErr/SplitPreserve.agda between
+  relation of ISWIM/Untyped/proof/Correctness/GraphErr/SplitPreserve.agda between
   single source values and target sets (v ⊑ D'), by recursion on the
   value: a source function is exhibited by a target closure (a pair)
   whose applications (⊙, the call of callc) are related to its own.
@@ -18,17 +18,17 @@ open import Framework.Primitives
 open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; 𝒞-left; 𝒞-right; ⋆₂-mono)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
-open import proof.Semantics.GraphErr.Prim using (primD; out)
-open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ; hit; keep)
-open import Language.Typed.Type using (Any; ⟪_⟫; tup; _∋_; Z; S; idx; flat; ttup; tfun; tsum; tint)
-open import Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit; tuple; get; case; prim; let′; inject; project)
-import Language.Typed.Clos4 as T
-import proof.Semantics.GraphErr.Typed.Clos3 as S3
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primD; out)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ; hit; keep)
+open import ISWIM.Language.Typed.Type using (Any; ⟪_⟫; tup; _∋_; Z; S; idx; flat; ttup; tfun; tsum; tint)
+open import ISWIM.Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit; tuple; get; case; prim; let′; inject; project)
+import ISWIM.Language.Typed.Clos4 as T
+import ISWIM.proof.Semantics.GraphErr.Typed.Clos3 as S3
 open S3 using (⟦_⟧; ⟦_⟧s)
-import proof.Semantics.GraphErr.Typed.Clos4 as S4
+import ISWIM.proof.Semantics.GraphErr.Typed.Clos4 as S4
 open S4 using (fin₁; fin₂; ΛΛᵐ-call; kind₄) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
-open import Compiler.Split using (Ren; ext; split; splits; split-program)
-open import proof.Correctness.GraphErr.SplitRel using (_●_; out-data)
+open import ISWIM.Compiler.Split using (Ren; ext; split; splits; split-program)
+open import ISWIM.proof.Correctness.GraphErr.SplitRel using (_●_; out-data)
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -44,7 +44,7 @@ open import Level using (Lift; lift; lower) renaming (suc to lsuc; zero to lzero
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
 open import Language.Prim using (δ; sub; eq)
 
-module proof.Correctness.GraphErr.SplitPreserve where
+module ISWIM.proof.Correctness.GraphErr.SplitPreserve where
 
 {- The relation -----------------------------------------------------------------}
 

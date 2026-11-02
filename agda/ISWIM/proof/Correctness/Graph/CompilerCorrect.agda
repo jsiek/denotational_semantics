@@ -1,6 +1,6 @@
 {-
 
-  The typed compiler (Compiler/Pipeline.agda) in the plain graph
+  The typed compiler (ISWIM/Compiler/Pipeline.agda) in the plain graph
   model: for a closed ISWIM program, the compiled program, in Clos5ᵀ,
   Monᵀ (by its embedding), Impᵀ, CFGᵀ and X86ᵀ, produces the same
   constants as the source, and produces something exactly when the
@@ -11,38 +11,38 @@
 
 -}
 
-module proof.Correctness.Graph.CompilerCorrect where
+module ISWIM.proof.Correctness.Graph.CompilerCorrect where
 
 open import Framework.Primitives using (base-rep)
 open import Framework.Iff using (_⇔_)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
-open import Language.ISWIM using (AST)
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.Simplify using (simplify)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
-open import Compiler.Cast using (cast-closed)
-open import Compiler.Capture using (capture)
-open import Compiler.Prune using (prune-program)
-open import Compiler.Concretize using (concretize-program)
-open import Compiler.Pipeline
-open import Language.Typed.Mon using (⌜_⌝ₚ)
-open import Semantics.Graph.ISWIM using (⟦_⟧)
-open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
-open import Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
-open import proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
-open import proof.Correctness.Graph.CastCorrect using (cast-correct)
-open import proof.Correctness.Graph.CaptureCorrect using (capture-correct)
-open import proof.Correctness.Graph.PruneCorrect using (prune-correct)
-open import proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct)
-open import proof.Correctness.Graph.SplitCorrect using (split-correct-const; split-correct-nonempty)
-open import proof.Correctness.Graph.HoistCorrect using (hoist-correct)
-open import proof.Correctness.Graph.RCOCorrect using (rco-correct)
-open import proof.Correctness.Graph.LiftLocalsCorrect using (lift-locals-correct)
-open import proof.Correctness.Graph.ExplicateCorrect using (explicate-correct)
-open import proof.Correctness.Graph.SelectCorrect using (select-correct)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
+open import ISWIM.Compiler.Cast using (cast-closed)
+open import ISWIM.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Prune using (prune-program)
+open import ISWIM.Compiler.Concretize using (concretize-program)
+open import ISWIM.Compiler.Pipeline
+open import ISWIM.Language.Typed.Mon using (⌜_⌝ₚ)
+open import ISWIM.Semantics.Graph.ISWIM using (⟦_⟧)
+open import ISWIM.Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import ISWIM.Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
+open import ISWIM.Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import ISWIM.Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
+open import ISWIM.proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
+open import ISWIM.proof.Correctness.Graph.CastCorrect using (cast-correct)
+open import ISWIM.proof.Correctness.Graph.CaptureCorrect using (capture-correct)
+open import ISWIM.proof.Correctness.Graph.PruneCorrect using (prune-correct)
+open import ISWIM.proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct)
+open import ISWIM.proof.Correctness.Graph.SplitCorrect using (split-correct-const; split-correct-nonempty)
+open import ISWIM.proof.Correctness.Graph.HoistCorrect using (hoist-correct)
+open import ISWIM.proof.Correctness.Graph.RCOCorrect using (rco-correct)
+open import ISWIM.proof.Correctness.Graph.LiftLocalsCorrect using (lift-locals-correct)
+open import ISWIM.proof.Correctness.Graph.ExplicateCorrect using (explicate-correct)
+open import ISWIM.proof.Correctness.Graph.SelectCorrect using (select-correct)
 
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 

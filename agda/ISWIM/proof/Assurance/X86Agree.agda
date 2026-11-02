@@ -1,7 +1,7 @@
 {-
 
   Assurance (not in the totals): what the erasure proof
-  (proof/Assurance/X86Erasure.agda) relates X86ᵀ and X86 states by,
+  (ISWIM/proof/Assurance/X86Erasure.agda) relates X86ᵀ and X86 states by,
   kept from the proof of select into untyped X86 that preceded X86ᵀ
   (PR #58).
 
@@ -15,20 +15,20 @@
 
 -}
 
-module proof.Assurance.X86Agree where
+module ISWIM.proof.Assurance.X86Agree where
 
-open import Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import Framework.Membership using (_⊑_; ⊑-∋)
 open import Framework.Lookup using (_!_; forget)
 open import Framework.ListUtil using (_‼_; has-length; proj)
-import Language.Typed.Imp as Imp
-open import Compiler.SelectX86 using (select-atm)
+import ISWIM.Language.Typed.Imp as Imp
+open import ISWIM.Compiler.SelectX86 using (select-atm)
 open import proof.Framework.Lookup using (lvl-<; lvl-⊑; forget-!)
 open import Semantics.Observation using (Obs; o-tuple; o-inl; o-inr)
-import Semantics.CEK.X86 as X
-import Semantics.CEK.Values as XV
-import Semantics.CEK.Typed.Clos5 as V
-import Semantics.CEK.Typed.CFG as G
+import ISWIM.Semantics.CEK.X86 as X
+import ISWIM.Semantics.CEK.Values as XV
+import ISWIM.Semantics.CEK.Typed.Clos5 as V
+import ISWIM.Semantics.CEK.Typed.CFG as G
 open G using (atom)
 
 open import Data.Bool using (true; false; if_then_else_)

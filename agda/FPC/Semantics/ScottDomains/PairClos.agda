@@ -1,11 +1,11 @@
 {-
 
-  The semantics of PairClosμ (Mu/Language/PairClos.agda) in Scott domains, as
-  in the graph model (Mu/Semantics/GraphModel/PairClos.agda): code is a closed
+  The semantics of PairClosμ (FPC/Language/PairClos.agda) in Scott domains, as
+  in the graph model (FPC/Semantics/GraphModel/PairClos.agda): code is a closed
   function of two arguments (codeᶜ, Framework/Scott/Semantics.agda), a
   closure the pair of code and environment, and callc applies the
   closure's code (car) to its environment (cdr) and the argument;
-  otherwise as FPC (Mu/Semantics/ScottDomains/FPC.agda).
+  otherwise as FPC (FPC/Semantics/ScottDomains/FPC.agda).
 
 -}
 
@@ -14,12 +14,12 @@ open import UF.FunExt using (Fun-Ext)
 open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
-open import Mu.Language.Type
-open import Mu.Language.PairClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.PairClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import Data.List using (length)
 
-module Mu.Semantics.ScottDomains.PairClos
+module FPC.Semantics.ScottDomains.PairClos
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)

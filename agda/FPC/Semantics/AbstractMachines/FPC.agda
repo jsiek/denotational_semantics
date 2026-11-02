@@ -1,33 +1,33 @@
 {-
 
-  A CEK machine for FPC (Mu/Language/FPC.agda), with typed values,
+  A CEK machine for FPC (FPC/Language/FPC.agda), with typed values,
   environments and continuations: a state is well typed by construction,
   so the machine has no case for a value of the wrong kind or an unbound
   variable, and it never stops with an error. Call by value, left to
-  right, as the ISWIMᵀ machine (Semantics/CEK/Typed/ISWIM.agda). The
-  values are those of Mu/Semantics/AbstractMachines/Values.agda: a closure (clo) is
+  right, as the ISWIMᵀ machine (ISWIM/Semantics/CEK/Typed/ISWIM.agda). The
+  values are those of FPC/Semantics/AbstractMachines/Values.agda: a closure (clo) is
   the code of a function packed with the tuple of its environment. A
   value of a recursive type is a fold of a value of its unfolding;
   unfold takes it apart, and cannot fail.
 
   The values of a tuple are collected newest first (vs : All Val Δ'),
   so that the tuple's type, tup (Δ' <>< Δ), needs no rewriting as they
-  grow (Mu/Framework/AllUtil.agda).
+  grow (FPC/Framework/AllUtil.agda).
 
 -}
 
-module Mu.Semantics.AbstractMachines.FPC where
+module FPC.Semantics.AbstractMachines.FPC where
 
 open import Framework.Primitives using (Int)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([]; _∷_)
 
-open import Mu.Semantics.AbstractMachines.Values (λ Δ A B → Tm (A ∷ Δ) B) public
+open import FPC.Semantics.AbstractMachines.Values (λ Δ A B → Tm (A ∷ Δ) B) public
 
 {- a closure: the code N with its environment ρ -}
 pattern clo N ρ = pack (code N) (tup ρ)

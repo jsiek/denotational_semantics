@@ -1,7 +1,7 @@
 {-
 
   Remove complex operands (GlobalFunμ → Monμ), as typed rco
-  (Compiler/RCO.agda): every complex operand is bound to a fresh
+  (ISWIM/Compiler/RCO.agda): every complex operand is bound to a fresh
   variable by a let, left to right, so the operands of every operation
   become atoms.
 
@@ -15,13 +15,13 @@
 
 -}
 
-module Mu.Compiler.RCO where
+module FPC.Compiler.RCO where
 
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun
-import Mu.Language.Mon as M
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun
+import FPC.Language.Mon as M
 open M using (Atm; Exp; var; lit; ref; atm; ren)
-open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
+open import FPC.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 
 open import Data.List using (List; []; _∷_)
 

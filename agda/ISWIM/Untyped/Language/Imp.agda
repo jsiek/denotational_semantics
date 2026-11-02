@@ -1,4 +1,4 @@
-module Untyped.Language.Imp where
+module ISWIM.Untyped.Language.Imp where
 {-
 
  Imp, the imperative language after the lift-locals pass

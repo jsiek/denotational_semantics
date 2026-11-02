@@ -18,7 +18,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Data.Bool using (true; false)
 open import Language.Prim using (int; bool)
 
-module Untyped.proof.Correctness.Graph.SplitFiniteCommon where
+module ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon where
 
 open import proof.Framework.GraphModel.DomainUtil public
 

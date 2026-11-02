@@ -1,4 +1,4 @@
-module Untyped.Language.Clos2 where
+module ISWIM.Untyped.Language.Clos2 where
 
 {-
  In this intermediate language, a closure binds its free variables

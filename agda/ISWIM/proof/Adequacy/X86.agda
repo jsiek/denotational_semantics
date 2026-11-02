@@ -1,9 +1,9 @@
 {-
 
   Soundness and adequacy of the graph model of X86ᵀ
-  (Semantics/Graph/Typed/X86.agda, ⟦_⟧ₜ) with respect to the X86ᵀ
-  machine (Semantics/CEK/Typed/X86.agda), as for Clos5ᵀ
-  (proof/Adequacy/Clos5.agda):
+  (ISWIM/Semantics/Graph/Typed/X86.agda, ⟦_⟧ₜ) with respect to the X86ᵀ
+  machine (ISWIM/Semantics/CEK/Typed/X86.agda), as for Clos5ᵀ
+  (ISWIM/proof/Adequacy/Clos5.agda):
 
     adequacy (X86LogRel.agda), for every program: every d ∈ ⟦ P ⟧ₜ is
       related to the value that the machine returns;
@@ -20,24 +20,24 @@
 
 -}
 
-module proof.Adequacy.X86 where
+module ISWIM.proof.Adequacy.X86 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
-open import proof.Semantics.Graph.Typed.Ops using (ConT; tables)
-open import Language.Typed.Type using (Any)
-open import Language.Typed.X86 using (Program; program)
-open import Language.ISWIM using (AST)
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.Pipeline using (compile-x86)
-open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ; codeₜ)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (ConT; tables)
+open import ISWIM.Language.Typed.Type using (Any)
+open import ISWIM.Language.Typed.X86 using (Program; program)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Pipeline using (compile-x86)
+open import ISWIM.Semantics.Graph.Typed.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
-open import Semantics.CEK.Typed.X86 using (sem; obs; Val)
-open import proof.Adequacy.X86Compiled using (Contains; compiled)
-import proof.Adequacy.X86LogRel as LR
-import proof.Adequacy.X86Soundness as S
+open import ISWIM.Semantics.CEK.Typed.X86 using (sem; obs; Val)
+open import ISWIM.proof.Adequacy.X86Compiled using (Contains; compiled)
+import ISWIM.proof.Adequacy.X86LogRel as LR
+import ISWIM.proof.Adequacy.X86Soundness as S
 
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (sym; subst)

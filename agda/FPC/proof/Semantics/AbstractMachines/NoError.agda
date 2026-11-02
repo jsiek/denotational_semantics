@@ -9,17 +9,17 @@
 
 -}
 
-module Mu.proof.Semantics.AbstractMachines.NoError where
+module FPC.proof.Semantics.AbstractMachines.NoError where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Semantics.Observation using (Obs; o-error; Answer)
 open import Semantics.CEK.Smallstep using (Terminates; Final; next; stop)
-import Mu.Language.FPC as L
-import Mu.Semantics.AbstractMachines.FPC as I
-import Mu.Semantics.AbstractMachines.GlobalFun as C5
-open import Mu.Language.X86
-open import Mu.Semantics.AbstractMachines.X86 using (State; run; halt; retK; enter; step; sem; cast; regs; _⦅_⦆)
-open import Mu.Framework.AllUtil using (All)
+import FPC.Language.FPC as L
+import FPC.Semantics.AbstractMachines.FPC as I
+import FPC.Semantics.AbstractMachines.GlobalFun as C5
+open import FPC.Language.X86
+open import FPC.Semantics.AbstractMachines.X86 using (State; run; halt; retK; enter; step; sem; cast; regs; _⦅_⦆)
+open import FPC.Framework.AllUtil using (All)
 
 open import Data.List using (List; [])
 open import Data.Product using (_,_)

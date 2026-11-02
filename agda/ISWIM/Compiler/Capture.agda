@@ -8,11 +8,11 @@
 
 -}
 
-module Compiler.Capture where
+module ISWIM.Compiler.Capture where
 
-open import Language.Typed.Type
-open import Language.Typed.ISWIM
-import Language.Typed.Clos2 as T
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.ISWIM
+import ISWIM.Language.Typed.Clos2 as T
 
 open import Data.Nat using (ℕ)
 open import Data.Vec using (Vec; []; _∷_; tabulate)

@@ -32,23 +32,23 @@
 
 -}
 
-module Untyped.proof.Adequacy.EndToEnd where
+module ISWIM.Untyped.proof.Adequacy.EndToEnd where
 
 open import Framework.Primitives using (Base; base-rep)
-open import Language.ISWIM using (AST)
-open import Untyped.Compiler.Pipeline using (compile; compile-x86)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-x86)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
-import Semantics.CEK.ISWIM as I
-import Untyped.Semantics.CEK.Clos5 as C5
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
-import proof.Adequacy.ISWIM as AI
-import Untyped.proof.Adequacy.ISWIMCompile as AIC
-import Untyped.proof.Adequacy.Clos5 as A5
-import Semantics.CEK.X86 as X
-import Untyped.proof.Adequacy.X86 as AX
-open import Untyped.proof.Adequacy.X86CompileWF using (compile-x86-wf)
-open import Untyped.proof.Correctness.Graph.SelectCorrect using (compile-x86-correct-const; compile-x86-correct-nonempty)
+import ISWIM.Semantics.CEK.ISWIM as I
+import ISWIM.Untyped.Semantics.CEK.Clos5 as C5
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
+import ISWIM.proof.Adequacy.ISWIM as AI
+import ISWIM.Untyped.proof.Adequacy.ISWIMCompile as AIC
+import ISWIM.Untyped.proof.Adequacy.Clos5 as A5
+import ISWIM.Semantics.CEK.X86 as X
+import ISWIM.Untyped.proof.Adequacy.X86 as AX
+open import ISWIM.Untyped.proof.Adequacy.X86CompileWF using (compile-x86-wf)
+open import ISWIM.Untyped.proof.Correctness.Graph.SelectCorrect using (compile-x86-correct-const; compile-x86-correct-nonempty)
 
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 

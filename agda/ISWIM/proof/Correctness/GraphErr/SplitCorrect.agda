@@ -12,19 +12,19 @@ open import Framework.GraphModel.Prelude
 open import Framework.Primitives using (base-rep)
 open import Framework.GraphModel.ErrorMonad using (val∈)
 open import proof.Framework.GraphModel.Domain using (ρ₀)
-open import Language.Typed.Type using (Any)
-open import Language.Typed.Clos3 using (Tm)
-open import Compiler.Split using (split-program)
-open import Semantics.GraphErr.Typed.Clos3 using (⟦_⟧)
-open import Semantics.GraphErr.Typed.Clos4 renaming (⟦_⟧ to ⟦_⟧₄)
-open import proof.Correctness.GraphErr.SplitPreserve using (preserve₀; ⊑-val)
-open import proof.Correctness.GraphErr.SplitReflect using (reflect-error; reflect-const; reflect-val)
+open import ISWIM.Language.Typed.Type using (Any)
+open import ISWIM.Language.Typed.Clos3 using (Tm)
+open import ISWIM.Compiler.Split using (split-program)
+open import ISWIM.Semantics.GraphErr.Typed.Clos3 using (⟦_⟧)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 renaming (⟦_⟧ to ⟦_⟧₄)
+open import ISWIM.proof.Correctness.GraphErr.SplitPreserve using (preserve₀; ⊑-val)
+open import ISWIM.proof.Correctness.GraphErr.SplitReflect using (reflect-error; reflect-const; reflect-val)
 
 open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Level using (lower)
 
-module proof.Correctness.GraphErr.SplitCorrect where
+module ISWIM.proof.Correctness.GraphErr.SplitCorrect where
 
 split-correct-error : ∀ (M : Tm [] Any)
   → (ω ∈ ⟦ M ⟧ ρ₀ → ω ∈ ⟦ split-program M ⟧₄ ρ₀) × (ω ∈ ⟦ split-program M ⟧₄ ρ₀ → ω ∈ ⟦ M ⟧ ρ₀)

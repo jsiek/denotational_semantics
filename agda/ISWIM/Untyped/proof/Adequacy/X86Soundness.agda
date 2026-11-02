@@ -3,10 +3,10 @@
   Soundness of the X86 machine with respect to the graph model: what the
   machine computes is in the denotation of the (well-formed) program.
 
-  As for Clos5 (Untyped/proof/Adequacy/Clos5Soundness.agda), each machine state
+  As for Clos5 (ISWIM/Untyped/proof/Adequacy/Clos5Soundness.agda), each machine state
   denotes a set of values (𝒮) that every step can only shrink (step-⊆),
   and code pointers denote the entries of the table T⁺, with ν added.
-  The state runs in continuation-passing style (Untyped/Semantics/Graph/X86.agda), and the
+  The state runs in continuation-passing style (ISWIM/Untyped/Semantics/Graph/X86.agda), and the
   call stack is its continuation (𝒦): a return frame runs the caller's
   rest with %rax holding the callee's result.
 
@@ -27,7 +27,7 @@
 
 -}
 
-module Untyped.proof.Adequacy.X86Soundness where
+module ISWIM.Untyped.proof.Adequacy.X86Soundness where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (bool; δ; sub; eq)
@@ -40,23 +40,23 @@ open import proof.Framework.GraphModel.Ops
   using (⋆; 𝒯; nthD; inl; inr; Λ; ⋆-mono; pair-mono; car-mono; cdr-mono; 𝒯-mono; proj-mono; 𝒞-mono; ■)
   renaming (proj to dproj; pair to dpair)
 open import proof.Semantics.Graph.Prim using (primD; primD-mono) renaming (out to dout)
-open import Language.X86
+open import ISWIM.Language.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
-open import Untyped.Semantics.Graph.X86
+open import ISWIM.Untyped.Semantics.Graph.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates; next; stop)
 open import proof.Framework.ListUtil using (replicate-‼-just; _‼_; proj)
-open import Semantics.CEK.X86
+open import ISWIM.Semantics.CEK.X86
   using (Val; code; pair; const; tup; obs; out; prim?; Frame; State; Stack; halt; retK; run; step; block-at; global; sem; get-field; build; is-inl; cmp; truth; bit; _[_]≔_; zeros; arg; args; test; goto; callq?; regs)
   renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])
-import Semantics.CEK.X86 as T using (inl; inr)
-open import proof.Adequacy.Common using (ShapeOf; δ?-inv)
-open import proof.Adequacy.Soundness using (At; AllNE; 𝒯L; At-length; inl-⊆; inr-⊆; 𝒯L-mono; _⊆L_)
-open import Untyped.proof.Adequacy.Values using (module Den)
-open import Untyped.proof.Adequacy.X86WF
-import Untyped.proof.Adequacy.X86Common as Common
+import ISWIM.Semantics.CEK.X86 as T using (inl; inr)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; δ?-inv)
+open import ISWIM.proof.Adequacy.Soundness using (At; AllNE; 𝒯L; At-length; inl-⊆; inr-⊆; 𝒯L-mono; _⊆L_)
+open import ISWIM.Untyped.proof.Adequacy.Values using (module Den)
+open import ISWIM.Untyped.proof.Adequacy.X86WF
+import ISWIM.Untyped.proof.Adequacy.X86Common as Common
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥; ⊥-elim)

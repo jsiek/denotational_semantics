@@ -1,12 +1,12 @@
 {-
 
   Soundness of the clocked interpreter of FPC
-  (Mu/Semantics/ClockedInterpreters/FPC.agda) with respect to its
-  Scott-domain semantics (Mu/Semantics/ScottDomains/FPC.agda): what the
+  (FPC/Semantics/ClockedInterpreters/FPC.agda) with respect to its
+  Scott-domain semantics (FPC/Semantics/ScottDomains/FPC.agda): what the
   interpreter returns, at any clock, means what the program means, and
   the interpreter never errs.
 
-  As for the graph model (Mu/proof/Adequacy/Soundness.agda), through the
+  As for the graph model (FPC/proof/Adequacy/Soundness.agda), through the
   meanings of values (𝒱; a closure means the function value of its body
   in the meaning of its environment, 𝓔), by induction on the clock and
   the term. In Scott domains the meanings are elements of 𝔻, so a
@@ -25,10 +25,10 @@ open import UF.Base using (ap₂)
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Framework.abt.GSubst using (_•_)
 open import Language.Prim using (sub; eq; bool) renaming (δ to δᴾ)
-open import Mu.Language.Type using (Type; Ctx; _⇒_; tup; out-ty; _∋_; Z; S; idx)
-open import Mu.Language.FPC
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
-open import Mu.Semantics.ClockedInterpreters.FPC
+open import FPC.Language.Type using (Type; Ctx; _⇒_; tup; out-ty; _∋_; Z; S; idx)
+open import FPC.Language.FPC
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.Semantics.ClockedInterpreters.FPC
   renaming (Val to Value; Env to Envᵢ; const to cv; δ to δᵥ)
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.Interp.Clock using (Result; timeout; error; ret; _>>=_)
@@ -40,7 +40,7 @@ open import Data.List using (length; [])
 open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to ≡-refl)
 open import Relation.Nullary using (does)
 
-module Mu.proof.Adequacy.ScottDomains.Soundness
+module FPC.proof.Adequacy.ScottDomains.Soundness
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -52,7 +52,7 @@ open import proof.Framework.Scott.Ops pt fe pe
 open import proof.Framework.Scott.Values pt fe pe using (view; view-inj)
 open import proof.Framework.Scott.Semantics pt fe pe using (lamᶜ; abs; _∷ᶠ_; init; lamᶜ-β; letᶜ-β; caseᶜ-inl; caseᶜ-inr)
 open import Semantics.Scott.Prim pt fe pe using (primD; out)
-open import Mu.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧; ⟦_⟧s)
+open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧; ⟦_⟧s)
 
 {- Meanings of values and environments ------------------------------------------}
 

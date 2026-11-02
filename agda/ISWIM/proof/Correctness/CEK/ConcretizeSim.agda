@@ -20,19 +20,19 @@
 
 -}
 
-module proof.Correctness.CEK.ConcretizeSim where
+module ISWIM.proof.Correctness.CEK.ConcretizeSim where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos2
-import Language.Typed.Clos3 as C3
-open import Compiler.Concretize
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos2
+import ISWIM.Language.Typed.Clos3 as C3
+open import ISWIM.Compiler.Concretize
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.VecUtil using (_<><₂_)
-open import proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
-import Semantics.CEK.Typed.Clos2 as Src
-import Semantics.CEK.Typed.Clos3 as Tgt
+open import ISWIM.proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
+import ISWIM.Semantics.CEK.Typed.Clos2 as Src
+import ISWIM.Semantics.CEK.Typed.Clos3 as Tgt
 
 open import Data.Bool using (true; false)
 open import Data.Fin using (Fin; zero; suc)

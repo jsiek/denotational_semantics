@@ -18,12 +18,12 @@
 
 -}
 
-module Untyped.proof.Adequacy.GraphErr.Clos5WF where
+module ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5WF where
 
-open import Untyped.Language.Clos4
-import Untyped.Language.Clos5 as L5
-open import Untyped.Compiler.Hoist
-open import Untyped.Compiler.Pipeline using (compile; compile₄)
+open import ISWIM.Untyped.Language.Clos4
+import ISWIM.Untyped.Language.Clos5 as L5
+open import ISWIM.Untyped.Compiler.Hoist
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile₄)
 
 open import Data.Nat using (ℕ; _<_; _≤_)
 open import Data.Nat.Properties using (<-≤-trans; m≤n+m; n<1+n)

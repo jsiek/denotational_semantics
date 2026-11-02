@@ -1,8 +1,8 @@
 {-
 
-  The semantics of Impμ (Mu/Language/Imp.agda) in Scott domains, in
+  The semantics of Impμ (FPC/Language/Imp.agda) in Scott domains, in
   continuation-passing style, as in the graph model
-  (Mu/Semantics/GraphModel/Imp.agda). The frame σ gives each slot a meaning;
+  (FPC/Semantics/GraphModel/Imp.agda). The frame σ gives each slot a meaning;
   a continuation κ (a continuous map, in K = 𝔻 ⟹ 𝔻) takes the value of
   the expression. An expression means a continuous map of the frame and
   the continuation. Atoms and simple expressions (𝒜, 𝒮, shared with
@@ -22,13 +22,13 @@ open import UF.FunExt using (Fun-Ext)
 open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
-open import Mu.Language.Type
-open import Mu.Language.Imp
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.Imp
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import Framework.abt.GSubst using (_•_)
 open import Data.List using (List; length)
 
-module Mu.Semantics.ScottDomains.Imp
+module FPC.Semantics.ScottDomains.Imp
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -40,7 +40,7 @@ open import Framework.Scott.Ops pt fe pe using (Env; ext; const; proj; car; cdr;
   renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ)
 open import Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
 
 𝒜 : ∀ {Σ Δ A} → Atm Σ Δ A → Table Σ → Den Env
 𝒜 (var x) T = at _ 𝔻 (idx x)

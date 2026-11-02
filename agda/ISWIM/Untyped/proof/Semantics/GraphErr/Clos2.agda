@@ -1,4 +1,4 @@
-module Untyped.proof.Semantics.GraphErr.Clos2 where
+module ISWIM.Untyped.proof.Semantics.GraphErr.Clos2 where
 
 open import Framework.Syntax.SigUtil
 open import proof.Framework.GraphModel.DOpSig
@@ -8,9 +8,9 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.ContinuityBase using (mono; consis)
-open import proof.Semantics.GraphErr.Prim
-open import Untyped.Language.Clos2
-open import Untyped.Semantics.GraphErr.Clos2 public hiding (⟦_⟧; init)
+open import ISWIM.proof.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Clos2
+open import ISWIM.Untyped.Semantics.GraphErr.Clos2 public hiding (⟦_⟧; init)
 
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Nat.Properties using (+-suc)

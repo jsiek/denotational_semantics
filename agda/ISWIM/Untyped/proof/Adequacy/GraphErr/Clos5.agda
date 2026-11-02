@@ -31,28 +31,28 @@
 
 -}
 
-module Untyped.proof.Adequacy.GraphErr.Clos5 where
+module ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω) renaming (const to dconst)
-open import Language.ISWIM using (AST)
-open import Untyped.Language.Clos5 using (Program; program)
-open import Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Untyped.Language.Clos5 using (Program; program)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; never-final-diverges)
-import Untyped.Semantics.CEK.Clos5 as Clos5ₘ
-open import Untyped.Semantics.CEK.Clos5 using (ret; halt; obs)
-open import Untyped.Compiler.Pipeline using (compile)
-open import Compiler.CaptureScope using (Closed)
-open import Untyped.proof.Compiler.HoistTable using (⊑-refl)
-open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
-open import proof.Adequacy.GraphErr.Soundness using (shape-ω)
-open import Untyped.proof.Adequacy.GraphErr.Clos5WF using (WF; compile-wf) public
-open import Untyped.proof.Adequacy.GraphErr.Clos5Soundness using (soundness; sound-error) public
-import Untyped.proof.Adequacy.GraphErr.Clos5Common as C
-import Untyped.proof.Adequacy.GraphErr.Clos5LogRel as LR
+import ISWIM.Untyped.Semantics.CEK.Clos5 as Clos5ₘ
+open import ISWIM.Untyped.Semantics.CEK.Clos5 using (ret; halt; obs)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.proof.Compiler.HoistTable using (⊑-refl)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
+open import ISWIM.proof.Adequacy.GraphErr.Soundness using (shape-ω)
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5WF using (WF; compile-wf) public
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5Soundness using (soundness; sound-error) public
+import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5Common as C
+import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5LogRel as LR
 
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)

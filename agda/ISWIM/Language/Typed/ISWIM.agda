@@ -1,7 +1,7 @@
 {-
 
   ISWIMᵀ: ISWIM with explicit casts, intrinsically typed. The output of
-  cast insertion (Compiler/Cast.agda).
+  cast insertion (ISWIM/Compiler/Cast.agda).
 
   Tm k A is a term of type A in a context of k variables, each of type
   Any (functions, let and case bind values of type Any). The operations
@@ -11,11 +11,11 @@
 
 -}
 
-module Language.Typed.ISWIM where
+module ISWIM.Language.Typed.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 
 open import Data.Fin using (Fin)
 open import Data.Nat using (ℕ; suc)

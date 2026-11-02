@@ -1,7 +1,7 @@
 {-
 
-  A machine for Impᵀ (Language/Typed/Imp.agda), with the values of the
-  Clos5ᵀ machine (Semantics/CEK/Typed/Clos5.agda). An expression runs
+  A machine for Impᵀ (ISWIM/Language/Typed/Imp.agda), with the values of the
+  Clos5ᵀ machine (ISWIM/Semantics/CEK/Typed/Clos5.agda). An expression runs
   in a frame of slots typed by its frame context Δ (Frame Δ, the values
   of the slots assigned so far, slot 0 last), so an atom always has a
   value (atom).
@@ -15,18 +15,18 @@
   runs the definition in a frame of its argument and environment, with
   the caller's continuation (which holds the caller's frame). The
   simple expressions and run are shared with the CFGᵀ machine
-  (Semantics/CEK/Typed/CFG.agda).
+  (ISWIM/Semantics/CEK/Typed/CFG.agda).
 
 -}
 
-module Semantics.CEK.Typed.Imp where
+module ISWIM.Semantics.CEK.Typed.Imp where
 
-open import Language.Typed.Type
-open import Language.Typed.Imp
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Imp
 open import Framework.Lookup using (_!_)
 open import Semantics.Observation using (o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import Semantics.CEK.Typed.Clos5
+open import ISWIM.Semantics.CEK.Typed.Clos5
   using (Val; code; pack; const; tup; inl; inr; dyn; Env; obs; int; elems; choose; δᵀ; proj?) public
 
 open import Data.List using (List; []; _∷_)

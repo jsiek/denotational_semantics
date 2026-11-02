@@ -1,19 +1,19 @@
 {-
 
-  The semantics of ISWIMᵀ (Language/Typed/ISWIM.agda) in the graph model
-  with errors, with the typed operators (Semantics/GraphErr/Typed/Ops.agda):
+  The semantics of ISWIMᵀ (ISWIM/Language/Typed/ISWIM.agda) in the graph model
+  with errors, with the typed operators (ISWIM/Semantics/GraphErr/Typed/Ops.agda):
   no operator checks the kind of an operand but project. Defined by
   recursion on typed terms; variable x is position toℕ x of the
   environment.
 
 -}
 
-module Semantics.GraphErr.Typed.ISWIM where
+module ISWIM.Semantics.GraphErr.Typed.ISWIM where
 
 open import Framework.GraphModel.ErrorPrelude
-open import Semantics.GraphErr.Typed.Ops
-open import Language.Typed.Type
-open import Language.Typed.ISWIM
+open import ISWIM.Semantics.GraphErr.Typed.Ops
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.ISWIM
 
 open import Data.Fin using (toℕ)
 open import Data.List using (replicate)

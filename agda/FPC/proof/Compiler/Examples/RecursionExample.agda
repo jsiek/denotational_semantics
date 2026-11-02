@@ -1,7 +1,7 @@
 {-
 
   Divergence and recursion in FPC, through recursive types, without
-  a recursion construct (Mu/Language/FPC.agda):
+  a recursion construct (FPC/Language/FPC.agda):
 
   * ω = λx. unfold x x : (μX. X ⇒ Int) ⇒ Int, and Ω = ω (fold ω), which
     diverges;
@@ -11,22 +11,22 @@
   * countdown = fix (λc. λn. if n = 0 then 0 else c (n - 1)), and
     countdown 3.
 
-  Each is compiled with compile-to-PairClos (Mu/Compiler/Pipeline.agda) and run on
+  Each is compiled with compile-to-PairClos (FPC/Compiler/Pipeline.agda) and run on
   the FPC and PairClosμ machines, by computation.
 
 -}
 
-module Mu.proof.Compiler.Examples.RecursionExample where
+module FPC.proof.Compiler.Examples.RecursionExample where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Compiler.Pipeline using (compile-to-PairClos)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Compiler.Pipeline using (compile-to-PairClos)
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.CEK.Smallstep using (Machine; next; stop)
-import Mu.Semantics.AbstractMachines.FPC as FPCₘ
-import Mu.Semantics.AbstractMachines.PairClos as PairClosμₘ
+import FPC.Semantics.AbstractMachines.FPC as FPCₘ
+import FPC.Semantics.AbstractMachines.PairClos as PairClosμₘ
 
 open import Data.Fin using (zero)
 open import Data.Integer using (+_)

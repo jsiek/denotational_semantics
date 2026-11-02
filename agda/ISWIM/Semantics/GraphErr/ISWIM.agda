@@ -1,17 +1,17 @@
-module Semantics.GraphErr.ISWIM where
+module ISWIM.Semantics.GraphErr.ISWIM where
 {-
 
- The semantics of ISWIM in the graph model with errors: the graph model's operators (Semantics/Graph/ISWIM.agda) as
+ The semantics of ISWIM in the graph model with errors: the graph model's operators (ISWIM/Semantics/Graph/ISWIM.agda) as
    kernels under the error monad (Framework/GraphModel/ErrorMonad.agda).
    A program that stops with an error denotes a set that holds ω; one
    that diverges, the empty set. Evaluation order is that of the machine
-   (Semantics/CEK/ISWIM.agda): the nesting of the binds.
+   (ISWIM/Semantics/CEK/ISWIM.agda): the nesting of the binds.
 
 -}
 
 open import Framework.GraphModel.ErrorPrelude
-open import Semantics.GraphErr.Prim
-open import Language.ISWIM
+open import ISWIM.Semantics.GraphErr.Prim
+open import ISWIM.Language.ISWIM
 open import Framework.abt.Fold2 Op sig using (fold)
 
 𝕆-ISWIMᵐ : DOpSig (𝒫 Value) sig

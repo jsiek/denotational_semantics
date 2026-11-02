@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed hoist (Clos4ᵀ → Clos5ᵀ,
-  Compiler/Hoist.agda) by a forward simulation between the
+  ISWIM/Compiler/Hoist.agda) by a forward simulation between the
   typed machines (see the design note in Semantics/CEK/Smallstep.agda).
 
   The machines run in lock step. A Clos4ᵀ term is related to a Clos5ᵀ
@@ -22,22 +22,22 @@
 
 -}
 
-module proof.Correctness.CEK.HoistSim where
+module ISWIM.proof.Correctness.CEK.HoistSim where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
 open import Framework.Lookup using (_!_)
-import Language.Typed.Clos4 as S
-open import Language.Typed.Clos5
-open import Compiler.Hoist
+import ISWIM.Language.Typed.Clos4 as S
+open import ISWIM.Language.Typed.Clos5
+open import ISWIM.Compiler.Hoist
 open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.VecUtil using (_<><₂_)
-open import proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
-import Semantics.CEK.Typed.Clos4 as Sₘ
-import Semantics.CEK.Typed.Clos5 as Tₘ
+open import ISWIM.proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
+import ISWIM.Semantics.CEK.Typed.Clos4 as Sₘ
+import ISWIM.Semantics.CEK.Typed.Clos5 as Tₘ
 
 open import Data.Bool using (true; false)
 open import Data.Integer using (_≟_)

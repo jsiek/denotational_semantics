@@ -2,7 +2,7 @@
 
   The approximant logical relation, for the backward (reflect) direction
   of typed split (Clos3ᵀ → Clos4ᵀ) in the graph model, as for untyped
-  split (Untyped/proof/Correctness/Graph/SplitFiniteRel.agda).
+  split (ISWIM/Untyped/proof/Correctness/Graph/SplitFiniteRel.agda).
   ApproxLR D V' relates an arbitrary source denotation D (a set of Clos3ᵀ
   values) to a finite target approximant V' (a list of Clos4ᵀ values), by
   recursion on the depth of V', since a target closure is a set of pairs
@@ -21,7 +21,7 @@ open import Framework.Primitives
 open import proof.Framework.GraphModel.Ops using (⋆; car; cdr)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Semantics.Graph.Prim using (out)
-open import Semantics.Graph.Typed.Ops using (fun₂)
+open import ISWIM.Semantics.Graph.Typed.Ops using (fun₂)
 open import Language.Prim using (Out; int; bool)
 open import Data.Bool using (true; false)
 
@@ -34,7 +34,7 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality using (_≢_)
 
-module proof.Correctness.Graph.SplitRel where
+module ISWIM.proof.Correctness.Graph.SplitRel where
 
 {- Shorthands -----------------------------------------------------------------}
 

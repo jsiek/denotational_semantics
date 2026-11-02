@@ -1,22 +1,22 @@
 {-
 
   Clos3ᵀ: Clos3, intrinsically typed. The output of typed concretize
-  (Compiler/Concretize.agda).
+  (ISWIM/Compiler/Concretize.agda).
 
   A closure clos N (M₀ ∷ … ∷ Mₙ₋₁) has closed code N with two
   variables: the argument (variable 0, of type Any) and the tuple of its
   n free variables (variable 1, of type ⟪ tup n ⟫), from which the code
   reads a free variable with get. The closure itself has type ⟪ fun ⟫:
   the length of its environment is hidden in its value. Contexts are
-  lists of types (Language/Typed/Type.agda).
+  lists of types (ISWIM/Language/Typed/Type.agda).
 
 -}
 
-module Language.Typed.Clos3 where
+module ISWIM.Language.Typed.Clos3 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 
 open import Data.Fin using (Fin)
 open import Data.List using ([]; _∷_)

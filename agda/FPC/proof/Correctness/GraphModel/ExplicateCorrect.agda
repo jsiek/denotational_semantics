@@ -1,10 +1,10 @@
 {-
 
   Correctness of explicate control (Impμ → CFGμ,
-  Mu/Compiler/Explicate.agda) in the graph model, as for the typed pass
-  (proof/Correctness/Graph/ExplicateCorrect.agda): the CFGμ program
-  (Mu/Semantics/GraphModel/CFG.agda) means what the Impμ program does
-  (Mu/Semantics/GraphModel/Imp.agda, continuation-passing).
+  FPC/Compiler/Explicate.agda) in the graph model, as for the typed pass
+  (ISWIM/proof/Correctness/Graph/ExplicateCorrect.agda): the CFGμ program
+  (FPC/Semantics/GraphModel/CFG.agda) means what the Impμ program does
+  (FPC/Semantics/GraphModel/Imp.agda, continuation-passing).
 
   explicate-assign e p k bs is e in continuation-passing style, as the
   semantics of Impμ is: its tail, with its blocks, means e run with the
@@ -17,21 +17,21 @@
 
 -}
 
-module Mu.proof.Correctness.GraphModel.ExplicateCorrect where
+module FPC.proof.Correctness.GraphModel.ExplicateCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import Mu.Language.Type
-import Mu.Language.Imp as I
-open import Mu.Language.CFG
-open import Mu.Compiler.Explicate
-open import Mu.Semantics.GraphModel.Ops using (Table; tables)
-open import Mu.proof.Semantics.GraphModel.CFG using (⟦_⟧ᵗ; blocks; run; drop; 𝒮-≃; 𝒜)
+open import FPC.Language.Type
+import FPC.Language.Imp as I
+open import FPC.Language.CFG
+open import FPC.Compiler.Explicate
+open import FPC.Semantics.GraphModel.Ops using (Table; tables)
+open import FPC.proof.Semantics.GraphModel.CFG using (⟦_⟧ᵗ; blocks; run; drop; 𝒮-≃; 𝒜)
   renaming (code′ to codeᶜ; table to tableᶜ; ⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Mu.Semantics.GraphModel.Imp using (⟦_⟧ᴷ) renaming (code′ to codeᵢ; table to tableᵢ; ⟦_⟧ₚ to ⟦_⟧ᵢ)
-open import Mu.proof.Semantics.GraphModel.Binders using (let-≃; case-≃)
-open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
+open import FPC.Semantics.GraphModel.Imp using (⟦_⟧ᴷ) renaming (code′ to codeᵢ; table to tableᵢ; ⟦_⟧ₚ to ⟦_⟧ᵢ)
+open import FPC.proof.Semantics.GraphModel.Binders using (let-≃; case-≃)
+open import FPC.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.Nat using (ℕ; _≟_)

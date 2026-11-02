@@ -1,19 +1,19 @@
 {-
 
   Lemmas about the semantics of Closμ in the graph model
-  (Mu/Semantics/GraphModel/Clos.agda): the environment of the code of a
+  (FPC/Semantics/GraphModel/Clos.agda): the environment of the code of a
   closure (fv-env-pos).
 
 -}
 
-module Mu.proof.Semantics.GraphModel.Clos where
+module FPC.proof.Semantics.GraphModel.Clos where
 
-open import Mu.Semantics.GraphModel.Clos public
+open import FPC.Semantics.GraphModel.Clos public
 
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.OpsBase using (nthD)
-open import Mu.Language.Type using (Ctx; _∋_; Z; S; idx)
-open import Mu.Framework.AllUtil using (pos)
+open import FPC.Language.Type using (Ctx; _∋_; Z; S; idx)
+open import FPC.Framework.AllUtil using (pos)
 
 open import Data.List using (length)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

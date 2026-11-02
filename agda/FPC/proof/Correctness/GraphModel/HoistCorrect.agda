@@ -1,8 +1,8 @@
 {-
 
   Correctness of hoist (PairClosμ → GlobalFunμ) in the graph model
-  (Mu/Semantics/GraphModel/{PairClos,GlobalFun}.agda), as for the typed pass
-  (proof/Correctness/Graph/HoistCorrect.agda): the pass preserves
+  (FPC/Semantics/GraphModel/{PairClos,GlobalFun}.agda), as for the typed pass
+  (ISWIM/proof/Correctness/Graph/HoistCorrect.agda): the pass preserves
   denotations exactly.
 
   The definitions made so far (Made, each over the older ones) have
@@ -18,22 +18,22 @@
 
 -}
 
-module Mu.proof.Correctness.GraphModel.HoistCorrect where
+module FPC.proof.Correctness.GraphModel.HoistCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to pairD)
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import Mu.proof.Semantics.GraphModel.Ops
-open import Mu.Semantics.GraphModel.GlobalFun
-open import Mu.proof.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
-open import Mu.Language.Type
+open import FPC.proof.Semantics.GraphModel.Ops
+open import FPC.Semantics.GraphModel.GlobalFun
+open import FPC.proof.Semantics.GraphModel.PairClos using () renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.PairClos as S
-open import Mu.Language.GlobalFun
-open import Mu.Compiler.Hoist
-open import Mu.proof.Semantics.GraphModel.Binders using (let-≃; case-≃)
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+import FPC.Language.PairClos as S
+open import FPC.Language.GlobalFun
+open import FPC.Compiler.Hoist
+open import FPC.proof.Semantics.GraphModel.Binders using (let-≃; case-≃)
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import proof.Framework.Lookup using (lvl-<; lvl-⊑; ⊑-∋-trans)
 
 open import Data.Empty using (⊥-elim)

@@ -1,7 +1,7 @@
 {-
 
   Correctness of remove complex operands (GlobalFunμ → Monμ) in the graph
-  model, as for the typed pass (proof/Correctness/Graph/RCOCorrect.agda):
+  model, as for the typed pass (ISWIM/proof/Correctness/Graph/RCOCorrect.agda):
   the embedding of the output means what the input means.
 
     rco-sem : ⟦ M ⟧[ T ] γ ≃ ⟦ ⌜ rco M ρ ⌝ ⟧[ T' ] σ
@@ -17,7 +17,7 @@
 
 -}
 
-module Mu.proof.Correctness.GraphModel.RCOCorrect where
+module FPC.proof.Correctness.GraphModel.RCOCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
@@ -25,16 +25,16 @@ open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import proof.Framework.GraphModel.Strict
 open import proof.Semantics.Graph.Prim using (primD; primD-mono)
-open import Mu.proof.Semantics.GraphModel.Ops
-open import Mu.proof.Semantics.GraphModel.GlobalFun using (ok; con; table-con; code-con)
-open import Mu.Semantics.GraphModel.GlobalFun
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun
-import Mu.Language.Mon as M
+open import FPC.proof.Semantics.GraphModel.Ops
+open import FPC.proof.Semantics.GraphModel.GlobalFun using (ok; con; table-con; code-con)
+open import FPC.Semantics.GraphModel.GlobalFun
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun
+import FPC.Language.Mon as M
 open M using (Atm; Exp; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Mu.Compiler.RCO
-open import Mu.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; ne-≃; body-mono)
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
+open import FPC.Compiler.RCO
+open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; ne-≃; body-mono)
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.Nat using (ℕ; suc; _≟_)

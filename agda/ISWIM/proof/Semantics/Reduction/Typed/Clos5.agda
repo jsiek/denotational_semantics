@@ -1,20 +1,20 @@
 {-
 
   The values of the Clos5ᵀ reduction semantics
-  (Semantics/Reduction/Typed/Clos5.agda), which reduce to val, and the
+  (ISWIM/Semantics/Reduction/Typed/Clos5.agda), which reduce to val, and the
   laws of its substitution, as for ISWIMᵀ
-  (proof/Semantics/Reduction/Typed/ISWIM.agda): two traversals fuse
+  (ISWIM/proof/Semantics/Reduction/Typed/ISWIM.agda): two traversals fuse
   into one, substitution by variables is the identity, and so a
   substitution under a binder and then one for the bound variable is
   one substitution (exts-[]).
 
 -}
 
-module proof.Semantics.Reduction.Typed.Clos5 where
+module ISWIM.proof.Semantics.Reduction.Typed.Clos5 where
 
-open import Semantics.Reduction.Typed.Clos5 public
-open import Language.Typed.Type
-open import Language.Typed.Clos5 hiding (wk; wks)
+open import ISWIM.Semantics.Reduction.Typed.Clos5 public
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos5 hiding (wk; wks)
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Framework.Reduction Obs o-error using (val)
 

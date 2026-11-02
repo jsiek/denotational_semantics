@@ -10,19 +10,19 @@
 
 -}
 
-module proof.Correctness.Interp.SplitFuel where
+module ISWIM.proof.Correctness.Interp.SplitFuel where
 
 open import Data.List using ([]; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
-open import Language.Typed.Type
-open import Language.Typed.Clos3
-import Language.Typed.Clos4 as C4
-open import Compiler.Split
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos3
+import ISWIM.Language.Typed.Clos4 as C4
+open import ISWIM.Compiler.Split
 open import proof.Semantics.Interp.Clock
 open import Framework.Lookup using (_!_)
-import Semantics.Interp.Typed.Clos3 as S
-import Semantics.Interp.Typed.Clos4 as T
-open import proof.Semantics.Interp.Typed.Rel
+import ISWIM.Semantics.Interp.Typed.Clos3 as S
+import ISWIM.Semantics.Interp.Typed.Clos4 as T
+open import ISWIM.proof.Semantics.Interp.Typed.Rel
   {λ n → Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any} {λ n → C4.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any}
 
 open import Data.List.Relation.Unary.All using ([]; _∷_)

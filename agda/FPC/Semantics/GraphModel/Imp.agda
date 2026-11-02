@@ -1,8 +1,8 @@
 {-
 
-  The semantics of Impμ (Mu/Language/Imp.agda) in the graph model, in
+  The semantics of Impμ (FPC/Language/Imp.agda) in the graph model, in
   continuation-passing style, as that of Impᵀ
-  (Semantics/Graph/Typed/Imp.agda). The frame σ gives each slot (a
+  (ISWIM/Semantics/Graph/Typed/Imp.agda). The frame σ gives each slot (a
   typed index, position idx) a meaning; a continuation κ takes the value
   of the expression. Atoms and simple expressions (𝒜, 𝒮, shared with
   CFGμ) are the operators of GlobalFunμ on atoms; fold and unfold are the
@@ -16,15 +16,15 @@
 
 -}
 
-module Mu.Semantics.GraphModel.Imp where
+module FPC.Semantics.GraphModel.Imp where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to pairD)
 open import Semantics.Graph.Prim using (primD)
-open import Mu.Semantics.GraphModel.Ops
-open import Mu.Language.Type
-open import Mu.Language.Imp
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Semantics.GraphModel.Ops
+open import FPC.Language.Type
+open import FPC.Language.Imp
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

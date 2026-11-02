@@ -28,16 +28,16 @@
 
 -}
 
-module Untyped.proof.Correctness.Reduction.PruneRed where
+module ISWIM.Untyped.proof.Correctness.Reduction.PruneRed where
 
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos2
-open import Untyped.Compiler.Prune hiding (bound; bound-arg; bound-args)
+open import ISWIM.Untyped.Language.Clos2
+open import ISWIM.Untyped.Compiler.Prune hiding (bound; bound-arg; bound-args)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Untyped.proof.Semantics.Reduction.Clos2 as T
+import ISWIM.Untyped.proof.Semantics.Reduction.Clos2 as T
 open T using (Value; Values; value-red; value-sub)
 import proof.Framework.Syntax.Subst Op sig as SS
 import Framework.Syntax.Rename Op sig as R

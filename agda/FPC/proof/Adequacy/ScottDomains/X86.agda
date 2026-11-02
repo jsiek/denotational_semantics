@@ -1,9 +1,9 @@
 {-
 
   Soundness and adequacy of the Scott-domain semantics of X86μ
-  (Mu/Semantics/ScottDomains/X86.agda, ⟦_⟧ₜ) with respect to the X86μ
-  clocked interpreter (Mu/Semantics/ClockedInterpreters/X86.agda), as
-  FPC.agda is for FPC and Mu/proof/Adequacy/X86.agda for the graph
+  (FPC/Semantics/ScottDomains/X86.agda, ⟦_⟧ₜ) with respect to the X86μ
+  clocked interpreter (FPC/Semantics/ClockedInterpreters/X86.agda), as
+  FPC.agda is for FPC and FPC/proof/Adequacy/X86.agda for the graph
   model:
 
     adequacy (X86LogRel.agda), for every program: if ⟦ P ⟧ₜ is defined,
@@ -27,13 +27,13 @@ open import UF.PropTrunc
 open import UF.Subsingletons
 
 open import Framework.Primitives using (Base; base-rep)
-open import Mu.Language.Type using (Type; _∋_)
-open import Mu.Language.X86 using (DSig; Body; called; entry; Program; program; body)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Compiler.Pipeline using (compile)
-open import Mu.Framework.AllUtil using (All; []; lookup)
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import Mu.Semantics.ClockedInterpreters.X86 using (rv; run; sem) renaming (⟨_,_,_,_⟩ to mach)
+open import FPC.Language.Type using (Type; _∋_)
+open import FPC.Language.X86 using (DSig; Body; called; entry; Program; program; body)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Compiler.Pipeline using (compile)
+open import FPC.Framework.AllUtil using (All; []; lookup)
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.ClockedInterpreters.X86 using (rv; run; sem) renaming (⟨_,_,_,_⟩ to mach)
 open import Semantics.Interp.Clock using (Result; timeout; error; ret; outcome; Terminates; Diverges)
 open import Semantics.Observation using (o-const)
 open import Naturals.ExitTruncation using (module exit-truncations)
@@ -45,7 +45,7 @@ open import Data.Unit using (tt)
 open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to ≡-refl; trans to ≡-trans; sym to ≡-sym; cong to ≡-cong)
 import Data.Product as P
 
-module Mu.proof.Adequacy.ScottDomains.X86
+module FPC.proof.Adequacy.ScottDomains.X86
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -54,12 +54,12 @@ module Mu.proof.Adequacy.ScottDomains.X86
 open import Framework.Scott.Base pt fe hiding (_>>=_)
 open import proof.Framework.Scott.Ops pt fe pe using (const; ⊥𝔻; defined; const-defined; ⊥-undefined)
 open import proof.Framework.Scott.Values pt fe pe using (undefined-⊥)
-open import Mu.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ; codeₜ)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe using (tables)
-open import Mu.proof.Adequacy.ScottDomains.Soundness pt fe pe using (Holds; timeout; ret)
-import Mu.proof.Adequacy.ScottDomains.X86Soundness pt fe pe as S
-import Mu.proof.Adequacy.ScottDomains.X86LogRel pt fe pe as LR
-open import Mu.proof.Adequacy.ScottDomains.X86Compiled pt fe pe using (compiled)
+open import FPC.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ; codeₜ)
+open import FPC.Semantics.ScottDomains.Ops pt fe pe using (tables)
+open import FPC.proof.Adequacy.ScottDomains.Soundness pt fe pe using (Holds; timeout; ret)
+import FPC.proof.Adequacy.ScottDomains.X86Soundness pt fe pe as S
+import FPC.proof.Adequacy.ScottDomains.X86LogRel pt fe pe as LR
+open import FPC.proof.Adequacy.ScottDomains.X86Compiled pt fe pe using (compiled)
 open exit-truncations pt using (exit-truncation)
 
 private

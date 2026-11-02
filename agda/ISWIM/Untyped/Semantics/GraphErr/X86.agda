@@ -1,9 +1,9 @@
-module Untyped.Semantics.GraphErr.X86 where
+module ISWIM.Untyped.Semantics.GraphErr.X86 where
 {-
 
- The semantics of X86 (Language/X86.agda) in the graph model with errors:
- that of Untyped/Semantics/Graph/X86.agda, with the error-propagating operators
- and the checks of the machine (Semantics/CEK/X86.agda).
+ The semantics of X86 (ISWIM/Language/X86.agda) in the graph model with errors:
+ that of ISWIM/Untyped/Semantics/Graph/X86.agda, with the error-propagating operators
+ and the checks of the machine (ISWIM/Semantics/CEK/X86.agda).
 
  An unset register and the absent flag hold init, {ω}, so that reading
  them errs: %rdi and %rsi in main, %rax at the start of a definition,
@@ -23,10 +23,10 @@ open import Framework.GraphModel.DOpSig
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
-open import Semantics.GraphErr.Prim
-open import Untyped.Semantics.GraphErr.Frames using (Table; Store; init; read; _[_↦_]; frameᵐ; zeros; tables) public
+open import ISWIM.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Semantics.GraphErr.Frames using (Table; Store; init; read; _[_↦_]; frameᵐ; zeros; tables) public
 open import Language.Prim using (sub; eq)
-open import Language.X86 renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ)
+open import ISWIM.Language.X86 renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ)
 
 open import Data.Integer using (+_)
 open import Data.Nat using (ℕ; _≟_; _⊔_)

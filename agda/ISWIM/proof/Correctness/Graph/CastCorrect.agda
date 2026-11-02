@@ -1,8 +1,8 @@
 {-
 
-  Correctness of cast insertion (ISWIM → ISWIMᵀ, Compiler/Cast.agda)
-  in the graph model: the untyped semantics (Semantics/Graph/ISWIM.agda)
-  and the typed one (Semantics/Graph/Typed/ISWIM.agda) are equal.
+  Correctness of cast insertion (ISWIM → ISWIMᵀ, ISWIM/Compiler/Cast.agda)
+  in the graph model: the untyped semantics (ISWIM/Semantics/Graph/ISWIM.agda)
+  and the typed one (ISWIM/Semantics/Graph/Typed/ISWIM.agda) are equal.
 
   By induction on the term, for environments that agree up to the
   renaming r of the pass. A project is a guard (it keeps its operand
@@ -15,23 +15,23 @@
 
 -}
 
-module proof.Correctness.Graph.CastCorrect where
+module ISWIM.proof.Correctness.Graph.CastCorrect where
 
 open import Framework.Syntax.SyntaxUtil
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.TypedGraph using (let-single)
 open import proof.Semantics.Graph.Prim using (primD; primD-≃; primD-mono)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import proof.Semantics.Graph.ISWIM
-open import Compiler.CaptureScope using (Closed)
-open import proof.Compiler.SimplifyScope using (closed-ws)
-open import proof.Compiler.CastScope using (cast-closed-≡)
-open import Language.Typed.Type using (tfun; tint; tsum; ttup)
-open import Semantics.Graph.Typed.Ops using (projectᵍ; fun₂)
-import Semantics.Graph.Typed.ISWIM as T
-open import Compiler.Cast
+open import ISWIM.proof.Semantics.Graph.ISWIM
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.proof.Compiler.SimplifyScope using (closed-ws)
+open import ISWIM.proof.Compiler.CastScope using (cast-closed-≡)
+open import ISWIM.Language.Typed.Type using (tfun; tint; tsum; ttup)
+open import ISWIM.Semantics.Graph.Typed.Ops using (projectᵍ; fun₂)
+import ISWIM.Semantics.Graph.Typed.ISWIM as T
+open import ISWIM.Compiler.Cast
 
 open import Data.Nat using (suc)
 open import Data.Fin using (Fin; zero; suc; toℕ)

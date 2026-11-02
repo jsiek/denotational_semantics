@@ -2,10 +2,10 @@
 
   FPC (Plotkin's Fixed Point Calculus): a call-by-value λ-calculus,
   intrinsically typed, with iso-recursive types. The
-  source of the FPC compiler (agda/Mu/).
+  source of the FPC compiler (agda/FPC/).
 
   Tm Γ A is a term of type A in the context Γ (a list of closed types,
-  Mu/Language/Type.agda). The constructs are ISWIM's, typed, with
+  FPC/Language/Type.agda). The constructs are ISWIM's, typed, with
   call-by-value semantics: functions, application, constants, n-ary
   tuples and their components (get, by a typed index into the tuple's
   list of types), binary sums and case, the primitives on integers,
@@ -19,12 +19,12 @@
 
 -}
 
-module Mu.Language.FPC where
+module FPC.Language.FPC where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Mu.Language.Type
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Language.Type
+open import FPC.Framework.AllUtil using (All)
 
 open import Data.List using (_∷_)
 

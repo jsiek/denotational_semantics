@@ -26,15 +26,15 @@ open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
-open import Untyped.Language.Clos2 as L2
-open import Untyped.Language.Clos3 as L3
+open import ISWIM.Untyped.Language.Clos2 as L2
+open import ISWIM.Untyped.Language.Clos3 as L3
   renaming (AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
             _⦅_⦆ to _⦅_⦆'; ast to ast'; bind to bind'; clear to clear')
-open import Untyped.proof.Semantics.Graph.Clos2Iswim as S2
-open import Untyped.proof.Semantics.Graph.Clos3Iswim as S3 renaming
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim as S2
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos3Iswim as S3 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
-open import Untyped.Compiler.Concretize
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; Init; ρ₀; single⊆; ne-mem)
+open import ISWIM.Untyped.Compiler.Concretize
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; Init; ρ₀; single⊆; ne-mem)
 open import proof.Framework.GraphModel.Env using (nonempty-env; •-~)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _<_; _<?_)
@@ -51,7 +51,7 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary using (¬_; yes; no)
 open import Level using (lift; lower)
 
-module Untyped.proof.Correctness.Graph.ConcretizeCorrect where
+module ISWIM.Untyped.proof.Correctness.Graph.ConcretizeCorrect where
 
 {- Variables in Clos3 -----------------------------------------------------------}
 

@@ -2,7 +2,7 @@
 
   Correctness of the simplify pass (FPC → FPC) by a forward
   simulation of the target's machine by the source's, as for the untyped
-  simplify (proof/Correctness/CEK/SimplifySim.agda; see the design note
+  simplify (ISWIM/proof/Correctness/CEK/SimplifySim.agda; see the design note
   in Semantics/CEK/Smallstep.agda); Equivalent is symmetric.
 
   The target does less work than the source: the reductions simplify did
@@ -36,16 +36,16 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.SimplifySim where
+module FPC.proof.Correctness.AbstractMachines.SimplifySim where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as Pr
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Language.FPCSubst using (ren; travs; varK)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_; All₂; lookup₂; _<><₂_)
-open import Mu.proof.Compiler.SimplifyFacts as P
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Language.FPCSubst using (ren; travs; varK)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_; All₂; lookup₂; _<><₂_)
+open import FPC.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; Facts; self; info; under; known-as; shift-info; shift-known; simp; simps;
          lam?; is-lam; other; simp-call; size; inline-size; inline-fuel;
          simp-app; simp-let; simp-get; simp-case; simp-prim; simp-unfold; simplify; small; atom; value; values;
@@ -54,7 +54,7 @@ open import Mu.proof.Compiler.SimplifyFacts as P
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-import Mu.Semantics.AbstractMachines.FPC as S
+import FPC.Semantics.AbstractMachines.FPC as S
 
 open import Data.Bool using (Bool; true; false; _∧_; if_then_else_)
 open import Data.Empty using (⊥; ⊥-elim)

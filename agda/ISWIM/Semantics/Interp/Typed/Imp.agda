@@ -1,26 +1,26 @@
 {-
 
-  A clocked interpreter for Impᵀ (Language/Typed/Imp.agda), the output
+  A clocked interpreter for Impᵀ (ISWIM/Language/Typed/Imp.agda), the output
   of typed lift locals. A body runs in a frame typed by its context, the
   values of the slots assigned so far (Env Δ); x := e₁; e₂ (assign)
   assigns the value of e₁ to the next slot, which e₂ sees, and case
   assigns the payload to the next slot. An atom is read from the frame
   and cannot fail. The values are those of Clos5ᵀ
-  (Semantics/Interp/Typed/Clos5.agda), and as there a call runs
+  (ISWIM/Semantics/Interp/Typed/Clos5.agda), and as there a call runs
   definition f, in a frame of its environment (slot 0) and argument
   (slot 1). Simple expressions are shared with CFGᵀ
-  (Semantics/Interp/Typed/CFG.agda). See the design note in
+  (ISWIM/Semantics/Interp/Typed/CFG.agda). See the design note in
   Semantics/Interp/Clock.agda.
 
 -}
 
-module Semantics.Interp.Typed.Imp where
+module ISWIM.Semantics.Interp.Typed.Imp where
 
-open import Language.Typed.Type
-open import Language.Typed.Imp
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Imp
 open import Semantics.Interp.Clock
 open import Framework.Lookup using (_!_)
-open import Semantics.Interp.Typed.Clos5 using (module Vals)
+open import ISWIM.Semantics.Interp.Typed.Clos5 using (module Vals)
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

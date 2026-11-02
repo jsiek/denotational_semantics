@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed concretize (Clos2ᵀ → Clos3ᵀ) in the graph model
-  with errors (Semantics/GraphErr/Typed/{Clos2,Clos3}.agda).
+  with errors (ISWIM/Semantics/GraphErr/Typed/{Clos2,Clos3}.agda).
 
   ⟦ M ⟧ ρ₂ ≃ ⟦ concretize φ M ⟧₃ ρ₃ when each variable x of M means in ρ₂
   what its reference φ x (a variable, or a component of a tuple) means
@@ -14,21 +14,21 @@
 
 -}
 
-module proof.Correctness.GraphErr.ConcretizeCorrect where
+module ISWIM.proof.Correctness.GraphErr.ConcretizeCorrect where
 
 open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.Ops using (𝒯; ⋆; proj; 𝒯-consis)
 open import proof.Framework.GraphModel.Env using (Env; •-~)
-open import Language.Typed.Type using (Any)
-open import Language.Typed.Clos2
-import Language.Typed.Clos3 as T
-open import Semantics.GraphErr.Typed.Ops using (getᵗ; init)
-open import Semantics.GraphErr.Typed.Clos2
-open import proof.Semantics.GraphErr.Typed.Clos2
+open import ISWIM.Language.Typed.Type using (Any)
+open import ISWIM.Language.Typed.Clos2
+import ISWIM.Language.Typed.Clos3 as T
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (getᵗ; init)
+open import ISWIM.Semantics.GraphErr.Typed.Clos2
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2
   using (appᵗ-≃; getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃; binds-≃₂; fv-env-nth)
-open import proof.Semantics.GraphErr.Typed.Clos3 using (ΛΛᵐ-⋆; ok; con; code-fin) renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
-open import Compiler.Concretize
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos3 using (ΛΛᵐ-⋆; ok; con; code-fin) renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
+open import ISWIM.Compiler.Concretize
 
 open import Data.Fin using (Fin; zero; suc; toℕ)
 open import Data.List using (replicate)

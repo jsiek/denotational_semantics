@@ -12,7 +12,7 @@
 
 -}
 
-module Untyped.proof.Correctness.GraphErr.ConcretizeCorrect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.ConcretizeCorrect where
 
 open import Framework.Syntax.SigUtil
 open import Framework.Syntax.SyntaxUtil
@@ -24,15 +24,15 @@ open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Ops using (𝒯; ⋆; 𝒯-mono; 𝒯-consis)
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
-open import proof.Semantics.GraphErr.Prim
-open import Untyped.Language.Clos2 as L2
-open import Untyped.Language.Clos3 as L3
+open import ISWIM.proof.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Clos2 as L2
+open import ISWIM.Untyped.Language.Clos3 as L3
   renaming (AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
             _⦅_⦆ to _⦅_⦆'; ast to ast'; bind to bind'; clear to clear')
-open import Untyped.proof.Semantics.GraphErr.Clos2 as S2 using (apply-n; apply-n-pres; push; apply-push; push-plus; ⟦_⟧; ⟦_⟧ₐ; ⟦_⟧₊; ⟦⟧-monotone-arg)
-open import Untyped.proof.Semantics.GraphErr.Clos3 as S3 using (Clos3ᵐ-con) renaming
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos2 as S2 using (apply-n; apply-n-pres; push; apply-push; push-plus; ⟦_⟧; ⟦_⟧ₐ; ⟦_⟧₊; ⟦⟧-monotone-arg)
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos3 as S3 using (Clos3ᵐ-con) renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
-open import Untyped.Compiler.Concretize
+open import ISWIM.Untyped.Compiler.Concretize
 open import proof.Framework.GraphModel.Env using (Env; •-~)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _<_; _<?_)

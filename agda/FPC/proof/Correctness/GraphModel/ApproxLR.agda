@@ -17,7 +17,7 @@
   antitone in V (ApproxLR-⊆).
 
   This module is a proof module: the theorem statements do not use it.
-  Mu/proof/Correctness/GraphModel/SplitRel.agda builds the form of the
+  FPC/proof/Correctness/GraphModel/SplitRel.agda builds the form of the
   fundamental lemma on it (Approx).
 
 -}
@@ -43,7 +43,7 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
-module Mu.proof.Correctness.GraphModel.ApproxLR where
+module FPC.proof.Correctness.GraphModel.ApproxLR where
 
 {- application, D • E (Figure 3) -}
 _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value

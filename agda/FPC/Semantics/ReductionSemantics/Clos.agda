@@ -1,25 +1,25 @@
 {-
 
-  A reduction semantics for Closμ (Mu/Language/Clos.agda), as for
-  FPC (Mu/Semantics/ReductionSemantics/FPC.agda) and Clos2ᵀ
-  (Semantics/Reduction/Typed/Clos2.agda). A closure evaluates its free
+  A reduction semantics for Closμ (FPC/Language/Clos.agda), as for
+  FPC (FPC/Semantics/ReductionSemantics/FPC.agda) and Clos2ᵀ
+  (ISWIM/Semantics/Reduction/Typed/Clos2.agda). A closure evaluates its free
   variables left to right; applying it to a value W substitutes W and
   their values for the variables of its code, which no other
   substitution enters.
 
 -}
 
-module Mu.Semantics.ReductionSemantics.Clos where
+module FPC.Semantics.ReductionSemantics.Clos where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.Clos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.Clos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
-open import Mu.Framework.ReductionAll Obs o-error using (red-∷)
+open import FPC.Framework.ReductionAll Obs o-error using (red-∷)
 
 open import Data.Bool using (if_then_else_)
 open import Data.Integer using (ℤ; _-_; _≟_)

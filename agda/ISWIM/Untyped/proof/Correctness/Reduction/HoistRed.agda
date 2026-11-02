@@ -22,18 +22,18 @@
 
 -}
 
-module Untyped.proof.Correctness.Reduction.HoistRed where
+module ISWIM.Untyped.proof.Correctness.Reduction.HoistRed where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos4
-import Untyped.Language.Clos5 as C
-open import Untyped.Compiler.Hoist
-open import Untyped.proof.Compiler.HoistTable
+open import ISWIM.Untyped.Language.Clos4
+import ISWIM.Untyped.Language.Clos5 as C
+open import ISWIM.Untyped.Compiler.Hoist
+open import ISWIM.Untyped.proof.Compiler.HoistTable
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Untyped.proof.Semantics.Reduction.Clos4 as S
-import Untyped.proof.Semantics.Reduction.Clos5 as T
+import ISWIM.Untyped.proof.Semantics.Reduction.Clos4 as S
+import ISWIM.Untyped.proof.Semantics.Reduction.Clos5 as T
 import proof.Framework.Syntax.Subst Op sig as SS
 import proof.Framework.Syntax.Subst C.Op C.sig as TS
 import proof.Framework.Syntax.SubstRel Op sig C.Op C.sig as SubstRel

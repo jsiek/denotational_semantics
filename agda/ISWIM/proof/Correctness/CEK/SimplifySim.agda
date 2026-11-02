@@ -36,26 +36,26 @@
 
 -}
 
-module proof.Correctness.CEK.SimplifySim where
+module ISWIM.proof.Correctness.CEK.SimplifySim where
 
 open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Language.Prim using (int; bool; δ)
-open import proof.Compiler.SimplifyFacts as P
+open import ISWIM.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; Facts; self; info; under; known-as; shift-info; shift-known; simp; simp-args;
          lam?; is-lam; other; simp-call; size; inline-size; inline-fuel;
          simp-app; simp-let; simp-get; simp-case; simp-prim; simplify; small; atom; value; values;
          component; branch; int-of; prim-term; value-sv; small-sv; comp-inv; int-inv; branch-inl; branch-inr)
-open import Compiler.CaptureScope using (Closed)
-open import proof.Compiler.SimplifyScope using (closed-ws)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.proof.Compiler.SimplifyScope using (closed-ws)
 open import Framework.Syntax.Rename Op sig using (rename; rename-args; shift)
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.ListUtil
-import Semantics.CEK.ISWIM as S
+import ISWIM.Semantics.CEK.ISWIM as S
 
 open import Data.Bool using (Bool; true; false; _∧_)
 open import Data.Empty using (⊥; ⊥-elim)

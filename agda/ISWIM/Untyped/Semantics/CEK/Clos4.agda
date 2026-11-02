@@ -8,7 +8,7 @@
   the environment y, x: the argument is variable 0 and the environment
   variable 1. Only then does it check that L's value is code, like an
   indirect call instruction (the source languages check the operator
-  before the operand; see Semantics/CEK/ISWIM.agda). See the design note in
+  before the operand; see ISWIM/Semantics/CEK/ISWIM.agda). See the design note in
   Smallstep.agda.
 
   Observations: Obs has no pairs, and Clos4 uses a pair only to represent
@@ -17,12 +17,12 @@
 
 -}
 
-module Untyped.Semantics.CEK.Clos4 where
+module ISWIM.Untyped.Semantics.CEK.Clos4 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
-open import Untyped.Language.Clos4
+open import ISWIM.Untyped.Language.Clos4
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
 open import Framework.ListUtil

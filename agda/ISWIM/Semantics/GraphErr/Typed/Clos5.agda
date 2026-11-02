@@ -1,10 +1,10 @@
 {-
 
-  The semantics of Clos5ᵀ (Language/Typed/Clos5.agda) in the graph model
-  with errors: that of Clos4ᵀ (Semantics/GraphErr/Typed/Clos4.agda), with
+  The semantics of Clos5ᵀ (ISWIM/Language/Typed/Clos5.agda) in the graph model
+  with errors: that of Clos4ᵀ (ISWIM/Semantics/GraphErr/Typed/Clos4.agda), with
   the code of a function a reference to a global definition. Under a
   table T, the meanings of the definitions by their position from the
-  oldest (as in Untyped/Semantics/GraphErr/Clos5.agda), a reference f means
+  oldest (as in ISWIM/Untyped/Semantics/GraphErr/Clos5.agda), a reference f means
   T (lvl f); let binds a value of any type.
 
   The table of a program (tbl) gives each definition the meanings of
@@ -14,14 +14,14 @@
 
 -}
 
-module Semantics.GraphErr.Typed.Clos5 where
+module ISWIM.Semantics.GraphErr.Typed.Clos5 where
 
 open import Framework.GraphModel.ErrorPrelude
 open import Framework.GraphModel.Ops using (⋆; car; cdr)
-open import Semantics.GraphErr.Typed.Ops
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.Clos5
+open import ISWIM.Semantics.GraphErr.Typed.Ops
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Clos5
 
 open import Data.List using (List; _∷_; length; replicate)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

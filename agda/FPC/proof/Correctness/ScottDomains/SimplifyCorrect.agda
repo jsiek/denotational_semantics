@@ -1,8 +1,8 @@
 {-
 
   Correctness of the simplify pass (FPC → FPC) in Scott domains
-  (Mu/Semantics/ScottDomains/FPC.agda), as in the graph model
-  (Mu/proof/Correctness/GraphModel/SimplifyCorrect.agda), with equality of
+  (FPC/Semantics/ScottDomains/FPC.agda), as in the graph model
+  (FPC/proof/Correctness/GraphModel/SimplifyCorrect.agda), with equality of
   values in place of equality of sets.
 
   The main lemma (simp-ok): if what simp knows of each variable x is true
@@ -44,11 +44,11 @@ open import UF.Base using (ap₂; happly)
 
 open import Framework.Primitives using (Int)
 import Language.Prim as Pr
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Language.FPCSubst using (ren; exts; varK; travs)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
-open import Mu.proof.Compiler.SimplifyFacts as P
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Language.FPCSubst using (ren; exts; varK; travs)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; val; fun; Facts; self; info; under; known-as; shift-info; shift-known;
          simp; simps; simp-app; Lam?; lam?; is-lam; other; simp-call; simp-let; size; inline-size; inline-fuel;
          simp-get; simp-case; simp-prim; simp-unfold; simplify; small; value; component; branch; unfolded; int-of;
@@ -68,7 +68,7 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 open import Relation.Nullary using (does)
 
-module Mu.proof.Correctness.ScottDomains.SimplifyCorrect
+module FPC.proof.Correctness.ScottDomains.SimplifyCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -78,7 +78,7 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe hiding (component; branch; case; unroll) renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD; out)
-open import Mu.Semantics.ScottDomains.FPC pt fe pe
+open import FPC.Semantics.ScottDomains.FPC pt fe pe
 
 {- Renaming ---------------------------------------------------------------------}
 

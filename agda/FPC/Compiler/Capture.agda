@@ -1,18 +1,18 @@
 {-
 
-  Capture (FPC → Closμ), as typed capture (Compiler/Capture.agda):
+  Capture (FPC → Closμ), as typed capture (ISWIM/Compiler/Capture.agda):
   each function becomes a closure that captures every variable of its
   context, in order, so its body is unchanged: variable S x of the
   closure's code is the free variable x.
 
 -}
 
-module Mu.Compiler.Capture where
+module FPC.Compiler.Capture where
 
-open import Mu.Language.Type
-open import Mu.Language.FPC
-import Mu.Language.Clos as T
-open import Mu.Framework.AllUtil using (All; []; _∷_; tab)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+import FPC.Language.Clos as T
+open import FPC.Framework.AllUtil using (All; []; _∷_; tab)
 
 capture : ∀ {Γ A} → Tm Γ A → T.Tm Γ A
 encs : ∀ {Γ Δ} → All (Tm Γ) Δ → All (T.Tm Γ) Δ

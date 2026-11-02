@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed explicate control (Impᵀ → CFGᵀ,
-  Compiler/Explicate.agda) by a forward simulation of the Impᵀ
+  ISWIM/Compiler/Explicate.agda) by a forward simulation of the Impᵀ
   machine by the CFGᵀ machine (see the design note in
   Semantics/CEK/Smallstep.agda).
 
@@ -29,21 +29,21 @@
 
 -}
 
-module proof.Correctness.CEK.ExplicateSim where
+module ISWIM.proof.Correctness.CEK.ExplicateSim where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
 open import Framework.Lookup using (forget)
-import Language.Typed.Imp as Imp
+import ISWIM.Language.Typed.Imp as Imp
 open Imp using (simple; assign; case)
-open import Language.Typed.CFG
-open import Compiler.Explicate
+open import ISWIM.Language.Typed.CFG
+open import ISWIM.Compiler.Explicate
 open import proof.Framework.Lookup using (map-!)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; Reach)
 open import proof.Semantics.CEK.Simulation
   using (Answers≺; stops; steps; stutters; steps₁≺; after≺; answers-at; FSim; Equivalent; equivalent)
-import Semantics.CEK.Typed.Imp as I
-import Semantics.CEK.Typed.CFG as G
+import ISWIM.Semantics.CEK.Typed.Imp as I
+import ISWIM.Semantics.CEK.Typed.CFG as G
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

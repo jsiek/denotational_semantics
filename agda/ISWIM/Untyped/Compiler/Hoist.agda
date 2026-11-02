@@ -5,7 +5,7 @@ open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_�
 open import Framework.Syntax.SyntaxUtil
 open import Framework.Syntax.SigUtil
 
-module Untyped.Compiler.Hoist where
+module ISWIM.Untyped.Compiler.Hoist where
   {-
    The hoist pass (Clos4 → Clos5): the code of every function becomes
    a global definition, as in the hoisting step of
@@ -18,8 +18,8 @@ module Untyped.Compiler.Hoist where
    functions nested in N become definitions first, then adds N as a new
    definition and replaces the code by a reference to it.
   -}
-  open import Untyped.Language.Clos4 as Source
-  open import Untyped.Language.Clos5 as Target
+  open import ISWIM.Untyped.Language.Clos4 as Source
+  open import ISWIM.Untyped.Language.Clos5 as Target
     renaming (clear to clear'; bind to bind'; ast to ast';
               AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
               _⦅_⦆ to _⦅_⦆'; nil to nil'; cons to cons')

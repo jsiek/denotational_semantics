@@ -1,27 +1,27 @@
 {-
 
-  Smoke tests of the typed compiler (Compiler/Pipeline.agda), from
-  untyped ISWIM to X86ᵀ, run on the X86ᵀ machine (Semantics/CEK/Typed/X86.agda)
+  Smoke tests of the typed compiler (ISWIM/Compiler/Pipeline.agda), from
+  untyped ISWIM to X86ᵀ, run on the X86ᵀ machine (ISWIM/Semantics/CEK/Typed/X86.agda)
   and on the ISWIM machine, by computation.
 
 -}
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
-open import Compiler.Pipeline using (compile-x86)
+open import ISWIM.Compiler.Pipeline using (compile-x86)
 open import Semantics.Observation using (Obs; o-const; o-error)
 open import Semantics.CEK.Smallstep using (Machine; next; stop)
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Semantics.CEK.Typed.X86 as X86ᵀₘ
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 open import Data.Integer using (+_)
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ; zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module proof.Compiler.Examples.PipelineExample where
+module ISWIM.proof.Compiler.Examples.PipelineExample where
 
 {- run a machine for at most n steps -}
 run : ℕ → (L : Machine) → Maybe Obs

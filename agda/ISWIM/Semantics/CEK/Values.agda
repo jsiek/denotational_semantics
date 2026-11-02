@@ -1,14 +1,14 @@
 {-
 
-  The values of the X86 machine (Semantics/CEK/X86.agda), which the
-  machines of the preserved untyped Clos5, Imp and CFG (agda/Untyped/)
+  The values of the X86 machine (ISWIM/Semantics/CEK/X86.agda), which the
+  machines of the preserved untyped Clos5, Imp and CFG (agda/ISWIM/Untyped/)
   share: code pointers, pairs, constants, tuples and injections, their
   observations, and the primitives on them, and frames of slots. Code
   pointers and pairs (closures) are observed as functions (o-fun).
 
 -}
 
-module Semantics.CEK.Values where
+module ISWIM.Semantics.CEK.Values where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; Out; int; bool)

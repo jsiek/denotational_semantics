@@ -2,7 +2,7 @@
 
   For X86ᵀ adequacy (X86Soundness.agda), lemmas about the semantics of
   X86ᵀ in the graph model with errors
-  (Semantics/GraphErr/Typed/X86.agda): the meaning of a sequence is
+  (ISWIM/Semantics/GraphErr/Typed/X86.agda): the meaning of a sequence is
   monotone in the meanings of the blocks it may jump to, and in the
   slots, registers and flag that its type has (Le); it does not read the
   others (mono), so a write that the type forgets (an unset register,
@@ -11,7 +11,7 @@
 
 -}
 
-module proof.Adequacy.GraphErr.X86Mono where
+module ISWIM.proof.Adequacy.GraphErr.X86Mono where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; _•_)
@@ -19,19 +19,19 @@ open import proof.Framework.GraphModel.ErrorMonad using (≫=-mono; binds-mono; 
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
 open import proof.Framework.GraphModel.Continuity using (pair-good; 𝒯-good; inl-good; inr-good)
-open import proof.Semantics.GraphErr.Typed.Clos2 using (prim-good; project-good)
-open import proof.Correctness.GraphErr.SelectCorrect using (drop-idx)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (prim-good; project-good)
+open import ISWIM.proof.Correctness.GraphErr.SelectCorrect using (drop-idx)
 open import Framework.GraphModel.DOpSig using (■)
 open import Framework.GraphModel.Ops using (⋆; 𝒞; payloadD; 𝒯) renaming (inl to inlD; inr to inrD; proj to projD)
 open import Framework.GraphModel.ErrorMonad using (Λᵐ; isinlD; _⇂_; ValPayload)
 open import Framework.GraphModel.Env using (Env)
-open import Semantics.GraphErr.Typed.Ops using (init; primᵗ; projectᵠ)
-open import Semantics.GraphErr.Typed.Imp using (Table; letᵗ)
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import Semantics.GraphErr.Typed.CFG using (BEnv; drop)
-open import Semantics.GraphErr.Typed.X86
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.X86
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (init; primᵗ; projectᵠ)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (Table; letᵗ)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (BEnv; drop)
+open import ISWIM.Semantics.GraphErr.Typed.X86
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.X86
 open import Framework.Membership using (_⊑_; ⊑-∋)
 
 open import Data.Bool using (true; false)

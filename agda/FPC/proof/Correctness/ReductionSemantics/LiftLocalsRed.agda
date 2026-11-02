@@ -2,8 +2,8 @@
 
   Correctness of lift locals (Monμ → Impμ) by a forward simulation of
   the GlobalFunμ reduction semantics of the Monμ program (its embedding,
-  ⌜_⌝ₚ) by the Impμ machine (Mu/Semantics/AbstractMachines/Imp.agda), as for typed
-  lift locals (proof/Correctness/Reduction/LiftLocalsRed.agda).
+  ⌜_⌝ₚ) by the Impμ machine (FPC/Semantics/AbstractMachines/Imp.agda), as for typed
+  lift locals (ISWIM/proof/Correctness/Reduction/LiftLocalsRed.agda).
 
   A machine state decodes to a term (D): its expression, with the values
   of its frame substituted for the slots (env), in the stack of lets of
@@ -17,33 +17,33 @@
   Unlike the typed pipeline's, the continuations of the Impμ machine do
   not say the type of the result, so a state decodes to a pair of a type
   (fin) and a term of that type, and the source runs on such pairs
-  (redΣ, which is equivalent: pairs, Mu/proof/Framework/ReductionAll.agda).
+  (redΣ, which is equivalent: pairs, FPC/proof/Framework/ReductionAll.agda).
   Nothing fails.
 
 -}
 
-module Mu.proof.Correctness.ReductionSemantics.LiftLocalsRed where
+module FPC.proof.Correctness.ReductionSemantics.LiftLocalsRed where
 
-open import Mu.Language.Type hiding (_[_])
-import Mu.Language.GlobalFun as C
+open import FPC.Language.Type hiding (_[_])
+import FPC.Language.GlobalFun as C
 open C using (Tm; Code; DSig; sig; Args)
-import Mu.Language.Mon as Mon
+import FPC.Language.Mon as Mon
 open Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ₚ)
-open import Mu.Language.Imp
-open import Mu.Compiler.LiftLocals using (lift; lift-program)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to All-map)
-open import Mu.proof.Framework.AllProp using (lookup-map)
+open import FPC.Language.Imp
+open import FPC.Compiler.LiftLocals using (lift; lift-program)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to All-map)
+open import FPC.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation
 open import Framework.Smallstep Obs using (Machine; Next; next; stop; Step; Steps; zero; suc; ε; _◅_)
 open import proof.Framework.Smallstep Obs using (plus; step⁺)
 open import proof.Framework.Simulation Obs using (Answers≺; stops; steps; stutters; runs; Lag; lag; lag-fsim; equivalent; answers-at; equiv-trans)
 open import proof.Framework.Reduction Obs o-error using (Red; val; error; to; step-in; toNext; reduction; Frame; frame; frame-id; frame-∘; val-in; step-in-to)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_; obsΣ; redΣ; pairs)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_; obsΣ; redΣ; pairs)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Mu.proof.Semantics.ReductionSemantics.GlobalFun as T
+import FPC.proof.Semantics.ReductionSemantics.GlobalFun as T
 open T using (Value; value-red; sub; exts; tmK; _•_; ∅; _[_])
-import Mu.Semantics.AbstractMachines.Imp as I
-import Mu.Semantics.AbstractMachines.GlobalFun as C5ₘ
+import FPC.Semantics.AbstractMachines.Imp as I
+import FPC.Semantics.AbstractMachines.GlobalFun as C5ₘ
 open I using (Val; code; pack; const; tup; inl; inr; fold; Env; Res; value; call; Cont; halt; assignK; State; eval)
 import Language.Prim as P
 

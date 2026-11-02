@@ -1,4 +1,4 @@
-module Untyped.Language.CFG where
+module ISWIM.Untyped.Language.CFG where
 {-
 
  CFG, the language after the explicate-control pass
@@ -30,7 +30,7 @@ module Untyped.Language.CFG where
 
 -}
 
-open import Untyped.Language.Imp using (Atm; Simple) public
+open import ISWIM.Untyped.Language.Imp using (Atm; Simple) public
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.Maybe using (Maybe; just; nothing)

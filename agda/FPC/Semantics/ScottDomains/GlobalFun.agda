@@ -1,11 +1,11 @@
 {-
 
-  The semantics of GlobalFunμ (Mu/Language/GlobalFun.agda) in Scott domains, as
-  that of PairClosμ (Mu/Semantics/ScottDomains/PairClos.agda), given a table T of the
+  The semantics of GlobalFunμ (FPC/Language/GlobalFun.agda) in Scott domains, as
+  that of PairClosμ (FPC/Semantics/ScottDomains/PairClos.agda), given a table T of the
   meanings of the global definitions: fun-ref f means T f. As in the
-  graph model (Mu/Semantics/GraphModel/GlobalFun.agda), the definitions of a
+  graph model (FPC/Semantics/GraphModel/GlobalFun.agda), the definitions of a
   program are given meaning newest first, each with the table of the
-  older ones (tables, Mu/Semantics/ScottDomains/Ops.agda), and main with the
+  older ones (tables, FPC/Semantics/ScottDomains/Ops.agda), and main with the
   table of all of them.
 
 -}
@@ -15,12 +15,12 @@ open import UF.FunExt using (Fun-Ext)
 open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import Data.List using (List; length)
 
-module Mu.Semantics.ScottDomains.GlobalFun
+module FPC.Semantics.ScottDomains.GlobalFun
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -31,7 +31,7 @@ open import Framework.Scott.Domain pt fe pe using (𝔻)
 open import Framework.Scott.Ops pt fe pe using (Env; const; proj; car; cdr) renaming (pair to pairᵈ; app to appᵈ; inl to inlᵈ; inr to inrᵈ)
 open import Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
 
 ⟦_⟧[_] : ∀ {Σ Γ A} → Tm Σ Γ A → Table Σ → Den Env
 ⟦_⟧s[_] : ∀ {Σ Γ Δ} → All (Tm Σ Γ) Δ → Table Σ → Dens (length Δ)

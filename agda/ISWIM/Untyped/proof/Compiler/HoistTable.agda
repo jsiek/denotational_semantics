@@ -8,11 +8,11 @@
 
 -}
 
-module Untyped.proof.Compiler.HoistTable where
+module ISWIM.Untyped.proof.Compiler.HoistTable where
 
-open import Untyped.Language.Clos4
-open import Untyped.Language.Clos5 using (global)
-open import Untyped.Compiler.Hoist
+open import ISWIM.Untyped.Language.Clos4
+open import ISWIM.Untyped.Language.Clos5 using (global)
+open import ISWIM.Untyped.Compiler.Hoist
 open import proof.Framework.ListUtil using (_‼_; ‼-++)
 
 open import Data.List using ([]; _∷_; _++_; [_]; length; reverse)

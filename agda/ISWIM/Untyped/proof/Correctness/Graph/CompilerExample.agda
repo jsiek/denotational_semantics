@@ -15,19 +15,19 @@
 open import Framework.Primitives
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
-import Untyped.Language.Clos4 as L4
-import Untyped.Language.Clos5 as L5
-open import Untyped.Compiler.Hoist using (hoist)
-open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
-open import Untyped.proof.Correctness.Graph.CaptureExample using (prog; prog-is-7)
-open import Untyped.proof.Correctness.Graph.CompilerCorrect
+import ISWIM.Untyped.Language.Clos4 as L4
+import ISWIM.Untyped.Language.Clos5 as L5
+open import ISWIM.Untyped.Compiler.Hoist using (hoist)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
+open import ISWIM.Untyped.proof.Correctness.Graph.CaptureExample using (prog; prog-is-7)
+open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect
 
 open import Framework.Syntax.SyntaxUtil
 open import Data.List using ([]; _∷_; length)
 open import Data.Product using (proj₁)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module Untyped.proof.Correctness.Graph.CompilerExample where
+module ISWIM.Untyped.proof.Correctness.Graph.CompilerExample where
 
 {- λ X. λ Y. (λ X'. λ Y'. 5) in Clos4: code whose body is more code -}
 nested : L4.AST

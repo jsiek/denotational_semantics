@@ -2,8 +2,8 @@
 
   The simplify pass (FPC → FPC), a simplified version of the
   source optimizer cp0 of Chez Scheme, the first pass of compile
-  (Mu/Compiler/Pipeline.agda): the untyped simplify
-  (Compiler/Simplify.agda), intrinsically typed, with the same design,
+  (FPC/Compiler/Pipeline.agda): the untyped simplify
+  (ISWIM/Compiler/Simplify.agda), intrinsically typed, with the same design,
   rules and policy, and one more known-value rule, for unfold.
 
   In one recursive pass, simp carries what it knows about each variable
@@ -57,19 +57,19 @@
   concrete type (unfold's type A [ μ A ] does not unify with one; the
   design note's green slime); for the same reason lam? recognizes a
   function at any type. Typed tuples need no test of their length.
-  Renaming is the kit's (Mu/Language/FPCSubst.agda), which the
+  Renaming is the kit's (FPC/Language/FPCSubst.agda), which the
   reduction semantics shares.
 
 -}
 
-module Mu.Compiler.Simplify where
+module FPC.Compiler.Simplify where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; sub; eq)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Language.FPCSubst using (ren)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Language.FPCSubst using (ren)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 
 open import Data.Bool using (Bool; true; false; _∧_; if_then_else_)
 open import Data.Integer using (ℤ; _-_; _≟_)

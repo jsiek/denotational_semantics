@@ -1,6 +1,6 @@
 {-
 
-  Correctness of select instructions (CFGᵀ → X86ᵀ, Compiler/Select.agda):
+  Correctness of select instructions (CFGᵀ → X86ᵀ, ISWIM/Compiler/Select.agda):
   a simulation of the CFGᵀ machine by the X86ᵀ machine (Both,
   proof/Framework/Both.agda).
 
@@ -16,26 +16,26 @@
 
 -}
 
-module proof.Correctness.CEK.SelectSim where
+module ISWIM.proof.Correctness.CEK.SelectSim where
 
 open import Language.Prim using (sub; eq)
-open import Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import Framework.Membership using (_⊑_)
 open import Framework.Lookup using (_!_; forget)
 open import proof.Framework.Lookup using (map-!)
-import Language.Typed.CFG as C
+import ISWIM.Language.Typed.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
-import Language.Typed.Imp as I
-open import Language.Typed.X86
-open import Compiler.Select
+import ISWIM.Language.Typed.Imp as I
+open import ISWIM.Language.Typed.X86
+open import ISWIM.Compiler.Select
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Semantics.CEK.Smallstep using (Machine; Next; next; stop; Star; ε; _◅_; _◅◅_; Plus; plus; step⁺; star-plus; plus-star; plus→star; Final)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)
 open import proof.Framework.Both Obs using (Both; halt; move; both-fsim)
-import Semantics.CEK.Typed.X86 as X
-import Semantics.CEK.Typed.CFG as G
+import ISWIM.Semantics.CEK.Typed.X86 as X
+import ISWIM.Semantics.CEK.Typed.CFG as G
 open G using (Res; value; fail; call; pack; code; choose)
-open import Semantics.CEK.Typed.Imp using (ok?)
+open import ISWIM.Semantics.CEK.Typed.Imp using (ok?)
 open X using (proj?; inl; inr; ⟨_,_,_,_⟩)
 
 open import Data.List using (List; []; _∷_; length)

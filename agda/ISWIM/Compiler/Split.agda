@@ -11,11 +11,11 @@
 
 -}
 
-module Compiler.Split where
+module ISWIM.Compiler.Split where
 
-open import Language.Typed.Type
-open import Language.Typed.Clos3
-import Language.Typed.Clos4 as T
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos3
+import ISWIM.Language.Typed.Clos4 as T
 
 open import Data.List using ([]; _∷_)
 open import Data.Vec using (Vec; []; _∷_)

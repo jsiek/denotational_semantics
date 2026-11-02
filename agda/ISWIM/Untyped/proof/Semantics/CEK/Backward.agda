@@ -29,7 +29,7 @@
 
 -}
 
-module Untyped.proof.Semantics.CEK.Backward where
+module ISWIM.Untyped.proof.Semantics.CEK.Backward where
 
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep

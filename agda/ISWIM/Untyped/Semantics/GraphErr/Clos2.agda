@@ -1,4 +1,4 @@
-module Untyped.Semantics.GraphErr.Clos2 where
+module ISWIM.Untyped.Semantics.GraphErr.Clos2 where
 {-
 
  The semantics of Clos2 in the graph model with errors: a closure binds its free variables left to right, and is a
@@ -13,8 +13,8 @@ open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
-open import Semantics.GraphErr.Prim
-open import Untyped.Language.Clos2
+open import ISWIM.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Clos2
 open import Framework.GraphModel.Env using (Env)
 open import Framework.abt.Fold2 Op sig using (fold)
 

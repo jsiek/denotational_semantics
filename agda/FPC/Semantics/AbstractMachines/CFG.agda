@@ -1,8 +1,8 @@
 {-
 
-  A machine for CFGμ (Mu/Language/CFG.agda), with the values, frames
-  and simple expressions of the Impμ machine (Mu/Semantics/AbstractMachines/Imp.agda),
-  as the CFGᵀ machine (Semantics/CEK/Typed/CFG.agda). A state runs a
+  A machine for CFGμ (FPC/Language/CFG.agda), with the values, frames
+  and simple expressions of the Impμ machine (FPC/Semantics/AbstractMachines/Imp.agda),
+  as the CFGᵀ machine (ISWIM/Semantics/CEK/Typed/CFG.agda). A state runs a
   tail in a frame, with the blocks it may jump to:
     exec t φ bs κ
   One step runs a statement:
@@ -19,15 +19,15 @@
 
 -}
 
-module Mu.Semantics.AbstractMachines.CFG where
+module FPC.Semantics.AbstractMachines.CFG where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_)
-open import Mu.Language.CFG
+open import FPC.Language.CFG
 open import Framework.Lookup using (forget)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import Mu.Semantics.AbstractMachines.Imp
+open import FPC.Semantics.AbstractMachines.Imp
   using (Val; code; pack; Frame; obs; choose; atom; Res; value; call; run) public
 
 open import Data.List using (List; []; _∷_)

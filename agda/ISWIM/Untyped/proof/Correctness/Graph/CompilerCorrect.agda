@@ -17,27 +17,27 @@
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
-open import Language.ISWIM
-open import proof.Semantics.Graph.ISWIM
-open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.Compiler.Prune using (prune-program)
-open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
-open import Compiler.Simplify using (simplify)
-open import Untyped.proof.Correctness.Graph.CaptureCorrect using (capture-correct-closed)
-open import Untyped.proof.Correctness.Graph.PruneCorrect using (prune-correct-closed)
-open import Untyped.proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct-closed)
-open import Untyped.proof.Correctness.Graph.SplitPreserve
+open import ISWIM.Language.ISWIM
+open import ISWIM.proof.Semantics.Graph.ISWIM
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
+open import ISWIM.proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.proof.Correctness.Graph.CaptureCorrect using (capture-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.Graph.PruneCorrect using (prune-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitPreserve
   using (split-correct-const; split-correct-nonempty)
-open import Untyped.proof.Correctness.Graph.HoistCorrect using (hoist-correct)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (hoist-correct)
 
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
-module Untyped.proof.Correctness.Graph.CompilerCorrect where
+module ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect where
 
-open import Untyped.Compiler.Pipeline using (compile; compile₄) public
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile₄) public
 
 {- D and D' produce the same constants, and one is nonempty iff the other is -}
 infix 4 _⇔_

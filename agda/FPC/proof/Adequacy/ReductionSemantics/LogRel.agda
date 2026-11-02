@@ -1,11 +1,11 @@
 {-
 
   Adequacy of the graph model for the reduction semantics of FPC
-  (Mu/Semantics/ReductionSemantics/FPC.agda), as Plotkin's for PCF:
+  (FPC/Semantics/ReductionSemantics/FPC.agda), as Plotkin's for PCF:
   every element of the denotation of a closed program is witnessed by
   the value the program reduces to.
 
-  As for the clocked interpreter (Mu/proof/Adequacy/LogRel.agda): a
+  As for the clocked interpreter (FPC/proof/Adequacy/LogRel.agda): a
   logical relation 𝕍 d V, by recursion on the denotational value d (and
   on the folds of V), relates a constant to itself, a function entry
   U ↦ w to the λs whose body, with any value related to every element
@@ -20,7 +20,7 @@
 
 -}
 
-module Mu.proof.Adequacy.ReductionSemantics.LogRel where
+module FPC.proof.Adequacy.ReductionSemantics.LogRel where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (sub; eq) renaming (δ to δᴾ)
@@ -29,16 +29,16 @@ open import proof.Framework.GraphModel.Domain renaming (const to dconst)
 open import proof.Framework.GraphModel.Ops using (nthD)
 open import proof.Semantics.Graph.Prim using () renaming (out to dout)
 import proof.Framework.GraphModel.Env as E
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.FPC
-open import Mu.Language.FPCSubst using (exts; tmK; travs)
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
-open import Mu.proof.Semantics.ReductionSemantics.FPC
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.FPC
+open import FPC.Language.FPCSubst using (exts; tmK; travs)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.proof.Semantics.ReductionSemantics.FPC
   using (red; reds; obs; out; _[_]; β; get?; case?; prim?; unfold?; value-red; exts-[]; lam; lit; tuple; inl; inr; fold)
   renaming (Value to Val; _•_ to _•ₛ_; sub to subst-tm)
 open import Semantics.Observation using (Obs; o-error; o-const)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_; each-lookup)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_; each-lookup)
 open import Semantics.Reduction.Smallstep using (Red; val; error; to; step-in)
 open import proof.Framework.Reduction Obs o-error using (Star*; ε; _◅_; _◅◅_; Frame; frame; star-in; val-in)
 

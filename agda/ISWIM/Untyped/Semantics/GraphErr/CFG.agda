@@ -1,4 +1,4 @@
-module Untyped.Semantics.GraphErr.CFG where
+module ISWIM.Untyped.Semantics.GraphErr.CFG where
 {-
 
  The semantics of CFG (Language/CFG.agda) in the graph model with
@@ -14,8 +14,8 @@ module Untyped.Semantics.GraphErr.CFG where
 open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.ErrorMonad
-open import Untyped.Semantics.GraphErr.Imp public
-open import Untyped.Language.CFG
+open import ISWIM.Untyped.Semantics.GraphErr.Imp public
+open import ISWIM.Untyped.Language.CFG
 
 open import Data.Nat using (ℕ; _≟_; _⊔_)
 open import Data.List using (List; []; _∷_; length)

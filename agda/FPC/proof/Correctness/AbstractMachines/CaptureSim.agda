@@ -2,7 +2,7 @@
 
   Correctness of capture (FPC → Closμ) by a forward simulation
   between the typed machines, as for typed capture
-  (proof/Correctness/CEK/CaptureSim.agda).
+  (ISWIM/proof/Correctness/CEK/CaptureSim.agda).
 
   The machines run in lock step, except that evaluating a function (one
   FPC step) takes several Closμ steps: the closure evaluates the
@@ -17,22 +17,22 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.CaptureSim where
+module FPC.proof.Correctness.AbstractMachines.CaptureSim where
 
-open import Mu.Language.Type
-open import Mu.Language.FPC
-import Mu.Language.Clos as C2
-open import Mu.Compiler.Capture
-open import Mu.Framework.AllUtil using (All; []; _∷_; tab; lookup; _<><_; _<><ᵃ_; All₂; lookup₂; _<><₂_; tab-lookup₂)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+import FPC.Language.Clos as C2
+open import FPC.Compiler.Capture
+open import FPC.Framework.AllUtil using (All; []; _∷_; tab; lookup; _<><_; _<><ᵃ_; All₂; lookup₂; _<><₂_; tab-lookup₂)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-import Mu.Semantics.AbstractMachines.FPC as Src
-import Mu.Semantics.AbstractMachines.Clos as Tgt
+import FPC.Semantics.AbstractMachines.FPC as Src
+import FPC.Semantics.AbstractMachines.Clos as Tgt
 
 open import Data.List using (List; []; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 
-open import Mu.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C2.Tm (A ∷ Δ) B} capture
+open import FPC.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C2.Tm (A ∷ Δ) B} capture
 
 {- The simulation relation -----------------------------------------------------}
 

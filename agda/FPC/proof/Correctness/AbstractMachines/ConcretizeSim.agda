@@ -2,7 +2,7 @@
 
   Correctness of concretize (Closμ → EnvClosμ) by a forward simulation
   between the typed machines, as for typed concretize
-  (proof/Correctness/CEK/ConcretizeSim.agda).
+  (ISWIM/proof/Correctness/CEK/ConcretizeSim.agda).
 
   The machines run in lock step, except that a free variable of a
   closure's code, read in one Closμ step, becomes get i (` 1), which
@@ -20,22 +20,22 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.ConcretizeSim where
+module FPC.proof.Correctness.AbstractMachines.ConcretizeSim where
 
-open import Mu.Language.Type
-open import Mu.Language.Clos
-import Mu.Language.EnvClos as C3
-open import Mu.Compiler.Concretize
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
+open import FPC.Language.Type
+open import FPC.Language.Clos
+import FPC.Language.EnvClos as C3
+open import FPC.Compiler.Concretize
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-import Mu.Semantics.AbstractMachines.Clos as Src
-import Mu.Semantics.AbstractMachines.EnvClos as Tgt
+import FPC.Semantics.AbstractMachines.Clos as Src
+import FPC.Semantics.AbstractMachines.EnvClos as Tgt
 
 open import Data.List using ([]; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 
-open import Mu.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C3.Tm (A ∷ tup Δ ∷ []) B} (concretize fv-ref)
+open import FPC.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C3.Tm (A ∷ tup Δ ∷ []) B} (concretize fv-ref)
 
 {- The simulation relation -----------------------------------------------------}
 

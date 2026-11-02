@@ -1,10 +1,10 @@
 {-
 
   Soundness and adequacy of the graph model of X86μ
-  (Mu/Semantics/GraphModel/X86.agda, ⟦_⟧ₜ) with respect to the X86μ clocked
-  interpreter (Mu/Semantics/ClockedInterpreters/X86.agda), direct, as
-  Mu/proof/Adequacy/FPC.agda is for FPC (and
-  Mu/proof/Adequacy/AbstractMachines/X86.agda for the X86μ machine):
+  (FPC/Semantics/GraphModel/X86.agda, ⟦_⟧ₜ) with respect to the X86μ clocked
+  interpreter (FPC/Semantics/ClockedInterpreters/X86.agda), direct, as
+  FPC/proof/Adequacy/FPC.agda is for FPC (and
+  FPC/proof/Adequacy/AbstractMachines/X86.agda for the X86μ machine):
 
     adequacy (X86LogRel.agda), for every program: every d ∈ ⟦ P ⟧ₜ is
       related to the value that the interpreter returns from some clock
@@ -22,26 +22,26 @@
 
 -}
 
-module Mu.proof.Adequacy.X86 where
+module FPC.proof.Adequacy.X86 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
-open import Mu.proof.Semantics.GraphModel.Ops using (ConT; tables)
-open import Mu.Language.Type using (Type)
-open import Mu.Language.X86 using (DSig; Body; called; entry; Program; program; body)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Compiler.Pipeline using (compile)
-open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ₜ; codeₜ)
+open import FPC.proof.Semantics.GraphModel.Ops using (ConT; tables)
+open import FPC.Language.Type using (Type)
+open import FPC.Language.X86 using (DSig; Body; called; entry; Program; program; body)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Compiler.Pipeline using (compile)
+open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation using (o-const; _⇔_)
 open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome; Terminates; Diverges)
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import Mu.Semantics.ClockedInterpreters.X86 using (sem)
-open import Mu.Framework.AllUtil using (All)
-open import Mu.proof.Adequacy.X86Compiled using (Contains; compiled)
-open import Mu.proof.Adequacy.Soundness using (Holds; timeout; ret)
-import Mu.proof.Adequacy.X86LogRel as LR
-import Mu.proof.Adequacy.X86Soundness as S
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.ClockedInterpreters.X86 using (sem)
+open import FPC.Framework.AllUtil using (All)
+open import FPC.proof.Adequacy.X86Compiled using (Contains; compiled)
+open import FPC.proof.Adequacy.Soundness using (Holds; timeout; ret)
+import FPC.proof.Adequacy.X86LogRel as LR
+import FPC.proof.Adequacy.X86Soundness as S
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; [])

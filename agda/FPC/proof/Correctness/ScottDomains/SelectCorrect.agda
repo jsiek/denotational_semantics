@@ -1,9 +1,9 @@
 {-
 
   Correctness of select instructions (CFGμ → X86μ,
-  Mu/Compiler/Select.agda) in Scott domains
-  (Mu/Semantics/ScottDomains/{CFG,X86}.agda), as in the graph model
-  (Mu/proof/Correctness/GraphModel/SelectCorrect.agda), with equality of
+  FPC/Compiler/Select.agda) in Scott domains
+  (FPC/Semantics/ScottDomains/{CFG,X86}.agda), as in the graph model
+  (FPC/proof/Correctness/GraphModel/SelectCorrect.agda), with equality of
   values in place of equality of sets.
 
   The X86μ frame is the CFGμ frame, a slot write binds as CFGμ's seq
@@ -38,15 +38,15 @@ open import UF.Base using (ap₂; happly)
 
 open import Language.Prim using (sub; eq)
 open import Framework.Membership using (_⊑_; here⊑)
-open import Mu.Language.Type
-import Mu.Language.Imp as I
-import Mu.Language.CFG as C
+open import FPC.Language.Type
+import FPC.Language.Imp as I
+import FPC.Language.CFG as C
 open C using (DSig; Args; Tail; return; goto; _▷_)
-open import Mu.Language.X86 using () renaming (Body to X86Body)
-import Mu.Language.X86 as X86b
-open import Mu.Language.X86 using (Seq; Atm; var; rax; rdi; rsi; St; st; called; reg; retq; _∷_; movq; slot)
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
-open import Mu.Compiler.Select using (Out; ret; to; after; dst; sel; tail; atms; depth; depth-≥; blocks-depth; def-body; select)
+open import FPC.Language.X86 using () renaming (Body to X86Body)
+import FPC.Language.X86 as X86b
+open import FPC.Language.X86 using (Seq; Atm; var; rax; rdi; rsi; St; st; called; reg; retq; _∷_; movq; slot)
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
+open import FPC.Compiler.Select using (Out; ret; to; after; dst; sel; tail; atms; depth; depth-≥; blocks-depth; def-body; select)
   renaming (blocks to sel-blocks)
 open import Framework.abt.GSubst using (_•_)
 open import Data.List using (List; []; _∷_; length)
@@ -57,7 +57,7 @@ open import Data.Maybe using (nothing)
 open import Data.Bool using (false)
 import Relation.Binary.PropositionalEquality as Eq
 
-module Mu.proof.Correctness.ScottDomains.SelectCorrect
+module FPC.proof.Correctness.ScottDomains.SelectCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -67,12 +67,12 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; pair to pairᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
-import Mu.Semantics.ScottDomains.CFG pt fe pe as CS
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
+import FPC.Semantics.ScottDomains.CFG pt fe pe as CS
 open CS using (⟦_⟧ᵗ; Meanings; drop)
-import Mu.Semantics.ScottDomains.X86 pt fe pe as X86
+import FPC.Semantics.ScottDomains.X86 pt fe pe as X86
 open X86 using (𝕊; RegsD; _[_≔_])
-open import Mu.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (seq-self; seq-seq; code₂-cong; tables-cons; 𝒮-＝; 𝒜s; 𝒮)
+open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (seq-self; seq-seq; code₂-cong; tables-cons; 𝒮-＝; 𝒜s; 𝒮)
 
 {- d := D, then K, in CFGμ -}
 then : ∀ {n Δ A Δ''} → Out n Δ A Δ'' → DCPO[ 𝔻 , 𝔻 ] → ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩

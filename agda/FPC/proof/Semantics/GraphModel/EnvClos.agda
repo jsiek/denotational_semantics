@@ -1,22 +1,22 @@
 {-
 
   Lemmas about the semantics of EnvClosμ in the graph model
-  (Mu/Semantics/GraphModel/EnvClos.agda): its denotations are Ok, by induction
+  (FPC/Semantics/GraphModel/EnvClos.agda): its denotations are Ok, by induction
   on the term, one line per construct, as for Clos3ᵀ.
 
 -}
 
-module Mu.proof.Semantics.GraphModel.EnvClos where
+module FPC.proof.Semantics.GraphModel.EnvClos where
 
-open import Mu.Semantics.GraphModel.EnvClos public
+open import FPC.Semantics.GraphModel.EnvClos public
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Continuity
 open import proof.Framework.GraphModel.TypedOkBase
 open import proof.Semantics.Graph.Prim using (primD-good)
-open import Mu.Language.Type using (idx)
-open import Mu.Language.EnvClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type using (idx)
+open import FPC.Language.EnvClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)
 open import Data.Product using (proj₂) renaming (_,_ to ⟨_,_⟩)

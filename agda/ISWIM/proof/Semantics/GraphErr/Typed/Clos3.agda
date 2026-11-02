@@ -1,7 +1,7 @@
 {-
 
   Lemmas about the semantics of Clos3ᵀ in the graph model with errors
-  (Semantics/GraphErr/Typed/Clos3.agda): its denotations are monotone,
+  (ISWIM/Semantics/GraphErr/Typed/Clos3.agda): its denotations are monotone,
   continuous and consistent (Ok), by induction on the term, one line per
   construct, from the facts of proof/Framework/GraphModel/{TypedOk,
   TypedBinders}.agda: each operator is the error monad's kernel under
@@ -12,9 +12,9 @@
 
 -}
 
-module proof.Semantics.GraphErr.Typed.Clos3 where
+module ISWIM.proof.Semantics.GraphErr.Typed.Clos3 where
 
-open import Semantics.GraphErr.Typed.Clos3 public
+open import ISWIM.Semantics.GraphErr.Typed.Clos3 public
 open import proof.Framework.GraphModel.TypedOk using (Ok; Oks; ok-op; Ok-≃; var-ok; const-ok; let-ok; split; ok-vec; FinCode; fin-code) public
 open import proof.Framework.GraphModel.TypedBinders using (ΛΛᵐ-⋆; code-ok) public
 
@@ -23,9 +23,9 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.Continuity using (⋆-good; ℬ-good)
 open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Semantics.GraphErr.Typed.Clos2 using (app-good; get-good; case-good; prim-good; project-good)
-open import Language.Typed.Type using (Any; tup; idx) renaming (⟪_⟫ to ⟪_⟫ᵗ)
-open import Language.Typed.Clos3
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (app-good; get-good; case-good; prim-good; project-good)
+open import ISWIM.Language.Typed.Type using (Any; tup; idx) renaming (⟪_⟫ to ⟪_⟫ᵗ)
+open import ISWIM.Language.Typed.Clos3
 
 open import Data.List using ([]; _∷_; replicate)
 open import Data.Vec using (Vec; []; _∷_)

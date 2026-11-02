@@ -2,7 +2,7 @@
 
   Correctness of hoist (PairClosμ → GlobalFunμ) by a forward simulation
   between their reduction semantics, in lock step, as for typed
-  hoist (proof/Correctness/Reduction/HoistRed.agda).
+  hoist (ISWIM/proof/Correctness/Reduction/HoistRed.agda).
 
   The GlobalFunμ program runs with the definitions ds that the pass made for
   the whole program, and the relation is for ds: a congruence, closed
@@ -17,22 +17,22 @@
 
 -}
 
-module Mu.proof.Correctness.ReductionSemantics.HoistRed where
+module FPC.proof.Correctness.ReductionSemantics.HoistRed where
 
-open import Mu.Language.Type hiding (_[_])
+open import FPC.Language.Type hiding (_[_])
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
 open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
-open import Mu.Language.PairClos
-import Mu.Language.GlobalFun as C
+open import FPC.Language.PairClos
+import FPC.Language.GlobalFun as C
 open C using (DSig; sig)
-open import Mu.Compiler.Hoist
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
+open import FPC.Compiler.Hoist
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Mu.proof.Semantics.ReductionSemantics.PairClos as S
-import Mu.proof.Semantics.ReductionSemantics.GlobalFun as T
+import FPC.proof.Semantics.ReductionSemantics.PairClos as S
+import FPC.proof.Semantics.ReductionSemantics.GlobalFun as T
 open T using (Value; value-red)
 import Language.Prim as P
 

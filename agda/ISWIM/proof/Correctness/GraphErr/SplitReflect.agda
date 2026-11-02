@@ -2,7 +2,7 @@
 
   Backward (reflect) direction of the correctness of typed split
   (Clos3ᵀ → Clos4ᵀ) in the graph model with errors, with the approximant
-  logical relation ApproxLR of SplitRel, as in Untyped/proof/Correctness/GraphErr/SplitReflect.agda.
+  logical relation ApproxLR of SplitRel, as in ISWIM/Untyped/proof/Correctness/GraphErr/SplitReflect.agda.
 
   The errors are reflected by the monad (ApproxLR-bind); each construct is then
   its kernel. The closure is reflected by its applications: callc binds
@@ -15,20 +15,20 @@
 open import proof.Framework.GraphModel.ErrorPrelude
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; 𝒞-left; 𝒞-right)
-open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ; keep)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ; keep)
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
-open import proof.Semantics.GraphErr.Prim using (primD; out)
-open import Language.Typed.Type using (Any; ⟪_⟫; code; tup; _∋_; Z; S; idx; flat)
-open import Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit; tuple; get; case; prim; let′; inject; project)
-import Language.Typed.Clos4 as T
-import proof.Semantics.GraphErr.Typed.Clos3 as S3
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primD; out)
+open import ISWIM.Language.Typed.Type using (Any; ⟪_⟫; code; tup; _∋_; Z; S; idx; flat)
+open import ISWIM.Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit; tuple; get; case; prim; let′; inject; project)
+import ISWIM.Language.Typed.Clos4 as T
+import ISWIM.proof.Semantics.GraphErr.Typed.Clos3 as S3
 open S3 using (⟦_⟧; ⟦_⟧s)
-import proof.Semantics.GraphErr.Typed.Clos4 as S4
+import ISWIM.proof.Semantics.GraphErr.Typed.Clos4 as S4
 open S4 using (fin₁; fin₂; ΛΛᵐ-call; kind₄) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
-open import Compiler.Split using (Ren; ext; split; splits; split-program)
-open import proof.Correctness.GraphErr.SplitRel
+open import ISWIM.Compiler.Split using (Ren; ext; split; splits; split-program)
+open import ISWIM.proof.Correctness.GraphErr.SplitRel
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -47,7 +47,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym
 open import Level using (lift; lower)
 open import Language.Prim using (δ)
 
-module proof.Correctness.GraphErr.SplitReflect where
+module ISWIM.proof.Correctness.GraphErr.SplitReflect where
 
 
 clean⌊⌋ : ∀ {D} → Clean ⌊ D ⌋

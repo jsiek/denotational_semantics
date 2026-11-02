@@ -14,21 +14,21 @@
 
 -}
 
-module proof.Correctness.Reduction.HoistRed where
+module ISWIM.proof.Correctness.Reduction.HoistRed where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
 open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
 open import Framework.Lookup using (_!_)
-open import Language.Typed.Clos4
-import Language.Typed.Clos5 as C
-open import Compiler.Hoist
+open import ISWIM.Language.Typed.Clos4
+import ISWIM.Language.Typed.Clos5 as C
+open import ISWIM.Compiler.Hoist
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import proof.Framework.ReductionVec Obs o-error using (ans-∷; cong₃)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import proof.Semantics.Reduction.Typed.Clos4 as S
-import proof.Semantics.Reduction.Typed.Clos5 as T
+import ISWIM.proof.Semantics.Reduction.Typed.Clos4 as S
+import ISWIM.proof.Semantics.Reduction.Typed.Clos5 as T
 open T using (Value; value-red)
 import Language.Prim as P
 

@@ -9,19 +9,19 @@
 
 -}
 
-module proof.Correctness.Interp.ConcretizeFuel where
+module ISWIM.proof.Correctness.Interp.ConcretizeFuel where
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using ([]; _∷_)
-open import Language.Typed.Type
-open import Language.Typed.Clos2
-import Language.Typed.Clos3 as C3
-open import Compiler.Concretize
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos2
+import ISWIM.Language.Typed.Clos3 as C3
+open import ISWIM.Compiler.Concretize
 open import proof.Semantics.Interp.Clock
 open import Framework.Lookup using (_!_)
-import Semantics.Interp.Typed.Clos2 as S
-import Semantics.Interp.Typed.Clos3 as T
-open import proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ n → C3.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any}
+import ISWIM.Semantics.Interp.Typed.Clos2 as S
+import ISWIM.Semantics.Interp.Typed.Clos3 as T
+open import ISWIM.proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ n → C3.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any}
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List.Relation.Unary.All using ([]; _∷_)

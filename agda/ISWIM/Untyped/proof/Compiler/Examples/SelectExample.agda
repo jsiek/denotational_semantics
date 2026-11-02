@@ -6,16 +6,16 @@
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (eq)
-open import Untyped.Language.Imp as Imp using (atm; var; lit)
-open import Untyped.Language.CFG as CFG using (return; seq; case)
-open import Language.X86
-open import Untyped.Compiler.Select using (select-body)
+open import ISWIM.Untyped.Language.Imp as Imp using (atm; var; lit)
+open import ISWIM.Untyped.Language.CFG as CFG using (return; seq; case)
+open import ISWIM.Language.X86
+open import ISWIM.Untyped.Compiler.Select using (select-body)
 
 open import Data.Integer using (+_)
 open import Data.List using ([]; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module Untyped.proof.Compiler.Examples.SelectExample where
+module ISWIM.Untyped.proof.Compiler.Examples.SelectExample where
 
 {- the output of explicate control in ExplicateExample:
      block 0: return z   block 1: return x

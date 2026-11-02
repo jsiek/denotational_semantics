@@ -10,11 +10,11 @@
 
 -}
 
-module Compiler.LiftLocals where
+module ISWIM.Compiler.LiftLocals where
 
-open import Language.Typed.Type
-import Language.Typed.Mon as M
-open import Language.Typed.Imp
+open import ISWIM.Language.Typed.Type
+import ISWIM.Language.Typed.Mon as M
+open import ISWIM.Language.Typed.Imp
 
 open import Data.List using ([]; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

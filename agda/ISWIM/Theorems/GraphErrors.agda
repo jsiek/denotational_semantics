@@ -1,8 +1,8 @@
 {-
 
   The correctness of the compiler in the graph model with errors:
-  the public statements. The proofs are in proof/Correctness/GraphErr/
-  and proof/Adequacy/GraphErr/EndToEnd.agda; each theorem here is one of
+  the public statements. The proofs are in ISWIM/proof/Correctness/GraphErr/
+  and ISWIM/proof/Adequacy/GraphErr/EndToEnd.agda; each theorem here is one of
   them, with its type written out.
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
@@ -10,11 +10,11 @@
           --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
-  To read them: the typed languages (Language/Typed/), the passes
-  (Compiler/), the semantics of each typed language
-  (Semantics/GraphErr/Typed/, X86ᵀ included; Monᵀ means its embedding
-  into Clos5ᵀ, ⌜_⌝ₚ), that of ISWIM (Semantics/GraphErr/), the machines
-  of ISWIM, Clos5ᵀ and X86ᵀ (Semantics/CEK/), and the domain and
+  To read them: the typed languages (ISWIM/Language/Typed/), the passes
+  (ISWIM/Compiler/), the semantics of each typed language
+  (ISWIM/Semantics/GraphErr/Typed/, X86ᵀ included; Monᵀ means its embedding
+  into Clos5ᵀ, ⌜_⌝ₚ), that of ISWIM (ISWIM/Semantics/GraphErr/), the machines
+  of ISWIM, Clos5ᵀ and X86ᵀ (ISWIM/Semantics/CEK/), and the domain and
   operators they are built from (Framework/GraphModel/). An error is the
   element ω; in the typed semantics only project (a cast from Any)
   checks kinds and errs.
@@ -26,11 +26,11 @@
   (Adequacy/GraphErr/X86.agda), on the programs of the compiler, whose
   definitions' code depends only on the older ones and whose table is
   consistent; for Clos5ᵀ, derived from the ISWIM machine's, Same, and
-  the simulation of the CEK column (Theorems/Simulation.agda).
+  the simulation of the CEK column (ISWIM/Theorems/Simulation.agda).
 
 -}
 
-module Theorems.GraphErrors where
+module ISWIM.Theorems.GraphErrors where
 
 open import Framework.Primitives using (base-rep)
 open import Framework.GraphModel.SetsAsPredicates using (𝒫; ⌈_⌉; _∈_; _≃_)
@@ -39,60 +39,60 @@ open import Framework.GraphModel.Domain using (Value; ω; const)
 open import Framework.GraphModel.ErrorMonad using (val∈)
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
-import Semantics.CEK.Typed.X86 as X86ᵀₘ
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
+import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
 
-import Language.ISWIM as ISWIM
-open import Language.Typed.Type using (Any)
-import Language.Typed.ISWIM as ISWIMᵀ
-import Language.Typed.Clos2 as Clos2ᵀ
-import Language.Typed.Clos3 as Clos3ᵀ
-import Language.Typed.Clos4 as Clos4ᵀ
-import Language.Typed.Clos5 as Clos5ᵀ
-import Language.Typed.Mon as Monᵀ
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Language.Typed.Type using (Any)
+import ISWIM.Language.Typed.ISWIM as ISWIMᵀ
+import ISWIM.Language.Typed.Clos2 as Clos2ᵀ
+import ISWIM.Language.Typed.Clos3 as Clos3ᵀ
+import ISWIM.Language.Typed.Clos4 as Clos4ᵀ
+import ISWIM.Language.Typed.Clos5 as Clos5ᵀ
+import ISWIM.Language.Typed.Mon as Monᵀ
 open Monᵀ using (⌜_⌝ₚ)
-import Language.Typed.Imp as Impᵀ
-import Language.Typed.CFG as CFGᵀ
-open import Compiler.CaptureScope using (Closed)
+import ISWIM.Language.Typed.Imp as Impᵀ
+import ISWIM.Language.Typed.CFG as CFGᵀ
+open import ISWIM.Compiler.CaptureScope using (Closed)
 
-open import Compiler.Simplify using (simplify)
-open import Compiler.Cast using (cast-closed)
-open import Compiler.Capture using (capture)
-open import Compiler.Prune using (prune-program)
-open import Compiler.Concretize using (concretize-program)
-open import Compiler.Split using (split-program)
-open import Compiler.Hoist using (hoist)
-open import Compiler.RCO using (rco-program)
-open import Compiler.LiftLocals using (lift-program)
-open import Compiler.Explicate using (explicate)
-open import Compiler.Select using (select)
-open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.Cast using (cast-closed)
+open import ISWIM.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Prune using (prune-program)
+open import ISWIM.Compiler.Concretize using (concretize-program)
+open import ISWIM.Compiler.Split using (split-program)
+open import ISWIM.Compiler.Hoist using (hoist)
+open import ISWIM.Compiler.RCO using (rco-program)
+open import ISWIM.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Compiler.Explicate using (explicate)
+open import ISWIM.Compiler.Select using (select)
+open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Semantics.GraphErr.ISWIM using (⟦_⟧)
-open import Semantics.GraphErr.Typed.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵀ)
-open import Semantics.GraphErr.Typed.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)
-open import Semantics.GraphErr.Typed.Clos3 using () renaming (⟦_⟧ to ⟦_⟧₃)
-open import Semantics.GraphErr.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄)
-open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅)
-open import Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
-open import Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
-open import Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
+open import ISWIM.Semantics.GraphErr.ISWIM using (⟦_⟧)
+open import ISWIM.Semantics.GraphErr.Typed.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵀ)
+open import ISWIM.Semantics.GraphErr.Typed.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)
+open import ISWIM.Semantics.GraphErr.Typed.Clos3 using () renaming (⟦_⟧ to ⟦_⟧₃)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄)
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
+open import ISWIM.Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
 
-import proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
-import proof.Correctness.GraphErr.CaptureCorrect as Capture
-import proof.Correctness.GraphErr.PruneCorrect as Prune
-import proof.Correctness.GraphErr.ConcretizeCorrect as Concretize
-import proof.Correctness.GraphErr.SplitCorrect as Split
-import proof.Correctness.GraphErr.HoistCorrect as Hoist
-import proof.Correctness.GraphErr.RCOCorrect as RCO
-import proof.Correctness.GraphErr.LiftLocalsCorrect as LiftLocals
-import proof.Correctness.GraphErr.ExplicateCorrect as Explicate
-import proof.Correctness.GraphErr.SelectCorrect as Select
-import proof.Correctness.GraphErr.CompilerCorrect as Compiler
-import proof.Adequacy.GraphErr.EndToEnd as Adequacy
-import proof.Adequacy.GraphErr.ISWIM as AdequacyISWIM
-import proof.Adequacy.GraphErr.Simplify as SimplifyMachine
+import ISWIM.proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
+import ISWIM.proof.Correctness.GraphErr.CaptureCorrect as Capture
+import ISWIM.proof.Correctness.GraphErr.PruneCorrect as Prune
+import ISWIM.proof.Correctness.GraphErr.ConcretizeCorrect as Concretize
+import ISWIM.proof.Correctness.GraphErr.SplitCorrect as Split
+import ISWIM.proof.Correctness.GraphErr.HoistCorrect as Hoist
+import ISWIM.proof.Correctness.GraphErr.RCOCorrect as RCO
+import ISWIM.proof.Correctness.GraphErr.LiftLocalsCorrect as LiftLocals
+import ISWIM.proof.Correctness.GraphErr.ExplicateCorrect as Explicate
+import ISWIM.proof.Correctness.GraphErr.SelectCorrect as Select
+import ISWIM.proof.Correctness.GraphErr.CompilerCorrect as Compiler
+import ISWIM.proof.Adequacy.GraphErr.EndToEnd as Adequacy
+import ISWIM.proof.Adequacy.GraphErr.ISWIM as AdequacyISWIM
+import ISWIM.proof.Adequacy.GraphErr.Simplify as SimplifyMachine
 open Adequacy using (Agree)
 
 open import Data.List using ([])

@@ -4,7 +4,7 @@
   the denotation of a closed program is witnessed by a run of the
   machine.
 
-  As for ISWIM (proof/Adequacy/LogRel.agda): a logical relation 𝕍 d v,
+  As for ISWIM (ISWIM/proof/Adequacy/LogRel.agda): a logical relation 𝕍 d v,
   by recursion on the denotational value d (and on the folds of v: a
   value of a recursive type is related as the value it folds, since
   fold is the identity on denotations), relates a constant to itself, a
@@ -20,7 +20,7 @@
 
 -}
 
-module Mu.proof.Adequacy.AbstractMachines.LogRel where
+module FPC.proof.Adequacy.AbstractMachines.LogRel where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (sub; eq; δ)
@@ -30,11 +30,11 @@ open import proof.Framework.GraphModel.Ops using (nthD)
 open import proof.Semantics.Graph.Prim using () renaming (out to dout)
 import proof.Framework.GraphModel.Env as E
 open import proof.Framework.Runs using (module Runs)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos; All₂; _<><ᵃ_)
-open import Mu.Semantics.AbstractMachines.FPC
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos; All₂; _<><ᵃ_)
+open import FPC.Semantics.AbstractMachines.FPC
 open import Semantics.Observation using (o-const; Answer)
 
 open import Data.Bool using (true; false)

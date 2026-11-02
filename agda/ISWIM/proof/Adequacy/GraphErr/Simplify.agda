@@ -2,7 +2,7 @@
 
   Simplify, observed through the ISWIM machine, by the graph model with
   errors: the correctness of simplify in that model
-  (proof/Correctness/GraphErr/SimplifyCorrect.agda) and adequacy
+  (ISWIM/proof/Correctness/GraphErr/SimplifyCorrect.agda) and adequacy
   (ISWIM.agda) give that a closed program and its simplification stop
   with an error together, terminate with the same constants, terminate
   with an answer together, and diverge together, the last three
@@ -10,21 +10,21 @@
 
 -}
 
-module proof.Adequacy.GraphErr.Simplify where
+module ISWIM.proof.Adequacy.GraphErr.Simplify where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
-open import Language.ISWIM using (AST)
-open import Compiler.Simplify using (simplify)
-open import Compiler.CaptureScope using (Closed)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
-open import proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
+open import ISWIM.proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
 open import Semantics.Observation
-open import proof.Semantics.GraphErr.ISWIM using (⟦_⟧)
+open import ISWIM.proof.Semantics.GraphErr.ISWIM using (⟦_⟧)
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
-open import Semantics.CEK.ISWIM using (sem)
-open import proof.Adequacy.GraphErr.ISWIM using (error-iff; const-iff; converges-iff; diverges-iff)
+open import ISWIM.Semantics.CEK.ISWIM using (sem)
+open import ISWIM.proof.Adequacy.GraphErr.ISWIM using (error-iff; const-iff; converges-iff; diverges-iff)
 
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≢_)

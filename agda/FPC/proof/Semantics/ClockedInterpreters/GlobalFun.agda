@@ -1,23 +1,23 @@
 {-
 
-  Lemmas about the interpreter of GlobalFunμ (Mu/Semantics/ClockedInterpreters/GlobalFun.agda)
-  on the embedding of Monμ (Mu/Language/Mon.agda), shared by the proofs
-  of rco and lift locals, as proof/Semantics/Interp/Typed/Clos5.agda: an
+  Lemmas about the interpreter of GlobalFunμ (FPC/Semantics/ClockedInterpreters/GlobalFun.agda)
+  on the embedding of Monμ (FPC/Language/Mon.agda), shared by the proofs
+  of rco and lift locals, as ISWIM/proof/Semantics/Interp/Typed/Clos5.agda: an
   embedded atom evaluates, without calling anything, to its value as
-  Impμ reads it (Mu/Semantics/ClockedInterpreters/Imp.agda), and a definition of a
+  Impμ reads it (FPC/Semantics/ClockedInterpreters/Imp.agda), and a definition of a
   mapped table is the mapped definition.
 
 -}
 
-module Mu.proof.Semantics.ClockedInterpreters.GlobalFun where
+module FPC.proof.Semantics.ClockedInterpreters.GlobalFun where
 
-open import Mu.Language.Type
-open import Mu.Language.Mon using (DSig; Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
-import Mu.Language.GlobalFun as C
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
+open import FPC.Language.Type
+open import FPC.Language.Mon using (DSig; Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
+import FPC.Language.GlobalFun as C
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import proof.Semantics.Interp.Clock
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals; eval; evals)
-open import Mu.Semantics.ClockedInterpreters.Imp using (atom)
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals; eval; evals)
+open import FPC.Semantics.ClockedInterpreters.Imp using (atom)
 
 open import Data.List using (List)
 open import Data.Nat using (ℕ)

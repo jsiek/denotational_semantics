@@ -1,10 +1,10 @@
 {-
 
-  The semantics of CFGμ (Mu/Language/CFG.agda) in Scott domains, as in
-  the graph model (Mu/Semantics/GraphModel/CFG.agda). A tail runs in a frame
+  The semantics of CFGμ (FPC/Language/CFG.agda) in Scott domains, as in
+  the graph model (FPC/Semantics/GraphModel/CFG.agda). A tail runs in a frame
   σ, given the meanings B of the blocks it can see (by their typed
   labels), and means a value, continuously in σ. Atoms and simple
-  expressions are Impμ's (Mu/Semantics/ScottDomains/Imp.agda).
+  expressions are Impμ's (FPC/Semantics/ScottDomains/Imp.agda).
 
   * seq p s t is strict in s, like an assignment in Impμ: app (Λ F) D,
     where D is the value of s and F X runs t with X in the next slot of
@@ -22,13 +22,13 @@ open import UF.FunExt using (Fun-Ext)
 open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
-open import Mu.Language.Type
-open import Mu.Language.CFG
+open import FPC.Language.Type
+open import FPC.Language.CFG
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Framework.AllUtil using (All)
 open import Data.List using (List; []; _∷_)
 
-module Mu.Semantics.ScottDomains.CFG
+module FPC.Semantics.ScottDomains.CFG
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -38,8 +38,8 @@ open import Framework.Scott.Base pt fe
 open import Framework.Scott.Domain pt fe pe using (𝔻)
 open import Framework.Scott.Ops pt fe pe using (Env) renaming (app to appᵈ)
 open import Framework.Scott.Semantics pt fe pe
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
-open import Mu.Semantics.ScottDomains.Imp pt fe pe using (𝒜; 𝒮) public
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
+open import FPC.Semantics.ScottDomains.Imp pt fe pe using (𝒜; 𝒮) public
 
 {- the frame cut to the slots of an older context -}
 drop : ∀ {Δ' Δ : Ctx} → Δ' ⊑ Δ → DCPO[ Env , Env ]

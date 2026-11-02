@@ -1,9 +1,9 @@
 {-
 
-  The values of the Clos5ᵀ machine (Semantics/CEK/Typed/Clos5.agda) in
+  The values of the Clos5ᵀ machine (ISWIM/Semantics/CEK/Typed/Clos5.agda) in
   the graph model, for the adequacy proofs of the machines that share
-  them (Clos5ᵀ, proof/Adequacy/Clos5.agda, and X86ᵀ,
-  proof/Adequacy/X86.agda), which differ only in how they run a
+  them (Clos5ᵀ, ISWIM/proof/Adequacy/Clos5.agda, and X86ᵀ,
+  ISWIM/proof/Adequacy/X86.agda), which differ only in how they run a
   definition:
 
   * Rel Run: the logical relation 𝕍 d v of Clos5LogRel.agda, given what
@@ -17,9 +17,9 @@
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 
-module proof.Adequacy.Clos5Values where
+module ISWIM.proof.Adequacy.Clos5Values where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq; δ; int; bool)
@@ -29,11 +29,11 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
   using (ℬ; 𝒯; nthD; Λ; ℬ-consis; pair-consis; inl-consis; inr-consis) renaming (pair to dpair; inl to inlD; inr to inrD)
 open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
-open import proof.Semantics.Graph.Typed.Ops using (Table; tables; ConT; accepts; fun₄; init)
-open import Semantics.CEK.Typed.Clos5
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; tables; ConT; accepts; fun₄; init)
+open import ISWIM.Semantics.CEK.Typed.Clos5
 open import Semantics.Observation using (Obs; o-const; Answer)
 open import Framework.Lookup using (_!_)
-open import proof.Adequacy.Soundness using (At; AllNE; 𝒯L; AllCon; 𝒯L-con)
+open import ISWIM.proof.Adequacy.Soundness using (At; AllNE; 𝒯L; AllCon; 𝒯L-con)
 import proof.Framework.GraphModel.Env as E
 
 open import Data.Bool using (true; false)

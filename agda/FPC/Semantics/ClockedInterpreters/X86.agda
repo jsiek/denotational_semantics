@@ -1,13 +1,13 @@
 {-
 
-  A clocked interpreter for X86μ (Mu/Language/X86.agda), the output of
+  A clocked interpreter for X86μ (FPC/Language/X86.agda), the output of
   select instructions, with the values of the GlobalFunμ interpreter
-  (Mu/Semantics/ClockedInterpreters/GlobalFun.agda), as the one for X86ᵀ
-  (Semantics/Interp/Typed/X86.agda): the registers, frame, open closure
+  (FPC/Semantics/ClockedInterpreters/GlobalFun.agda), as the one for X86ᵀ
+  (ISWIM/Semantics/Interp/Typed/X86.agda): the registers, frame, open closure
   and flag (Mach) have the types of the start of the sequence that runs
   in them; η is α, the types of the open closure's environment, so a
   register of type codeα A B holds code of η, A and B. The frame holds
-  the slots assigned so far, as in CFGμ (Mu/Semantics/ClockedInterpreters/CFG.agda);
+  the slots assigned so far, as in CFGμ (FPC/Semantics/ClockedInterpreters/CFG.agda);
   an unset register, an unset flag and the open closure (when there is
   none) hold nothing (⊤); the open closure holds its environment.
 
@@ -22,17 +22,17 @@
 
 -}
 
-module Mu.Semantics.ClockedInterpreters.X86 where
+module FPC.Semantics.ClockedInterpreters.X86 where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub)
-open import Mu.Language.Type
-open import Mu.Language.X86
+open import FPC.Language.Type
+open import FPC.Language.X86
 open import Framework.Lookup using (forget)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import Mu.Semantics.ClockedInterpreters.Imp using () renaming (atom to value-of)
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.ClockedInterpreters.Imp using () renaming (atom to value-of)
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Integer using (_≟_)

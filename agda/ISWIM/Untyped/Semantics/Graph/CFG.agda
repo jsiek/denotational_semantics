@@ -1,4 +1,4 @@
-module Untyped.Semantics.Graph.CFG where
+module ISWIM.Untyped.Semantics.Graph.CFG where
 {-
 
  The semantics of CFG, the language after the explicate-control pass
@@ -32,9 +32,9 @@ module Untyped.Semantics.Graph.CFG where
 open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
-open import Untyped.Semantics.Graph.Imp
+open import ISWIM.Untyped.Semantics.Graph.Imp
   using (Table; init; Store; _[_↦_]; checked; 𝒜; 𝒮; zeros; frame) public
-open import Untyped.Language.CFG
+open import ISWIM.Untyped.Language.CFG
 
 open import Data.Nat using (ℕ; _≟_)
 open import Data.List using (List; []; _∷_; length)

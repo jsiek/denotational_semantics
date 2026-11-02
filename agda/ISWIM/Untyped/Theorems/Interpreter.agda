@@ -22,62 +22,62 @@
 
   To read them: the languages (Language/), the passes
   (Compiler/), the interpreters, the observations, and the
-  preconditions: Closed (Compiler/CaptureScope.agda), WS
+  preconditions: Closed (ISWIM/Compiler/CaptureScope.agda), WS
   (Framework/Syntax/Scope.agda), Scoped (Compiler/PipelineScope.agda)
   and MonProgram (Language/Mon.agda).
 
 -}
 
-module Untyped.Theorems.Interpreter where
+module ISWIM.Untyped.Theorems.Interpreter where
 
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.Interp.Clock using (Terminates; Diverges; Equivalent)
 
-import Language.ISWIM as ISWIM
-import Untyped.Language.Clos2 as Clos2
-import Untyped.Language.Clos3 as Clos3
-import Untyped.Language.Clos4 as Clos4
-import Untyped.Language.Clos5 as Clos5
-open import Untyped.Language.Mon using (MonProgram)
-import Untyped.Language.Imp as Imp
-import Untyped.Language.CFG as CFG
+import ISWIM.Language.ISWIM as ISWIM
+import ISWIM.Untyped.Language.Clos2 as Clos2
+import ISWIM.Untyped.Language.Clos3 as Clos3
+import ISWIM.Untyped.Language.Clos4 as Clos4
+import ISWIM.Untyped.Language.Clos5 as Clos5
+open import ISWIM.Untyped.Language.Mon using (MonProgram)
+import ISWIM.Untyped.Language.Imp as Imp
+import ISWIM.Untyped.Language.CFG as CFG
 
-open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.Compiler.Prune using (prune-program)
-open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Split using (split)
-open import Untyped.Compiler.Hoist using (hoist)
-open import Untyped.Compiler.RCO using (rco-program)
-open import Untyped.Compiler.LiftLocals using (lift-program)
-open import Untyped.Compiler.Explicate using (explicate)
-open import Untyped.Compiler.Select using (select)
-open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Split using (split)
+open import ISWIM.Untyped.Compiler.Hoist using (hoist)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Untyped.Compiler.Explicate using (explicate)
+open import ISWIM.Untyped.Compiler.Select using (select)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
-open import Untyped.Compiler.PipelineScope using (Scoped)
+open import ISWIM.Untyped.Compiler.PipelineScope using (Scoped)
 
-import Semantics.Interp.ISWIM as ISWIMᵢ
-import Untyped.Semantics.Interp.Clos2 as Clos2ᵢ
-import Untyped.Semantics.Interp.Clos3 as Clos3ᵢ
-import Untyped.Semantics.Interp.Clos4 as Clos4ᵢ
-import Untyped.Semantics.Interp.Clos5 as Clos5ᵢ
-import Untyped.Semantics.Interp.Imp as Impᵢ
-import Untyped.Semantics.Interp.CFG as CFGᵢ
-import Untyped.Semantics.Interp.X86 as X86ᵢ
+import ISWIM.Semantics.Interp.ISWIM as ISWIMᵢ
+import ISWIM.Untyped.Semantics.Interp.Clos2 as Clos2ᵢ
+import ISWIM.Untyped.Semantics.Interp.Clos3 as Clos3ᵢ
+import ISWIM.Untyped.Semantics.Interp.Clos4 as Clos4ᵢ
+import ISWIM.Untyped.Semantics.Interp.Clos5 as Clos5ᵢ
+import ISWIM.Untyped.Semantics.Interp.Imp as Impᵢ
+import ISWIM.Untyped.Semantics.Interp.CFG as CFGᵢ
+import ISWIM.Untyped.Semantics.Interp.X86 as X86ᵢ
 
-import proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
-import Untyped.proof.Correctness.Interp.CaptureFuel as CaptureFuel
-import Untyped.proof.Correctness.Interp.PruneFuel as PruneFuel
-import Untyped.proof.Correctness.Interp.ConcretizeFuel as ConcretizeFuel
-import Untyped.proof.Correctness.Interp.SplitFuel as SplitFuel
-import Untyped.proof.Correctness.Interp.HoistFuel as HoistFuel
-import Untyped.proof.Correctness.Interp.RCOFuel as RCOFuel
-import Untyped.proof.Correctness.Interp.LiftLocalsFuel as LiftLocalsFuel
-import Untyped.proof.Correctness.Interp.ExplicateFuel as ExplicateFuel
-import Untyped.proof.Correctness.Interp.SelectFuel as SelectFuel
-import Untyped.proof.Correctness.Interp.CompilerFuel as CompilerFuel
+import ISWIM.proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
+import ISWIM.Untyped.proof.Correctness.Interp.CaptureFuel as CaptureFuel
+import ISWIM.Untyped.proof.Correctness.Interp.PruneFuel as PruneFuel
+import ISWIM.Untyped.proof.Correctness.Interp.ConcretizeFuel as ConcretizeFuel
+import ISWIM.Untyped.proof.Correctness.Interp.SplitFuel as SplitFuel
+import ISWIM.Untyped.proof.Correctness.Interp.HoistFuel as HoistFuel
+import ISWIM.Untyped.proof.Correctness.Interp.RCOFuel as RCOFuel
+import ISWIM.Untyped.proof.Correctness.Interp.LiftLocalsFuel as LiftLocalsFuel
+import ISWIM.Untyped.proof.Correctness.Interp.ExplicateFuel as ExplicateFuel
+import ISWIM.Untyped.proof.Correctness.Interp.SelectFuel as SelectFuel
+import ISWIM.Untyped.proof.Correctness.Interp.CompilerFuel as CompilerFuel
 
 {- Each pass ------------------------------------------------------------------}
 

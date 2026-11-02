@@ -2,7 +2,7 @@
 
   Correctness of split (EnvClosμ → PairClosμ) by a forward simulation
   between their reduction semantics, in lock step, as for typed split
-  (proof/Correctness/Reduction/SplitRed.agda).
+  (ISWIM/proof/Correctness/Reduction/SplitRed.agda).
 
   The relation on terms (_⊢_≈_) relates a variable x to ρ x, for the
   renaming ρ of the pass; it is a congruence, closed under substitution
@@ -12,19 +12,19 @@
 
 -}
 
-module Mu.proof.Correctness.ReductionSemantics.SplitRed where
+module FPC.proof.Correctness.ReductionSemantics.SplitRed where
 
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.EnvClos
-import Mu.Language.PairClos as C
-open import Mu.Compiler.Split
-open import Mu.Framework.AllUtil using (All; []; _∷_; All₂; lookup₂)
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.EnvClos
+import FPC.Language.PairClos as C
+open import FPC.Compiler.Split
+open import FPC.Framework.AllUtil using (All; []; _∷_; All₂; lookup₂)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Mu.proof.Semantics.ReductionSemantics.EnvClos as S
-import Mu.proof.Semantics.ReductionSemantics.PairClos as T
+import FPC.proof.Semantics.ReductionSemantics.EnvClos as S
+import FPC.proof.Semantics.ReductionSemantics.PairClos as T
 open T using (Value; value-red)
 import Language.Prim as P
 

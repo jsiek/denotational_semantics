@@ -1,7 +1,7 @@
 {-
 
   The values of the clocked interpreters of the typed languages
-  (Semantics/Interp/Typed/), indexed by their type, and the operations
+  (ISWIM/Semantics/Interp/Typed/), indexed by their type, and the operations
   on them; C n is what the code of a closure with an environment of
   length n is in each language (a term, or in Clos5ᵀ a reference to a
   definition).
@@ -17,11 +17,11 @@
 
 open import Data.Nat using (ℕ)
 
-module Semantics.Interp.Typed.Values (C : ℕ → Set) where
+module ISWIM.Semantics.Interp.Typed.Values (C : ℕ → Set) where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
 open import Semantics.Interp.Clock using (Result; ret; error)
 

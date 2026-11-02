@@ -1,7 +1,7 @@
 {-
 
   The FPC compiler in the graph model, observed through the
-  machines, as proof/Adequacy/EndToEnd.agda for the typed pipeline: for
+  machines, as ISWIM/proof/Adequacy/EndToEnd.agda for the typed pipeline: for
   a closed FPC program M,
 
     FPC machine  ⇔  ⟦ M ⟧ ρ₀             (Adequacy/AbstractMachines/FPC.agda)
@@ -16,28 +16,28 @@
   Correctness/ReductionSemantics/PipelineRed.agda): the two machines stop with
   the same constant, or both diverge.
 
-  An alternative to Mu/proof/Adequacy/EndToEnd.agda, which observes the
+  An alternative to FPC/proof/Adequacy/EndToEnd.agda, which observes the
   compiler through the clocked interpreters instead and is the graph
-  model's end theorem (Mu/Theorems/GraphModelAdequateWrtClockedInterpreters.agda); this one is kept for
+  model's end theorem (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda); this one is kept for
   the comparison of the two targets of adequacy, reported separately.
 
 -}
 
-module Mu.proof.Adequacy.AbstractMachines.EndToEnd where
+module FPC.proof.Adequacy.AbstractMachines.EndToEnd where
 
 open import Framework.Primitives using (base-rep; Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import Mu.Language.Type using (base)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Compiler.Pipeline using (compile)
+open import FPC.Language.Type using (base)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Compiler.Pipeline using (compile)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
-import Mu.Semantics.AbstractMachines.FPC as I
-import Mu.Semantics.AbstractMachines.X86 as X
-import Mu.proof.Adequacy.AbstractMachines.FPC as AI
-import Mu.proof.Adequacy.AbstractMachines.X86 as AX
-open import Mu.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
-open import Mu.proof.Semantics.AbstractMachines.NoError using () renaming (fpc-no-error to fpc-ok; x86-no-error to x86-ok)
+import FPC.Semantics.AbstractMachines.FPC as I
+import FPC.Semantics.AbstractMachines.X86 as X
+import FPC.proof.Adequacy.AbstractMachines.FPC as AI
+import FPC.proof.Adequacy.AbstractMachines.X86 as AX
+open import FPC.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
+open import FPC.proof.Semantics.AbstractMachines.NoError using () renaming (fpc-no-error to fpc-ok; x86-no-error to x86-ok)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

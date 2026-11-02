@@ -1,7 +1,7 @@
 {-
 
-  A CEK machine for Clos5ᵀ (Language/Typed/Clos5.agda), as the one for
-  Clos4ᵀ (Semantics/CEK/Typed/Clos4.agda), except for code: a program
+  A CEK machine for Clos5ᵀ (ISWIM/Language/Typed/Clos5.agda), as the one for
+  Clos4ᵀ (ISWIM/Semantics/CEK/Typed/Clos4.agda), except for code: a program
   runs with its table of definitions, fun-ref f evaluates to the code
   pointer code f, and a call runs definition f, which always exists
   (f is a typed index into the table). Values, environments and
@@ -10,17 +10,17 @@
   The machine takes its values apart with total functions (int, elems,
   choose; call), since their types say what they are; the only error is
   a failed project (proj?). The values and these functions are shared
-  with the machines of Impᵀ and CFGᵀ (Semantics/CEK/Typed/Imp.agda,
+  with the machines of Impᵀ and CFGᵀ (ISWIM/Semantics/CEK/Typed/Imp.agda,
   CFG.agda).
 
 -}
 
-module Semantics.CEK.Typed.Clos5 where
+module ISWIM.Semantics.CEK.Typed.Clos5 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos5
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos5
 open import Framework.Lookup using (_!_)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)

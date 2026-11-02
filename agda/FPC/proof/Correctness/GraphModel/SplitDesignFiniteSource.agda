@@ -56,19 +56,19 @@
 -}
 
 open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import Framework.Primitives
 open import proof.Framework.GraphModel.DomainUtilBase
-open import Mu.Language.Type using (Type; base; _⇒_; tup; Z)
-open import Mu.Language.EnvClos
-import Mu.proof.Semantics.GraphModel.EnvClos as S3
-import Mu.proof.Semantics.GraphModel.PairClos as S4
+open import FPC.Language.Type using (Type; base; _⇒_; tup; Z)
+open import FPC.Language.EnvClos
+import FPC.proof.Semantics.GraphModel.EnvClos as S3
+import FPC.proof.Semantics.GraphModel.PairClos as S4
 open S3 using (⟦_⟧)
 open S4 using () renaming (⟦_⟧ to ⟦_⟧')
-open import Mu.Framework.AllUtil using ([])
-open import Mu.Compiler.Split using (split-program)
-open import Mu.proof.Correctness.GraphModel.SplitRel renaming (fold to foldᴬ; unfold to unfoldᴬ)
-open import Mu.proof.Correctness.GraphModel.SplitReflect using (split-reflect; Envs₀)
+open import FPC.Framework.AllUtil using ([])
+open import FPC.Compiler.Split using (split-program)
+open import FPC.proof.Correctness.GraphModel.SplitRel renaming (fold to foldᴬ; unfold to unfoldᴬ)
+open import FPC.proof.Correctness.GraphModel.SplitReflect using (split-reflect; Envs₀)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _≤_)
 open import Data.Nat.Properties using (suc-injective; ≤-trans; m≤m+n; m≤n+m; 1+n≰n; ≤-reflexive; n≤1+n)
@@ -84,7 +84,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; cong; trans; sym)
 open import Relation.Nullary using (¬_)
 
-module Mu.proof.Correctness.GraphModel.SplitDesignFiniteSource where
+module FPC.proof.Correctness.GraphModel.SplitDesignFiniteSource where
 
 {- The values -----------------------------------------------------------------}
 

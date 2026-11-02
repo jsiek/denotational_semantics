@@ -1,6 +1,6 @@
 {-
 
-  Correctness of select instructions (CFGᵀ → X86ᵀ, Compiler/Select.agda)
+  Correctness of select instructions (CFGᵀ → X86ᵀ, ISWIM/Compiler/Select.agda)
   by clocked interpreters, clock for clock, with no value relation: the
   two interpreters hold the same values in the same frame, so for every
   clock the X86ᵀ program gives exactly the result of the CFGᵀ one
@@ -17,22 +17,22 @@
 
 -}
 
-module proof.Correctness.Interp.SelectFuel where
+module ISWIM.proof.Correctness.Interp.SelectFuel where
 
 open import Language.Prim using (sub; eq)
-open import Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import Framework.Lookup using (_!_)
 open import proof.Framework.Lookup using (map-!)
-import Language.Typed.CFG as C
+import ISWIM.Language.Typed.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
-import Language.Typed.Imp as I
-open import Language.Typed.X86
-open import Compiler.Select
+import ISWIM.Language.Typed.Imp as I
+open import ISWIM.Language.Typed.X86
+open import ISWIM.Compiler.Select
 open import proof.Semantics.Interp.Clock
-open import Semantics.Interp.Typed.Clos5 using (module Vals)
-open import Semantics.Interp.Typed.Imp using (eval-simple) renaming (atom to value-of)
-import Semantics.Interp.Typed.CFG as G
-import Semantics.Interp.Typed.X86 as X
+open import ISWIM.Semantics.Interp.Typed.Clos5 using (module Vals)
+open import ISWIM.Semantics.Interp.Typed.Imp using (eval-simple) renaming (atom to value-of)
+import ISWIM.Semantics.Interp.Typed.CFG as G
+import ISWIM.Semantics.Interp.Typed.X86 as X
 open X using (⟨_,_,_,_⟩; put)
 
 open import Data.List using (List; []; _∷_)

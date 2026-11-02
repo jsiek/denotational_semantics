@@ -1,10 +1,10 @@
 {-
 
-  The semantics of CFGᵀ (Language/Typed/CFG.agda) in the graph model, as
-  that of CFG (Untyped/Semantics/Graph/CFG.agda). A tail runs in a frame σ, given
+  The semantics of CFGᵀ (ISWIM/Language/Typed/CFG.agda) in the graph model, as
+  that of CFG (ISWIM/Untyped/Semantics/Graph/CFG.agda). A tail runs in a frame σ, given
   the meanings B of the blocks it can see (by their typed labels), and
   means a set of values. Atoms and simple expressions are Impᵀ's
-  (Semantics/Graph/Typed/Imp.agda).
+  (ISWIM/Semantics/Graph/Typed/Imp.agda).
 
   * seq p s t is strict in s, like an assignment in Impᵀ: ⋆ ⟨ Λ F , D ⟩,
     where D is the value of s and F X runs t with X in the next slot of
@@ -18,15 +18,15 @@
 
 -}
 
-module Semantics.Graph.Typed.CFG where
+module ISWIM.Semantics.Graph.Typed.CFG where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Semantics.Graph.Typed.Ops
-open import Semantics.Graph.Typed.Imp using (𝒜; 𝒮) public
-open import Language.Typed.Type
-open import Language.Typed.CFG
+open import ISWIM.Semantics.Graph.Typed.Ops
+open import ISWIM.Semantics.Graph.Typed.Imp using (𝒜; 𝒮) public
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.CFG
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All)

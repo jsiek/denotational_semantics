@@ -9,21 +9,21 @@
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
-open import Language.Typed.Type
-import Language.Typed.ISWIM as T
-open import Compiler.Cast using (cast-program)
-open import Compiler.Capture using (capture)
-open import Compiler.Prune using (prune-program)
-open import Compiler.Concretize using (concretize-program)
-open import Compiler.Split using (split-program)
-import Language.Typed.Clos4 as Clos4ᵀ
+open import ISWIM.Language.Typed.Type
+import ISWIM.Language.Typed.ISWIM as T
+open import ISWIM.Compiler.Cast using (cast-program)
+open import ISWIM.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Prune using (prune-program)
+open import ISWIM.Compiler.Concretize using (concretize-program)
+open import ISWIM.Compiler.Split using (split-program)
+import ISWIM.Language.Typed.Clos4 as Clos4ᵀ
 open import Data.List using ([])
 open import Semantics.Observation using (Obs; o-const; o-error)
 open import Semantics.CEK.Smallstep using (Machine; next; stop)
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Semantics.CEK.Typed.Clos4 as Clos4ᵀₘ
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Semantics.CEK.Typed.Clos4 as Clos4ᵀₘ
 
 open import Framework.Syntax.Scope Op sig using (WS)
 open import Data.Fin using (zero; suc)
@@ -34,7 +34,7 @@ open import Data.Product using (_,_)
 open import Data.Unit using (tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module proof.Compiler.Examples.CastExample where
+module ISWIM.proof.Compiler.Examples.CastExample where
 
 {- cast insertion to split, on a well-scoped closed program -}
 to-clos4 : (M : AST) → WS 0 M → Clos4ᵀ.Tm [] Any

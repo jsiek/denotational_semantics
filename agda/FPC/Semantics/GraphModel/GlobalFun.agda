@@ -1,23 +1,23 @@
 {-
 
-  The semantics of GlobalFunμ (Mu/Language/GlobalFun.agda) in the graph model,
-  as that of PairClosμ (Mu/Semantics/GraphModel/PairClos.agda), given a table T of
+  The semantics of GlobalFunμ (FPC/Language/GlobalFun.agda) in the graph model,
+  as that of PairClosμ (FPC/Semantics/GraphModel/PairClos.agda), given a table T of
   the meanings of the global definitions: fun-ref f means T f. The
   definitions of a program are given meaning newest first, each with
-  the table of the older ones (tables, Mu/Semantics/GraphModel/Ops.agda), and
+  the table of the older ones (tables, FPC/Semantics/GraphModel/Ops.agda), and
   main with the table of all of them.
 
 -}
 
-module Mu.Semantics.GraphModel.GlobalFun where
+module FPC.Semantics.GraphModel.GlobalFun where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to pairD)
 open import Semantics.Graph.Prim using (primD)
-open import Mu.Semantics.GraphModel.Ops
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Semantics.GraphModel.Ops
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (List; length; replicate)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

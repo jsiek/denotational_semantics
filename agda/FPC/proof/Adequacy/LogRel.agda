@@ -4,7 +4,7 @@
   every element of the denotation of a closed program is witnessed by
   the value the interpreter returns from some clock on.
 
-  As for the FPC machine (Mu/proof/Adequacy/AbstractMachines/LogRel.agda): a logical
+  As for the FPC machine (FPC/proof/Adequacy/AbstractMachines/LogRel.agda): a logical
   relation 𝕍 d v, by recursion on the denotational value d (and on the
   folds of v), relates a constant to itself, a function entry V ↦ w to
   closures that, run on a value related to every element of V, return a
@@ -19,7 +19,7 @@
 
 -}
 
-module Mu.proof.Adequacy.LogRel where
+module FPC.proof.Adequacy.LogRel where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (sub; eq) renaming (δ to δᴾ)
@@ -29,11 +29,11 @@ open import proof.Framework.GraphModel.Ops using (nthD)
 open import proof.Semantics.Graph.Prim using () renaming (out to dout)
 import proof.Framework.GraphModel.Env as E
 open import proof.Semantics.Interp.Clock using (Result; ret; Stable; st-now; st-bind; stable-unique)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos; All₂)
-open import Mu.Semantics.ClockedInterpreters.FPC
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos; All₂)
+open import FPC.Semantics.ClockedInterpreters.FPC
 open import Semantics.Observation using (o-const)
 
 open import Data.Bool using (true; false)

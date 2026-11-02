@@ -1,7 +1,7 @@
 {-
 
   Correctness of select instructions (CFG → X86, Compiler/Select.agda):
-  the meaning of the X86 program (Untyped/Semantics/Graph/X86.agda) is that of the CFG
+  the meaning of the X86 program (ISWIM/Untyped/Semantics/Graph/X86.agda) is that of the CFG
   program (Semantics/Graph/CFG.agda), given that each global definition has at least
   2 slots, its parameters (Defs); the programs that compile-cfg produces
   do (defs-2).
@@ -34,25 +34,25 @@ open import proof.Framework.GraphModel.DOpSig using (Results; results-rel-pres)
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim using (primD; primD-mono; primD-≃)
-open import Untyped.Language.Imp as I using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim)
+open import ISWIM.Untyped.Language.Imp as I using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim)
 import Language.Prim as P
-import Untyped.Language.CFG as C
-open import Language.X86 hiding (fst; snd; get)
-open import Untyped.Compiler.Select
-open import Untyped.Compiler.Explicate using (explicate-body)
-open import Untyped.Compiler.LiftLocals using (lift-defs)
-open import Untyped.Compiler.Pipeline using (compile-x86; compile-cfg)
-open import Untyped.Semantics.Graph.Imp using (Table; Store; _[_↦_]; checked; 𝒜; 𝒜s; 𝒮; zeros; frame)
-open import Untyped.Semantics.Graph.CFG
+import ISWIM.Untyped.Language.CFG as C
+open import ISWIM.Language.X86 hiding (fst; snd; get)
+open import ISWIM.Untyped.Compiler.Select
+open import ISWIM.Untyped.Compiler.Explicate using (explicate-body)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-defs)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile-x86; compile-cfg)
+open import ISWIM.Untyped.Semantics.Graph.Imp using (Table; Store; _[_↦_]; checked; 𝒜; 𝒜s; 𝒮; zeros; frame)
+open import ISWIM.Untyped.Semantics.Graph.CFG
   using () renaming (⟦_⟧[_] to ⟪_⟫[_]; Blocks to Blocksₜ; blocks to blocksₜ; table to tableₜ; ⟦_⟧ₚ to ⟪_⟫ₚ)
-open import Untyped.Semantics.Graph.X86
-open import Untyped.proof.Semantics.Graph.X86 using (Tagged; Inv; tagged-≈; inv-↦; case-core)
-open import Untyped.proof.Correctness.Graph.ExplicateCommon using (module Agreeing; checked-≃)
-open import Untyped.proof.Correctness.Graph.ExplicateCorrectK using (compile-cfg-same)
-open import Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
-import Language.ISWIM as ISWIM
+open import ISWIM.Untyped.Semantics.Graph.X86
+open import ISWIM.Untyped.proof.Semantics.Graph.X86 using (Tagged; Inv; tagged-≈; inv-↦; case-core)
+open import ISWIM.Untyped.proof.Correctness.Graph.ExplicateCommon using (module Agreeing; checked-≃)
+open import ISWIM.Untyped.proof.Correctness.Graph.ExplicateCorrectK using (compile-cfg-same)
+open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
+open import ISWIM.proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
+import ISWIM.Language.ISWIM as ISWIM
 open import Framework.Primitives using (base-rep)
 
 open import Data.Empty using (⊥; ⊥-elim)
@@ -70,7 +70,7 @@ open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; cong₂)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.Graph.SelectCorrect where
+module ISWIM.Untyped.proof.Correctness.Graph.SelectCorrect where
 
 open import proof.Framework.GraphModel.Laws using (strict-≃; strict-≃₂; strict-≃₃; ⋆-ne)
 
@@ -313,7 +313,7 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
       {⟪ t ⟫[ T' ] n (blocksₜ T' n bs)} (λ σ i → tail t (blocks-≃ bs) σ i _ ∅)
     (Mono.tail-mono T' n t (Mono.blocks-mono T' n bs)) le
 
-  code-≃ : ∀ bs t → 2 ≤ n → code T (select-body prologue (C.body n bs t)) ≃ Untyped.Semantics.Graph.CFG.code T' (C.body n bs t)
+  code-≃ : ∀ bs t → 2 ≤ n → code T (select-body prologue (C.body n bs t)) ≃ ISWIM.Untyped.Semantics.Graph.CFG.code T' (C.body n bs t)
   code-≃ bs t le = Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → start-≃ (m≤n⇒m⊔n≡n le) le bs t cV cU neV neU
 
 {- Programs -----------------------------------------------------------------------------}

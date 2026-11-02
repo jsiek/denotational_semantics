@@ -1,24 +1,24 @@
 {-
 
-  Syntactic facts about simplify (Mu/Compiler/Simplify.agda), used by
+  Syntactic facts about simplify (FPC/Compiler/Simplify.agda), used by
   its four proofs, as for the untyped simplify
-  (proof/Compiler/SimplifyFacts.agda): the values (SV, where a variable
+  (ISWIM/proof/Compiler/SimplifyFacts.agda): the values (SV, where a variable
   stands for a value), which value and small recognize and renaming and
   substitution keep, and what the known values that simplify inspects
   are.
 
 -}
 
-module Mu.proof.Compiler.SimplifyFacts where
+module FPC.proof.Compiler.SimplifyFacts where
 
-open import Mu.Compiler.Simplify public
+open import FPC.Compiler.Simplify public
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Language.FPCSubst using (Kit; Sub; trav; travs; ren)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Language.FPCSubst using (Kit; Sub; trav; travs; ren)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 
 open import Data.Bool using (Bool; true; false; _∧_; if_then_else_)
 open import Data.Integer using (ℤ; _≟_)

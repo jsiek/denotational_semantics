@@ -2,12 +2,12 @@
 
   Lemmas about lists and primitives for the CEK proof of cast insertion
   (CastSim.agda): copies of lemmas of the adequacy proofs
-  (proof/Adequacy/Common.agda, proof/Adequacy/GraphErr/LogRel.agda), so
+  (ISWIM/proof/Adequacy/Common.agda, ISWIM/proof/Adequacy/GraphErr/LogRel.agda), so
   that the CEK proof does not import adequacy.
 
 -}
 
-module proof.Correctness.CEK.CastSimLemmas where
+module ISWIM.proof.Correctness.CEK.CastSimLemmas where
 
 open import Framework.Primitives using (Int; Nat; 𝔹; Unit; Void; Blame)
 open import Framework.ListUtil using (has-length; proj)

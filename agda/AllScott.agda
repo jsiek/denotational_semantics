@@ -1,7 +1,7 @@
 {-
 
   The denotational: Scott domains column, and the adequacy of the
-  Scott-domain semantics, for the FPC compiler (agda/Mu/). It needs TypeTopology besides the standard library, so it
+  Scott-domain semantics, for the FPC compiler (agda/FPC/). It needs TypeTopology besides the standard library, so it
   is not part of All.agda; check it with
 
     make check-scott
@@ -18,8 +18,8 @@
 module AllScott where
 
 {- the theorem statements -}
-import Mu.Theorems.CorrectWrtScottDomains
-import Mu.Theorems.ScottDomainsAdequateWrtClockedInterpreters
+import FPC.Theorems.CorrectWrtScottDomains
+import FPC.Theorems.ScottDomainsAdequateWrtClockedInterpreters
 
 {- the language-independent lemmas: dcpos, the solution of the domain
    equation, the domain of values and its operators, the combinators for
@@ -35,32 +35,32 @@ import proof.Framework.Scott.Stages
 import proof.Framework.Scott.StageCall
 
 {- lemmas shared by the passes -}
-import Mu.proof.Semantics.ScottDomains.PruneLemmas
-import Mu.proof.Semantics.ScottDomains.BackEndLemmas
+import FPC.proof.Semantics.ScottDomains.PruneLemmas
+import FPC.proof.Semantics.ScottDomains.BackEndLemmas
 
 {- the passes, and the whole compiler -}
-import Mu.proof.Correctness.ScottDomains.SimplifyCorrect
-import Mu.proof.Correctness.ScottDomains.CaptureCorrect
-import Mu.proof.Correctness.ScottDomains.PruneCorrect
-import Mu.proof.Correctness.ScottDomains.ConcretizeCorrect
-import Mu.proof.Correctness.ScottDomains.SplitRel
-import Mu.proof.Correctness.ScottDomains.SplitPreserve
-import Mu.proof.Correctness.ScottDomains.SplitReflect
-import Mu.proof.Correctness.ScottDomains.SplitTerms
-import Mu.proof.Correctness.ScottDomains.SplitCorrect
-import Mu.proof.Correctness.ScottDomains.HoistCorrect
-import Mu.proof.Correctness.ScottDomains.RCOCorrect
-import Mu.proof.Correctness.ScottDomains.LiftLocalsCorrect
-import Mu.proof.Correctness.ScottDomains.ExplicateCorrect
-import Mu.proof.Correctness.ScottDomains.SelectCorrect
-import Mu.proof.Correctness.ScottDomains.CompilerCorrect
+import FPC.proof.Correctness.ScottDomains.SimplifyCorrect
+import FPC.proof.Correctness.ScottDomains.CaptureCorrect
+import FPC.proof.Correctness.ScottDomains.PruneCorrect
+import FPC.proof.Correctness.ScottDomains.ConcretizeCorrect
+import FPC.proof.Correctness.ScottDomains.SplitRel
+import FPC.proof.Correctness.ScottDomains.SplitPreserve
+import FPC.proof.Correctness.ScottDomains.SplitReflect
+import FPC.proof.Correctness.ScottDomains.SplitTerms
+import FPC.proof.Correctness.ScottDomains.SplitCorrect
+import FPC.proof.Correctness.ScottDomains.HoistCorrect
+import FPC.proof.Correctness.ScottDomains.RCOCorrect
+import FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect
+import FPC.proof.Correctness.ScottDomains.ExplicateCorrect
+import FPC.proof.Correctness.ScottDomains.SelectCorrect
+import FPC.proof.Correctness.ScottDomains.CompilerCorrect
 
 {- adequacy for the clocked interpreters -}
-import Mu.proof.Adequacy.ScottDomains.Soundness
-import Mu.proof.Adequacy.ScottDomains.LogRel
-import Mu.proof.Adequacy.ScottDomains.FPC
-import Mu.proof.Adequacy.ScottDomains.X86Soundness
-import Mu.proof.Adequacy.ScottDomains.X86LogRel
-import Mu.proof.Adequacy.ScottDomains.X86Compiled
-import Mu.proof.Adequacy.ScottDomains.X86
-import Mu.proof.Adequacy.ScottDomains.EndToEnd
+import FPC.proof.Adequacy.ScottDomains.Soundness
+import FPC.proof.Adequacy.ScottDomains.LogRel
+import FPC.proof.Adequacy.ScottDomains.FPC
+import FPC.proof.Adequacy.ScottDomains.X86Soundness
+import FPC.proof.Adequacy.ScottDomains.X86LogRel
+import FPC.proof.Adequacy.ScottDomains.X86Compiled
+import FPC.proof.Adequacy.ScottDomains.X86
+import FPC.proof.Adequacy.ScottDomains.EndToEnd

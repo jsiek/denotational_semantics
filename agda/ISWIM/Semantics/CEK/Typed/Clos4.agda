@@ -1,7 +1,7 @@
 {-
 
-  A CEK machine for Clos4ᵀ (Language/Typed/Clos4.agda), as the one for
-  Clos3ᵀ (Semantics/CEK/Typed/Clos3.agda). The value of code is the
+  A CEK machine for Clos4ᵀ (ISWIM/Language/Typed/Clos4.agda), as the one for
+  Clos3ᵀ (ISWIM/Semantics/CEK/Typed/Clos3.agda). The value of code is the
   code; a closure is a packed pair of code and an environment of the
   same length n. callc L M evaluates the closure and the argument, then
   runs the closure's code with its environment and the argument; there
@@ -9,12 +9,12 @@
 
 -}
 
-module Semantics.CEK.Typed.Clos4 where
+module ISWIM.Semantics.CEK.Typed.Clos4 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.Clos4
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Clos4
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import Framework.VecUtil using (_+ʳ_; _<><_)

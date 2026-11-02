@@ -2,7 +2,7 @@
 
   Correctness of remove complex operands (GlobalFunμ → Monμ, run as its
   embedding into GlobalFunμ), clock for clock, as for typed rco
-  (proof/Correctness/Interp/RCOFuel.agda). The pass only adds lets,
+  (ISWIM/proof/Correctness/Interp/RCOFuel.agda). The pass only adds lets,
   which do not tick, and an atom evaluates without calling anything, so
   a term and its rco, in environments that agree through the renaming ρ
   (Agree), give the same result for every clock.
@@ -14,19 +14,19 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.RCOFuel where
+module FPC.proof.Correctness.ClockedInterpreters.RCOFuel where
 
-open import Mu.Language.Type
-open import Mu.Language.GlobalFun
-import Mu.Language.Mon as M
+open import FPC.Language.Type
+open import FPC.Language.GlobalFun
+import FPC.Language.Mon as M
 open M using (Atm; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Mu.Compiler.RCO
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
+open import FPC.Compiler.RCO
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.GlobalFun as C
+import FPC.Semantics.ClockedInterpreters.GlobalFun as C
 open C using (eval; evals; call)
-open import Mu.Semantics.ClockedInterpreters.Imp using (atom)
-open import Mu.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; atm-bind; atoms-bind; either-cong)
+open import FPC.Semantics.ClockedInterpreters.Imp using (atom)
+open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; atm-bind; atoms-bind; either-cong)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)

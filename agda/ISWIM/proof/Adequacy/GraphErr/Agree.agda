@@ -11,7 +11,7 @@
 
 -}
 
-module proof.Adequacy.GraphErr.Agree where
+module ISWIM.proof.Adequacy.GraphErr.Agree where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates

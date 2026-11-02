@@ -1,8 +1,8 @@
 {-
 
   Correctness of cast insertion (ISWIM → ISWIMᵀ) by a forward simulation
-  between their reduction semantics (Semantics/Reduction/ISWIM.agda and
-  Semantics/Reduction/Typed/ISWIM.agda).
+  between their reduction semantics (ISWIM/Semantics/Reduction/ISWIM.agda and
+  ISWIM/Semantics/Reduction/Typed/ISWIM.agda).
 
   The relation on terms (_⊢_≈_) follows the shape of cast's output: a
   value of the source is related to the injection of the typed value,
@@ -24,22 +24,22 @@
 
 -}
 
-module proof.Correctness.Reduction.CastRed where
+module ISWIM.proof.Correctness.Reduction.CastRed where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-import Language.Typed.ISWIM as I
-open import Compiler.Cast
-open import Compiler.CaptureScope using (Closed)
-open import proof.Compiler.SimplifyScope using (closed-ws)
-open import proof.Compiler.CastScope using (cast-closed-≡)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+import ISWIM.Language.Typed.ISWIM as I
+open import ISWIM.Compiler.Cast
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.proof.Compiler.SimplifyScope using (closed-ws)
+open import ISWIM.proof.Compiler.CastScope using (cast-closed-≡)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Semantics.Reduction.ISWIM as S
-import proof.Semantics.Reduction.Typed.ISWIM as T
+import ISWIM.Semantics.Reduction.ISWIM as S
+import ISWIM.proof.Semantics.Reduction.Typed.ISWIM as T
 open T using (Kit; varK; tmK; trav; Value; value-red; values-red)
 import proof.Framework.Syntax.Subst Op sig as IS
 open IS using (sub; exts)

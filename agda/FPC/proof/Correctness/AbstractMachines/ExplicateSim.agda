@@ -1,9 +1,9 @@
 {-
 
   Correctness of explicate control (Impμ → CFGμ,
-  Mu/Compiler/Explicate.agda) by a forward simulation of the Impμ
+  FPC/Compiler/Explicate.agda) by a forward simulation of the Impμ
   machine by the CFGμ machine, as for typed explicate control
-  (proof/Correctness/CEK/ExplicateSim.agda).
+  (ISWIM/proof/Correctness/CEK/ExplicateSim.agda).
 
   The machines share the values, the frames and the simple expressions,
   and an expression runs in the same frame on both. An expression e
@@ -23,22 +23,22 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.ExplicateSim where
+module FPC.proof.Correctness.AbstractMachines.ExplicateSim where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
 open import Framework.Lookup using (forget)
-import Mu.Language.Imp as Imp
+import FPC.Language.Imp as Imp
 open Imp using (simple; assign; case)
-open import Mu.Language.CFG
-open import Mu.Compiler.Explicate
-open import Mu.Framework.AllUtil using (All; []; _∷_; map)
-open import Mu.proof.Framework.AllProp using (lookup-map)
+open import FPC.Language.CFG
+open import FPC.Compiler.Explicate
+open import FPC.Framework.AllUtil using (All; []; _∷_; map)
+open import FPC.proof.Framework.AllProp using (lookup-map)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; Reach)
 open import proof.Semantics.CEK.Simulation
   using (Answers≺; stops; steps; stutters; steps₁≺; after≺; answers-at; FSim; Equivalent; equivalent)
-import Mu.Semantics.AbstractMachines.Imp as I
-import Mu.Semantics.AbstractMachines.CFG as G
+import FPC.Semantics.AbstractMachines.Imp as I
+import FPC.Semantics.AbstractMachines.CFG as G
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; suc)

@@ -20,20 +20,20 @@
 
 -}
 
-module Untyped.proof.Correctness.Interp.HoistFuel where
+module ISWIM.Untyped.proof.Correctness.Interp.HoistFuel where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos4
-open import Untyped.Compiler.Hoist
+open import ISWIM.Untyped.Language.Clos4
+open import ISWIM.Untyped.Compiler.Hoist
 open import Semantics.Observation
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
 open import proof.Framework.ListUtil using (_‼_; proj-pw; ‼-pw)
-open import Untyped.proof.Compiler.HoistTable
+open import ISWIM.Untyped.proof.Compiler.HoistTable
   using (_⊑_; ⊑-refl; ⊑-trans; ∷-⊑; glob-grows; glob-grows-args; global-⊑)
 open import proof.Semantics.Interp.Clock
-import Untyped.Semantics.Interp.Clos4 as S
-import Untyped.Semantics.Interp.Clos5 as T
+import ISWIM.Untyped.Semantics.Interp.Clos4 as S
+import ISWIM.Untyped.Semantics.Interp.Clos5 as T
 
 open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)

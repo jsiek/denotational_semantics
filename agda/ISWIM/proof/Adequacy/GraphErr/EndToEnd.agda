@@ -1,7 +1,7 @@
 {-
 
   Adequacy of the graph model with errors for the typed compiler
-  (Compiler/Pipeline.agda): the denotation of compile M (Clos5ᵀ) and of
+  (ISWIM/Compiler/Pipeline.agda): the denotation of compile M (Clos5ᵀ) and of
   compile-x86 M (X86ᵀ) tells the three outcomes of its machine apart,
   for a closed ISWIM program M.
 
@@ -11,7 +11,7 @@
     the code of the Clos5ᵀ definition it comes from, under any table of
     sets of values, consistent (x86-code: select, explicate control, lift
     locals and rco preserve the meaning of code), and hoist makes
-    only references to older definitions (proof/Compiler/HoistOlder.agda);
+    only references to older definitions (ISWIM/proof/Compiler/HoistOlder.agda);
   * the table is consistent, as that of CFGᵀ is (select's table-≃).
   The ISWIM machine on M and the X86ᵀ machine on compile-x86 M agree on
   every outcome (end-to-end-x86): the denotations of M and compile-x86 M
@@ -27,7 +27,7 @@
 
 -}
 
-module proof.Adequacy.GraphErr.EndToEnd where
+module ISWIM.proof.Adequacy.GraphErr.EndToEnd where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
@@ -35,45 +35,45 @@ open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀; Con; Con-
 open import proof.Framework.GraphModel.ErrorMonad
   using (ΛΛᵐ-≃; ΛΛᵐ-≃′; noerr-val; pairᵐ-≃; 𝒯ᵐ-≃; inlᵐ-≃; inrᵐ-≃; ≫=-≃) renaming (Val to Valᴰ)
 open import proof.Framework.GraphModel.Env using (extend-nonempty-env; •-~; _~ₑ[_]_)
-open import Language.ISWIM using (AST)
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.Clos5 using (Tm; Code; `_; fun-ref; pack; callc; lit; tuple; get; inl; inr; case; prim; let′; inject; project)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Clos5 using (Tm; Code; `_; fun-ref; pack; callc; lit; tuple; get; inl; inr; case; prim; let′; inject; project)
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
-import Semantics.CEK.Typed.X86 as X86ᵀₘ
-open import Semantics.GraphErr.Typed.Ops using (init)
-open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅; ⟦_⟧[_]; ⟦_⟧s[_]; code₅; Table)
-open import Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ; codeₜ)
-open import Semantics.GraphErr.ISWIM using (⟦_⟧)
-open import Compiler.Pipeline using (compile; compile₄; compile-cfg; compile-x86)
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.RCO using (rco)
-open import Compiler.LiftLocals using (lift)
-open import Compiler.Explicate using (explicate-body)
-open import Compiler.Select using (def-body)
-open import proof.Correctness.GraphErr.CompilerCorrect using (Same; compile-same₅; compile-x86-same)
-open import proof.Correctness.GraphErr.SelectCorrect using (code-≃; table-≃)
-open import proof.Correctness.GraphErr.ExplicateCorrect using (body-sem)
-open import proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-sem)
-open import proof.Correctness.GraphErr.RCOCorrect using (rco-sem; mkR)
-open import proof.Semantics.GraphErr.Typed.Clos5 using (callc-≃; tbl-con)
-open import proof.Semantics.GraphErr.Typed.Clos2 using (getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃)
-open import proof.Semantics.GraphErr.Typed.CFG using (codeᶜ-con)
-open import proof.Correctness.CEK.PipelineSim using (compile-error; compile-const; compile-converges; compile-diverges)
-open import proof.Compiler.HoistOlder using (Older; Olders; OlderDefs; hoist-older)
-import proof.Adequacy.GraphErr.ISWIM as A
-import proof.Adequacy.GraphErr.X86 as X
-import proof.Adequacy.GraphErr.X86Common as C
-import Language.Typed.Clos5 as C₅
-import Language.Typed.CFG as CFG
-import Language.Typed.Mon as Mon
-open import Semantics.GraphErr.Typed.CFG using (codeᶜ)
-open import Semantics.GraphErr.Typed.Imp using (codeᵢ)
-import Language.Typed.X86 as X86ᵀ
-open import proof.Adequacy.GraphErr.Agree using (Agree; agree; ⇔-sym; ⇔-trans; Same-sym; empty-Same) public
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
+import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (init)
+open import ISWIM.Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅; ⟦_⟧[_]; ⟦_⟧s[_]; code₅; Table)
+open import ISWIM.Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ; codeₜ)
+open import ISWIM.Semantics.GraphErr.ISWIM using (⟦_⟧)
+open import ISWIM.Compiler.Pipeline using (compile; compile₄; compile-cfg; compile-x86)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.RCO using (rco)
+open import ISWIM.Compiler.LiftLocals using (lift)
+open import ISWIM.Compiler.Explicate using (explicate-body)
+open import ISWIM.Compiler.Select using (def-body)
+open import ISWIM.proof.Correctness.GraphErr.CompilerCorrect using (Same; compile-same₅; compile-x86-same)
+open import ISWIM.proof.Correctness.GraphErr.SelectCorrect using (code-≃; table-≃)
+open import ISWIM.proof.Correctness.GraphErr.ExplicateCorrect using (body-sem)
+open import ISWIM.proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-sem)
+open import ISWIM.proof.Correctness.GraphErr.RCOCorrect using (rco-sem; mkR)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 using (callc-≃; tbl-con)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃)
+open import ISWIM.proof.Semantics.GraphErr.Typed.CFG using (codeᶜ-con)
+open import ISWIM.proof.Correctness.CEK.PipelineSim using (compile-error; compile-const; compile-converges; compile-diverges)
+open import ISWIM.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs; hoist-older)
+import ISWIM.proof.Adequacy.GraphErr.ISWIM as A
+import ISWIM.proof.Adequacy.GraphErr.X86 as X
+import ISWIM.proof.Adequacy.GraphErr.X86Common as C
+import ISWIM.Language.Typed.Clos5 as C₅
+import ISWIM.Language.Typed.CFG as CFG
+import ISWIM.Language.Typed.Mon as Mon
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (codeᶜ)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (codeᵢ)
+import ISWIM.Language.Typed.X86 as X86ᵀ
+open import ISWIM.proof.Adequacy.GraphErr.Agree using (Agree; agree; ⇔-sym; ⇔-trans; Same-sym; empty-Same) public
 open import Framework.Lookup using (_!_)
 open import Framework.GraphModel.OpsBase using (nthD)
 

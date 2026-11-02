@@ -1,7 +1,7 @@
 {-
 
   Correctness of explicate control (Impμ → CFGμ), clock for clock, as
-  for typed explicate control (proof/Correctness/Interp/ExplicateFuel.agda).
+  for typed explicate control (ISWIM/proof/Correctness/Interp/ExplicateFuel.agda).
   The pass keeps every call, the values are the same, and so the two
   programs give the same result for every clock.
 
@@ -14,21 +14,21 @@
 
 -}
 
-module Mu.proof.Correctness.ClockedInterpreters.ExplicateFuel where
+module FPC.proof.Correctness.ClockedInterpreters.ExplicateFuel where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Mu.Language.Imp as Imp
-open import Mu.Language.CFG
-open import Mu.Compiler.Explicate
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
+import FPC.Language.Imp as Imp
+open import FPC.Language.CFG
+open import FPC.Compiler.Explicate
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.GlobalFun as C
-import Mu.Semantics.ClockedInterpreters.Imp as I
-import Mu.Semantics.ClockedInterpreters.CFG as G
-open import Mu.Semantics.ClockedInterpreters.Imp using (atom; eval-simple)
+import FPC.Semantics.ClockedInterpreters.GlobalFun as C
+import FPC.Semantics.ClockedInterpreters.Imp as I
+import FPC.Semantics.ClockedInterpreters.CFG as G
+open import FPC.Semantics.ClockedInterpreters.Imp using (atom; eval-simple)
 open import Framework.Lookup using (forget)
-open import Mu.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; either-cong)
+open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; either-cong)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)

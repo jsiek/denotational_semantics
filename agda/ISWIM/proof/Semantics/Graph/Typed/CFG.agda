@@ -1,18 +1,18 @@
 {-
 
   Lemmas about the semantics of CFGᵀ in the graph model
-  (Semantics/Graph/Typed/CFG.agda), and about the simple expressions it
+  (ISWIM/Semantics/Graph/Typed/CFG.agda), and about the simple expressions it
   shares with Impᵀ: a simple expression is monotone in its atoms (𝒮-⊆,
   hence a congruence in the table, 𝒮-≃), and a tail and the blocks are
   monotone in the frame (tail-mono, blocks-mono).
 
 -}
 
-module proof.Semantics.Graph.Typed.CFG where
+module ISWIM.proof.Semantics.Graph.Typed.CFG where
 
-open import Semantics.Graph.Typed.CFG public
-open import Semantics.Graph.Typed.Imp using (𝒜s)
-open import proof.Semantics.Graph.Typed.Ops using (Table; project-good; fun₄)
+open import ISWIM.Semantics.Graph.Typed.CFG public
+open import ISWIM.Semantics.Graph.Typed.Imp using (𝒜s)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; project-good; fun₄)
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
@@ -21,9 +21,9 @@ open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.Env using (_⊆ₑ_; •-~)
 open import proof.Semantics.Graph.Prim using (primD-mono)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Language.Typed.Type
-open import Language.Typed.CFG
-open import Language.Typed.Imp using (var; lit; ref; atm; pack; callc; tuple; get; inl; inr; prim; inject; project)
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.CFG
+open import ISWIM.Language.Typed.Imp using (var; lit; ref; atm; pack; callc; tuple; get; inl; inr; prim; inject; project)
 
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Nat using (ℕ; suc)

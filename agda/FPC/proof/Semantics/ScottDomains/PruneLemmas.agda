@@ -1,7 +1,7 @@
 {-
 
   Scott domains: comparing strictness guards (for the proofs of
-  prune and concretize, Mu/proof/Correctness/ScottDomains/). guard n ds e
+  prune and concretize, FPC/proof/Correctness/ScottDomains/). guard n ds e
   and seq d e are ⊥ unless their guards are defined, so they are below
   any value that e is below when the guards are defined (guard-below).
   Hence two guards whose conditions hold together are equal when their
@@ -17,7 +17,7 @@ open import UF.Subsingletons
 
 open import Data.Fin using (Fin; zero; suc)
 
-module Mu.proof.Semantics.ScottDomains.PruneLemmas
+module FPC.proof.Semantics.ScottDomains.PruneLemmas
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)

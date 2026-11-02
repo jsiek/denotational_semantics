@@ -7,14 +7,14 @@
 
 -}
 
-module proof.Compiler.SimplifyScope where
+module ISWIM.proof.Compiler.SimplifyScope where
 
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 import Language.Prim
 open import Language.Prim using (int; bool)
-open import Compiler.Simplify
-open import Compiler.CaptureScope using (Closed)
-open import proof.Compiler.SimplifyFacts using (comp-inv; branch-inl; branch-inr)
+open import ISWIM.Compiler.Simplify
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.proof.Compiler.SimplifyFacts using (comp-inv; branch-inl; branch-inr)
 open import Framework.Syntax.Uses Op sig using (bound; bound-args)
 open import Data.Nat using (_≤_; _⊔_; _∸_)
 open import Data.Nat.Properties using (m⊔n≤o⇒m≤o; m⊔n≤o⇒n≤o; ≤-trans; m≤n+m∸n)

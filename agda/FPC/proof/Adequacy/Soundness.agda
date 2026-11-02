@@ -1,12 +1,12 @@
 {-
 
   Soundness of the clocked interpreter of FPC
-  (Mu/Semantics/ClockedInterpreters/FPC.agda) with respect to the graph model
-  (Mu/Semantics/GraphModel/FPC.agda): what the interpreter returns, at any
+  (FPC/Semantics/ClockedInterpreters/FPC.agda) with respect to the graph model
+  (FPC/Semantics/GraphModel/FPC.agda): what the interpreter returns, at any
   clock, denotes a part of the denotation of the program; and it never
   errs.
 
-  As the soundness of the FPC machine (Mu/proof/Adequacy/AbstractMachines/Soundness.agda),
+  As the soundness of the FPC machine (FPC/proof/Adequacy/AbstractMachines/Soundness.agda),
   through denotations of values (𝒱; a closure denotes its λ in the
   denotation of its environment, 𝓔), but by induction on the clock and
   the term instead of over the steps of a machine: no continuations.
@@ -18,13 +18,13 @@
 
 -}
 
-module Mu.proof.Adequacy.Soundness where
+module FPC.proof.Adequacy.Soundness where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; sub; eq) renaming (δ to δᴾ)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain hiding (ρ₀) renaming (const to dconst)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; 𝒞; Λ; proj; Λ-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (inl to inlD; inr to inrD)
@@ -35,12 +35,12 @@ open import proof.Framework.GraphModel.TypedOkBase using (fin₁)
 import proof.Framework.GraphModel.Env as E
 open import proof.Semantics.Graph.Prim using (primD; primD-good) renaming (out to dout)
 open import proof.Semantics.Interp.Clock using (Result; timeout; error; ret; _>>=_)
-open import Mu.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; 𝒯L-mono; At-length)
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; ok)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
-open import Mu.Semantics.ClockedInterpreters.FPC
+open import FPC.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; 𝒯L-mono; At-length)
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; ok)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.Semantics.ClockedInterpreters.FPC
 open import Semantics.Observation using (o-const)
 
 open import Data.Bool using (true; false)

@@ -1,8 +1,8 @@
 {-
 
   X86μ: the typed assembly language of FPC's compiler, the target of the
-  compiler, the output of select instructions (Mu/Compiler/Select.agda).
-  As X86ᵀ (Language/Typed/X86.agda), with the types of CFGμ, and with
+  compiler, the output of select instructions (FPC/Compiler/Select.agda).
+  As X86ᵀ (ISWIM/Language/Typed/X86.agda), with the types of CFGμ, and with
   no check: nothing traps.
 
   An instruction is typed by the machine state it starts in and the one
@@ -57,14 +57,14 @@
 
 -}
 
-module Mu.Language.X86 where
+module FPC.Language.X86 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_)
-open import Mu.Language.Mon using (DSig; sig; Args; Atm; var; lit; ref) public
+open import FPC.Language.Mon using (DSig; sig; Args; Atm; var; lit; ref) public
 open import Language.Reg public
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Framework.AllUtil using (All)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.List using (List; []; _∷_; length)

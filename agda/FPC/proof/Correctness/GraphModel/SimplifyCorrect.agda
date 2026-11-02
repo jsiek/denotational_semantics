@@ -1,7 +1,7 @@
 {-
 
   Correctness of the simplify pass (FPC → FPC) in the graph model,
-  as for the untyped simplify (proof/Correctness/Graph/SimplifyCorrect.agda).
+  as for the untyped simplify (ISWIM/proof/Correctness/Graph/SimplifyCorrect.agda).
 
   The main lemma (simp-ok): if what simp knows of each variable x is true
   of the source's environment γ in the target's γ' (Desc: γ x is denoted
@@ -23,15 +23,15 @@
 
   Unlike untyped ISWIM, whose renaming and continuity come with the
   syntax of any signature, FPC's renaming needs its lemma here
-  (ren-≃), and its continuity is Mu/proof/Semantics/GraphModel/FPC.agda's.
+  (ren-≃), and its continuity is FPC/proof/Semantics/GraphModel/FPC.agda's.
 
 -}
 
-module Mu.proof.Correctness.GraphModel.SimplifyCorrect where
+module FPC.proof.Correctness.GraphModel.SimplifyCorrect where
 
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import proof.Framework.GraphModel.TypedOkBase using (fin₁)
 open import proof.Framework.GraphModel.TypedGraph using (𝒯-intro; proj-𝒯)
@@ -39,13 +39,13 @@ open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-none
 open import proof.Semantics.Graph.Prim
 open import Language.Prim using (Prim; Out; int; bool; δ)
 import Language.Prim as Pr
-open import Mu.Language.Type
-open import Mu.Language.FPC
-open import Mu.Language.FPCSubst using (ren; exts; varK; travs)
-open import Mu.proof.Semantics.GraphModel.FPC
-open import Mu.proof.Semantics.GraphModel.Binders using (Body-≃; lam-≃; let-≃; case-≃; body-mono)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
-open import Mu.proof.Compiler.SimplifyFacts as P
+open import FPC.Language.Type
+open import FPC.Language.FPC
+open import FPC.Language.FPCSubst using (ren; exts; varK; travs)
+open import FPC.proof.Semantics.GraphModel.FPC
+open import FPC.proof.Semantics.GraphModel.Binders using (Body-≃; lam-≃; let-≃; case-≃; body-mono)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
+open import FPC.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; val; fun; Facts; self; info; under; known-as; shift-info; shift-known;
          simp; simps; simp-app; lam?; is-lam; other; simp-call; simp-let; size; inline-size; inline-fuel;
          simp-get; simp-case; simp-prim; simp-unfold; simplify; small; value; component; branch; unfolded; int-of;

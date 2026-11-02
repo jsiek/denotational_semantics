@@ -1,7 +1,7 @@
 {-
 
-  A machine for CFGᵀ (Language/Typed/CFG.agda), with the values, frames
-  and simple expressions of the Impᵀ machine (Semantics/CEK/Typed/Imp.agda).
+  A machine for CFGᵀ (ISWIM/Language/Typed/CFG.agda), with the values, frames
+  and simple expressions of the Impᵀ machine (ISWIM/Semantics/CEK/Typed/Imp.agda).
   A state runs a tail in a frame, with the blocks it may jump to (those
   of its body for the start of a body, and those older than block l for
   block l):
@@ -20,15 +20,15 @@
 
 -}
 
-module Semantics.CEK.Typed.CFG where
+module ISWIM.Semantics.CEK.Typed.CFG where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_)
-open import Language.Typed.CFG
+open import ISWIM.Language.Typed.CFG
 open import Framework.Lookup using (_!_; forget)
 open import Semantics.Observation using (o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import Semantics.CEK.Typed.Imp
+open import ISWIM.Semantics.CEK.Typed.Imp
   using (Val; code; pack; Frame; obs; choose; atom; Res; value; fail; call; run) public
 
 open import Data.List using (List; []; _∷_)

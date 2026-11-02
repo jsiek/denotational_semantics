@@ -25,24 +25,24 @@
 
 -}
 
-module Untyped.proof.Correctness.Reduction.RCORed where
+module ISWIM.Untyped.proof.Correctness.Reduction.RCORed where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos5
-open import Untyped.Language.Mon using (Atom; var; lit; ref; atom-rename)
-open import Untyped.Compiler.RCO
-open import Untyped.Compiler.Pipeline using (compile; compile-mon)
-open import Untyped.Compiler.PipelineScope using (Scoped)
-open import Untyped.proof.Compiler.PipelineScope using (compile-scoped)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Language.Mon using (Atom; var; lit; ref; atom-rename)
+open import ISWIM.Untyped.Compiler.RCO
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon)
+open import ISWIM.Untyped.Compiler.PipelineScope using (Scoped)
+open import ISWIM.Untyped.proof.Compiler.PipelineScope using (compile-scoped)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import proof.Framework.Simulation Obs using (equiv-trans)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Untyped.proof.Semantics.Reduction.Clos5 as T
+import ISWIM.Untyped.proof.Semantics.Reduction.Clos5 as T
 open T using (Value; Values; value-red; values-red)
-import Semantics.Reduction.ISWIM as S
-open import Untyped.proof.Correctness.Reduction.CompilerRed using (compile-correct)
+import ISWIM.Semantics.Reduction.ISWIM as S
+open import ISWIM.Untyped.proof.Correctness.Reduction.CompilerRed using (compile-correct)
 open import proof.Framework.Syntax.Subst Op sig
   using (Subst; sub; sub-args; exts; ids; extend; _[_]; sub-id; sub-cong; ren-sub; exts-[]; extend-skip; extend-top)
 open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-args; rename-fuse-args; rename-id-args)

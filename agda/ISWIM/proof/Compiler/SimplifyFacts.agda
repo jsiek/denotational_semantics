@@ -1,17 +1,17 @@
 {-
 
-  Syntactic facts about simplify (Compiler/Simplify.agda), used by its
+  Syntactic facts about simplify (ISWIM/Compiler/Simplify.agda), used by its
   four proofs: the values (SV, where a variable stands for a value),
   which value and small recognize and substitution keeps, and what the
   known values that simplify inspects are.
 
 -}
 
-module proof.Compiler.SimplifyFacts where
+module ISWIM.proof.Compiler.SimplifyFacts where
 
-open import Compiler.Simplify public
+open import ISWIM.Compiler.Simplify public
 
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Language.Prim using (Out; int; bool)
 open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)

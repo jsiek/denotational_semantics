@@ -11,7 +11,7 @@
   program terminates with the same observation as the original,
   errors exactly when it does, and diverges exactly when it does.
 
-  The compiler is Untyped.Compiler.Pipeline.compile, the one of the
+  The compiler is ISWIM.Untyped.Compiler.Pipeline.compile, the one of the
   denotational end-to-end theorem (CompilerCorrect) and of the
   simulation one (CompilerSim), and it is definitionally the
   composition of the passes as the per-pass theorems state them. The
@@ -19,25 +19,25 @@
 
 -}
 
-module Untyped.proof.Correctness.Interp.CompilerFuel where
+module ISWIM.Untyped.proof.Correctness.Interp.CompilerFuel where
 
-open import Untyped.Compiler.Pipeline using (compile)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile)
 open import Semantics.Observation
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
-open import Untyped.Compiler.Prune using (prune-program)
-open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Split using (split)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Split using (split)
 open import proof.Semantics.Interp.Clock
-open import Compiler.Simplify using (simplify)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
-open import proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
-open import Untyped.proof.Correctness.Interp.PruneFuel using (capture-prune-correct)
-open import Untyped.proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
-open import Untyped.proof.Correctness.Interp.SplitFuel using (split-correct)
-open import Untyped.proof.Correctness.Interp.HoistFuel using (hoist-correct)
-import Semantics.Interp.ISWIM as S
-import Untyped.Semantics.Interp.Clos5 as T
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
+open import ISWIM.proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.PruneFuel using (capture-prune-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.SplitFuel using (split-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.HoistFuel using (hoist-correct)
+import ISWIM.Semantics.Interp.ISWIM as S
+import ISWIM.Untyped.Semantics.Interp.Clos5 as T
 
 open import Data.Product using (_,_; proj₁; proj₂)
 

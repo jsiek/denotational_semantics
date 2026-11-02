@@ -1,11 +1,11 @@
 {-
 
-  A clocked interpreter for X86 (Language/X86.agda), the output of select
+  A clocked interpreter for X86 (ISWIM/Language/X86.agda), the output of select
   instructions. The machine state is a frame (the slots, as in Imp and
   CFG) and a register file: %rax, %rdi and %rsi each hold a value or
   are unset, and the flag is set (true or false) or unset; reading an
   unset register or flag errors. The values and the
-  operations on them are in Untyped/Semantics/Interp/Values.agda: subq is
+  operations on them are in ISWIM/Untyped/Semantics/Interp/Values.agda: subq is
   prim? sub, cmpq compares integers as prim? eq does, and alloc and load
   build and take apart pairs, tuples and injections.
 
@@ -19,7 +19,7 @@
   result and %rdi, %rsi and the flag unset. main runs in a frame of
   locals zeros, with %rax 0 and the rest unset.
 
-  As in CFGᵀ (Semantics/Interp/Typed/CFG.agda), only calls tick the clock (see the design
+  As in CFGᵀ (ISWIM/Semantics/Interp/Typed/CFG.agda), only calls tick the clock (see the design
   note in Clock.agda), and a jump to l walks the list of blocks it may
   jump to (newest first) and runs block l with the blocks older than
   it, so the interpreter is structurally recursive on the clock, the
@@ -27,14 +27,14 @@
 
 -}
 
-module Untyped.Semantics.Interp.X86 where
+module ISWIM.Untyped.Semantics.Interp.X86 where
 
-open import Language.X86
+open import ISWIM.Language.X86
 open import Language.Prim using (sub; eq; Out; int; bool)
 open import Semantics.Observation using (δ?)
 open import Framework.ListUtil using (_‼_)
 open import Semantics.Interp.Clock
-open import Untyped.Semantics.Interp.Values
+open import ISWIM.Untyped.Semantics.Interp.Values
   using (Val; code; pair; const; tup; inl; inr; obs; out; prim?; project; first; second; Frame; zero-val; _[_]≔_)
 
 open import Data.Bool using (Bool; true; false; if_then_else_)

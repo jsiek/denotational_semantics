@@ -2,7 +2,7 @@
 
   Forward (preserve) direction of typed split (Clos3ᵀ → Clos4ᵀ) in the
   graph model, by the logical relation of untyped split
-  (Untyped/proof/Correctness/Graph/SplitPreserve.agda) between single source
+  (ISWIM/Untyped/proof/Correctness/Graph/SplitPreserve.agda) between single source
   values and target sets (v ⊑ D'), by recursion on the value: a source
   function is exhibited by a target closure, a set with a pair, whose
   calls (⊙, callc) exhibit its results. The pair is what project needs:
@@ -17,17 +17,17 @@ open import proof.Framework.GraphModel.Ops using (⋆; Λ; 𝒯; nthD; pair; car
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
 open import proof.Semantics.Graph.Prim using (out)
-open import Language.Typed.Type using (Any; ⟪_⟫; tup; _∋_; Z; S; idx; tfun; tsum; tint; ttup)
-open import Language.Typed.Clos3
-import Language.Typed.Clos4 as T
-import proof.Semantics.Graph.Typed.Clos3 as S3
-import proof.Semantics.Graph.Typed.Clos4 as S4
+open import ISWIM.Language.Typed.Type using (Any; ⟪_⟫; tup; _∋_; Z; S; idx; tfun; tsum; tint; ttup)
+open import ISWIM.Language.Typed.Clos3
+import ISWIM.Language.Typed.Clos4 as T
+import ISWIM.proof.Semantics.Graph.Typed.Clos3 as S3
+import ISWIM.proof.Semantics.Graph.Typed.Clos4 as S4
 open S3 using (⟦_⟧; ⟦_⟧s)
 open S4 using () renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
-open import proof.Semantics.Graph.Typed.Ops using (fin₁; fin₂; accepts; fun₂; fun₄)
-open import Compiler.Split using (Ren; ext; split; splits; split-program)
-open import proof.Correctness.Graph.SplitRel using (_●_; _⊙_; out-data)
-open import proof.Correctness.Graph.SplitReflect using (mono₁)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (fin₁; fin₂; accepts; fun₂; fun₄)
+open import ISWIM.Compiler.Split using (Ren; ext; split; splits; split-program)
+open import ISWIM.proof.Correctness.Graph.SplitRel using (_●_; _⊙_; out-data)
+open import ISWIM.proof.Correctness.Graph.SplitReflect using (mono₁)
 open import Language.Prim using (δ)
 
 open import Data.Nat using (zero; suc)
@@ -42,7 +42,7 @@ open import Data.Unit.Polymorphic using () renaming (⊤ to pTrue; tt to ptt)
 open import Level using (Lift; lift; lower) renaming (suc to lsuc; zero to lzero)
 open import Relation.Binary.PropositionalEquality using (refl)
 
-module proof.Correctness.Graph.SplitPreserve where
+module ISWIM.proof.Correctness.Graph.SplitPreserve where
 
 {- The relation -----------------------------------------------------------------}
 

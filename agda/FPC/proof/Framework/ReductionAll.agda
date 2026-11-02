@@ -1,7 +1,7 @@
 {-
 
   The lemmas about the reduction of heterogeneous vectors
-  (Mu/Framework/ReductionAll.agda), as proof/Framework/ReductionVec.agda
+  (FPC/Framework/ReductionAll.agda), as proof/Framework/ReductionVec.agda
   for vectors: each element with a property (Each); and how the
   target's operands answer the source's, the first and then the rest,
   related pointwise (ans-∷). And a reduction on terms of every type, as
@@ -11,11 +11,11 @@
 
 -}
 
-module Mu.proof.Framework.ReductionAll (Obs : Set) (o-error : Obs) where
+module FPC.proof.Framework.ReductionAll (Obs : Set) (o-error : Obs) where
 
 open import proof.Framework.Reduction Obs o-error hiding (Each)
-open import Mu.Framework.ReductionAll Obs o-error public
-open import Mu.Framework.AllUtil using (All; []; _∷_; All₂; lookup)
+open import FPC.Framework.ReductionAll Obs o-error public
+open import FPC.Framework.AllUtil using (All; []; _∷_; All₂; lookup)
 open import Framework.Membership using (_∋_; Z; S)
 
 open import Framework.Smallstep Obs using (Equivalent)

@@ -1,4 +1,4 @@
-module Untyped.Semantics.Graph.Clos3Iswim where
+module ISWIM.Untyped.Semantics.Graph.Clos3Iswim where
 {-
 
  In this intermediate semantics all functions take two parameters,
@@ -13,7 +13,7 @@ open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
-open import Untyped.Language.Clos3
+open import ISWIM.Untyped.Language.Clos3
 open import Framework.GraphModel.Env using (Env)
 open import Framework.abt.Fold2 Op sig using (fold)
 

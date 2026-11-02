@@ -1,7 +1,7 @@
 {-
 
-  The FPC compiler (Mu/Compiler/Pipeline.agda) in Scott domains, as
-  in the graph model (Mu/proof/Correctness/GraphModel/CompilerCorrect.agda):
+  The FPC compiler (FPC/Compiler/Pipeline.agda) in Scott domains, as
+  in the graph model (FPC/proof/Correctness/GraphModel/CompilerCorrect.agda):
   for a closed FPC program, the compiled program, in PairClosμ, GlobalFunμ,
   Monμ (by its embedding), Impμ, CFGμ and X86μ, produces the same
   constants as the source, and is defined exactly when the source is
@@ -16,16 +16,16 @@ open import UF.PropTrunc
 open import UF.Subsingletons
 
 open import Framework.Primitives using (Base; base-rep; Int)
-open import Mu.Language.Type using (base)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Language.Mon using (⌜_⌝ₚ)
-open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Capture using (capture)
-open import Mu.Compiler.Prune using (prune-program)
-open import Mu.Compiler.Concretize using (concretize-program)
-open import Mu.Compiler.Pipeline
+open import FPC.Language.Type using (base)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Language.Mon using (⌜_⌝ₚ)
+open import FPC.Compiler.Simplify using (simplify)
+open import FPC.Compiler.Capture using (capture)
+open import FPC.Compiler.Prune using (prune-program)
+open import FPC.Compiler.Concretize using (concretize-program)
+open import FPC.Compiler.Pipeline
 
-module Mu.proof.Correctness.ScottDomains.CompilerCorrect
+module FPC.proof.Correctness.ScottDomains.CompilerCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -34,22 +34,22 @@ module Mu.proof.Correctness.ScottDomains.CompilerCorrect
 open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe using (ρ₀)
-open import Mu.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
-open import Mu.Semantics.ScottDomains.PairClos pt fe pe using () renaming (⟦_⟧ to ⟦_⟧₄)
-open import Mu.Semantics.ScottDomains.GlobalFun pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Mu.Semantics.ScottDomains.Imp pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
-open import Mu.Semantics.ScottDomains.CFG pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Mu.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
-open import Mu.proof.Correctness.ScottDomains.SimplifyCorrect pt fe pe using (simplify-correct)
-open import Mu.proof.Correctness.ScottDomains.CaptureCorrect pt fe pe using (capture-correct)
-open import Mu.proof.Correctness.ScottDomains.PruneCorrect pt fe pe using (prune-correct)
-open import Mu.proof.Correctness.ScottDomains.ConcretizeCorrect pt fe pe using (concretize-correct)
-open import Mu.proof.Correctness.ScottDomains.SplitCorrect pt fe pe using (split-correct-const; split-correct-defined)
-open import Mu.proof.Correctness.ScottDomains.HoistCorrect pt fe pe using (hoist-correct)
-open import Mu.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using (rco-correct)
-open import Mu.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using (lift-locals-correct)
-open import Mu.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using (explicate-correct)
-open import Mu.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using (select-correct)
+open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
+open import FPC.Semantics.ScottDomains.PairClos pt fe pe using () renaming (⟦_⟧ to ⟦_⟧₄)
+open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import FPC.Semantics.ScottDomains.Imp pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
+open import FPC.Semantics.ScottDomains.CFG pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import FPC.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
+open import FPC.proof.Correctness.ScottDomains.SimplifyCorrect pt fe pe using (simplify-correct)
+open import FPC.proof.Correctness.ScottDomains.CaptureCorrect pt fe pe using (capture-correct)
+open import FPC.proof.Correctness.ScottDomains.PruneCorrect pt fe pe using (prune-correct)
+open import FPC.proof.Correctness.ScottDomains.ConcretizeCorrect pt fe pe using (concretize-correct)
+open import FPC.proof.Correctness.ScottDomains.SplitCorrect pt fe pe using (split-correct-const; split-correct-defined)
+open import FPC.proof.Correctness.ScottDomains.HoistCorrect pt fe pe using (hoist-correct)
+open import FPC.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using (rco-correct)
+open import FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using (lift-locals-correct)
+open import FPC.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using (explicate-correct)
+open import FPC.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using (select-correct)
 
 open import Data.List using ([])
 

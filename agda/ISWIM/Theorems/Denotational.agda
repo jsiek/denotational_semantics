@@ -1,7 +1,7 @@
 {-
 
   The correctness of the compiler in the graph model: the public
-  statements. The proofs are in proof/Correctness/Graph/; each
+  statements. The proofs are in ISWIM/proof/Correctness/Graph/; each
   theorem here is one of them, with its type written out.
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
@@ -9,70 +9,70 @@
           --hoist--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
           --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
-  To read them: the typed languages (Language/Typed/), the passes
-  (Compiler/), the semantics of each typed language, X86ᵀ included
-  (Semantics/Graph/Typed/; Monᵀ means its embedding into Clos5ᵀ, ⌜_⌝ₚ),
-  that of ISWIM (Semantics/Graph/), and the domain and operators they
+  To read them: the typed languages (ISWIM/Language/Typed/), the passes
+  (ISWIM/Compiler/), the semantics of each typed language, X86ᵀ included
+  (ISWIM/Semantics/Graph/Typed/; Monᵀ means its embedding into Clos5ᵀ, ⌜_⌝ₚ),
+  that of ISWIM (ISWIM/Semantics/Graph/), and the domain and operators they
   are built from (Framework/GraphModel/). In the graph model a
   failed project, like any error, means ∅.
 
 -}
 
-module Theorems.Denotational where
+module ISWIM.Theorems.Denotational where
 
 open import Framework.Primitives using (base-rep)
 open import Framework.GraphModel.SetsAsPredicates using (⌈_⌉; _∈_; nonempty; _≃_)
 open import Framework.GraphModel.Env using (Env)
 open import Framework.GraphModel.Domain using (Value; const; ω)
 
-import Language.ISWIM as ISWIM
-open import Language.Typed.Type using (Any)
-import Language.Typed.ISWIM as ISWIMᵀ
-import Language.Typed.Clos2 as Clos2ᵀ
-import Language.Typed.Clos3 as Clos3ᵀ
-import Language.Typed.Clos4 as Clos4ᵀ
-import Language.Typed.Clos5 as Clos5ᵀ
-import Language.Typed.Mon as Monᵀ
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Language.Typed.Type using (Any)
+import ISWIM.Language.Typed.ISWIM as ISWIMᵀ
+import ISWIM.Language.Typed.Clos2 as Clos2ᵀ
+import ISWIM.Language.Typed.Clos3 as Clos3ᵀ
+import ISWIM.Language.Typed.Clos4 as Clos4ᵀ
+import ISWIM.Language.Typed.Clos5 as Clos5ᵀ
+import ISWIM.Language.Typed.Mon as Monᵀ
 open Monᵀ using (⌜_⌝ₚ)
-import Language.Typed.Imp as Impᵀ
-import Language.Typed.CFG as CFGᵀ
-open import Compiler.CaptureScope using (Closed)
+import ISWIM.Language.Typed.Imp as Impᵀ
+import ISWIM.Language.Typed.CFG as CFGᵀ
+open import ISWIM.Compiler.CaptureScope using (Closed)
 
-open import Compiler.Simplify using (simplify)
-open import Compiler.Cast using (cast-closed)
-open import Compiler.Capture using (capture)
-open import Compiler.Prune using (prune-program)
-open import Compiler.Concretize using (concretize-program)
-open import Compiler.Split using (split-program)
-open import Compiler.Hoist using (hoist)
-open import Compiler.RCO using (rco-program)
-open import Compiler.LiftLocals using (lift-program)
-open import Compiler.Explicate using (explicate)
-open import Compiler.Select using (select)
-open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.Cast using (cast-closed)
+open import ISWIM.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Prune using (prune-program)
+open import ISWIM.Compiler.Concretize using (concretize-program)
+open import ISWIM.Compiler.Split using (split-program)
+open import ISWIM.Compiler.Hoist using (hoist)
+open import ISWIM.Compiler.RCO using (rco-program)
+open import ISWIM.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Compiler.Explicate using (explicate)
+open import ISWIM.Compiler.Select using (select)
+open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Semantics.Graph.ISWIM using (⟦_⟧)
-open import Semantics.Graph.Typed.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵀ)
-open import Semantics.Graph.Typed.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)
-open import Semantics.Graph.Typed.Clos3 using () renaming (⟦_⟧ to ⟦_⟧₃)
-open import Semantics.Graph.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄)
-open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
-open import Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
+open import ISWIM.Semantics.Graph.ISWIM using (⟦_⟧)
+open import ISWIM.Semantics.Graph.Typed.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵀ)
+open import ISWIM.Semantics.Graph.Typed.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)
+open import ISWIM.Semantics.Graph.Typed.Clos3 using () renaming (⟦_⟧ to ⟦_⟧₃)
+open import ISWIM.Semantics.Graph.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄)
+open import ISWIM.Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import ISWIM.Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
+open import ISWIM.Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import ISWIM.Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
 
-import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
-import proof.Correctness.Graph.CastCorrect as Cast
-import proof.Correctness.Graph.CaptureCorrect as Capture
-import proof.Correctness.Graph.PruneCorrect as Prune
-import proof.Correctness.Graph.ConcretizeCorrect as Concretize
-import proof.Correctness.Graph.SplitCorrect as Split
-import proof.Correctness.Graph.HoistCorrect as Hoist
-import proof.Correctness.Graph.RCOCorrect as RCO
-import proof.Correctness.Graph.LiftLocalsCorrect as LiftLocals
-import proof.Correctness.Graph.ExplicateCorrect as Explicate
-import proof.Correctness.Graph.SelectCorrect as Select
-import proof.Correctness.Graph.CompilerCorrect as Compiler
+import ISWIM.proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
+import ISWIM.proof.Correctness.Graph.CastCorrect as Cast
+import ISWIM.proof.Correctness.Graph.CaptureCorrect as Capture
+import ISWIM.proof.Correctness.Graph.PruneCorrect as Prune
+import ISWIM.proof.Correctness.Graph.ConcretizeCorrect as Concretize
+import ISWIM.proof.Correctness.Graph.SplitCorrect as Split
+import ISWIM.proof.Correctness.Graph.HoistCorrect as Hoist
+import ISWIM.proof.Correctness.Graph.RCOCorrect as RCO
+import ISWIM.proof.Correctness.Graph.LiftLocalsCorrect as LiftLocals
+import ISWIM.proof.Correctness.Graph.ExplicateCorrect as Explicate
+import ISWIM.proof.Correctness.Graph.SelectCorrect as Select
+import ISWIM.proof.Correctness.Graph.CompilerCorrect as Compiler
 
 open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂)

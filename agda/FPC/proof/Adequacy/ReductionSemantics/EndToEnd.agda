@@ -2,7 +2,7 @@
 
   The FPC compiler in the graph model, observed through the reduction
   semantics of FPC and the machine of X86μ, as
-  Mu/proof/Adequacy/AbstractMachines/EndToEnd.agda is through the two
+  FPC/proof/Adequacy/AbstractMachines/EndToEnd.agda is through the two
   machines: for a closed FPC program M,
 
     FPC reduction  ⇔  ⟦ M ⟧ ρ₀          (Adequacy/ReductionSemantics/FPC.agda)
@@ -11,25 +11,25 @@
 
   for constants and for divergence. For a main of type Int, the graph
   model so states the theorem the reduction column states
-  (Mu/Theorems/CorrectWrtReductionSemantics.agda): the two stop with the same
+  (FPC/Theorems/CorrectWrtReductionSemantics.agda): the two stop with the same
   constant, or both diverge.
 
 -}
 
-module Mu.proof.Adequacy.ReductionSemantics.EndToEnd where
+module FPC.proof.Adequacy.ReductionSemantics.EndToEnd where
 
 open import Framework.Primitives using (Int)
-open import Mu.Language.Type using (base)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Compiler.Pipeline using (compile)
+open import FPC.Language.Type using (base)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Compiler.Pipeline using (compile)
 open import Semantics.Observation using (o-const; _⇔_)
 import Semantics.Reduction.Smallstep as R
 import Semantics.CEK.Smallstep as C
-import Mu.Semantics.ReductionSemantics.FPC as FPCᵣ
-import Mu.Semantics.AbstractMachines.X86 as X86μₘ
-import Mu.proof.Adequacy.ReductionSemantics.FPC as AR
-import Mu.proof.Adequacy.AbstractMachines.X86 as AX
-open import Mu.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
+import FPC.Semantics.ReductionSemantics.FPC as FPCᵣ
+import FPC.Semantics.AbstractMachines.X86 as X86μₘ
+import FPC.proof.Adequacy.ReductionSemantics.FPC as AR
+import FPC.proof.Adequacy.AbstractMachines.X86 as AX
+open import FPC.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

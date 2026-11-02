@@ -10,13 +10,13 @@
 
 -}
 
-module Untyped.Semantics.CEK.Clos2 where
+module ISWIM.Untyped.Semantics.CEK.Clos2 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
-open import Untyped.Language.Clos2
+open import ISWIM.Untyped.Language.Clos2
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
 open import Framework.ListUtil

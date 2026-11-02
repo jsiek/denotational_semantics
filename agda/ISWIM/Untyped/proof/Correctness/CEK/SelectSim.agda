@@ -28,24 +28,24 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.SelectSim where
+module ISWIM.Untyped.proof.Correctness.CEK.SelectSim where
 
-open import Untyped.Language.Imp as Imp using (Atm; atm; app; fst; snd; tuple; get; prim)
+open import ISWIM.Untyped.Language.Imp as Imp using (Atm; atm; app; fst; snd; tuple; get; prim)
 open import Language.Prim using (sub; eq; int; bool)
-open import Untyped.Language.CFG as C using (Tail; return; seq; goto; case; block)
-open import Language.X86
+open import ISWIM.Untyped.Language.CFG as C using (Tail; return; seq; goto; case; block)
+open import ISWIM.Language.X86
   using (Instr; Block; Loc; Jump; var; reg; rax; rdi; rsi; loc; movq; sete; callq; retq; je; payload)
-open import Untyped.Compiler.Select
+open import ISWIM.Untyped.Compiler.Select
 
 open import Semantics.Observation
 open import Framework.Primitives using (Int)
 open import proof.Semantics.CEK.Smallstep using (next; stop; Plus; plus; Star; ε; _◅_; Reach)
 open import proof.Semantics.CEK.Simulation
   using (Answers≺; stops; steps; answers-at; FSim; Lag; lag-now; lag-step; lag-fsim; Equivalent; equivalent; equiv-trans)
-import Language.X86 as L
-import Untyped.Semantics.CEK.Imp as M
-import Untyped.Semantics.CEK.CFG as G
-import Semantics.CEK.X86 as X
+import ISWIM.Language.X86 as L
+import ISWIM.Untyped.Semantics.CEK.Imp as M
+import ISWIM.Untyped.Semantics.CEK.CFG as G
+import ISWIM.Semantics.CEK.X86 as X
 open X using (code; pair; const; tup; inl; inr; obs; _[_↦_]; _[_]≔_)
 open import proof.Framework.ListUtil using (_‼_; reverse-map-‼)
 

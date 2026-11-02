@@ -1,14 +1,14 @@
 {-
 
-  Soundness of the X86ᵀ machine (Semantics/CEK/Typed/X86.agda) with
-  respect to the graph model (Semantics/Graph/Typed/X86.agda): what the
+  Soundness of the X86ᵀ machine (ISWIM/Semantics/CEK/Typed/X86.agda) with
+  respect to the graph model (ISWIM/Semantics/Graph/Typed/X86.agda): what the
   machine computes is in the denotation of the program, for a table
   that is consistent (cT) and contains the code of each definition
   interpreted with the whole table (closed), as the table of a compiled
   program does (X86Compiled.agda): the machine runs a definition with
   the whole table, the semantics with the table of the older ones.
 
-  As for untyped X86 (Untyped/proof/Adequacy/X86Soundness.agda), each
+  As for untyped X86 (ISWIM/Untyped/proof/Adequacy/X86Soundness.agda), each
   state denotes a set of values (𝒮) that a step can only shrink
   (back), the call stack being its continuation (𝒦), and a location
   (a register or a slot, numbered as in 𝓛) denotes not the whole meaning
@@ -31,18 +31,18 @@
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ)
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.X86
 open import Framework.Membership using (_∋_)
 open import Framework.Lookup using (_!_)
 open import proof.Framework.GraphModel.SetsAsPredicates using (_⊆_)
-open import proof.Semantics.Graph.Typed.Ops using (ConT; tables)
-open import Semantics.Graph.Typed.X86 using (codeₜ)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (ConT; tables)
+open import ISWIM.Semantics.Graph.Typed.X86 using (codeₜ)
 
-module proof.Adequacy.X86Soundness {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ)
+module ISWIM.proof.Adequacy.X86Soundness {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ)
   (cT : ConT (tables codeₜ ds)) (closed : ∀ {n} (f : Σ ∋ n) → codeₜ (tables codeₜ ds) (ds ! f) ⊆ tables codeₜ ds f) where
 
 open import Language.Prim using (sub; eq)
-open import Language.Typed.Type hiding (_∋_) renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.Type hiding (_∋_) renaming (_≟_ to _≟F_)
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
@@ -53,18 +53,18 @@ open import proof.Framework.GraphModel.Ops
   renaming (car to carD; cdr to cdrD; proj to projD)
 open import proof.Framework.GraphModel.Env using (Env; _⊆ₑ_; •-~)
 open import proof.Semantics.Graph.Prim using (primD; primD-mono)
-open import proof.Semantics.Graph.Typed.Ops using (Table; fun₄; projectᵍ; init)
-open import proof.Semantics.Graph.Typed.CFG using (Meanings; drop; drop-mono; 𝒜-mono)
-open import Semantics.Graph.Typed.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; isinl; called-regs; RegsD; Kont)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; fun₄; projectᵍ; init)
+open import ISWIM.proof.Semantics.Graph.Typed.CFG using (Meanings; drop; drop-mono; 𝒜-mono)
+open import ISWIM.Semantics.Graph.Typed.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; isinl; called-regs; RegsD; Kont)
   renaming (put to putₛ; field′ to fieldₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to runₛ)
-open import Semantics.CEK.Typed.X86
+open import ISWIM.Semantics.CEK.Typed.X86
 open import Semantics.Observation using (Obs; Answer)
 open import proof.Semantics.CEK.Smallstep using (Star; Terminates; Next; next; stop)
 open import Framework.Lookup using (forget)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; idx)
-open import proof.Adequacy.X86Common ds
-open import proof.Adequacy.Clos5Values using (module Den; pair-inv; inl-inv; inr-inv; 𝒯L[]-inv)
-open import proof.Adequacy.Soundness using (At; 𝒯L; At-length)
+open import ISWIM.proof.Adequacy.X86Common ds
+open import ISWIM.proof.Adequacy.Clos5Values using (module Den; pair-inv; inl-inv; inr-inv; 𝒯L[]-inv)
+open import ISWIM.proof.Adequacy.Soundness using (At; 𝒯L; At-length)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥-elim)

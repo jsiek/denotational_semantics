@@ -1,12 +1,12 @@
 {-
 
   Soundness and adequacy of the graph model with errors
-  (Semantics/GraphErr/ISWIM.agda) for the ISWIM machine
-  (Semantics/CEK/ISWIM.agda), for closed programs, started in ρ₀ (every
+  (ISWIM/Semantics/GraphErr/ISWIM.agda) for the ISWIM machine
+  (ISWIM/Semantics/CEK/ISWIM.agda), for closed programs, started in ρ₀ (every
   variable means {ω}) and in the empty environment.
 
   Unlike the graph model, where errors and divergence both denote ∅
-  (proof/Adequacy/ISWIM.agda), the denotation tells all three outcomes
+  (ISWIM/proof/Adequacy/ISWIM.agda), the denotation tells all three outcomes
   of the machine apart:
 
     error-iff     : ω ∈ ⟦ M ⟧ ρ₀ exactly when the machine stops with an
@@ -25,22 +25,22 @@
 
 -}
 
-module proof.Adequacy.GraphErr.ISWIM where
+module ISWIM.proof.Adequacy.GraphErr.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
-open import Language.ISWIM
-open import proof.Semantics.GraphErr.ISWIM using (⟦_⟧)
+open import ISWIM.Language.ISWIM
+open import ISWIM.proof.Semantics.GraphErr.ISWIM using (⟦_⟧)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; never-final-diverges; next; stop)
-open import Semantics.CEK.ISWIM
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.Semantics.CEK.ISWIM
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
-open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const; ↠→star)
-open import proof.Adequacy.GraphErr.Soundness using (soundness; sound-error; shape-ω) public
-open import proof.Adequacy.GraphErr.LogRel
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const; ↠→star)
+open import ISWIM.proof.Adequacy.GraphErr.Soundness using (soundness; sound-error; shape-ω) public
+open import ISWIM.proof.Adequacy.GraphErr.LogRel
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using ([])

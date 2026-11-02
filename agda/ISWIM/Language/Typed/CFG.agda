@@ -1,7 +1,7 @@
 {-
 
   CFGᵀ: CFG, intrinsically typed. The output of typed explicate control
-  (Compiler/Explicate.agda), after Essentials of Compilation.
+  (ISWIM/Compiler/Explicate.agda), after Essentials of Compilation.
 
   A body is a control-flow graph of blocks; a block is a tail, typed by
   the frame context Δ it starts in (the types of the slots it may read,
@@ -22,11 +22,11 @@
 
 -}
 
-module Language.Typed.CFG where
+module ISWIM.Language.Typed.CFG where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_)
-open import Language.Typed.Imp using (Atm; Simple) public
+open import ISWIM.Language.Typed.Imp using (Atm; Simple) public
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All)

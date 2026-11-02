@@ -1,8 +1,8 @@
 {-
 
   Correctness of prune (Closμ → Closμ) in the graph model
-  (Mu/Semantics/GraphModel/Clos.agda), as for typed prune
-  (proof/Correctness/Graph/PruneCorrect.agda).
+  (FPC/Semantics/GraphModel/Clos.agda), as for typed prune
+  (ISWIM/proof/Correctness/Graph/PruneCorrect.agda).
 
   ⟦ M ⟧ ρ ≃ ⟦ opt M r ⟧ ρ' when ρ and ρ' agree through r on the
   variables that M uses (Agree), and ρ is nonempty on all variables in
@@ -14,19 +14,19 @@
 
 -}
 
-module Mu.proof.Correctness.GraphModel.PruneCorrect where
+module FPC.proof.Correctness.GraphModel.PruneCorrect where
 
 open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.TypedGraph using (guard-≃)
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import Mu.Language.Type
-open import Mu.Language.Clos
-open import Mu.proof.Semantics.GraphModel.Clos using (⟦_⟧; ⟦_⟧s; fv-env)
-open import Mu.Compiler.Prune
-open import Mu.proof.Semantics.GraphModel.Binders using (Body-≃; lam-≃; let-≃; case-≃; ne-≃)
-open import Mu.Framework.AllUtil using (All; []; _∷_; Flags; kept; select; sq; squeeze; pos; ∨-l; ∨-r)
+open import FPC.Language.Type
+open import FPC.Language.Clos
+open import FPC.proof.Semantics.GraphModel.Clos using (⟦_⟧; ⟦_⟧s; fv-env)
+open import FPC.Compiler.Prune
+open import FPC.proof.Semantics.GraphModel.Binders using (Body-≃; lam-≃; let-≃; case-≃; ne-≃)
+open import FPC.Framework.AllUtil using (All; []; _∷_; Flags; kept; select; sq; squeeze; pos; ∨-l; ∨-r)
 
 open import Data.Bool using (Bool; true; false; T)
 open import Data.Fin using (Fin; zero; suc)
@@ -67,7 +67,7 @@ th-ne← (drop x th) ne zero = x
 th-ne← (drop x th) ne (suc i) = th-ne← th ne i
 
 {- a kept free variable means the same in the two codes' environments -}
-th-fv : ∀ {Δ fl Ds Es C} → Th {Δ} fl Ds Es → (i : Δ ∋ C) (k : T (Mu.Framework.AllUtil.lookup fl i))
+th-fv : ∀ {Δ fl Ds Es C} → Th {Δ} fl Ds Es → (i : Δ ∋ C) (k : T (FPC.Framework.AllUtil.lookup fl i))
   → fv-env (length Δ) Ds (idx i) ≃ fv-env (length (kept fl)) Es (idx (sq fl i k))
 th-fv (keep e th) Z k = e
 th-fv (keep e th) (S i) k = th-fv th i k

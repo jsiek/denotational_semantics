@@ -1,16 +1,16 @@
 {-
 
   The values of the Clos3ᵀ reduction semantics
-  (Semantics/Reduction/Typed/Clos3.agda), which reduce to val and which
+  (ISWIM/Semantics/Reduction/Typed/Clos3.agda), which reduce to val and which
   renaming and substitution keep.
 
 -}
 
-module proof.Semantics.Reduction.Typed.Clos3 where
+module ISWIM.proof.Semantics.Reduction.Typed.Clos3 where
 
-open import Semantics.Reduction.Typed.Clos3 public
-open import Language.Typed.Type
-open import Language.Typed.Clos3
+open import ISWIM.Semantics.Reduction.Typed.Clos3 public
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos3
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Framework.Reduction Obs o-error using (val)
 

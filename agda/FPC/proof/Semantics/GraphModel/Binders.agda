@@ -15,7 +15,7 @@
 
 -}
 
-module Mu.proof.Semantics.GraphModel.Binders where
+module FPC.proof.Semantics.GraphModel.Binders where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops

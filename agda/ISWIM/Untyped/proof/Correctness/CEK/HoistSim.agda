@@ -24,19 +24,19 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.HoistSim where
+module ISWIM.Untyped.proof.Correctness.CEK.HoistSim where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos4
-import Untyped.Language.Clos5 as C
-open import Untyped.Compiler.Hoist
-open import Untyped.proof.Compiler.HoistTable
+open import ISWIM.Untyped.Language.Clos4
+import ISWIM.Untyped.Language.Clos5 as C
+open import ISWIM.Untyped.Compiler.Hoist
+open import ISWIM.Untyped.proof.Compiler.HoistTable
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.ListUtil
-import Untyped.Semantics.CEK.Clos4 as S
-import Untyped.Semantics.CEK.Clos5 as T
+import ISWIM.Untyped.Semantics.CEK.Clos4 as S
+import ISWIM.Untyped.Semantics.CEK.Clos5 as T
 
 open import Data.Fin using (Fin)
 open import Data.List using ([]; _∷_; length; replicate)

@@ -1,20 +1,20 @@
 {-
 
-  Examples of simplify (Compiler/Simplify.agda).
+  Examples of simplify (ISWIM/Compiler/Simplify.agda).
 
 -}
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
-open import Language.ISWIM
-open import Compiler.Simplify using (simplify)
+open import ISWIM.Language.ISWIM
+open import ISWIM.Compiler.Simplify using (simplify)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 
 open import Data.Fin using (zero; suc)
 open import Data.Integer using (+_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module proof.Compiler.Examples.SimplifyExample where
+module ISWIM.proof.Compiler.Examples.SimplifyExample where
 
 n : ∀ k → AST
 n k = lit Int (+ k) ⦅ Nil ⦆

@@ -9,9 +9,9 @@
 
 -}
 
-module Untyped.Compiler.PipelineScope where
+module ISWIM.Untyped.Compiler.PipelineScope where
 
-import Untyped.Language.Clos5 as C5
+import ISWIM.Untyped.Language.Clos5 as C5
 import Framework.Syntax.Scope
 
 open import Data.List.Relation.Unary.All using (All)

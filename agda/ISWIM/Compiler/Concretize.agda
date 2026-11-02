@@ -11,11 +11,11 @@
 
 -}
 
-module Compiler.Concretize where
+module ISWIM.Compiler.Concretize where
 
-open import Language.Typed.Type
-open import Language.Typed.Clos2
-import Language.Typed.Clos3 as T
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos2
+import ISWIM.Language.Typed.Clos3 as T
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using ([]; _∷_)

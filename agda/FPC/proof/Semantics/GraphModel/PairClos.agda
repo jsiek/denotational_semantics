@@ -1,22 +1,22 @@
 {-
 
   Lemmas about the semantics of PairClosμ in the graph model
-  (Mu/Semantics/GraphModel/PairClos.agda): its denotations are Ok, by induction
+  (FPC/Semantics/GraphModel/PairClos.agda): its denotations are Ok, by induction
   on the term, one line per construct (callc is callcᵈ), as for Clos4ᵀ.
 
 -}
 
-module Mu.proof.Semantics.GraphModel.PairClos where
+module FPC.proof.Semantics.GraphModel.PairClos where
 
-open import Mu.Semantics.GraphModel.PairClos public
+open import FPC.Semantics.GraphModel.PairClos public
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Continuity
 open import proof.Framework.GraphModel.TypedOkBase
 open import proof.Semantics.Graph.Prim using (primD-good)
-open import Mu.Language.Type using (idx)
-open import Mu.Language.PairClos
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type using (idx)
+open import FPC.Language.PairClos
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)
 open import Data.Product using (proj₂) renaming (_,_ to ⟨_,_⟩)

@@ -27,18 +27,18 @@ open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
-open import proof.Semantics.GraphErr.Prim using (primD; out)
-open import Untyped.Language.Clos3 as L3
-open import Untyped.Language.Clos4 as L4
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primD; out)
+open import ISWIM.Untyped.Language.Clos3 as L3
+open import ISWIM.Untyped.Language.Clos4 as L4
   renaming (AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
             _⦅_⦆ to _⦅_⦆'; ast to ast'; bind to bind'; clear to clear')
-open import Untyped.proof.Semantics.GraphErr.Clos3 as S3
-open import Untyped.proof.Semantics.GraphErr.Clos4 as S4 renaming
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos3 as S3
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos4 as S4 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
-open import Untyped.Compiler.Split using (split; del-map-args)
+open import ISWIM.Untyped.Compiler.Split using (split; del-map-args)
 open import proof.Framework.GraphModel.Env using (nonempty-env; •-~; extend-nonempty-env)
-open import Untyped.proof.Correctness.GraphErr.SplitRel
-open import Untyped.proof.Correctness.GraphErr.SplitApp using (let-app-≃)
+open import ISWIM.Untyped.proof.Correctness.GraphErr.SplitRel
+open import ISWIM.Untyped.proof.Correctness.GraphErr.SplitApp using (let-app-≃)
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -56,7 +56,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym
 open import Level using (lift; lower)
 open import Language.Prim using (δ)
 
-module Untyped.proof.Correctness.GraphErr.SplitReflect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.SplitReflect where
 
 clean⌊⌋ : ∀ {D} → Clean ⌊ D ⌋
 clean⌊⌋ d d∈ = proj₂ d∈

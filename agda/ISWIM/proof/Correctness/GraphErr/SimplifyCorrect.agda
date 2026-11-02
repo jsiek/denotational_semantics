@@ -1,9 +1,9 @@
 {-
 
   Correctness of the simplify pass (ISWIM → ISWIM) in the graph model with
-  errors (Semantics/GraphErr/ISWIM.agda).
+  errors (ISWIM/Semantics/GraphErr/ISWIM.agda).
 
-  The proof is that of the graph model (proof/Correctness/Graph/
+  The proof is that of the graph model (ISWIM/proof/Correctness/Graph/
   SimplifyCorrect.agda), with environments that also hold no ω (Wf):
   simplify duplicates and drops values only, and a variable stands for a
   value, so the variables must not stand for errors. That holds under
@@ -22,24 +22,24 @@
 
 -}
 
-module proof.Correctness.GraphErr.SimplifyCorrect where
+module ISWIM.proof.Correctness.GraphErr.SimplifyCorrect where
 
 open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil
 open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.Ops using (𝒯-mono; inl; inr)
 open import Level using (lower)
-open import proof.Semantics.GraphErr.Prim
-open import Language.ISWIM
+open import ISWIM.proof.Semantics.GraphErr.Prim
+open import ISWIM.Language.ISWIM
 open import Language.Prim using (Prim; Out; int; bool; δ)
-open import proof.Semantics.GraphErr.ISWIM
-open import proof.Compiler.SimplifyFacts as P
+open import ISWIM.proof.Semantics.GraphErr.ISWIM
+open import ISWIM.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; val; fun; Facts; self; info; under; known-as; shift-info; shift-known;
          simp; simp-args; simp-app; lam?; is-lam; other; simp-call; simp-let; size; inline-size; inline-fuel;
          simp-get; simp-case; simp-prim; simplify; small; value; component; branch; int-of; prim-term;
          SV; SVs; value-sv; small-sv; sv-rename; prim-term-sv; int-of-just; component-just)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import proof.Framework.GraphModel.RenameSem Op sig using (shift-≃)
 open import proof.Framework.GraphModel.SemanticsUses Op sig using (⟦⟧-closed₀)

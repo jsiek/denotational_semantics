@@ -8,19 +8,19 @@
 
 -}
 
-module Untyped.proof.Adequacy.ISWIMCompile where
+module ISWIM.Untyped.proof.Adequacy.ISWIMCompile where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
-open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
-open import Untyped.proof.Correctness.Graph.CompilerCorrect
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
+open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect
   using (compile; compile-correct-const; compile-correct-nonempty)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
-open import Semantics.CEK.ISWIM using (sem)
-open import Compiler.CaptureScope using (Closed)
-open import proof.Adequacy.ISWIM using (sound-const; sound-nonempty; adequacy-const; adequacy-converges)
+open import ISWIM.Semantics.CEK.ISWIM using (sem)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.proof.Adequacy.ISWIM using (sound-const; sound-nonempty; adequacy-const; adequacy-converges)
 
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 

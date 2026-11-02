@@ -1,9 +1,9 @@
 {-
 
   Correctness of remove complex operands (GlobalFunμ → Monμ,
-  Mu/Compiler/RCO.agda): the GlobalFunμ machine on P and on the embedding of
+  FPC/Compiler/RCO.agda): the GlobalFunμ machine on P and on the embedding of
   rco-program P are Equivalent, for every program P, as for typed rco
-  (proof/Correctness/CEK/RCOSim.agda).
+  (ISWIM/proof/Correctness/CEK/RCOSim.agda).
 
   The two runs compute the same values. The target's environment has the
   values of the lets in front: a source term M in φ₁ is related to the
@@ -25,23 +25,23 @@
 
 -}
 
-module Mu.proof.Correctness.AbstractMachines.RCOSim where
+module FPC.proof.Correctness.AbstractMachines.RCOSim where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Primitives using (Int)
-open import Mu.Language.GlobalFun
-import Mu.Language.Mon as M
+open import FPC.Language.GlobalFun
+import FPC.Language.Mon as M
 open M using (Atm; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Mu.Compiler.RCO
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map; _<><_; _<><ᵃ_)
-open import Mu.proof.Framework.AllProp using (lookup-map)
+open import FPC.Compiler.RCO
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map; _<><_; _<><ᵃ_)
+open import FPC.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation using (Obs)
 open import proof.Semantics.CEK.Smallstep using (next; ε; _◅_; plus; step⁺)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)
 open import proof.Framework.Both Obs using (Both; halt; move; both-fsim; pre₁; pre₂)
-open import Mu.proof.Correctness.AbstractMachines.GlobalFunCommon using (atm-step; tuple-atoms)
-open import Mu.Semantics.AbstractMachines.GlobalFun
-open import Mu.Semantics.AbstractMachines.Imp using (atom)
+open import FPC.proof.Correctness.AbstractMachines.GlobalFunCommon using (atm-step; tuple-atoms)
+open import FPC.Semantics.AbstractMachines.GlobalFun
+open import FPC.Semantics.AbstractMachines.Imp using (atom)
 
 open import Data.List using (List; []; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)

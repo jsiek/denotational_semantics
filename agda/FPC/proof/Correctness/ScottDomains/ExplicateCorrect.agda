@@ -1,9 +1,9 @@
 {-
 
   Correctness of explicate control (Impμ → CFGμ,
-  Mu/Compiler/Explicate.agda) in Scott domains
-  (Mu/Semantics/ScottDomains/{Imp,CFG}.agda), as in the graph model
-  (Mu/proof/Correctness/GraphModel/ExplicateCorrect.agda), with equality of
+  FPC/Compiler/Explicate.agda) in Scott domains
+  (FPC/Semantics/ScottDomains/{Imp,CFG}.agda), as in the graph model
+  (FPC/proof/Correctness/GraphModel/ExplicateCorrect.agda), with equality of
   values in place of equality of sets.
 
   explicate-assign e p k bs is e in continuation-passing style, as the
@@ -31,15 +31,15 @@ open import UF.Subsingletons
 open import UF.Base using (ap₂)
 
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import Mu.Language.Type
-import Mu.Language.Imp as I
-open import Mu.Language.CFG
-open import Mu.Compiler.Explicate
-open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
+open import FPC.Language.Type
+import FPC.Language.Imp as I
+open import FPC.Language.CFG
+open import FPC.Compiler.Explicate
+open import FPC.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 open import Framework.abt.GSubst using (_•_)
 open import Data.List using (List; []; _∷_; length)
 
-module Mu.proof.Correctness.ScottDomains.ExplicateCorrect
+module FPC.proof.Correctness.ScottDomains.ExplicateCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -48,12 +48,12 @@ module Mu.proof.Correctness.ScottDomains.ExplicateCorrect
 open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
-open import Mu.Semantics.ScottDomains.Imp pt fe pe using (⟦_⟧ᴷ; K; idK; underK)
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
+open import FPC.Semantics.ScottDomains.Imp pt fe pe using (⟦_⟧ᴷ; K; idK; underK)
   renaming (code′ to codeᵢ; ⟦_⟧ₚ to ⟦_⟧ᵢ)
-open import Mu.Semantics.ScottDomains.CFG pt fe pe using (⟦_⟧ᵗ; blocks; run; drop; 𝒜; 𝒮)
+open import FPC.Semantics.ScottDomains.CFG pt fe pe using (⟦_⟧ᵗ; blocks; run; drop; 𝒜; 𝒮)
   renaming (code′ to codeᶜ′; ⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Mu.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong; tables-cons; 𝒜-＝; 𝒮-＝)
+open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong; tables-cons; 𝒜-＝; 𝒮-＝)
 
 {- blocks that extend others -----------------------------------------------------------}
 

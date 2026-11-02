@@ -1,8 +1,8 @@
 {-
 
   Correctness of lift locals (Monμ → Impμ) in Scott domains
-  (Mu/Semantics/ScottDomains/{GlobalFun,Imp}.agda), as in the graph model
-  (Mu/proof/Correctness/GraphModel/LiftLocalsCorrect.agda), with equality of
+  (FPC/Semantics/ScottDomains/{GlobalFun,Imp}.agda), as in the graph model
+  (FPC/proof/Correctness/GraphModel/LiftLocalsCorrect.agda), with equality of
   values in place of equality of sets: the continuation-passing meaning
   of the output is the meaning of the input (its embedding into GlobalFunμ)
   given to the continuation,
@@ -13,7 +13,7 @@
   model's K⟨ k ⟩; there is no consistency to track). A simple
   expression is the same operator on the same atoms; an assignment and
   a case commute with the continuation, as κ is strict (seq-strict,
-  cases-strict-natural in Mu/proof/Semantics/ScottDomains/BackEndLemmas.agda,
+  cases-strict-natural in FPC/proof/Semantics/ScottDomains/BackEndLemmas.agda,
   in place of the let-law and case-law). The continuation that an
   assignment gives its right-hand side, app (Λ F), is strict too.
 
@@ -25,16 +25,16 @@ open import UF.PropTrunc
 open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
-open import Mu.Language.Type
-import Mu.Language.Mon as M
+open import FPC.Language.Type
+import FPC.Language.Mon as M
 open M using (DSig; Args; Atm; var; lit; ref; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Mu.Compiler.LiftLocals
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
+open import FPC.Compiler.LiftLocals
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
 open import Framework.abt.GSubst using (_•_)
 open import Data.List using (List; []; _∷_; length)
 open import Data.Fin using (Fin; zero; suc)
 
-module Mu.proof.Correctness.ScottDomains.LiftLocalsCorrect
+module FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -44,11 +44,11 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
-open import Mu.Semantics.ScottDomains.GlobalFun pt fe pe
-import Mu.Semantics.ScottDomains.Imp pt fe pe as I
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
+open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe
+import FPC.Semantics.ScottDomains.Imp pt fe pe as I
 open I using (⟦_⟧ᴷ; 𝒜; 𝒜s; K; idK; underK)
-open import Mu.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (seq-⊥; cases-strict-natural; codeᶜ-cong; tables-cons)
+open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (seq-⊥; cases-strict-natural; codeᶜ-cong; tables-cons)
 
 module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
 

@@ -16,7 +16,7 @@
   * closureᶜ n B: the closure of Closμ, strict in its n free variables.
 
   init, the meaning of a variable that is never bound (as in the graph
-  model, Mu/Semantics/GraphModel/Closed.agda), is the empty tuple.
+  model, FPC/Semantics/GraphModel/Closed.agda), is the empty tuple.
 
 -}
 

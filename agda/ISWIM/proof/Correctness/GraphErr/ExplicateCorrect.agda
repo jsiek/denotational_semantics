@@ -1,12 +1,12 @@
 {-
 
-  Correctness of typed explicate control (Impᵀ → CFGᵀ, Compiler/Explicate.agda)
+  Correctness of typed explicate control (Impᵀ → CFGᵀ, ISWIM/Compiler/Explicate.agda)
   in the graph model with errors, against the continuation-passing
-  semantics of Impᵀ (Semantics/GraphErr/Typed/{Imp,CFG}.agda):
+  semantics of Impᵀ (ISWIM/Semantics/GraphErr/Typed/{Imp,CFG}.agda):
 
     explicate-correct : ⟦ P ⟧ᵢ ≃ ⟦ explicate P ⟧ᶜ
 
-  As in Untyped/proof/Correctness/GraphErr/ExplicateCorrect.agda:
+  As in ISWIM/Untyped/proof/Correctness/GraphErr/ExplicateCorrect.agda:
   explicate-assign e p k means e run with the continuation that binds
   the next slot and runs k (cps), and explicate-tail e means e run with
   the identity (tail); each case is a congruence. The pass only adds
@@ -17,21 +17,21 @@
 
 -}
 
-module proof.Correctness.GraphErr.ExplicateCorrect where
+module ISWIM.proof.Correctness.GraphErr.ExplicateCorrect where
 
 open import proof.Framework.GraphModel.ErrorPrelude hiding (_▷_)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import proof.Semantics.GraphErr.Typed.Clos2 using (caseᵗ-≃)
-open import proof.Semantics.GraphErr.Typed.Clos5 using (tm-≃; tbl-map; map-id)
-open import proof.Semantics.GraphErr.Typed.Imp using (letᵗ-≃)
-open import Semantics.GraphErr.Typed.Imp using (⟦_⟧ᴷ; codeᵢ; ⟦_⟧ᵢ; 𝒮; 𝒜; Table; tbl)
-open import Semantics.GraphErr.Typed.CFG using (⟦_⟧ᵗ; blocks; drop; run; codeᶜ; ⟦_⟧ᶜ; letᵗ)
-open import Semantics.GraphErr.Typed.Ops using (init)
-open import Language.Typed.Type hiding (_≟_)
-import Language.Typed.Mon as M
-import Language.Typed.Imp as I
-open import Language.Typed.CFG
-open import Compiler.Explicate
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (caseᵗ-≃)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 using (tm-≃; tbl-map; map-id)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Imp using (letᵗ-≃)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (⟦_⟧ᴷ; codeᵢ; ⟦_⟧ᵢ; 𝒮; 𝒜; Table; tbl)
+open import ISWIM.Semantics.GraphErr.Typed.CFG using (⟦_⟧ᵗ; blocks; drop; run; codeᶜ; ⟦_⟧ᶜ; letᵗ)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (init)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+import ISWIM.Language.Typed.Mon as M
+import ISWIM.Language.Typed.Imp as I
+open import ISWIM.Language.Typed.CFG
+open import ISWIM.Compiler.Explicate
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
@@ -59,7 +59,7 @@ blocks-ext (ext-there e) l T ρ = blocks-ext e l T ρ
 module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
 
   𝒮-≃ : ∀ {Σ Δ A} (s : I.Simple Σ Δ A) ρ → 𝒮 s T ρ ≃ 𝒮 s T' ρ
-  𝒮-≃ s ρ = tm-≃ TT M.⌜ Semantics.GraphErr.Typed.Imp.⌞ s ⌟ ⌝ (λ _ → ≃-refl)
+  𝒮-≃ s ρ = tm-≃ TT M.⌜ ISWIM.Semantics.GraphErr.Typed.Imp.⌞ s ⌟ ⌝ (λ _ → ≃-refl)
 
   𝒜-≃ : ∀ {Σ Δ A} (a : I.Atm Σ Δ A) ρ → 𝒜 a T ρ ≃ 𝒜 a T' ρ
   𝒜-≃ a ρ = tm-≃ TT M.⌜ a ⌝ᵃ (λ _ → ≃-refl)

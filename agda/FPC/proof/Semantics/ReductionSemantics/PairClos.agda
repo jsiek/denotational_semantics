@@ -1,18 +1,18 @@
 {-
 
   The values of the PairClosμ reduction semantics
-  (Mu/Semantics/ReductionSemantics/PairClos.agda), which reduce to val.
+  (FPC/Semantics/ReductionSemantics/PairClos.agda), which reduce to val.
 
 -}
 
-module Mu.proof.Semantics.ReductionSemantics.PairClos where
+module FPC.proof.Semantics.ReductionSemantics.PairClos where
 
-open import Mu.Semantics.ReductionSemantics.PairClos public
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.PairClos
-open import Mu.Framework.AllUtil using (All; []; _∷_)
+open import FPC.Semantics.ReductionSemantics.PairClos public
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.PairClos
+open import FPC.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Observation using (Obs; o-error)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (val)
 
 open import Data.List using ([]; _∷_)

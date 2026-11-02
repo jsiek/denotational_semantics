@@ -1,4 +1,4 @@
-module Semantics.Graph.ISWIM where
+module ISWIM.Semantics.Graph.ISWIM where
 {-
 
  The graph-model semantics of ISWIM. A function denotes the function of
@@ -10,7 +10,7 @@ module Semantics.Graph.ISWIM where
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.abt.Fold2 Op sig using (fold)
 
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

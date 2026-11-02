@@ -1,4 +1,4 @@
-module Untyped.Semantics.GraphErr.Clos3 where
+module ISWIM.Untyped.Semantics.GraphErr.Clos3 where
 {-
 
  The semantics of Clos3 in the graph model with errors: that of
@@ -16,8 +16,8 @@ open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
-open import Semantics.GraphErr.Prim
-open import Untyped.Language.Clos3
+open import ISWIM.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Clos3
 open import Framework.GraphModel.Env using (Env)
 open import Framework.abt.Fold2 Op sig using (fold)
 

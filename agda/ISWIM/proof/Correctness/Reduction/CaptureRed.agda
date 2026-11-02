@@ -14,18 +14,18 @@
 
 -}
 
-module proof.Correctness.Reduction.CaptureRed where
+module ISWIM.proof.Correctness.Reduction.CaptureRed where
 
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.ISWIM
-import Language.Typed.Clos2 as C
-open import Compiler.Capture using (capture; encs)
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.ISWIM
+import ISWIM.Language.Typed.Clos2 as C
+open import ISWIM.Compiler.Capture using (capture; encs)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import proof.Framework.ReductionVec Obs o-error using (ans-∷; all-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import proof.Semantics.Reduction.Typed.ISWIM as S
-import proof.Semantics.Reduction.Typed.Clos2 as T
+import ISWIM.proof.Semantics.Reduction.Typed.ISWIM as S
+import ISWIM.proof.Semantics.Reduction.Typed.Clos2 as T
 open T using (Value; value-red)
 import Language.Prim as P
 

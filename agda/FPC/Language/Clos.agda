@@ -1,21 +1,21 @@
 {-
 
   Closμ: Clos, intrinsically typed, with recursive types. The output
-  of capture (Mu/Compiler/Capture.agda).
+  of capture (FPC/Compiler/Capture.agda).
 
   A closure clos N Ms, with Ms : All (Tm Γ) Δ its free variables, has
   closed code N in the context A ∷ Δ: variable Z is the argument and
   variable S i the value of the i-th free variable. Otherwise as FPC
-  (Mu/Language/FPC.agda).
+  (FPC/Language/FPC.agda).
 
 -}
 
-module Mu.Language.Clos where
+module FPC.Language.Clos where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Mu.Language.Type
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Language.Type
+open import FPC.Framework.AllUtil using (All)
 
 open import Data.List using (_∷_)
 

@@ -1,7 +1,7 @@
 {-
 
   The values of the ISWIMᵀ reduction semantics
-  (Semantics/Reduction/Typed/ISWIM.agda), which reduce to val, and the
+  (ISWIM/Semantics/Reduction/Typed/ISWIM.agda), which reduce to val, and the
   laws of its renaming and substitution: two traversals fuse into one
   (fuse, for any relation of the three maps that is kept under binders),
   and substitution by variables is the identity (sub-id); in particular
@@ -10,11 +10,11 @@
 
 -}
 
-module proof.Semantics.Reduction.Typed.ISWIM where
+module ISWIM.proof.Semantics.Reduction.Typed.ISWIM where
 
-open import Semantics.Reduction.Typed.ISWIM public
-open import Language.Typed.Type
-open import Language.Typed.ISWIM
+open import ISWIM.Semantics.Reduction.Typed.ISWIM public
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.ISWIM
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Framework.Reduction Obs o-error using (val)
 

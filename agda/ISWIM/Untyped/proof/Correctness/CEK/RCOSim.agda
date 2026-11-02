@@ -40,12 +40,12 @@
 
 -}
 
-module Untyped.proof.Correctness.CEK.RCOSim where
+module ISWIM.Untyped.proof.Correctness.CEK.RCOSim where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos5
-open import Untyped.Language.Mon using (Atom; var; lit; ref; atom-rename)
-open import Untyped.Compiler.RCO
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Language.Mon using (Atom; var; lit; ref; atom-rename)
+open import ISWIM.Untyped.Compiler.RCO
 open import proof.Framework.Syntax.Rename Op sig
   using (ext; rename; rename-args; rename-fuse; rename-fuse-args; rename-id; rename-id-args)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-args)
@@ -56,12 +56,12 @@ open import proof.Semantics.CEK.Smallstep
   using (Next; next; stop; Step; Plus; plus; Star; ε; _◅_; plus-star; plus→star; step⁺; next?-same)
 open import proof.Semantics.CEK.Simulation
   using (FSim; Answers≺; stops; steps; stutters; answers≺; answers-at; steps₁≺; Equivalent; equivalent; equiv-trans)
-import Untyped.Semantics.CEK.Clos5 as T
-import Semantics.CEK.ISWIM as S
-open import Untyped.Compiler.Pipeline using (compile; compile-mon)
-open import Untyped.proof.Compiler.CaptureScope using (Closed)
-open import Untyped.proof.Correctness.CEK.CompilerSim using (compile-correct)
-open import Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
+import ISWIM.Untyped.Semantics.CEK.Clos5 as T
+import ISWIM.Semantics.CEK.ISWIM as S
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.proof.Correctness.CEK.CompilerSim using (compile-correct)
+open import ISWIM.Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin)

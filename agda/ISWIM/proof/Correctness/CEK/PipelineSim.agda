@@ -1,42 +1,42 @@
 {-
 
-  The typed compiler (Compiler/Pipeline.agda) is correct on the
+  The typed compiler (ISWIM/Compiler/Pipeline.agda) is correct on the
   machines, for closed programs: the ISWIM machine on M and the machine
   of each later language on its compilation are Equivalent, by composing
   the passes (simplify untyped, cast insertion on the simplified closed
-  program, proof/Compiler/CastScope.agda, then the typed passes).
+  program, ISWIM/proof/Compiler/CastScope.agda, then the typed passes).
 
 -}
 
-module proof.Correctness.CEK.PipelineSim where
+module ISWIM.proof.Correctness.CEK.PipelineSim where
 
-open import Language.ISWIM using (AST)
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.Simplify using (simplify)
-open import Compiler.Cast using (cast-closed)
-open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
-open import Language.Typed.Mon using (⌜_⌝ₚ)
-open import proof.Compiler.SimplifyScope using (closed-ws; simplify-closed)
-open import proof.Compiler.CastScope using (cast-closed-≡)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.Cast using (cast-closed)
+open import ISWIM.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Language.Typed.Mon using (⌜_⌝ₚ)
+open import ISWIM.proof.Compiler.SimplifyScope using (closed-ws; simplify-closed)
+open import ISWIM.proof.Compiler.CastScope using (cast-closed-≡)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equiv-trans)
-open import proof.Correctness.CEK.SimplifySim using (simplify-correct)
-open import proof.Correctness.CEK.CastSim renaming (cast-correct to cast-ws-correct)
-open import proof.Correctness.CEK.CaptureSim using (capture-correct)
-open import proof.Correctness.CEK.PruneSim using (prune-correct)
-open import proof.Correctness.CEK.ConcretizeSim using (concretize-correct)
-open import proof.Correctness.CEK.SplitSim using (split-correct)
-open import proof.Correctness.CEK.HoistSim using (hoist-correct)
-open import proof.Correctness.CEK.RCOSim using (rco-correct)
-open import proof.Correctness.CEK.LiftLocalsSim using (lift-locals-correct)
-open import proof.Correctness.CEK.ExplicateSim using (explicate-correct)
-open import proof.Correctness.CEK.SelectSim using (select-correct)
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Semantics.CEK.Typed.ISWIM as ISWIMᵀₘ
-import Semantics.CEK.Typed.Clos4 as Clos4ᵀₘ
-import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
-import Semantics.CEK.Typed.Imp as Impᵀₘ
-import Semantics.CEK.Typed.CFG as CFGᵀₘ
-import Semantics.CEK.Typed.X86 as X86ᵀₘ
+open import ISWIM.proof.Correctness.CEK.SimplifySim using (simplify-correct)
+open import ISWIM.proof.Correctness.CEK.CastSim renaming (cast-correct to cast-ws-correct)
+open import ISWIM.proof.Correctness.CEK.CaptureSim using (capture-correct)
+open import ISWIM.proof.Correctness.CEK.PruneSim using (prune-correct)
+open import ISWIM.proof.Correctness.CEK.ConcretizeSim using (concretize-correct)
+open import ISWIM.proof.Correctness.CEK.SplitSim using (split-correct)
+open import ISWIM.proof.Correctness.CEK.HoistSim using (hoist-correct)
+open import ISWIM.proof.Correctness.CEK.RCOSim using (rco-correct)
+open import ISWIM.proof.Correctness.CEK.LiftLocalsSim using (lift-locals-correct)
+open import ISWIM.proof.Correctness.CEK.ExplicateSim using (explicate-correct)
+open import ISWIM.proof.Correctness.CEK.SelectSim using (select-correct)
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Semantics.CEK.Typed.ISWIM as ISWIMᵀₘ
+import ISWIM.Semantics.CEK.Typed.Clos4 as Clos4ᵀₘ
+import ISWIM.Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
+import ISWIM.Semantics.CEK.Typed.Imp as Impᵀₘ
+import ISWIM.Semantics.CEK.Typed.CFG as CFGᵀₘ
+import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)

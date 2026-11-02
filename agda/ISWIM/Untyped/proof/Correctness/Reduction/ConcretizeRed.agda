@@ -27,18 +27,18 @@
 
 -}
 
-module Untyped.proof.Correctness.Reduction.ConcretizeRed where
+module ISWIM.Untyped.proof.Correctness.Reduction.ConcretizeRed where
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Framework.Syntax.SigUtil using (ν-n)
-open import Untyped.Language.Clos2
-import Untyped.Language.Clos3 as C
-open import Untyped.Compiler.Concretize
+open import ISWIM.Untyped.Language.Clos2
+import ISWIM.Untyped.Language.Clos3 as C
+open import ISWIM.Untyped.Compiler.Concretize
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Untyped.proof.Semantics.Reduction.Clos2 as S
-import Untyped.proof.Semantics.Reduction.Clos3 as T
+import ISWIM.Untyped.proof.Semantics.Reduction.Clos2 as S
+import ISWIM.Untyped.proof.Semantics.Reduction.Clos3 as T
 import proof.Framework.Syntax.Subst Op sig as SS
 import proof.Framework.Syntax.Subst C.Op C.sig as TS
 import Framework.Syntax.Rename C.Op C.sig as TR

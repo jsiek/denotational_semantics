@@ -6,7 +6,7 @@ open import Relation.Nullary using (yes; no)
 open import Framework.Syntax.SyntaxUtil
 open import Framework.Syntax.SigUtil
 
-module Untyped.Compiler.Concretize where
+module ISWIM.Untyped.Compiler.Concretize where
   {-
    The concretize pass: each closure stores its free variables in a
    single tuple, and inside the closure's code each free variable becomes
@@ -18,8 +18,8 @@ module Untyped.Compiler.Concretize where
    bound last but k. In Clos3 the code binds the tuple of free variables
    (variable 1) and the argument (variable 0).
   -}
-  open import Untyped.Language.Clos2 as Source
-  open import Untyped.Language.Clos3 as Target
+  open import ISWIM.Untyped.Language.Clos2 as Source
+  open import ISWIM.Untyped.Language.Clos3 as Target
     renaming (clear to clear'; bind to bind'; ast to ast';
               AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
               _⦅_⦆ to _⦅_⦆')

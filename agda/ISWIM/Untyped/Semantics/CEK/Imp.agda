@@ -30,14 +30,14 @@
 
 -}
 
-module Untyped.Semantics.CEK.Imp where
+module ISWIM.Untyped.Semantics.CEK.Imp where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
-open import Untyped.Language.Imp
+open import ISWIM.Untyped.Language.Imp
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
-open import Semantics.CEK.Values using (Val; code; pair; const; tup; inl; inr; obs; prim?; Frame; _[_]≔_; zeros) public
+open import ISWIM.Semantics.CEK.Values using (Val; code; pair; const; tup; inl; inr; obs; prim?; Frame; _[_]≔_; zeros) public
 open import Framework.ListUtil using (_‼_; proj)
 
 open import Data.Fin using (Fin)

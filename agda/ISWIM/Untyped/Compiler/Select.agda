@@ -1,4 +1,4 @@
-module Untyped.Compiler.Select where
+module ISWIM.Untyped.Compiler.Select where
 {-
 
  The select-instructions pass (CFG → X86), after Essentials of
@@ -17,10 +17,10 @@ module Untyped.Compiler.Select where
 
 -}
 
-open import Untyped.Language.Imp as Imp using (Atm; var; lit; fun-ref; Simple)
+open import ISWIM.Untyped.Language.Imp as Imp using (Atm; var; lit; fun-ref; Simple)
 open import Language.Prim using (sub; eq)
-open import Untyped.Language.CFG as CFG using (Tail; return; seq; goto; case)
-open import Language.X86
+open import ISWIM.Untyped.Language.CFG as CFG using (Tail; return; seq; goto; case)
+open import ISWIM.Language.X86
 
 open import Data.List using (List; []; _∷_; _++_; map)
 

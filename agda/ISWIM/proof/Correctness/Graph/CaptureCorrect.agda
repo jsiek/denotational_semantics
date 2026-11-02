@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed capture (ISWIMᵀ → Clos2ᵀ) in the graph model
-  (Semantics/Graph/Typed/{ISWIM,Clos2}.agda).
+  (ISWIM/Semantics/Graph/Typed/{ISWIM,Clos2}.agda).
 
   ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ' when the environments agree on the k
   variables in scope and ρ' is nonempty there (Rel). Every case but the
@@ -11,18 +11,18 @@
 
 -}
 
-module proof.Correctness.Graph.CaptureCorrect where
+module ISWIM.proof.Correctness.Graph.CaptureCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import Language.Typed.Type
-open import Language.Typed.ISWIM
-import Language.Typed.Clos2 as T
-open import Semantics.Graph.Typed.ISWIM
-open import proof.Semantics.Graph.Typed.Ops using (project-≃)
-open import proof.Semantics.Graph.Typed.Clos2 using (fv-env-nth; fv-env) renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
-open import Compiler.Capture
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.ISWIM
+import ISWIM.Language.Typed.Clos2 as T
+open import ISWIM.Semantics.Graph.Typed.ISWIM
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (project-≃)
+open import ISWIM.proof.Semantics.Graph.Typed.Clos2 using (fv-env-nth; fv-env) renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
+open import ISWIM.Compiler.Capture
 
 open import Data.Fin using (Fin; zero; suc; toℕ)
 open import Data.List.Relation.Unary.Any using (here)

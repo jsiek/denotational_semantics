@@ -2,23 +2,23 @@
 
   capture produces well-scoped Clos2 programs (WS 0,
   Framework/Syntax/Scope.agda) from closed ISWIM programs (Closed,
-  Compiler/CaptureScope.agda). The
+  ISWIM/Compiler/CaptureScope.agda). The
   simulation and interpreter proofs of prune need well-scoped
   programs; the adequacy proof for Clos5 also uses this.
 
 -}
 
-module Untyped.proof.Compiler.CaptureScope where
+module ISWIM.Untyped.proof.Compiler.CaptureScope where
 
-open import Compiler.CaptureScope public
+open import ISWIM.Compiler.CaptureScope public
 
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Untyped.Language.Clos2 using (AST; Op; sig; ■)
-import Language.ISWIM as I
+open import ISWIM.Untyped.Language.Clos2 using (AST; Op; sig; ■)
+import ISWIM.Language.ISWIM as I
 open import Framework.Syntax.Uses I.Op I.sig using (bound; bound-args)
 open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args)
-open import Untyped.Compiler.Prune using (bind-n-ast)
-open import Untyped.Compiler.Capture using (capture; enc-args; fv-vars)
+open import ISWIM.Untyped.Compiler.Prune using (bind-n-ast)
+open import ISWIM.Untyped.Compiler.Capture using (capture; enc-args; fv-vars)
 
 open import Data.List using (replicate)
 open import Data.Nat using (zero; suc; _+_; _∸_; _≤_; z≤n; s≤s)

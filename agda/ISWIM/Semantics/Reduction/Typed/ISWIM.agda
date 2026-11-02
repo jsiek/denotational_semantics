@@ -1,8 +1,8 @@
 {-
 
-  A reduction semantics for ISWIMᵀ (Language/Typed/ISWIM.agda), call by
+  A reduction semantics for ISWIMᵀ (ISWIM/Language/Typed/ISWIM.agda), call by
   value, left to right, by substitution, as for ISWIM
-  (Semantics/Reduction/ISWIM.agda), on closed terms of any type: a term
+  (ISWIM/Semantics/Reduction/ISWIM.agda), on closed terms of any type: a term
   of type A reduces to one of type A, so a state is well typed by
   construction, and there is no case for an operand of the wrong kind or
   for a variable. The only error is a project that finds a value
@@ -11,13 +11,13 @@
 
 -}
 
-module Semantics.Reduction.Typed.ISWIM where
+module ISWIM.Semantics.Reduction.Typed.ISWIM where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
-open import Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Language.Typed.ISWIM
+open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
+open import ISWIM.Language.Typed.ISWIM
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
 open import Framework.ReductionVec Obs o-error using (red-∷)

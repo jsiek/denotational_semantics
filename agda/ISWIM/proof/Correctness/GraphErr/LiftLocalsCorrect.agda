@@ -1,12 +1,12 @@
 {-
 
-  Correctness of typed lift locals (Monᵀ → Impᵀ, Compiler/LiftLocals.agda)
+  Correctness of typed lift locals (Monᵀ → Impᵀ, ISWIM/Compiler/LiftLocals.agda)
   in the graph model with errors, against the continuation-passing
-  semantics of Impᵀ (Semantics/GraphErr/Typed/Imp.agda):
+  semantics of Impᵀ (ISWIM/Semantics/GraphErr/Typed/Imp.agda):
 
     lift-locals-correct : ⟦ ⌜ P ⌝ₚ ⟧₅ ≃ ⟦ lift-program P ⟧ᵢ
 
-  As in Untyped/proof/Correctness/GraphErr/LiftLocalsCorrect.agda: lift e run
+  As in ISWIM/Untyped/proof/Correctness/GraphErr/LiftLocalsCorrect.agda: lift e run
   with a continuation that means K means K of the meaning of e
   (lift-sem). K is a bind (K⟨_⟩): it commutes with a let, a bind
   (let-law), and with a case (case-lawᵗ), and a slot binding is the bind
@@ -16,21 +16,21 @@
 
 -}
 
-module proof.Correctness.GraphErr.LiftLocalsCorrect where
+module ISWIM.proof.Correctness.GraphErr.LiftLocalsCorrect where
 
 open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.OpsBase using (Mono₁)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import proof.Framework.GraphModel.TypedOk using (fin₁)
-open import proof.Semantics.GraphErr.Typed.Clos2 using (caseᵗ-≃)
-open import proof.Semantics.GraphErr.Typed.Clos5 renaming (ok to ok₅)
-open import proof.Semantics.GraphErr.Typed.Imp
-open import Semantics.GraphErr.Typed.Imp using (⟦_⟧ᴷ; codeᵢ; ⟦_⟧ᵢ; letᵗ)
-open import Language.Typed.Type hiding (_≟_)
-import Language.Typed.Mon as M
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (caseᵗ-≃)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 renaming (ok to ok₅)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Imp
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (⟦_⟧ᴷ; codeᵢ; ⟦_⟧ᵢ; letᵗ)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+import ISWIM.Language.Typed.Mon as M
 open M using (⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ₚ)
 
-open import Compiler.LiftLocals
+open import ISWIM.Compiler.LiftLocals
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

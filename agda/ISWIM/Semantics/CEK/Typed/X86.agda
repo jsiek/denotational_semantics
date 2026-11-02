@@ -1,7 +1,7 @@
 {-
 
-  A machine for X86ᵀ (Language/Typed/X86.agda): the machine of untyped
-  X86 (Semantics/CEK/X86.agda) on typed states, with the values of the Clos5ᵀ machine (Semantics/CEK/Typed/Clos5.agda).
+  A machine for X86ᵀ (ISWIM/Language/Typed/X86.agda): the machine of untyped
+  X86 (ISWIM/Semantics/CEK/X86.agda) on typed states, with the values of the Clos5ᵀ machine (ISWIM/Semantics/CEK/Typed/Clos5.agda).
   A state
     run k bs σ η m
   runs the sequence k, with the blocks bs it may jump to, the call
@@ -23,17 +23,17 @@
 
 -}
 
-module Semantics.CEK.Typed.X86 where
+module ISWIM.Semantics.CEK.Typed.X86 where
 
 open import Language.Prim using (sub)
-open import Language.Typed.Type hiding (_≟_)
-open import Language.Typed.X86
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.X86
 open import Framework.Lookup using (_!_; forget)
 open import Semantics.Observation using (o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import Semantics.CEK.Typed.Clos5
+open import ISWIM.Semantics.CEK.Typed.Clos5
   using (Val; code; pack; const; tup; inl; inr; dyn; obs; int; elems; choose; δᵀ; proj?) public
-open import Semantics.CEK.Typed.Imp using (Frame) renaming (atom to value-of) public
+open import ISWIM.Semantics.CEK.Typed.Imp using (Frame) renaming (atom to value-of) public
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Integer using (_≟_)

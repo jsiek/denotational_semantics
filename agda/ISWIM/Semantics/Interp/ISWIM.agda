@@ -1,18 +1,18 @@
 {-
 
   A clocked interpreter for ISWIM (call by value, left to right), which
-  follows the CEK machine (Semantics/CEK/ISWIM.agda). A function
+  follows the CEK machine (ISWIM/Semantics/CEK/ISWIM.agda). A function
   value is a closure of the function's body and the whole environment it
-  was created in. See the design note in Clock.agda.
+  was created in. See the design note in Semantics/Interp/Clock.agda.
 
 -}
 
-module Semantics.Interp.ISWIM where
+module ISWIM.Semantics.Interp.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Semantics.Observation
 open import Framework.ListUtil using (_‼_; proj)
 open import Semantics.Interp.Clock
@@ -81,7 +81,7 @@ eval-args {zero} ck ρ vs Nil = ret vs
 eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
 
 {- the operator is checked before the argument is evaluated (Clos4 and
-   Clos5 check only at the call; see Semantics/CEK/ISWIM.agda) -}
+   Clos5 check only at the call; see ISWIM/Semantics/CEK/ISWIM.agda) -}
 apply ck ρ M (clo N ρ') = do w ← eval ck ρ M; call ck N (w ∷ ρ')
 apply ck ρ M _ = error
 

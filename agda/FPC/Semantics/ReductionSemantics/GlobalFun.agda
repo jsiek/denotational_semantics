@@ -1,24 +1,24 @@
 {-
 
-  A reduction semantics for GlobalFunμ (Mu/Language/GlobalFun.agda), as for
-  PairClosμ (Mu/Semantics/ReductionSemantics/PairClos.agda) and Clos5ᵀ
-  (Semantics/Reduction/Typed/Clos5.agda), for a program's table of
+  A reduction semantics for GlobalFunμ (FPC/Language/GlobalFun.agda), as for
+  PairClosμ (FPC/Semantics/ReductionSemantics/PairClos.agda) and Clos5ᵀ
+  (ISWIM/Semantics/Reduction/Typed/Clos5.agda), for a program's table of
   definitions ds: a reference to a definition is a value, and callc
   calls the definition it refers to.
 
 -}
 
-module Mu.Semantics.ReductionSemantics.GlobalFun where
+module FPC.Semantics.ReductionSemantics.GlobalFun where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 import Language.Prim as P
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.GlobalFun hiding (wk; wks)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.GlobalFun hiding (wk; wks)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
-open import Mu.Framework.ReductionAll Obs o-error using (red-∷)
+open import FPC.Framework.ReductionAll Obs o-error using (red-∷)
 
 open import Data.Bool using (if_then_else_)
 open import Data.Integer using (ℤ; _-_; _≟_)

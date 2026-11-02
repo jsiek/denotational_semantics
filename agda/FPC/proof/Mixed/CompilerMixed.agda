@@ -1,10 +1,10 @@
 {-
 
   The FPC compiler proved by mixing semantics: simplify in the graph
-  model (Mu/proof/Correctness/GraphModel/SimplifyCorrect.agda), every other
-  pass by the clocked interpreters (Mu/proof/Correctness/ClockedInterpreters/, as in
+  model (FPC/proof/Correctness/GraphModel/SimplifyCorrect.agda), every other
+  pass by the clocked interpreters (FPC/proof/Correctness/ClockedInterpreters/, as in
   CompilerFuel.agda), joined at FPC by the bridge between its graph
-  semantics and its interpreter (Mu/proof/Adequacy/FPC.agda, the
+  semantics and its interpreter (FPC/proof/Adequacy/FPC.agda, the
   graph model's adequacy for the FPC interpreter), used for
   the program and for its simplification:
 
@@ -15,42 +15,42 @@
 
   for constants, and for divergence through the emptiness of the
   denotations. The end theorem is the interpreter column's
-  (Mu/proof/Correctness/ClockedInterpreters/CompilerFuel.agda): for a main of type
+  (FPC/proof/Correctness/ClockedInterpreters/CompilerFuel.agda): for a main of type
   Int, the interpreters of FPC and X86μ stop with the same constant,
   or both diverge.
 
 -}
 
-module Mu.proof.Mixed.CompilerMixed where
+module FPC.proof.Mixed.CompilerMixed where
 
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
-open import Mu.Semantics.GraphModel.Closed using (ρ₀)
-open import Mu.Language.Type using (base)
-open import Mu.Language.FPC using (Tm)
-open import Mu.Semantics.GraphModel.FPC using (⟦_⟧)
-open import Mu.Compiler.Simplify using (simplify)
-open import Mu.Compiler.Capture using (capture)
-open import Mu.Compiler.Prune using (prune-program)
-open import Mu.Compiler.Concretize using (concretize-program)
-open import Mu.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
+open import FPC.Semantics.GraphModel.Closed using (ρ₀)
+open import FPC.Language.Type using (base)
+open import FPC.Language.FPC using (Tm)
+open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
+open import FPC.Compiler.Simplify using (simplify)
+open import FPC.Compiler.Capture using (capture)
+open import FPC.Compiler.Prune using (prune-program)
+open import FPC.Compiler.Concretize using (concretize-program)
+open import FPC.Compiler.Pipeline using (compile-to-PairClos; compile-to-GlobalFun; compile-to-Mon; compile-to-Imp; compile-to-CFG; compile)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
-import Mu.Semantics.ClockedInterpreters.FPC as FPCᵢ
-import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
+import FPC.Semantics.ClockedInterpreters.FPC as FPCᵢ
+import FPC.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
-open import Mu.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.CaptureFuel using (capture-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.PruneFuel using (prune-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.ConcretizeFuel using (concretize-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.SplitFuel using (split-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.HoistFuel using (hoist-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.RCOFuel using (rco-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.LiftLocalsFuel using (lift-locals-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.ExplicateFuel using (explicate-correct)
-open import Mu.proof.Correctness.ClockedInterpreters.SelectFuel using (select-correct)
-open import Mu.proof.Adequacy.FPC using (const-iff; diverges-iff)
+open import FPC.proof.Correctness.GraphModel.SimplifyCorrect using (simplify-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.CaptureFuel using (capture-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.PruneFuel using (prune-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.ConcretizeFuel using (concretize-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.SplitFuel using (split-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.HoistFuel using (hoist-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.RCOFuel using (rco-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.LiftLocalsFuel using (lift-locals-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.ExplicateFuel using (explicate-correct)
+open import FPC.proof.Correctness.ClockedInterpreters.SelectFuel using (select-correct)
+open import FPC.proof.Adequacy.FPC using (const-iff; diverges-iff)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])

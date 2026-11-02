@@ -3,12 +3,13 @@
 surface.
 
 Run from the repository root:  python3 papers/PLDI-2027/loc.py
-which prints the tables of FPC (agda/Mu/), the main experiment, and
+which prints the tables of FPC (agda/FPC/), the main experiment, and
 then a short comparison with the ISWIM pipeline (dynamic typing and
 errors).  Further tables:
-  --iswim       the full tables of the ISWIM pipeline (agda/, typed after
+  --iswim       the full tables of the ISWIM pipeline (agda/ISWIM/, typed after
                 cast insertion), with the graph model with errors
-  --untyped     those of the untyped ISWIM pipeline preserved in agda/Untyped/
+  --untyped     those of the untyped ISWIM pipeline preserved in
+                agda/ISWIM/Untyped/
   --mu          the FPC tables only
   --mu-detail   FPC against the ISWIM pipeline, row by row, per style
   --tokens      measure in lexical tokens instead of lines (with any of
@@ -23,7 +24,7 @@ errors).  Further tables:
   --artifact    Tables 1 and 2 of the paper only (the five proofs, and the
                 infrastructure each relies on), for the exported artifact
                 (artifact/export.py), which has only the import closure of
-                agda/Mu/All.agda and agda/AllScott.agda and vendors
+                agda/FPC/All.agda and agda/AllScott.agda and vendors
                 TypeTopology in vendor/TypeTopology: the groups of the other
                 pipelines are empty there, and the checks that concern only
                 them are skipped
@@ -32,54 +33,58 @@ A code line is a line that is not blank, not a comment ({- -} blocks,
 -- line comments) and not part of an import statement (`import` or
 `open import`, with its continuation lines): imports depend on how
 finely a development is split into modules, not on its content.  Every
-.agda file under agda/ (except agda/old/ and the three All.agda) must
+.agda file under agda/ (except agda/old/ and the four All.agda) must
 belong to exactly one group; the script fails otherwise, so new modules
 cannot go uncounted.
 
-Three pipelines.  The main one (the default) is FPC (agda/Mu/, module
-prefix Mu.): a typed ISWIM with iso-recursive types (no recursion
+Three pipelines.  The main one (the default) is FPC (agda/FPC/, module
+prefix FPC.): a typed ISWIM with iso-recursive types (no recursion
 construct, no errors) and its compiler to the typed assembly language
 X86μ, FPC --simplify--> FPC --enclose--> ... --select--> X86μ,
 proved in four styles (sides 'mu-den', 'mu-op', 'mu-ck', 'mu-red', and
 the graph model's adequacy for the clocked interpreters, 'mu-adeq', with
 alternatives against the CEK machines, 'mu-adeq-cek', and against
 FPC's reduction semantics, 'mu-adeq-red', reported alongside it; see
-below).  The ISWIM pipeline (agda/), reported
+below).  The ISWIM pipeline (agda/ISWIM/, module prefix ISWIM.), reported
 briefly by default and in full with --iswim, shows how dynamic typing
 and errors affect the comparison: ISWIM --simplify--> ISWIM --cast
 insertion--> ISWIMᵀ --enclose--> ... --select--> X86ᵀ, with
 intrinsically typed intermediate languages and an intrinsically typed
 assembly language, X86ᵀ, as the target, and a fifth column, the graph
 model with errors.  The untyped pipeline that preceded it is preserved
-in agda/Untyped/ (module prefix Untyped.); --untyped prints its tables,
+in agda/ISWIM/Untyped/ (module prefix ISWIM.Untyped.); --untyped prints its tables,
 and --iswim ends with a table that compares the two, column by column.
 Each column of the ISWIM pipelines is a side ('den', 'op', 'ck', 'red',
 'gerr' for the typed one; 'uden', 'uop', 'uck', 'ured', 'ugerr' for the
 untyped one), and so are their adequacy proofs ('adeq', 'gadeq';
 'uadeq', 'ugadeq').  What both ISWIM pipelines use (untyped ISWIM and
 simplify with its proofs, the primitives, the observations, the ISWIM
-adequacy) stays in agda/ and belongs to groups of both sides
+adequacy) stays in agda/ISWIM/ and belongs to groups of both sides
 ('den+uden'): it is counted in full in that row of both pipelines.
-Untyped X86 (Language/X86.agda) and its CEK machine stay in agda/ too,
-for the untyped pipeline and for the typed one's assurance (below); its
-other semantics and its adequacy are the untyped pipeline's, in
-agda/Untyped/.
+Untyped X86 (ISWIM/Language/X86.agda) and its CEK machine stay in
+agda/ISWIM/ too, for the untyped pipeline and for the typed one's
+assurance (below); its other semantics and its adequacy are the untyped
+pipeline's, in agda/ISWIM/Untyped/.  What FPC uses too (the primitives,
+the graph model's meaning of them, the observations and the frameworks'
+instances at them) is directly in agda/, with the language-independent
+frameworks (agda/Framework/).
 
 Assurance (side 'assure', not in any total nor in the comparison):
 checks that the typed pipeline's X86ᵀ is faithful to untyped X86, such
 as that erasing X86ᵀ to X86 keeps the meaning of every program, and that
 select, with the types erased, emits the instructions of select into
-untyped X86 (Theorems/X86Erasure.agda).
+untyped X86 (ISWIM/Theorems/X86Erasure.agda).
 
 The code is split into an audit surface (the theorem statements,
-agda/Mu/Theorems/, agda/Theorems/ and agda/Untyped/Theorems/, and the
-definitions they use, everywhere outside a proof/ directory) and the
-proof/ directories (agda/Mu/proof/, agda/proof/, agda/Untyped/proof/),
-which need not be read to trust the results.  A module that mixes
-definitions and lemmas is split in two: the definitions at agda/X.agda,
-the lemmas at agda/proof/X.agda (likewise agda/Mu/X.agda and
-agda/Mu/proof/X.agda, and agda/Untyped/X.agda and
-agda/Untyped/proof/X.agda).  For the counts below the two halves are one
+agda/FPC/Theorems/, agda/ISWIM/Theorems/ and agda/ISWIM/Untyped/Theorems/,
+and the definitions they use, everywhere outside a proof/ directory) and
+the proof/ directories (agda/FPC/proof/, agda/ISWIM/proof/,
+agda/ISWIM/Untyped/proof/, agda/proof/), which need not be read to trust
+the results.  A module that mixes definitions and lemmas is split in
+two: the definitions at agda/X.agda, the lemmas at agda/proof/X.agda
+(likewise agda/FPC/X.agda and agda/FPC/proof/X.agda, agda/ISWIM/X.agda
+and agda/ISWIM/proof/X.agda, and agda/ISWIM/Untyped/X.agda and
+agda/ISWIM/Untyped/proof/X.agda).  For the counts below the two halves are one
 unit (as they were one module before the split): they belong to the same
 group, and a proof reaches the unit when it reaches either half.
 
@@ -137,9 +142,9 @@ derived from the CEK column's simulation (PipelineSim); the CEK modules
 it reaches that way are shown in their own row, not in its total.  The
 script fails if one proof reaches another proof's modules (of either
 pipeline), adequacy's, an example's or an experiment's, or if a module
-outside agda/Untyped/ imports one inside it.
+outside agda/ISWIM/Untyped/ imports one inside it.
 
-FPC (agda/Mu/, module prefix Mu.; sides 'mu-*', in no total of the
+FPC (agda/FPC/, module prefix FPC.; sides 'mu-*', in no total of the
 ISWIM pipelines, nor in their tables): its languages, passes and proofs
 are a parallel copy of the typed ISWIM pipeline's, without cast
 insertion, in the four styles.  Its main table is in the shape of the
@@ -162,14 +167,14 @@ such as the meaning of the primitives and the small-step framework, they
 may use), and its infrastructure must import only infrastructure.
 
 FPC's adequacy ('mu-adeq') is for the clocked interpreters of FPC
-and X86μ (Mu/proof/Adequacy/), and its end theorem is the interpreter
+and X86μ (FPC/proof/Adequacy/), and its end theorem is the interpreter
 column's.  The adequacy for the CEK machines that preceded it
-('mu-adeq-cek', Mu/proof/Adequacy/AbstractMachines/, in no total) is kept as an
+('mu-adeq-cek', FPC/proof/Adequacy/AbstractMachines/, in no total) is kept as an
 alternative and shown beside it, row by row: the modules both use (the
 tuples of sets, the tables' lemmas, the well-formedness of compiled
 programs) are in groups of both sides ('mu-adeq+mu-adeq-cek'), counted
 in full in each.  The adequacy for FPC's reduction semantics
-('mu-adeq-red', Mu/proof/Adequacy/ReductionSemantics/, in no total) is a
+('mu-adeq-red', FPC/proof/Adequacy/ReductionSemantics/, in no total) is a
 second alternative: its target is the X86μ machine, as in the reduction
 column's end theorem, so its X86μ rows are the CEK alternative's
 ('mu-adeq-cek+mu-adeq-red'), counted in full in each.
@@ -203,7 +208,7 @@ TypeTopology: sums, lifting, functors, the solution of the domain
 equation, the domain of values and its operators, the combinators that
 build continuous meanings, the stages of the bilimit) is a separate
 table, as the graph model's is.  Its adequacy for the clocked
-interpreters (Mu/proof/Adequacy/ScottDomains/, in no total) is reported
+interpreters (FPC/proof/Adequacy/ScottDomains/, in no total) is reported
 separately, against the graph model's ('mu-adeq'), by the same rows,
 with the modules of the graph model's adequacy that it reuses (lemmas
 about the interpreters only).
@@ -216,10 +221,10 @@ lines of the audit surface that its statements reach: the shared part
 and the statements.  The script fails if a module of an audit surface
 imports a proof module (the theorem files do, by design), or if a module
 outside the proof/ directories is not reached from the theorem files:
-those of agda/ from the ISWIM pipelines'.  FPC's theorem files
-(agda/Mu/Theorems/) state only the paper's end-to-end theorems (and
+those of agda/ISWIM/ and directly in agda/ from the ISWIM pipelines'.  FPC's theorem files
+(agda/FPC/Theorems/) state only the paper's end-to-end theorems (and
 split's), so the semantics of its intermediate languages
-(agda/Mu/Semantics/), which only the proofs use, are reached by no
+(agda/FPC/Semantics/), which only the proofs use, are reached by no
 statement; they are listed as not on the audit surface, and must import
 no proof module either.
 """
@@ -229,17 +234,28 @@ import glob, os, re, sys
 ARTIFACT = '--artifact' in sys.argv[1:]
 
 A = 'agda/'
-U = 'agda/Untyped/'
+# the ISWIM pipelines: the typed one in agda/ISWIM/, the untyped one in
+# agda/ISWIM/Untyped/
+I = A + 'ISWIM/'
+U = I + 'Untyped/'
 
-L, C, PC = A + 'Language/', A + 'Compiler/', A + 'proof/Compiler/'
-G, GP, GC = A + 'Semantics/Graph/', A + 'proof/Semantics/Graph/', A + 'proof/Correctness/Graph/'
-O, OP, OC = A + 'Semantics/CEK/', A + 'proof/Semantics/CEK/', A + 'proof/Correctness/CEK/'
-F, FP, FC = A + 'Semantics/Interp/', A + 'proof/Semantics/Interp/', A + 'proof/Correctness/Interp/'
-RD, RP, RC = A + 'Semantics/Reduction/', A + 'proof/Semantics/Reduction/', A + 'proof/Correctness/Reduction/'
-GE, GEP, GEC = A + 'Semantics/GraphErr/', A + 'proof/Semantics/GraphErr/', A + 'proof/Correctness/GraphErr/'
-AP, GEA = A + 'proof/Adequacy/', A + 'proof/Adequacy/GraphErr/'
+L, C, PC = I + 'Language/', I + 'Compiler/', I + 'proof/Compiler/'
+G, GP, GC = I + 'Semantics/Graph/', I + 'proof/Semantics/Graph/', I + 'proof/Correctness/Graph/'
+O, OP, OC = I + 'Semantics/CEK/', I + 'proof/Semantics/CEK/', I + 'proof/Correctness/CEK/'
+F, FP, FC = I + 'Semantics/Interp/', I + 'proof/Semantics/Interp/', I + 'proof/Correctness/Interp/'
+RD, RP, RC = I + 'Semantics/Reduction/', I + 'proof/Semantics/Reduction/', I + 'proof/Correctness/Reduction/'
+GE, GEP, GEC = I + 'Semantics/GraphErr/', I + 'proof/Semantics/GraphErr/', I + 'proof/Correctness/GraphErr/'
+AP, GEA = I + 'proof/Adequacy/', I + 'proof/Adequacy/GraphErr/'
+# the modules that FPC and the ISWIM pipelines share, directly under agda/:
+# the primitives and registers, the graph model's meaning of the
+# primitives, the observations and the frameworks' instances at them
+SL = A + 'Language/'
+SG, SGP = A + 'Semantics/Graph/', A + 'proof/Semantics/Graph/'
+SO, SOP = A + 'Semantics/CEK/', A + 'proof/Semantics/CEK/'
+SF, SFP = A + 'Semantics/Interp/', A + 'proof/Semantics/Interp/'
+SRD = A + 'Semantics/Reduction/'
 W, WP = A + 'Framework/', A + 'proof/Framework/'
-MU = A + 'Mu/'
+MU = A + 'FPC/'
 MUP = MU + 'proof/'
 # FPC's names of the languages that the ISWIM pipeline calls Clos2–Clos5
 # (the names of the paper)
@@ -267,19 +283,19 @@ SCOTT_FILES = scott_files()
 
 
 def u(p):
-    """The path p of agda/, in the preserved untyped pipeline."""
-    return U + p[len(A):]
+    """The path p of agda/ISWIM/, in the preserved untyped pipeline."""
+    return U + p[len(I):]
 
 
 # the sides of the four proofs that the five compare, all of them, and their
 # adequacy proofs: the typed pipeline (the main one) and the untyped one
 TYPED = dict(sides=('den', 'op', 'ck', 'red'), gerr='gerr', adeq='adeq', gadeq='gadeq',
-             shared=('shared',), thm={'den': A + 'Theorems/Denotational.agda',
-                                      'op': A + 'Theorems/Simulation.agda',
-                                      'ck': A + 'Theorems/Interpreter.agda',
-                                      'red': A + 'Theorems/Reduction.agda',
-                                      'adeq': A + 'Theorems/Adequacy.agda',
-                                      'gerr': A + 'Theorems/GraphErrors.agda'},
+             shared=('shared',), thm={'den': I + 'Theorems/Denotational.agda',
+                                      'op': I + 'Theorems/Simulation.agda',
+                                      'ck': I + 'Theorems/Interpreter.agda',
+                                      'red': I + 'Theorems/Reduction.agda',
+                                      'adeq': I + 'Theorems/Adequacy.agda',
+                                      'gerr': I + 'Theorems/GraphErrors.agda'},
              exp='exp', name='typed pipeline')
 UNTYPED = dict(sides=('uden', 'uop', 'uck', 'ured'), gerr='ugerr', adeq='uadeq', gadeq='ugadeq',
                shared=('shared', 'ushared'),
@@ -290,7 +306,7 @@ UNTYPED = dict(sides=('uden', 'uop', 'uck', 'ured'), gerr='ugerr', adeq='uadeq',
 BOTH = 'den+uden'
 
 # the statements of the assurance (side 'assure'), not in the totals
-ASSURE_THM = A + 'Theorems/X86Erasure.agda'
+ASSURE_THM = I + 'Theorems/X86Erasure.agda'
 
 # import bundles: imports only, looked through (see above)
 BUNDLES = {W + 'GraphModel/Prelude.agda', W + 'GraphModel/ErrorPrelude.agda',
@@ -306,7 +322,8 @@ GROUPS = [
     # primitives, simplify and the observations are used by both
     # pipelines; untyped X86 is the untyped pipeline's target.
     ('shared', 'syntax, languages, compiler passes',
-     [L + '*.agda', L + 'Typed/*.agda', C + '*.agda', PC + '*.agda', A + 'Semantics/Observation.agda']),
+     [SL + '*.agda', L + '*.agda', L + 'Typed/*.agda', C + '*.agda', PC + '*.agda',
+      A + 'Semantics/Observation.agda']),
     ('ushared', 'syntax, languages, compiler passes',
      [u(L) + '*.agda', u(C) + '*.agda', u(PC) + '*.agda', L + 'X86.agda']),
 
@@ -318,7 +335,7 @@ GROUPS = [
     # and erasing X86ᵀ keeps the meaning of every program, in the CEK
     # machines (a simulation of the X86ᵀ machine by the X86 machine)
     ('assure', 'erasure keeps the meaning of every X86ᵀ program (CEK machines)',
-     [A + 'proof/Assurance/*.agda']),
+     [I + 'proof/Assurance/*.agda']),
 
     # language-independent infrastructure: not in the totals (see main)
     ('infra', 'abstract binding trees',
@@ -377,7 +394,7 @@ GROUPS = [
     # the meaning of the primitives (Prim.agda) is here, as prim? is in each
     # machine and interpreter
     (BOTH, 'semantics of the languages',
-     [G + 'Prim.agda', GP + 'Prim.agda', G + 'ISWIM.agda', GP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda']),
+     [SG + 'Prim.agda', SGP + 'Prim.agda', G + 'ISWIM.agda', GP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda']),
     ('den', 'semantics of the languages', [G + 'Typed/*.agda', GP + 'Typed/*.agda']),
     (BOTH, 'simplify', [GC + 'SimplifyCorrect.agda']),
     ('den', 'cast insertion', [GC + 'CastCorrect.agda']),
@@ -400,7 +417,7 @@ GROUPS = [
     # untyped X86 and its values are the untyped pipeline's.
     ('op+uop', 'semantics of the languages', [O + 'ISWIM.agda']),
     ('op+red+uop+ured', 'semantics of the languages',
-     [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
+     [SO + 'Smallstep.agda', SOP + 'Smallstep.agda', SOP + 'Simulation.agda']),
     ('uop+ured', 'semantics of the languages', [O + 'Values.agda', O + 'X86.agda']),
     ('op', 'semantics of the languages',
      [O + 'Typed/ISWIM.agda', O + 'Typed/Clos2.agda', O + 'Typed/Clos3.agda', O + 'Typed/Clos4.agda']),
@@ -428,7 +445,7 @@ GROUPS = [
 
     # --- clocked interpreters + value relations --------------------------------
     # with the framework at this compiler's observations (Clock.agda)
-    ('ck+uck', 'semantics of the languages', [F + 'ISWIM.agda', F + 'Clock.agda', FP + 'Clock.agda']),
+    ('ck+uck', 'semantics of the languages', [F + 'ISWIM.agda', SF + 'Clock.agda', SFP + 'Clock.agda']),
     ('ck', 'semantics of the languages', [F + 'Typed/*.agda', FP + 'Typed/*.agda']),
     ('ck+uck', 'simplify', [FC + 'SimplifyFuel.agda']),
     ('ck', 'cast insertion', [FC + 'CastFuel.agda']),
@@ -446,7 +463,7 @@ GROUPS = [
     # --- reduction semantics + simulations -------------------------------------
     # reduction semantics (substitution) for the languages with binders, and
     # the framework at this compiler's observations (Smallstep.agda)
-    ('red+ured', 'semantics of the languages', [RD + 'ISWIM.agda', RD + 'Smallstep.agda']),
+    ('red+ured', 'semantics of the languages', [RD + 'ISWIM.agda', SRD + 'Smallstep.agda']),
     ('red', 'semantics of the languages', [RD + 'Typed/*.agda', RP + 'Typed/*.agda']),
     ('red+ured', 'simplify', [RC + 'SimplifyRed.agda']),
     ('red', 'cast insertion', [RC + 'CastRed.agda']),
@@ -498,7 +515,7 @@ GROUPS = [
 
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
-    ('thm', 'theorem statements', [A + 'Theorems/*.agda']),
+    ('thm', 'theorem statements', [I + 'Theorems/*.agda']),
 
     # --- the untyped pipeline, preserved ---------------------------------------
     ('uden', 'semantics of the languages',
@@ -590,7 +607,7 @@ GROUPS = [
     ('uexp', 'graph model: direct Imp — explicate control', [u(GC) + 'ExplicateCorrect.agda']),
     ('uthm', 'theorem statements', [U + 'Theorems/*.agda']),
 
-    # --- FPC (agda/Mu/), in no total of the ISWIM pipelines -------------------
+    # --- FPC (agda/FPC/), in no total of the ISWIM pipelines ------------------
     # with the lemma that hoist refers only to older definitions, which
     # only adequacy uses (shared in the typed pipeline, where the graph model
     # with errors uses it too), counted as a shared module
@@ -846,16 +863,20 @@ def imports(path):
 
 
 def is_proof(f):
-    return f.startswith(A + 'proof/') or f.startswith(U + 'proof/') or f.startswith(MUP)
+    return (f.startswith(A + 'proof/') or f.startswith(I + 'proof/') or f.startswith(U + 'proof/')
+            or f.startswith(MUP))
 
 
 def unit(f):
     """The unit of a file: agda/X.agda for both agda/X.agda and its proof half
-    agda/proof/X.agda (likewise under agda/Untyped/ and agda/Mu/)."""
+    agda/proof/X.agda (likewise under agda/ISWIM/, agda/ISWIM/Untyped/ and
+    agda/FPC/)."""
     if f.startswith(MUP):
         return MU + f[len(MUP):]
     if f.startswith(U + 'proof/'):
         return U + f[len(U + 'proof/'):]
+    if f.startswith(I + 'proof/'):
+        return I + f[len(I + 'proof/'):]
     if f.startswith(A + 'proof/'):
         return A + f[len(A + 'proof/'):]
     return f
@@ -920,7 +941,7 @@ class Count:
             for s in sides_of(side):
                 counts[(s, gname)] = counts.get((s, gname), 0) + sum(code_lines(f) for f in files)
         every = {f for f in glob.glob('agda/**/*.agda', recursive=True)
-                 if not f.startswith('agda/old/') and f not in ('agda/All.agda', U + 'All.agda', MU + 'All.agda', MU + 'Experiments.agda')
+                 if not f.startswith('agda/old/') and f not in ('agda/All.agda', I + 'All.agda', U + 'All.agda', MU + 'All.agda', MU + 'Experiments.agda')
                  and f not in BUNDLES and f not in scott_files() and not f.startswith('agda/Scratch/')}
         missing = sorted(every - set(seen))
         if missing:
@@ -989,7 +1010,7 @@ class Count:
             if not f.startswith(U):
                 bad = sorted(g for g in self.fgraph[f] if g.startswith(U))
                 if bad:
-                    sys.exit(f'{f} imports modules of agda/Untyped/:\n  ' + '\n  '.join(bad))
+                    sys.exit(f'{f} imports modules of agda/ISWIM/Untyped/:\n  ' + '\n  '.join(bad))
         # The proofs must be independent: no proof reaches another proof's
         # modules (of either pipeline, the shared rows apart), nor adequacy's,
         # an example or an experiment (adequacy, examples and experiments may
@@ -997,7 +1018,7 @@ class Count:
         # model's meaning of the primitives, which they extend.
         exp = {un for un, (side, _) in group_of.items() if side in ('uexp', 'examples', 'uexamples')}
         cols = [s for s in STYLE if STYLE[s] in ('den', 'op', 'ck', 'red', 'gerr')]
-        prim = {G + 'Prim.agda'}
+        prim = {SG + 'Prim.agda'}
         for s in cols:
             for t in STYLE:
                 if t == s:
@@ -1021,8 +1042,8 @@ class Count:
             thm = set()
         elif thm != {f for f, (side, _) in self.seen.items() if side in ('thm', 'uthm')}:
             sys.exit('the theorem files are not ' + ', '.join(sorted(thm)))
-        # FPC's audit surface is that of agda/Mu/, reached from its own
-        # theorem files (agda/Mu/Theorems/), with the modules of agda/ they
+        # FPC's audit surface is that of agda/FPC/, reached from its own
+        # theorem files (agda/FPC/Theorems/), with the modules of agda/ they
         # reach (the frameworks, the observations, ...)
         mthm = set(MU_P['thm'].values())
         if mthm != {f for f, (side, _) in self.seen.items() if side == 'mu-thm'}:
@@ -1045,13 +1066,13 @@ class Count:
                      + '\n  '.join(unreached))
         # FPC's theorem files state only the end-to-end theorems (and
         # split's), so the semantics of the intermediate languages, which
-        # only the proofs use, are definitions outside Mu/proof/ that no
+        # only the proofs use, are definitions outside FPC/proof/ that no
         # statement reaches; they must be semantics, and import no proof
         # module (checked above)
         self.munreached = sorted(msurface - reachable(mthm, self.sgraph))
         bad = [f for f in self.munreached if not f.startswith(MU + 'Semantics/')]
         if bad:
-            sys.exit('in agda/Mu/, outside Mu/proof/ and Mu/Semantics/, but not reached from the theorem '
+            sys.exit('in agda/FPC/, outside FPC/proof/ and FPC/Semantics/, but not reached from the theorem '
                      'files of FPC:\n  ' + '\n  '.join(bad))
         self.thm, self.mthm = thm, mthm
 
@@ -1477,7 +1498,7 @@ def mu_report(c, T):
     print(f'| languages and passes (ISWIM … X86, enclose … select, and their composition; μ also simplify, with the renaming of FPC) | {n(MU_SHARED)} | {n(mush)} |')
     mui = [f for f in c.every if c.seen[f][0] == 'mu-infra']
     print(f'| infrastructure: vectors and lookup lemmas (`VecUtil`, `VecSelect`, `proof/Framework/Lookup`) '
-          f'against heterogeneous vectors (`Mu/Framework/AllUtil`, `AllProp`) '
+          f'against heterogeneous vectors (`FPC/Framework/AllUtil`, `AllProp`) '
           f'| {n(MU_INFRA)} | {n(mui)} |')
     mex = [f for f in c.every if c.seen[f][0] == 'mu-examples']
     print(f'| examples | — | {n(mex)} |')
@@ -1539,7 +1560,7 @@ def mu_ck_report(c):
 # rows (name, typed files, μ files), like for like: the typed reduction
 # column without simplify and cast insertion (and without the reduction
 # semantics of untyped ISWIM, which only their proofs use)
-# (FPC's renaming and substitution, Mu/Language/FPCSubst.agda, are
+# (FPC's renaming and substitution, FPC/Language/FPCSubst.agda, are
 # shared with simplify, and so not counted in the main table; here they
 # stay in ISWIM's row, like for like with ISWIMᵀ's, whose kit is in its
 # reduction semantics)
@@ -1548,13 +1569,13 @@ MU_RED_ROWS = [
      [MU + 'Semantics/ReductionSemantics/' + ml(x) + '.agda', MUP + 'Semantics/ReductionSemantics/' + ml(x) + '.agda']
      + ([MU + 'Language/FPCSubst.agda'] if x == 'ISWIM' else []))
     for x in ('ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5')] + [
-    ('semantics: transition systems (shared)', [RD + 'Smallstep.agda'], [RD + 'Smallstep.agda']),
+    ('semantics: transition systems (shared)', [SRD + 'Smallstep.agda'], [SRD + 'Smallstep.agda']),
     ('semantics: machines of Clos5, Imp, CFG, X86 (the CEK column\'s)',
      [O + 'Typed/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')],
      [MU + 'Semantics/AbstractMachines/' + x + '.agda' for x in ('GlobalFun', 'Imp', 'CFG', 'X86')]),
     ('semantics: the CEK framework at this compiler\'s observations (shared)',
-     [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda'],
-     [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
+     [SO + 'Smallstep.agda', SOP + 'Smallstep.agda', SOP + 'Simulation.agda'],
+     [SO + 'Smallstep.agda', SOP + 'Smallstep.agda', SOP + 'Simulation.agda']),
     ('CC: capture', [RC + 'CaptureRed.agda'], [MUP + 'Correctness/ReductionSemantics/CaptureRed.agda']),
     ('CC: prune', [RC + 'PruneRed.agda'], [MUP + 'Correctness/ReductionSemantics/PruneRed.agda']),
     ('CC: concretize', [RC + 'ConcretizeRed.agda'], [MUP + 'Correctness/ReductionSemantics/ConcretizeRed.agda']),
@@ -1624,7 +1645,7 @@ def mu_red_report(c):
     print()
     print('| reduction: not counted in the rows | typed | μ |')
     print('|---|---:|---:|')
-    print(f'| reduction of vectors (`ReductionVec`) against heterogeneous vectors (`Mu/Framework/ReductionAll`) '
+    print(f'| reduction of vectors (`ReductionVec`) against heterogeneous vectors (`FPC/Framework/ReductionAll`) '
           f'| {n([W + "ReductionVec.agda", WP + "ReductionVec.agda"])} '
           f'| {n([MU + "Framework/ReductionAll.agda", MUP + "Framework/ReductionAll.agda"])} |')
     print()
@@ -1784,7 +1805,7 @@ def mu_main(c, T, M):
 
     c.print_audit(MU_P)
     if c.munreached:
-        print('Not on the audit surface: the semantics of the intermediate languages, outside Mu/proof/ '
+        print('Not on the audit surface: the semantics of the intermediate languages, outside FPC/proof/ '
               'but reached by no theorem statement (only the proofs use them): '
               f'{len(c.munreached)} modules, {sum(code_lines(f) for f in c.munreached)} lines.')
         print()
@@ -1960,7 +1981,7 @@ def mixed_report(c, M, X):
                       ('statements (constants, convergence or divergence)', 'FPC')):
         print(f'| {label_} | {code_lines(MUP + "Adequacy/AbstractMachines/" + x + ".agda")} | {code_lines(MUP + "Adequacy/" + x + ".agda")} |')
     t = code_lines(MUP + 'Adequacy/Tuples.agda')
-    print(f'| tuples of sets (`Mu.proof.Adequacy.Tuples`, the same module) | {t} | {t} |')
+    print(f'| tuples of sets (`FPC.proof.Adequacy.Tuples`, the same module) | {t} | {t} |')
     print(f"| **total** | {c.counts[('mu-adeq-cek', 'ISWIM')]} | **{X['rows']['bridge']}** |")
     print()
 
@@ -2118,7 +2139,7 @@ def scott_report(c, M):
                                                                          for un in sorted(extra | borrowed)) + '.')
         print()
     print('The Scott column counts the meaning of the primitives (`Semantics.Scott.Prim`) in its '
-          "semantics row, and simplify's syntactic lemmas (`Mu.proof.Compiler.SimplifyFacts`) in its "
+          "semantics row, and simplify's syntactic lemmas (`FPC.proof.Compiler.SimplifyFacts`) in its "
           'simplify row, as the graph model does; its split row includes the calls of approximated '
           'closures (`proof.Framework.Scott.StageCall`).')
     print()
@@ -2128,7 +2149,7 @@ def scott_report(c, M):
         print(f'| {r} | {n} |')
     print(f"| **total** | {S['itotal']} |")
     print()
-    print(f"Theorem statements (Mu/Theorems/CorrectWrtScottDomains.agda): {S['thm']} lines.")
+    print(f"Theorem statements (FPC/Theorems/CorrectWrtScottDomains.agda): {S['thm']} lines.")
     print()
     print('| adequacy for the clocked interpreters (reported separately) | graph model | Scott domains |')
     print('|---|---:|---:|')
@@ -2144,7 +2165,7 @@ def scott_report(c, M):
         print('Reused by the Scott column\'s adequacy: ' + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
                                                                for un in sorted(S['areused'])) + '.')
         print()
-    print(f"Theorem statements (Mu/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda): {S['athm']} lines.")
+    print(f"Theorem statements (FPC/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda): {S['athm']} lines.")
     print()
     typetopology_report()
 

@@ -3,10 +3,10 @@
   X86ᵀ: a typed assembly language, after Morrisett, Walker, Crary and
   Glew's TAL, intrinsically typed in the style of Rouvoet et al.'s
   typed compilation to typed bytecode: the target of the compiler, the
-  output of select instructions (Compiler/Select.agda), with the
+  output of select instructions (ISWIM/Compiler/Select.agda), with the
   instructions of x86 with variables over abstract values, after
   Essentials of Compilation (those of the untyped X86,
-  Language/X86.agda, which the untyped pipeline targets), and their
+  ISWIM/Language/X86.agda, which the untyped pipeline targets), and their
   meaning.
 
   An instruction is typed by the machine state it starts in and the one
@@ -38,13 +38,13 @@
   The only check is project's: chk t x, d moves slot x : Any to d at
   ⟪ flat t ⟫, and is the trapped error when x holds another kind. It
   is a pseudo-instruction for the X86 test of t and the move (check,
-  Compiler/SelectX86.agda), which clobber %rax or the flag: chk leaves
+  ISWIM/Compiler/SelectX86.agda), which clobber %rax or the flag: chk leaves
   %rax unset and no flag. A value of type ⟪ G ⟫ is one of type Any
   (a ↑, as inject is a move in X86).
 
   A typed proof argument (an equation for a register, a frame bound) is
   not an operand: without the types, the instructions are those of X86
-  (Language/Typed/X86Erase.agda).
+  (ISWIM/Language/Typed/X86Erase.agda).
 
   Informally, the instructions, which run in a frame, registers and a
   flag, and their jumps:
@@ -72,12 +72,12 @@
 
 -}
 
-module Language.Typed.X86 where
+module ISWIM.Language.Typed.X86 where
 
 open import Framework.Primitives using (Base; base-rep; Int)
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_)
-open import Language.Typed.Mon using (Atm; var; lit; ref) public
+open import ISWIM.Language.Typed.Mon using (Atm; var; lit; ref) public
 open import Language.Reg public
 
 open import Data.Bool using (Bool; true; false)

@@ -1,4 +1,4 @@
-module Untyped.Semantics.Graph.Imp where
+module ISWIM.Untyped.Semantics.Graph.Imp where
 {-
 
  What the two semantics of Imp, the language after the 'lift locals'
@@ -33,8 +33,8 @@ open import Framework.GraphModel.DOpSig using (Results)
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
-open import Untyped.Semantics.Graph.Frames using (Table; init; Store; read; _[_↦_]; checked; zeros) public
-open import Untyped.Language.Imp renaming (pair to pair′; inl to inl′; inr to inr′)
+open import ISWIM.Untyped.Semantics.Graph.Frames using (Table; init; Store; read; _[_↦_]; checked; zeros) public
+open import ISWIM.Untyped.Language.Imp renaming (pair to pair′; inl to inl′; inr to inr′)
 open import Framework.Primitives using (Int)
 
 open import Data.Integer using (+_)

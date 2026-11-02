@@ -36,7 +36,7 @@
 
 -}
 
-module Untyped.Theorems.GraphErrors where
+module ISWIM.Untyped.Theorems.GraphErrors where
 
 open import Framework.Primitives using (base-rep)
 open import Framework.GraphModel.SetsAsPredicates using (𝒫; ⌈_⌉; _∈_; _≃_)
@@ -44,59 +44,59 @@ open import Framework.GraphModel.Env using (Env)
 open import Framework.GraphModel.Domain using (Value; ω; const)
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Untyped.Semantics.CEK.Clos5 as Clos5ₘ
-import Semantics.CEK.X86 as X86ₘ
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Untyped.Semantics.CEK.Clos5 as Clos5ₘ
+import ISWIM.Semantics.CEK.X86 as X86ₘ
 
-import Language.ISWIM as ISWIM
-import Untyped.Language.Clos2 as Clos2
-import Untyped.Language.Clos3 as Clos3
-import Untyped.Language.Clos4 as Clos4
-import Untyped.Language.Clos5 as Clos5
-open import Untyped.Language.Mon using (MonProgram)
-import Untyped.Language.Imp as Imp
-import Untyped.Language.CFG as CFG
+import ISWIM.Language.ISWIM as ISWIM
+import ISWIM.Untyped.Language.Clos2 as Clos2
+import ISWIM.Untyped.Language.Clos3 as Clos3
+import ISWIM.Untyped.Language.Clos4 as Clos4
+import ISWIM.Untyped.Language.Clos5 as Clos5
+open import ISWIM.Untyped.Language.Mon using (MonProgram)
+import ISWIM.Untyped.Language.Imp as Imp
+import ISWIM.Untyped.Language.CFG as CFG
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
-open import Compiler.Simplify using (simplify)
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.Compiler.Prune using (prune-program)
-open import Untyped.Compiler.Concretize using (concretize-program)
-open import Untyped.Compiler.Split using (split)
-open import Untyped.Compiler.Hoist using (hoist)
-open import Untyped.Compiler.RCO using (rco-program)
-open import Untyped.Compiler.LiftLocals using (lift-program)
-open import Untyped.Compiler.Explicate using (explicate)
-open import Untyped.Compiler.Select using (select)
-open import Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
-open import Untyped.Compiler.PipelineScope using (Scoped)
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.Compiler.Prune using (prune-program)
+open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
+open import ISWIM.Untyped.Compiler.Split using (split)
+open import ISWIM.Untyped.Compiler.Hoist using (hoist)
+open import ISWIM.Untyped.Compiler.RCO using (rco-program)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-program)
+open import ISWIM.Untyped.Compiler.Explicate using (explicate)
+open import ISWIM.Untyped.Compiler.Select using (select)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Untyped.Compiler.PipelineScope using (Scoped)
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import Framework.GraphModel.ErrorMonad using (val∈)
 
-open import Semantics.GraphErr.ISWIM using (⟦_⟧)
-open import Untyped.Semantics.GraphErr.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)
-open import Untyped.Semantics.GraphErr.Clos3 using () renaming (⟦_⟧ to ⟦_⟧₃)
-open import Untyped.Semantics.GraphErr.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄)
-open import Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Untyped.Semantics.GraphErr.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
-open import Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import ISWIM.Semantics.GraphErr.ISWIM using (⟦_⟧)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos3 using () renaming (⟦_⟧ to ⟦_⟧₃)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import ISWIM.Untyped.Semantics.GraphErr.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
+open import ISWIM.Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import ISWIM.Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
-import proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
-import Untyped.proof.Correctness.GraphErr.CaptureCorrect as CaptureCorrect
-import Untyped.proof.Correctness.GraphErr.PruneCorrect as PruneCorrect
-import Untyped.proof.Correctness.GraphErr.ConcretizeCorrect as ConcretizeCorrect
-import Untyped.proof.Correctness.GraphErr.SplitPreserve as SplitCorrect
-import Untyped.proof.Correctness.GraphErr.HoistCorrect as HoistCorrect
-import Untyped.proof.Correctness.GraphErr.RCOCorrect as RCOCorrect
-import Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect as LiftLocalsCorrect
-import Untyped.proof.Correctness.GraphErr.ExplicateCorrect as ExplicateCorrect
-import Untyped.proof.Correctness.GraphErr.SelectCorrect as SelectCorrect
-import Untyped.proof.Correctness.GraphErr.CompilerCorrect as CompilerCorrect
-import proof.Adequacy.GraphErr.ISWIM as Adequacy
-import proof.Adequacy.GraphErr.Simplify as SimplifyMachine
-import Untyped.proof.Adequacy.GraphErr.Clos5 as AdequacyClos5
-import Untyped.proof.Adequacy.GraphErr.X86CompileWF as AdequacyX86
-import Untyped.proof.Adequacy.GraphErr.EndToEnd as EndToEnd
+import ISWIM.proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.CaptureCorrect as CaptureCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.PruneCorrect as PruneCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.ConcretizeCorrect as ConcretizeCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.SplitPreserve as SplitCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.HoistCorrect as HoistCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.RCOCorrect as RCOCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect as LiftLocalsCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.ExplicateCorrect as ExplicateCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.SelectCorrect as SelectCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.CompilerCorrect as CompilerCorrect
+import ISWIM.proof.Adequacy.GraphErr.ISWIM as Adequacy
+import ISWIM.proof.Adequacy.GraphErr.Simplify as SimplifyMachine
+import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5 as AdequacyClos5
+import ISWIM.Untyped.proof.Adequacy.GraphErr.X86CompileWF as AdequacyX86
+import ISWIM.Untyped.proof.Adequacy.GraphErr.EndToEnd as EndToEnd
 
 open import Data.Product using (Σ-syntax; _×_; proj₁; proj₂)
 open import Relation.Binary.PropositionalEquality using (_≢_)

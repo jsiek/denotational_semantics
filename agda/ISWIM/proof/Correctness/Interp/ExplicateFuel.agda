@@ -14,20 +14,20 @@
 
 -}
 
-module proof.Correctness.Interp.ExplicateFuel where
+module ISWIM.proof.Correctness.Interp.ExplicateFuel where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-import Language.Typed.Imp as Imp
-open import Language.Typed.CFG
-open import Compiler.Explicate
+import ISWIM.Language.Typed.Imp as Imp
+open import ISWIM.Language.Typed.CFG
+open import ISWIM.Compiler.Explicate
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Typed.Clos5 as C
-import Semantics.Interp.Typed.Imp as I
-import Semantics.Interp.Typed.CFG as G
-open import Semantics.Interp.Typed.Imp using (atom; eval-simple)
+import ISWIM.Semantics.Interp.Typed.Clos5 as C
+import ISWIM.Semantics.Interp.Typed.Imp as I
+import ISWIM.Semantics.Interp.Typed.CFG as G
+open import ISWIM.Semantics.Interp.Typed.Imp using (atom; eval-simple)
 open import Framework.Lookup using (_!_; forget)
-open import proof.Semantics.Interp.Typed.Clos5 using (def-map; either-cong)
+open import ISWIM.proof.Semantics.Interp.Typed.Clos5 using (def-map; either-cong)
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

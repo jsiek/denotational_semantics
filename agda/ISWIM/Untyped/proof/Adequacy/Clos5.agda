@@ -28,24 +28,24 @@
 
 -}
 
-module Untyped.proof.Adequacy.Clos5 where
+module ISWIM.Untyped.proof.Adequacy.Clos5 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
-open import Untyped.Language.Clos5 using (program)
-open import Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
+open import ISWIM.Untyped.Language.Clos5 using (program)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; terminates-det)
-open import Untyped.Semantics.CEK.Clos5
-open import Untyped.proof.Compiler.HoistTable using (⊑-refl)
-open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
-open import Untyped.proof.Adequacy.Clos5WF using (WF) public
-open import Untyped.proof.Adequacy.Clos5Soundness using (soundness) public
-open import Untyped.proof.Adequacy.CompileWF using (compile-wf) public
-import Untyped.proof.Adequacy.Clos5Common as C
-import Untyped.proof.Adequacy.Clos5LogRel as LR
+open import ISWIM.Untyped.Semantics.CEK.Clos5
+open import ISWIM.Untyped.proof.Compiler.HoistTable using (⊑-refl)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
+open import ISWIM.Untyped.proof.Adequacy.Clos5WF using (WF) public
+open import ISWIM.Untyped.proof.Adequacy.Clos5Soundness using (soundness) public
+open import ISWIM.Untyped.proof.Adequacy.CompileWF using (compile-wf) public
+import ISWIM.Untyped.proof.Adequacy.Clos5Common as C
+import ISWIM.Untyped.proof.Adequacy.Clos5LogRel as LR
 
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; subst)

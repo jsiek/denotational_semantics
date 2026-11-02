@@ -1,23 +1,23 @@
 {-
 
   The values of the FPC reduction semantics
-  (Mu/Semantics/ReductionSemantics/FPC.agda), which reduce to val, and the
+  (FPC/Semantics/ReductionSemantics/FPC.agda), which reduce to val, and the
   laws of its renaming and substitution, as for ISWIMᵀ
-  (proof/Semantics/Reduction/Typed/ISWIM.agda): two traversals fuse
+  (ISWIM/proof/Semantics/Reduction/Typed/ISWIM.agda): two traversals fuse
   into one (fuse), and substitution by variables is the identity
   (sub-id); in particular a substitution under a binder and then one
   for the bound variable is one substitution (exts-[]).
 
 -}
 
-module Mu.proof.Semantics.ReductionSemantics.FPC where
+module FPC.proof.Semantics.ReductionSemantics.FPC where
 
-open import Mu.Semantics.ReductionSemantics.FPC public
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.FPC
-open import Mu.Framework.AllUtil using (All; []; _∷_)
+open import FPC.Semantics.ReductionSemantics.FPC public
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.FPC
+open import FPC.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Observation using (Obs; o-error)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (val)
 
 open import Data.List using ([]; _∷_)

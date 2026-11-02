@@ -1,22 +1,22 @@
 {-
 
   Cast insertion on closed programs, for the typed compiler
-  (Compiler/Pipeline.agda): a closed program, simplified, is well
+  (ISWIM/Compiler/Pipeline.agda): a closed program, simplified, is well
   scoped (WS 0), and then cast-closed is cast-program at any proof that
   it is (scoping proofs are unique). Every column's composition starts
   from these.
 
 -}
 
-module proof.Compiler.CastScope where
+module ISWIM.proof.Compiler.CastScope where
 
-open import Language.ISWIM
+open import ISWIM.Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args)
 open import Framework.Syntax.ScopeDec Op sig using (ws?)
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.Simplify using (simplify)
-open import proof.Compiler.SimplifyScope using (simplify-closed; closed-ws)
-open import Compiler.Cast using (cast-program; cast-closed)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed; closed-ws)
+open import ISWIM.Compiler.Cast using (cast-program; cast-closed)
 
 open import Data.Empty using (⊥-elim)
 open import Data.Nat.Properties using (<-irrelevant)

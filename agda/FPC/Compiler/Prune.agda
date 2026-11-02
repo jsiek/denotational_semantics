@@ -1,6 +1,6 @@
 {-
 
-  Prune (Closμ → Closμ), as typed prune (Compiler/Prune.agda):
+  Prune (Closμ → Closμ), as typed prune (ISWIM/Compiler/Prune.agda):
   a closure stops capturing the free variables that its code does not
   use, provided that they are variables (closures are strict, so a free
   variable that is not a variable could err or diverge; capture
@@ -8,7 +8,7 @@
 
   The flags (true: keep) say which free variables a closure keeps; its
   code's context becomes the argument and the kept free variables
-  (Mu/Framework/AllUtil.agda). Since the free variables have different
+  (FPC/Framework/AllUtil.agda). Since the free variables have different
   types, an unused variable cannot be sent to the argument, as the
   typed pass does: the renaming is only defined on the variables a term
   uses (Ren u, given a proof that u holds of the variable), and the
@@ -18,11 +18,11 @@
 
 -}
 
-module Mu.Compiler.Prune where
+module FPC.Compiler.Prune where
 
-open import Mu.Language.Type
-open import Mu.Language.Clos
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; Flags; kept; select; Kept; squeeze; ∨-l; ∨-r)
+open import FPC.Language.Type
+open import FPC.Language.Clos
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; Flags; kept; select; Kept; squeeze; ∨-l; ∨-r)
 
 open import Data.Bool using (Bool; true; false; T; _∨_)
 open import Data.List using (List; []; _∷_)

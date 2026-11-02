@@ -1,14 +1,14 @@
 {-
 
-  Adequacy of the graph model of X86μ (Mu/Semantics/GraphModel/X86.agda) for
-  the X86μ interpreter (Mu/Semantics/ClockedInterpreters/X86.agda): every element of
+  Adequacy of the graph model of X86μ (FPC/Semantics/GraphModel/X86.agda) for
+  the X86μ interpreter (FPC/Semantics/ClockedInterpreters/X86.agda): every element of
   the denotation of a program is witnessed by the value the interpreter
   returns from some clock on. As for the X86μ machine
-  (Mu/proof/Adequacy/AbstractMachines/X86LogRel.agda), with the logical relation 𝕍
-  of the GlobalFunμ values (Mu/proof/Adequacy/GlobalFunValues.agda), code f
+  (FPC/proof/Adequacy/AbstractMachines/X86LogRel.agda), with the logical relation 𝕍
+  of the GlobalFunμ values (FPC/proof/Adequacy/GlobalFunValues.agda), code f
   being related to Λ X. Λ Y. w when a call of definition f on values
   related to X and Y returns a value related to w (Run). "Returns" is
-  Stable, as for the FPC interpreter (Mu/proof/Adequacy/LogRel.agda):
+  Stable, as for the FPC interpreter (FPC/proof/Adequacy/LogRel.agda):
   the results of a call and of the rest of the caller compose by
   st-bind, and a call returns one value by stable-unique. The
   fundamental lemma (adequate) is by induction on the sequence, given
@@ -26,30 +26,30 @@
 -}
 
 open import Data.List using (List; []; _∷_)
-open import Mu.Language.X86
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Language.X86
+open import FPC.Framework.AllUtil using (All)
 
-module Mu.proof.Adequacy.X86LogRel {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
+module FPC.proof.Adequacy.X86LogRel {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; _↦_; ν; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _•_) renaming (const to dconst)
 open import proof.Framework.GraphModel.Ops using (nthD; ⋆) renaming (car to carD)
 open import proof.Semantics.Graph.Prim using (primD)
-open import Mu.proof.Semantics.GraphModel.Ops using (Table; tables; init)
-open import Mu.Semantics.GraphModel.CFG using (drop)
-open import Mu.Semantics.GraphModel.X86 using (⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs; RegsD)
+open import FPC.proof.Semantics.GraphModel.Ops using (Table; tables; init)
+open import FPC.Semantics.GraphModel.CFG using (drop)
+open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs; RegsD)
   renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ)
-open import Mu.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import Mu.Semantics.ClockedInterpreters.X86
+open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.ClockedInterpreters.X86
 open import proof.Semantics.Interp.Clock using (Result; ret; Stable; st-now; st-bind; stable-unique)
 open import Framework.Lookup using (forget)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
-open import Mu.Framework.AllUtil using ([]; _∷_; lookup; pos)
-open import Mu.proof.Adequacy.X86Common using (OpR; none; agree)
-open import Mu.proof.Adequacy.GlobalFunValues using (module Rel; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv)
+open import FPC.Framework.AllUtil using ([]; _∷_; lookup; pos)
+open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
+open import FPC.proof.Adequacy.GlobalFunValues using (module Rel; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥-elim)

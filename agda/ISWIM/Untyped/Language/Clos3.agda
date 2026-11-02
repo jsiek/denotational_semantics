@@ -1,4 +1,4 @@
-module Untyped.Language.Clos3 where
+module ISWIM.Untyped.Language.Clos3 where
 
 {-
  In this intermediate language,

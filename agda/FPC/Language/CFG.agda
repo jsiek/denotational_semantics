@@ -1,8 +1,8 @@
 {-
 
   CFGμ: CFG, intrinsically typed, with recursive types. The output of
-  explicate control (Mu/Compiler/Explicate.agda); as CFGᵀ
-  (Language/Typed/CFG.agda), with the types of Impμ.
+  explicate control (FPC/Compiler/Explicate.agda); as CFGᵀ
+  (ISWIM/Language/Typed/CFG.agda), with the types of Impμ.
 
   A body is a control-flow graph of blocks; a block is a tail, typed by
   the type R of the body's result, the frame context Δ it starts in and
@@ -19,12 +19,12 @@
 
 -}
 
-module Mu.Language.CFG where
+module FPC.Language.CFG where
 
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_)
-open import Mu.Language.Imp using (DSig; sig; Args; Atm; Simple) public
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Language.Imp using (DSig; sig; Args; Atm; Simple) public
+open import FPC.Framework.AllUtil using (All)
 
 open import Data.List using (List; []; _∷_)
 

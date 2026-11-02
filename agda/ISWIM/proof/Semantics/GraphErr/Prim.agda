@@ -1,6 +1,6 @@
-module proof.Semantics.GraphErr.Prim where
+module ISWIM.proof.Semantics.GraphErr.Prim where
 
-open import Semantics.GraphErr.Prim public
+open import ISWIM.Semantics.GraphErr.Prim public
 
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.ErrorPrelude

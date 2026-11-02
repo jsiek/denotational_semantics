@@ -14,7 +14,7 @@
 
 -}
 
-module Untyped.proof.Correctness.GraphErr.CaptureCorrect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.CaptureCorrect where
 
 open import Framework.Syntax.SigUtil
 open import Framework.Syntax.SyntaxUtil
@@ -24,16 +24,16 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
-open import proof.Semantics.GraphErr.Prim
-open import Language.ISWIM
+open import ISWIM.proof.Semantics.GraphErr.Prim
+open import ISWIM.Language.ISWIM
 open import proof.Framework.Syntax.Uses Op sig
-open import proof.Semantics.GraphErr.ISWIM
-open import Untyped.proof.Semantics.GraphErr.Clos2 as S2 using (apply-n; push; apply-push; push-plus; clos-β) renaming
+open import ISWIM.proof.Semantics.GraphErr.ISWIM
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos2 as S2 using (apply-n; push; apply-push; push-plus; clos-β) renaming
   (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂; ⟦⟧-monotone-arg to ⟦⟧-monotone-arg₂)
-import Untyped.Language.Clos2 as L2
-open import Untyped.Compiler.Prune using (bind-n-ast)
-open import Untyped.Compiler.Capture
-open import Compiler.CaptureScope using (Closed)
+import ISWIM.Untyped.Language.Clos2 as L2
+open import ISWIM.Untyped.Compiler.Prune using (bind-n-ast)
+open import ISWIM.Untyped.Compiler.Capture
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import proof.Framework.GraphModel.Env using (Env)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _<?_; _∸_; _+_; _⊔_)

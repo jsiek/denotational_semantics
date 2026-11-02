@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed remove complex operands (Clos5ᵀ → Monᵀ,
-  Compiler/RCO.agda): the Clos5ᵀ machine on P and on the embedding
+  ISWIM/Compiler/RCO.agda): the Clos5ᵀ machine on P and on the embedding
   of rco-program P are Equivalent, for every program P.
 
   The two runs compute the same values (a code pointer is a typed index
@@ -27,24 +27,24 @@
 
 -}
 
-module proof.Correctness.CEK.RCOSim where
+module ISWIM.proof.Correctness.CEK.RCOSim where
 
-open import Language.Typed.Type
+open import ISWIM.Language.Typed.Type
 open import Framework.Primitives using (Int)
-open import Language.Typed.Clos5
-import Language.Typed.Mon as M
+open import ISWIM.Language.Typed.Clos5
+import ISWIM.Language.Typed.Mon as M
 open M using (Atm; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
-open import Compiler.RCO
+open import ISWIM.Compiler.RCO
 open import Framework.Lookup using (_!_)
 open import proof.Framework.Lookup using (map-!)
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Semantics.CEK.Smallstep using (next; stop; next?; Star; ε; _◅_; Plus; plus; step⁺; star-plus)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)
 open import proof.Framework.Both Obs using (Both; halt; move; both-fsim; pre₁; pre₂)
-open import proof.Correctness.CEK.Clos5Common using (atm-step; tuple-atoms)
+open import ISWIM.proof.Correctness.CEK.Clos5Common using (atm-step; tuple-atoms)
 open import Framework.VecUtil using (_+ʳ_; _<><_)
-open import Semantics.CEK.Typed.Clos5
-open import Semantics.CEK.Typed.Imp using (atom)
+open import ISWIM.Semantics.CEK.Typed.Clos5
+open import ISWIM.Semantics.CEK.Typed.Imp using (atom)
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

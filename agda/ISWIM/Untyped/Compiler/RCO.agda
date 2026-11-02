@@ -1,4 +1,4 @@
-module Untyped.Compiler.RCO where
+module ISWIM.Untyped.Compiler.RCO where
 {-
 
  The remove-complex-operands pass (Clos5 → Clos5), after Essentials of
@@ -23,8 +23,8 @@ module Untyped.Compiler.RCO where
 
 -}
 
-open import Untyped.Language.Clos5
-open import Untyped.Language.Mon
+open import ISWIM.Untyped.Language.Clos5
+open import ISWIM.Untyped.Language.Mon
 open import Framework.Syntax.Rename Op sig using (rename; rename-args; ext)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 

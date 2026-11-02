@@ -18,16 +18,16 @@ open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
-open import proof.Semantics.GraphErr.Prim
-open import Untyped.Language.Clos4
-import Untyped.Language.Clos5 as L5
-import Language.ISWIM as ISWIM
-open import Untyped.proof.Semantics.GraphErr.Clos4
-open import Untyped.Semantics.GraphErr.Clos5
+open import ISWIM.proof.Semantics.GraphErr.Prim
+open import ISWIM.Untyped.Language.Clos4
+import ISWIM.Untyped.Language.Clos5 as L5
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos4
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5
   using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ) renaming (init to init₅)
-open import Untyped.Compiler.Hoist
-open import Untyped.Compiler.Pipeline using (compile₄; compile)
-open import Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Compiler.Hoist
+open import ISWIM.Untyped.Compiler.Pipeline using (compile₄; compile)
+open import ISWIM.Compiler.CaptureScope using (Closed)
 open import proof.Framework.GraphModel.Env using (Env; •-~)
 
 
@@ -45,7 +45,7 @@ open import Relation.Binary.PropositionalEquality
   using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.GraphErr.HoistCorrect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.HoistCorrect where
 
 
 {- Environments and results that agree ----------------------------------------}

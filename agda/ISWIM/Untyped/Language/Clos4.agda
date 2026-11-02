@@ -1,4 +1,4 @@
-module Untyped.Language.Clos4 where
+module ISWIM.Untyped.Language.Clos4 where
 {-
 
  In this intermediate semantics all functions take two parameters,

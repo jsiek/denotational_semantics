@@ -1,7 +1,7 @@
 {-
 
   PairClosμ: PairClos, intrinsically typed, with recursive types. The output
-  of split (Mu/Compiler/Split.agda).
+  of split (FPC/Compiler/Split.agda).
 
   A closure is a pair of closed code and the tuple of its free
   variables, packed so that its type A ⇒ B hides the types Δ of the
@@ -17,12 +17,12 @@
 
 -}
 
-module Mu.Language.PairClos where
+module FPC.Language.PairClos where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
-open import Mu.Language.Type
-open import Mu.Framework.AllUtil using (All)
+open import FPC.Language.Type
+open import FPC.Framework.AllUtil using (All)
 
 open import Data.List using ([]; _∷_)
 

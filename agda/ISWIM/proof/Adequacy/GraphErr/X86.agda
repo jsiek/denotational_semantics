@@ -1,8 +1,8 @@
 {-
 
   Soundness and adequacy of the graph model with errors
-  (Semantics/GraphErr/Typed/X86.agda, ⟦_⟧ₜ) for the X86ᵀ machine
-  (Semantics/CEK/Typed/X86.agda): as for ISWIM (GraphErr/ISWIM.agda),
+  (ISWIM/Semantics/GraphErr/Typed/X86.agda, ⟦_⟧ₜ) for the X86ᵀ machine
+  (ISWIM/Semantics/CEK/Typed/X86.agda): as for ISWIM (GraphErr/ISWIM.agda),
   the denotation tells all three outcomes of the machine apart:
 
     error-iff     : ω ∈ ⟦ P ⟧ₜ exactly when the machine stops with an
@@ -26,20 +26,20 @@
 
 -}
 
-module proof.Adequacy.GraphErr.X86 where
+module ISWIM.proof.Adequacy.GraphErr.X86 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; Con) renaming (const to dconst)
-open import Language.Typed.X86 using (Program; program; body)
-open import Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
+open import ISWIM.Language.Typed.X86 using (Program; program; body)
+open import ISWIM.Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; never-final-diverges)
-open import Semantics.CEK.Typed.X86 using (sem; obs; Val)
-import proof.Adequacy.GraphErr.X86Common as C
-import proof.Adequacy.GraphErr.X86LogRel as LR
-import proof.Adequacy.GraphErr.X86Soundness as S
+open import ISWIM.Semantics.CEK.Typed.X86 using (sem; obs; Val)
+import ISWIM.proof.Adequacy.GraphErr.X86Common as C
+import ISWIM.proof.Adequacy.GraphErr.X86LogRel as LR
+import ISWIM.proof.Adequacy.GraphErr.X86Soundness as S
 
 open import Data.Empty using (⊥-elim)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)

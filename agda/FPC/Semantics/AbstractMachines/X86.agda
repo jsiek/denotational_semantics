@@ -1,8 +1,8 @@
 {-
 
-  A machine for X86μ (Mu/Language/X86.agda), as the X86ᵀ machine
-  (Semantics/CEK/Typed/X86.agda), with the values of the GlobalFunμ machine
-  (Mu/Semantics/AbstractMachines/GlobalFun.agda). A state
+  A machine for X86μ (FPC/Language/X86.agda), as the X86ᵀ machine
+  (ISWIM/Semantics/CEK/Typed/X86.agda), with the values of the GlobalFunμ machine
+  (FPC/Semantics/AbstractMachines/GlobalFun.agda). A state
     run k bs σ η m
   runs the sequence k, with the blocks bs it may jump to, the call
   stack σ, and the registers, frame, open closure and flag m (Mach),
@@ -23,17 +23,17 @@
 
 -}
 
-module Mu.Semantics.AbstractMachines.X86 where
+module FPC.Semantics.AbstractMachines.X86 where
 
 open import Language.Prim using (sub)
-open import Mu.Language.Type
-open import Mu.Language.X86
+open import FPC.Language.Type
+open import FPC.Language.X86
 open import Framework.Lookup using (forget)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import Mu.Semantics.AbstractMachines.GlobalFun
+open import FPC.Semantics.AbstractMachines.GlobalFun
   using (Val; code; pack; const; tup; inl; inr; fold; obs; int; elems; choose; unfoldᵥ; δᵀ) public
-open import Mu.Semantics.AbstractMachines.Imp using (Frame) renaming (atom to value-of) public
+open import FPC.Semantics.AbstractMachines.Imp using (Frame) renaming (atom to value-of) public
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Integer using (_≟_)

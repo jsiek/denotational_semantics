@@ -1,7 +1,7 @@
 {-
 
   Impᵀ: Imp, intrinsically typed. The output of typed lift locals
-  (Compiler/LiftLocals.agda), after Essentials of Compilation.
+  (ISWIM/Compiler/LiftLocals.agda), after Essentials of Compilation.
 
   A body runs in a frame of slots; the frame is typed by a context Δ,
   the types of the slots assigned so far (slot 0, the oldest, last), and
@@ -10,16 +10,16 @@
   (assign) evaluates e₁ and assigns its value to the next slot, which
   e₂ sees; case a e₁ e₂ assigns the payload of a to the next slot and
   runs a branch. The frame's size is the deepest nesting of slots, which
-  select instructions computes (Compiler/Select.agda). Simple
+  select instructions computes (ISWIM/Compiler/Select.agda). Simple
   expressions, without assignment or control flow, are shared with CFGᵀ.
 
 -}
 
-module Language.Typed.Imp where
+module ISWIM.Language.Typed.Imp where
 
 open import Language.Prim using (Prim)
-open import Language.Typed.Type
-open import Language.Typed.Mon using (Atm; var; lit; ref) public
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Mon using (Atm; var; lit; ref) public
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_)

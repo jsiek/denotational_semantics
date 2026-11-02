@@ -4,10 +4,10 @@
   premise of soundness in Scott domains (X86Soundness.agda): each entry
   is the code of its definition interpreted with the whole table, not
   only with the table of the older ones, as the semantics interprets it.
-  As in the graph model (Mu/proof/Adequacy/X86Compiled.agda):
+  As in the graph model (FPC/proof/Adequacy/X86Compiled.agda):
 
   * the GlobalFunμ program that hoist produces refers, in each
-    definition, only to older ones (Mu/proof/Compiler/HoistOlder.agda);
+    definition, only to older ones (FPC/proof/Compiler/HoistOlder.agda);
     definition f means its code with the table of the older ones
     (table-at), the older definitions mean the same in the table of all
     of them (agree), and a term means the same in two tables that agree
@@ -26,21 +26,21 @@ open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
 open import Framework.abt.GSubst using (_•_)
-open import Mu.Language.Type using (Type; _∋_; Z; S; idx; lvl)
-open import Mu.Language.GlobalFun using (DSig; Code; Tm; `_; fun-ref; pair; callc; lit; tuple; get; inl; inr; case; prim;
+open import FPC.Language.Type using (Type; _∋_; Z; S; idx; lvl)
+open import FPC.Language.GlobalFun using (DSig; Code; Tm; `_; fun-ref; pair; callc; lit; tuple; get; inl; inr; case; prim;
                                          let′; fold; unfold)
-import Mu.Language.GlobalFun as GlobalFun
-open import Mu.Language.X86 using (Program)
-open import Mu.Language.FPC using () renaming (Tm to FPC-Tm)
-open import Mu.Language.Mon using (⌜_⌝)
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos) renaming (map to All-map)
-open import Mu.proof.Framework.AllProp using (lookup-map)
-open import Mu.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-PairClos; compile)
-open import Mu.Compiler.RCO using (rco)
-open import Mu.Compiler.LiftLocals using () renaming (lift to liftₗ)
-open import Mu.Compiler.Explicate using (explicate-body)
-open import Mu.Compiler.Select using (def-body)
-open import Mu.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs; hoist-older)
+import FPC.Language.GlobalFun as GlobalFun
+open import FPC.Language.X86 using (Program)
+open import FPC.Language.FPC using () renaming (Tm to FPC-Tm)
+open import FPC.Language.Mon using (⌜_⌝)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos) renaming (map to All-map)
+open import FPC.proof.Framework.AllProp using (lookup-map)
+open import FPC.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-PairClos; compile)
+open import FPC.Compiler.RCO using (rco)
+open import FPC.Compiler.LiftLocals using () renaming (lift to liftₗ)
+open import FPC.Compiler.Explicate using (explicate-body)
+open import FPC.Compiler.Select using (def-body)
+open import FPC.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs; hoist-older)
 open import proof.Framework.Lookup using (lvl-<)
 
 open import Data.List using (List; []; _∷_; length)
@@ -50,7 +50,7 @@ open import Data.Nat using (_<_; _≟_)
 open import Data.Nat.Properties using (<-irrefl; <-trans)
 open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to ≡-refl; sym to ≡-sym; trans to ≡-trans; subst to ≡-subst; cong to ≡-cong)
 
-module Mu.proof.Adequacy.ScottDomains.X86Compiled
+module FPC.proof.Adequacy.ScottDomains.X86Compiled
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -61,16 +61,16 @@ open import proof.Framework.Scott.Ops pt fe pe hiding (Val; case)
   renaming (Env to Envᵈ; app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; pair to pairᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe using (env₂; caseᶜ-cong; letᶜ-cong)
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import Mu.Semantics.ScottDomains.Ops pt fe pe using (Table; tables; tables-yes; tables-no)
-open import Mu.Semantics.ScottDomains.GlobalFun pt fe pe using (⟦_⟧[_]; ⟦_⟧s[_]; code′)
-import Mu.Semantics.ScottDomains.Imp pt fe pe as I
-import Mu.Semantics.ScottDomains.CFG pt fe pe as C
-open import Mu.Semantics.ScottDomains.X86 pt fe pe using (codeₜ)
-open import Mu.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong)
-open import Mu.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using (code-rco; table-rco)
-open import Mu.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using (code-lift; table-lift)
-open import Mu.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using (body-＝; table-explicate)
-open import Mu.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using (db; code-＝; table-＝; map-db)
+open import FPC.Semantics.ScottDomains.Ops pt fe pe using (Table; tables; tables-yes; tables-no)
+open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe using (⟦_⟧[_]; ⟦_⟧s[_]; code′)
+import FPC.Semantics.ScottDomains.Imp pt fe pe as I
+import FPC.Semantics.ScottDomains.CFG pt fe pe as C
+open import FPC.Semantics.ScottDomains.X86 pt fe pe using (codeₜ)
+open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong)
+open import FPC.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using (code-rco; table-rco)
+open import FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using (code-lift; table-lift)
+open import FPC.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using (body-＝; table-explicate)
+open import FPC.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using (db; code-＝; table-＝; map-db)
 
 private
  ≡→＝ : ∀ {X : Set} {x y : X} → x ≡ y → x ＝ y

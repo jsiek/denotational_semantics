@@ -1,7 +1,7 @@
 {-
 
   Correctness of typed concretize (Clos2ᵀ → Clos3ᵀ) in the graph model
-  (Semantics/Graph/Typed/{Clos2,Clos3}.agda).
+  (ISWIM/Semantics/Graph/Typed/{Clos2,Clos3}.agda).
 
   ⟦ M ⟧ ρ₂ ≃ ⟦ concretize φ M ⟧₃ ρ₃ when each variable x of M means in ρ₂
   what its reference φ x (a variable, or a component of a tuple) means
@@ -14,7 +14,7 @@
 
 -}
 
-module proof.Correctness.Graph.ConcretizeCorrect where
+module ISWIM.proof.Correctness.Graph.ConcretizeCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.DenotProperties using (Every)
@@ -24,13 +24,13 @@ open import proof.Framework.GraphModel.Env using (Env; •-~)
 open import proof.Framework.GraphModel.TypedGraph using (ΛΛ-⋆; 𝒯-ne; 𝒯-intro; proj-𝒯)
 open import proof.Framework.GraphModel.TypedOkBase using (fin-code)
 open import proof.Semantics.Graph.Prim using (primD-≃)
-open import Language.Typed.Type using (Any)
-open import Language.Typed.Clos2
-import Language.Typed.Clos3 as T
-open import proof.Semantics.Graph.Typed.Ops using (project-≃; init)
-open import proof.Semantics.Graph.Typed.Clos2 using (⟦_⟧; ⟦_⟧s; fv-env; fv-env-nth)
-open import proof.Semantics.Graph.Typed.Clos3 using (ok; con) renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
-open import Compiler.Concretize
+open import ISWIM.Language.Typed.Type using (Any)
+open import ISWIM.Language.Typed.Clos2
+import ISWIM.Language.Typed.Clos3 as T
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (project-≃; init)
+open import ISWIM.proof.Semantics.Graph.Typed.Clos2 using (⟦_⟧; ⟦_⟧s; fv-env; fv-env-nth)
+open import ISWIM.proof.Semantics.Graph.Typed.Clos3 using (ok; con) renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
+open import ISWIM.Compiler.Concretize
 
 open import Data.Fin using (Fin; zero; suc; toℕ)
 open import Data.List using (replicate)

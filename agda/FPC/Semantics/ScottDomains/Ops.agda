@@ -2,7 +2,7 @@
 
   What the languages of FPC from GlobalFunμ on share in Scott domains:
   the tables of global definitions, as in the graph model
-  (Mu/Semantics/GraphModel/Ops.agda).
+  (FPC/Semantics/GraphModel/Ops.agda).
 
   A table gives each definition of a program (Σ ∋ s) its meaning, a
   value. The definitions are given meaning newest first, each with the
@@ -16,8 +16,8 @@ open import UF.FunExt using (Fun-Ext)
 open import UF.PropTrunc using (propositional-truncations-exist)
 open import UF.Subsingletons using (propext)
 
-open import Mu.Language.Type using (_∋_; lvl)
-open import Mu.Language.GlobalFun using (DSig)
+open import FPC.Language.Type using (_∋_; lvl)
+open import FPC.Language.GlobalFun using (DSig)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
@@ -26,7 +26,7 @@ open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.Empty using (⊥-elim)
 
-module Mu.Semantics.ScottDomains.Ops
+module FPC.Semantics.ScottDomains.Ops
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)

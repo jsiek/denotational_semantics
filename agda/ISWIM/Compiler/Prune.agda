@@ -2,7 +2,7 @@
 
   Typed prune (Clos2ᵀ → Clos2ᵀ): a closure stops capturing the free
   variables that its code does not use, as the untyped pass
-  (Untyped/Compiler/Prune.agda).
+  (ISWIM/Untyped/Compiler/Prune.agda).
 
   Closures are strict (they evaluate their free variables, which may
   err or diverge), so a free variable is dropped only when its code
@@ -15,10 +15,10 @@
 
 -}
 
-module Compiler.Prune where
+module ISWIM.Compiler.Prune where
 
-open import Language.Typed.Type using (Any)
-open import Language.Typed.Clos2
+open import ISWIM.Language.Typed.Type using (Any)
+open import ISWIM.Language.Typed.Clos2
 open import Framework.VecSelect
 
 open import Data.Bool using (Bool; true; false; T; _∨_)

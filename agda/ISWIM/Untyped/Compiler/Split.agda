@@ -5,9 +5,9 @@ open import Framework.abt.AbstractBindingTree
 open import Framework.Syntax.SyntaxUtil
 open import Framework.Syntax.SigUtil
 
-module Untyped.Compiler.Split where
-  open import Untyped.Language.Clos3 as Source
-  open import Untyped.Language.Clos4 as Target
+module ISWIM.Untyped.Compiler.Split where
+  open import ISWIM.Untyped.Language.Clos3 as Source
+  open import ISWIM.Untyped.Language.Clos4 as Target
     renaming (clear to clear'; bind to bind'; ast to ast';
               AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
               _⦅_⦆ to _⦅_⦆')

@@ -1,23 +1,23 @@
 {-
 
   Lemmas about the semantics of GlobalFunμ in the graph model
-  (Mu/Semantics/GraphModel/GlobalFun.agda): with a consistent table, its
+  (FPC/Semantics/GraphModel/GlobalFun.agda): with a consistent table, its
   denotations are Ok, by induction on the term, one line per construct
   (a reference is a constant); the table of a program is consistent.
 
 -}
 
-module Mu.proof.Semantics.GraphModel.GlobalFun where
+module FPC.proof.Semantics.GraphModel.GlobalFun where
 
-open import Mu.Semantics.GraphModel.GlobalFun public
-open import Mu.proof.Semantics.GraphModel.Ops
+open import FPC.Semantics.GraphModel.GlobalFun public
+open import FPC.proof.Semantics.GraphModel.Ops
 
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Continuity
 open import proof.Semantics.Graph.Prim using (primD-good)
-open import Mu.Language.Type using (idx)
-open import Mu.Language.GlobalFun
-open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
+open import FPC.Language.Type using (idx)
+open import FPC.Language.GlobalFun
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 
 open import Data.List using (length; replicate)
 open import Data.Product using (proj₂) renaming (_,_ to ⟨_,_⟩)

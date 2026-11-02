@@ -1,7 +1,7 @@
 {-
 
   Select instructions (CFGμ → X86μ), as typed select instructions
-  (Compiler/Select.agda).
+  (ISWIM/Compiler/Select.agda).
 
   * A slot is the typed index of CFGμ; the frame of a body has as many
     slots as the deepest level its tails write (depth), and each write
@@ -18,16 +18,16 @@
 
 -}
 
-module Mu.Compiler.Select where
+module FPC.Compiler.Select where
 
 open import Language.Prim using (sub; eq)
-open import Mu.Language.Type
+open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑)
-import Mu.Language.CFG as C
+import FPC.Language.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
-import Mu.Language.Imp as I
-open import Mu.Language.X86
-open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
+import FPC.Language.Imp as I
+open import FPC.Language.X86
+open import FPC.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 
 open import Data.Bool using (Bool)
 open import Data.List using (List; []; _∷_; length)

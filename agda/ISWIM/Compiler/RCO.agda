@@ -1,7 +1,7 @@
 {-
 
   Typed remove complex operands (Clos5ᵀ → Monᵀ), after Essentials of
-  Compilation, as the untyped pass (Untyped/Compiler/RCO.agda): every complex
+  Compilation, as the untyped pass (ISWIM/Untyped/Compiler/RCO.agda): every complex
   operand is bound to a fresh variable by a let, left to right, so the
   operands of every operation become atoms.
 
@@ -16,11 +16,11 @@
 
 -}
 
-module Compiler.RCO where
+module ISWIM.Compiler.RCO where
 
-open import Language.Typed.Type
-open import Language.Typed.Clos5
-import Language.Typed.Mon as M
+open import ISWIM.Language.Typed.Type
+open import ISWIM.Language.Typed.Clos5
+import ISWIM.Language.Typed.Mon as M
 open M using (Atm; Exp; var; lit; ref; atm; ren)
 
 open import Data.List using (List; []; _∷_)

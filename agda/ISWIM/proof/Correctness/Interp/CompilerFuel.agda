@@ -1,6 +1,6 @@
 {-
 
-  Correctness of the typed compiler (Compiler/Pipeline.agda) by
+  Correctness of the typed compiler (ISWIM/Compiler/Pipeline.agda) by
   clocked interpreters: each pass is proved clock for clock (simplify
   clock-monotone), and the end theorems compose (equiv-trans), from
   untyped ISWIM to Clos5ᵀ (compile), Monᵀ run as Clos5ᵀ (compile-mon),
@@ -9,39 +9,39 @@
 
 -}
 
-module proof.Correctness.Interp.CompilerFuel where
+module ISWIM.proof.Correctness.Interp.CompilerFuel where
 
-open import Language.ISWIM using (AST)
-open import Language.Typed.Mon using (⌜_⌝ₚ)
-open import Compiler.CaptureScope using (Closed)
-open import Compiler.Simplify using (simplify)
-open import Compiler.Cast using (cast-closed)
-open import Compiler.Capture using (capture)
-open import Compiler.Prune using (prune-program)
-open import Compiler.Concretize using (concretize-program)
-open import Compiler.Split using (split-program)
-open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
-open import proof.Compiler.SimplifyScope using (simplify-closed)
+open import ISWIM.Language.ISWIM using (AST)
+open import ISWIM.Language.Typed.Mon using (⌜_⌝ₚ)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Compiler.Simplify using (simplify)
+open import ISWIM.Compiler.Cast using (cast-closed)
+open import ISWIM.Compiler.Capture using (capture)
+open import ISWIM.Compiler.Prune using (prune-program)
+open import ISWIM.Compiler.Concretize using (concretize-program)
+open import ISWIM.Compiler.Split using (split-program)
+open import ISWIM.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.ISWIM as ISWIMᵢ
-import Semantics.Interp.Typed.Clos4 as Clos4ᵀᵢ
-import Semantics.Interp.Typed.Clos5 as Clos5ᵀᵢ
-import Semantics.Interp.Typed.Imp as Impᵀᵢ
-import Semantics.Interp.Typed.CFG as CFGᵀᵢ
-import Semantics.Interp.Typed.X86 as X86ᵀᵢ
+import ISWIM.Semantics.Interp.ISWIM as ISWIMᵢ
+import ISWIM.Semantics.Interp.Typed.Clos4 as Clos4ᵀᵢ
+import ISWIM.Semantics.Interp.Typed.Clos5 as Clos5ᵀᵢ
+import ISWIM.Semantics.Interp.Typed.Imp as Impᵀᵢ
+import ISWIM.Semantics.Interp.Typed.CFG as CFGᵀᵢ
+import ISWIM.Semantics.Interp.Typed.X86 as X86ᵀᵢ
 
-open import proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
-open import proof.Correctness.Interp.CastFuel using (cast-correct)
-open import proof.Correctness.Interp.CaptureFuel using (capture-correct)
-open import proof.Correctness.Interp.PruneFuel using (prune-correct)
-open import proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
-open import proof.Correctness.Interp.SplitFuel using (split-correct)
-open import proof.Correctness.Interp.HoistFuel using (hoist-correct)
-open import proof.Correctness.Interp.RCOFuel using (rco-correct)
-open import proof.Correctness.Interp.LiftLocalsFuel using (lift-locals-correct)
-open import proof.Correctness.Interp.ExplicateFuel using (explicate-correct)
-open import proof.Correctness.Interp.SelectFuel using (select-correct)
+open import ISWIM.proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
+open import ISWIM.proof.Correctness.Interp.CastFuel using (cast-correct)
+open import ISWIM.proof.Correctness.Interp.CaptureFuel using (capture-correct)
+open import ISWIM.proof.Correctness.Interp.PruneFuel using (prune-correct)
+open import ISWIM.proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
+open import ISWIM.proof.Correctness.Interp.SplitFuel using (split-correct)
+open import ISWIM.proof.Correctness.Interp.HoistFuel using (hoist-correct)
+open import ISWIM.proof.Correctness.Interp.RCOFuel using (rco-correct)
+open import ISWIM.proof.Correctness.Interp.LiftLocalsFuel using (lift-locals-correct)
+open import ISWIM.proof.Correctness.Interp.ExplicateFuel using (explicate-correct)
+open import ISWIM.proof.Correctness.Interp.SelectFuel using (select-correct)
 
 open import Data.Product using (_,_; proj₁; proj₂)
 

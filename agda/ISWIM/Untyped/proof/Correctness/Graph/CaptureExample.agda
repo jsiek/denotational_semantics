@@ -16,13 +16,13 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
-open import Language.ISWIM
-open import proof.Semantics.Graph.ISWIM
-import Untyped.proof.Semantics.Graph.Clos2Iswim as S2
-import Untyped.Language.Clos2 as L2
-open import Untyped.Compiler.Capture using (capture)
-open import Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import Untyped.proof.Correctness.Graph.CaptureCorrect using (capture-correct-closed)
+open import ISWIM.Language.ISWIM
+open import ISWIM.proof.Semantics.Graph.ISWIM
+import ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim as S2
+import ISWIM.Untyped.Language.Clos2 as L2
+open import ISWIM.Untyped.Compiler.Capture using (capture)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
+open import ISWIM.Untyped.proof.Correctness.Graph.CaptureCorrect using (capture-correct-closed)
 
 open import Data.Nat using (ℕ)
 open import Data.List using ([]; _∷_)
@@ -30,7 +30,7 @@ open import Data.List.Relation.Unary.Any using (here)
 open import Data.Product using (proj₁) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-module Untyped.proof.Correctness.Graph.CaptureExample where
+module ISWIM.Untyped.proof.Correctness.Graph.CaptureExample where
 
 lit-nat : ℕ → AST
 lit-nat k = lit Nat k ⦅ Nil ⦆

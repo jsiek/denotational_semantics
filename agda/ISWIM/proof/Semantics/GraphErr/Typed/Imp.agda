@@ -1,20 +1,20 @@
 {-
 
   Lemmas about the semantics of Impᵀ and CFGᵀ in the graph model with
-  errors (Semantics/GraphErr/Typed/{Imp,CFG}.agda): letᵗ, the binding of
+  errors (ISWIM/Semantics/GraphErr/Typed/{Imp,CFG}.agda): letᵗ, the binding of
   a slot, is a congruence, and is the bind of its body when the body is
   monotone and finitary (as letᵐ is, ErrorMonad); a continuation, a bind
   (K⟨_⟩), commutes with a typed case (as with 𝒞ᵐ, case-law).
 
 -}
 
-module proof.Semantics.GraphErr.Typed.Imp where
+module ISWIM.proof.Semantics.GraphErr.Typed.Imp where
 
 open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.OpsBase using (Mono₁; Finitary)
 open import proof.Framework.GraphModel.Ops using (𝒞)
-open import Semantics.GraphErr.Typed.Ops using (caseᵗ)
-open import Semantics.GraphErr.Typed.Imp using (letᵗ)
+open import ISWIM.Semantics.GraphErr.Typed.Ops using (caseᵗ)
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (letᵗ)
 
 open import Data.Maybe using (nothing; just)
 open import Data.Product using (proj₁) renaming (_,_ to ⟨_,_⟩)

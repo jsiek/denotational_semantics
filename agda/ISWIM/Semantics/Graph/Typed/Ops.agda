@@ -1,29 +1,29 @@
 {-
 
-  What the typed languages (Language/Typed/) share in the graph model:
+  What the typed languages (ISWIM/Language/Typed/) share in the graph model:
   project, and the tables of global definitions.
 
   * inject is the identity: a value carries its own kind.
   * project t D is D, provided that D has a value that the tag t accepts
     (guardᵖ), and ∅ otherwise: a failed project means ∅, as an error
     does in the graph model. The tag accepts what the X86 test of t reads
-    (Compiler/Select.agda): an integer, an injection, component i
+    (ISWIM/Compiler/Select.agda): an integer, an injection, component i
     of a tuple of n + 1 (ttup n i), and a function, which is an entry of
     a function's graph (fun₂) up to Clos3ᵀ and a pair from Clos4ᵀ on,
     where a closure is a pair of code and environment (fun₄).
   * A table gives each definition of a program (Σ ∋ n) its meaning. The
     definitions are given meaning newest first, each with the table of
     the older ones (tables, by the level of a reference, as in
-    Untyped/Semantics/Graph/Clos5Iswim.agda); a reference to another means ∅.
+    ISWIM/Untyped/Semantics/Graph/Clos5Iswim.agda); a reference to another means ∅.
 
 -}
 
-module Semantics.Graph.Typed.Ops where
+module ISWIM.Semantics.Graph.Typed.Ops where
 
 open import Framework.Primitives using (Int)
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.TypedGuard using (guardᵖ) public
-open import Language.Typed.Type hiding (_≟_)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
 
 open import Data.Empty using (⊥)
 open import Data.List using (List; []; _∷_; length)

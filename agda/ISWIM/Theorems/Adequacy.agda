@@ -2,43 +2,43 @@
 
   Soundness and adequacy of the graph model with respect to the
   small-step machines, and the compiler's correctness observed through
-  the machines: the public statements. The proofs are in proof/Adequacy/
+  the machines: the public statements. The proofs are in ISWIM/proof/Adequacy/
   (for the ISWIM machine, the same as for the preserved untyped
-  pipeline, Untyped/Theorems/Adequacy.agda).
+  pipeline, ISWIM/Untyped/Theorems/Adequacy.agda).
 
-  To read them: those of Theorems/Denotational.agda, the ISWIM machine
-  (Semantics/CEK/ISWIM.agda), the Clos5ᵀ machine
-  (Semantics/CEK/Typed/Clos5.agda), the X86ᵀ machine
-  (Semantics/CEK/Typed/X86.agda), and the observations
+  To read them: those of ISWIM/Theorems/Denotational.agda, the ISWIM machine
+  (ISWIM/Semantics/CEK/ISWIM.agda), the Clos5ᵀ machine
+  (ISWIM/Semantics/CEK/Typed/Clos5.agda), the X86ᵀ machine
+  (ISWIM/Semantics/CEK/Typed/X86.agda), and the observations
   (Semantics/Observation.agda). The Clos5ᵀ and X86ᵀ statements are for
   the programs the compiler produces, so that their preconditions (in
-  proof/) need not be audited.
+  ISWIM/proof/) need not be audited.
 
 -}
 
-module Theorems.Adequacy where
+module ISWIM.Theorems.Adequacy where
 
 open import Framework.Primitives using (base-rep)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
 open import Framework.GraphModel.Domain using (Value; const)
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
-import Language.ISWIM as ISWIM
-open import Compiler.Pipeline using (compile; compile₄; compile-x86)
-open import Compiler.CaptureScope using (Closed)
-open import Theorems.Denotational using (ρ₀)
-open import Semantics.Graph.ISWIM using (⟦_⟧)
-open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
-import Semantics.CEK.ISWIM as ISWIMₘ
-import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
-import Semantics.CEK.Typed.X86 as X86ᵀₘ
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Compiler.Pipeline using (compile; compile₄; compile-x86)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Theorems.Denotational using (ρ₀)
+open import ISWIM.Semantics.Graph.ISWIM using (⟦_⟧)
+open import ISWIM.Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import ISWIM.Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
+import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
+import ISWIM.Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
+import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
 
-import proof.Adequacy.ISWIM as AdequacyISWIM
-import proof.Adequacy.Clos5 as AdequacyClos5
-import proof.Adequacy.X86 as AdequacyX86
-open import proof.Compiler.HoistOlder using (hoist-older)
-import proof.Adequacy.EndToEnd as EndToEnd
+import ISWIM.proof.Adequacy.ISWIM as AdequacyISWIM
+import ISWIM.proof.Adequacy.Clos5 as AdequacyClos5
+import ISWIM.proof.Adequacy.X86 as AdequacyX86
+open import ISWIM.proof.Compiler.HoistOlder using (hoist-older)
+import ISWIM.proof.Adequacy.EndToEnd as EndToEnd
 
 open import Data.Product using (_,_)
 open import Relation.Nullary using (¬_)

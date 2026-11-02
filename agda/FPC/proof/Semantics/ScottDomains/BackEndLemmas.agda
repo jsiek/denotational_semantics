@@ -3,7 +3,7 @@
   Scott domains: lemmas for the proofs of the passes of FPC from
   hoist on (hoist, remove complex operands, lift locals,
   explicate control, select instructions,
-  Mu/proof/Correctness/ScottDomains/{Hoist,RCO,LiftLocals,Explicate,Select}Correct.agda).
+  FPC/proof/Correctness/ScottDomains/{Hoist,RCO,LiftLocals,Explicate,Select}Correct.agda).
 
   * seq: seq ⊥ e is ⊥, seq d d is d, and seq d (seq d e) is seq d e;
     d ⊑ e when d = e provided d is defined (below-if);
@@ -23,17 +23,17 @@ open import UF.PropTrunc
 open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
-open import Mu.Language.Type using (_∋_; lvl)
-open import Mu.Language.GlobalFun using (DSig)
+open import FPC.Language.Type using (_∋_; lvl)
+open import FPC.Language.GlobalFun using (DSig)
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (_≟_)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Fin using (zero; suc)
-import Mu.Language.Imp as I
-open import Mu.Framework.AllUtil using (pos)
+import FPC.Language.Imp as I
+open import FPC.Framework.AllUtil using (pos)
 
-module Mu.proof.Semantics.ScottDomains.BackEndLemmas
+module FPC.proof.Semantics.ScottDomains.BackEndLemmas
         (pt : propositional-truncations-exist)
         (fe : Fun-Ext)
         (pe : propext 𝓤₀)
@@ -44,11 +44,11 @@ open import Framework.Scott.Lift pt fe pe
 open import Framework.Scott.Functor pt fe pe
 open import proof.Framework.Scott.Ops pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe
-open import Mu.Semantics.ScottDomains.Ops pt fe pe
+open import FPC.Semantics.ScottDomains.Ops pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 {- (re-exported: a proof that uses 𝒮-＝ on a given simple expression
    should take 𝒜 and 𝒮 from here, so that Agda compares them by name) -}
-open import Mu.Semantics.ScottDomains.Imp pt fe pe using (𝒜; 𝒜s; 𝒮) public
+open import FPC.Semantics.ScottDomains.Imp pt fe pe using (𝒜; 𝒜s; 𝒮) public
 
 private
  V : DCPO₁

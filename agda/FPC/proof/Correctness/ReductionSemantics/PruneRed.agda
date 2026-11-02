@@ -2,7 +2,7 @@
 
   Correctness of prune (Closμ → Closμ) by a forward simulation of
   the Closμ reduction semantics by itself, in lock step, as for typed
-  prune (proof/Correctness/Reduction/PruneRed.agda).
+  prune (ISWIM/proof/Correctness/Reduction/PruneRed.agda).
 
   The pass renames variables: the relation on terms (_⊢_≈_) relates a
   variable x to ρ x, for a partial map ρ (a free variable that a closure
@@ -17,17 +17,17 @@
 
 -}
 
-module Mu.proof.Correctness.ReductionSemantics.PruneRed where
+module FPC.proof.Correctness.ReductionSemantics.PruneRed where
 
-open import Mu.Language.Type hiding (_[_])
-open import Mu.Language.Clos
-open import Mu.Compiler.Prune
-open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂; Flags; kept; select; Kept; squeeze; sq; ∨-l; ∨-r)
+open import FPC.Language.Type hiding (_[_])
+open import FPC.Language.Clos
+open import FPC.Compiler.Prune
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂; Flags; kept; select; Kept; squeeze; sq; ∨-l; ∨-r)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
-open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_; each-lookup)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_; each-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Mu.proof.Semantics.ReductionSemantics.Clos as T
+import FPC.proof.Semantics.ReductionSemantics.Clos as T
 open T using (Kit; varK; tmK; trav; travs; Value; value-red; VV; var; val; vv-wk; vv-value)
 import Language.Prim as P
 

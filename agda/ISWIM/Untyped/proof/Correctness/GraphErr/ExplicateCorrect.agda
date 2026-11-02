@@ -25,18 +25,18 @@ open import proof.Framework.GraphModel.DOpSig using (RRs; mono-≃)
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase using (nthD-≃)
 open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Semantics.GraphErr.Prim using (primᵐ-≃)
-open import Untyped.Language.Imp as I
+open import ISWIM.proof.Semantics.GraphErr.Prim using (primᵐ-≃)
+open import ISWIM.Untyped.Language.Imp as I
   using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim; simple; case; assign; body; program)
-import Untyped.Language.CFG as C
-import Language.ISWIM as ISWIM
-open import Untyped.Compiler.Explicate
-open import Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
-open import Compiler.CaptureScope using (Closed)
-open import Untyped.Semantics.GraphErr.ImpK
+import ISWIM.Untyped.Language.CFG as C
+import ISWIM.Language.ISWIM as ISWIM
+open import ISWIM.Untyped.Compiler.Explicate
+open import ISWIM.Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
+open import ISWIM.Compiler.CaptureScope using (Closed)
+open import ISWIM.Untyped.Semantics.GraphErr.ImpK
   using (Store; _[_↦_]; frameᵐ; Table; 𝒜; 𝒜s; 𝒮; zeros; frame; tables; Kont; halt; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ)
   renaming (code to codeᴷ)
-open import Untyped.Semantics.GraphErr.CFG
+open import ISWIM.Untyped.Semantics.GraphErr.CFG
   using (Blocks; blocks; ⟦_⟧ₚ)
   renaming (⟦_⟧[_] to ⟪_⟫[_]; code to codeₜ)
 
@@ -51,7 +51,7 @@ open import Level using (lift)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
 
-module Untyped.proof.Correctness.GraphErr.ExplicateCorrect where
+module ISWIM.Untyped.proof.Correctness.GraphErr.ExplicateCorrect where
 
 open import proof.Framework.GraphModel.ErrorMonad using (ΛΛᵐ-≃)
 

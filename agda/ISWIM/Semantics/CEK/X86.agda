@@ -1,15 +1,15 @@
 {-
 
-  An abstract machine for X86 (Language/X86.agda), one instruction (or
+  An abstract machine for X86 (ISWIM/Language/X86.agda), one instruction (or
   jump) per step. Values are those of the Clos5 machine, and frames are
-  lists of slots (Semantics/CEK/Values.agda). A state
+  lists of slots (ISWIM/Semantics/CEK/Values.agda). A state
     run is j bs σ f φ ρ
   runs the instructions is and then the jump j, with the blocks bs that
   j may jump to (as in CFG: those older than the current block, or all
   of the body's at its start), the call stack σ, the flag f (if set),
   the frame φ and the registers ρ (each holds a value or is unset).
 
-  The instructions are as in the header of Language/X86.agda; each errors
+  The instructions are as in the header of ISWIM/Language/X86.agda; each errors
   on an operand that is unset or beyond the frame, on a value of the
   wrong kind, or on a destination beyond the frame. The primitives (subq,
   cmpq) are those of the earlier machines (prim?, δ?). alloc reads its
@@ -29,16 +29,16 @@
 
 -}
 
-module Semantics.CEK.X86 where
+module ISWIM.Semantics.CEK.X86 where
 
 open import Framework.Primitives using (Int)
-open import Language.X86
-open import Language.X86 using (block-at) public
+open import ISWIM.Language.X86
+open import ISWIM.Language.X86 using (block-at) public
 open import Language.Prim using (sub; eq; Out; bool)
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import Semantics.CEK.Values
-open import Semantics.CEK.Values using (Frame; _[_]≔_; zeros) public
+open import ISWIM.Semantics.CEK.Values
+open import ISWIM.Semantics.CEK.Values using (Frame; _[_]≔_; zeros) public
   using (Val; code; pair; const; tup; inl; inr; obs; out; prim?) public
 open import Framework.ListUtil using (_‼_; proj)
 

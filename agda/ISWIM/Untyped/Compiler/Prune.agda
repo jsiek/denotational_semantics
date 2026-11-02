@@ -5,7 +5,7 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Framework.Syntax.SyntaxUtil
 open import Framework.Syntax.SigUtil
 
-module Untyped.Compiler.Prune where
+module ISWIM.Untyped.Compiler.Prune where
   {-
    The prune pass (Clos2 → Clos2): a closure stops capturing the free
    variables that its code does not use.
@@ -19,7 +19,7 @@ module Untyped.Compiler.Prune where
    (suc j) is the free variable bound last but j. Dropping free variables
    renumbers these, so the pass carries a renaming of variables.
   -}
-  open import Untyped.Language.Clos2
+  open import ISWIM.Untyped.Language.Clos2
   open import Framework.Syntax.Uses Op sig public
 
   {- the renaming for the body of a binder -}

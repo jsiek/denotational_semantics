@@ -1,9 +1,9 @@
 {-
 
   Correctness of typed explicate control (Impᵀ → CFGᵀ,
-  Compiler/Explicate.agda) in the graph model: the CFGᵀ program
-  (Semantics/Graph/Typed/CFG.agda) means what the Impᵀ program does
-  (Semantics/Graph/Typed/Imp.agda, continuation-passing).
+  ISWIM/Compiler/Explicate.agda) in the graph model: the CFGᵀ program
+  (ISWIM/Semantics/Graph/Typed/CFG.agda) means what the Impᵀ program does
+  (ISWIM/Semantics/Graph/Typed/Imp.agda, continuation-passing).
 
   explicate-assign e p k bs is e in continuation-passing style, as the
   semantics of Impᵀ is: its tail, with its blocks, means e run with the
@@ -16,19 +16,19 @@
 
 -}
 
-module proof.Correctness.Graph.ExplicateCorrect where
+module ISWIM.proof.Correctness.Graph.ExplicateCorrect where
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import Language.Typed.Type hiding (_≟_)
-import Language.Typed.Imp as I
-open import Language.Typed.CFG
-open import Compiler.Explicate
-open import proof.Semantics.Graph.Typed.Ops using (Table; tables)
-open import proof.Semantics.Graph.Typed.CFG using (⟦_⟧ᵗ; blocks; run; drop; 𝒮-≃; 𝒜)
+open import ISWIM.Language.Typed.Type hiding (_≟_)
+import ISWIM.Language.Typed.Imp as I
+open import ISWIM.Language.Typed.CFG
+open import ISWIM.Compiler.Explicate
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; tables)
+open import ISWIM.proof.Semantics.Graph.Typed.CFG using (⟦_⟧ᵗ; blocks; run; drop; 𝒮-≃; 𝒜)
   renaming (code′ to codeᶜ; table to tableᶜ; ⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.Graph.Typed.Imp using (⟦_⟧ᴷ) renaming (code′ to codeᵢ; table to tableᵢ; ⟦_⟧ₚ to ⟦_⟧ᵢ)
+open import ISWIM.Semantics.Graph.Typed.Imp using (⟦_⟧ᴷ) renaming (code′ to codeᵢ; table to tableᵢ; ⟦_⟧ₚ to ⟦_⟧ᵢ)
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)

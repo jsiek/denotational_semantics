@@ -1,22 +1,22 @@
 {-
 
-  The examples of Mu/proof/Compiler/Examples/RecursionExample.agda
+  The examples of FPC/proof/Compiler/Examples/RecursionExample.agda
   (countdown 3 by the fixed-point combinator, and Ω) run on the clocked
   interpreters of FPC, PairClosμ and X86μ, by computation: countdown 3
   returns 0 with enough clock, and Ω times out at every clock tried.
 
 -}
 
-module Mu.proof.Compiler.Examples.RecursionInterp where
+module FPC.proof.Compiler.Examples.RecursionInterp where
 
 open import Framework.Primitives using (Int)
-open import Mu.Compiler.Pipeline using (compile-to-PairClos; compile)
-open import Mu.proof.Compiler.Examples.RecursionExample using (three; Ω)
+open import FPC.Compiler.Pipeline using (compile-to-PairClos; compile)
+open import FPC.proof.Compiler.Examples.RecursionExample using (three; Ω)
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.Interp.Clock using (Semantics; outcome)
-import Mu.Semantics.ClockedInterpreters.FPC as FPCᵢ
-import Mu.Semantics.ClockedInterpreters.PairClos as PairClosμᵢ
-import Mu.Semantics.ClockedInterpreters.X86 as X86μᵢ
+import FPC.Semantics.ClockedInterpreters.FPC as FPCᵢ
+import FPC.Semantics.ClockedInterpreters.PairClos as PairClosμᵢ
+import FPC.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
 open import Data.Integer using (+_)
 open import Data.Maybe using (Maybe; just; nothing)
