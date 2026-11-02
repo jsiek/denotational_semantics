@@ -173,7 +173,9 @@ languages, which only the proofs use).
     and adequate for the FPC interpreter, and for the X86μ
     interpreter running compiled programs; with Theorem 4.1, for a main
     of type Int, the operational styles' end-to-end theorem
-    (`end-to-end-x86-const`, `end-to-end-x86-diverges`).
+    (`end-to-end-x86-const`, `end-to-end-x86-diverges`);
+  * `Mu/Theorems/AbstractMachinesAdequacy.agda`: the same, with the
+    abstract machines of FPC and X86μ in place of the interpreters.
   The per-pass theorems and the compiler's prefixes are proved in
   `Mu/proof/` but not restated. The definitions the statements use are
   those of `Mu/` outside `Mu/proof/` that they reach (its languages,

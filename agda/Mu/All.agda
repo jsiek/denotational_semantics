@@ -32,7 +32,8 @@
   * adequacy of the graph model for the clocked interpreters of FPC
     and X86μ: Mu/Theorems/Adequacy.agda (Theorem 4.5),
     Mu/proof/Adequacy/; an alternative, reported separately, against the
-    abstract machines instead: Mu/proof/Adequacy/AbstractMachines/;
+    abstract machines instead: Mu/Theorems/AbstractMachinesAdequacy.agda,
+    Mu/proof/Adequacy/AbstractMachines/;
   * the two Agda checks of the paper's §4.2 ("Which sides to relate"):
     a finite source side cannot satisfy the function clause of split's
     relation (Mu/proof/Correctness/GraphModel/SplitDesignFiniteSource.agda),
@@ -59,6 +60,7 @@ import Mu.Theorems.AbstractMachines
 import Mu.Theorems.ClockedInterpreters
 import Mu.Theorems.ReductionSemantics
 import Mu.Theorems.Adequacy
+import Mu.Theorems.AbstractMachinesAdequacy
 import Mu.proof.Correctness.GraphModel.CompilerCorrect
 import Mu.proof.Correctness.AbstractMachines.PipelineSim
 import Mu.proof.Correctness.ClockedInterpreters.CompilerFuel

@@ -1632,7 +1632,8 @@ MU_BORROWED = "the ISWIM pipeline's modules it reuses (meaning of the primitives
 MU_P = dict(sides=MU_SIDES, gerr=None, adeq='mu-adeq',
             thm={'mu-den': MU + 'Theorems/GraphModel.agda', 'mu-op': MU + 'Theorems/AbstractMachines.agda',
                  'mu-ck': MU + 'Theorems/ClockedInterpreters.agda', 'mu-red': MU + 'Theorems/ReductionSemantics.agda',
-                 'mu-adeq': MU + 'Theorems/Adequacy.agda'},
+                 'mu-adeq': MU + 'Theorems/Adequacy.agda',
+                 'mu-adeq-cek': MU + 'Theorems/AbstractMachinesAdequacy.agda'},
             name='FPC')
 
 
