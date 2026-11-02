@@ -186,7 +186,7 @@ The lines a reader must audit to trust each style's theorems (see [[#Audit surfa
 
 | audit surface (ISWIMμ) (not in the totals) | lines | read for denotational: graph model | read for CEK machine + simulation | read for clocked interpreter + value relations | read for reduction semantics + simulation | read for adequacy |
 |---|---:|---:|---:|---:|---:|---:|
-| languages, compiler passes, syntax, base types (shared) | 1164 | 1124 | 1084 | 1084 | 1128 | 1150 |
+| languages, compiler passes, syntax, base types (shared) | 1166 | 1126 | 1086 | 1086 | 1130 | 1152 |
 | graph model: domain, operators, semantics of each language | 298 | 298 | — | — | — | 260 |
 | simulation: small-step machines, transition systems | 354 | — | 354 | — | 277 | — |
 | interpreter: clocked interpreters, results | 256 | — | — | 256 | — | 256 |
@@ -196,7 +196,7 @@ The lines a reader must audit to trust each style's theorems (see [[#Audit surfa
 | interpreter: theorem statements | 9 | — | — | 9 | — | — |
 | reduction: theorem statements | 9 | — | — | — | 9 | — |
 | adequacy: theorem statements | 19 | — | — | — | — | 19 |
-| **total** | 2226 | 1447 | 1447 | **1349** | 1497 | 1685 |
+| **total** | 2228 | 1449 | 1449 | **1351** | 1499 | 1687 |
 
 Not on the audit surface: the semantics of the intermediate languages, outside Mu/proof/ but reached by no theorem statement (only the proofs use them): 14 modules, 699 lines.
 
