@@ -131,12 +131,14 @@ call takes the code from $\car$ and the environment from $\cdr$
 \emph{separately}, so a result may combine the code of one pair
 with the environment of another. 
 
-\paragraph{Which sides to relate}
+\paragraph{Design alternatives: which sides to relate}
 
-A relation for reflection relates a source side to a target side, and
-each side can be a single graph element, a finite list of elements, or
-a set that may be infinite. Of these nine combinations, the following
-reasons rule out all but one (Appendix~\ref{app:alr-example} gives
+Before we define our relation for reflection, we explain how we chose
+its shape, because the obvious designs fail. A relation for reflection
+relates a source side to a target side, and each side can be a single
+graph element, a finite list of elements, or a set that may be
+infinite. Of these nine designs, the following reasons rule out all
+but one (Appendix~\ref{app:alr-example} gives
 examples and the variants we tried in Agda).
 \begin{itemize}
 \item \emph{A single target element}, against any source side, fails
@@ -155,11 +157,13 @@ examples and the variants we tried in Agda).
   denotation is well founded, but the target denotation is unbounded,
   and the outputs of a call can come from code entries of any depth.
 \end{itemize}
-The remaining combination relates a finite list of target elements to
-the whole source denotation. Recursion on types, as in the proofs of
+The remaining design, which we adopt, relates a finite list of target
+elements to the whole source denotation. We also had to choose what
+the definition recurses on. Recursion on types, as in the proofs of
 \citet{Chlipala:2007fk} and \citet{Nielsen:2000aa}, is not an option.
 Because $\kw{fold}$ and $\kw{unfold}$ mean the identity, the relation at
-$\mu X.\,A$ would be the relation at $A[\mu X.\,A/X]$, which is not a smaller type. The relation does not depend on types.
+$\mu X.\,A$ would be the relation at $A[\mu X.\,A/X]$, which is not a smaller type. Our relation therefore does not depend on
+types and instead recurses on the depth of the target elements.
 
 \paragraph{The key insight}
 

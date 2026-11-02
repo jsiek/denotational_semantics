@@ -36,7 +36,7 @@
     Mu/proof/Adequacy/AbstractMachines/; and another, against FPC's
     reduction semantics: Mu/Theorems/ReductionSemanticsAdequacy.agda,
     Mu/proof/Adequacy/ReductionSemantics/;
-  * the two Agda checks of the paper's §4.2 ("Which sides to relate"):
+  * the two Agda checks of the paper's §4.2 ("Design alternatives: which sides to relate"):
     a finite source side cannot satisfy the function clause of split's
     relation (Mu/proof/Correctness/GraphModel/SplitDesignFiniteSource.agda),
     and split's relation on target sets of bounded depth is the

@@ -4,7 +4,7 @@
   in the graph model, in no proof's total: the approximant logical
   relation of SplitRel with a target *set* T of bounded depth, possibly
   infinite, in place of the finite target list V (the paper, §4.2,
-  "Which sides to relate", fourth bullet).
+  "Design alternatives: which sides to relate", fourth bullet).
 
   ApproxLRSet≤ k D T has the four clauses of ApproxLRLayer, by recursion
   on the bound k, for T whose elements all have depth < k (the
