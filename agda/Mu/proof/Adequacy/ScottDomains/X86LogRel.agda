@@ -92,7 +92,7 @@ open import Semantics.Scott.Prim pt fe pe using (primD; out; prim-br₁; prim-br
 open import Mu.Semantics.ScottDomains.Ops pt fe pe using (Table; tables; tables-yes; tables-no)
 open import Mu.Semantics.ScottDomains.CFG pt fe pe using (drop)
 open import Mu.Semantics.ScottDomains.X86 pt fe pe
-  using (RegsD; 𝕊; Kont; regsᶜ; flagᶜ; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs)
+  using (RegsD; 𝕊; Kont; regsᶜ; flagᶜ; argsᶜ; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs)
   renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to runₛ)
 open Over 𝕊 using (op₁; op₂)
 
@@ -635,3 +635,381 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
      eq₂ = ap (λ - → appᵈ · - · Y) (eqG ∙ pr₁ (pr₂ inv)) ∙ app-inj h₂ Y
      eq₃ : appᵈ · (appᵈ · F · X) · Y ＝ h₂ · Y
      eq₃ = eq₂ ∙ strict-defined h₂ Y (seq-defined-l Y (h₂ · Y) (transport defined (eq₂ ∙ strict-is h₂ Y) q))
+
+ {- Values -------------------------------------------------------------------------------}
+
+ Rel-const : ∀ {B} (c : base-rep B) → Rel (const B c) (cv c)
+ Rel-const c = Rel-inj ⋆ s-con (λ _ → ⋆)
+
+ inl-is : (a : ⟨ 𝔻 ⟩) → inlᵈ · a ＝ seq · a · (inj left · a)
+ inl-is a = refl
+
+ inr-is : (a : ⟨ 𝔻 ⟩) → inrᵈ · a ＝ seq · a · (inj right · a)
+ inr-is a = refl
+
+ pair-is : (a b : ⟨ 𝔻 ⟩) → pairᵈ · a · b ＝ guard 2 · pick₂ a b · (inj pr · pick₂ a b)
+ pair-is a b = refl
+
+ Rel-inl : ∀ {A B} {d : ⟨ 𝔻 ⟩} {v : Val A} → Rel d v → Rel (inlᵈ · d) (inl {B = B} v)
+ Rel-inl {d = d} {v} r = Rel-from-defined λ q →
+   transport (λ - → Rel - (inl v))
+     ((inl-is d ∙ seq-defined d (inj left · d) (seq-defined-l d (inj left · d) (transport defined (inl-is d) q))) ⁻¹)
+     (Rel-inj d s-left (stage r))
+
+ Rel-inr : ∀ {A B} {d : ⟨ 𝔻 ⟩} {v : Val B} → Rel d v → Rel (inrᵈ · d) (inr {A = A} v)
+ Rel-inr {d = d} {v} r = Rel-from-defined λ q →
+   transport (λ - → Rel - (inr v))
+     ((inr-is d ∙ seq-defined d (inj right · d) (seq-defined-l d (inj right · d) (transport defined (inr-is d) q))) ⁻¹)
+     (Rel-inj d s-right (stage r))
+
+ Rel-unit : Rel unit (tup [])
+ Rel-unit = Rel-inj _ s-tup (λ n → ⋆)
+
+ Rel-out : ∀ p n m → Rel (out (δᴾ p n m)) (δᵥ p (cv n) (cv m))
+ Rel-out sub n m = Rel-const _
+ Rel-out eq n m = Rel-bool (does (n ≟ℤ m))
+  where
+   Rel-bool : (b : Bool) → Rel {tup [] ⊹ tup []} (out (bool b)) (if b then inl (tup []) else inr (tup []))
+   Rel-bool true = Rel-inl Rel-unit
+   Rel-bool false = Rel-inr Rel-unit
+
+ Rel-pair : ∀ {Δ A B} {a b : ⟨ 𝔻 ⟩} {c : Val (code Δ A B)} {e : Val (tup Δ)} → Rel a c → Rel b e → Rel (pairᵈ · a · b) (pack c e)
+ Rel-pair {a = a} {b} {c} {e} ra rb = Rel-from-defined λ q →
+   transport (λ - → Rel - (pack c e))
+     ((pair-is a b ∙ guard-defined 2 (pick₂ a b) (λ { zero → pr₁ (pair-defined← a b q) ; (suc zero) → pr₂ (pair-defined← a b q) })
+                       (inj pr · pick₂ a b)) ⁻¹)
+     (Rel-inj (pick₂ a b) s-pack (λ n → stage ra n , stage rb n))
+
+ Rel-tuple : ∀ {Δ} {ds : Fin (length Δ) → ⟨ 𝔻 ⟩} {vs : All Val Δ} → ((n : ℕ) → Tup n vs (λ i → π∞ n · ds i))
+   → Rel (tupleᵈ (length Δ) · ds) (tup vs)
+ Rel-tuple {Δ} {ds} {vs} h = Rel-from-defined λ q →
+   transport (λ - → Rel - (tup vs))
+     ((tuple-is (length Δ) ds ∙ guard-defined (length Δ) ds (tuple-defined← (length Δ) ds q) (inj (tup (length Δ)) · ds)) ⁻¹)
+     (Rel-inj ds s-tup h)
+
+ Tup-lookup : ∀ {n Δ A} (vs : All Val Δ) (xs : Fin (length Δ) → ⟨ 𝓓 n ⟩) (i : Δ ∋ A)
+   → Tup n vs xs → R n (xs (pos i)) (lookup vs i)
+ Tup-lookup (v ∷ vs) xs Z (r , _) = r
+ Tup-lookup (v ∷ vs) xs (S i) (_ , m) = Tup-lookup vs (λ j → xs (suc j)) i m
+
+ proj-inj : (k : ℕ) (xs : Fin k → ⟨ 𝔻 ⟩) (i : Fin k) → proj i · (inj (tup k) · xs) ＝ xs i
+ proj-inj k xs i = case-inj 𝔻⊥ (proj-br i) (tup k) xs ∙ at-k (k Nat.≟ k)
+  where
+   at-k : (q : Dec (k Eq.≡ k)) → at-tup k k i q · xs ＝ xs i
+   at-k (yes Eq.refl) = refl
+   at-k (no ¬q) = Data.Empty.⊥-elim (¬q Eq.refl)
+
+ nth-rel : ∀ {Δ A} (i : Δ ∋ A) {D : ⟨ 𝔻 ⟩} (v : Val (tup Δ)) → Rel D v → Rel (proj (pos i) · D) (nth i v)
+ nth-rel {Δ} i {D} (tup ws) r = Rel-from-defined λ q → inv-case (Rel-inv r (proj-defined (pos i) D q))
+  where
+   inv-case : Inv D (tup ws) → Rel (proj (pos i) · D) (lookup ws i)
+   inv-case (_ , xs , eqD , s-tup , m) =
+     transport (λ - → Rel - (lookup ws i)) ((ap (proj (pos i) ·_) eqD ∙ proj-inj (length Δ) xs (pos i)) ⁻¹)
+       (rel (λ n → Tup-lookup ws (λ j → π∞ n · xs j) i (m n)))
+
+ car-rel : ∀ {A B} {D : ⟨ 𝔻 ⟩} (v : Val (A ⇒ B)) → Rel D v → Rel (car · D) (code-of v)
+ car-rel {D = D} (pack c e) r = Rel-from-defined λ q → inv-case (Rel-inv r (component-defined zero D q))
+  where
+   inv-case : Inv D (pack c e) → Rel (car · D) c
+   inv-case (_ , xy , eqD , s-pack , m) =
+     transport (λ - → Rel - c) ((ap (car ·_) eqD ∙ case-inj 𝔻⊥ (component-br zero) pr xy) ⁻¹) (rel (λ n → pr₁ (m n)))
+
+ cdr-rel : ∀ {A B} {D : ⟨ 𝔻 ⟩} (v : Val (A ⇒ B)) → Rel D v → Rel (cdr · D) (env-of v)
+ cdr-rel {D = D} (pack c e) r = Rel-from-defined λ q → inv-case (Rel-inv r (component-defined (suc zero) D q))
+  where
+   inv-case : Inv D (pack c e) → Rel (cdr · D) e
+   inv-case (_ , xy , eqD , s-pack , m) =
+     transport (λ - → Rel - e) ((ap (cdr ·_) eqD ∙ case-inj 𝔻⊥ (component-br (suc zero)) pr xy) ⁻¹) (rel (λ n → pr₂ (m n)))
+
+ prim-rel : ∀ p {D E : ⟨ 𝔻 ⟩} (u w : Val (base Int)) → Rel D u → Rel E w → Rel (primD p · D · E) (δᵥ p u w)
+ prim-rel p {D} {E} (cv n) (cv k) rD rE = Rel-from-defined λ q → caseD (Rel-inv rD (primD-defined₁ p D E q)) q
+  where
+   caseD : Inv D (cv n) → defined (primD p · D · E) → Rel (primD p · D · E) (δᵥ p (cv n) (cv k))
+   caseD (_ , x , eqD , s-con , _) q = transport (λ - → Rel - (δᵥ p (cv n) (cv k))) (eq₁ ⁻¹) (caseE (Rel-inv rE qE))
+    where
+     eq₁ : primD p · D · E ＝ caseᵈ 𝔻⊥ (prim-br₂ p n) · E
+     eq₁ = ap (λ - → primD p · - · E) eqD ∙ ap (_· E) (case-inj (𝔻 ⟹𝔻) (prim-br₁ p) (con Int n) x)
+     qE = case-defined (prim-br₂ p n) E (transport defined eq₁ q)
+     caseE : Inv E (cv k) → Rel (caseᵈ 𝔻⊥ (prim-br₂ p n) · E) (δᵥ p (cv n) (cv k))
+     caseE (_ , y , eqE , s-con , _) =
+       transport (λ - → Rel - (δᵥ p (cv n) (cv k)))
+         ((ap (caseᵈ 𝔻⊥ (prim-br₂ p n) ·_) eqE ∙ case-inj 𝔻⊥ (prim-br₂ p n) (con Int k) y) ⁻¹)
+         (Rel-out p n k)
+
+ eq-rel : ∀ {D E : ⟨ 𝔻 ⟩} (u w : Val (base Int)) → Rel D u → Rel E w → Rel (primD eq · D · E) (bit {Σ} (equal u w))
+ eq-rel (cv n) (cv k) = prim-rel eq (cv n) (cv k)
+
+ {- Related states ---------------------------------------------------------------------}
+
+ {- for the contents of a register of type τ -}
+ Relᵣ : ∀ {η} τ → ⟨ 𝔻 ⟩ → RV Σ η τ → 𝓤₁ ̇
+ Relᵣ (ty A) d v = Rel d v
+ Relᵣ (codeα A B) d v = Rel d v
+ Relᵣ tupα d v = Rel d v
+
+ FrameRel : ∀ {Δ} → ⟨ Envᵈ ⟩ → Frame Δ → 𝓤₁ ̇
+ FrameRel {Δ} σ φ = ∀ {A} (x : Δ ∋ A) → Rel (σ (idx x)) (lookup φ x)
+
+ RegsRel : ∀ {η Γ} → ⟨ RegsD ⟩ → RegVals Σ η Γ → 𝓤₁ ̇
+ RegsRel {Γ = Γ} R ρ = ∀ r {τ} (e : Γ ‹ r › ≡ just τ) → Relᵣ τ (R r) (cast e (ρ ⦅ r ⦆))
+
+ FlagRel : ∀ {b} → ⟨ 𝔻 ⟩ → Flag Σ b → 𝓤₁ ̇
+ FlagRel {true} F b = Rel F (bit {Σ} b)
+ FlagRel {false} F _ = 𝟙
+
+ record RelState {η ψ} (𝔰 : ⟨ 𝕊 ⟩) (m : Mach Σ η ψ) : 𝓤₁ ̇ where
+  constructor rst
+  field
+   fr : FrameRel (pr₁ 𝔰) (frame m)
+   rg : RegsRel (pr₁ (pr₂ 𝔰)) (regs m)
+   fl : FlagRel (pr₂ (pr₂ 𝔰)) (flag m)
+   op : OpR (frame m) (St.op ψ) η (clo m)
+ open RelState
+
+ frame-drop-rel : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} → FrameRel σ φ → FrameRel (drop p · σ) (forget p φ)
+ frame-drop-rel here⊑ h x = h x
+ frame-drop-rel (there⊑ p) {σ} {v ∷ φ} h x = frame-drop-rel p {σ = λ i → σ (succ i)} (λ y → h (S y)) x
+
+ frame-ext-rel : ∀ {Δ A} {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} {d : ⟨ 𝔻 ⟩} {v : Val A} → Rel d v → FrameRel σ φ
+   → FrameRel (d • σ) (v ∷ φ)
+ frame-ext-rel r h Z = r
+ frame-ext-rel r h (S x) = h x
+
+ regs-upd-rel : ∀ r {η Γ τ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ} {D} {v : RV Σ η τ} → RegsRel R ρ → Relᵣ τ D v
+   → RegsRel (R [ r ≔ₛ D ]) (_[_≔_] {τ = just τ} ρ r v)
+ regs-upd-rel rax h hD rax ≡-refl = hD
+ regs-upd-rel rax h hD rdi e = h rdi e
+ regs-upd-rel rax h hD rsi e = h rsi e
+ regs-upd-rel rdi h hD rax e = h rax e
+ regs-upd-rel rdi h hD rdi ≡-refl = hD
+ regs-upd-rel rdi h hD rsi e = h rsi e
+ regs-upd-rel rsi h hD rax e = h rax e
+ regs-upd-rel rsi h hD rdi e = h rdi e
+ regs-upd-rel rsi h hD rsi ≡-refl = hD
+
+ private
+  forget-rel : ∀ {η η' τ} m {x : MV Σ η m} {D} (e : forgetα m ≡ just τ)
+    → (∀ {τ'} (e' : m ≡ just τ') → Relᵣ τ' D (cast e' x)) → Relᵣ {η'} τ D (cast e (forgetᵥ m x))
+  forget-rel (just (ty A)) ≡-refl h = h ≡-refl
+  forget-rel (just (codeα A B)) () h
+  forget-rel (just tupα) () h
+  forget-rel nothing () h
+
+ regs-wipe-rel : ∀ {η η' Γ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ} → RegsRel R ρ → RegsRel R (wipeᵣ {η' = η'} ρ)
+ regs-wipe-rel {Γ = rt a b c} h rax e = forget-rel a e (h rax)
+ regs-wipe-rel {Γ = rt a b c} h rdi e = forget-rel b e (h rdi)
+ regs-wipe-rel {Γ = rt a b c} h rsi e = forget-rel c e (h rsi)
+
+ {- the environment of the open closure is related to the second component of its slot -}
+ snd-rel : ∀ {Δ A B} {φ : Frame Δ} {x : Δ ∋ A ⇒ B} {η} {o : Val (tup η)} {D : ⟨ 𝔻 ⟩} → OpR φ (just (opened x)) η o
+   → Rel D (lookup φ x) → Rel (cdr · D) o
+ snd-rel {φ = φ} {x} agree r = cdr-rel (lookup φ x) r
+
+ {- a call of code: the result, then the rest -}
+ callq-rel : ∀ {η A B R'} (c : Val (code η A B)) {F X Y K : ⟨ 𝔻 ⟩} {e : Val (tup η)} {w : Val A}
+   {g : ℕ → Val B → Result (Val R')} → Rel F c → Rel X e → Rel Y w
+   → ((v : Val B) → Rel (appᵈ · (appᵈ · F · X) · Y) v → RelE K (λ ck → g ck v))
+   → RelE (seq · (appᵈ · (appᵈ · F · X) · Y) · K) (λ ck → call ds ck c e w >>= g ck)
+ callq-rel (code f) {F} {X} {Y} {K} {e} {w} {g} rF rX rY h q =
+   v , ∥∥-functor₂ comb t₀ t , transport (λ - → Rel - v) (seq-defined C K qC ⁻¹) r
+  where
+   C : ⟨ 𝔻 ⟩
+   C = appᵈ · (appᵈ · F · X) · Y
+   qC : defined C
+   qC = seq-defined-l C K q
+   res₀ : Σ v ꞉ Val _ , ∥ Call f e w ⇓ v ∥ × Rel C v
+   res₀ = call-rel rF rX rY qC
+   v₀ = pr₁ res₀
+   t₀ = pr₁ (pr₂ res₀)
+   res : Σ v ꞉ Val _ , ∥ (λ ck → g ck v₀) ⇓ v ∥ × Rel K v
+   res = h v₀ (pr₂ (pr₂ res₀)) (seq-defined-r C K q)
+   v = pr₁ res
+   t = pr₁ (pr₂ res)
+   r = pr₂ (pr₂ res)
+   comb : Call f e w ⇓ v₀ → (λ ck → g ck v₀) ⇓ v → (λ ck → call ds ck (code f) e w >>= g ck) ⇓ v
+   comb a b = ev (st-bind {f = Call f e w} {g = g} (run⇓ a) (run⇓ b))
+
+ {- The fundamental lemma, for a table related to the code pointers ----------------------}
+
+ 𝕋 : Table Σ → 𝓤₁ ̇
+ 𝕋 T = ∀ {Δ A B} (f : Σ ∋ sig Δ A B) → Rel (T f) (code f)
+
+ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
+
+  arg-rel : ∀ {η ψ τ} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ} (a : Arg Σ ψ τ) → RelState 𝔰 m → Relᵣ τ (𝒪 T a · 𝔰) (arg a m)
+  arg-rel (atom (var x)) RS = fr RS x
+  arg-rel (atom (lit B c)) RS = Rel-const c
+  arg-rel (atom (ref f)) RS = 𝕋T f
+  arg-rel (reg r e) RS = rg RS r e
+  arg-rel (a ↑) RS = Rel-fold (arg-rel a RS)
+  arg-rel {m = m} (a ↓) RS = Rel-unfold (arg a m) (arg-rel a RS)
+
+  args-tup : ∀ {η ψ Δ} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ} (as : All (λ A → Arg Σ ψ (ty A)) Δ) → RelState 𝔰 m
+    → (n : ℕ) → Tup n (args as m) (λ i → π∞ n · (𝒪s T as · 𝔰) i)
+  args-tup [] RS n = ⋆
+  args-tup (a ∷ as) RS n = stage (arg-rel a RS) n , args-tup as RS n
+
+  obj-rel : ∀ {η ψ B} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ} (o : Obj Σ ψ B) → RelState 𝔰 m → Rel (object T o · 𝔰) (objᵢ o m)
+  obj-rel (pair c e) RS = Rel-pair (arg-rel c RS) (arg-rel e RS)
+  obj-rel (tuple as) RS = Rel-tuple (args-tup as RS)
+  obj-rel (inl a) RS = Rel-inl (arg-rel a RS)
+  obj-rel (inr a) RS = Rel-inr (arg-rel a RS)
+
+  {- a write of D, then κ -}
+  put-rel : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {η} {m : Mach Σ η ψ} {v : RV Σ η τ} (𝔰 : ⟨ 𝕊 ⟩) (D : Den 𝕊) (κ : Kont)
+    {B} {c : ℕ → Result (Val B)} → RelState 𝔰 m → Relᵣ τ (D · 𝔰) v
+    → ((𝔰' : ⟨ 𝕊 ⟩) → RelState 𝔰' (put d v m) → RelE (κ · 𝔰') c) → RelE (putₛ T d D κ · 𝔰) c
+  put-rel (reg r) (σ , R , F) D κ (rst fa ra fla oa) hD k = k (σ , R [ r ≔ₛ D · (σ , R , F) ] , F) (rst fa (regs-upd-rel r ra hD) fla oa)
+  put-rel (slot p _) {m = m} {v = v} (σ , RF) D κ {c = c} (rst fa ra fla oa) hD k q =
+    RelE-＝ {c = c} (app-Λ _ (D · (σ , RF)) ∙ seq-defined (D · (σ , RF)) (κ · 𝔰') qD) (k 𝔰' (rst fr' ra fla none)) q
+   where
+    𝔰' : ⟨ 𝕊 ⟩
+    𝔰' = ((D · (σ , RF)) • (drop p · σ) , RF)
+    qD : defined (D · (σ , RF))
+    qD = seq-defined-l (D · (σ , RF)) (κ · 𝔰') (transport defined (app-Λ _ (D · (σ , RF))) q)
+    fr' : FrameRel ((D · (σ , RF)) • (drop p · σ)) (v ∷ forget p (frame m))
+    fr' Z = hD
+    fr' (S x) = frame-drop-rel p fa x
+
+  {- the blocks bs are adequate -}
+  AdeqB : ∀ {n R Bs} → Blocks Σ n R Bs → 𝓤₁ ̇
+  AdeqB {R = R} {Bs} bs = ∀ {Δ} (l : Bs ∋ Δ) {η} {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} → FrameRel σ φ
+    → RelE (blocksₛ T bs l · σ) (λ ck → jump ds ck bs η l φ)
+
+  adequate : ∀ {n R Bs ψ} (k : Seq Σ n R Bs ψ) {bs : Blocks Σ n R Bs} → AdeqB bs → ∀ {η} {m : Mach Σ η ψ} (𝔰 : ⟨ 𝕊 ⟩)
+    → RelState 𝔰 m → RelE (⟦_⟧ˢ T k (blocksₛ T bs) · 𝔰) (λ ck → run ds ck bs η m k)
+
+  adequate (movq a d ∷ k) {bs} AB 𝔰 RS = put-rel d 𝔰 (𝒪 T a) (⟦_⟧ˢ T k (blocksₛ T bs)) RS (arg-rel a RS) (λ 𝔰' RS' → adequate k AB 𝔰' RS')
+  adequate (subq a r e ∷ k) {bs} AB {m = m} 𝔰 RS =
+    put-rel {n = 0} (reg r) 𝔰 (op₂ (primD sub) (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 r)) (𝒪 T a)) (⟦_⟧ˢ T k (blocksₛ T bs)) RS
+      (prim-rel sub (cast e (regs m ⦅ r ⦆)) (arg a m) (rg RS r e) (arg-rel a RS)) (λ 𝔰' RS' → adequate k AB 𝔰' RS')
+  adequate (cmpq a₂ a₁ ∷ k) AB {m = m} 𝔰@(σ , R , F) RS =
+    adequate k AB (σ , R , primD eq · (𝒪 T a₁ · 𝔰) · (𝒪 T a₂ · 𝔰))
+      (rst (fr RS) (rg RS) (eq-rel (arg a₁ m) (arg a₂ m) (arg-rel a₁ RS) (arg-rel a₂ RS)) (op RS))
+  adequate (sete d ∷ k) {bs} AB 𝔰 RS = put-rel d 𝔰 flagᶜ (⟦_⟧ˢ T k (blocksₛ T bs)) RS (fl RS) (λ 𝔰' RS' → adequate k AB 𝔰' RS')
+  adequate (alloc o d ∷ k) {bs} AB 𝔰 RS = put-rel d 𝔰 (object T o) (⟦_⟧ˢ T k (blocksₛ T bs)) RS (obj-rel o RS) (λ 𝔰' RS' → adequate k AB 𝔰' RS')
+  adequate (load i a d ∷ k) {bs} AB {m = m} 𝔰 RS =
+    put-rel d 𝔰 (op₁ (proj (pos i)) (𝒪 T a)) (⟦_⟧ˢ T k (blocksₛ T bs)) RS (nth-rel i (arg a m) (arg-rel a RS)) (λ 𝔰' RS' → adequate k AB 𝔰' RS')
+  adequate (loadfst x r ∷ k) AB {m = m} (σ , R , F) RS =
+    adequate k AB (σ , R [ r ≔ₛ car · σ (idx x) ] , F)
+      (rst (fr RS) (regs-upd-rel r (regs-wipe-rel (rg RS)) (car-rel (lookup (frame m) x) (fr RS x))) (fl RS) agree)
+  adequate (loadsnd {x = opened x} r ∷ k) AB (σ , R , F) RS =
+    adequate k AB (σ , R [ r ≔ₛ cdr · σ (idx x) ] , F)
+      (rst (fr RS) (regs-upd-rel r (rg RS) (snd-rel (op RS) (fr RS x))) (fl RS) (op RS))
+  adequate (callq a e₁ e₂ ∷ k) AB {m = m} 𝔰@(σ , R , F) RS =
+    callq-rel (arg a m) (arg-rel a RS) (rg RS rdi e₁) (rg RS rsi e₂)
+      (λ v rC → adequate k AB (σ , called-regs C , init) (rst (fr RS) (λ { rax ≡-refl → rC ; rdi () ; rsi () }) ⋆ none))
+   where
+    C : ⟨ 𝔻 ⟩
+    C = appᵈ · (appᵈ · (𝒪 T a · 𝔰) · R rdi) · R rsi
+  adequate (retq e) AB {m = m} 𝔰 RS q = cast e (regs m ⦅ rax ⦆) , ∣ ev (st-now (λ _ → ≡-refl)) ∣ , rg RS rax e
+  adequate (jmp l) AB {m = m} (σ , RF) RS = AB l (fr RS)
+  adequate (case x p _ l₁ l₂) {bs} AB {η} {m = m} (σ , RF) RS = sel (lookup (frame m) x) (fr RS x)
+   where
+    br : ⟨ Br ⟩
+    br = (strict · (abs (blocksₛ T bs l₁) · (drop p · σ)) , strict · (abs (blocksₛ T bs l₂) · (drop p · σ)))
+    sel : (v : Val (_ ⊹ _)) → Rel (σ (idx x)) v
+      → RelE (cases · σ (idx x) · br)
+             (λ ck → either v (λ u → jump ds ck bs η l₁ (u ∷ forget p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ forget p (frame m))))
+    sel (inl u) r q = inv-case (Rel-inv r (cases-defined (σ (idx x)) br q)) q
+     where
+      inv-case : Inv (σ (idx x)) (inl u) → RelE (cases · σ (idx x) · br) (λ ck → jump ds ck bs η l₁ (u ∷ forget p (frame m)))
+      inv-case (_ , y , eqx , s-left , my) =
+        RelE-＝ (ap (λ - → cases · - · br) eqx ∙ ap (_· br) (case-inj (Br ⟹𝔻) cases-br left y))
+          (RelE-strict (abs (blocksₛ T bs l₁) · (drop p · σ)) y
+             (λ _ → AB l₁ (frame-ext-rel (rel my) (frame-drop-rel p (fr RS)))))
+    sel (inr u) r q = inv-case (Rel-inv r (cases-defined (σ (idx x)) br q)) q
+     where
+      inv-case : Inv (σ (idx x)) (inr u) → RelE (cases · σ (idx x) · br) (λ ck → jump ds ck bs η l₂ (u ∷ forget p (frame m)))
+      inv-case (_ , y , eqx , s-right , my) =
+        RelE-＝ (ap (λ - → cases · - · br) eqx ∙ ap (_· br) (case-inj (Br ⟹𝔻) cases-br right y))
+          (RelE-strict (abs (blocksₛ T bs l₂) · (drop p · σ)) y
+             (λ _ → AB l₂ (frame-ext-rel (rel my) (frame-drop-rel p (fr RS)))))
+
+  blocks-adeq : ∀ {n R Bs} (bs : Blocks Σ n R Bs) → AdeqB bs
+  blocks-adeq (bs ▷ k) Z {σ = σ} FR =
+    adequate k (blocks-adeq bs) (σ , (λ _ → init) , init) (rst FR (λ { rax () ; rdi () ; rsi () }) ⋆ none)
+  blocks-adeq (bs ▷ k) (S l) = blocks-adeq bs l
+
+  {- the code of definition f, with the table T, is related to code f -}
+  code-rel : ∀ {Δ A B} (f : Σ ∋ sig Δ A B) → Rel (codeₜ T (lookup ds f)) (code f)
+  code-rel {Δ} {A} {B} f = Rel-inj (strict · H) s-code pay
+   where
+    b = lookup ds f
+    {- the body, run with X in %rdi and Y in %rsi -}
+    Bf : DCPO[ 𝔻 ×₁ 𝔻 , 𝔻 ]
+    Bf = ∘₁ (𝔻 ×₁ 𝔻) 𝕊 𝔻
+           (pair₁ (𝔻 ×₁ 𝔻) Envᵈ (RegsD ×₁ 𝔻) (const₁ (𝔻 ×₁ 𝔻) Envᵈ (λ _ → init))
+              (pair₁ (𝔻 ×₁ 𝔻) RegsD 𝔻 argsᶜ (const₁ (𝔻 ×₁ 𝔻) 𝔻 init)))
+           (runₛ T b)
+    H : DCPO[ 𝔻 , 𝔻 ]
+    H = ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 Bf) Λ
+    {- a call of f returns what the start of its definition returns, a clock later -}
+    shift : ∀ {X Y : ⟨ 𝔻 ⟩} {e : Val (tup Δ)} {a : Val A}
+      → RelE (Bf · (X , Y)) (λ ck → run ds ck (Body.blocks b) Δ (mach (rv tt e a) [] tt tt) (Body.start b))
+      → RelE (Bf · (X , Y)) (Call f e a)
+    shift h q = let (v , t , r) = h q in
+      v , ∥∥-functor (λ σ → ev (succ (P.proj₁ (run⇓ σ)) P., (λ { (succ ck) (s≤s le) → P.proj₂ (run⇓ σ) ck le }))) t , r
+    pay : (n : ℕ) → Pay n (s-code {f = f}) (approx n fun (strict · H))
+    pay n x e r = RelFn-inj (strict · (curry₁ 𝔻 𝔻 𝔻 Bf · X)) (strict · H · X)
+                     (λ q → strict-defined H X (seq-defined-l X (H · X) (transport defined (strict-is H X) q)))
+                     pay₂ n
+     where
+      X = ε∞ n · x
+      pay₂ : (m : ℕ) → Pay₂ m is-fun (approx m fun (strict · (curry₁ 𝔻 𝔻 𝔻 Bf · X))) f e
+      pay₂ m y a r' =
+        Ev-from-RelE {c = Call f e a}
+          (RelE-strict (curry₁ 𝔻 𝔻 𝔻 Bf · X) (ε∞ m · y)
+             (λ _ → shift (adequate (Body.start b) (blocks-adeq (Body.blocks b)) _
+                             (rst (λ ()) (λ { rax () ; rdi ≡-refl → Rel-ε n r ; rsi ≡-refl → Rel-ε m r' }) ⋆ none))))
+          m
+ {- The table of the program -----------------------------------------------------------}
+
+ private
+  ≡→＝ : ∀ {𝓥} {X : 𝓥 ̇ } {x y : X} → x ≡ y → x ＝ y
+  ≡→＝ ≡-refl = refl
+
+  {- an index is determined by its level -}
+  lvl-inj : ∀ {Γ : List DSig} {m n} (f : Γ ∋ m) (g : Γ ∋ n) → lvl f ≡ lvl g → _≡_ {A = P.Σ DSig (Γ ∋_)} (m P., f) (n P., g)
+  lvl-inj Z Z e = ≡-refl
+  lvl-inj Z (S g) e = Data.Empty.⊥-elim (<-irrefl (≡-sym e) (lvl-< g))
+  lvl-inj (S f) Z e = Data.Empty.⊥-elim (<-irrefl e (lvl-< f))
+  lvl-inj (S f) (S g) e = cong-S (lvl-inj f g e)
+   where
+    cong-S : ∀ {Γ : List DSig} {a m n} {f : Γ ∋ m} {g : Γ ∋ n} → _≡_ {A = P.Σ DSig (Γ ∋_)} (m P., f) (n P., g)
+      → _≡_ {A = P.Σ DSig ((a ∷ Γ) ∋_)} (m P., S f) (n P., S g)
+    cong-S ≡-refl = ≡-refl
+
+  {- the same index -}
+  at-same : ∀ {t} (g : Σ ∋ t) {Δ A B} (f : Σ ∋ sig Δ A B) → _≡_ {A = P.Σ DSig (Σ ∋_)} (sig Δ A B P., f) (t P., g)
+    → ∀ {d} → Rel d (code g) → Rel d (code f)
+  at-same g f ≡-refl r = r
+
+ {- the newest definition p of a part of the table, reached through rZ -}
+ tab-step : ∀ {s ss} (p : Body Σ (DSig.cod s) (called s)) (ps : All (λ s → Body Σ (DSig.cod s) (called s)) ss)
+   (rZ : Σ ∋ s) → lvl rZ ≡ length ss → lookup ds rZ ≡ p → 𝕋 (tables codeₜ ps) → 𝕋 (tables codeₜ (p ∷ ps))
+ tab-step {ss = ss} p ps rZ rl L IH f = step (lvl f ≟ length ss)
+  where
+   step : Dec (lvl f ≡ length ss) → Rel (tables codeₜ (p ∷ ps) f) (code f)
+   step (no ne) = transport (λ - → Rel - (code f)) (tables-no codeₜ p ps f ne ⁻¹) (IH f)
+   step (yes e) =
+     transport (λ - → Rel - (code f)) ((tables-yes codeₜ p ps f e ∙ ap (codeₜ (tables codeₜ ps)) (≡→＝ L) ⁻¹) ⁻¹)
+       (at-same rZ f (lvl-inj f rZ (≡-trans e (≡-sym rl))) (code-rel IH rZ))
+
+ {- a part ps of the table, reached through r -}
+ tab′ : ∀ {ss} (ps : All (λ s → Body Σ (DSig.cod s) (called s)) ss) (r : ∀ {s} → ss ∋ s → Σ ∋ s)
+   → (∀ {s} (g : ss ∋ s) → lvl (r g) ≡ lvl g) → (∀ {s} (g : ss ∋ s) → lookup ds (r g) ≡ lookup ps g)
+   → 𝕋 (tables codeₜ ps)
+ tab′ [] r rl L f = Rel-⊥
+ tab′ (p ∷ ps) r rl L = tab-step p ps (r Z) (rl Z) (L Z) (tab′ ps (λ x → r (S x)) (λ x → rl (S x)) (λ x → L (S x)))
+
+ tab : 𝕋 (tables codeₜ ds)
+ tab = tab′ ds (λ x → x) (λ _ → ≡-refl) (λ _ → ≡-refl)
+
+ {- Adequacy: main returns a related value from some clock on -----------------------------}
+
+ adequacy : ∀ {A} (b : Body Σ A (entry []))
+   → RelE ⟦ program ds b ⟧ₜ (λ ck → run ds ck (Body.blocks b) [] (mach (rv tt tt tt) [] tt tt) (Body.start b))
+ adequacy b =
+   adequate tab (Body.start b) (blocks-adeq tab (Body.blocks b)) ((λ _ → init) , (λ _ → init) , init)
+     (rst (λ ()) (λ { rax () ; rdi () ; rsi () }) ⋆ none)
