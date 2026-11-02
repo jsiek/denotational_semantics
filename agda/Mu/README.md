@@ -196,7 +196,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 |---|---|---|
 | v ⊑ D′ and U ⊑* E′ (Figure 4) | `proof/Correctness/GraphModel/SplitPreserve.agda` | `_⊑_`, `_⊑*_`; preservation: `preserve` |
 | usable entry U_a ↦ w ∈ V (Figure 5) | `proof/Correctness/GraphModel/ApproxLR.agda` | `UsableEntry` (constructor `usable-entry`) |
-| args(V) and a self-contained call, V maps U to W (Figure 5) | `proof/Correctness/GraphModel/ApproxLR.agda` | `Batch` (fields `results` and `args`) |
+| args(V) and a self-contained call, V maps U to W (Figure 5) | `proof/Correctness/GraphModel/ApproxLR.agda` | `Maps` (fields `results` and `args`) |
 | D ≼ₖ V and D ≼ V (Figure 5) | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLR≤`, `ApproxLR` |
 | its four clauses | `proof/Correctness/GraphModel/ApproxLR.agda` | `ApproxLRLayer`: `const-obs`, `nonempty-obs`, `app-obs`, `tag-obs` |
 | D related to every finite V ⊆ D′ | `proof/Correctness/GraphModel/SplitRel.agda` | `Approx` |
@@ -234,7 +234,7 @@ meaning of the primitives is `../Semantics/Graph/Prim.agda` (`primD`,
 | D, Remove complex operands | calculation | `proof/Correctness/GraphModel/RCOCorrect.agda` (`rco-correct`) |
 | D, Lift locals | calculation | `proof/Correctness/GraphModel/LiftLocalsCorrect.agda` (`lift-locals-correct`) |
 | D, Explicate control | calculation | `proof/Correctness/GraphModel/ExplicateCorrect.agda` (`explicate-correct`) |
-| E An Example of the Approximant Logical Relation | clause 3 on λy. x + y (the example itself is not mechanized) | `proof/Correctness/GraphModel/ApproxLR.agda` (`UsableEntry`, `Batch`, `ApproxLRLayer.app-obs`) |
+| E An Example of the Approximant Logical Relation | clause 3 on λy. x + y (the example itself is not mechanized) | `proof/Correctness/GraphModel/ApproxLR.agda` (`UsableEntry`, `Maps`, `ApproxLRLayer.app-obs`) |
 | F.1 Values and Observations | values, obs, observations, machines, clocked interpreters, equivalence | `Semantics/AbstractMachines/Values.agda` and `Semantics/ClockedInterpreters/Values.agda` (`Val`, `obs`), `../Semantics/Observation.agda` (`Obs`), `../Framework/Smallstep.agda` (`Machine`, `Terminates`, `Diverges`, `Equivalent`), `../Framework/Clocked.agda` (`Result`, `Terminates`, `Diverges`, `Equivalent`) |
 | F.2 Clocked Interpreters | FPC and x86μ; Proposition F.1 | `Semantics/ClockedInterpreters/FPC.agda`, `Semantics/ClockedInterpreters/X86.agda`; `Theorems/ClockedInterpreters.agda` |
 | F.3 Abstract Machines | FPC and x86μ; Proposition F.2 | `Semantics/AbstractMachines/FPC.agda`, `Semantics/AbstractMachines/X86.agda`; `Theorems/AbstractMachines.agda` |
