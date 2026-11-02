@@ -1,6 +1,6 @@
 {-
 
-  The approximant logical relation of the paper (Section 4.2, Figure 4)
+  The approximant logical relation of the paper (Section 4.2, Figure 5)
   and Lemma 4.2 (depth irrelevance and unfolding), for the reflection
   half of split (EnvClosμ → PairClosμ) in the graph model.
 
@@ -45,7 +45,7 @@ open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module Mu.proof.Correctness.GraphModel.ApproxLR where
 
-{- application, D • E (Figure 2) -}
+{- application, D • E (Figure 3) -}
 _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩
 
@@ -57,7 +57,7 @@ D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩
 Cdrs : List Value → 𝒫 Value
 Cdrs V' = cdr ⟨ mem V' , ptt ⟩
 
-{- Figure 4: usable entries. UsableEntry V' U₀ w is an entry
+{- Figure 5: usable entries. UsableEntry V' U₀ w is an entry
    FV ↦ (U₀ ↦ w) of car(V'), with FV nonempty, whose environments FV are
    among cdr(V') -}
 record UsableEntry (V' U₀ : List Value) (w : Value) : Set where
@@ -79,7 +79,7 @@ Bnd-UsableEntry {U₀ = U₀}{w} bV (usable-entry FV t e∈ _ _) =
   , <-shrink (s≤s (≤-trans (m≤n⊔m (depths U₀) _) up)) (bV _ e∈) ⟩
   where up = ≤-trans (n≤1+n _) (≤-trans (m≤n⊔m (depths FV) _) (≤-trans (n≤1+n _) (m≤m⊔n _ (depth t))))
 
-{- Figure 4: arguments of usable entries, args(V), and self-contained calls.
+{- Figure 5: arguments of usable entries, args(V), and self-contained calls.
    Maps V U W, read "V maps U to W", is a self-contained call: V supplies
    both the code entries and the environments. Each w in W is the result
    of a usable entry U₀ ↦ w of V with U₀ nonempty and U₀ ⊆ U (results),
@@ -105,7 +105,7 @@ Bnd-Maps-args bV cs u u∈ =
 Bnd-Maps-apps : ∀ {k V U W} → Bnd (suc k) V → Maps V U W → Bnd k W
 Bnd-Maps-apps bV cs w w∈ = proj₂ (Bnd-UsableEntry bV (proj₁ (proj₂ (Maps.results cs w w∈))))
 
-{- Figure 4: the four clauses of the relation, ApproxLRLayer Q D V, with Q
+{- Figure 5: the four clauses of the relation, ApproxLRLayer Q D V, with Q
    at the recursive occurrences -}
 record ApproxLRLayer (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value) (V : List Value) : Set₁ where
   field
@@ -127,12 +127,12 @@ ApproxLRLayer-map bk bj to from o = record
   }
   where open ApproxLRLayer o
 
-{- Figure 4: D ≼ₖ V -}
+{- Figure 5: D ≼ₖ V -}
 ApproxLR≤ : ℕ → 𝒫 Value → List Value → Set₁
 ApproxLR≤ zero D V = pTrue
 ApproxLR≤ (suc k) D V = ApproxLRLayer (ApproxLR≤ k) D V
 
-{- Figure 4: D ≼ V, at an index one more than the depth of V -}
+{- Figure 5: D ≼ V, at an index one more than the depth of V -}
 ApproxLR : 𝒫 Value → List Value → Set₁
 ApproxLR D V = ApproxLR≤ (suc (depths V)) D V
 
