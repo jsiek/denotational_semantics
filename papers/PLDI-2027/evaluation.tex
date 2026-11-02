@@ -64,11 +64,12 @@ denotational formulation of correctness as more fundamental than the
 other. \citet{Scott:1971ab} proposed a mathematical semantics as ``the
 standard against which to judge an implementation'', while
 \citet{Plotkin:1977oc} judged denotational semantics by their
-closeness to an operational one. Our adequacy proof
-(Section~\ref{sec:adequacy}) makes the choice immaterial. For programs
-of integer type, the graph-model theorem and the interpreter theorem
-are equivalent. We therefore count each development up to its own
-theorem and report adequacy, 1,529 lines, separately.
+closeness to an operational one. Our adequacy proofs
+(Section~\ref{sec:adequacy}) make the choice immaterial. For programs
+of integer type, the graph-model theorem, the Scott-domain theorem, and
+the interpreter theorem are equivalent. We therefore count each
+development up to its own theorem and report adequacy, 1,529 lines for
+the graph model and 1,886 for Scott domains, separately.
 
 We measure each proof by its lines of Agda, not counting comments,
 blank lines, or imports. The counts include the semantics of the
