@@ -9,7 +9,8 @@
   unfold (fold V) reduces to V.
 
   Renaming and substitution are one traversal with a kit
-  (FPC/Language/FPCSubst.agda, which the simplify pass shares).
+  (FPC/Language/FPCSubst.agda, which the simplify pass shares, on
+  Framework/Syntax/TypedSubst.agda).
 
   The redexes take an equation between the operand's type and the
   expected one (C ≡ A ⇒ B): a term cannot be split at a concrete type,
@@ -40,19 +41,6 @@ open import Relation.Nullary using (does)
 {- Renaming and substitution (shared with simplify) ------------------------}
 
 open import FPC.Language.FPCSubst public
-
-{- a closing substitution: values for the variables, the newest first -}
-infixr 5 _•_
-_•_ : ∀ {Γ Δ A} → Tm Δ A → (∀ {B} → Γ ∋ B → Tm Δ B) → ∀ {B} → (A ∷ Γ) ∋ B → Tm Δ B
-(V • σ) Z = V
-(V • σ) (S x) = σ x
-
-∅ : ∀ {Δ B} → [] ∋ B → Tm Δ B
-∅ ()
-
-{- substituting a value for variable 0 -}
-_[_] : ∀ {A B} → Tm (A ∷ []) B → Tm [] A → Tm [] B
-N [ V ] = sub (V • ∅) N
 
 {- The reduction ----------------------------------------------------------}
 

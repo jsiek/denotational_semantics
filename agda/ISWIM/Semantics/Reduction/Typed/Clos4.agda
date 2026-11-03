@@ -28,16 +28,13 @@ open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Relation.Nullary using (Dec; yes; no; does)
 
-{- Renaming and substitution ----------------------------------------------}
+{- Renaming and substitution: the traversal, the rest by
+   Framework/Syntax/TypedSubst.agda ------------------------------------------}
 
-open import Framework.Syntax.Kit {Ctx} {Ty} _∋_ (λ Γ A → A ∷ Γ) Tm public
+open import Framework.Syntax.TypedSubst Tm `_ public
 
 module _ (𝒦 : Kit) where
   open Kit 𝒦
-
-  exts : ∀ {Γ Δ B} → Sub 𝒦 Γ Δ → Sub 𝒦 (B ∷ Γ) (B ∷ Δ)
-  exts σ Z = vr Z
-  exts σ (S x) = wk (σ x)
 
   trav : ∀ {Γ Δ A} → Sub 𝒦 Γ Δ → Tm Γ A → Tm Δ A
   travs : ∀ {Γ Δ n} → Sub 𝒦 Γ Δ → Vec (Tm Γ Any) n → Vec (Tm Δ Any) n
@@ -50,39 +47,15 @@ module _ (𝒦 : Kit) where
   trav σ (get i M) = get i (trav σ M)
   trav σ (inl M) = inl (trav σ M)
   trav σ (inr M) = inr (trav σ M)
-  trav σ (case L M N) = case (trav σ L) (trav (exts σ) M) (trav (exts σ) N)
+  trav σ (case L M N) = case (trav σ L) (trav (exts 𝒦 σ) M) (trav (exts 𝒦 σ) N)
   trav σ (prim p L M) = prim p (trav σ L) (trav σ M)
-  trav σ (let′ M N) = let′ (trav σ M) (trav (exts σ) N)
+  trav σ (let′ M N) = let′ (trav σ M) (trav (exts 𝒦 σ) N)
   trav σ (inject G M) = inject G (trav σ M)
   trav σ (project t M) = project t (trav σ M)
   travs σ [] = []
   travs σ (M ∷ Ms) = trav σ M ∷ travs σ Ms
 
-varK : Kit
-varK = record { K = _∋_ ; vr = λ x → x ; tm = `_ ; wk = S }
-
-ren : ∀ {Γ Δ A} → (∀ {B} → Γ ∋ B → Δ ∋ B) → Tm Γ A → Tm Δ A
-ren r = trav varK r
-
-tmK : Kit
-tmK = record { K = Tm ; vr = `_ ; tm = λ M → M ; wk = ren S }
-
-sub : ∀ {Γ Δ A} → (∀ {B} → Γ ∋ B → Tm Δ B) → Tm Γ A → Tm Δ A
-sub σ = trav tmK σ
-
-
-{- a closing substitution: values for the variables, the newest first -}
-infixr 5 _•_
-_•_ : ∀ {Γ Δ A} → Tm Δ A → (∀ {B} → Γ ∋ B → Tm Δ B) → ∀ {B} → (A ∷ Γ) ∋ B → Tm Δ B
-(V • σ) Z = V
-(V • σ) (S x) = σ x
-
-∅ : ∀ {Δ B} → [] ∋ B → Tm Δ B
-∅ ()
-
-{- substituting a value for variable 0 -}
-_[_] : ∀ {A B} → Tm (A ∷ []) B → Tm [] A → Tm [] B
-N [ V ] = sub (V • ∅) N
+open Substitution trav public
 
 {- The reduction ----------------------------------------------------------}
 

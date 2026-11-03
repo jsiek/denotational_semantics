@@ -3,10 +3,12 @@
   The values of the GlobalFunμ reduction semantics
   (FPC/Semantics/ReductionSemantics/GlobalFun.agda), which reduce to val, and the
   laws of its substitution, as for Clos5ᵀ
-  (ISWIM/proof/Semantics/Reduction/Typed/Clos5.agda): two traversals fuse
-  into one, substitution by variables is the identity, and so a
-  substitution under a binder and then one for the bound variable is
-  one substitution (exts-[]).
+  (ISWIM/proof/Semantics/Reduction/Typed/Clos5.agda): the two by induction on
+  its terms, that two traversals fuse into one (fuse) and that
+  substitution by variables is the identity (sub-id), and from them the
+  rest (proof/Framework/Syntax/TypedSubst.agda); in particular a
+  substitution under a binder and then one for the bound variable is one
+  substitution (exts-[]).
 
 -}
 
@@ -22,7 +24,7 @@ open import Semantics.Reduction.Smallstep using (val)
 open import proof.Framework.ReductionVec Obs o-error using (cong₃)
 
 open import Data.List using (List; []; _∷_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong₂)
 
 module _ {Σ : List DSig} where
 
@@ -49,7 +51,10 @@ module _ {Σ : List DSig} where
   values-red [] = refl
   values-red {ds} (v ∷ vs) rewrite value-red {ds} v | values-red {ds} vs = refl
 
-  {- Fusion -------------------------------------------------------------------}
+  {- Substitution: fusion and the identity, by induction on terms ----------}
+
+  open import proof.Framework.Syntax.TypedSubst (Tm Σ) `_
+  open Traversal trav (λ _ _ _ → refl) public
 
   module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
     (R : ∀ {Γ Δ Θ} → Sub 𝒦₁ Γ Δ → Sub 𝒦₂ Δ Θ → Sub 𝒦₃ Γ Θ → Set)
@@ -77,36 +82,8 @@ module _ {Σ : List DSig} where
     fuses r [] = refl
     fuses r (M ∷ Ms) = cong₂ _∷_ (fuse r M) (fuses r Ms)
 
-  {- a renaming, then a traversal -}
-  ren-trav : ∀ 𝒦 {Γ Δ Θ} {r : ∀ {A} → Γ ∋ A → Δ ∋ A} {σ : Sub 𝒦 Δ Θ} {τ : Sub 𝒦 Γ Θ}
-    → (∀ {A} (x : Γ ∋ A) → σ (r x) ≡ τ x) → ∀ {A} (M : Tm Σ Γ A) → trav 𝒦 σ (ren r M) ≡ trav 𝒦 τ M
-  ren-trav 𝒦 = fuse varK 𝒦 𝒦 (λ r σ τ → ∀ {A} x → σ {A} (r x) ≡ τ x)
-    (λ { h Z → refl ; h (S x) → cong (Kit.wk 𝒦) (h x) }) (λ h x → cong (Kit.tm 𝒦) (h x))
-
-  {- a substitution, then a renaming -}
-  sub-ren : ∀ {Γ Δ Θ} {σ : Sub tmK Γ Δ} {r : ∀ {A} → Δ ∋ A → Θ ∋ A} {τ : Sub tmK Γ Θ}
-    → (∀ {A} (x : Γ ∋ A) → ren r (σ x) ≡ τ x) → ∀ {A} (M : Tm Σ Γ A) → ren r (sub σ M) ≡ sub τ M
-  sub-ren = fuse tmK varK tmK (λ σ r τ → ∀ {A} x → ren r (σ {A} x) ≡ τ x)
-    (λ { h Z → refl
-       ; {σ₁ = σ} h (S x) → trans (ren-trav varK (λ _ → refl) (σ x))
-                              (trans (sym (ren-trav varK (λ _ → refl) (σ x))) (cong (ren S) (h x))) })
-    (λ h x → h x)
-
-  {- a substitution, then another -}
-  sub-sub : ∀ {Γ Δ Θ} {σ : Sub tmK Γ Δ} {τ : Sub tmK Δ Θ} {ρ : Sub tmK Γ Θ}
-    → (∀ {A} (x : Γ ∋ A) → sub τ (σ x) ≡ ρ x) → ∀ {A} (M : Tm Σ Γ A) → sub τ (sub σ M) ≡ sub ρ M
-  sub-sub = fuse tmK tmK tmK (λ σ τ ρ → ∀ {A} x → sub τ (σ {A} x) ≡ ρ x)
-    (λ { h Z → refl
-       ; {σ₁ = σ} {τ} h (S x) → trans (ren-trav tmK (λ _ → refl) (σ x))
-                                  (trans (sym (sub-ren (λ _ → refl) (σ x))) (cong (ren S) (h x))) })
-    (λ h x → h x)
-
-  {- substituting variables for themselves -}
-  sub-id : ∀ {Γ A} {σ : Sub tmK Γ Γ} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → (M : Tm Σ Γ A) → sub σ M ≡ M
+  sub-id : SubId
   sub-ids : ∀ {Γ Δ} {σ : Sub tmK Γ Γ} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → (Ms : All (Tm Σ Γ) Δ) → travs tmK σ Ms ≡ Ms
-  sub-id-exts : ∀ {Γ B} {σ : Sub tmK Γ Γ} → (∀ {C} (x : Γ ∋ C) → σ x ≡ ` x) → ∀ {C} (x : (B ∷ Γ) ∋ C) → exts tmK σ x ≡ ` x
-  sub-id-exts h Z = refl
-  sub-id-exts h (S x) = cong (ren S) (h x)
   sub-id h (` x) = h x
   sub-id h (fun-ref f) = refl
   sub-id h (pair L M) = cong₂ pair (sub-id h L) (sub-id h M)
@@ -124,6 +101,4 @@ module _ {Σ : List DSig} where
   sub-ids h [] = refl
   sub-ids h (M ∷ Ms) = cong₂ _∷_ (sub-id h M) (sub-ids h Ms)
 
-  {- under a binder, then for the bound variable: closed values for the rest -}
-  exts-[] : ∀ {Γ A B} (σ : Sub tmK Γ []) (W : Tm Σ [] A) (N : Tm Σ (A ∷ Γ) B) → sub (exts tmK σ) N [ W ] ≡ sub (W • σ) N
-  exts-[] σ W = sub-sub λ { Z → refl ; (S x) → trans (ren-trav tmK {τ = `_} (λ ()) (σ x)) (sub-id (λ ()) (σ x)) }
+  open Lemmas fuse sub-id public

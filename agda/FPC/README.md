@@ -120,7 +120,7 @@ those of capture, prune and concretize in
 | Language | File | Agda |
 |---|---|---|
 | types and contexts | [`Language/Type.agda`](Language/Type.agda) | `Ty`, `Type`, `Ctx`, `_⇒_`, `_⊹_`, `tup`, `base`, `μ` types and `unroll` |
-| FPC | [`Language/FPC.agda`](Language/FPC.agda) | `Tm` (renaming and substitution: `Language/FPCSubst.agda`) |
+| FPC | [`Language/FPC.agda`](Language/FPC.agda) | `Tm` (renaming and substitution: `Language/FPCSubst.agda`, on `../Framework/Syntax/TypedSubst.agda`) |
 | Clos | [`Language/Clos.agda`](Language/Clos.agda) | `Tm` |
 | EnvClos | [`Language/EnvClos.agda`](Language/EnvClos.agda) | `Tm` |
 | PairClos | [`Language/PairClos.agda`](Language/PairClos.agda) | `Tm` |
@@ -263,7 +263,7 @@ except the theorem files, which cite the proofs they re-export.
 `python3 papers/PLDI-2027/loc.py --mu` checks this and prints the size
 of each style's surface (the Scott column's is the closure of
 `Theorems/CorrectWrtScottDomains.agda`, which needs TypeTopology). The surface is
-the following 93 files (3531 lines of code, 2260 of them for the
+the following 94 files (3536 lines of code, 2265 of them for the
 statements other than those about Scott domains):
 
 * the theorem statements: `Theorems/CorrectWrtGraphModel.agda`,
@@ -292,7 +292,7 @@ statements other than those about Scott domains):
 * shared with the other pipelines: `../Semantics/Observation.agda`,
   `../Language/Prim.agda`, `../Language/Reg.agda`,
   `../Framework/{Primitives,Iff,Lookup,Membership}.agda`,
-  `../Framework/Syntax/Kit.agda`,
+  `../Framework/Syntax/{Kit,TypedSubst}.agda`,
   `../Framework/abt/{AbstractBindingTree,GSubst,ScopedTuple,Sig,Var}.agda`.
 
 The semantics of the other intermediate languages
