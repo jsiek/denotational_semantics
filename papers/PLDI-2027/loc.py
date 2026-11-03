@@ -226,7 +226,9 @@ those of agda/ISWIM/ and directly in agda/ from the ISWIM pipelines'.  FPC's the
 split's), so the semantics of its intermediate languages
 (agda/FPC/Semantics/), which only the proofs use, are reached by no
 statement; they are listed as not on the audit surface, and must import
-no proof module either.
+no proof module either.  Neither do FPC's example programs
+(agda/FPC/Examples.agda), which no statement reaches and which are not
+counted.
 """
 import glob, os, re, sys
 
@@ -697,7 +699,7 @@ GROUPS = [
     # which are not counted here
     ('mu-adeq-red', 'ISWIM', [MUP + 'Adequacy/ReductionSemantics/' + x + '.agda' for x in ('Soundness', 'LogRel', 'FPC')]),
     ('mu-adeq-red', 'end to end', [MUP + 'Adequacy/ReductionSemantics/EndToEnd.agda']),
-    ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
+    ('mu-examples', 'examples', [MU + 'Examples.agda', MUP + 'Compiler/Examples/*.agda']),
     # design experiments, in no total: the split relation on target sets of
     # bounded depth (the paper's design space for reflection, §4.2)
     ('mu-exp', 'split: design experiments (target sets of bounded depth; a finite source side)',
@@ -1069,7 +1071,10 @@ class Count:
         # only the proofs use, are definitions outside FPC/proof/ that no
         # statement reaches; they must be semantics, and import no proof
         # module (checked above)
-        self.munreached = sorted(msurface - reachable(mthm, self.sgraph))
+        # FPC/Examples.agda runs example programs on FPC's interpreter: it
+        # is on the audit surface (it imports no proof module), but no
+        # statement reaches it
+        self.munreached = sorted(msurface - reachable(mthm, self.sgraph) - {MU + 'Examples.agda'})
         bad = [f for f in self.munreached if not f.startswith(MU + 'Semantics/')]
         if bad:
             sys.exit('in agda/FPC/, outside FPC/proof/ and FPC/Semantics/, but not reached from the theorem '

@@ -170,8 +170,11 @@ the proofs they re-export (`make tables` checks this). The surface is:
   `Framework/Syntax/Kit.agda`,
   `Framework/abt/{AbstractBindingTree,GSubst,ScopedTuple,Sig,Var}.agda`.
 
-The semantics of the other intermediate languages are used only by the
-proofs.
+The example programs of `FPC/Examples.agda` are also outside `proof/`
+and import no proof module: each states, and Agda checks by computation,
+the result of a program on the interpreter of FPC. No theorem statement
+uses them. The semantics of the other intermediate languages are used
+only by the proofs.
 
 ## Assumptions
 

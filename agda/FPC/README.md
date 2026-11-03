@@ -295,10 +295,56 @@ statements other than those about Scott domains):
   `../Framework/Syntax/{Kit,TypedSubst}.agda`,
   `../Framework/abt/{AbstractBindingTree,GSubst,ScopedTuple,Sig,Var}.agda`.
 
-The semantics of the other intermediate languages
+The example programs of [`Examples.agda`](Examples.agda) are also
+outside `proof/` and import no proof module, so a reader can check what
+the programs compute on the interpreter of FPC (see "Examples" below),
+although no theorem statement uses them. The semantics of the other
+intermediate languages
 (`Semantics/<style>/{Clos,EnvClos,PairClos,GlobalFun}.agda` where not
 listed above) are used only by the proofs, and are not on the surface.
 Everything under `proof/` (here and in `../proof/`) is proof.
+
+## Examples
+
+[`Examples.agda`](Examples.agda) runs closed FPC programs on the
+clocked interpreter of FPC (`Semantics/ClockedInterpreters/FPC.agda`),
+and Agda checks each expected outcome by computation (`refl`). Every
+program ends at an integer or a boolean, or times out. The file is on
+the audit surface, so a reader can check what the programs compute
+without reading any proof. It also defines the recursion examples
+(`ω`, `Ω`, `fix`, `countdown 3`) that
+`proof/Compiler/Examples/` runs through the compiler. The table lists each case of the interpreter
+(`eval`, `evals` and `call`, with the helpers of
+`Semantics/ClockedInterpreters/Values.agda` that they use) and the
+programs that exercise it.
+
+| Case of the interpreter | Programs |
+|---|---|
+| `` ` x `` (lookup in the environment) | `let-shadow` (a shadowed variable), `closure`, `sum-inl`, `sum-inr`, and most others |
+| `lam` (a closure of the whole environment) | `closure` (three free variables), `curried`, `compose-app`, `twice-app` |
+| `app`, then `call (suc ck)` | every program but `arith`, `eq-cases`, `let-shadow`, `sum-inl` and `sum-inr` |
+| `call zero` (timeout) | `Ω-eval`, `fact5-timeout` |
+| `lit` | every program; a negative integer in `arith`, booleans in `eq-cases` |
+| `tuple`, with `evals` on a non-empty list | `tuple-get` (four components, one of them a function and one a tuple), `list-altsum` (`cons`) |
+| `tuple`, with `evals` on the empty list | `list-altsum` (`nil`) |
+| `get` (`nth`) | `tuple-get` (indices 0 to 3, and a `get` of a `get`), `list-altsum` |
+| `inl` | `sum-inl`, `list-altsum` (`nil`) |
+| `inr` | `sum-inr`, `list-altsum` (`cons`) |
+| `case` on an `inl` (`either`) | `sum-inl`, `eq-cases` (outer), `list-altsum`, `fact5`, `fib7` |
+| `case` on an `inr` (`either`) | `sum-inr`, `eq-cases` (inner), `list-altsum`, `fact5`, `fib7` |
+| `prim sub` (`δ sub`) | `arith`, and most others |
+| `prim eq` on equal integers (`δ eq`, `inl ⟨⟩`) | `eq-cases` (outer), `fact5`, `fib7` |
+| `prim eq` on distinct integers (`δ eq`, `inr ⟨⟩`) | `eq-cases` (inner), `fact5`, `fib7` |
+| `let′` | `let-shadow` (nested, shadowing), `closure`, `tuple-get`, `sum-inl`, `sum-inr`, `fact5` (binding closures) |
+| `fold` | `list-altsum` (the list and the self-application), `fact5` and `fib7` (inside `fix`), `Ω-eval` |
+| `unfold` (`unfold-v`) | `list-altsum`, `fact5`, `fib7`, `Ω-eval` |
+| an outcome `just (o-const B c)` | every terminating program, with `B` either `Int` or `𝔹` |
+| an outcome `nothing` (timeout) | `Ω-eval`, `fact5-timeout` |
+| an outcome `just o-error` | none, because the interpreter has no error case, and `proof/Semantics/ClockedInterpreters/NoError.agda` proves that it never errs |
+
+The programs end at constants on purpose, so the observations of
+functions, tuples and injections (`o-fun`, `o-tuple`, `o-inl`, `o-inr`)
+appear in no expected result.
 
 ## Assumptions
 
