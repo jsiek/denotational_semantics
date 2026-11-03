@@ -7,8 +7,21 @@
   programs exercise every term constructor, both primitives, both
   branches of case, recursion through recursive types, and timing out.
   The table in FPC/README.md lists which program exercises each clause
-  of the interpreter. Unlike the other examples here, these test only
-  the source interpreter, not the compiler.
+  of the interpreter.
+
+  FPC has no recursion construct. Self-application is typable through a
+  recursive type:
+
+  * ω = λx. unfold x x : (μX. X ⇒ Int) ⇒ Int, and Ω = ω (fold ω), which
+    diverges;
+  * the call-by-value fixed-point combinator at Int ⇒ Int,
+      fix = λf. g (fold g),  g = λx. f (λv. unfold x x v),
+    with x : μX. X ⇒ (Int ⇒ Int);
+  * countdown = fix (λc. λn. if n = 0 then 0 else c (n - 1)), and
+    countdown 3.
+
+  FPC/proof/Compiler/Examples/ runs some of these programs through the
+  compiler as well.
 
   The interpreter is a total function that never errs, so a test
   expects either just a constant or nothing (a timeout). The clock
@@ -16,14 +29,13 @@
 
 -}
 
-module FPC.proof.Compiler.Examples.InterpExamples where
+module FPC.Examples where
 
 open import Framework.Primitives using (Int; 𝔹)
 open import Language.Prim using (sub; eq)
 open import FPC.Language.Type
 open import FPC.Language.FPC
 open import FPC.Framework.AllUtil using ([]; _∷_)
-open import FPC.proof.Compiler.Examples.RecursionExample using (F; fix; Ω)
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.Interp.Clock using (Semantics; outcome)
 import FPC.Semantics.ClockedInterpreters.FPC as FPCᵢ
@@ -65,6 +77,38 @@ L ≐ M = prim eq L M
 {- addition, by subtraction: L + M = L - (0 - M) -}
 _⊕_ : ∀ {Γ} → Tm Γ ℤ′ → Tm Γ ℤ′ → Tm Γ ℤ′
 L ⊕ M = L ⊖ (# 0 ⊖ M)
+
+{- Recursion through recursive types --------------------------------------------}
+
+ω : Tm [] (μ (var zero ⇒ ℤ′) ⇒ ℤ′)
+ω = lam (app (unfold (` Z)) (` Z))
+
+Ω : Tm [] ℤ′
+Ω = app ω (fold ω)
+
+{- the recursive type of the self-application in fix -}
+D : Type
+D = μ (var zero ⇒ (ℤ′ ⇒ ℤ′))
+
+F : Type
+F = (ℤ′ ⇒ ℤ′) ⇒ (ℤ′ ⇒ ℤ′)
+
+fix : Tm [] (F ⇒ (ℤ′ ⇒ ℤ′))
+fix = lam (app g (fold g))
+  where
+  g : Tm (F ∷ []) (D ⇒ (ℤ′ ⇒ ℤ′))
+  g = lam (app (` S Z) (lam (app (app (unfold (` S Z)) (` S Z)) (` Z))))
+
+countdown : Tm [] (ℤ′ ⇒ ℤ′)
+countdown = app fix (lam (lam (case (prim eq (` Z) (lit Int (+ 0)))
+                                 (lit Int (+ 0))
+                                 (app (` S (S Z)) (prim sub (` S Z) (lit Int (+ 1)))))))
+
+three : Tm [] ℤ′
+three = app countdown (lit Int (+ 3))
+
+three-eval : run 10 (FPCᵢ.sem three) ≡ just (o-const Int (+ 0))
+three-eval = refl
 
 {- Arithmetic and equality ----------------------------------------------------}
 
@@ -180,13 +224,13 @@ cons : ∀ {Γ} → Tm Γ ℤ′ → Tm Γ IntList → Tm Γ IntList
 cons h t = fold (inr (tuple (h ∷ t ∷ [])))
 
 {- the alternating sum, by self-application through
-   D = μX. X ⇒ IntList ⇒ Int: alt [] = 0 and alt (h ∷ t) = h - alt t -}
+   L = μX. X ⇒ IntList ⇒ Int: alt [] = 0 and alt (h ∷ t) = h - alt t -}
 altsum : Tm [] (IntList ⇒ ℤ′)
 altsum = app body (fold body)
   where
-  D : Type
-  D = μ (var zero ⇒ (IntList ⇒ ℤ′))
-  body : Tm [] (D ⇒ IntList ⇒ ℤ′)
+  L : Type
+  L = μ (var zero ⇒ (IntList ⇒ ℤ′))
+  body : Tm [] (L ⇒ IntList ⇒ ℤ′)
   body = lam (lam (case (unfold (` Z))
                         (# 0)
                         (get Z (` Z) ⊖ app (app (unfold (` S (S Z))) (` S (S Z))) (get (S Z) (` Z)))))
@@ -200,7 +244,7 @@ list-altsum-eval = refl
 
 {- Recursion with the fixed-point combinator -----------------------------------}
 
-{- the type of fix (FPC/proof/Compiler/Examples/RecursionExample.agda) -}
+{- the type of fix -}
 Fix : Type
 Fix = F ⇒ (ℤ′ ⇒ ℤ′)
 
@@ -244,6 +288,6 @@ fib7-eval = refl
 
 {- Divergence ------------------------------------------------------------------}
 
-{- Ω = ω (fold ω), with ω = λx. unfold x x, times out -}
+{- Ω times out -}
 Ω-eval : run 50 (FPCᵢ.sem Ω) ≡ nothing
 Ω-eval = refl

@@ -295,21 +295,25 @@ statements other than those about Scott domains):
   `../Framework/Syntax/{Kit,TypedSubst}.agda`,
   `../Framework/abt/{AbstractBindingTree,GSubst,ScopedTuple,Sig,Var}.agda`.
 
-The semantics of the other intermediate languages
+The example programs of [`Examples.agda`](Examples.agda) are also
+outside `proof/` and import no proof module, so a reader can check what
+the programs compute on the interpreter of FPC (see "Examples" below),
+although no theorem statement uses them. The semantics of the other
+intermediate languages
 (`Semantics/<style>/{Clos,EnvClos,PairClos,GlobalFun}.agda` where not
 listed above) are used only by the proofs, and are not on the surface.
 Everything under `proof/` (here and in `../proof/`) is proof.
 
 ## Examples
 
-[`proof/Compiler/Examples/InterpExamples.agda`](proof/Compiler/Examples/InterpExamples.agda)
-runs closed FPC programs on the clocked interpreter of FPC
-(`Semantics/ClockedInterpreters/FPC.agda`), and Agda checks each
-expected outcome by computation (`refl`). Every program ends at an
-integer or a boolean, or times out. The file lives under `proof/`
-because it imports `fix` and `Ω` from `RecursionExample.agda` next to
-it, and no module outside `proof/` may import one inside it (see the
-audit surface above). The table lists each case of the interpreter
+[`Examples.agda`](Examples.agda) runs closed FPC programs on the
+clocked interpreter of FPC (`Semantics/ClockedInterpreters/FPC.agda`),
+and Agda checks each expected outcome by computation (`refl`). Every
+program ends at an integer or a boolean, or times out. The file is on
+the audit surface, so a reader can check what the programs compute
+without reading any proof. It also defines the recursion examples
+(`ω`, `Ω`, `fix`, `countdown 3`) that
+`proof/Compiler/Examples/` runs through the compiler. The table lists each case of the interpreter
 (`eval`, `evals` and `call`, with the helpers of
 `Semantics/ClockedInterpreters/Values.agda` that they use) and the
 programs that exercise it.

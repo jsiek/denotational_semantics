@@ -354,7 +354,7 @@ program of type $\key{Int}$ (Section~\ref{sec:m-thm}).
 
 \paragraph{Recursion without a construct.} There is no $\key{rec}$ or
 $\key{fix}$. Self-application is typable through a recursive type
-(\texttt{proof/Compiler/Examples/RecursionExample.agda}):
+(\texttt{Examples.agda}):
 \begin{align*}
   \omega &= \lam{x} (\Munfold x)\;x : (\Mmu{X}{X \rightarrow \key{Int}}) \rightarrow \key{Int}
   \qquad \Omega = \omega\;(\Mfold \omega) : \key{Int} , \\

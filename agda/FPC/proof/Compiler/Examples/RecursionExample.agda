@@ -1,69 +1,26 @@
 {-
 
-  Divergence and recursion in FPC, through recursive types, without
-  a recursion construct (FPC/Language/FPC.agda):
-
-  * ω = λx. unfold x x : (μX. X ⇒ Int) ⇒ Int, and Ω = ω (fold ω), which
-    diverges;
-  * the call-by-value fixed-point combinator at Int ⇒ Int,
-      fix = λf. g (fold g),  g = λx. f (λv. unfold x x v),
-    with x : μX. X ⇒ (Int ⇒ Int);
-  * countdown = fix (λc. λn. if n = 0 then 0 else c (n - 1)), and
-    countdown 3.
-
-  Each is compiled with compile-to-PairClos (FPC/Compiler/Pipeline.agda) and run on
-  the FPC and PairClosμ machines, by computation.
+  The recursion examples of FPC/Examples.agda (countdown 3 by the
+  fixed-point combinator, and Ω), compiled with compile-to-PairClos
+  (FPC/Compiler/Pipeline.agda) and run on the FPC and PairClosμ
+  machines, by computation.
 
 -}
 
 module FPC.proof.Compiler.Examples.RecursionExample where
 
 open import Framework.Primitives using (Int)
-open import Language.Prim using (sub; eq)
-open import FPC.Language.Type
-open import FPC.Language.FPC
+open import FPC.Examples using (three; Ω)
 open import FPC.Compiler.Pipeline using (compile-to-PairClos)
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.CEK.Smallstep using (Machine; next; stop)
 import FPC.Semantics.AbstractMachines.FPC as FPCₘ
 import FPC.Semantics.AbstractMachines.PairClos as PairClosμₘ
 
-open import Data.Fin using (zero)
 open import Data.Integer using (+_)
-open import Data.List using ([]; _∷_)
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ; zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
-
-ℤ′ : ∀ {n} → Ty n
-ℤ′ = base Int
-
-ω : Tm [] (μ (var zero ⇒ ℤ′) ⇒ ℤ′)
-ω = lam (app (unfold (` Z)) (` Z))
-
-Ω : Tm [] ℤ′
-Ω = app ω (fold ω)
-
-{- the recursive type of the self-application in fix -}
-D : Type
-D = μ (var zero ⇒ (ℤ′ ⇒ ℤ′))
-
-F : Type
-F = (ℤ′ ⇒ ℤ′) ⇒ (ℤ′ ⇒ ℤ′)
-
-fix : Tm [] (F ⇒ (ℤ′ ⇒ ℤ′))
-fix = lam (app g (fold g))
-  where
-  g : Tm (F ∷ []) (D ⇒ (ℤ′ ⇒ ℤ′))
-  g = lam (app (` S Z) (lam (app (app (unfold (` S Z)) (` S Z)) (` Z))))
-
-countdown : Tm [] (ℤ′ ⇒ ℤ′)
-countdown = app fix (lam (lam (case (prim eq (` Z) (lit Int (+ 0)))
-                                 (lit Int (+ 0))
-                                 (app (` S (S Z)) (prim sub (` S Z) (lit Int (+ 1)))))))
-
-three : Tm [] ℤ′
-three = app countdown (lit Int (+ 3))
 
 {- run a machine for at most n steps -}
 run : ℕ → (L : Machine) → Maybe Obs
