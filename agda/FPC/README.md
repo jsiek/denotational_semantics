@@ -300,6 +300,48 @@ The semantics of the other intermediate languages
 listed above) are used only by the proofs, and are not on the surface.
 Everything under `proof/` (here and in `../proof/`) is proof.
 
+## Examples
+
+[`proof/Compiler/Examples/InterpExamples.agda`](proof/Compiler/Examples/InterpExamples.agda)
+runs closed FPC programs on the clocked interpreter of FPC
+(`Semantics/ClockedInterpreters/FPC.agda`), and Agda checks each
+expected outcome by computation (`refl`). Every program ends at an
+integer or a boolean, or times out. The file lives under `proof/`
+because it imports `fix` and `Ω` from `RecursionExample.agda` next to
+it, and no module outside `proof/` may import one inside it (see the
+audit surface above). The table lists each case of the interpreter
+(`eval`, `evals` and `call`, with the helpers of
+`Semantics/ClockedInterpreters/Values.agda` that they use) and the
+programs that exercise it.
+
+| Case of the interpreter | Programs |
+|---|---|
+| `` ` x `` (lookup in the environment) | `let-shadow` (a shadowed variable), `closure`, `sum-inl`, `sum-inr`, and most others |
+| `lam` (a closure of the whole environment) | `closure` (three free variables), `curried`, `compose-app`, `twice-app` |
+| `app`, then `call (suc ck)` | every program but `arith`, `eq-cases`, `let-shadow`, `sum-inl` and `sum-inr` |
+| `call zero` (timeout) | `Ω-eval`, `fact5-timeout` |
+| `lit` | every program; a negative integer in `arith`, booleans in `eq-cases` |
+| `tuple`, with `evals` on a non-empty list | `tuple-get` (four components, one of them a function and one a tuple), `list-altsum` (`cons`) |
+| `tuple`, with `evals` on the empty list | `list-altsum` (`nil`) |
+| `get` (`nth`) | `tuple-get` (indices 0 to 3, and a `get` of a `get`), `list-altsum` |
+| `inl` | `sum-inl`, `list-altsum` (`nil`) |
+| `inr` | `sum-inr`, `list-altsum` (`cons`) |
+| `case` on an `inl` (`either`) | `sum-inl`, `eq-cases` (outer), `list-altsum`, `fact5`, `fib7` |
+| `case` on an `inr` (`either`) | `sum-inr`, `eq-cases` (inner), `list-altsum`, `fact5`, `fib7` |
+| `prim sub` (`δ sub`) | `arith`, and most others |
+| `prim eq` on equal integers (`δ eq`, `inl ⟨⟩`) | `eq-cases` (outer), `fact5`, `fib7` |
+| `prim eq` on distinct integers (`δ eq`, `inr ⟨⟩`) | `eq-cases` (inner), `fact5`, `fib7` |
+| `let′` | `let-shadow` (nested, shadowing), `closure`, `tuple-get`, `sum-inl`, `sum-inr`, `fact5` (binding closures) |
+| `fold` | `list-altsum` (the list and the self-application), `fact5` and `fib7` (inside `fix`), `Ω-eval` |
+| `unfold` (`unfold-v`) | `list-altsum`, `fact5`, `fib7`, `Ω-eval` |
+| an outcome `just (o-const B c)` | every terminating program, with `B` either `Int` or `𝔹` |
+| an outcome `nothing` (timeout) | `Ω-eval`, `fact5-timeout` |
+| an outcome `just o-error` | none, because the interpreter has no error case, and `proof/Semantics/ClockedInterpreters/NoError.agda` proves that it never errs |
+
+The programs end at constants on purpose, so the observations of
+functions, tuples and injections (`o-fun`, `o-tuple`, `o-inl`, `o-inr`)
+appear in no expected result.
+
 ## Assumptions
 
 Every file is checked with `--safe`, and there are no postulates

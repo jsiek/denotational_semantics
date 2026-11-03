@@ -52,6 +52,11 @@
   The experiment of mixing semantics is not part of the paper; it is
   checked from FPC/Experiments.agda.
 
+  The example programs of
+  FPC/proof/Compiler/Examples/InterpExamples.agda run on FPC's clocked
+  interpreter, and FPC/README.md lists which interpreter clause each
+  one exercises.
+
   agda/FPC/ mirrors agda/ISWIM/: FPC/X.agda corresponds to ISWIM/X.agda
   (with ISWIM/Language/Typed/ as FPC/Language/ and
   ISWIM/Semantics/<style>/Typed/ as FPC/Semantics/<style>/), and the
@@ -86,3 +91,4 @@ import FPC.proof.Semantics.ClockedInterpreters.NoError
 import FPC.proof.Semantics.ReductionSemantics.NoError
 import FPC.proof.Compiler.Examples.RecursionExample
 import FPC.proof.Compiler.Examples.RecursionInterp
+import FPC.proof.Compiler.Examples.InterpExamples
