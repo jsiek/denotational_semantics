@@ -8,7 +8,7 @@ compiler, each proved correct in several semantic styles:
   Calculus, a typed call-by-value λ-calculus with iso-recursive types.
   This is the development of the PLDI 2027 paper submission.
 * **ISWIM** (`agda/ISWIM/`): a compiler for ISWIM, an untyped
-  call-by-value λ-calculus. It is not part of the PLDI 2027 submission.
+  call-by-value λ-calculus.
 
 The modules that the two share (the frameworks, the primitives, the
 observations) are directly in `agda/`. `agda/README.md` describes the
@@ -81,7 +81,7 @@ semantics for the clocked interpreters.
   `--tokens` or `--chars` for the other measures. `papers/PLDI-2027/loc.md`
   discusses the counts.
 * **Artifact.** `make artifact` writes the anonymized artifact of the
-  paper, which contains only the FPC development and the shared modules,
+  paper, which contains the FPC development and the shared modules,
   to `_artifact/` (see `artifact/export.py`).
 
 ## The ISWIM development
