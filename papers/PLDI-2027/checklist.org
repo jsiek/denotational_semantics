@@ -9,7 +9,7 @@
 - public stuff is more important for us to check
 - even though the private stuff is not as important, it still needs to be checked because it affects our claims about proof lengths
 - A part of checking the proofs is to see whether the proofs can be made shorter (as time permits)
-  
+
 ** TODO Finish high priority tasks marked by ＊ followed by a person's initials in the tables below
 ** TODO Finish lower priority tasks marked by a person's initials in the tables below
 
@@ -36,7 +36,7 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 
 ** TODO (Tianyu) Check definition of compiler pass simplify
 ** TODO (Darshal) Check definitions of compiler passes from enclose to select instructions
-** TODO (Tianyu/Darshal) spot check the lemmas corresponding to the empty cells in the table above 
+** TODO (Tianyu/Darshal) spot check the lemmas corresponding to the empty cells in the table above
 
 * Comparison of semantics/proofs
 - when denotational equality => denotational proofs are small
@@ -45,7 +45,7 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 - proof size comparison: Graph > Scott, Interp > Graph, ...
 
 ** TODO Check that the above claims are true as we go through the proofs
-  
+
 * Adequacy theorems
 
 Graph
@@ -61,19 +61,19 @@ Graph
 ** TODO (Tianyu) check the above adequacy theorems
 Each edge in the graph above represents adequacy between the two edge-connected
 semantics. Replace ✗ with ✓ on the graph edges once the check is done.
- 
+
 * Definitions for languages and their semantics
 
-| Languages \ Semantics | Graph  | Scott  | Red | CEK  | Interp |
-|-----------------------+--------+--------+-----+------+--------|
-| ＊ FPC                | D✓    |        | T✓ | T    | ＊ D   |
+| Languages \ Semantics | Graph | Scott  | Red | CEK  | Interp |
+|-----------------------+-------+--------+-----+------+--------|
+| ＊ FPC                | D✓    |        | T✓  | T✓   | ＊ D   |
 | EnvClos               | ＊ J✓ | ＊ J/M |     |      |        |
 | PairClos              | ＊ J✓ | ＊ J/M |     |      |        |
-| GlobalFun             |        |        |     |      |        |
-| MNF                   |        |        |     |      |        |
-| Imp                   |        |        |     |      |        |
-| CFG                   |        |        |     |      |        |
-| ＊ Instrμ             | D      |        |     | ＊ D |        |
+| GlobalFun             |       |        |     |      |        |
+| MNF                   |       |        |     |      |        |
+| Imp                   |       |        |     |      |        |
+| CFG                   |       |        |     |      |        |
+| ＊ Instrμ             | D     |        |     | ＊ D |        |
 
 
 - Checking correctness of one definition of semantics for FPC and Instrμ is
@@ -90,5 +90,3 @@ semantics. Replace ✗ with ✓ on the graph edges once the check is done.
 Documentation must summarize this document while highlighting the important
 proofs/definitions/statements in the entire agda formalization along with where
 to find them in the file structure.
-  
-
