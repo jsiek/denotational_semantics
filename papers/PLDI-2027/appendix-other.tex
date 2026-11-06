@@ -205,8 +205,11 @@ Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the
 
 \paragraph{Machine for \fpc}
 
-A state of the CEK machine of \fpc\ either evaluates a term $M$ in an environment $\rho$ with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or returns a value $v$ to a continuation, $\mathit{ret}(v, \kappa)$. A continuation is a stack of frames, and each frame holds the work that remains after a subterm returns its value; for example, $\mathit{appL}(M, \rho, \kappa)$ holds the argument $M$ that the machine evaluates next.
-\defhead{States and continuations}{\varsigma \qquad \kappa}
+The machine is the CEK machine of \citet{Felleisen:kx}, extended from
+the $\lambda$-calculus to the constructs of \fpc.
+
+\defhead{States and continuations}{\varsigma ~\text{and}~ \kappa}
+\vspace{-5pt}
 \begin{align*}
   \varsigma &::= \mathit{eval}(M, \rho, \kappa) \mid \mathit{ret}(v, \kappa) \\
   \kappa &::= \mathit{halt} \mid \mathit{appL}(M, \rho, \kappa) \mid \mathit{appR}(f, \kappa)
@@ -216,6 +219,22 @@ A state of the CEK machine of \fpc\ either evaluates a term $M$ in an environmen
     \mid \mathit{primR}_p(n, \kappa) \\
  &\mid \mathit{letK}(x.\,N, \rho, \kappa) \mid \mathit{foldK}(\kappa) \mid \mathit{unfoldK}(\kappa)
 \end{align*}
+
+A state either evaluates a term $M$ in an environment $\rho$ with a continuation
+$\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or returns a value $v$ to a
+continuation, $\mathit{ret}(v, \kappa)$. The first is the CEK triple $\langle
+M, \rho, \kappa\rangle$. The second is the return state of \citet{Felleisen:kx},
+$\langle \ddagger, \emptyset, (\kappa\ \mathit{ret}\ v)\rangle$, whose
+environment is always empty, so we drop it. A continuation is a stack of frames,
+and each frame holds the work that remains after a subterm returns its value.
+For example, $\mathit{halt}$ is the empty continuation (their $\mathit{stop}$),
+$\mathit{appL}(M, \rho, \kappa)$ holds the argument $M$ that the machine
+evaluates next (their $\mathit{arg}$), and $\mathit{appR}(f,
+\kappa)$ holds the function $f$ that awaits the argument's value (their
+$\mathit{fun}$). The other frames are for primitives, $\kw{let}$, tuples, sums
+and recursive types. An environment is a list of values, and the environment
+inside a closure is stored as a tuple.
+
 \defhead{Steps of the CEK machine of \fpc}{\varsigma \longrightarrow \varsigma'}
 \begin{align*}
   \mathit{eval}(x, \rho, \kappa) &\longrightarrow \mathit{ret}(\rho(x), \kappa) \\
@@ -243,12 +262,22 @@ A state of the CEK machine of \fpc\ either evaluates a term $M$ in an environmen
   \mathit{ret}(v, \mathit{letK}(x.\,N, \rho, \kappa)) &\longrightarrow \mathit{eval}(N, \rho[x{:=}v], \kappa) \\
   \mathit{ret}(\kw{fold}\,v, \mathit{unfoldK}(\kappa)) &\longrightarrow \mathit{ret}(v, \kappa)
 \end{align*}
+
+The machine of a closed program $M$ starts in
+$\mathit{eval}(M, \emptyset, \mathit{halt})$. The terminal state is
+$\mathit{ret}(v, \mathit{halt})$. We define the final observation as follows.
+
 \defhead{Final observation of the CEK machine of \fpc}{\varsigma \longrightarrow \mathsf{stop}(o)}
 \[
   \mathit{ret}(v, \mathit{halt}) \longrightarrow \mathsf{stop}(\mathit{obs}(v))
 \]
-The machine of a closed program $M$ starts in
-$\mathit{eval}(M, \emptyset, \mathit{halt})$.
+
+In the Agda development, terms, environments and continuations are intrinsically
+typed, and a variable is a de~Bruijn index into the environment, so a state is
+well typed by construction. The CEK transitions are defined in the step
+function, $\texttt{step} : \texttt{State}
+\to \texttt{Next}\ \texttt{State}$, which maps each state to a next state or
+to a final observation.
 
 \paragraph{Machine for \instr}
 
