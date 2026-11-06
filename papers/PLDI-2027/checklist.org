@@ -9,6 +9,7 @@
 - public stuff is more important for us to check
 - even though the private stuff is not as important, it still needs to be checked because it affects our claims about proof lengths
 - A part of checking the proofs is to see whether the proofs can be made shorter (as time permits)
+- Check whether the Agda definitions match the Appendix
 
 ** TODO Finish high priority tasks marked by ＊ followed by a person's initials in the tables below
 ** TODO Finish lower priority tasks marked by a person's initials in the tables below
