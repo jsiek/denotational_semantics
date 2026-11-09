@@ -315,22 +315,29 @@ Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the
 \label{app:reduction}
 \agda{FPC/Semantics/ReductionSemantics/FPC.agda, Framework/Reduction.agda}
 
-The reduction semantics of \fpc\ rewrites closed terms, by
-substitution, call by value and left to right. The values are
+The reduction semantics of \fpc\ rewrites closed terms by substitution. The
+evaluation order is call by value and left to right. We define values as
+follows.
 \[
   V, W ::= \lambda x.\,N \mid c \mid \kw{tuple}\,(V_1, \ldots, V_n) \mid \kw{inl}\,V
     \mid \kw{inr}\,V \mid \kw{fold}\,V
 \]
-The function $\mathit{red}$ maps a closed term $M$ to a \emph{result},
-ranged over by $r$, which says whether $M$ is a value ($\mathsf{val}$)
-or reduces to a term $M'$ ($\mathsf{to}\,M'$):
+Following the Agda development, we define the reduction semantics as a function.
+The function $\mathit{red}$ maps a closed term $M$ to a \emph{result}, ranged
+over by $r$, which says whether $M$ is a value ($\mathsf{val}$) or reduces to a
+term $M'$ ($\mathsf{to}\,M'$).
 \[
   r ::= \mathsf{val} \mid \mathsf{to}\,M'
 \]
-In each case below, the subterms are reduced left to right. A subterm
-that reduces makes the whole term reduce in the same position, and once
+\noindent In the Agda code, a result has a third
+case ($\mathsf{error}$) for a term that is stuck. However, no closed well-typed
+term is stuck, so we omit that case above.
+
+We present the definition of $\mathit{red}$ below, which is the core of
+reduction semantics. In each case, the subterms are reduced left to right. A
+subterm that reduces makes the whole term reduce in the same position, and once
 the subterms are values the term takes its own step.
-\defhead{One reduction of a closed term}{\mathit{red}(M) = r}
+\defhead{Reduction of a closed term}{\mathit{red}(M) = r}
 \begin{align*}
   \mathit{red}(V) &= \mathsf{val} \\
   \mathit{red}(L\;M) &= \mathsf{to}\,(L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
@@ -352,18 +359,21 @@ the subterms are values the term takes its own step.
   \mathit{red}(\kw{unfold}\;M) &= \mathsf{to}\,(\kw{unfold}\;M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
  &= \mathsf{to}\,V &&\text{if } M = \kw{fold}\,V
 \end{align*}
-Here $\delta_p(n, m)$ is read as a term. The result of a primitive is a
-value, and the result $\mathit{obs}(V)$ of a value is as in
-Appendix~\ref{app:observations}, with $\mathit{fun}$ for $\lambda
-x.\,N$. A closed well-typed term is a value or reduces, so these cases
-cover every such term.\footnote{The Agda definition also has a result
-$\mathsf{error}$ for a term that is stuck, which no closed well-typed
-term is, and it writes the cases that reduce a subterm with one
-combinator, $\mathit{step\text{-}in}$, that propagates a subterm's
-reduction to the whole term. The equations above are that definition
-with the combinator unfolded.} The reduction semantics of a closed
-program $M$ is the machine whose states are closed terms and which
-starts at $M$.
+Here $\delta_p(n, m)$ is the result of a primitive operator, which is a value.
+The observation $\mathit{obs}(V)$ of a value is as in
+Appendix~\ref{app:observations}, with $\mathit{fun}$ for $\lambda x.\,N$. A
+closed well-typed term is a value or reduces, so these cases cover every such
+term. The function is deterministic and total by construction.
+
+In the Agda development, the cases that reduce a subterm are written with one
+combinator, $\mathit{step\text{-}in}(f, r, k)$. If the subterm reduces, by $r$,
+then so does the whole term, in the evaluation context $f$; if the subterm is a
+value, the reduction continues with $k$. The equations above are equivalent to
+the Agda definition, just with the combinator unfolded.
+
+With the $\mathit{red}$ function defined, we define single-step reduction and
+final observation as follows.
+%%%%%
 \defhead{Steps and final observation of the reduction semantics}{M \longrightarrow M' \qquad M \longrightarrow \mathsf{stop}(o)}
 \[
   M \longrightarrow M' \ \text{ if } \mathit{red}(M) = \mathsf{to}\,M'
