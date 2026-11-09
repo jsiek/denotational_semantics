@@ -324,19 +324,19 @@ follows.
 \]
 Following the Agda development, we define the reduction semantics as a function.
 The function $\mathit{red}$ maps a closed term $M$ to a \emph{result}, ranged
-over by $r$, which says whether $M$ is a value ($\mathsf{val}$) or reduces to a
-term $M'$ ($\mathsf{to}\,M'$).
+over by $r$, which says whether $M$ is a value ($\mathsf{val}$), reduces to a
+term $M'$ ($\mathsf{to}\,M'$), or is stuck ($\mathsf{error}$). The stuck case is
+there only to make $\mathit{red}$ total. A closed well-typed term does not get
+stuck, because \fpc\ is type safe.
 \[
-  r ::= \mathsf{val} \mid \mathsf{to}\,M'
+  r ::= \mathsf{val} \mid \mathsf{to}\,M' \mid \mathsf{error}
 \]
-\noindent In the Agda development, a result has a third
-case ($\mathsf{error}$) for a term that is stuck. However, no closed well-typed
-term is stuck, so we omit that case above.
 
 The definition of $\mathit{red}$ below is the core of the reduction semantics.
-In each case, the subterms are reduced left to right. A subterm that reduces
-makes the whole term reduce in the same position, and once the subterms are
-values the term takes its own step.
+The function $\mathit{red}$ is deterministic and total by construction. In each
+case, the subterms are reduced left to right. A subterm that reduces makes the
+whole term reduce in the same position, and once the subterms are values the
+term takes its own step.
 \defhead{Reduction of a closed term}{\mathit{red}(M) = r}
 \begin{align*}
   \mathit{red}(V) &= \mathsf{val} \\
@@ -357,37 +357,38 @@ values the term takes its own step.
   \mathit{red}(\kw{let}\;x{=}M\;\kw{in}\;N) &= \mathsf{to}\,(\kw{let}\;x{=}M'\;\kw{in}\;N) &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
  &= \mathsf{to}\,(N[x{:=}V]) &&\text{if } M = V \\
   \mathit{red}(\kw{unfold}\;M) &= \mathsf{to}\,(\kw{unfold}\;M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
- &= \mathsf{to}\,V &&\text{if } M = \kw{fold}\,V
+ &= \mathsf{to}\,V &&\text{if } M = \kw{fold}\,V \\
+  \mathit{red}(M) &= \mathsf{error} &&\text{otherwise}
 \end{align*}
 Here $\delta_p(n, m)$ is the result of a primitive operator, which is a value,
 read as a term. The observation $\mathit{obs}(V)$ of a value is as in
-Appendix~\ref{app:observations}, with $\mathit{fun}$ for $\lambda x.\,N$. A
-closed well-typed term is a value or reduces, so the above cases cover every
-such term. The function $\mathit{red}$ is deterministic and total by
-construction.
+Appendix~\ref{app:observations}, with $\mathit{fun}$ for $\lambda x.\,N$.
 
 In the Agda development, the cases that reduce a subterm are written with one
 combinator, $\mathit{step\text{-}in}(f, r, k)$. If the subterm reduces, by $r$,
 then so does the whole term, in the evaluation context $f$; if the subterm is a
-value, the reduction continues with $k$. The equations above are the Agda
-definition with the combinator unfolded.
+value, the reduction continues with $k$; and if the subterm is stuck, so is the
+whole term. The equations above are the Agda definition with the combinator
+unfolded.
 
 With the function $\mathit{red}$ defined, we define single-step reduction and
 final observation as follows. A closed program $M$ runs by these steps, so it
 terminates and diverges in the sense of Appendix~\ref{app:observations}.
 %%%%%
 \defhead{Steps and final observation of the reduction semantics}{M \longrightarrow M' \qquad M \longrightarrow \mathsf{stop}(o)}
-\[
+\vspace{-10pt}
+\begin{align*}
   M \longrightarrow M' \ \text{ if } \mathit{red}(M) = \mathsf{to}\,M'
   \qquad\qquad
-  M \longrightarrow \mathsf{stop}(\mathit{obs}(M)) \ \text{ if } \mathit{red}(M) = \mathsf{val}
-\]
+  & M \longrightarrow \mathsf{stop}(\mathit{obs}(M)) \ \text{ if } \mathit{red}(M) = \mathsf{val} \\
+  & M \longrightarrow \mathsf{stop}(\mathit{error}) \ \text{ if } \mathit{red}(M) = \mathsf{error}
+\end{align*}
 
-The first-order languages Imp, CFG, and \instr\ have no binders, so
-the reduction-semantics development uses the machines of
-Appendix~\ref{app:machines} for them, and shares the proofs of
-\pass{explicate control} and \pass{select instructions} with the
-abstract-machine development.
+The languages Imp, CFG, and \instr\ are first order, so their abstract machines
+of Appendix~\ref{app:machines} serve as their reduction semantics.
+
+%% and shares the proofs of \pass{explicate control} and \pass{select
+%% instructions} with the abstract-machine development.
 
 \begin{proposition}[Correctness, reduction semantics]\label{prop:reduction}
 Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the reduction semantics of \fpc\ on $M$ terminates with $n$ if and only if the machine of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two are equivalent.
