@@ -165,12 +165,16 @@ application. It collects the outputs of the entries of $D$ whose input
 is contained in the argument $E$. For example, $\den{\lambda x.\, x +
   1}$ contains the entry $[n] \mapsto n{+}1$ for every integer $n$, and
 $\den{(\lambda x.\, x + 1)\; 3} = \{4\}$.
-
+%
 For a higher-order example, $\den{\lambda f.\, \lambda x.\, f\;(f\;x)}$
-contains the entry $[\, [0] \mapsto 1,\; [1] \mapsto 2 \,] \mapsto
-([0] \mapsto 2)$, whose input has one entry for each call to $f$. That
-input is included in $\den{\lambda x.\, x + 1}$, so applying the
-function to $\lambda x.\, x + 1$ and then to $0$ gives $\{2\}$.
+contains the entry
+\[
+[\, [0] \mapsto 1,\; [1] \mapsto 2 \,] \mapsto
+([0] \mapsto 2)
+\]
+whose input has one entry for each call to $f$. That input is included
+in $\den{\lambda x.\, x + 1}$, so applying the function to $\lambda
+x.\, x + 1$ and then to $0$ gives $\{2\}$.
 
 The other operators build and take apart data. The operator
 $\mathsf{pair}$ builds pairs, and $\car$ and $\cdr$ take their
