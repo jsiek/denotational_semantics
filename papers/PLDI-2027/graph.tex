@@ -126,24 +126,23 @@ as an inductive data type, can provide that.
 
 \paragraph{Graph elements}
 
-An element is a finite piece of evidence about a value
-(Figure~\ref{fig:graph-ops}). A row of a table is an element $V
-\mapsto w$, called an \emph{entry}, whose input $V$ is a list of
-elements\footnote{We sometimes use a list of elements where a set of
-elements is expected, and assume the natural conversion takes place.}
-and whose output $w$ is an element. (The input of an entry could
-instead be a single element, as in filter models
+An element is a finite and partial description of a term's behavior
+(Figure~\ref{fig:graph-ops}). A row of a table is represented by an
+element $V \mapsto w$, called an \emph{entry}, whose input $V$ is a
+list of elements\footnote{We sometimes use a list of elements where a
+set of elements is expected, and assume the natural conversion takes
+place.}  and whose output $w$ is an element.\footnote{The input of an
+entry could instead be a single element, as in filter models
 \citep{Barendregt:1983aa}, but a list makes the metatheory cleaner
-because the argument of a function is often itself a function, and $V$
-can then contain one entry for each call to it.) The element $\nu$
+because the argument of a function is often a function, and $V$
+can contain one entry for each call to it.} The element $\nu$
 records that a term evaluates to a function, without describing any of
-the function's rows. The other elements
-describe the data of our languages: a constant $c$; a pair
-$\pairv{u}{v}$, which PairClos uses for closures; a tuple element
-$\mathsf{tup}_i(v)$, which says that component $i$ of a tuple is
-described by $v$; the injections $\mathsf{left}(v)$ and
-$\mathsf{right}(v)$ of a sum; and the empty tuple $\langle\rangle$.
-A denotation is a set of elements.
+the function's rows. The other elements describe the data of our
+languages: a constant $c$; a pair $\pairv{u}{v}$, which we use
+for closures; a tuple element $\mathsf{tup}_i(v)$, which says that
+component $i$ of a tuple is described by $v$; the injections
+$\mathsf{left}(v)$ and $\mathsf{right}(v)$ of a sum; and the empty
+tuple $\langle\rangle$.  A denotation is a set of elements.
 
 \paragraph{Operators}
 
