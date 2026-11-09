@@ -271,17 +271,18 @@ its uses with auxiliary lemmas, records, or opaque definitions.
 \subsection{Threats to Validity}
 
 We measure the size of the proofs, which is only a proxy for the
-effort of writing them. Lines of Agda depend on layout; lexical tokens
-and non-whitespace characters do not, but they are proxies too. The
-three measures agree on the ranking. For example, by tokens the graph model's
-total is 1.22 times the interpreters', against 1.20 times by
+effort of writing, checking, and maintaining them. Lines of Agda
+depend on layout; lexical tokens and non-whitespace characters are
+bettern in this regard but they are still proxies. Nevertheless, the
+three measures agree on the ranking. For example, by tokens the graph
+model's total is 1.22 times the interpreters', against 1.20 times by
 lines. Size also says little about difficulty, which depends on
 whether a proof has precedent in the literature or its authors must
 invent it. Because experience carries over from one development to the
 next, we gave every development a final cleanup pass under the same
-rules (shorten and clarify the proofs but change no statement
-and move nothing into the uncounted infrastructure). The cleanup pass
-did not change the order of the four other proofs; the Scott-domain proof,
+rules (shorten and clarify the proofs but change no statement and move
+nothing into the uncounted infrastructure). The cleanup pass did not
+change the order of the four other proofs; the Scott-domain proof,
 written last, shrank from 3,457 to 2,485 lines, which moved it ahead
 of reduction semantics.
 
