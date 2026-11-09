@@ -95,12 +95,14 @@ that describes its behavior. In a graph model, that object is a set of
 finite pieces of evidence about the behavior, which we call
 \emph{elements}. Our model is a variant of the model of
 \citet{Engeler:1981aa}, which we extend with the data structures of
-our compiler's languages. We first explain how the model represents
-functions, then how it handles recursion and divergence, and then why
-we require consistency, which rules out sets of elements that cannot
-all describe the same value. Figure~\ref{fig:graph-ops} defines the
+our compiler's languages. Figure~\ref{fig:graph-ops} defines the
 elements, the operators on sets of elements from which we build the
-semantics of all our languages, and the semantics of \fpc.  We end
+semantics of all our languages, and the semantics of \fpc. We first
+explain how the model represents functions, then introduce the
+elements, and then the operators. We then explain how the model
+handles recursion and divergence, and why we require consistency,
+which rules out sets of elements that cannot all describe the same
+value. We end
 this section with the properties of the semantics that our proofs rely
 on, including a $\beta$-law.
 
@@ -122,41 +124,59 @@ input is \emph{included} in the argument, rather than equal to it. A
 table then needs only a smaller copy of itself, and elements, defined
 as an inductive data type, can provide that.
 
-Concretely, a row is an element $V \mapsto w$, called an \emph{entry},
-whose input $V$ is a list of elements\footnote{We sometimes use a list
-of elements where a set of elements is expected, and assume the
-natural conversion takes place.} and whose output $w$ is an
-element. (The input of an entry could instead be a single element, as
-in filter models \citep{Barendregt:1983aa}, but a list makes the
-metatheory cleaner because the argument of a function is often itself a
-function, and $V$ can then contain one entry for each call to it.)
+\paragraph{Graph elements}
 
-The meaning of a function, given by the operator $\Lambda$
-(Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
-\mapsto w$ such that each output $w$ is in the meaning of the
-function's body in an environment that maps its parameter to input
-$V$. The input $V$ must be nonempty and consistent, written
-$\mathsf{con}(V)$, which we explain at the end of this section. In the
-semantics of \fpc\ (Figure~\ref{fig:graph-ops}), an environment $\rho$
-maps each variable to a set of elements, $\rho[x{:=}X]$ maps $x$ to $X$
-and every other variable as $\rho$ does, and $\boldsymbol{\lambda}$
-denotes a mathematical function. The operator $D \app E$ gives the
-meaning of application. It collects the outputs of the entries of $D$
-whose input is contained in the argument $E$.
-For example, $\den{\lambda x.\, x + 1}$ contains the entry $[n]
-\mapsto n{+}1$ for every integer $n$, and $\den{(\lambda x.\, x + 1)\;
-  3} = \{4\}$. Besides its entries, the meaning of every
-$\lambda$-abstraction contains the element $\nu$, which records that
-the term evaluates to a function and says nothing about the function's
-input--output behavior. Thus a
-$\lambda$-abstraction has a nonempty meaning, as befits a value in a
-call-by-value language, even if it is never applied. The other
-elements describe the data of our languages: a constant $c$; a pair
+An element is a finite piece of evidence about a value
+(Figure~\ref{fig:graph-ops}). A row of a table is an element $V
+\mapsto w$, called an \emph{entry}, whose input $V$ is a list of
+elements\footnote{We sometimes use a list of elements where a set of
+elements is expected, and assume the natural conversion takes place.}
+and whose output $w$ is an element. (The input of an entry could
+instead be a single element, as in filter models
+\citep{Barendregt:1983aa}, but a list makes the metatheory cleaner
+because the argument of a function is often itself a function, and $V$
+can then contain one entry for each call to it.) The element $\nu$
+records that a term evaluates to a function, without describing any of
+the function's rows. The other elements
+describe the data of our languages: a constant $c$; a pair
 $\pairv{u}{v}$, which PairClos uses for closures; a tuple element
 $\mathsf{tup}_i(v)$, which says that component $i$ of a tuple is
 described by $v$; the injections $\mathsf{left}(v)$ and
-$\mathsf{right}(v)$ of a sum; and the empty tuple
-$\langle\rangle$. The empty tuple also fills the positions of an
+$\mathsf{right}(v)$ of a sum; and the empty tuple $\langle\rangle$.
+A denotation is a set of elements.
+
+\paragraph{Operators}
+
+Each case of the semantics of \fpc\ (Figure~\ref{fig:graph-ops})
+applies an operator to the denotations of the parts of the term. In
+the semantics, an environment $\rho$ maps each variable to a set of
+elements, $\rho[x{:=}X]$ maps $x$ to $X$ and every other variable as
+$\rho$ does, and $\boldsymbol{\lambda}$ denotes a mathematical
+function.
+
+The meaning of a function, given by the operator $\Lambda$, is the set
+of entries $V \mapsto w$ such that the output $w$ is in the meaning of
+the function's body in an environment that maps its parameter to the
+input $V$, together with $\nu$. The input $V$ must be nonempty and
+consistent, written $\mathsf{con}(V)$, which we explain at the end of
+this section. Because of $\nu$, a $\lambda$-abstraction has a nonempty
+meaning, as befits a value in a call-by-value language, even if it is
+never applied. The operator $D \app E$ gives the meaning of
+application. It collects the outputs of the entries of $D$ whose input
+is contained in the argument $E$. For example, $\den{\lambda x.\, x +
+  1}$ contains the entry $[n] \mapsto n{+}1$ for every integer $n$, and
+$\den{(\lambda x.\, x + 1)\; 3} = \{4\}$.
+
+The other operators build and take apart data. The operator
+$\mathsf{pair}$ builds pairs, and $\car$ and $\cdr$ take their
+components. The operator $\mathcal{T}$ builds tuples, and
+$\pi_{\mathsf{tup}_i}$ takes component $i$. The operators
+$\mathsf{inl}$ and $\mathsf{inr}$ build injections, and $\mathcal{C}$
+gives the meaning of a $\kw{case}$. Like $\Lambda$, it binds the
+variable of a branch to a nonempty, consistent list, here of the
+payloads of the injections in the scrutinee. The operator
+$\mathsf{prim}_p$ applies a primitive to the integers in its operands.
+The empty tuple $\langle\rangle$ also fills the positions of an
 environment that hold no variable, because we represent environments
 as total functions whose positions are nonempty. The environment
 $\rho_0$ of a closed program maps every variable to
