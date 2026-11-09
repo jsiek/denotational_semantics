@@ -128,8 +128,7 @@ $\den{M}\rho \subseteq \den{M}\rho'$.
 
 %% Typing: definitions.tex (Types and Languages) and
 %% agda/FPC/Language/*.agda. Semantics: agda/FPC/Semantics/GraphModel/*.agda.
-This appendix gives, for each language of Section~\ref{sec:compiler} in the order of the pipeline, its type system and its semantics in the graph model. The type systems are those of our intrinsically typed Agda definitions, so every pass maps well-typed terms to well-typed terms; the semantics are the ones that Theorem~\ref{thm:compiler} and the proofs of Section~\ref{sec:compiler-proof} speak of. The base types
-are $\kw{Nat}$, $\kw{Int}$, $\kw{Bool}$, $\kw{Unit}$, and $\kw{Void}$.
+This appendix gives, for each language of Section~\ref{sec:compiler} in the order of the pipeline, its type system and its semantics in the graph model. The type systems are those of our intrinsically typed Agda definitions, so every pass maps well-typed terms to well-typed terms; the semantics are the ones that Theorem~\ref{thm:compiler} and the proofs of Section~\ref{sec:compiler-proof} speak of. Figure~\ref{fig:grammars} lists the base types.
 The result type $\mathit{out}(p)$ of a primitive is $\kw{Int}$ for
 $\kw{sub}$ and $\kw{tup}() + \kw{tup}()$ for $\kw{eq}$. 
 
