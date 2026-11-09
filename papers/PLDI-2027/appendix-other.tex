@@ -449,8 +449,9 @@ values and maps $\bot$ to $\bot$.
   \mathsf{seq}(d, e) &= e &&\text{if } d \text{ is defined}
 \end{align*}
 In every case that the equations do not cover, the result is $\bot$.
-As in the graph model (Figure~\ref{fig:graph-ops}), $\mathit{out}$ turns
-the result of a primitive into a value: $\mathit{out}(k) = \up{(k, ())}$
+The function $\mathit{out}$ turns the result of a primitive into a
+value, with booleans as injections, as in the graph model
+(Figure~\ref{fig:graph-ops}): $\mathit{out}(k) = \up{(k, ())}$
 for an integer $k$, $\mathit{out}(\mathsf{true}) = \up{(\mathit{left}, \langle\rangle)}$,
 and $\mathit{out}(\mathsf{false}) = \up{(\mathit{right}, \langle\rangle)}$.
 An environment maps variables to values, and the environment $\rho_0$

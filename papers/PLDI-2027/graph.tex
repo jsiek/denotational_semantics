@@ -54,15 +54,12 @@
   \mathsf{left}(V) & = & \{\, \mathsf{left}(v) \mid v \in V \,\}
     \qquad
   \mathsf{right}(V) \;=\; \{\, \mathsf{right}(v) \mid v \in V \,\}\\
-  \mathsf{prim}_p(D, E) & = & \{\, \mathit{out}(\delta(p, n, m)) \mid n \in D,\; m \in E \text{ integers} \,\}\\
+  \mathsf{prim}_p(D, E) & = & \{\, \delta(p, n, m) \mid n \in D,\; m \in E \text{ integers} \,\}\\
   \delta(\kw{sub}, n, m) & = & n - m
     \qquad
-  \delta(\kw{eq}, n, m) \;=\; (n = m)\\
-  \mathit{out}(n) & = & n
-    \qquad
-  \mathit{out}(\mathsf{true}) \;=\; \mathsf{left}(\langle\rangle)
-    \qquad
-  \mathit{out}(\mathsf{false}) \;=\; \mathsf{right}(\langle\rangle)
+  \delta(\kw{eq}, n, m) \;=\;
+    \mathsf{left}(\langle\rangle) \text{ if } n = m,
+    \text{ and } \mathsf{right}(\langle\rangle) \text{ otherwise}
 \end{array}
 \]
 
