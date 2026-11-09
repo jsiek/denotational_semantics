@@ -342,6 +342,7 @@ All of these bear on C6. None is indexed by a finite approximation on one side w
 | `3-540-10886-6_1.pdf` … `_5.pdf` | Polak, *Compiler Specification and Verification*, LNCS 124, 1981 (one PDF per chapter, I–V) | C1, C6, C7: first denotational, partly machine-checked compiler proof | I §1.9; III B4 |
 | `abramsky-1993.pdf` | Abramsky & Ong, "Full Abstraction in the Lazy Lambda Calculus", Inf. & Comp. 105, 1993 | adequacy by the domain logic (Thm 5.4.9); image-only scan, read page by page | III A4b |
 | `bahr-hutton-2022.pdf` | Bahr & Hutton, "Monadic Compiler Calculation", ICFP 2022 | C1, C3, C10: divergence in calculated compilers; the VM keeps closures | I §1.6 |
+| `cheng-2026.pdf` | Cheng, Wu, Wang & Cao, "Denotation-based Compositional Compiler Verification", TOPLAS 48(1), 2026 (read 2026-11-09) | C1, compositionality: relational trace-set denotations (typed Kleene algebra), open modules and semantic linking, CompCert front end, Rocq; first-order | I §1.5; intro next-step paragraph |
 | `clinger-1984.pdf` | Clinger, "The Scheme 311 Compiler", LFP 1984 | A2, C3, C4: target with closure-building `lambda` | I §1.9; III B5; `vlisp-clinger-wand.md` |
 | `filinski-2007.pdf` | Filinski, "On the relations between monadic semantics", TCS 2007 | C6: Pitts-style relations between two interpretations | III B5 |
 | `meyer-wand-1985.pdf` | Meyer & Wand, "Continuation Semantics in Typed Lambda-Calculi (Summary)", 1985 | C6: retractions instead of inclusive predicates | III B5 |

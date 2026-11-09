@@ -85,14 +85,26 @@ lacks many of the features of modern programming languages, such as
 mutable state, exceptions, and multi-threading, to name a few. The
 claims in this paper are specific to the compilation of FPC. We make
 no claims about the impact of semantic styles on proofs of correctness
-for compilers of other programming languages.
+for compilers of other programming languages.  Our proofs of
+correctness, like most of those cited above, are for whole
+programs. They relate the meaning of a closed source program to the
+meaning of its compiled code. Compositional compiler correctness
+\citep{Perconti:2014aa,Stewart:2015ab,Ramananandro:2015aa}, which
+addresses linking with separately compiled code or code written in
+another language, is just as important.
+\citet{Cheng:2026aa} achieve compositional compiler correctness with a
+denotational semantics of open modules and a semantic linking
+operator, for imperative first-order languages, including the front end
+of CompCert. Extending our denotational proofs to open terms and
+linking, through closure conversion, would be a good next step.
 
 The compiler for FPC that we study begins with a source optimization
 pass based on the cp0 pass of Chez Scheme
 \citep{Waddell:1997fk,Dybvig:2006aa}, includes three passes for
 closure conversion, and four back-end passes that target a typed
-low-level intermediate language. For this compiler we seek to answer
-three research questions:
+low-level intermediate language that is on the way to x86
+assembly. For this compiler we seek to answer three research
+questions:
 \begin{description}
 \item[RQ1] Can we prove correctness of this compiler with respect to a
   denotational semantics?
@@ -104,9 +116,9 @@ three research questions:
 \end{description}
 
 We answer RQ1 affirmatively, in two denotational models
-(Theorems~\ref{thm:compiler} and~\ref{thm:scott}). Our first
-model is a graph model, in which a program denotes a set of
-inductively defined graph
+(Theorems~\ref{thm:compiler} and~\ref{thm:scott}). Our first model is
+a graph model, in which a program denotes a set of inductively defined
+graph
 elements~\citep{Scott:1976lq,Engeler:1981aa,Plotkin:1993ab}. Each
 element is a finite description of the program's behavior, and in
 particular, the semantics of a function is given by a set of elements
@@ -116,28 +128,27 @@ introduce a new kind of relation between denotations, the
 finite set of target graph elements (a finite approximation) to a
 possibly infinite source denotation, and to define the relation by
 recursion on the depth of the elements in the finite set
-(Lemma~\ref{lem:delay} in Section~\ref{sec:approx-lr}).
-Our second model uses Scott domains, in
-which a program denotes an element of a universal domain of tagged
-values~\citep{Scott:1982aa}.  There we define the relation by
-recursion on the stages of the bilimit that constructs the domain
-(Lemma~\ref{lem:scott-delay} in Section~\ref{sec:scott-delay}),
-as \citet{Reynolds:1974aa} did to
+(Lemma~\ref{lem:delay} in Section~\ref{sec:approx-lr}).  Our second
+model uses Scott domains, in which a program denotes an element of a
+universal domain of tagged values~\citep{Scott:1982aa}.  There we
+define the relation by recursion on the stages of the bilimit that
+constructs the domain (Lemma~\ref{lem:scott-delay} in
+Section~\ref{sec:scott-delay}), as \citet{Reynolds:1974aa} did to
 relate the direct and continuation semantics of an untyped
-$\lambda$-calculus. Other styles of denotational semantics
-remain to be evaluated for compiler correctness and closure
-conversion, among them synthetic
-domain theory \citep{Rosolini:1986aa,Hyland:1991aa} and its guarded
-variant \citep{Birkedal:2011aa,Mogelberg:2016aa}, guarded interaction
-trees \citep{Frumin:2024aa}, categorical semantics
+$\lambda$-calculus. Other styles of denotational semantics remain to
+be evaluated for compiler correctness and closure conversion, among
+them synthetic domain theory \citep{Rosolini:1986aa,Hyland:1991aa} and
+its guarded variant \citep{Birkedal:2011aa,Mogelberg:2016aa}, guarded
+interaction trees \citep{Frumin:2024aa}, categorical semantics
 \citep{Fiore:1994aa}, the partiality monad \citep{Danielsson:2012aa},
 and game semantics \citep{Hyland:2000ve}.
 
 On top of our denotational results for closure conversion, we develop
 two correctness proofs for the eight-pass compiler from \fpc{} to a
-typed low-level intermediate language. For seven of the eight passes, correctness is
-expressed as equality of denotations (Lemma~\ref{lem:equational}) and the proofs are by induction
-on terms and use equational reasoning.  The exception is the pass that
+typed low-level intermediate language. For seven of the eight passes,
+correctness is expressed as equality of denotations
+(Lemma~\ref{lem:equational}) and the proofs are by induction on terms
+and use equational reasoning.  The exception is the pass that
 separates the code of each closure from its environment, \pass{split
   closure}, whose reflection proof uses the approximant logical
 relation for the graph model and the relation on stages of the bilimit
@@ -146,20 +157,24 @@ for Scott domains.
 To answer RQ2 and RQ3, we compare the two denotational proofs with
 proofs of correctness of the same compiler with respect to three
 operational semantics
-(Propositions~\ref{prop:interp}--\ref{prop:reduction}), each proved using the technique usual for its
-style: clocked interpreters with relations on values, abstract
-machines with simulations, and reduction semantics with simulations.
-Earlier work that compares
-proofs of compiler correctness focuses on a single phase or pass of a
-compiler \citep{Owens:2016aa,Kahn:2025aa,Knothe:2026aa}; ours is the
-first on a whole compiler for a higher-order language.
+(Propositions~\ref{prop:interp}--\ref{prop:reduction}), each proved
+using the technique usual for its style: clocked interpreters with
+relations on values, abstract machines with simulations, and reduction
+semantics with simulations.
 %
-Each of the five correctness results is with respect to a different
-semantics, so one might wonder whether the semantics and therefore the
-results are equivalent. To check that our mechanized semantics agree,
-we prove the graph model adequate with respect to the interpreters,
-the abstract machines, and the reduction semantics, and the
-Scott-domain semantics adequate with respect to the interpreters
+We mechanize all five compiler correctness proofs in the Agda proof
+assistant \citep{Agda}.
+%
+Earlier work that compares proofs of
+compiler correctness focuses on a single phase or pass of a compiler
+\citep{Owens:2016aa,Kahn:2025aa,Knothe:2026aa}; ours is the first on a
+whole compiler for a higher-order language.  Each of the five
+correctness results is with respect to a different semantics, so one
+might wonder whether the semantics and therefore the results are
+equivalent. To check that our mechanized semantics agree, we prove the
+graph model adequate with respect to the interpreters, the abstract
+machines, and the reduction semantics, and the Scott-domain semantics
+adequate with respect to the interpreters
 (Proposition~\ref{prop:adequacy}), so the five results are equivalent.
 These proofs adapt prior proofs of adequacy
 \citep{Plotkin:1977oc,Plotkin:1985aa,Siek:2017ab}.
@@ -192,12 +207,15 @@ the Scott-domain proofs for all of the compiler passes
 The rest of the paper is organized as follows.
 Section~\ref{sec:compiler} presents the compiler and its eight
 passes. Section~\ref{sec:graph-models} provides background on the
-graph model, and Section~\ref{sec:compiler-proof} describes the proof
-of correctness of each pass of the compiler with respect to the graph
-model.  In addition, Section~\ref{sec:scott-delay} describes the proof
-of correctness for \pass{split closure} with respect to Scott domains.
-Section~\ref{sec:adequacy} proves the denotational semantics adequate
-with respect to the operational semantics.
+graph model. Appendix~\ref{app:scott} defines the Scott domains that
+we use, but for the background on domain theory we refer the reader to
+\citet{Scott:1982aa}, \citet{Winskel:1993aa}, and
+\citet{Abramsky:1994cr}. Section~\ref{sec:compiler-proof} describes
+the proof of correctness of each pass of the compiler with respect to
+the graph model.  In addition, Section~\ref{sec:scott-delay} describes
+the proof of correctness for \pass{split closure} with respect to
+Scott domains.  Section~\ref{sec:adequacy} proves the denotational
+semantics adequate with respect to the operational semantics.
 Section~\ref{sec:evaluation} compares the five proofs of correctness
 and identifies which properties of the passes contribute to the sizes
 of the proofs in the different semantic styles.

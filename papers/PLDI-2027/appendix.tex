@@ -100,37 +100,11 @@ elements (zero for the empty list):
 \agda{Framework/GraphModel/Ops.agda, Semantics/Graph/Prim.agda}
 
 %% Framework/GraphModel/Ops.agda (𝒞, guard-n, strict), OpsBase.agda (ℬ),
-%% Semantics/Graph/Prim.agda (primD, out), Language/Prim.agda (δ).
+%% Semantics/Graph/Prim.agda (primD, out), Language/Prim.agda (δ);
+%% 𝒞 and primD are in Figure 3 (graph.tex).
 Besides the operators of Figure~\ref{fig:graph-ops}, the semantics of
 the languages use the following ones. The empty tuple means
-$\mathcal{T}() = \{\langle\rangle\}$. A primitive applies to the integers
-in its operands; $\kw{eq}$ produces $\mathsf{left}(\langle\rangle)$ for
-true and $\mathsf{right}(\langle\rangle)$ for false:
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \mathsf{prim}_p(D, E) & = & \{\, \mathit{out}(\delta(p, n, m)) \mid n \in D,\; m \in E \text{ integers} \,\}\\
-  \delta(\kw{sub}, n, m) & = & n - m
-  \qquad
-  \delta(\kw{eq}, n, m) = (n = m)\\
-  \mathit{out}(n) & = & n
-  \qquad
-  \mathit{out}(\mathsf{true}) = \mathsf{left}(\langle\rangle)
-  \qquad
-  \mathit{out}(\mathsf{false}) = \mathsf{right}(\langle\rangle)
-\end{array}
-\]
-The operator $\mathcal{C}$ gives the meaning of a $\kw{case}$. Like
-$\Lambda$, it binds only nonempty, consistent, finite lists, here of
-the payloads of the injections in the scrutinee:
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \mathcal{C}(D, F, G) & = &
-    \{\, w \mid V \neq [\,],\; \mathsf{con}(V),\; \mathsf{left}(V) \subseteq D,\; w \in F(V) \,\}\\
-  & \cup & \{\, w \mid V \neq [\,],\; \mathsf{con}(V),\; \mathsf{right}(V) \subseteq D,\; w \in G(V) \,\}
-\end{array}
-\]
-where $\mathsf{left}(V) = \{\mathsf{left}(v) \mid v \in V\}$, and
-likewise for $\mathsf{right}$. A guard makes a set strict in other sets:
+$\mathcal{T}() = \{\langle\rangle\}$. A guard makes a set strict in other sets:
 \[
   \mathsf{guard}(D_1, \ldots, D_n;\, E) = E
   \text{ if } D_1, \ldots, D_n \text{ are nonempty, and } \emptyset \text{ otherwise.}
@@ -161,9 +135,9 @@ variables as de~Bruijn indices, and every term is well scoped by construction.
 The type systems are those of our intrinsically typed Agda definitions, so every
 pass maps well-typed terms to well-typed terms; the semantics are the ones that
 Theorem~\ref{thm:compiler} and the proofs of Section~\ref{sec:compiler-proof}
-speak of. The base types are $\kw{Nat}$, $\kw{Int}$, $\kw{Bool}$, $\kw{Unit}$,
-and $\kw{Void}$. The result type $\mathit{out}(p)$ of a primitive is $\kw{Int}$
-for $\kw{sub}$ and $\kw{tup}() + \kw{tup}()$ for $\kw{eq}$.
+speak of. Figure~\ref{fig:grammars} lists the base types. The result type
+$\mathit{out}(p)$ of a primitive is $\kw{Int}$ for $\kw{sub}$ and $\kw{tup}()
++ \kw{tup}()$ for $\kw{eq}$.
 
 In the semantics, an environment $\rho$ maps each variable to a set of
 elements, and $\rho[x{:=}X]$ maps $x$ to $X$ and every other variable
@@ -213,28 +187,7 @@ Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
   \dfrac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \end{array}
 \]
-The semantics follows Section~\ref{sec:graph-models}, with the operators of Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
-\defhead{Semantics of \fpc}{\den{M}\rho = D}
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
-  \den{x}\rho & = & \rho(x) &
-  \den{c}\rho & = & \{c\}\\
-  \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X]) &
-  \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho\\
-  \den{\kw{tuple}\;(M_1, \ldots, M_n)}\rho & = & \mathcal{T}(\den{M_1}\rho, \ldots, \den{M_n}\rho) &
-  \den{\kw{get}_i\,M}\rho & = & \pi_{\mathsf{tup}_i}(\den{M}\rho)\\
-  \den{\kw{inl}\;M}\rho & = & \mathsf{inl}(\den{M}\rho) &
-  \den{\kw{inr}\;M}\rho & = & \mathsf{inr}(\den{M}\rho)\\
-  \den{\kw{prim}_p\;L\;M}\rho & = & \mathsf{prim}_p(\den{L}\rho, \den{M}\rho) &
-  \den{\kw{fold}\;M}\rho & = & \den{M}\rho\\
-  \den{\kw{let}\;x = M\;\kw{in}\;N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X]) \app \den{M}\rho &
-  \den{\kw{unfold}\;M}\rho & = & \den{M}\rho
-\end{array}
-\]
-\[
-  \den{\kw{case}\;L\;(x.\,M)\;(y.\,N)}\rho =
-    \mathcal{C}(\den{L}\rho,\; \mlam{X} \den{M}\rho[x{:=}X],\; \mlam{Y} \den{N}\rho[y{:=}Y])
-\]
+Figure~\ref{fig:graph-ops} gives the semantics of \fpc.
 
 \subsection{The Clos and EnvClos Languages}
 \agda{FPC/Language/Clos.agda, FPC/Language/EnvClos.agda, FPC/Semantics/GraphModel/Clos.agda, FPC/Semantics/GraphModel/EnvClos.agda}

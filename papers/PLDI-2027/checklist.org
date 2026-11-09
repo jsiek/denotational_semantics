@@ -65,20 +65,21 @@ semantics. Replace ✗ with ✓ on the graph edges once the check is done.
 
 * Definitions for languages and their semantics
 
-| Languages \ Semantics | Graph | Scott  | Red | CEK  | Interp |
-|-----------------------+-------+--------+-----+------+--------|
-| ＊ FPC                | D✓    |        | T✓  | T✓   | ＊ D   |
-| EnvClos               | ＊ J✓ | ＊ J/M |     |      |        |
-| PairClos              | ＊ J✓ | ＊ J/M |     |      |        |
-| GlobalFun             |       |        |     |      |        |
-| MNF                   |       |        |     |      |        |
-| Imp                   |       |        |     |      |        |
-| CFG                   |       |        |     |      |        |
-| ＊ Instrμ             | D     |        |     | ＊ D |        |
+| Languages \ Semantics | Graph  | Scott  | Red | CEK | Interp |
+|-----------------------+--------+--------+-----+-----+--------|
+| ＊ FPC                | D✓    |        | T✓ | T✓ | ＊ D✓ |
+| EnvClos               | ＊ J✓ | ＊ J/M |     |     |        |
+| PairClos              | ＊ J✓ | ＊ J/M |     |     |        |
+| GlobalFun             |        |        |     |     |        |
+| MNF                   |        |        |     |     |        |
+| Imp                   |        |        |     |     |        |
+| CFG                   |        |        |     |     |        |
+| ＊ Instrμ             | D      |        |     |     | ＊ D   |
+|                       |        |        |     |     |        |
 
 
 - Checking correctness of one definition of semantics for FPC and Instrμ is
-  highest priority (we choose Interp semantics for checking). CEK and Interp
+  highest priority (we choose Interp semantics for checking). CEK and reduction
   semantics are same for Instrμ
 - Graph and Scott semantics for EnvClos and PairClos are important because they
   are related to our novel claim about split closure

@@ -5,19 +5,20 @@ operational semantics such as abstract machines and interpreters are
 viable choices. Their correctness proofs reason about program
 execution using simulations and induction on evaluation. In this paper
 we explore whether denotational semantics can also be used in proofs
-of compiler correctness and evaluate the tradeoffs. Compiling a
-higher-order language to a first-order language requires closure
-conversion, but no prior proof of correctness with respect to
-denotational semantics covers closure conversion for a Turing-complete
-source language.  Compiler correctness requires that the denotation of
-a program be both preserved and reflected by the compiler. Without
-reflection, a compiler would be allowed to translate a diverging
-program into one that halts.  For closure conversion, reflection is
-the hard direction. We present the first denotational proofs of
-semantic reflection for closure conversion applied to a
-Turing-complete language, one proof with respect to a graph model and
-one with respect to Scott domains. For the graph-model proof we
-develop a new logical relation, the
+of compiler correctness and evaluate the tradeoffs.  We focus on a
+compiler from FPC, a language with lexically scoped functions and
+recursive types, to a first-order low-level intermediate language.
+The compiler includes closure conversion, but no prior proof of
+correctness with respect to denotational semantics covers closure
+conversion for a Turing-complete language.  Compiler correctness
+requires that the denotation of a program be both preserved and
+reflected by the compiler. Without reflection, a compiler would be
+allowed to translate a diverging program into one that halts.  For
+closure conversion, reflection is the hard direction. We present the
+first denotational proofs of semantic reflection for closure
+conversion applied to a Turing-complete language, one proof with
+respect to a graph model and one with respect to Scott domains. For
+the graph-model proof we develop a new logical relation, the
 \emph{approximant logical relation}, and for the Scott-domain proof we
 adapt a logical relation of Reynolds.
 
