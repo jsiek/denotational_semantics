@@ -329,14 +329,14 @@ term $M'$ ($\mathsf{to}\,M'$).
 \[
   r ::= \mathsf{val} \mid \mathsf{to}\,M'
 \]
-\noindent In the Agda code, a result has a third
+\noindent In the Agda development, a result has a third
 case ($\mathsf{error}$) for a term that is stuck. However, no closed well-typed
 term is stuck, so we omit that case above.
 
-We present the definition of $\mathit{red}$ below, which is the core of
-reduction semantics. In each case, the subterms are reduced left to right. A
-subterm that reduces makes the whole term reduce in the same position, and once
-the subterms are values the term takes its own step.
+The definition of $\mathit{red}$ below is the core of the reduction semantics.
+In each case, the subterms are reduced left to right. A subterm that reduces
+makes the whole term reduce in the same position, and once the subterms are
+values the term takes its own step.
 \defhead{Reduction of a closed term}{\mathit{red}(M) = r}
 \begin{align*}
   \mathit{red}(V) &= \mathsf{val} \\
@@ -359,20 +359,22 @@ the subterms are values the term takes its own step.
   \mathit{red}(\kw{unfold}\;M) &= \mathsf{to}\,(\kw{unfold}\;M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
  &= \mathsf{to}\,V &&\text{if } M = \kw{fold}\,V
 \end{align*}
-Here $\delta_p(n, m)$ is the result of a primitive operator, which is a value.
-The observation $\mathit{obs}(V)$ of a value is as in
+Here $\delta_p(n, m)$ is the result of a primitive operator, which is a value,
+read as a term. The observation $\mathit{obs}(V)$ of a value is as in
 Appendix~\ref{app:observations}, with $\mathit{fun}$ for $\lambda x.\,N$. A
-closed well-typed term is a value or reduces, so these cases cover every such
-term. The function is deterministic and total by construction.
+closed well-typed term is a value or reduces, so the above cases cover every
+such term. The function $\mathit{red}$ is deterministic and total by
+construction.
 
 In the Agda development, the cases that reduce a subterm are written with one
 combinator, $\mathit{step\text{-}in}(f, r, k)$. If the subterm reduces, by $r$,
 then so does the whole term, in the evaluation context $f$; if the subterm is a
-value, the reduction continues with $k$. The equations above are equivalent to
-the Agda definition, just with the combinator unfolded.
+value, the reduction continues with $k$. The equations above are the Agda
+definition with the combinator unfolded.
 
-With the $\mathit{red}$ function defined, we define single-step reduction and
-final observation as follows.
+With the function $\mathit{red}$ defined, we define single-step reduction and
+final observation as follows. A closed program $M$ runs by these steps, so it
+terminates and diverges in the sense of Appendix~\ref{app:observations}.
 %%%%%
 \defhead{Steps and final observation of the reduction semantics}{M \longrightarrow M' \qquad M \longrightarrow \mathsf{stop}(o)}
 \[
