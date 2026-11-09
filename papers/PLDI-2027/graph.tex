@@ -95,6 +95,9 @@ metatheory cleaner because the argument of a function is often itself a
 function, and $V$ can then contain one entry for each call to it.)
 
 \todo[inline]{Explain the rest of the graph elements, including $\nu$}
+\todo[inline]{Forward reference the Appendix for the definition
+  of consistency ($\mathsf{con}$).}
+\todo[inline]{Show the complete semantics for FPC in a figure.}
 
 The meaning of a function, given by operator $\Lambda$
 (Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
@@ -175,21 +178,25 @@ environments of these pairs are consistent with each other.
 %% The finitary premise holds for term meanings by `ok` in
 %% agda/FPC/proof/Semantics/GraphModel/{FPC,EnvClos,PairClos,GlobalFun}.agda (fin₁, fin₂).
 The meaning of a term is monotone in its environment
-(Lemma~\ref{lem:monotone}), and it is
-continuous in the sense that each element of the meaning depends on
-only finitely many elements of the environment. These properties,
-together with consistency, give the graph model a $\beta$-law. Its
-premises come from the definitions of $\Lambda$ and application, which
-use only entries whose input is nonempty and consistent.
-
-\begin{lemma}[$\beta$]\label{lem:beta}
-Call a function $F$ on sets \emph{finitary} at $D$ if every
-$w \in F(D)$ is in $F(V)$ for some nonempty $V \subseteq D$, and
+(Lemma~\ref{lem:monotone}), and it is continuous in the sense that
+each element of the meaning depends on only finitely many elements of
+the environment. These properties, together with consistency, give the
+graph model the following $\beta$ laws. Its premises come from the
+definitions of $\Lambda$ and application, which use only entries whose
+input is nonempty and consistent.
+%
+A function $F$ on sets is called \emph{finitary} at $D$ if every $w
+\in F(D)$ is in $F(V)$ for some nonempty $V \subseteq D$, and
 similarly for a function of two sets.
+
+
+\begin{lemma}[$\beta$ laws]\label{lem:beta}\ 
 \begin{enumerate}
-\item If $F$ is monotone and finitary at a consistent $D$, then
+\item If $F$ is monotone and finitary at $D$ and $D$ is consistent,
+  then \\
   $\Lambda(F) \app D = F(D)$.
-\item If $F$ is finitary at a consistent $T$ and $E$, then
+\item If $F$ is finitary at $T$ and $E$, and both $T$ and $E$ are consistent,
+  then \\
   $F(T, E) \subseteq (\Lambda(\mlam{X} \Lambda(\mlam{Y} F(X, Y))) \app T) \app E$.
 \end{enumerate}
 \end{lemma}
