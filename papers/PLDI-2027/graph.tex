@@ -108,18 +108,19 @@ on, including a $\beta$-law.
 
 One can describe a function by tabulating it. Each row of the table
 pairs an input with the corresponding output, and applying the
-function means looking up a row. Two problems arise. First, a function
-on an infinite domain (such as the integers) needs an infinite
-table. Second, a function that is applied to itself (such as the Y
-combinator) would need a table that contains a copy of itself. Graph
-models solve both problems. For the first, a terminating program
-applies each function to only finitely many arguments, so finite
-tables suffice \citep{Scott:1976lq,Plotkin:1993ab}. The meaning of a
-function is the set of all its finite tables, or equivalently the set
-of all their rows. For the second, a row applies to an argument when
-the row's input is \emph{included} in the argument, rather than equal
-to it. A table then needs only a smaller copy of itself, and elements,
-defined as an inductive data type, can provide that.
+function means looking up a row. Two problems arise with this simple
+approach. First, a function on an infinite domain (such as the
+integers) needs an infinite table. Second, a function that is applied
+to itself (such as the Y combinator) would need a table that contains
+a copy of itself. Graph models solve both problems. For the first, a
+terminating program applies each function to only finitely many
+arguments, so finite tables suffice
+\citep{Scott:1976lq,Plotkin:1993ab}. The meaning of a function is the
+set of all its finite tables, or equivalently the set of all their
+rows. For the second, a row applies to an argument when the row's
+input is \emph{included} in the argument, rather than equal to it. A
+table then needs only a smaller copy of itself, and elements, defined
+as an inductive data type, can provide that.
 
 Concretely, a row is an element $V \mapsto w$, called an \emph{entry},
 whose input $V$ is a list of elements\footnote{We sometimes use a list
