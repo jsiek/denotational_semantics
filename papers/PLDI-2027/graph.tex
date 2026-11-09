@@ -15,6 +15,7 @@
 \begin{figure}[t]
 \small\figdefs
 \defhead{Graph elements}{u, v, w \in \Elem}
+\vspace{-10pt}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   u, v, w & ::= & c \mid V \mapsto w \mid \nu \mid \pairv{u}{v}
@@ -26,10 +27,10 @@
 \defhead{Denotations (sets of elements)}{D, E \subseteq \Elem}
 \defhead{Indices}{i, j \in \mathbb{N}}
 \defhead{Consistency (Appendix~\ref{app:consistency})}{u \sim v \qquad \mathsf{con}(V)}
+\vspace{-10pt}
 \[
   \mathsf{con}(V) \iff u \sim v \text{ for all } u, v \in V
 \]
-
 \defhead{Operators on denotations}{\mathit{op}(D_1, \ldots, D_n) \subseteq \Elem}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
@@ -65,7 +66,7 @@
 
 \defhead{Semantics of \fpc}{\den{M}\rho = D}
 \[
-\begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
+\begin{array}{@{}r@{\;}c@{\;}l@{\qquad\qquad}r@{\;}c@{\;}l@{}}
   \den{x}\rho & = & \rho(x) &
   \den{c}\rho & = & \{c\}\\
   \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X]) &
@@ -84,8 +85,8 @@
   \den{\kw{case}\;L\;(x.\,M)\;(y.\,N)}\rho =
     \mathcal{C}(\den{L}\rho,\; \mlam{X} \den{M}\rho[x{:=}X],\; \mlam{Y} \den{N}\rho[y{:=}Y])
 \]
-\caption{The graph model: elements, operators on denotations, and the
-  semantics of \fpc.}
+\caption{The graph model (elements, denotations, and operators) and
+  the semantics of \fpc.}
 \label{fig:graph-ops}
 \end{figure}
 
@@ -94,18 +95,14 @@ that describes its behavior. In a graph model, that object is a set of
 finite pieces of evidence about the behavior, which we call
 \emph{elements}. Our model is a variant of the model of
 \citet{Engeler:1981aa}, which we extend with the data structures of
-our compiler's languages. For space, this section gives background
-only for the graph model; Appendix~\ref{app:scott} describes the Scott
-domains of our second proof. \citet{Scott:1982aa} presents Scott
-domains, and \citet{Winskel:1993aa} and \citet{Abramsky:1994cr}
-introduce domain theory. We first explain how the model represents
+our compiler's languages. We first explain how the model represents
 functions, then how it handles recursion and divergence, and then why
 we require consistency, which rules out sets of elements that cannot
-all describe the same value.  Figure~\ref{fig:graph-ops} defines the
+all describe the same value. Figure~\ref{fig:graph-ops} defines the
 elements, the operators on sets of elements from which we build the
-semantics of all our languages, and the semantics of \fpc.  We end this section with the
-properties of the semantics that our proofs rely on, including a
-$\beta$-law.
+semantics of all our languages, and the semantics of \fpc.  We end
+this section with the properties of the semantics that our proofs rely
+on, including a $\beta$-law.
 
 \paragraph{Functions as tables}
 
