@@ -91,7 +91,12 @@ programs. They relate the meaning of a closed source program to the
 meaning of its compiled code. Compositional compiler correctness
 \citep{Perconti:2014aa,Stewart:2015ab,Ramananandro:2015aa}, which
 addresses linking with separately compiled code or code written in
-another language, is just as important and would be a good next step.
+another language, is just as important.
+\citet{Cheng:2026aa} achieve compositional compiler correctness with a
+denotational semantics of open modules and a semantic linking
+operator, for imperative first-order languages, including the front end
+of CompCert. Extending our denotational proofs to open terms and
+linking, through closure conversion, would be a good next step.
 
 The compiler for FPC that we study begins with a source optimization
 pass based on the cp0 pass of Chez Scheme
