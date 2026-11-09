@@ -42,10 +42,12 @@ the languages and passes, and each is our best effort in its style.
   and we prove each pass by showing that if one interpreter returns a
   result at some clock, the other returns a related result at some
   clock.
-\item \emph{Reduction semantics and simulations.} Each language has a
-  reduction semantics, using substitution for function application
-  (Appendix~\ref{app:reduction}),
-  and we prove each pass by a simulation between reductions.
+\item \emph{Reduction semantics and simulations.} We define a
+  reduction semantics for each language, using substitution for
+  function application (Appendix~\ref{app:reduction}), and we prove
+  each pass by a simulation.  We include reduction semantics in this
+  comparison because of its central role in the theory of programming
+  languages \citep{wright94:_type_soundness,Pierce:2002hj}.
 \end{itemize}
 Appendix~\ref{app:other} gives each style's
 semantics of \fpc\ and \instr.
