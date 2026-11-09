@@ -154,10 +154,16 @@ $\den{M}\rho \subseteq \den{M}\rho'$.
 
 %% Typing: definitions.tex (Types and Languages) and
 %% agda/FPC/Language/*.agda. Semantics: agda/FPC/Semantics/GraphModel/*.agda.
-This appendix gives, for each language of Section~\ref{sec:compiler} in the order of the pipeline, its type system and its semantics in the graph model. The type systems are those of our intrinsically typed Agda definitions, so every pass maps well-typed terms to well-typed terms; the semantics are the ones that Theorem~\ref{thm:compiler} and the proofs of Section~\ref{sec:compiler-proof} speak of. The base types
-are $\kw{Nat}$, $\kw{Int}$, $\kw{Bool}$, $\kw{Unit}$, and $\kw{Void}$.
-The result type $\mathit{out}(p)$ of a primitive is $\kw{Int}$ for
-$\kw{sub}$ and $\kw{tup}() + \kw{tup}()$ for $\kw{eq}$. 
+This appendix gives, for each language of Section~\ref{sec:compiler} in the
+order of the pipeline, its type system and its semantics in the graph model. On
+paper, we write variables by name. In the Agda development, we instead write
+variables as de~Bruijn indices, and every term is well scoped by construction.
+The type systems are those of our intrinsically typed Agda definitions, so every
+pass maps well-typed terms to well-typed terms; the semantics are the ones that
+Theorem~\ref{thm:compiler} and the proofs of Section~\ref{sec:compiler-proof}
+speak of. The base types are $\kw{Nat}$, $\kw{Int}$, $\kw{Bool}$, $\kw{Unit}$,
+and $\kw{Void}$. The result type $\mathit{out}(p)$ of a primitive is $\kw{Int}$
+for $\kw{sub}$ and $\kw{tup}() + \kw{tup}()$ for $\kw{eq}$.
 
 In the semantics, an environment $\rho$ maps each variable to a set of
 elements, and $\rho[x{:=}X]$ maps $x$ to $X$ and every other variable
