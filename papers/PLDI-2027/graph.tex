@@ -56,15 +56,17 @@ finite pieces of evidence about the behavior, which we call
 \emph{elements}. Our model is a variant of the model of
 \citet{Engeler:1981aa}, which we extend with the data structures of
 our compiler's languages. For space, this section gives background
-only for the graph model; Appendix~\ref{app:scott} describes the Scott domains of our second
-proof. \citet{Scott:1982aa} presents Scott domains, and
-\citet{Winskel:1993aa} and \citet{Abramsky:1994cr} introduce domain
-theory. We first explain how the model represents
+only for the graph model; Appendix~\ref{app:scott} describes the Scott
+domains of our second proof. \citet{Scott:1982aa} presents Scott
+domains, and \citet{Winskel:1993aa} and \citet{Abramsky:1994cr}
+introduce domain theory. We first explain how the model represents
 functions, then how it handles recursion and divergence, and then why
 we require consistency, which rules out sets of elements that cannot
-all describe the same value.  Figure~\ref{fig:graph-ops} defines the elements and the operators on sets of elements from which we build the semantics of all our languages.  We end
-this section with the properties of the semantics that our proofs rely
-on, including a $\beta$-law.
+all describe the same value.  Figure~\ref{fig:graph-ops} defines the
+elements and the operators on sets of elements from which we build the
+semantics of all our languages.  We end this section with the
+properties of the semantics that our proofs rely on, including a
+$\beta$-law.
 
 \paragraph{Functions as tables}
 
@@ -91,14 +93,17 @@ element. (The input of an entry could instead be a single element, as
 in filter models \citep{Barendregt:1983aa}, but a list makes the
 metatheory cleaner because the argument of a function is often itself a
 function, and $V$ can then contain one entry for each call to it.)
+
+\todo[inline]{Explain the rest of the graph elements, including $\nu$}
+
 The meaning of a function, given by operator $\Lambda$
 (Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
 \mapsto w$ such that each output $w$ is in the meaning of the
 function's body in an environment that maps its parameter to input
 $V$.  The following equation gives the meaning of a
-$\lambda$-abstraction in \fpc, where $\rho$ maps each
-variable to a set of elements and $\boldsymbol{\lambda}$ denotes a
-mathematical function.
+$\lambda$-abstraction in \fpc, where $\rho$ maps each variable to a
+set of elements and $\boldsymbol{\lambda}$ denotes a mathematical
+function.
 \[
 \begin{array}{rcl}
   \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X])
@@ -110,20 +115,21 @@ The operator $D \app E$ (Figure~\ref{fig:graph-ops}) gives the meaning of applic
   \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
 \end{array}
 \]
-For example, $\den{\lambda x.\, x + 1}$ contains the entry $[n] \mapsto n{+}1$
-for every integer $n$, and $\den{(\lambda x.\, x + 1)\; 3} = \{4\}$. Besides its
-entries, the meaning of every $\lambda$-abstraction contains the element
-$\nu$\todo{The description for \(\nu\) after this point isn't clear. Doesn't
-  \(nu\) define an empty function?}, which says only that the term is a
-function. Thus a $\lambda$-abstraction has a nonempty meaning, as befits a value
-in a call-by-value language, even if it is never applied. The other elements
-describe the data of our languages: a constant $c$; a pair $\pairv{u}{v}$, which
-PairClos uses for closures; a tuple element $\mathsf{tup}_i(v)$, which says that
-component $i$ of a tuple is described by $v$; the injections $\mathsf{left}(v)$
-and $\mathsf{right}(v)$ of a sum; and the empty tuple $\langle\rangle$. The
-empty tuple also fills the positions of an environment that hold no variable,
-because we represent environments as total functions whose positions are
-nonempty. The environment $\rho_0$ of a closed program maps every variable to
+For example, $\den{\lambda x.\, x + 1}$ contains the entry $[n]
+\mapsto n{+}1$ for every integer $n$, and $\den{(\lambda x.\, x + 1)\;
+  3} = \{4\}$. Besides its entries, the meaning of every
+$\lambda$-abstraction contains the element $\nu$. Thus a
+$\lambda$-abstraction has a nonempty meaning, as befits a value in a
+call-by-value language, even if it is never applied. The other
+elements describe the data of our languages: a constant $c$; a pair
+$\pairv{u}{v}$, which PairClos uses for closures; a tuple element
+$\mathsf{tup}_i(v)$, which says that component $i$ of a tuple is
+described by $v$; the injections $\mathsf{left}(v)$ and
+$\mathsf{right}(v)$ of a sum; and the empty tuple
+$\langle\rangle$. The empty tuple also fills the positions of an
+environment that hold no variable, because we represent environments
+as total functions whose positions are nonempty. The environment
+$\rho_0$ of a closed program maps every variable to
 $\{\langle\rangle\}$, and $\den{M} = \den{M}\rho_0$.
 
 \paragraph{Recursion and divergence}
