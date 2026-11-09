@@ -84,20 +84,19 @@ or returns a value $v$:
 \[
   e ::= \mathsf{timeout} \mid \mathsf{error} \mid \mathsf{ret}\,v
 \]
-We write $v \leftarrow e;\; e'$ for the result of $e'$
-when $e$ is $\mathsf{ret}\,v$, and for $e$ itself when $e$ is
-$\mathsf{timeout}$ or $\mathsf{error}$. An interpreter \emph{terminates
-with} $o$ when for some clock $k$ its result is $\mathsf{ret}\,v$ with
-$\mathit{obs}(v) = o$, or $\mathsf{error}$ with $o = \mathit{error}$,
-and it \emph{diverges} when its result is $\mathsf{timeout}$ for every
-clock.
+We write $v \leftarrow e;\; e'$ for the result $e'$ which depends on $v$ when
+$e$ is $\mathsf{ret}\,v$, and for $e$ itself when $e$ is $\mathsf{timeout}$ or
+$\mathsf{error}$. An interpreter \emph{terminates with} $o$ when for some clock
+$k$ its result is $\mathsf{ret}\,v$ with $\mathit{obs}(v) = o$, or
+$\mathsf{error}$ with $o = \mathit{error}$, and it \emph{diverges} when its
+result is $\mathsf{timeout}$ for every clock.
 
 \paragraph{Equivalence}
 
-Two machines, or two interpreters, are \emph{equivalent} when, for
-every observation $o$, one terminates with $o$ if and only if the other
-does, and one diverges if and only if the other does. The three
-operational propositions state that a program and its compilation are
+Two machines, or two interpreters, are \emph{equivalent} when, for every
+observation $o$, one terminates with $o$ if and only if the other does, and one
+diverges if and only if the other does. The compiler correctness proofs for the
+three operational semantics state that a program and its compilation are
 equivalent.
 
 \subsection{Clocked Interpreters}
