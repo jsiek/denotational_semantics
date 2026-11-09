@@ -22,15 +22,20 @@
     \mid \langle\rangle
 \end{array}
 \]
-\noindent where $U, V, W$ range over finite lists of elements, $D, E$
-over sets of elements, and $i, j \in \mathbb{N}$.
+\defhead{Finite lists of elements}{U, V, W \in \mathsf{List}(\Elem)}
+\defhead{Denotations (sets of elements)}{D, E \subseteq \Elem}
+\defhead{Indices}{i, j \in \mathbb{N}}
+\defhead{Consistency (Appendix~\ref{app:consistency})}{u \sim v \qquad \mathsf{con}(V)}
+\[
+  \mathsf{con}(V) \iff u \sim v \text{ for all } u, v \in V
+\]
 
 \defhead{Operators on denotations}{\mathit{op}(D_1, \ldots, D_n) \subseteq \Elem}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   D \app E & = & \{\, w \mid V \mapsto w \in D,\; V \neq [\,],\; V \subseteq E \,\}\\
   \Lambda(F) & = & \{\, V \mapsto w \mid V \neq [\,],\; \mathsf{con}(V),\; w \in F(V) \,\} \cup \{\nu\}
-    \hfill (F \text{ a function on sets, e.g. } \mlam{X} E)\\
+    \quad (F \text{ a function on sets, e.g. } \mlam{X} E)\\
   \mathsf{pair}(D, E) & = & \{\, \pairv{u}{v} \mid u \in D,\; v \in E \,\}\\
   \car(D) & = & \{\, u \mid \pairv{u}{v} \in D \,\}\\
   \cdr(D) & = & \{\, v \mid \pairv{u}{v} \in D \,\}\\
@@ -42,11 +47,48 @@ over sets of elements, and $i, j \in \mathbb{N}$.
     \qquad
   \mathsf{inr}(D) \;=\; \{\, \mathsf{right}(v) \mid v \in D \,\}\\
   \pi_t(D) & = & \{\, v \mid t(v) \in D \,\}
-    \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}
+    \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
+  \mathcal{C}(D, F, G) & = &
+    \{\, w \mid V \neq [\,],\; \mathsf{con}(V),\; \mathsf{left}(V) \subseteq D,\; w \in F(V) \,\}\\
+  & \cup & \{\, w \mid V \neq [\,],\; \mathsf{con}(V),\; \mathsf{right}(V) \subseteq D,\; w \in G(V) \,\}\\
+  \mathsf{left}(V) & = & \{\, \mathsf{left}(v) \mid v \in V \,\}
+    \qquad
+  \mathsf{right}(V) \;=\; \{\, \mathsf{right}(v) \mid v \in V \,\}\\
+  \mathsf{prim}_p(D, E) & = & \{\, \mathit{out}(\delta(p, n, m)) \mid n \in D,\; m \in E \text{ integers} \,\}\\
+  \delta(\kw{sub}, n, m) & = & n - m
+    \qquad
+  \delta(\kw{eq}, n, m) \;=\; (n = m)\\
+  \mathit{out}(n) & = & n
+    \qquad
+  \mathit{out}(\mathsf{true}) \;=\; \mathsf{left}(\langle\rangle)
+    \qquad
+  \mathit{out}(\mathsf{false}) \;=\; \mathsf{right}(\langle\rangle)
 \end{array}
 \]
-\caption{The elements of the graph model and the operators on denotations
-  (sets of elements).}
+
+\defhead{Semantics of \fpc}{\den{M}\rho = D}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
+  \den{x}\rho & = & \rho(x) &
+  \den{c}\rho & = & \{c\}\\
+  \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X]) &
+  \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho\\
+  \den{\kw{tuple}\;(M_1, \ldots, M_n)}\rho & = & \mathcal{T}(\den{M_1}\rho, \ldots, \den{M_n}\rho) &
+  \den{\kw{get}_i\,M}\rho & = & \pi_{\mathsf{tup}_i}(\den{M}\rho)\\
+  \den{\kw{inl}\;M}\rho & = & \mathsf{inl}(\den{M}\rho) &
+  \den{\kw{inr}\;M}\rho & = & \mathsf{inr}(\den{M}\rho)\\
+  \den{\kw{prim}_p\;L\;M}\rho & = & \mathsf{prim}_p(\den{L}\rho, \den{M}\rho) &
+  \den{\kw{fold}\;M}\rho & = & \den{M}\rho\\
+  \den{\kw{let}\;x = M\;\kw{in}\;N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X]) \app \den{M}\rho &
+  \den{\kw{unfold}\;M}\rho & = & \den{M}\rho
+\end{array}
+\]
+\[
+  \den{\kw{case}\;L\;(x.\,M)\;(y.\,N)}\rho =
+    \mathcal{C}(\den{L}\rho,\; \mlam{X} \den{M}\rho[x{:=}X],\; \mlam{Y} \den{N}\rho[y{:=}Y])
+\]
+\caption{The graph model: its elements, the operators on denotations
+  (sets of elements), and the semantics of \fpc.}
 \label{fig:graph-ops}
 \end{figure}
 
@@ -63,8 +105,8 @@ introduce domain theory. We first explain how the model represents
 functions, then how it handles recursion and divergence, and then why
 we require consistency, which rules out sets of elements that cannot
 all describe the same value.  Figure~\ref{fig:graph-ops} defines the
-elements and the operators on sets of elements from which we build the
-semantics of all our languages.  We end this section with the
+elements, the operators on sets of elements from which we build the
+semantics of all our languages, and the semantics of \fpc.  We end this section with the
 properties of the semantics that our proofs rely on, including a
 $\beta$-law.
 
@@ -94,35 +136,24 @@ in filter models \citep{Barendregt:1983aa}, but a list makes the
 metatheory cleaner because the argument of a function is often itself a
 function, and $V$ can then contain one entry for each call to it.)
 
-\todo[inline]{Explain the rest of the graph elements, including $\nu$}
-\todo[inline]{Forward reference later in this section and
-  the Appendix for the definition
-  of consistency ($\mathsf{con}$).}
-\todo[inline]{Show the complete semantics for FPC in a figure.}
-
-The meaning of a function, given by operator $\Lambda$
+The meaning of a function, given by the operator $\Lambda$
 (Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
 \mapsto w$ such that each output $w$ is in the meaning of the
 function's body in an environment that maps its parameter to input
-$V$.  The following equation gives the meaning of a
-$\lambda$-abstraction in \fpc, where $\rho$ maps each variable to a
-set of elements and $\boldsymbol{\lambda}$ denotes a mathematical
-function.
-\[
-\begin{array}{rcl}
-  \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X])
-\end{array}
-\]
-The operator $D \app E$ (Figure~\ref{fig:graph-ops}) gives the meaning of application. It collects the outputs of the entries of $D$ whose input is contained in the argument $E$, and application in \fpc\ means:
-\[
-\begin{array}{rcl}
-  \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
-\end{array}
-\]
+$V$. The input $V$ must be nonempty and consistent, written
+$\mathsf{con}(V)$, which we explain at the end of this section. In the
+semantics of \fpc\ (Figure~\ref{fig:graph-ops}), an environment $\rho$
+maps each variable to a set of elements, $\rho[x{:=}X]$ maps $x$ to $X$
+and every other variable as $\rho$ does, and $\boldsymbol{\lambda}$
+denotes a mathematical function. The operator $D \app E$ gives the
+meaning of application. It collects the outputs of the entries of $D$
+whose input is contained in the argument $E$.
 For example, $\den{\lambda x.\, x + 1}$ contains the entry $[n]
 \mapsto n{+}1$ for every integer $n$, and $\den{(\lambda x.\, x + 1)\;
   3} = \{4\}$. Besides its entries, the meaning of every
-$\lambda$-abstraction contains the element $\nu$. Thus a
+$\lambda$-abstraction contains the element $\nu$, which records that
+the term evaluates to a function and says nothing about the function's
+input--output behavior. Thus a
 $\lambda$-abstraction has a nonempty meaning, as befits a value in a
 call-by-value language, even if it is never applied. The other
 elements describe the data of our languages: a constant $c$; a pair
@@ -160,10 +191,8 @@ We write $u \sim v$ when the elements $u$ and $v$ are consistent, which means
 that they could describe the same value. Appendix~\ref{app:consistency} gives
 the definition. The operator $\Lambda$ builds only entries whose inputs are
 consistent, which rules out entries such as $[1, 2] \mapsto 3$ in the meaning of
-$\lambda x.\, x + 1$\todo{The next clause is not clear. Is this clause talking
-  about $[1, 2] \mapsto 3$ or $\lambda x.\, x + 1$? If it's the former, then
-  shouldn't we say something like "whose input describes more than one
-  arguments"? -Darshal}, whose input describes no single argument.
+$\lambda x.\, x + 1$, because the input $[1, 2]$ of that entry
+describes no single argument.
 %
 Our model requires consistency because the proof for the \pass{split closure} pass needs it (Section~\ref{sec:approx-lr}). A call in PairClos takes
 the code from one pair and the environment from another, so a
