@@ -5,7 +5,7 @@
   (ISWIM/Semantics/GraphErr/Typed/X86.agda): the meaning of a sequence is
   monotone in the meanings of the blocks it may jump to, and in the
   slots, registers and flag that its type has (Le); it does not read the
-  others (mono), so a write that the type forgets (an unset register,
+  others (mono), so a write that the type wipes (an unset register,
   the code and environment of the last closure opened) need not be
   undone.
 
@@ -74,7 +74,7 @@ le-wipe : ∀ {Γ Δ O F₀ ρ ρ' R R' F F'} {x : Δ ∋ ⟪ fun ⟫} → Le (s
   → Le (st (wipe Γ) Δ (just x) F₀) ρ ρ' R R' F F'
 le-wipe {Γ} (le f g l) = le f (λ { rax e → g rax (fj (Regs.ax Γ) e) ; rdi e → g rdi (fj (Regs.di Γ) e) ; rsi e → g rsi (fj (Regs.si Γ) e) }) l
   where
-  fj : ∀ m {τ} → forgetα m ≡ just τ → m ≡ just τ
+  fj : ∀ m {τ} → wipeα m ≡ just τ → m ≡ just τ
   fj (just (ty A)) e = e
   fj (just codeα) ()
   fj (just tupα) ()

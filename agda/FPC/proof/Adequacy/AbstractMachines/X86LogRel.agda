@@ -134,14 +134,14 @@ cast-𝕍 refl r = r
 ℝ-upd rdi G h = λ { rax → G rax ; rdi → h ; rsi → G rsi }
 ℝ-upd rsi G h = λ { rax → G rax ; rdi → G rdi ; rsi → h }
 
-forget-𝕍 : ∀ {η η' d} m {v : MV Σ η m} → 𝕍ᵐ m d v → 𝕍ᵐ {η'} (forgetα m) d (forgetᵥ m v)
-forget-𝕍 (just (ty A)) r = r
-forget-𝕍 (just (codeα A B)) r = tt
-forget-𝕍 (just tupα) r = tt
-forget-𝕍 nothing r = tt
+wipe-𝕍 : ∀ {η η' d} m {v : MV Σ η m} → 𝕍ᵐ m d v → 𝕍ᵐ {η'} (wipeα m) d (wipeᵥ m v)
+wipe-𝕍 (just (ty A)) r = r
+wipe-𝕍 (just (codeα A B)) r = tt
+wipe-𝕍 (just tupα) r = tt
+wipe-𝕍 nothing r = tt
 
 ℝ-wipe : ∀ {η η' Γ R} {ρ : RegVals Σ η Γ} → ℝ R ρ → ℝ R (wipeᵣ {η' = η'} ρ)
-ℝ-wipe {Γ = rt a b c} G = λ { rax d d∈ → forget-𝕍 a (G rax d d∈) ; rdi d d∈ → forget-𝕍 b (G rdi d d∈) ; rsi d d∈ → forget-𝕍 c (G rsi d d∈) }
+ℝ-wipe {Γ = rt a b c} G = λ { rax d d∈ → wipe-𝕍 a (G rax d d∈) ; rdi d d∈ → wipe-𝕍 b (G rdi d d∈) ; rsi d d∈ → wipe-𝕍 c (G rsi d d∈) }
 
 FlR : ∀ {f} → 𝒫 Value → Flag Σ f → Set
 FlR {true} F b = ∀ d → d ∈ F → 𝕍 d (bit {Σ} b)

@@ -20,7 +20,7 @@
   open closure, gives r the type tupα of its environment. As in X86ᵀ,
   where α stands for the hidden length of an environment, the witness
   is never named in a type: codeα and tupα refer to the closure opened
-  last, opening forgets the registers of type codeα or tupα of an
+  last, opening wipes the registers of type codeα or tupα of an
   earlier closure, and so a register of type codeα A B and one of type
   tupα always belong to the same closure. Only the argument and result
   types, which the type of the closure shows, are in codeα A B. callq a
@@ -102,12 +102,12 @@ unset : Regs
 unset = rt nothing nothing nothing
 
 {- a register of an earlier closure's code or environment is unset -}
-forgetα : Maybe RTy → Maybe RTy
-forgetα (just (ty A)) = just (ty A)
-forgetα _ = nothing
+wipeα : Maybe RTy → Maybe RTy
+wipeα (just (ty A)) = just (ty A)
+wipeα _ = nothing
 
 wipe : Regs → Regs
-wipe Γ = rt (forgetα (Regs.ax Γ)) (forgetα (Regs.di Γ)) (forgetα (Regs.si Γ))
+wipe Γ = rt (wipeα (Regs.ax Γ)) (wipeα (Regs.di Γ)) (wipeα (Regs.si Γ))
 
 {- the slot of the open closure -}
 record Open (Δ : Ctx) : Set where

@@ -503,7 +503,7 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   ... | ⟨ N , ⟨ fN , gN ⟩ ⟩ = ⟨ ap (sl A') (rg A') [] ∪ₐ N , ⟨ ∪-fits (fits f g (PF-[] _)) fN ,
     𝕂-mono k bs (le (λ x → ++ˡ) (λ r _ → ++ˡ) (λ _ → gN _ (∪ʳ ⊑-refl))) ⟩ ⟩
 
-  {- opening a closure, back: the code and environment of the last one, forgotten, were parts of their values -}
+  {- opening a closure, back: the code and environment of the last one, wiped, were parts of their values -}
   keepL : Maybe RTy → List Value → List Value
   keepL (just (ty A)) W = W
   keepL _ W = []
@@ -516,12 +516,12 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
     ⟨ fits f (λ { rax → kf (Regs.ax Γ) (g rax) ; rdi → kf (Regs.di Γ) (g rdi) ; rsi → kf (Regs.si Γ) (g rsi) }) l
     , le (λ _ _ z → z) (λ { rax e → kl (Regs.ax Γ) e ; rdi e → kl (Regs.di Γ) e ; rsi e → kl (Regs.si Γ) e }) (λ _ _ z → z) ⟩
     where
-    kf : ∀ {η η'} mt {W} {v : MV Σ η mt} → PM {η'} (forgetα mt) (mem W) (forgetᵥ mt v) → PM mt (mem (keepL mt W)) v
+    kf : ∀ {η η'} mt {W} {v : MV Σ η mt} → PM {η'} (wipeα mt) (mem W) (wipeᵥ mt v) → PM mt (mem (keepL mt W)) v
     kf (just (ty A)) h = h
     kf (just codeα) _ _ ()
     kf (just tupα) _ _ ()
     kf nothing _ = tt
-    kl : ∀ mt {τ W} → forgetα mt ≡ just τ → mem W ⊆ mem (keepL mt W)
+    kl : ∀ mt {τ W} → wipeα mt ≡ just τ → mem W ⊆ mem (keepL mt W)
     kl (just (ty A)) _ _ z = z
     kl (just codeα) ()
     kl (just tupα) ()

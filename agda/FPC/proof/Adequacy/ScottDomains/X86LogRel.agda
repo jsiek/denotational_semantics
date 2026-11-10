@@ -49,7 +49,7 @@ open import FPC.Language.X86
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.X86
-  using (RV; MV; RegVals; rv; Flag; Mach; regs; frame; clo; flag; _⦅_⦆; _[_≔_]; cast; forgetᵥ; wipeᵣ;
+  using (RV; MV; RegVals; rv; Flag; Mach; regs; frame; clo; flag; _⦅_⦆; _[_≔_]; cast; wipeᵥ; wipeᵣ;
          arg; args; put; equal; bit; size; code-of; env-of; run; jump; call)
   renaming (⟨_,_,_,_⟩ to mach; obj to objᵢ)
 open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
@@ -788,17 +788,17 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
  regs-upd-rel rsi h hD rsi ≡-refl = hD
 
  private
-  forget-rel : ∀ {η η' τ} m {x : MV Σ η m} {D} (e : forgetα m ≡ just τ)
-    → (∀ {τ'} (e' : m ≡ just τ') → Relᵣ τ' D (cast e' x)) → Relᵣ {η'} τ D (cast e (forgetᵥ m x))
-  forget-rel (just (ty A)) ≡-refl h = h ≡-refl
-  forget-rel (just (codeα A B)) () h
-  forget-rel (just tupα) () h
-  forget-rel nothing () h
+  wipe-rel : ∀ {η η' τ} m {x : MV Σ η m} {D} (e : wipeα m ≡ just τ)
+    → (∀ {τ'} (e' : m ≡ just τ') → Relᵣ τ' D (cast e' x)) → Relᵣ {η'} τ D (cast e (wipeᵥ m x))
+  wipe-rel (just (ty A)) ≡-refl h = h ≡-refl
+  wipe-rel (just (codeα A B)) () h
+  wipe-rel (just tupα) () h
+  wipe-rel nothing () h
 
  regs-wipe-rel : ∀ {η η' Γ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ} → RegsRel R ρ → RegsRel R (wipeᵣ {η' = η'} ρ)
- regs-wipe-rel {Γ = rt a b c} h rax e = forget-rel a e (h rax)
- regs-wipe-rel {Γ = rt a b c} h rdi e = forget-rel b e (h rdi)
- regs-wipe-rel {Γ = rt a b c} h rsi e = forget-rel c e (h rsi)
+ regs-wipe-rel {Γ = rt a b c} h rax e = wipe-rel a e (h rax)
+ regs-wipe-rel {Γ = rt a b c} h rdi e = wipe-rel b e (h rdi)
+ regs-wipe-rel {Γ = rt a b c} h rsi e = wipe-rel c e (h rsi)
 
  {- the environment of the open closure is related to the second component of its slot -}
  snd-rel : ∀ {Δ A B} {φ : Frame Δ} {x : Δ ∋ A ⇒ B} {η} {o : Val (tup η)} {D : ⟨ 𝔻 ⟩} → OpR φ (just (opened x)) η o
