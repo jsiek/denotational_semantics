@@ -236,5 +236,7 @@ $\kw{fold}\;a$ and $\kw{unfold}\;a$, that do nothing.
 with no addresses or memory layout, and control flow within a function
 is acyclic, so loops are recursive calls. Neither abstraction concerns
 closure conversion, because in \instr, as in machine code, a closure is
-a heap object that pairs the name of a function with a tuple of
-captured values, and a call loads both before it jumps.
+a heap object that pairs a function's code pointer with a tuple of
+captured values, and the caller passes the tuple, along with the
+argument, in argument-passing registers before it calls the code
+pointer.
