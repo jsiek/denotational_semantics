@@ -53,7 +53,33 @@ correct within compilers for core ML.
 \citet{Pottier:2006aa} prove that defunctionalization preserves
 convergence and divergence with a simulation. The simulation proof of \citet{Wand:1994aa} covers only terminating
 programs, and \citet{Neis:2015aa} use parametric inter-language
-simulations.
+simulations. \citet{Ghica:2027aa} present closure conversion for the
+$\lambda$-calculus with string diagrams and show, with
+diagrammatic equations, that a closure-converted $\beta$-redex reduces
+to the same result as the original. That lemma is the main case of an
+operational proof by simulation. A complete proof would also cover the
+other reduction rules, a substitution lemma for the translation, and
+the preservation and reflection of divergence.
+
+\paragraph{Categorical accounts of closure conversion}
+
+\citet{Schweimeier:1999aa} justify closure conversion for an ML-like
+language with references and recursive functions with categorical
+models, partially traced, partially closed premonoidal categories,
+which they present as flow graphs. They prove that every program is
+equal, by the equations of these categories, to a program whose
+functions are all at top level. Their closures keep a function type,
+with the code and the environment inseparable, so the target is still
+higher-order, and they place the transformation ``part-way between
+closure conversion and lambda-lifting.'' Their equations hold in every
+model of these categories. A statement about divergence therefore
+requires a particular model that is adequate for the execution of
+programs, a step the paper leaves open. In a blog post,
+\citet{New:2017aa} gives a categorical account of the parametricity
+argument of \citet{Ahmed:2008aa}, deriving the
+isomorphism between $A \to B$ and
+$\exists \Gamma.\, \Gamma \times (\Gamma \times A \to B)$ from the
+coYoneda lemma.
 
 \paragraph{Relations between denotations}
 
