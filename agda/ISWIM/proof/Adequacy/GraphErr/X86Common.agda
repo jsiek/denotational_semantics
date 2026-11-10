@@ -267,13 +267,13 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
     → Rel {ψ = st (Γ [ rax ↦ nothing ]) Δ O false} ρ (R [ rax ≔ˢ init ]) G ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩
   rax-rel (mr f g l o) = mr f (λ { rax → tt ; rdi → g rdi ; rsi → g rsi }) tt o
 
-  {- opening the closure in slot x forgets the code and environment of the last one -}
+  {- opening the closure in slot x wipes the code and environment of the last one -}
   wipe-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (x : Δ ∋ ⟪ fun ⟫) → Rel ρ R F m
     → Rel {ψ = st (wipe Γ) Δ (just x) F'} ρ R F ⟨ wipeᵣ (regs m) , frame m , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩
   wipe-rel {Γ = Γ} {m = m} x (mr f g l o) =
     mr f (λ { rax → fg (Regs.ax Γ) (g rax) ; rdi → fg (Regs.di Γ) (g rdi) ; rsi → fg (Regs.si Γ) (g rsi) }) l (pack-η (frame m ! x))
     where
-    fg : ∀ {η η'} mt {D v} → PM {η} mt D v → PM {η'} (forgetα mt) D (forgetᵥ mt v)
+    fg : ∀ {η η'} mt {D v} → PM {η} mt D v → PM {η'} (wipeα mt) D (wipeᵥ mt v)
     fg (just (ty A)) h = h
     fg (just codeα) h = tt
     fg (just tupα) h = tt

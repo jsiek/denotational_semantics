@@ -29,7 +29,7 @@
   (∃ n. code n × ⟪ tup n ⟫). load fst x, r opens the closure in slot x:
   r gets the type codeα of its code, α the length of its environment,
   and the state records that x is open; load snd x, r, of the open
-  closure, gives r the type tupα. Opening forgets the registers of type
+  closure, gives r the type tupα. Opening wipes the registers of type
   codeα or tupα of an earlier closure; writing a slot, or a call,
   closes the closure. callq a needs a : codeα, %rdi : tupα and %rsi :
   Any, as code n expects; it leaves %rax : Any and %rdi, %rsi and the
@@ -118,12 +118,12 @@ unset : Regs
 unset = rt nothing nothing nothing
 
 {- a register of an earlier closure's code or environment is unset -}
-forgetα : Maybe RTy → Maybe RTy
-forgetα (just (ty A)) = just (ty A)
-forgetα _ = nothing
+wipeα : Maybe RTy → Maybe RTy
+wipeα (just (ty A)) = just (ty A)
+wipeα _ = nothing
 
 wipe : Regs → Regs
-wipe Γ = rt (forgetα (Regs.ax Γ)) (forgetα (Regs.di Γ)) (forgetα (Regs.si Γ))
+wipe Γ = rt (wipeα (Regs.ax Γ)) (wipeα (Regs.di Γ)) (wipeα (Regs.si Γ))
 
 {- the type of a machine state -}
 record St : Set where

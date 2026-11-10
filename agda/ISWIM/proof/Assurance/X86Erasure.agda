@@ -170,14 +170,14 @@ module _ {Σ : List ℕ} where
     → RegsAg (T._[_≔_] {τ = nothing} ρt rax tt) ρ'
   clr {Γ = Γ} (ragree a d s) e₁ e₂ = ragree tt (subst (RAg (Regs.di Γ) _) (sym e₁) d) (subst (RAg (Regs.si Γ) _) (sym e₂) s)
 
-  forget-ag : ∀ {η η'} m {v : T.MV Σ η m} {w} → RAg m v w → RAg {η = η'} (forgetα m) (T.forgetᵥ m v) w
-  forget-ag (just (ty A)) a = a
-  forget-ag (just codeα) a = tt
-  forget-ag (just tupα) a = tt
-  forget-ag nothing a = tt
+  wipeᵥ-ag : ∀ {η η'} m {v : T.MV Σ η m} {w} → RAg m v w → RAg {η = η'} (wipeα m) (T.wipeᵥ m v) w
+  wipeᵥ-ag (just (ty A)) a = a
+  wipeᵥ-ag (just codeα) a = tt
+  wipeᵥ-ag (just tupα) a = tt
+  wipeᵥ-ag nothing a = tt
 
   wipe-ag : ∀ {η η' Γ} {ρt : T.RegVals Σ η Γ} {ρ} → RegsAg ρt ρ → RegsAg (T.wipeᵣ {η' = η'} ρt) ρ
-  wipe-ag {Γ = Γ} (ragree a d s) = ragree (forget-ag (Regs.ax Γ) a) (forget-ag (Regs.di Γ) d) (forget-ag (Regs.si Γ) s)
+  wipe-ag {Γ = Γ} (ragree a d s) = ragree (wipeᵥ-ag (Regs.ax Γ) a) (wipeᵥ-ag (Regs.di Γ) d) (wipeᵥ-ag (Regs.si Γ) s)
 
   arg-e : ∀ {n η ψ τ} (a : Arg Σ ψ τ) {m : T.Mach Σ η ψ} {f φ ρ} → MAg n m f φ ρ
     → X.arg φ ρ (eArg a) ≡ just (er τ (T.arg a m))

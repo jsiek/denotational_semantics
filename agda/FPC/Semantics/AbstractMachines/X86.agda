@@ -99,15 +99,15 @@ module _ {Σ : List DSig} where
   cast : ∀ {η m τ} → m ≡ just τ → MV Σ η m → RV Σ η τ
   cast refl v = v
 
-  forgetᵥ : ∀ {η η'} m → MV Σ η m → MV Σ η' (forgetα m)
-  forgetᵥ (just (ty A)) v = v
-  forgetᵥ (just (codeα _ _)) v = tt
-  forgetᵥ (just tupα) v = tt
-  forgetᵥ nothing v = tt
+  wipeᵥ : ∀ {η η'} m → MV Σ η m → MV Σ η' (wipeα m)
+  wipeᵥ (just (ty A)) v = v
+  wipeᵥ (just (codeα _ _)) v = tt
+  wipeᵥ (just tupα) v = tt
+  wipeᵥ nothing v = tt
 
   wipeᵣ : ∀ {η η' Γ} → RegVals Σ η Γ → RegVals Σ η' (wipe Γ)
   wipeᵣ {Γ = Γ} ρ =
-    rv (forgetᵥ (Regs.ax Γ) (RegVals.ax ρ)) (forgetᵥ (Regs.di Γ) (RegVals.di ρ)) (forgetᵥ (Regs.si Γ) (RegVals.si ρ))
+    rv (wipeᵥ (Regs.ax Γ) (RegVals.ax ρ)) (wipeᵥ (Regs.di Γ) (RegVals.di ρ)) (wipeᵥ (Regs.si Γ) (RegVals.si ρ))
 
   arg : ∀ {η ψ τ} → Arg Σ ψ τ → Mach Σ η ψ → RV Σ η τ
   arg (atom a) m = value-of (frame m) a

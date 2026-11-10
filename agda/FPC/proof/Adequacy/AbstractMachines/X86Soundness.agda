@@ -199,11 +199,11 @@ blocks-at (bs ▷ k) (S l) = blocks-at bs l
 cast-𝒱 : ∀ {η m τ} (e : m ≡ just τ) {v : MV Σ η m} → 𝒱ᵐ (just τ) (cast e v) ⊆ 𝒱ᵐ m v
 cast-𝒱 refl = ⊆r
 
-forget-𝒱 : ∀ {η η'} m {v : MV Σ η m} → 𝒱ᵐ {η'} (forgetα m) (forgetᵥ m v) ⊆ 𝒱ᵐ m v
-forget-𝒱 (just (ty A)) = ⊆r
-forget-𝒱 (just (codeα A B)) = λ _ ()
-forget-𝒱 (just tupα) = λ _ ()
-forget-𝒱 nothing = λ _ ()
+wipe-𝒱 : ∀ {η η'} m {v : MV Σ η m} → 𝒱ᵐ {η'} (wipeα m) (wipeᵥ m v) ⊆ 𝒱ᵐ m v
+wipe-𝒱 (just (ty A)) = ⊆r
+wipe-𝒱 (just (codeα A B)) = λ _ ()
+wipe-𝒱 (just tupα) = λ _ ()
+wipe-𝒱 nothing = λ _ ()
 
 {- the locations of a machine: %rax, %rdi and %rsi at 0, 1 and 2, slot i at 3 + i -}
 ix : Reg → ℕ
@@ -230,7 +230,7 @@ upd-𝓛 rdi = ⟨ (λ { 0 _ → ⊆r ; 1 ne → ⊥-elim (ne refl) ; 2 _ → �
 upd-𝓛 rsi = ⟨ (λ { 0 _ → ⊆r ; 1 _ → ⊆r ; 2 ne → ⊥-elim (ne refl) ; (suc (suc (suc i))) _ → ⊆r }) , ⊆r ⟩
 
 wipe-𝓛 : ∀ {η η' Γ Δ} {ρ : RegVals Σ η Γ} {φ : Frame Σ Δ} l → 𝓛 (wipeᵣ {η' = η'} ρ) φ l ⊆ 𝓛 ρ φ l
-wipe-𝓛 {Γ = rt a b c} = λ { 0 → forget-𝒱 a ; 1 → forget-𝒱 b ; 2 → forget-𝒱 c ; (suc (suc (suc i))) → ⊆r }
+wipe-𝓛 {Γ = rt a b c} = λ { 0 → wipe-𝒱 a ; 1 → wipe-𝒱 b ; 2 → wipe-𝒱 c ; (suc (suc (suc i))) → ⊆r }
 
 {- a finite part of each location -}
 Apx : Set

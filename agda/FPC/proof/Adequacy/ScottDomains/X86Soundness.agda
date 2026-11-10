@@ -39,7 +39,7 @@ open import FPC.Language.X86
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.X86
-  using (RV; MV; RegVals; rv; Flag; Mach; regs; frame; clo; flag; _⦅_⦆; _[_≔_]; cast; forgetᵥ; wipeᵣ;
+  using (RV; MV; RegVals; rv; Flag; Mach; regs; frame; clo; flag; _⦅_⦆; _[_≔_]; cast; wipeᵥ; wipeᵣ;
          arg; args; put; obj; equal; bit; size; code-of; env-of; run; jump; call)
   renaming (⟨_,_,_,_⟩ to mach)
 open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
@@ -179,17 +179,17 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
 
   {- an unset register agrees with anything, and wiping unsets registers -}
   private
-   forget-agree : ∀ {η η' τ} m {x : MV Σ η m} {D} (e : forgetα m ≡ just τ)
-     → (∀ {τ'} (e' : m ≡ just τ') → D ＝ 𝒱ᵣ τ' (cast e' x)) → D ＝ 𝒱ᵣ {η'} τ (cast e (forgetᵥ m x))
-   forget-agree (just (ty A)) ≡-refl h = h ≡-refl
-   forget-agree (just (codeα A B)) () h
-   forget-agree (just tupα) () h
-   forget-agree nothing () h
+   wipe-agree : ∀ {η η' τ} m {x : MV Σ η m} {D} (e : wipeα m ≡ just τ)
+     → (∀ {τ'} (e' : m ≡ just τ') → D ＝ 𝒱ᵣ τ' (cast e' x)) → D ＝ 𝒱ᵣ {η'} τ (cast e (wipeᵥ m x))
+   wipe-agree (just (ty A)) ≡-refl h = h ≡-refl
+   wipe-agree (just (codeα A B)) () h
+   wipe-agree (just tupα) () h
+   wipe-agree nothing () h
 
   regs-wipe : ∀ {η η' Γ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ} → RegsAgree R ρ → RegsAgree R (wipeᵣ {η' = η'} ρ)
-  regs-wipe {Γ = rt a b c} h rax e = forget-agree a e (h rax)
-  regs-wipe {Γ = rt a b c} h rdi e = forget-agree b e (h rdi)
-  regs-wipe {Γ = rt a b c} h rsi e = forget-agree c e (h rsi)
+  regs-wipe {Γ = rt a b c} h rax e = wipe-agree a e (h rax)
+  regs-wipe {Γ = rt a b c} h rdi e = wipe-agree b e (h rdi)
+  regs-wipe {Γ = rt a b c} h rsi e = wipe-agree c e (h rsi)
 
   {- Operands and objects ---------------------------------------------------------------}
 
