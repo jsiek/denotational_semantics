@@ -13,13 +13,13 @@
 
 Each of our five correctness results speaks of a different semantics.
 As due diligence on our mechanized definitions, we prove the graph
-model adequate with respect to the clocked interpreters, the CEK
-machines, and the reduction semantics, and we prove the Scott-domain
-semantics adequate with respect to the clocked interpreters. Each
-proof adapts a proof from the literature
+model of \fpc{} adequate with respect to the clocked interpreters, the
+CEK machines, and the reduction semantics, and we prove the
+Scott-domain semantics of \fpc{} adequate with respect to the clocked
+interpreters. Each proof adapts a proof from the literature
 \citep{Plotkin:1977oc,Plotkin:1985aa,Winskel:1993uq,Siek:2017ab}.
-Here is the statement of adequacy of the graph model with respect to
-the interpreter.
+Here is the statement of adequacy of the graph model for \fpc{} with
+respect to the interpreter.
 
 \begin{proposition}[Adequacy]\label{prop:adequacy}
 Let $M$ be a closed term of \fpc. For every constant $c$, $c \in
@@ -28,8 +28,7 @@ and $\den{M}$ is empty iff the interpreter diverges on $M$, that is,
 times out at every clock.
 \end{proposition}
 
-The graph-model is also adequate with respect to the CEK machines of
-\fpc\ and \instr\ and with the reduction semantics of \fpc, whose
-correctness proof targets the CEK machine of \instr. The adequacy
-results therefore cover every semantics in our comparison and make the
-five correctness results equivalent.
+We have also proved that the graph model of \instr{} is adequate with
+respect to the interpreter for \instr{}. These adequacy results
+therefore cover every semantics in our comparison and make the five
+correctness results equivalent.
