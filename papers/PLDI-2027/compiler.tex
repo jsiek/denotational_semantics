@@ -131,10 +131,10 @@ Neither coercion does anything at run time. \fpc\ has no recursion
 operator.  Recursive types make self-application typable, so a program can define the call-by-value fixed-point combinator:
 \[
   \mathit{fix} = \lambda f.\, g\;(\kw{fold}\;g)
-  \quad\text{where}\quad
+  \quad\text{where}\;\;
   g = \lambda x.\, f\;(\lambda v.\, (\kw{unfold}\;x)\;x\;v)
+  \quad\text{and}\;\; x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})
 \]
-with $x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})$.
 
 \paragraph{The optimizer}
 
