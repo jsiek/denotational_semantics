@@ -11,57 +11,27 @@
 \section{Adequacy}
 \label{sec:adequacy}
 
-Each of our five compiler correctness results speaks of a different
-semantics.  To check that our mechanized semantics agree, we prove the
-graph model adequate with respect to the clocked interpreters, the CEK
-machines, and the reduction semantics, and we prove the Scott-domain
-semantics adequate with respect to the clocked interpreters. We regard
-these proofs as due-dilligence on our mechanized definitions, not as
-novel contributions, because each one is a straightforward adaptation
-of proofs in the literature. We state the adequacy proposition for the
-interpreters.
+Each of our five correctness results speaks of a different semantics.
+As due diligence on our mechanized definitions, we prove the graph
+model adequate with respect to the clocked interpreters, the CEK
+machines, and the reduction semantics, and the Scott-domain semantics
+adequate with respect to the clocked interpreters. Each proof adapts a
+proof from the literature
+\citep{Plotkin:1977oc,Plotkin:1985aa,Winskel:1993uq,Siek:2017ab}, so
+we state only the result for the interpreters.
 
 \begin{proposition}[Adequacy]\label{prop:adequacy}
 Let $M$ be a closed term of \fpc. For every constant $c$, $c \in
 \den{M}$ if and only if the interpreter of \fpc\ terminates on $M$
 returning $c$, and $\den{M}$ is empty if and only if the interpreter
 diverges on $M$, that is, times out at every clock. The same holds for
-\instr\ and $\pass{compile}(M)$. In the Scott-domain semantics,
-$\den{M}\rho_0 = \up{(c, ())}$ if and only if the interpreter
-terminates on $M$ returning $c$, and $\den{M}\rho_0 = \bot$ if and
-only if the interpreter diverges on $M$, and the same holds for
-\instr.
+\instr\ and $\pass{compile}(M)$, and for the Scott-domain semantics,
+with $\den{M}\rho_0 = \up{(c, ())}$ and $\den{M}\rho_0 = \bot$ in
+place of $c \in \den{M}$ and $\den{M} = \emptyset$.
 \end{proposition}
 
-The graph-model half of the proposition also holds with the CEK machines
-of \fpc\ and \instr\ in place of the interpreters, and with the
-reduction semantics of \fpc. These cover every semantics in our
-comparison, because the reduction-semantics proof of correctness uses
-the CEK machine of \instr\ as its target.
-
-Each proof has two halves. Soundness says that if the operational
-semantics returns a value, then that value denotes a part of the
-meaning of the program. Adequacy says that every element of the
-meaning is related to the value that the operational semantics
-returns, by a logical relation. For the reduction semantics, we follow
-\citet{Plotkin:1977oc}. Each reduction step preserves the meaning of a
-term, by a substitution lemma, and the logical relation relates
-elements to closed values. For the interpreters and the CEK machines,
-the logical relation relates elements to values with environments and
-is defined by recursion on the element, as in earlier adequacy proofs
-for graph and filter models \citep{Siek:2017ab,Wadler:2020aa}. For the
-machines, soundness gives a meaning to each continuation and shows
-that a step never enlarges the meaning of the machine state. For Scott
-domains, the proof follows the textbook approach
-\citep{Plotkin:1985aa,Winskel:1993uq,Pitts:1996aa}. The logical
-relation occurs negatively at recursive types, and we define it by
-recursion on the stages of the bilimit, similar to the logical
-relation for \pass{split closure} (Section~\ref{sec:scott-delay}). It
-relates each approximation of a domain element to an interpreter
-value.
-
-These adequacy results tell us that all five correctness results are
-equivalent. For the graph model, the adequacy proofs take 1,529 lines
-of Agda for the interpreters, 1,606 for the CEK machines, and 1,574
-for the reduction semantics, and the proof for Scott domains takes
-1,886 lines.
+The graph-model results also hold with the CEK machines of \fpc\ and
+\instr\ and with the reduction semantics of \fpc, whose correctness
+proof targets the CEK machine of \instr. The adequacy results
+therefore cover every semantics in our comparison and make the five
+correctness results equivalent.
