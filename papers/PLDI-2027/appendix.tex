@@ -336,6 +336,7 @@ it assigns, like a $\kw{let}$.
 \]
 
 \subsection{The CFG Language}
+\label{app:cfg}
 \agda{FPC/Language/CFG.agda, FPC/Semantics/GraphModel/CFG.agda}
 
 CFG, the target of \pass{explicate control}, organizes each function body as a control-flow graph. A function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the type $R$ of the function body's result, the list
@@ -344,7 +345,23 @@ blocks it may jump to, and its own frame $\Delta$. A label $l$ is an
 index into $\vec{\Delta}$. Block $t_l$ is typed over the blocks older
 than it, so control flow is acyclic. Here $\Delta' \sqsubseteq \Delta$
 says that $\Delta'$ is a prefix of $\Delta$; an assignment to slot
-$|\Delta'|$ forgets the slots from $|\Delta'|$ on.
+$|\Delta'|$ forgets the slots from $|\Delta'|$ on. The forgotten slots
+hold the variables bound inside the expression whose value the
+assignment writes, and these variables are out of scope after the
+assignment. For example, \pass{lift locals} translates
+$\kw{let}\;y = (\kw{let}\;z = 5\;\kw{in}\;\kw{let}\;w = z - 1\;\kw{in}\;w - 1)\;\kw{in}\;y - 2$
+into the Imp expression
+\[
+  0 \mathrel{:=} (0 \mathrel{:=} 5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;1;\;
+    \kw{prim}_{\kw{sub}}\;1\;1);\; \kw{prim}_{\kw{sub}}\;0\;2
+\]
+and \pass{explicate control} translates that into the tail
+\[
+  0 \mathrel{:=} 5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;1;\;
+  0 \mathrel{:=} \kw{prim}_{\kw{sub}}\;1\;1;\; \kw{return}\;\kw{prim}_{\kw{sub}}\;0\;2.
+\]
+The third assignment, with $\Delta'$ empty, forgets slots 0 and 1,
+which hold $z$ and $w$, and writes $y$ to slot 0.
 \defhead{Typing of CFG}{\Sigma; R; \vec{\Delta}; \Delta \vdash t}
 \[
   \dfrac{\Sigma; \Delta \vdash r : R}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{return}\;r}
@@ -879,7 +896,11 @@ $l_2$.
 \end{array}
 \]
 and $\pass{explicate}$ maps over the definitions and main expression of
-a program.
+a program. The cuts of CFG (Appendix~\ref{app:cfg}) come from the
+second equation for $\pass{assign}$. Its result assigns $x'$, which is
+slot $x$ or a later slot, before it assigns $x$, so the assignment to
+$x$ forgets $x'$ and the slots that $e_2$ assigns. In the example of
+Appendix~\ref{app:cfg}, the assignment to $y$ forgets $z$ and $w$.
 
 \subsection{\pass{select instructions} (CFG to \instr)}
 \label{app:pass-select}

@@ -161,9 +161,25 @@ $d$.
   \mathit{put}(\%r, v,\; \langle R, \sigma, u, b\rangle) &= \langle R[r{:=}v], \sigma, u, b\rangle \\
   \mathit{put}(x, v,\; \langle R, \sigma, u, b\rangle) &= \langle R, \sigma|_x[x{:=}v], \mathsf{none}, b\rangle
 \end{align*}
-Here $\sigma|_x$ is the frame cut at slot $x$, and writing a slot closes
-the open closure, as in the graph-model semantics, so $\mathsf{none}$
-marks that no closure is open. The instructions other than $\kw{callq}$ update the state.
+Here $\sigma|_x$ is the frame cut at slot $x$, which keeps the slots
+before $x$ and pops slot $x$ and the slots after it. As in the
+semantics of CFG (Appendix~\ref{app:cfg}), the popped slots hold
+variables that have gone out of scope. For example,
+\pass{select instructions} translates the CFG tail of
+Appendix~\ref{app:cfg} into
+\[
+\begin{array}{@{}l@{}}
+  \kw{movq}\;5, 0;\;
+  \kw{movq}\;0, \%\kw{rax};\; \kw{subq}\;1, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, 1;\;
+  \kw{movq}\;1, \%\kw{rax};\; \kw{subq}\;1, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, 0;\\
+  \kw{movq}\;0, \%\kw{rax};\; \kw{subq}\;2, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, \%\kw{rax};\; \kw{retq}.
+\end{array}
+\]
+The first and fourth instructions push 5 and then 4, and the seventh,
+$\kw{movq}\;\%\kw{rax}, 0$, pops both slots and pushes 3, so the frame
+goes from $5, 4$ to $3$. Writing a slot also closes the open closure,
+as in the graph-model semantics, and $\mathsf{none}$ marks that no
+closure is open. The instructions other than $\kw{callq}$ update the state.
 \defhead{The effect of an instruction}{\mathit{instr}(i, m) = m'}
 \begin{align*}
   \mathit{instr}(\kw{movq}\; a, d,\; m) &= \mathit{put}(d, \mathit{arg}(a, m), m) \\
