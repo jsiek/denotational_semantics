@@ -399,10 +399,11 @@ $\psi = \langle \Theta; \Delta; O; F \rangle$ gives the types $\Theta$
 of the registers, the frame $\Delta$ of the slots assigned so far, the
 open closure $O$ (none, written $\cdot$, or a slot $x$ of $\Delta$ of a
 function type), and whether the flag $F$ is set. A register holds a
-value of a type $A$, the code $\kw{code}_\alpha(A \rightarrow C)$ or the
-environment $\kw{tup}(\alpha)$ of the open closure, or nothing; the
-type variable $\alpha$ stands for the hidden types of the environment
-of the open closure. A function body declares the size $n$ of its frame. The
+value of a type $A$, the code $\kw{opencode}(A \rightarrow C)$ of the
+open closure, the environment $\kw{openenv}$ of the open closure, or
+nothing. The types $\kw{opencode}(A \rightarrow C)$ and $\kw{openenv}$
+refer to whichever closure is open, and they show only its argument
+and result types, as its function type does. A function body declares the size $n$ of its frame. The
 operands are typed by these rules, with the atoms typed as in Imp in
 the frame of the state.
 \defhead{Typing of operands}{\Sigma; \psi \vdash a : \tau}
@@ -454,19 +455,20 @@ $\psi$, the instructions are typed by.
   \\[14pt]
   \dfrac{x : A \rightarrow C \in \Delta}
         {\Sigma; n \vdash \kw{fst}\; x, \%r : \psi \Rightarrow
-         \langle \mathit{wipe}(\Theta)[r{:}\kw{code}_\alpha(A \rightarrow C)]; \Delta; x; F \rangle}
+         \langle \mathit{wipe}(\Theta)[r{:}\kw{opencode}(A \rightarrow C)]; \Delta; x; F \rangle}
   \\[14pt]
   \Sigma; n \vdash \kw{snd}\; x, \%r : \langle \Theta; \Delta; x; F \rangle \Rightarrow
-    \langle \Theta[r{:}\kw{tup}(\alpha)]; \Delta; x; F \rangle
+    \langle \Theta[r{:}\kw{openenv}]; \Delta; x; F \rangle
   \\[14pt]
-  \dfrac{a : \kw{code}_\alpha(A \rightarrow C) \quad \Theta(\kw{rdi}) = \kw{tup}(\alpha)
+  \dfrac{a : \kw{opencode}(A \rightarrow C) \quad \Theta(\kw{rdi}) = \kw{openenv}
          \quad \Theta(\kw{rsi}) = A}
         {\Sigma; n \vdash \kw{callq}\; a : \psi \Rightarrow \langle \kw{rax}{:}C; \Delta; \cdot; \kw{unset} \rangle}
 \end{array}
 \]
 Here $\mathit{wipe}(\Theta)$ unsets the registers that hold the code or
-the environment of an earlier open closure, so $\alpha$ always stands
-for the environment of one closure. A sequence $s$ is typed by the result
+the environment of an earlier open closure, so the registers of types
+$\kw{opencode}(A \rightarrow C)$ and $\kw{openenv}$ always belong to
+the same closure. A sequence $s$ is typed by the result
 type $R$, the frames $\vec{\Delta}$ of the blocks it may jump to, and
 its starting state.
 \defhead{Typing of sequences}{\Sigma; n; R; \vec{\Delta} \vdash s : \psi}
