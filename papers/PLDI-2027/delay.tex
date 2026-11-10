@@ -104,32 +104,31 @@ the graph of the function curried over the values of its free
 variables and the tuple of those values. Lemma~\ref{lem:delay}
 therefore states only that a closed program and its translation
 produce the same constants and that one produces something exactly
-when the other does. The forward half,
-preservation, requires only a relation between a \emph{single} source
-element and the \emph{set} of target elements, defined by recursion on
-the source element (Figure~\ref{fig:preserve}), because a source
-function has no code and environment to separate. We read $v \sqsubseteq D'$ as ``$v$ is included in the behavior of $D'$''. The source element is finite, so the
-recursion is structural, and preservation is a routine induction on
-$M$.
+when the other does. The forward half, preservation, requires only a
+relation between a \emph{single} source element and the \emph{set} of
+target elements, defined by recursion on the source element
+(Figure~\ref{fig:preserve}). We read $v \sqsubseteq D'$ as ``$v$ is
+included in the behavior of $D'$''. The source element is finite, so
+the recursion is structural, and preservation is a routine induction
+on $M$.
 
 The backward half, reflection, must show that the source accounts for
 every element that the target produces. Here the representation of
-closures gets in the way. To see how, consider the function
-$\lambda y.\, x + y$ in an environment where $x$ is $9$. In EnvClos,
-its meaning is a set of entries such as $[1] \mapsto 10$ and
-$[6] \mapsto 15$. After \pass{split closure}, its code takes the environment as an
-extra parameter. The meaning of the code is a table with entries
-for \emph{every} environment, such as the following two:
+closures gets in the way. Consider the function $\lambda y.\, x + y$
+in an environment where $x$ is $9$. In EnvClos, its meaning is a set
+of entries such as $[1] \mapsto 10$ and $[6] \mapsto 15$. After
+\pass{split closure}, its code takes the environment as an extra
+parameter. The meaning of the code is a table with entries for
+\emph{every} environment, such as the following two:
 \[
   [9] \mapsto ([1] \mapsto 10) \qquad
   [2] \mapsto ([1] \mapsto 3)  \qquad \ldots
 \]
-The program pairs this code only with the environment $[9]$, so the
-entry for $[2]$ is junk, an entry that corresponds to no source
-function. Worse, a
-call takes the code from $\car$ and the environment from $\cdr$
-\emph{separately}, so a result may combine the code of one pair
-with the environment of another. 
+The program pairs this only with the environment $[9]$, so the entry
+for $[2]$ is junk, it does not correspond to a source function. Worse,
+a call takes the code from $\car$ and the environment from $\cdr$
+\emph{separately}, so the denotation combining the code of one pair
+with the environment of another.
 
 \paragraph{Design alternatives: which sides to relate}
 
