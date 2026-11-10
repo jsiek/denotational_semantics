@@ -226,7 +226,8 @@ $.
 The first two instructions load the code and the environment of the
 closure, the third puts the argument in place, and the call leaves its
 result in $\kw{rax}$. The type system
-tracks which closure is open, so that a call never combines the code
+only allows one closure to be open at a time,
+so that a call never combines the code
 of one closure with the environment of another.  The coercions $\kw{fold}$ and
 $\kw{unfold}$ survive to \instr\ as annotations on operands,
 $\kw{fold}\;a$ and $\kw{unfold}\;a$, that do nothing.
