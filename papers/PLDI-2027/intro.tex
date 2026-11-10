@@ -65,7 +65,11 @@ recursion.''
 simply typed $\lambda$-calculus (STLC) to assembly, including closure
 conversion, but the STLC is not Turing-complete, which let him
 interpret each type as a Coq type and each function as a total Coq
-function.
+function. In a blog post, \citet{New:2017aa} uses the coYoneda lemma
+to prove that, in a pure typed $\lambda$-calculus with existential
+types and $\beta\eta$-equality, the function type $A \to B$ is
+isomorphic to the closure type
+$\exists \Gamma.\, \Gamma \times (\Gamma \times A \to B)$.
 %
 Other denotational proofs of compiler correctness avoid closure
 conversion, because either their source language is first-order
