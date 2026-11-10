@@ -115,8 +115,8 @@ on $M$.
 The backward half, reflection, must show that the source accounts for
 every element that the target produces. Here the representation of
 closures gets in the way. Consider the function $\lambda y.\, x + y$
-in an environment where $x$ is $9$. In EnvClos, its meaning is a set
-of entries such as $[1] \mapsto 10$ and $[6] \mapsto 15$. After
+in an environment where $x$ is $9$. In EnvClos, its meaning 
+includes entries $[1] \mapsto 10$ and $[6] \mapsto 15$. After
 \pass{split closure}, its code takes the environment as an extra
 parameter. The meaning of the code is a table with entries for
 \emph{every} environment, such as the following two:
@@ -124,10 +124,10 @@ parameter. The meaning of the code is a table with entries for
   [9] \mapsto ([1] \mapsto 10) \qquad
   [2] \mapsto ([1] \mapsto 3)  \qquad \ldots
 \]
-The program pairs this only with the environment $[9]$, so the entry
-for $[2]$ is junk, it does not correspond to a source function. Worse,
-a call takes the code from $\car$ and the environment from $\cdr$
-\emph{separately}, so the denotation combining the code of one pair
+The program pairs this table only with environment $[9]$, so the entry
+for $[2]$ does not correspond to a source function. Worse, the
+denotation of a call takes the table from $\car$ and the environment
+from $\cdr$ \emph{separately}, so it may combine the table of one pair
 with the environment of another.
 
 \paragraph{Design alternatives: which sides to relate}
