@@ -107,9 +107,9 @@ lemmas shared by the passes & --- & 135 & 38 & --- & ---\\
 \pass{lift locals} & 39 & 59 & 51 & \textbf{27} & 204\\
 \pass{explicate control} & \textbf{64} & 92 & 105 & 75 & 105\\
 \pass{select instructions} & 76 & 133 & 107 & \textbf{48} & 107\\
-composition & 30 & 32 & 20 & 22 & \textbf{18}\\
+composition & 28 & 32 & 20 & 22 & \textbf{18}\\
 \midrule
-total & 1808 & 2485 & 2103 & \textbf{1504} & 2961\\
+total & 1806 & 2485 & 2103 & \textbf{1504} & 2961\\
 \bottomrule
 \end{tabular}
 \caption{Lines of Agda in the five correctness proofs. The smallest number in each row is in bold.}
@@ -122,10 +122,10 @@ total & 1808 & 2485 & 2103 & \textbf{1504} & 2961\\
 \toprule
  & graph model & Scott domains & machines & interpreters & reduction\\
 \midrule
-our infrastructure & 1567 & 1507 & 470 & \textbf{436} & 1199\\
+our infrastructure & 1573 & 1507 & 470 & \textbf{436} & 1199\\
 TypeTopology's domain theory & --- & 6327 & --- & --- & ---\\
 \midrule
-total with Table~\ref{tab:loc} & 3375 & 10319 & 2573 & \textbf{1940} & 4160\\
+total with Table~\ref{tab:loc} & 3379 & 10319 & 2573 & \textbf{1940} & 4160\\
 \bottomrule
 \end{tabular}
 \caption{Lines of Agda in the infrastructure that each proof relies on,
@@ -136,18 +136,18 @@ total with Table~\ref{tab:loc} & 3375 & 10319 & 2573 & \textbf{1940} & 4160\\
 Table~\ref{tab:loc} gives the sizes of the proofs for each pass of the
 compiler, with one column per semantic style, with the totals in the
 last row. The proof with clocked interpreters is the smallest, at
-1,504 lines, followed by the graph model at 1,808, abstract machines
+1,504 lines, followed by the graph model at 1,806, abstract machines
 at 2,103, and reduction semantics at 2,961. One pass decides the graph
 model's place. The proof of \pass{split closure} alone is 450 lines, a quarter of the
 total, against 35 to 126 lines in the operational styles. Without
-\pass{split closure}, the graph model would be the smallest, at 1,358 lines
+\pass{split closure}, the graph model would be the smallest, at 1,356 lines
 against 1,469 for the interpreters. The second denotational proof,
 with Scott domains, is 2,485 lines, between the abstract machines and
 reduction semantics: 1.4 times the graph model, and larger in every
 row but the semantics of the languages. Counting the infrastructure
 (Table~\ref{tab:infra}) changes the order. The interpreters remain the
 smallest at 1,940 lines, followed by the machines at 2,573, the graph
-model at 3,375, reduction semantics at 4,160, and Scott domains at
+model at 3,379, reduction semantics at 4,160, and Scott domains at
 10,319. For comparison, \citet{Benton:2010aa} report 4,400 lines of
 Coq for their domain theory.
 

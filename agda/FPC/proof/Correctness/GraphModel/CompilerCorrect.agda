@@ -16,7 +16,7 @@
 module FPC.proof.Correctness.GraphModel.CompilerCorrect where
 
 open import Framework.Primitives using (base-rep; Int)
-open import Framework.Iff using (_⇔_)
+open import proof.Framework.Iff using (_⇔_; ⇔∘)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
 open import FPC.Semantics.GraphModel.Closed using (ρ₀)
@@ -52,9 +52,6 @@ open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_�
 {- the same constants, and nonempty together -}
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = (∀ {B} (c : base-rep B) → (dconst c ∈ D) ⇔ (dconst c ∈ E)) × (nonempty D ⇔ nonempty E)
-
-⇔∘ : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
-⇔∘ ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
 {- one Same after another (then), and an equation as one (same) -}
 then : ∀ {D E F} → Same D E → Same E F → Same D F

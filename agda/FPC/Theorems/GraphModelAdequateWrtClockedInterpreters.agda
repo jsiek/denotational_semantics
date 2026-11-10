@@ -22,7 +22,7 @@
 module FPC.Theorems.GraphModelAdequateWrtClockedInterpreters where
 
 open import Framework.Primitives using (base-rep; Int)
-open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
+open import Framework.GraphModel.SetsAsPredicates using (_∈_; ∅; _≃_)
 open import Framework.GraphModel.Domain using (const)
 open import Semantics.Observation using (o-const; _⇔_)
 open import Semantics.Interp.Clock using (Terminates; Diverges)
@@ -35,13 +35,14 @@ open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ₜ)
 import FPC.Semantics.ClockedInterpreters.FPC as FPCᵢ
 import FPC.Semantics.ClockedInterpreters.X86 as X86μᵢ
 
+open import proof.Framework.Iff using (⇔∘)
+open import proof.Framework.GraphModel.SetsAsPredicates using (¬nonempty⇔≃∅)
 import FPC.proof.Adequacy.FPC as AdequacyFPC
 import FPC.proof.Adequacy.X86 as AdequacyX86
 import FPC.proof.Adequacy.EndToEnd as EndToEnd
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
-open import Relation.Nullary using (¬_)
 
 {- Proposition 5.1 (Adequacy) -------------------------------------------------}
 
@@ -54,8 +55,8 @@ fpc-const-iff = AdequacyFPC.const-iff
 
 {- and ⟦ M ⟧ is empty if and only if the interpreter diverges on M -}
 fpc-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
-  → Diverges (FPCᵢ.sem M) ⇔ (¬ nonempty (⟦ M ⟧ ρ₀))
-fpc-diverges-iff = AdequacyFPC.diverges-iff
+  → Diverges (FPCᵢ.sem M) ⇔ (⟦ M ⟧ ρ₀ ≃ ∅)
+fpc-diverges-iff M = ⇔∘ (AdequacyFPC.diverges-iff M) ¬nonempty⇔≃∅
 
 {- the same holds for X86μ and compile M -}
 
@@ -64,8 +65,8 @@ x86-const-iff : ∀ {A} (M : FPC.Tm [] A) {B} {k : base-rep B}
 x86-const-iff = AdequacyX86.x86-const-iff
 
 x86-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
-  → Diverges (X86μᵢ.sem (compile M)) ⇔ (¬ nonempty ⟦ compile M ⟧ₜ)
-x86-diverges-iff = AdequacyX86.x86-diverges-iff
+  → Diverges (X86μᵢ.sem (compile M)) ⇔ (⟦ compile M ⟧ₜ ≃ ∅)
+x86-diverges-iff M = ⇔∘ (AdequacyX86.x86-diverges-iff M) ¬nonempty⇔≃∅
 
 {- With Theorem 4.1: the compiler, observed through the interpreters ---------}
 
