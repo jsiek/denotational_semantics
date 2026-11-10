@@ -208,29 +208,33 @@ main program. A body consists of numbered blocks and a starting tail,
 and a block may jump only to blocks numbered before it, so control
 flow is acyclic.
 
-Finally, \pass{select instructions} (\S\ref{app:pass-select}) produces \instr, a typed low-level
-language in the style of TAL \citep{Morrisett:1999fk}, with instructions
-modeled on x86, the registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
-and an abstract heap. Programs have the same structure as in CFG, except that a function
-body also declares the number of slots in its frame. An instruction reads operands $a$, which are slots, constants,
+Finally, \pass{select instructions} (\S\ref{app:pass-select}) produces
+\instr, a typed low-level language in the style of TAL
+\citep{Morrisett:1999fk}, with instructions modeled on x86, the
+registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
+and an abstract heap. Programs have the same structure as in CFG,
+except that a function body also declares the number of slots in its
+frame. An instruction reads operands $a$, which are slots, constants,
 names of definitions, and registers, and writes to a destination $d$,
-which is a register or a slot. The compiled code uses the registers to stage arithmetic and calls. The instruction $\kw{alloc}$ allocates an object
-$o$: a closure ($\kw{pair}$), a tuple, or an injection. A call
-$\kw{callc}\;x\;a$ of the closure in slot $x$ on the argument $a$
-becomes the instruction sequence 
+which is a register or a slot.
+
+The pass translates each simple expression of CFG into instructions
+that leave its value in a destination, using the registers to stage
+arithmetic and calls. A closure ($\kw{pair}$), a tuple, or an
+injection becomes the instruction $\kw{alloc}\;o, d$, which allocates
+the object $o$ on the heap. A call $\kw{callc}\;x\;a$ of the closure
+in slot $x$ on the argument $a$ becomes the instruction sequence
 $\kw{fst}\;x, \%\kw{rax};\;\;
  \kw{snd}\;x, \%\kw{rdi};\;\;
  \kw{movq}\;a, \%\kw{rsi};\;\;
- \kw{callq}\;\%\kw{rax}
-$.
+ \kw{callq}\;\%\kw{rax}$.
 The first two instructions load the code and the environment of the
 closure, the third puts the argument in place, and the call leaves its
-result in $\kw{rax}$. The type system
-only allows one closure to be open at a time,
-so that a call never combines the code
-of one closure with the environment of another.  The coercions $\kw{fold}$ and
-$\kw{unfold}$ survive to \instr\ as annotations on operands,
-$\kw{fold}\;a$ and $\kw{unfold}\;a$, that do nothing.
+result in $\kw{rax}$. The type system allows only one closure to be
+open at a time, so that a call never combines the code of one closure
+with the environment of another. The coercions $\kw{fold}$ and
+$\kw{unfold}$ become annotations on operands, $\kw{fold}\;a$ and
+$\kw{unfold}\;a$, that do nothing.
 
 \instr\ abstracts from a real instruction set. Its heap is abstract,
 with no addresses or memory layout, and control flow within a function
