@@ -47,21 +47,24 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 
 ** TODO Check that the above claims are true as we go through the proofs
 
-* Adequacy theorems
+* Adequacy
 
 Graph
 │✓
 ├── Clocked interpreter
-│   │✗
+│   │✓
 │   └── Scott
-│✗
+│✓
 ├── CEK machine
-│✗
+│✓
 └── Reduction semantics
 
-** TODO (Tianyu) check the above adequacy theorems
-Each edge in the graph above represents adequacy between the two edge-connected
-semantics. Replace ✗ with ✓ on the graph edges once the check is done.
+** DONE (Tianyu) check the above adequacy theorems
+
++ Tianyu thinks those are fine for FPC. He changed the Agda code slightly to
+  better match the divergence case of Prop. 5.1.
++ For Instrμ, we only care about the adequacy between the interpreter and the
+  graph model. The Instrμ part also looks fine.
 
 * Definitions for languages and their semantics
 
