@@ -210,13 +210,13 @@ flow is acyclic.
 
 Finally, \pass{select instructions} (\S\ref{app:pass-select}) produces
 \instr, a typed low-level language in the style of TAL
-\citep{Morrisett:1999fk}, with instructions modeled on x86, the
-registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
-and an abstract heap. Programs have the same structure as in CFG,
-except that a function body also declares the number of slots in its
-frame. An instruction reads operands $a$, which are slots, constants,
-names of definitions, and registers, and writes to a destination $d$,
-which is a register or a slot.
+\citep{Morrisett:1999fk}, with instructions modeled on x86.
+\instr\ has three registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$) a
+frame of slots, and an abstract heap. Programs have the same structure
+as in CFG, except that a function body declares the number of slots in
+its frame. Instruction operands $a$ are slots, constants, names of
+definitions, or registers. Instructions write to a destination $d$, a
+register or a slot.
 
 The pass translates each simple expression of CFG into instructions
 that leave its value in a destination, using the registers to stage
