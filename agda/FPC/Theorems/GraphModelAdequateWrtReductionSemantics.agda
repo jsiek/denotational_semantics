@@ -25,7 +25,7 @@
 module FPC.Theorems.GraphModelAdequateWrtReductionSemantics where
 
 open import Framework.Primitives using (base-rep; Int)
-open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
+open import Framework.GraphModel.SetsAsPredicates using (_∈_; ∅; _≃_)
 open import Framework.GraphModel.Domain using (const)
 open import Semantics.Observation using (o-const; _⇔_)
 import Semantics.Reduction.Smallstep as R
@@ -38,12 +38,13 @@ open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
 import FPC.Semantics.ReductionSemantics.FPC as FPCᵣ
 import FPC.Semantics.AbstractMachines.X86 as X86μₘ
 
+open import proof.Framework.Iff using (⇔∘)
+open import proof.Framework.GraphModel.SetsAsPredicates using (¬nonempty⇔≃∅)
 import FPC.proof.Adequacy.ReductionSemantics.FPC as AdequacyFPC
 import FPC.proof.Adequacy.ReductionSemantics.EndToEnd as EndToEnd
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
-open import Relation.Nullary using (¬_)
 
 {- Adequacy, reduction semantics ------------------------------------------------}
 
@@ -55,8 +56,8 @@ fpc-const-iff = AdequacyFPC.const-iff
 
 {- and ⟦ M ⟧ is empty if and only if the reduction of M diverges -}
 fpc-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
-  → R.Diverges (FPCᵣ.sem M) ⇔ (¬ nonempty (⟦ M ⟧ ρ₀))
-fpc-diverges-iff = AdequacyFPC.diverges-iff
+  → R.Diverges (FPCᵣ.sem M) ⇔ (⟦ M ⟧ ρ₀ ≃ ∅)
+fpc-diverges-iff M = ⇔∘ (AdequacyFPC.diverges-iff M) ¬nonempty⇔≃∅
 
 {- With Theorem 4.1: the compiler, observed through reduction and the X86μ machine -}
 
