@@ -161,8 +161,8 @@ $d$.
   \mathit{put}(\%r, v,\; \langle R, \sigma, u, b\rangle) &= \langle R[r{:=}v], \sigma, u, b\rangle \\
   \mathit{put}(x, v,\; \langle R, \sigma, u, b\rangle) &= \langle R, \sigma|_x[x{:=}v], \mathsf{none}, b\rangle
 \end{align*}
-Here $\sigma|_x$ is the frame cut at slot $x$, which keeps the slots
-before $x$ and pops slot $x$ and the slots after it. As in the
+Here $\sigma|_x$ is the frame with the slots from $x$ on popped, which
+keeps the slots before $x$, and $[x{:=}v]$ pushes $v$ as slot $x$. As in the
 semantics of CFG (Appendix~\ref{app:cfg}), the popped slots hold
 variables that have gone out of scope. For example,
 \pass{select instructions} translates the CFG tail of
