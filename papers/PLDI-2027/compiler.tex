@@ -232,11 +232,9 @@ of one closure with the environment of another.  The coercions $\kw{fold}$ and
 $\kw{unfold}$ survive to \instr\ as annotations on operands,
 $\kw{fold}\;a$ and $\kw{unfold}\;a$, that do nothing.
 
-\instr\ abstracts from a real instruction set. It is typed; its heap is abstract, with no addresses or memory layout; it has
-three registers and no register allocation; control flow within a
-function is acyclic, so loops are recursive calls; and $\kw{case}$ is a
-pseudo-instruction that stands for a test, a load, and a conditional
-jump. None of these abstractions concerns closure
-conversion, because in \instr, as in machine code, a closure is a heap object
-that pairs the name of a function with a tuple of captured values, and
-a call loads both before it jumps.
+\instr\ abstracts from a real instruction set. Its heap is abstract,
+with no addresses or memory layout, and control flow within a function
+is acyclic, so loops are recursive calls. Neither abstraction concerns
+closure conversion, because in \instr, as in machine code, a closure is
+a heap object that pairs the name of a function with a tuple of
+captured values, and a call loads both before it jumps.
