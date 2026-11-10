@@ -208,13 +208,13 @@ main program. A body consists of numbered blocks and a starting tail,
 and a block may jump only to blocks numbered before it, so control
 flow is acyclic.
 
-Finally, \pass{select instructions} (\S\ref{app:pass-select}) produces
-\instr, a typed low-level language in the style of TAL
-\citep{Morrisett:1999fk}, with instructions modeled on x86.
-\instr\ has three registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$) a
-frame of slots, and an abstract heap. Programs have the same structure
-as in CFG, except that a function body declares the number of slots in
-its frame. Instruction operands $a$ are slots, constants, names of
+Finally, \pass{select instructions} (\S\ref{app:pass-select})
+translates to \instr, a typed low-level language in the style of TAL
+\citep{Morrisett:1999fk}, with an x86 flavor.  \instr\ has three
+registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$) a stack frame of
+slots, and an abstract heap. Programs have the same structure as in
+CFG, except that a function body declares the number of slots in its
+frame. Instruction operands $a$ are slots, constants, names of
 definitions, or registers. Instructions write to a destination $d$, a
 register or a slot.
 
