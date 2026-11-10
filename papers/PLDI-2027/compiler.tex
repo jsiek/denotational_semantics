@@ -89,6 +89,9 @@
 \caption{The grammars of the compiler's languages.}
 \label{fig:grammars}
 \end{figure}
+\todo{In the above grammar rules, the non-terminal \(r\) in Imp denotes RHS of
+  an assignment while the same letter \(r\) denotes registers. Maybe we should
+  disambiguate these \(r\)s? --Darshal}
 
 Our compiler translates \fpc, the call-by-value $\lambda$-calculus
 with sums, products, and iso-recursive types of \citet{Plotkin:1985aa}
@@ -114,14 +117,15 @@ Appendix~\ref{app:languages}.
 
 \paragraph{The source language}
 
-\fpc\ has integers, $n$-ary tuples, binary sums, the primitives
-$\kw{sub}$ and $\kw{eq}$, and iso-recursive types. The primitive $\kw{eq}$ returns
-$\kw{inl}\;\langle\rangle$ for true and $\kw{inr}\;\langle\rangle$ for
-false, so $\kw{case}$ serves as the conditional. A recursive type $\mu
-X.\, A$ is isomorphic to its unfolding $A[\mu X.\, A / X]$, and the
-two coercions of this isomorphism are explicit. The $\kw{fold}$
-operation turns a term of the unfolding into a term of the recursive
-type, and $\kw{unfold}$ turns it back:
+\fpc\ has integers, $n$-ary tuples, binary sums, the primitives $\kw{sub}$ and
+$\kw{eq}$, and iso-recursive types. The primitive $\kw{eq}$ returns
+$\kw{inl}\;\langle\rangle$ for true and $\kw{inr}\;\langle\rangle$ for false, so
+$\kw{case}$ serves as the conditional. A recursive type $\mu X.\, A$ is
+isomorphic to its unfolding $A[\mu X.\, A / X]$\todo{Should we use
+  $A[X{:=}\mu X.\, A]$ as the notation for substitution here so that we use the
+  same notation throughout the paper? --Darshal}, and the two coercions of this
+isomorphism are explicit. The $\kw{fold}$ operation turns a term of the
+unfolding into a term of the recursive type, and $\kw{unfold}$ turns it back:
 \[
   \frac{\Gamma \vdash M : A[\mu X.\, A / X]}{\Gamma \vdash \kw{fold}\;M : \mu X.\, A}
   \qquad

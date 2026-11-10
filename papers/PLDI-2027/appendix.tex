@@ -339,18 +339,23 @@ it assigns, like a $\kw{let}$.
 \label{app:cfg}
 \agda{FPC/Language/CFG.agda, FPC/Semantics/GraphModel/CFG.agda}
 
-CFG, the target of \pass{explicate control}, organizes each function body as a control-flow graph. A function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the type $R$ of the function body's result, the list
-$\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
-blocks it may jump to, and its own frame $\Delta$. A label $l$ is an
-index into $\vec{\Delta}$. Block $t_l$ is typed over the blocks older
-than it, so control flow is acyclic. Here $\Delta' \sqsubseteq \Delta$
-says that $\Delta'$ is a prefix of $\Delta$; an assignment to slot
-$|\Delta'|$ pops the slots from $|\Delta'|$ on and pushes the new
-value. The popped slots hold the variables bound inside the expression whose value the
-assignment writes, and these variables are out of scope after the
-assignment. For example, \pass{lift locals} translates
+CFG, the target of \pass{explicate control}, organizes each function body as a
+control-flow graph. A function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered
+blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the
+type $R$ of the function body's result, the list
+$\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the blocks it
+may jump to, and its own frame $\Delta$. A label $l$ is an index into
+$\vec{\Delta}$. Block $t_l$ is typed over the blocks older than it, so control
+flow is acyclic. Here $\Delta' \sqsubseteq \Delta$ says that $\Delta'$ is a
+prefix of $\Delta$; an assignment to slot $|\Delta'|$ pops the slots from
+$|\Delta'|$ on and pushes the new value. The popped slots hold the variables
+bound inside the expression whose value the assignment writes, and these
+variables are out of scope after the assignment. For example, \pass{lift locals}
+translates
 $\kw{let}\;y = (\kw{let}\;z = 5\;\kw{in}\;\kw{let}\;w = z - 1\;\kw{in}\;w - 1)\;\kw{in}\;y - 2$
-into the Imp expression
+into the Imp expression \todo{We should probably disambiguate the syntax for
+  constant integers from frame slot addresses. Maybe use \(\$5\) for constants
+  or \(@0\) for slot addresses. --Darshal}
 \[
   0 \mathrel{:=} (0 \mathrel{:=} 5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;1;\;
     \kw{prim}_{\kw{sub}}\;1\;1);\; \kw{prim}_{\kw{sub}}\;0\;2
@@ -408,6 +413,7 @@ programs are given meaning as in Imp, with the function body in place of the
 expression and no continuation.
 
 \subsection{The \instr\ Language}
+\label{app:instr}
 \agda{FPC/Language/X86.agda, FPC/Semantics/GraphModel/X86.agda}
 
 \instr\ is the target language, produced by \pass{select instructions}; Section~\ref{sec:compiler} describes its instructions informally. An instruction is typed by the type of the machine state it starts in
@@ -449,6 +455,7 @@ $a_1 : \kw{code}(\Delta; A \rightarrow C)$ and $a_2 : \kw{tup}(\Delta)$;
 tuples and injections of operands are typed as in \fpc. With
 $\psi = \langle \Theta; \Delta; O; F \rangle$ and operands typed in
 $\psi$, the instructions are typed by.
+\todo{I need to explain the interaction between the rules for fst, snd and callq --Darshal}
 \defhead{Typing of instructions}{\Sigma; n \vdash i : \psi \Rightarrow \psi'}
 \[
 \begin{array}{@{}c@{}}
@@ -846,12 +853,15 @@ where $o$ ranges over the operations of Mon (Figure~\ref{fig:grammars}).
 \label{app:pass-lift-locals}
 \agda{FPC/Compiler/LiftLocals.agda (lift-program)}
 
-A $\kw{let}$ becomes an assignment to the next slot of the frame, and
-the variable a $\kw{case}$ binds becomes the slot its payload is
-written to. A variable becomes the slot at its level $\ell(x)$, the
-number of variables bound before it; in a definition
-$\kw{code}\;(z, y.\,N)$, $\ell(z) = 0$ and $\ell(y) = 1$. With $\Gamma$
-the variables in scope:
+A $\kw{let}$ becomes an assignment to the next slot of the frame, and the
+variable a $\kw{case}$ binds becomes the slot its payload is written to. A
+variable becomes the slot at its level $\ell(x)$, the number of variables bound
+before it; in a definition $\kw{code}\;(z, y.\,N)$, $\ell(z) = 0$ and
+$\ell(y) = 1$. With $\Gamma$ the variables in scope: \todo{I need to redefine
+  lift by defining \(\ell\) as a list of variables in scope. Then we can replace
+  \(|\Gamma|\) with \(|\ell|\) and the variable case looks up the variable's
+  position in \(\ell\). \(\ell\) is not used in the Agda code because it already
+  uses Debruijn indices. --Darshal}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \pass{lift}(x) & = & \ell(x)\\
