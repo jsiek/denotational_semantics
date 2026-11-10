@@ -27,7 +27,7 @@ module FPC.proof.Correctness.AbstractMachines.ExplicateSim where
 
 open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 import FPC.Language.Imp as Imp
 open Imp using (simple; assign; case)
 open import FPC.Language.CFG
@@ -96,14 +96,14 @@ module Sim {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)
       halt : ∀ {A} → I.halt {A = A} ≈ G.halt
       retK : ∀ {A} {κ₁ : I.Cont Σ A} {κ₂} → κ₁ ≈ κ₂ → κ₁ ≈ G.retK κ₂
       seqK : ∀ {R Bs Δ Δ' A} {p : Δ' ⊑ Δ} {φ} {k : Tail Σ R Bs (A ∷ Δ')} {bs} {κ₁ : I.Cont Σ A} {κ₂}
-        → Ctl (forget p φ) κ₁ k bs κ₂ → κ₁ ≈ G.seqK p φ k bs κ₂
+        → Ctl (pop p φ) κ₁ k bs κ₂ → κ₁ ≈ G.seqK p φ k bs κ₂
 
     {- κ₁, given a value v, continues as the tail k in the frame v ∷ φ -}
     data Ctl : ∀ {R Bs Δ A} → I.Frame Σ Δ → I.Cont Σ A → Tail Σ R Bs (A ∷ Δ) → Blocks Σ R Bs → G.Cont Σ R → Set where
       asgT : ∀ {R Bs Δ A} {e₂ : Imp.Exp Σ (A ∷ Δ) R} {φ κ κ₂} {bs : Blocks Σ R Bs} → κ ≈ κ₂
         → Ctl φ (I.assignK e₂ φ κ) (Out.tail (explicate-tail e₂ bs)) (Out.made (explicate-tail e₂ bs)) κ₂
       asgA : ∀ {R Bs Δ Δ'' A B} {e₂ : Imp.Exp Σ (A ∷ Δ) B} {p : Δ'' ⊑ Δ} {k : Tail Σ R Bs (B ∷ Δ'')} {φ κ κ₂ bs}
-        → Ctl (forget p φ) κ k bs κ₂
+        → Ctl (pop p φ) κ k bs κ₂
         → Ctl φ (I.assignK e₂ φ κ) (Out.tail (explicate-assign e₂ (there⊑ p) k bs))
               (Out.made (explicate-assign e₂ (there⊑ p) k bs)) κ₂
       jmp : ∀ {R Bs Bs' Δ A} {φ κ κ₂} {k : Tail Σ R Bs (A ∷ Δ)} {bs : Blocks Σ R Bs} {bs' : Blocks Σ R Bs'} {l}
@@ -113,7 +113,7 @@ module Sim {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)
     tail~ : ∀ {R Bs Δ} {e : Imp.Exp Σ Δ R} {φ κ₁ κ₂} {bs : Blocks Σ R Bs} → κ₁ ≈ κ₂
       → Match (depth e) (I.eval e φ κ₁) (G.exec (Out.tail (explicate-tail e bs)) φ (Out.made (explicate-tail e bs)) κ₂)
     asg~ : ∀ {R Bs Δ Δ' A} {e : Imp.Exp Σ Δ A} {p : Δ' ⊑ Δ} {k : Tail Σ R Bs (A ∷ Δ')} {bs φ κ₁ κ₂}
-      → Ctl (forget p φ) κ₁ k bs κ₂
+      → Ctl (pop p φ) κ₁ k bs κ₂
       → Match (depth e) (I.eval e φ κ₁)
           (G.exec (Out.tail (explicate-assign e p k bs)) φ (Out.made (explicate-assign e p k bs)) κ₂)
 
@@ -148,7 +148,7 @@ module Sim {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)
   res-t r (I.value v) st = cont≈ r v st
   res-t r (I.call f w) st = call≈ f w st (retK r)
 
-  res-a : ∀ {Bs Δ Δ'} {p : Δ' ⊑ Δ} {φ} {k : Tail Σ R Bs (A ∷ Δ')} {bs κ₂} → Ctl (forget p φ) κ₁ k bs κ₂
+  res-a : ∀ {Bs Δ Δ'} {p : Δ' ⊑ Δ} {φ} {k : Tail Σ R Bs (A ∷ Δ')} {bs κ₂} → Ctl (pop p φ) κ₁ k bs κ₂
     → ∀ r → G.step ds₂ s₂ ≡ G.assign ds₂ p φ k bs κ₂ r → Ans i (I.res ds r κ₁) s₂
   res-a c (I.value v) st with ctl c v
   ... | _ , e , _ , rch = answers-at e (after≺ st rch)

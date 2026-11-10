@@ -6,9 +6,9 @@
   model, as the semantics of CFGᵀ (ISWIM/Semantics/Graph/Typed/CFG.agda) is.
   What runs next (Kont) is given the frame, the registers and the flag.
   The frame is the environment, as in CFGᵀ: slot x is position idx x,
-  and writing slot k forgets the slots after it (drop). A label means
-  its block, under the meanings of the older blocks; a block starts with
-  its frame, the registers unset and no flag.
+  and writing slot k pops the slots from k on and pushes the new value
+  (drop). A label means its block, under the meanings of the older
+  blocks; a block starts with its frame, the registers unset and no flag.
 
   * A slot write binds its value as CFGᵀ's seq does: ⋆ ⟨ Λ F , D ⟩, F X
     running the rest with X in the slot. A register write is a

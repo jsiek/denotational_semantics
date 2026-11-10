@@ -14,8 +14,8 @@
 
   * return s: the value of s;
   * seq p s t: slot k := s, then t, where k is the length of Δ' (p : Δ' ⊑ Δ):
-    the slots from k on are forgotten (they belong to a finished scope)
-    and slot k is assigned anew;
+    the slots from k on are popped (they belong to a finished scope)
+    and slot k is pushed anew;
   * goto l;
   * case a p l₁ l₂: slot k := the payload of the injection a, then jump to
     l₁ for inl and l₂ for inr.

@@ -43,7 +43,7 @@ open import ISWIM.Semantics.Graph.Typed.X86 using (⟦_⟧ˢ; codeₜ; ⟦_⟧�
 open import ISWIM.Semantics.CEK.Typed.X86
 open import Semantics.Observation using (Obs)
 open import proof.Semantics.CEK.Smallstep using (Terminates; next)
-open import Framework.Lookup using (_!_; forget)
+open import Framework.Lookup using (_!_; pop)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import ISWIM.proof.Adequacy.X86Common ds
 open import ISWIM.proof.Adequacy.Clos5Values using (module Rel; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv; proj?-ok)
@@ -153,7 +153,7 @@ record 𝕄 {η ψ} (ρ : _) (R : RegsD) (F : 𝒫 Value) (m : Mach Σ η ψ) : 
     fl : FlR F (flag m)
     op : OpR (St.op ψ) (frame m) (opened m)
 
-𝔾-drop : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {ρ} {φ : Frame Σ Δ} → 𝔾 ρ φ → 𝔾 (drop p ρ) (forget p φ)
+𝔾-drop : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {ρ} {φ : Frame Σ Δ} → 𝔾 ρ φ → 𝔾 (drop p ρ) (pop p φ)
 𝔾-drop here⊑ G = G
 𝔾-drop (there⊑ p) {φ = v ∷ φ} G = 𝔾-drop p (λ x → G (S x))
 
@@ -221,7 +221,7 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   put-𝕄 (slot p _) {v = v} (𝕞 G Rg Fl Op) h ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ =
     ⟨ _ , ⟨ _ , ⟨ _ , ⟨ 𝕞 G' Rg Fl tt , w∈ ⟩ ⟩ ⟩ ⟩
     where
-    G' : 𝔾 (mem V • drop p _) (v ∷ forget p _)
+    G' : 𝔾 (mem V • drop p _) (v ∷ pop p _)
     G' Z d d∈ = h d (V⊆ d d∈)
     G' (S x) = 𝔾-drop p G x
 

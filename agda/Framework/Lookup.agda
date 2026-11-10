@@ -2,7 +2,7 @@
 
   Looking up a typed index (Framework/Membership.agda) in a list of
   things indexed by the list's elements (an environment typed by a
-  context, a table of definitions), and forgetting the newer part of
+  context, a table of definitions), and popping the newer part off
   such a list (a frame whose newer slots belong to a finished scope).
 
 -}
@@ -18,6 +18,6 @@ _!_ : ∀ {A : Set} {P : A → Set} {xs x} → All P xs → xs ∋ x → P x
 (p ∷ ps) ! Z = p
 (p ∷ ps) ! S x = ps ! x
 
-forget : ∀ {A : Set} {P : A → Set} {xs ys} → xs ⊑ ys → All P ys → All P xs
-forget here⊑ ps = ps
-forget (there⊑ s) (p ∷ ps) = forget s ps
+pop : ∀ {A : Set} {P : A → Set} {xs ys} → xs ⊑ ys → All P ys → All P xs
+pop here⊑ ps = ps
+pop (there⊑ s) (p ∷ ps) = pop s ps

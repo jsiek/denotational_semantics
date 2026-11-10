@@ -29,7 +29,7 @@ open import Framework.Primitives using (Int)
 open import Language.Prim using (sub)
 open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import ISWIM.Language.Typed.X86
-open import Framework.Lookup using (_!_; forget)
+open import Framework.Lookup using (_!_; pop)
 open import Semantics.Interp.Clock
 open import ISWIM.Semantics.Interp.Typed.Clos5 using (module Vals)
 open import ISWIM.Semantics.Interp.Typed.Imp using () renaming (atom to value-of)
@@ -124,7 +124,7 @@ module _ {Σ : List ℕ} where
   {- d := v -}
   put : ∀ {n η ψ τ ψ'} → Dst n ψ τ ψ' → RV Σ η τ → Mach Σ η ψ → Mach Σ η ψ'
   put (reg r) v m = ⟨ regs m [ r ≔ v ] , frame m , opened m , flag m ⟩
-  put (slot p _) v m = ⟨ regs m , v ∷ forget p (frame m) , tt , flag m ⟩
+  put (slot p _) v m = ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
 
   obj : ∀ {η ψ A} → Obj Σ ψ A → Mach Σ η ψ → Val A
   obj (pair c e) m = pack (arg c m) (arg e m)
