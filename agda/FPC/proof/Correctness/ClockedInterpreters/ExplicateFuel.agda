@@ -27,7 +27,7 @@ import FPC.Semantics.ClockedInterpreters.GlobalFun as C
 import FPC.Semantics.ClockedInterpreters.Imp as I
 import FPC.Semantics.ClockedInterpreters.CFG as G
 open import FPC.Semantics.ClockedInterpreters.Imp using (atom; eval-simple)
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; either-cong)
 
 open import Data.List using (List; []; _∷_)
@@ -89,8 +89,8 @@ module _ {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)) 
       assign-ok : ∀ {Bs Δ Δ' A} (e : Imp.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ R Bs (A ∷ Δ')) (bs : Blocks Σ R Bs)
         {K : Env (A ∷ Δ') → Result (Val R)}
         → (∀ φ → K φ ≡ G.tail ds' ck bs φ k)
-        → Ok bs (λ φ → I.eval ds ck φ e >>= λ v → K (v ∷ forget p φ)) (explicate-assign e p k bs)
-      assign-ok (Imp.simple s) p k bs h = ok same λ φ → bind≡ (simple≡ φ s) λ v → h (v ∷ forget p φ)
+        → Ok bs (λ φ → I.eval ds ck φ e >>= λ v → K (v ∷ pop p φ)) (explicate-assign e p k bs)
+      assign-ok (Imp.simple s) p k bs h = ok same λ φ → bind≡ (simple≡ φ s) λ v → h (v ∷ pop p φ)
       assign-ok (Imp.assign e₁ e₂) p k bs h with explicate-assign e₂ (there⊑ p) k bs | assign-ok e₂ (there⊑ p) k bs h
       ... | out g bs₁ t | ok e m with explicate-assign e₁ here⊑ t bs₁ | assign-ok e₁ here⊑ t bs₁ m
       ...   | o | ok e' m' = after-ok o e (ok e' λ φ → trans (bind-assoc (I.eval ds ck φ e₁)) (m' φ))

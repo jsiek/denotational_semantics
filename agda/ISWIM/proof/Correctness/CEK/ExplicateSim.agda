@@ -7,7 +7,7 @@
 
   The machines share the values, the frames and the simple expressions,
   and an expression runs in the same frame on both: a seq or case of
-  CFGᵀ forgets exactly the slots that the Impᵀ continuation does not
+  CFGᵀ pops exactly the slots that the Impᵀ continuation does not
   see. An expression e whose value is the body's result runs as
   explicate-tail e (tail~); one whose value is assigned to the next slot
   before the tail k runs, as explicate-assign e p k (asg~), where the
@@ -33,7 +33,7 @@ module ISWIM.proof.Correctness.CEK.ExplicateSim where
 
 open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 import ISWIM.Language.Typed.Imp as Imp
 open Imp using (simple; assign; case)
 open import ISWIM.Language.Typed.CFG
@@ -102,14 +102,14 @@ module Sim {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫
       halt : I.halt ≈ G.halt
       retK : ∀ {κ₁ κ₂} → κ₁ ≈ κ₂ → κ₁ ≈ G.retK κ₂
       seqK : ∀ {Bs Δ Δ'} {p : Δ' ⊑ Δ} {φ k} {bs : Blocks Σ Bs} {κ₁ κ₂}
-        → Ctl (forget p φ) κ₁ k bs κ₂ → κ₁ ≈ G.seqK p φ k bs κ₂
+        → Ctl (pop p φ) κ₁ k bs κ₂ → κ₁ ≈ G.seqK p φ k bs κ₂
 
     {- κ₁, given a value v, continues as the tail k in the frame v ∷ φ -}
     data Ctl : ∀ {Bs Δ A} → I.Frame Σ Δ → I.Cont Σ A → Tail Σ Bs (A ∷ Δ) → Blocks Σ Bs → G.Cont Σ → Set where
       asgT : ∀ {Bs Δ A} {e₂ : Imp.Exp Σ (A ∷ Δ) Any} {φ κ κ₂} {bs : Blocks Σ Bs} → κ ≈ κ₂
         → Ctl φ (I.assignK e₂ φ κ) (Out.tail (explicate-tail e₂ bs)) (Out.made (explicate-tail e₂ bs)) κ₂
       asgA : ∀ {Bs Δ Δ'' A B} {e₂ : Imp.Exp Σ (A ∷ Δ) B} {p : Δ'' ⊑ Δ} {k : Tail Σ Bs (B ∷ Δ'')} {φ κ κ₂ bs}
-        → Ctl (forget p φ) κ k bs κ₂
+        → Ctl (pop p φ) κ k bs κ₂
         → Ctl φ (I.assignK e₂ φ κ) (Out.tail (explicate-assign e₂ (there⊑ p) k bs))
               (Out.made (explicate-assign e₂ (there⊑ p) k bs)) κ₂
       jmp : ∀ {Bs Bs' Δ A} {φ κ κ₂} {k : Tail Σ Bs (A ∷ Δ)} {bs : Blocks Σ Bs} {bs' : Blocks Σ Bs'} {l}
@@ -119,7 +119,7 @@ module Sim {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫
     tail~ : ∀ {Bs Δ} {e : Imp.Exp Σ Δ Any} {φ κ₁ κ₂} {bs : Blocks Σ Bs} → κ₁ ≈ κ₂
       → Match (depth e) (I.eval e φ κ₁) (G.exec (Out.tail (explicate-tail e bs)) φ (Out.made (explicate-tail e bs)) κ₂)
     asg~ : ∀ {Bs Δ Δ' A} {e : Imp.Exp Σ Δ A} {p : Δ' ⊑ Δ} {k : Tail Σ Bs (A ∷ Δ')} {bs φ κ₁ κ₂}
-      → Ctl (forget p φ) κ₁ k bs κ₂
+      → Ctl (pop p φ) κ₁ k bs κ₂
       → Match (depth e) (I.eval e φ κ₁)
           (G.exec (Out.tail (explicate-assign e p k bs)) φ (Out.made (explicate-assign e p k bs)) κ₂)
 
@@ -155,7 +155,7 @@ module Sim {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫
   res-t r I.fail st = stops st
   res-t r (I.call f w) st = call≈ f w st (retK r)
 
-  res-a : ∀ {Bs Δ Δ'} {p : Δ' ⊑ Δ} {φ} {k : Tail Σ Bs (A ∷ Δ')} {bs} → Ctl (forget p φ) κ₁ k bs κ₂
+  res-a : ∀ {Bs Δ Δ'} {p : Δ' ⊑ Δ} {φ} {k : Tail Σ Bs (A ∷ Δ')} {bs} → Ctl (pop p φ) κ₁ k bs κ₂
     → ∀ r → G.step ds₂ s₂ ≡ G.assign ds₂ p φ k bs κ₂ r → Ans i (I.res ds r κ₁) s₂
   res-a c (I.value v) st with ctl c v
   ... | _ , e , _ , rch = answers-at e (after≺ st rch)

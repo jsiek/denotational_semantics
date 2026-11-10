@@ -21,7 +21,7 @@ module FPC.proof.Correctness.AbstractMachines.SelectSim where
 open import Language.Prim using (sub; eq)
 open import FPC.Language.Type
 open import Framework.Membership using (_⊑_)
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import FPC.proof.Framework.AllProp using (lookup-map)
 import FPC.Language.CFG as C
@@ -159,9 +159,9 @@ module Sim {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s))
   {- case x p l₁ l₂: the payload, then the branch -}
   case~ : ∀ {R Bs Δ Δ' A B n η} {p : Δ' ⊑ Δ} {l₁ : Bs ∋ (A ∷ Δ')} {l₂ : Bs ∋ (B ∷ Δ')} {φ : G.Frame Σ Δ} {bs : C.Blocks Σ R Bs}
     {κ σ} .{le : blocks-depth bs ≤ n} (v : G.Val Σ (A ⊹ B))
-    → G.step ds s₁ ≡ next (choose v (λ u → G.go ds (C.block bs l₁) (u ∷ forget p φ) κ) (λ u → G.go ds (C.block bs l₂) (u ∷ forget p φ) κ))
-    → X.step xds s₂ ≡ next (choose v (λ u → X.go xds (block (blocks bs le) l₁) σ η (u ∷ forget p φ))
-                                     (λ u → X.go xds (block (blocks bs le) l₂) σ η (u ∷ forget p φ)))
+    → G.step ds s₁ ≡ next (choose v (λ u → G.go ds (C.block bs l₁) (u ∷ pop p φ) κ) (λ u → G.go ds (C.block bs l₂) (u ∷ pop p φ) κ))
+    → X.step xds s₂ ≡ next (choose v (λ u → X.go xds (block (blocks bs le) l₁) σ η (u ∷ pop p φ))
+                                     (λ u → X.go xds (block (blocks bs le) l₂) σ η (u ∷ pop p φ)))
     → κ ~ σ → 𝔅 s₁ s₂
   case~ {η = η} {l₁ = l₁} {bs = bs} {σ = σ} {le = le} (inl u) e₀ e₁ k =
     move (step⁺ e₀) (step⁺ (trans e₁ (cong (λ b → next (X.go xds b σ η _)) (block-sel bs l₁ le)))) (exec~ k)

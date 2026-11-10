@@ -3,7 +3,7 @@
   The semantics of CFGᵀ (ISWIM/Language/Typed/CFG.agda) in the graph model
   with errors, as that of CFG (ISWIM/Untyped/Semantics/GraphErr/CFG.agda). The frame
   is the environment, as in Impᵀ (ISWIM/Semantics/GraphErr/Typed/Imp.agda);
-  a tail that forgets the slots of a finished scope (p : Δ' ⊑ Δ) sees
+  a tail that pops the slots of a finished scope (p : Δ' ⊑ Δ) sees
   the environment without them (drop). A label means the block it
   indexes, under the meanings of the older blocks (blocks), so a jump
   needs no check.

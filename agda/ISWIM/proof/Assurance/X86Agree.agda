@@ -19,11 +19,11 @@ module ISWIM.proof.Assurance.X86Agree where
 
 open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import Framework.Membership using (_⊑_; ⊑-∋)
-open import Framework.Lookup using (_!_; forget)
+open import Framework.Lookup using (_!_; pop)
 open import Framework.ListUtil using (_‼_; has-length; proj)
 import ISWIM.Language.Typed.Imp as Imp
 open import ISWIM.Compiler.SelectX86 using (select-atm)
-open import proof.Framework.Lookup using (lvl-<; lvl-⊑; forget-!)
+open import proof.Framework.Lookup using (lvl-<; lvl-⊑; pop-!)
 open import Semantics.Observation using (Obs; o-tuple; o-inl; o-inr)
 import ISWIM.Semantics.CEK.X86 as X
 import ISWIM.Semantics.CEK.Values as XV
@@ -121,15 +121,15 @@ upd (u ∷ φ) zero w _ = w ∷ φ , refl , refl , (λ { zero ne → ⊥-elim (n
 upd (u ∷ φ) (suc k) w (s≤s lt) with upd φ k w lt
 ... | φ' , e , r , o , l = u ∷ φ' , cong (mmap (u ∷_)) e , r , (λ { zero _ → refl ; (suc j) ne → o j (ne ∘ cong suc) }) , cong suc l
 
-{- slot |Δ'| := v, forgetting the slots from |Δ'| on -}
+{- slot |Δ'| := v, popping the slots from |Δ'| on -}
 write : ∀ {Σ Δ Δ' A} {φ : G.Frame Σ Δ} {φₓ} → Agree φ φₓ → (p : Δ' ⊑ Δ) → length Δ' < length φₓ → (v : V.Val Σ A)
-  → Σ[ φₓ' ∈ X.Frame ] φₓ X.[ length Δ' ]≔ ⌊ v ⌋ ≡ just φₓ' × Agree (v ∷ forget p φ) φₓ' × length φₓ' ≡ length φₓ
+  → Σ[ φₓ' ∈ X.Frame ] φₓ X.[ length Δ' ]≔ ⌊ v ⌋ ≡ just φₓ' × Agree (v ∷ pop p φ) φₓ' × length φₓ' ≡ length φₓ
 write {φ = φ} {φₓ} ag p lt v with upd φₓ _ ⌊ v ⌋ lt
 ... | φₓ' , e , r , o , l = φₓ' , e , agree ag' , l
   where
-  ag' : ∀ {B} (x : _ ∋ B) → φₓ' ‼ lvl x ≡ just ⌊ (v ∷ forget p φ) ! x ⌋
+  ag' : ∀ {B} (x : _ ∋ B) → φₓ' ‼ lvl x ≡ just ⌊ (v ∷ pop p φ) ! x ⌋
   ag' Z = r
   ag' (S y) = trans (o (lvl y) (<⇒≢ (lvl-< y)))
     (trans (cong (φₓ ‼_) (sym (lvl-⊑ p y)))
-      (trans (Agree.at ag (⊑-∋ p y)) (cong (just ∘ ⌊_⌋) (sym (forget-! p φ y)))))
+      (trans (Agree.at ag (⊑-∋ p y)) (cong (just ∘ ⌊_⌋) (sym (pop-! p φ y)))))
 

@@ -204,7 +204,7 @@ state $m$, where $B = s_0, \ldots, s_{n-1}$ lists the blocks that $s$
 may jump to. A label $l$ names the block $s_l$ of $B$. Because control
 flow within a function is acyclic, a block may jump only to the blocks
 created before it, which run after it, so jumping to $l$ runs $s_l$ with the blocks
-$B_l = s_0, \ldots, s_{l-1}$ and forgets the newer ones, which $s_l$
+$B_l = s_0, \ldots, s_{l-1}$ and pops the newer ones, which $s_l$
 cannot reach. A $\kw{callq}$ to the code $\kw{code}\,f$ runs
 $\mathit{call}_k(\kw{code}\,f, u, w)$, which does not use $B$. The
 program has a global list of definitions, fixed for the whole run, and

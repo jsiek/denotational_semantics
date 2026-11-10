@@ -66,7 +66,7 @@ open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_⟧�
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.X86
 open import proof.Semantics.Interp.Clock using (Result)
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import FPC.Framework.AllUtil using ([]; _∷_; pos)
 open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
@@ -304,7 +304,7 @@ undrop here⊑ f = f
 undrop (there⊑ p) f zero = []
 undrop (there⊑ p) f (suc i) = undrop p f i
 
-undrop-AL : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {f} {φ : Frame Δ} → (∀ j → mem (f j) ⊆ 𝓔 (forget p φ) j) → ∀ i → mem (undrop p f i) ⊆ 𝓔 φ i
+undrop-AL : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {f} {φ : Frame Δ} → (∀ j → mem (f j) ⊆ 𝓔 (pop p φ) j) → ∀ i → mem (undrop p f i) ⊆ 𝓔 φ i
 undrop-AL here⊑ h = h
 undrop-AL (there⊑ p) {φ = v ∷ φ} h zero = λ _ ()
 undrop-AL (there⊑ p) {φ = v ∷ φ} h (suc i) = undrop-AL p h i
@@ -317,7 +317,7 @@ und : ∀ {Δ' Δ : Ctx} → Δ' ⊑ Δ → Apx → Apx
 und p A' = λ { 0 → A' 0 ; 1 → A' 1 ; 2 → A' 2 ; (suc (suc (suc i))) → undrop p (λ j → A' (suc (suc (suc (suc j))))) i }
 
 und-AL : ∀ {Δ' Δ A η Γ} (p : Δ' ⊑ Δ) {A'} {ρ : RegVals Σ η Γ} {φ : Frame Δ} {v : Val A}
-  → (∀ l → mem (A' l) ⊆ 𝓛 ρ (v ∷ forget p φ) l) → ∀ l → mem (und p A' l) ⊆ 𝓛 ρ φ l
+  → (∀ l → mem (A' l) ⊆ 𝓛 ρ (v ∷ pop p φ) l) → ∀ l → mem (und p A' l) ⊆ 𝓛 ρ φ l
 und-AL p al' = λ { 0 → al' 0 ; 1 → al' 1 ; 2 → al' 2 ; (suc (suc (suc i))) → undrop-AL p (λ j → al' (suc (suc (suc (suc j))))) i }
 
 {- a jump, from a state with no register and no flag -}
@@ -660,11 +660,11 @@ sound ck bs η m (retq e) i =
 sound ck bs η m (jmp l) i =
   widen (λ { z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ → ⟨ A' , ⟨ unset-AL al' , jump-⊆ bs l al' z z∈ ⟩ ⟩ }) (sound-jump ck bs η l (frame m))
 sound ck bs η m s@(case x p _ l₁ l₂) i with lookup (frame m) x in eq
-... | inl u = widen ⊆′ (sound-jump ck bs η l₁ (u ∷ forget p (frame m)))
+... | inl u = widen ⊆′ (sound-jump ck bs η l₁ (u ∷ pop p (frame m)))
   where
   X : Apx → List Value
   X A' = proj₁ (𝒱-ne u) ∷ A' 3
-  ⊆′ : 𝒮 (Blk.start (block bs l₁)) (Blk.blocks (block bs l₁)) (entryₘ {η} (u ∷ forget p (frame m))) ⊆ 𝒮 s bs m
+  ⊆′ : 𝒮 (Blk.start (block bs l₁)) (Blk.blocks (block bs l₁)) (entryₘ {η} (u ∷ pop p (frame m))) ⊆ 𝒮 s bs m
   ⊆′ z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ = fin (grown (grow-arg {m = m} (atom (var x)) (map left (X A')) Xin) (und p A') (und-AL p (unset-AL al')))
     where
     X⊆ : mem (X A') ⊆ 𝒱 u
@@ -681,11 +681,11 @@ sound ck bs η m s@(case x p _ l₁ l₂) i with lookup (frame m) x in eq
       fr : σ̂ A' ⊆ₑ (mem (X A') • drop p (σ̂ A))
       fr zero d d∈ = there d∈
       fr (suc j) d d∈ = drop-mono p (σ̂E E) j d (drop-undrop p _ j d d∈)
-... | inr u = widen ⊆′ (sound-jump ck bs η l₂ (u ∷ forget p (frame m)))
+... | inr u = widen ⊆′ (sound-jump ck bs η l₂ (u ∷ pop p (frame m)))
   where
   X : Apx → List Value
   X A' = proj₁ (𝒱-ne u) ∷ A' 3
-  ⊆′ : 𝒮 (Blk.start (block bs l₂)) (Blk.blocks (block bs l₂)) (entryₘ {η} (u ∷ forget p (frame m))) ⊆ 𝒮 s bs m
+  ⊆′ : 𝒮 (Blk.start (block bs l₂)) (Blk.blocks (block bs l₂)) (entryₘ {η} (u ∷ pop p (frame m))) ⊆ 𝒮 s bs m
   ⊆′ z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ = fin (grown (grow-arg {m = m} (atom (var x)) (map right (X A')) Xin) (und p A') (und-AL p (unset-AL al')))
     where
     X⊆ : mem (X A') ⊆ 𝒱 u

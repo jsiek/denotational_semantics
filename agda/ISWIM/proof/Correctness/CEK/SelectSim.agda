@@ -21,7 +21,7 @@ module ISWIM.proof.Correctness.CEK.SelectSim where
 open import Language.Prim using (sub; eq)
 open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import Framework.Membership using (_⊑_)
-open import Framework.Lookup using (_!_; forget)
+open import Framework.Lookup using (_!_; pop)
 open import proof.Framework.Lookup using (map-!)
 import ISWIM.Language.Typed.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
@@ -169,8 +169,8 @@ module Sim {Σ : List ℕ} (ds : All (λ n → C.Body Σ (Any ∷ ⟪ tup n ⟫ 
   {- case a p l₁ l₂: the test and the payload, then the branch -}
   case~ : ∀ {Bs Δ Δ' n η Γ O} {p : Δ' ⊑ Δ} {l₁ l₂ : Bs ∋ (Any ∷ Δ')} {φ : G.Frame Σ Δ} {bs κ σ} {ρ : X.RegVals Σ η Γ}
     {op : X.Opened Σ η O} .{le : blocks-depth bs ≤ n} (v : G.Val Σ ⟪ sum ⟫)
-    → G.step ds s₁ ≡ next (choose v (λ u → G.go ds (C.block bs l₁) (u ∷ forget p φ) κ) (λ u → G.go ds (C.block bs l₂) (u ∷ forget p φ) κ))
-    → κ ~ σ → Plus L₂ s₂ (X.run (je l₁ l₂) (blocks bs le) σ η ⟨ ρ , X.field′ payload v ∷ forget p φ , op , X.is-inl v ⟩)
+    → G.step ds s₁ ≡ next (choose v (λ u → G.go ds (C.block bs l₁) (u ∷ pop p φ) κ) (λ u → G.go ds (C.block bs l₂) (u ∷ pop p φ) κ))
+    → κ ~ σ → Plus L₂ s₂ (X.run (je l₁ l₂) (blocks bs le) σ η ⟨ ρ , X.field′ payload v ∷ pop p φ , op , X.is-inl v ⟩)
     → B s₁ s₂
   case~ {η = η} {l₁ = l₁} {bs = bs} {σ = σ} {le = le} (inl u) e₀ k π =
     move (step⁺ e₀) (plus-star π (cong (λ b → next (X.go xds b σ η _)) (block-sel bs l₁ le) ◅ ε)) (exec~ k)
