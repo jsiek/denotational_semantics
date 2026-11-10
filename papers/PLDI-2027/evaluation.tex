@@ -49,8 +49,6 @@ the languages and passes, and each is our best effort in its style.
   comparison because of its central role in the theory of programming
   languages \citep{wright94:_type_soundness,Pierce:2002hj}.
 \end{itemize}
-Appendix~\ref{app:other} gives each style's
-semantics of \fpc\ and \instr.
 
 \paragraph{The correctness results and their proofs}
 
@@ -59,9 +57,7 @@ semantics, for closed programs of integer type. The denotational
 theorems state that a program and its compilation produce the same
 integer and that one has a meaning exactly when the other does; the
 operational propositions state that both terminate with the same integer
-or both diverge, for three different operational semantics. All five
-are whole-program results, which say nothing about compiled code
-linked with other code. We do not regard the operational or
+or both diverge, for three different operational semantics. We do not regard the operational or
 denotational formulation of correctness as more fundamental than the
 other. \citet{Scott:1971ab} proposed a mathematical semantics as ``the
 standard against which to judge an implementation'', while
@@ -262,10 +258,7 @@ shared lemmas are laws of strictness and definedness, which replace
 nonemptiness; in exchange, the proof needs no consistency. The
 graph-model relations recurse on finite elements, and neither of the
 first two costs arises. The infrastructure widens the gap further
-(Table~\ref{tab:infra}). The rest of the gap comes from Agda,
-whose \texttt{with}-abstraction is slow to check when a value of the
-domain is in scope, so most of the equational proofs replace some of
-its uses with auxiliary lemmas, records, or opaque definitions.
+(Table~\ref{tab:infra}).
 
 
 \subsection{Threats to Validity}
