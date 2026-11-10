@@ -54,7 +54,7 @@ open import ISWIM.proof.Adequacy.GraphErr.X86Mono using (Le; le; mono-seq; block
 open import ISWIM.proof.Correctness.GraphErr.SelectCorrect using (drop-idx)
 open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋)
-open import Framework.Lookup using (_!_; forget)
+open import Framework.Lookup using (_!_; pop)
 open import Semantics.Observation using (Obs; o-error; o-const)
 open import Semantics.CEK.Smallstep using (next; stop)
 open import ISWIM.Semantics.CEK.Typed.X86
@@ -455,7 +455,7 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   undrop-at here⊑ f y = refl
   undrop-at (there⊑ p) f y = undrop-at p f y
 
-  undrop-fits : ∀ {Δ' Δ : Ctx} (p : Δ' ⊑ Δ) {f} (φ : Frame Σ Δ) → (∀ {B} (y : Δ' ∋ B) → PS (mem (f (idx y))) (forget p φ ! y))
+  undrop-fits : ∀ {Δ' Δ : Ctx} (p : Δ' ⊑ Δ) {f} (φ : Frame Σ Δ) → (∀ {B} (y : Δ' ∋ B) → PS (mem (f (idx y))) (pop p φ ! y))
     → ∀ {B} (x : Δ ∋ B) → PS (mem (undrop p f (idx x))) (φ ! x)
   undrop-fits here⊑ φ h x = h x
   undrop-fits (there⊑ p) (_ ∷ φ) h Z = λ _ ()

@@ -28,7 +28,7 @@ module ISWIM.Semantics.CEK.Typed.X86 where
 open import Language.Prim using (sub)
 open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import ISWIM.Language.Typed.X86
-open import Framework.Lookup using (_!_; forget)
+open import Framework.Lookup using (_!_; pop)
 open import Semantics.Observation using (o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import ISWIM.Semantics.CEK.Typed.Clos5
@@ -124,7 +124,7 @@ module _ {Σ : List ℕ} where
   {- d := v -}
   put : ∀ {n η ψ τ ψ'} → Dst n ψ τ ψ' → RV Σ η τ → Mach Σ η ψ → Mach Σ η ψ'
   put (reg r) v m = ⟨ regs m [ r ≔ v ] , frame m , opened m , flag m ⟩
-  put (slot p _) v m = ⟨ regs m , v ∷ forget p (frame m) , tt , flag m ⟩
+  put (slot p _) v m = ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
 
   obj : ∀ {η ψ A} → Obj Σ ψ A → Mach Σ η ψ → Val Σ A
   obj (pair c e) m = pack (arg c m) (arg e m)

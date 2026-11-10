@@ -28,7 +28,7 @@ open import Framework.Primitives using (Int)
 open import Language.Prim using (sub)
 open import FPC.Language.Type
 open import FPC.Language.X86
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Interp.Clock
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
@@ -122,7 +122,7 @@ module _ {Σ : List DSig} where
   {- d := v -}
   put : ∀ {n η ψ τ ψ'} → Dst n ψ τ ψ' → RV Σ η τ → Mach Σ η ψ → Mach Σ η ψ'
   put (reg r) v m = ⟨ regs m [ r ≔ v ] , frame m , clo m , flag m ⟩
-  put (slot p _) v m = ⟨ regs m , v ∷ forget p (frame m) , tt , flag m ⟩
+  put (slot p _) v m = ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
 
   obj : ∀ {η ψ A} → Obj Σ ψ A → Mach Σ η ψ → Val A
   obj (pair c e) m = pack (arg c m) (arg e m)
@@ -172,7 +172,7 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
   run ck bs η m (retq e) = ret (cast e (regs m ⦅ rax ⦆))
   run ck bs η m (jmp l) = jump ck bs η l (frame m)
   run ck bs η m (case x p _ l₁ l₂) =
-    either (lookup (frame m) x) (λ v → jump ck bs η l₁ (v ∷ forget p (frame m))) (λ v → jump ck bs η l₂ (v ∷ forget p (frame m)))
+    either (lookup (frame m) x) (λ v → jump ck bs η l₁ (v ∷ pop p (frame m))) (λ v → jump ck bs η l₂ (v ∷ pop p (frame m)))
 
   jump ck (bs ▷ k) η Z φ = run ck bs η ⟨ rv tt tt tt , φ , tt , tt ⟩ k
   jump ck (bs ▷ k) η (S l) φ = jump ck bs η l φ

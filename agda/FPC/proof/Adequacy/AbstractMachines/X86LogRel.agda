@@ -42,7 +42,7 @@ open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 
   renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ)
 open import FPC.Semantics.AbstractMachines.X86
 open import proof.Semantics.CEK.Smallstep using (Terminates; next)
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import FPC.Framework.AllUtil using ([]; _∷_; lookup; pos)
 open import FPC.proof.Adequacy.AbstractMachines.X86Common ds
@@ -156,7 +156,7 @@ record 𝕄 {η ψ} (ρ : _) (R : RegsD) (F : 𝒫 Value) (m : Mach Σ η ψ) : 
     fl : FlR F (flag m)
     op : OpR (frame m) (St.op ψ) η (envα m)
 
-𝔾-drop : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {ρ} {φ : Frame Σ Δ} → 𝔾 ρ φ → 𝔾 (drop p ρ) (forget p φ)
+𝔾-drop : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {ρ} {φ : Frame Σ Δ} → 𝔾 ρ φ → 𝔾 (drop p ρ) (pop p φ)
 𝔾-drop here⊑ G = G
 𝔾-drop (there⊑ p) {φ = v ∷ φ} G = 𝔾-drop p (λ x → G (S x))
 
@@ -223,7 +223,7 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   put-𝕄 (slot p _) {v = v} (𝕞 G Rg Fl Op) h ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ =
     ⟨ _ , ⟨ _ , ⟨ _ , ⟨ 𝕞 G' Rg Fl none , w∈ ⟩ ⟩ ⟩ ⟩
     where
-    G' : 𝔾 (mem V • drop p _) (v ∷ forget p _)
+    G' : 𝔾 (mem V • drop p _) (v ∷ pop p _)
     G' Z d d∈ = h d (V⊆ d d∈)
     G' (S x) = 𝔾-drop p G x
 
@@ -291,14 +291,14 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
     ⇐ (λ _ → refl) (sel (lookup (frame m) x) (λ d d∈ → 𝕄.fr M x _ (allL d d∈)))
     where
     sel : (v : Val Σ _) → (∀ d → d ∈ mem (u ∷ U) → 𝕍 (left d) v) → Σ[ v' ∈ Val Σ _ ]
-      Ret (λ σ → choose v (λ u → go ds (block bs l₁) σ η (u ∷ forget p (frame m))) (λ u → go ds (block bs l₂) σ η (u ∷ forget p (frame m)))) v' × 𝕍 _ v'
+      Ret (λ σ → choose v (λ u → go ds (block bs l₁) σ η (u ∷ pop p (frame m))) (λ u → go ds (block bs l₂) σ η (u ∷ pop p (frame m)))) v' × 𝕍 _ v'
     sel (inl a) h = AB l₁ (λ { Z → h ; (S y) → 𝔾-drop p (𝕄.fr M) y }) w∈
     sel (inr a) h = ⊥-elim (h u (here refl))
   adequate (case x p _ l₁ l₂) {bs} AB {η} {m = m} M (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
     ⇐ (λ _ → refl) (sel (lookup (frame m) x) (λ d d∈ → 𝕄.fr M x _ (allR d d∈)))
     where
     sel : (v : Val Σ _) → (∀ d → d ∈ mem (u ∷ U) → 𝕍 (right d) v) → Σ[ v' ∈ Val Σ _ ]
-      Ret (λ σ → choose v (λ u → go ds (block bs l₁) σ η (u ∷ forget p (frame m))) (λ u → go ds (block bs l₂) σ η (u ∷ forget p (frame m)))) v' × 𝕍 _ v'
+      Ret (λ σ → choose v (λ u → go ds (block bs l₁) σ η (u ∷ pop p (frame m))) (λ u → go ds (block bs l₂) σ η (u ∷ pop p (frame m)))) v' × 𝕍 _ v'
     sel (inr a) h = AB l₂ (λ { Z → h ; (S y) → 𝔾-drop p (𝕄.fr M) y }) w∈
     sel (inl a) h = ⊥-elim (h u (here refl))
 

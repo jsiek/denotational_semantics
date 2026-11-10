@@ -28,7 +28,7 @@ module FPC.Semantics.AbstractMachines.X86 where
 open import Language.Prim using (sub)
 open import FPC.Language.Type
 open import FPC.Language.X86
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import FPC.Semantics.AbstractMachines.GlobalFun
@@ -122,7 +122,7 @@ module _ {Σ : List DSig} where
   {- d := v -}
   put : ∀ {n η ψ τ ψ'} → Dst n ψ τ ψ' → RV Σ η τ → Mach Σ η ψ → Mach Σ η ψ'
   put (reg r) v m = ⟨ regs m [ r ≔ v ] , frame m , envα m , flag m ⟩
-  put (slot p _) v m = ⟨ regs m , v ∷ forget p (frame m) , tt , flag m ⟩
+  put (slot p _) v m = ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
 
   obj : ∀ {η ψ A} → Obj Σ ψ A → Mach Σ η ψ → Val Σ A
   obj (pair c e) m = pack (arg c m) (arg e m)
@@ -181,8 +181,8 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
   step (run (retq e) bs (retK k bs' φ σ) η m) = next (run k bs' σ η ⟨ rv (cast e (regs m ⦅ rax ⦆)) tt tt , φ , tt , tt ⟩)
   step (run (jmp l) bs σ η m) = next (go (block bs l) σ η (frame m))
   step (run (case x p _ l₁ l₂) bs σ η m) =
-    next (choose (lookup (frame m) x) (λ u → go (block bs l₁) σ η (u ∷ forget p (frame m)))
-                                      (λ u → go (block bs l₂) σ η (u ∷ forget p (frame m))))
+    next (choose (lookup (frame m) x) (λ u → go (block bs l₁) σ η (u ∷ pop p (frame m)))
+                                      (λ u → go (block bs l₂) σ η (u ∷ pop p (frame m))))
 
 {- a program starts with the start of main, with no slot, no register
    and no flag -}

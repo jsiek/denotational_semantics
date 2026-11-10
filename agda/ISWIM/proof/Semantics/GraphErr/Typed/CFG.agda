@@ -4,7 +4,7 @@
   (ISWIM/Semantics/GraphErr/Typed/CFG.agda) is monotone, continuous and
   consistent (Ok), under a consistent table: a simple expression is a
   term of Clos5ᵀ, a slot binding is a let (letᵐ, letᵐ-unfold), and a
-  tail that forgets slots reindexes its environment (Ok-η, Ok-skip).
+  tail that pops slots reindexes its environment (Ok-η, Ok-skip).
 
 -}
 
@@ -28,7 +28,7 @@ open import Data.Nat using (suc)
 open import Data.Product using (proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
-{- the head of the environment, and the rest without the forgotten slots -}
+{- the head of the environment, and the rest without the popped slots -}
 drop-ok : ∀ {Δ' Δ : Ctx} (p : Δ' ⊑ Δ) {E} → Ok E → Ok (λ ρ → E (ρ 0 • drop p (λ i → ρ (suc i))))
 drop-ok here⊑ o = Ok-η o
 drop-ok (there⊑ p) o = Ok-skip (drop-ok p o)

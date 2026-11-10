@@ -41,7 +41,7 @@ open import UF.Base using (ap₂)
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Framework.abt.GSubst using (_•_)
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import Language.Prim using (Prim; sub; eq; int; bool) renaming (δ to δᴾ)
 open import FPC.Language.Type using (Type; Ctx; base; tup; _⊹_; _⇒_; μ; code; _∋_; Z; S; idx; lvl) renaming (unroll to unrollᵗ)
@@ -766,7 +766,7 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
    op : OpR (frame m) (St.op ψ) η (clo m)
  open RelState
 
- frame-drop-rel : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} → FrameRel σ φ → FrameRel (drop p · σ) (forget p φ)
+ frame-drop-rel : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} → FrameRel σ φ → FrameRel (drop p · σ) (pop p φ)
  frame-drop-rel here⊑ h x = h x
  frame-drop-rel (there⊑ p) {σ} {v ∷ φ} h x = frame-drop-rel p {σ = λ i → σ (succ i)} (λ y → h (S y)) x
 
@@ -867,7 +867,7 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     𝔰' = ((D · (σ , RF)) • (drop p · σ) , RF)
     qD : defined (D · (σ , RF))
     qD = seq-defined-l (D · (σ , RF)) (κ · 𝔰') (transport defined (app-Λ _ (D · (σ , RF))) q)
-    fr' : FrameRel ((D · (σ , RF)) • (drop p · σ)) (v ∷ forget p (frame m))
+    fr' : FrameRel ((D · (σ , RF)) • (drop p · σ)) (v ∷ pop p (frame m))
     fr' Z = hD
     fr' (S x) = frame-drop-rel p fa x
 
@@ -910,17 +910,17 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     br = (strict · (abs (blocksₛ T bs l₁) · (drop p · σ)) , strict · (abs (blocksₛ T bs l₂) · (drop p · σ)))
     sel : (v : Val (_ ⊹ _)) → Rel (σ (idx x)) v
       → RelE (cases · σ (idx x) · br)
-             (λ ck → either v (λ u → jump ds ck bs η l₁ (u ∷ forget p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ forget p (frame m))))
+             (λ ck → either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m))))
     sel (inl u) r q = inv-case (Rel-inv r (cases-defined (σ (idx x)) br q)) q
      where
-      inv-case : Inv (σ (idx x)) (inl u) → RelE (cases · σ (idx x) · br) (λ ck → jump ds ck bs η l₁ (u ∷ forget p (frame m)))
+      inv-case : Inv (σ (idx x)) (inl u) → RelE (cases · σ (idx x) · br) (λ ck → jump ds ck bs η l₁ (u ∷ pop p (frame m)))
       inv-case (_ , y , eqx , s-left , my) =
         RelE-＝ (ap (λ - → cases · - · br) eqx ∙ ap (_· br) (case-inj (Br ⟹𝔻) cases-br left y))
           (RelE-strict (abs (blocksₛ T bs l₁) · (drop p · σ)) y
              (λ _ → AB l₁ (frame-ext-rel (rel my) (frame-drop-rel p (fr RS)))))
     sel (inr u) r q = inv-case (Rel-inv r (cases-defined (σ (idx x)) br q)) q
      where
-      inv-case : Inv (σ (idx x)) (inr u) → RelE (cases · σ (idx x) · br) (λ ck → jump ds ck bs η l₂ (u ∷ forget p (frame m)))
+      inv-case : Inv (σ (idx x)) (inr u) → RelE (cases · σ (idx x) · br) (λ ck → jump ds ck bs η l₂ (u ∷ pop p (frame m)))
       inv-case (_ , y , eqx , s-right , my) =
         RelE-＝ (ap (λ - → cases · - · br) eqx ∙ ap (_· br) (case-inj (Br ⟹𝔻) cases-br right y))
           (RelE-strict (abs (blocksₛ T bs l₂) · (drop p · σ)) y

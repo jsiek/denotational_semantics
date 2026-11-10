@@ -60,7 +60,7 @@ open import ISWIM.Semantics.Graph.Typed.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_�
 open import ISWIM.Semantics.CEK.Typed.X86
 open import Semantics.Observation using (Obs; Answer)
 open import proof.Semantics.CEK.Smallstep using (Star; Terminates; Next; next; stop)
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; idx)
 open import ISWIM.proof.Adequacy.X86Common ds
 open import ISWIM.proof.Adequacy.Clos5Values using (module Den; pair-inv; inl-inv; inr-inv; 𝒯L[]-inv)
@@ -304,7 +304,7 @@ undrop here⊑ f = f
 undrop (there⊑ p) f zero = []
 undrop (there⊑ p) f (suc i) = undrop p f i
 
-undrop-AL : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {f} {φ : Frame Σ Δ} → (∀ j → mem (f j) ⊆ 𝓔 (forget p φ) j) → ∀ i → mem (undrop p f i) ⊆ 𝓔 φ i
+undrop-AL : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {f} {φ : Frame Σ Δ} → (∀ j → mem (f j) ⊆ 𝓔 (pop p φ) j) → ∀ i → mem (undrop p f i) ⊆ 𝓔 φ i
 undrop-AL here⊑ h = h
 undrop-AL (there⊑ p) {φ = v ∷ φ} h zero = λ _ ()
 undrop-AL (there⊑ p) {φ = v ∷ φ} h (suc i) = undrop-AL p h i
@@ -317,7 +317,7 @@ und : ∀ {Δ' Δ : Ctx} → Δ' ⊑ Δ → Apx → Apx
 und p A' = λ { 0 → A' 0 ; 1 → A' 1 ; 2 → A' 2 ; (suc (suc (suc i))) → undrop p (λ j → A' (suc (suc (suc (suc j))))) i }
 
 und-AL : ∀ {Δ' Δ A η Γ} (p : Δ' ⊑ Δ) {A'} {ρ : RegVals Σ η Γ} {φ : Frame Σ Δ} {v : Val Σ A}
-  → (∀ l → mem (A' l) ⊆ 𝓛 ρ (v ∷ forget p φ) l) → ∀ l → mem (und p A' l) ⊆ 𝓛 ρ φ l
+  → (∀ l → mem (A' l) ⊆ 𝓛 ρ (v ∷ pop p φ) l) → ∀ l → mem (und p A' l) ⊆ 𝓛 ρ φ l
 und-AL p al' = λ { 0 → al' 0 ; 1 → al' 1 ; 2 → al' 2 ; (suc (suc (suc i))) → undrop-AL p (λ j → al' (suc (suc (suc (suc j))))) i }
 
 {- a jump, from a state with no register and no flag -}

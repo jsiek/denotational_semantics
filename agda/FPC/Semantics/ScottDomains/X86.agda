@@ -4,10 +4,10 @@
   the graph model (FPC/Semantics/GraphModel/X86.agda). What runs next (a
   continuation, Kont) is a continuous map of the machine state: the
   frame, the registers and the flag (𝕊). The frame is the environment,
-  as in CFGμ: slot x is position idx x, and writing slot k forgets the
-  slots after it (drop). A label means its block, under the meanings of
-  the older blocks; a block starts with its frame, the registers unset
-  and no flag.
+  as in CFGμ: slot x is position idx x, and writing slot k pops the
+  slots from k on and pushes the new value (drop). A label means its
+  block, under the meanings of the older blocks; a block starts with
+  its frame, the registers unset and no flag.
 
   * A slot write binds its value as CFGμ's seq does: app (Λ F) D, F X
     running the rest with X in the slot. A register write is a

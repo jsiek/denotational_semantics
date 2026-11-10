@@ -5,9 +5,9 @@
   with the typed operators of the typed
   languages (ISWIM/Semantics/GraphErr/Typed/Ops.agda), which check nothing.
   The frame is the environment, as in CFGᵀ (ISWIM/Semantics/GraphErr/Typed/CFG.agda):
-  slot x is position idx x, and writing slot k forgets the slots after
-  it (drop). A label means its block, under the meanings of the older
-  blocks.
+  slot x is position idx x, and writing slot k pops the slots from k
+  on and pushes the new value (drop). A label means its block, under
+  the meanings of the older blocks.
 
   The only check is chk's: the project of the typed languages, a closure
   being a pair (projectᵠ kind₄). Only chk and callq can fail or diverge,

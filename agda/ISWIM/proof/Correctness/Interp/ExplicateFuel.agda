@@ -26,7 +26,7 @@ import ISWIM.Semantics.Interp.Typed.Clos5 as C
 import ISWIM.Semantics.Interp.Typed.Imp as I
 import ISWIM.Semantics.Interp.Typed.CFG as G
 open import ISWIM.Semantics.Interp.Typed.Imp using (atom; eval-simple)
-open import Framework.Lookup using (_!_; forget)
+open import Framework.Lookup using (_!_; pop)
 open import ISWIM.proof.Semantics.Interp.Typed.Clos5 using (def-map; either-cong)
 
 open import Data.List using (List; []; _∷_)
@@ -86,8 +86,8 @@ module _ {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫ �
 
     assign-ok : ∀ {Bs Δ Δ' A} (e : Imp.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ Bs (A ∷ Δ')) (bs : Blocks Σ Bs) {K : Env (A ∷ Δ') → Result (Val Any)}
       → (∀ φ → K φ ≡ G.tail ds' ck bs φ k)
-      → Ok bs (λ φ → I.eval ds ck φ e >>= λ v → K (v ∷ forget p φ)) (explicate-assign e p k bs)
-    assign-ok (Imp.simple s) p k bs h = ok same λ φ → bind≡ (simple≡ φ s) λ v → h (v ∷ forget p φ)
+      → Ok bs (λ φ → I.eval ds ck φ e >>= λ v → K (v ∷ pop p φ)) (explicate-assign e p k bs)
+    assign-ok (Imp.simple s) p k bs h = ok same λ φ → bind≡ (simple≡ φ s) λ v → h (v ∷ pop p φ)
     assign-ok (Imp.assign e₁ e₂) p k bs h with explicate-assign e₂ (there⊑ p) k bs | assign-ok e₂ (there⊑ p) k bs h
     ... | out g bs₁ t | ok e m with explicate-assign e₁ here⊑ t bs₁ | assign-ok e₁ here⊑ t bs₁ m
     ...   | o | ok e' m' = after-ok o e (ok e' λ φ → trans (bind-assoc (I.eval ds ck φ e₁)) (m' φ))

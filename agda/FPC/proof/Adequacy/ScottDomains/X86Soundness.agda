@@ -31,7 +31,7 @@ open import UF.Base using (ap₂)
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Framework.abt.GSubst using (_•_)
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋)
 open import Language.Prim using (sub; eq; bool) renaming (δ to δᴾ)
 open import FPC.Language.Type using (Type; Ctx; base; tup; _⊹_; _⇒_; μ; code; _∋_; Z; S; idx)
@@ -157,7 +157,7 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     op : OpR (frame m) (St.op ψ) η (clo m)
   open Agree
 
-  frame-drop : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} → FrameAgree σ φ → FrameAgree (drop p · σ) (forget p φ)
+  frame-drop : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} → FrameAgree σ φ → FrameAgree (drop p · σ) (pop p φ)
   frame-drop here⊑ h x = h x
   frame-drop (there⊑ p) {σ} {v ∷ φ} h x = frame-drop p {σ = λ i → σ (succ i)} (λ y → h (S y)) x
 
@@ -222,7 +222,7 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     (app-Λ _ (D · (σ , RF))
      ∙ seq-defined (D · (σ , RF)) (κ · ((D · (σ , RF)) • (drop p · σ) , RF)) (transport defined (hD ⁻¹) (𝒱ᵣ-defined {η} τ v)))
    where
-    fr' : FrameAgree ((D · (σ , RF)) • (drop p · σ)) (v ∷ forget p _)
+    fr' : FrameAgree ((D · (σ , RF)) • (drop p · σ)) (v ∷ pop p _)
     fr' Z = hD
     fr' (S x) = frame-drop p fa x
 
@@ -297,16 +297,16 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     br : ⟨ Br ⟩
     br = (strict · (abs (blocksₛ T bs l₁) · (drop p · σ)) , strict · (abs (blocksₛ T bs l₂) · (drop p · σ)))
     sel : (v : Val (_ ⊹ _)) → σ (idx x) ＝ 𝒱 v
-      → Sound (either v (λ u → jump ds ck bs η l₁ (u ∷ forget p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ forget p (frame m))))
+      → Sound (either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m))))
               (cases · σ (idx x) · br)
     sel (inl u) h =
       sound-＝ ((ap (λ - → cases · - · br) h ∙ cases-inl (𝒱 u) (𝒱-defined u) _ _
                  ∙ strict-defined (abs (blocksₛ T bs l₁) · (drop p · σ)) (𝒱 u) (𝒱-defined u)) ⁻¹)
-        (sound-jump ck bs η l₁ (u ∷ forget p (frame m)) _ (frame-ext u (frame-drop p (fr A))))
+        (sound-jump ck bs η l₁ (u ∷ pop p (frame m)) _ (frame-ext u (frame-drop p (fr A))))
     sel (inr u) h =
       sound-＝ ((ap (λ - → cases · - · br) h ∙ cases-inr (𝒱 u) (𝒱-defined u) _ _
                  ∙ strict-defined (abs (blocksₛ T bs l₂) · (drop p · σ)) (𝒱 u) (𝒱-defined u)) ⁻¹)
-        (sound-jump ck bs η l₂ (u ∷ forget p (frame m)) _ (frame-ext u (frame-drop p (fr A))))
+        (sound-jump ck bs η l₂ (u ∷ pop p (frame m)) _ (frame-ext u (frame-drop p (fr A))))
 
   sound-jump ck (bs ▷ k) η Z φ σ h =
     sound-run ck bs η (mach (rv tt tt tt) φ tt tt) k (σ , (λ _ → init) , init) (agr h (λ { rax () ; rdi () ; rsi () }) ⋆ none)

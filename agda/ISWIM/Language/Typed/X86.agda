@@ -14,8 +14,8 @@
   * the type of each register: a type, or nothing (unset);
   * the frame: the types of the slots assigned so far, a context Δ as
     in CFGᵀ (slot x : Δ ∋ A is at level lvl x), in a frame of n slots;
-    writing slot k (k the length of Δ', p : Δ' ⊑ Δ) gives it a type and
-    forgets the slots after it, and needs k < n;
+    writing slot k (k the length of Δ', p : Δ' ⊑ Δ) pops the slots from k
+    on, pushes a slot of the new type, and needs k < n;
   * the open closure, if any (below);
   * whether the flag is set.
   A sequence (Seq) is instructions ending in a jump, typed by the state

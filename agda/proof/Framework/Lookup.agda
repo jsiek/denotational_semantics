@@ -2,7 +2,7 @@
 
   Lemmas about typed indices (Framework/Membership.agda) and lookups in
   typed lists (Framework/Lookup.agda): the level of an index is below
-  the length, and stays the same along ⊑; forgetting commutes with
+  the length, and stays the same along ⊑; popping commutes with
   lookup; proofs of ⊑ are unique, and compose.
 
 -}
@@ -10,7 +10,7 @@
 module proof.Framework.Lookup where
 
 open import Framework.Membership
-open import Framework.Lookup using (_!_; forget)
+open import Framework.Lookup using (_!_; pop)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length)
@@ -33,9 +33,9 @@ lvl-⊑ : (p : xs ⊑ ys) (x : xs ∋ a) → lvl (⊑-∋ p x) ≡ lvl x
 lvl-⊑ here⊑ x = refl
 lvl-⊑ (there⊑ p) x = lvl-⊑ p x
 
-forget-! : (p : xs ⊑ ys) (ps : All P ys) (x : xs ∋ a) → forget p ps ! x ≡ ps ! ⊑-∋ p x
-forget-! here⊑ ps x = refl
-forget-! (there⊑ p) (_ ∷ ps) x = forget-! p ps x
+pop-! : (p : xs ⊑ ys) (ps : All P ys) (x : xs ∋ a) → pop p ps ! x ≡ ps ! ⊑-∋ p x
+pop-! here⊑ ps x = refl
+pop-! (there⊑ p) (_ ∷ ps) x = pop-! p ps x
 
 ⊑-len : xs ⊑ ys → length xs ≤ length ys
 ⊑-len here⊑ = ≤-refl

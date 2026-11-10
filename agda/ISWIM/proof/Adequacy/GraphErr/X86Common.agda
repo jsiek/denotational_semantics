@@ -40,8 +40,8 @@ open import ISWIM.Semantics.GraphErr.Typed.X86 using (RegsD; called-regs; code�
 open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 using (tbl-val)
 open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import Framework.Membership using (_⊑_; ⊑-∋)
-open import Framework.Lookup using (_!_; forget)
-open import proof.Framework.Lookup using (forget-!; lvl-<)
+open import Framework.Lookup using (_!_; pop)
+open import proof.Framework.Lookup using (pop-!; lvl-<)
 open import ISWIM.proof.Correctness.GraphErr.SelectCorrect using (drop-idx)
 open import ISWIM.Semantics.GraphErr.Typed.CFG using (drop)
 open import Semantics.Observation using (Obs; o-error)
@@ -243,14 +243,14 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
   reg-rel rdi h (mr f g l o) = mr f (λ { rax → g rax ; rdi → h ; rsi → g rsi }) l o
   reg-rel rsi h (mr f g l o) = mr f (λ { rax → g rax ; rdi → g rdi ; rsi → h }) l o
 
-  {- writing slot k, which forgets the slots after it -}
+  {- writing slot k, which pops the slots from k on and pushes the new value -}
   slot-rel : ∀ {η Γ Δ Δ' O F' A} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (p : Δ' ⊑ Δ) {v : Val Σ A} {D} → PS D v → Rel ρ R F m
-    → Rel {ψ = st Γ (A ∷ Δ') nothing F'} (D • drop p ρ) R F ⟨ regs m , v ∷ forget p (frame m) , tt , flag m ⟩
+    → Rel {ψ = st Γ (A ∷ Δ') nothing F'} (D • drop p ρ) R F ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
   slot-rel {m = m} {ρ} p h (mr f g l o) = mr fr′ g l tt
     where
     fr′ : ∀ {A} (x : _ ∋ A) → _
     fr′ Z = h
-    fr′ (S y) = subst₂ PS (sym (drop-idx p ρ y)) (sym (forget-! p (frame m) y)) (f (⊑-∋ p y))
+    fr′ (S y) = subst₂ PS (sym (drop-idx p ρ y)) (sym (pop-! p (frame m) y)) (f (⊑-∋ p y))
 
   {- the flag, set -}
   flag-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} b {G} → PS G (bit b) → Rel ρ R F m
