@@ -53,11 +53,12 @@ parametricity argument of \citet{Ahmed:2008aa}, deriving the
 isomorphism between $A \to B$ and
 $\exists \Gamma.\, \Gamma \times (\Gamma \times A \to B)$ from the
 coYoneda lemma. \citet{Ghica:2027aa} present closure conversion for
-the $\lambda$-calculus with string diagrams. Their evidence of
-correctness is one example, a closure-converted $\beta$-redex that
-reduces to the same result as the original. A proof of compiler
-correctness, by contrast, shows that every program and its translation
-have the same meaning, including programs that diverge.
+the $\lambda$-calculus with string diagrams and show, with
+diagrammatic equations, that a closure-converted $\beta$-redex reduces
+to the same result as the original. That lemma is the main case of an
+operational proof by simulation. A complete proof would also cover the
+other reduction rules, a substitution lemma for the translation, and
+the preservation and reflection of divergence.
 \citet{Dargaye:2009aa} and \citet{Hur:2011aa} prove closure conversion
 correct within compilers for core ML.
 \citet{Pottier:2006aa} prove that defunctionalization preserves
