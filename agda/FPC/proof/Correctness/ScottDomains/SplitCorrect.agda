@@ -37,21 +37,33 @@ open import FPC.Semantics.ScottDomains.EnvClos pt fe pe renaming (⟦_⟧ to ⟦
 open import FPC.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄)
 
 {- a defined value related to a constant is that constant -}
-Rel-const-is : ∀ {δ w} (B : Base) (c : base-rep B) → Rel δ (const B c) w → defined w → w ＝ const B c
+Rel-const-is : ∀ {δ w} (B : Base) (c : base-rep B)
+  → Rel δ (const B c) w
+  → defined w
+  → w ＝ const B c
 Rel-const-is {δ} {w} B c h q = inj-view w q ∙ const-view (view w q) (pr₁ (Rel-view ⋆ h q 0))
  where
-  const-view : (u : ⟨ obj Val 𝔻 ⟩) → Same δ (con B c) (pr₁ u) → inj (pr₁ u) · pr₂ u ＝ const B c
+  const-view : (u : ⟨ obj Val 𝔻 ⟩)
+    → Same δ (con B c) (pr₁ u)
+    → inj (pr₁ u) · pr₂ u ＝ const B c
   const-view (.(con B c) , ⋆) s-con = refl
 
 split-correct-defined : ∀ {A} (M : Tm [] A)
-  → (defined (⟦ M ⟧₃ · ρ₀) → defined (⟦ split-program M ⟧₄ · ρ₀))
-  × (defined (⟦ split-program M ⟧₄ · ρ₀) → defined (⟦ M ⟧₃ · ρ₀))
+  → (  defined (⟦ M ⟧₃ · ρ₀)
+     → defined (⟦ split-program M ⟧₄ · ρ₀))
+  × (  defined (⟦ split-program M ⟧₄ · ρ₀)
+     → defined (⟦ M ⟧₃ · ρ₀))
 split-correct-defined M = Rel-defined (split-pres M) , Rel-defined (split-refl M)
 
 split-correct-const : ∀ {A} (M : Tm [] A) (B : Base) (c : base-rep B)
-  → (⟦ M ⟧₃ · ρ₀ ＝ const B c → ⟦ split-program M ⟧₄ · ρ₀ ＝ const B c)
-  × (⟦ split-program M ⟧₄ · ρ₀ ＝ const B c → ⟦ M ⟧₃ · ρ₀ ＝ const B c)
+  → (  ⟦ M ⟧₃ · ρ₀ ＝ const B c
+     → ⟦ split-program M ⟧₄ · ρ₀ ＝ const B c)
+  × (  ⟦ split-program M ⟧₄ · ρ₀ ＝ const B c
+     → ⟦ M ⟧₃ · ρ₀ ＝ const B c)
 split-correct-const M B c = same (split-pres M) , same (split-refl M)
  where
-  same : ∀ {δ a w} → Rel δ a w → a ＝ const B c → w ＝ const B c
+  same : ∀ {δ a w}
+    → Rel δ a w
+    → a ＝ const B c
+    → w ＝ const B c
   same {δ} {w = w} h refl = Rel-const-is B c h (Rel-defined h (const-defined B c))
