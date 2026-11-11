@@ -23,7 +23,8 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Relation.Nullary using (¬_)
 open import Data.Product using (Σ-syntax; _×_; _,_; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 
 private variable
   A B C A' B' : Set
@@ -33,13 +34,16 @@ equiv-trans : ∀ {P₁ P₂ P₃}
   → Equivalent P₂ P₃
   → Equivalent P₁ P₃
 equiv-trans E F = record
-  { terminates = λ o → (λ t → to (T F o) (to (T E o) t)) , (λ t → from (T E o) (from (T F o) t))
-  ; diverges = (λ d → to (D F) (to (D E) d)) , (λ d → from (D E) (from (D F) d)) }
+  { terminates =
+      λ o →
+      (λ t → to (T F o) (to (T E o) t)) , (λ t → from (T E o) (from (T F o) t))
+  ; diverges =
+    (λ d → to (D F) (to (D E) d)) , (λ d → from (D E) (from (D F) d)) }
   where
   open Equivalent renaming (terminates to T; diverges to D)
   open Data.Product renaming (proj₁ to to; proj₂ to from)
 
-{- The Result monad -------------------------------------------------------------}
+{- The Result monad -----------------------------------------------------------}
 
 bind-cong : ∀ (r : Result A) {f g : A → Result B}
   → (∀ v → f v ≡ g v)
@@ -54,7 +58,8 @@ bind≡ : ∀ {r₁ r₂ : Result A} {f g : A → Result B}
   → (r₁ >>= f) ≡ (r₂ >>= g)
 bind≡ {r₁ = r} refl = bind-cong r
 
-bind-assoc : ∀ (r : Result A) {f : A → Result B} {g : B → Result C} → ((r >>= f) >>= g) ≡ (r >>= λ v → f v >>= g)
+bind-assoc : ∀ (r : Result A) {f : A → Result B} {g : B → Result C}
+  → ((r >>= f) >>= g) ≡ (r >>= λ v → f v >>= g)
 bind-assoc timeout = refl
 bind-assoc error = refl
 bind-assoc (ret v) = refl
@@ -64,7 +69,7 @@ bind-ret timeout = refl
 bind-ret error = refl
 bind-ret (ret v) = refl
 
-{- Clock-for-clock correctness ---------------------------------------------------}
+{- Clock-for-clock correctness ------------------------------------------------}
 
 data RelResult (R : A → B → Set) : Result A → Result B → Set where
   timeout : RelResult R timeout timeout
@@ -80,7 +85,8 @@ bind-rel error k = error
 bind-rel (ret r) k = k r
 
 {- the same, where the second result is itself a bind -}
-bind-rel∘ : ∀ {R : A → B → Set} {R' : A' → B' → Set} {r₁ r₂ f} {g : B → Result C} {h}
+bind-rel∘ : ∀ {R : A → B → Set} {R' : A' → B' → Set} {r₁ r₂ f}
+  {g : B → Result C} {h}
   → RelResult R r₁ r₂
   → (∀ {v w} → R v w → RelResult R' (f v) (g w >>= h))
   → RelResult R' (r₁ >>= f) ((r₂ >>= g) >>= h)
@@ -160,7 +166,7 @@ clocked-≡ : ∀ {V} {obs : V → Obs} {r₁ r₂}
   → Equivalent (semantics V obs r₁) (semantics V obs r₂)
 clocked-≡ e = clocked _≡_ (cong _) λ ck → ≡→rel (e ck)
 
-{- Clock-monotone correctness ----------------------------------------------------}
+{- Clock-monotone correctness -------------------------------------------------}
 
 {- r₁ is related to r₂, or times out -}
 data LeResult (R : A → B → Set) : Result A → Result B → Set where
@@ -193,7 +199,8 @@ Mono f = ∀ {ck ck'} → ck ≤ ck' → f ck ⊑ᵣ f ck'
 ⊑-eq timeout t = ⊥-elim (t refl)
 ⊑-eq same t = refl
 
-bind-le : ∀ {R : A → B → Set} {R' : A' → B' → Set} {r₁ r₂} {f : A → Result A'} {g : B → Result B'}
+bind-le : ∀ {R : A → B → Set} {R' : A' → B' → Set} {r₁ r₂} {f : A → Result A'}
+  {g : B → Result B'}
   → LeResult R r₁ r₂
   → (∀ {v w} → r₁ ≡ ret v → R v w → LeResult R' (f v) (g w))
   → LeResult R' (r₁ >>= f) (r₂ >>= g)
@@ -224,7 +231,9 @@ clocked-le : ∀ {P₁ P₂} (R : Val P₁ → Val P₂ → Set)
   → (∀ ck → ¬ run P₂ ck ≡ timeout → Σ[ ck' ∈ ℕ ] ¬ run P₁ ck' ≡ timeout)
   → Equivalent P₁ P₂
 clocked-le {P₁} {P₂} R obs≈ mono le def = record
-  { terminates = λ o → (λ { (ck , e) → ck , trans (sym (same-out (le ck) (λ t → nt e t))) e })
+  { terminates =
+      λ o →
+      (λ { (ck , e) → ck , trans (sym (same-out (le ck) (λ t → nt e t))) e })
                      , (λ { (ck , e) → back ck e })
   ; diverges = (λ d ck → fwd-div d ck) , (λ d ck → bwd-div (le ck) (d ck)) }
   where
@@ -257,7 +266,8 @@ clocked-le {P₁} {P₂} R obs≈ mono le def = record
   ... | ck' , t' =
     ck' , trans (same-out (le ck') t')
             (trans (cong (outcome (Semantics.obs P₂))
-                     (trans (sym (⊑-eq (mono (m≤n⊔m ck ck')) (le-nt (le ck') t')))
+                     (trans
+                         (sym (⊑-eq (mono (m≤n⊔m ck ck')) (le-nt (le ck') t')))
                             (⊑-eq (mono (m≤m⊔n ck ck')) (nt e))))
                    e)
 
@@ -283,7 +293,7 @@ clocked-le {P₁} {P₂} R obs≈ mono le def = record
     → r₁ ≡ timeout
   bwd-div timeout _ = refl
 
-{- Results that are the same from some clock on --------------------------------}
+{- Results that are the same from some clock on -------------------------------}
 
 Stable : (ℕ → Result A) → Result A → Set
 Stable f r = Σ[ c ∈ ℕ ] (∀ ck → c ≤ ck → f ck ≡ r)
@@ -298,7 +308,9 @@ st-bind : ∀ {f : ℕ → Result A} {g : ℕ → A → Result B} {v r}
   → Stable (λ ck → g ck v) r
   → Stable (λ ck → f ck >>= g ck) r
 st-bind {g = g} (c₁ , e₁) (c₂ , e₂) =
-  c₁ ⊔ c₂ , λ ck le → trans (cong (λ r → r >>= g ck) (e₁ ck (≤-trans (m≤m⊔n c₁ c₂) le))) (e₂ ck (≤-trans (m≤n⊔m c₁ c₂) le))
+  c₁ ⊔ c₂ , λ ck le →
+    trans (cong (λ r → r >>= g ck) (e₁ ck (≤-trans (m≤m⊔n c₁ c₂) le)))
+    (e₂ ck (≤-trans (m≤n⊔m c₁ c₂) le))
 
 st-error : ∀ {f : ℕ → Result A} {g : ℕ → A → Result B}
   → Stable f error
@@ -309,15 +321,18 @@ stable-unique : ∀ {f : ℕ → Result A} {r r'}
   → Stable f r
   → Stable f r'
   → r ≡ r'
-stable-unique (c , e) (c' , e') = trans (sym (e (c ⊔ c') (m≤m⊔n c c'))) (e' (c ⊔ c') (m≤n⊔m c c'))
+stable-unique (c , e) (c' , e') =
+  trans (sym (e (c ⊔ c') (m≤m⊔n c c'))) (e' (c ⊔ c') (m≤n⊔m c c'))
 
-{- at each clock, f times out or returns the value it returns from some clock on -}
+{- at each clock, f times out or returns the value it returns from some clock
+   on -}
 run-at : ∀ {f : ℕ → Result A} {v}
   → Mono f
   → Stable f (ret v)
   → ∀ ck
   → f ck ≡ timeout ⊎ f ck ≡ ret v
-run-at {f = f} mono (c , e) ck = ⊑-ret (subst (f ck ⊑ᵣ_) (e (ck ⊔ c) (m≤n⊔m ck c)) (mono (m≤m⊔n ck c)))
+run-at {f = f} mono (c , e) ck =
+  ⊑-ret (subst (f ck ⊑ᵣ_) (e (ck ⊔ c) (m≤n⊔m ck c)) (mono (m≤m⊔n ck c)))
   where ⊑-ret : ∀ {r v} → r ⊑ᵣ ret v → r ≡ timeout ⊎ r ≡ ret v
         ⊑-ret timeout = inj₁ refl
         ⊑-ret same = inj₂ refl
@@ -333,7 +348,8 @@ stable-ret {ck = ck} mono σ e with run-at mono σ ck
 ... | inj₂ e' with refl ← trans (sym e) e' = refl
 
 {- f, which returns v from some clock on, then g -}
-le-stable : ∀ {R : B → C → Set} {f : ℕ → Result A} {v} {g : A → Result B} {r₂} ck
+le-stable : ∀ {R : B → C → Set} {f : ℕ → Result A} {v}
+  {g : A → Result B} {r₂} ck
   → Mono f
   → Stable f (ret v)
   → LeResult R (g v) r₂
@@ -342,11 +358,13 @@ le-stable {g = g} ck mono σ k with run-at mono σ ck
 ... | inj₁ e = subst (λ x → LeResult _ (x >>= g) _) (sym e) timeout
 ... | inj₂ e = subst (λ x → LeResult _ (x >>= g) _) (sym e) k
 
-{- Backward: if r₂ does not time out, f has a related result from some clock on -}
+{- Backward: if r₂ does not time out, f has a related result from some clock
+   on -}
 Back : (A → B → Set) → (ℕ → Result A) → Result B → Set
 Back R f r₂ = ¬ r₂ ≡ timeout → Σ[ r₁ ∈ _ ] Stable f r₁ × RelResult R r₁ r₂
 
-back-bind : ∀ {R : A → B → Set} {R' : A' → B' → Set} {f : ℕ → Result A} {h : ℕ → A → Result A'}
+back-bind : ∀ {R : A → B → Set} {R' : A' → B' → Set} {f : ℕ → Result A}
+  {h : ℕ → A → Result A'}
     {r₂ : Result B} {g : B → Result B'}
   → Back R f r₂
   → (∀ {v w} → Stable f (ret v) → R v w → Back R' (λ ck → h ck v) (g w))
@@ -385,7 +403,8 @@ clocked-back : ∀ {P₁ P₂} (R : Val P₁ → Val P₂ → Set)
   → (∀ ck → LeResult R (run P₁ ck) (run P₂ ck))
   → (∀ ck → Back R (run P₁) (run P₂ ck))
   → Equivalent P₁ P₂
-clocked-back R obs≈ mono le back = clocked-le R obs≈ mono le λ ck nt → src (back ck nt) nt
+clocked-back R obs≈ mono le back =
+  clocked-le R obs≈ mono le λ ck nt → src (back ck nt) nt
   where
   nt-rel : ∀ {r₁ r₂}
     → RelResult R r₁ r₂
@@ -395,5 +414,7 @@ clocked-back R obs≈ mono le back = clocked-le R obs≈ mono le λ ck nt → sr
   nt-rel error _ ()
   nt-rel (ret _) _ ()
 
-  src : ∀ {f r₂} → Σ[ r₁ ∈ _ ] Stable f r₁ × RelResult R r₁ r₂ → ¬ r₂ ≡ timeout → Σ[ ck ∈ ℕ ] ¬ f ck ≡ timeout
-  src (_ , (c , e) , rr) nt = c , λ t → nt-rel rr nt (trans (sym (e c ≤-refl)) t)
+  src : ∀ {f r₂} → Σ[ r₁ ∈ _ ] Stable f r₁ × RelResult R r₁ r₂ → ¬ r₂ ≡ timeout
+    → Σ[ ck ∈ ℕ ] ¬ f ck ≡ timeout
+  src (_ , (c , e) , rr) nt =
+    c , λ t → nt-rel rr nt (trans (sym (e c ≤-refl)) t)

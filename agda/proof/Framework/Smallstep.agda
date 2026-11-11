@@ -19,7 +19,8 @@ import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Nat.Properties using (+-identityʳ; +-suc)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym;
+  cong)
 open import Relation.Nullary using (¬_)
 
 module _ (L : Machine) where
@@ -119,7 +120,8 @@ module _ {L : Machine} where
     → Terminates L o₁
     → Terminates L o₂
     → o₁ ≡ o₂
-  terminates-det (_ , σ₁ , f₁) (_ , σ₂ , f₂) = final-unique σ₁ f₁ (proj₂ (star→steps σ₂)) f₂
+  terminates-det (_ , σ₁ , f₁) (_ , σ₂ , f₂) =
+    final-unique σ₁ f₁ (proj₂ (star→steps σ₂)) f₂
 
   {- Divergence is never reaching a final state -}
   diverges-not-terminates : ∀ {o}
@@ -157,10 +159,12 @@ module _ {L : Machine} where
 data Answers {S₁ : Set} (L₂ : Machine) (R : S₁ → State L₂ → Set)
   : Next S₁ → State L₂ → Set where
   stops : ∀ {o s₂} → Final L₂ s₂ o → Answers L₂ R (stop o) s₂
-  steps : ∀ {s₁' s₂ s₂'} → Plus L₂ s₂ s₂' → R s₁' s₂' → Answers L₂ R (next s₁') s₂
+  steps : ∀ {s₁' s₂ s₂'} → Plus L₂ s₂ s₂' → R s₁' s₂'
+    → Answers L₂ R (next s₁') s₂
 
 {- a target state from which the target reaches a state matching s₁ -}
-Reach : ∀ {S₁ : Set} (L₂ : Machine) → (S₁ → State L₂ → Set) → S₁ → State L₂ → Set
+Reach : ∀ {S₁ : Set} (L₂ : Machine) → (S₁ → State L₂ → Set) → S₁
+  → State L₂ → Set
 Reach L₂ R s₁ s₂ = Σ[ t ∈ State L₂ ] Star L₂ s₂ t × R s₁ t
 
 module _ {S₁ : Set} {L₂ : Machine} {R : S₁ → State L₂ → Set} where

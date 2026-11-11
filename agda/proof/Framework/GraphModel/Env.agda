@@ -107,7 +107,8 @@ single-env x D ρ NE-ρ y
     with NE-ρ y
 ... | ⟨ v , v∈ρy ⟩ = ⌈ v ⌉    
 
-single-fin : ∀{A}{v}{x}{ρ : Env A}{NE-ρ} → finiteNE-env (single-env x ⌈ v ⌉ ρ NE-ρ)
+single-fin : ∀{A}{v}{x}{ρ : Env A}{NE-ρ}
+  → finiteNE-env (single-env x ⌈ v ⌉ ρ NE-ρ)
 single-fin {A}{v}{x}{ρ}{NE-ρ} y
     with x ≟ y
 ... | yes refl =

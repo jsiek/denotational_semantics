@@ -25,8 +25,10 @@ module _ {L₁ L₂ : Machine} (R : State L₁ → State L₂ → Set) where
 
   data Both (s₁ : State L₁) (s₂ : State L₂) : Set where
     halt : ∀ {o t} → Final L₁ s₁ o → Star L₂ s₂ t → Final L₂ t o → Both s₁ s₂
-    move : ∀ {s₁' s₂'} → Plus L₁ s₁ s₁' → Plus L₂ s₂ s₂' → R s₁' s₂' → Both s₁ s₂
-    ends : ∀ {o t₁ t₂} → Plus L₁ s₁ t₁ → Final L₁ t₁ o → Plus L₂ s₂ t₂ → Final L₂ t₂ o → Both s₁ s₂
+    move : ∀ {s₁' s₂'} → Plus L₁ s₁ s₁' → Plus L₂ s₂ s₂' → R s₁' s₂'
+      → Both s₁ s₂
+    ends : ∀ {o t₁ t₂} → Plus L₁ s₁ t₁ → Final L₁ t₁ o → Plus L₂ s₂ t₂
+      → Final L₂ t₂ o → Both s₁ s₂
 
   private
     R' : State L₁ → State L₂ → Set
@@ -50,8 +52,10 @@ module _ {L₁ L₂ : Machine} (R : State L₁ → State L₂ → Set) where
     go (inj₂ (_ , f₁ , f₂)) = answers-at f₁ (stops f₂)
     go (inj₁ m) with sim m
     ... | halt f₁ σ f₂ = answers-at f₁ (fin σ f₂)
-    ... | move (plus st σ) π m' = answers-at st (steps π (proj₂ (lag-star σ (inj₁ m'))))
-    ... | ends (plus st σ) f₁ π f₂ = answers-at st (steps π (proj₂ (lag-star σ (inj₂ (_ , f₁ , f₂)))))
+    ... | move (plus st σ) π m' =
+      answers-at st (steps π (proj₂ (lag-star σ (inj₁ m'))))
+    ... | ends (plus st σ) f₁ π f₂ =
+      answers-at st (steps π (proj₂ (lag-star σ (inj₂ (_ , f₁ , f₂)))))
 
   {- the target runs ahead -}
   pre₂ : ∀ {s₁ s₂ s₂'}

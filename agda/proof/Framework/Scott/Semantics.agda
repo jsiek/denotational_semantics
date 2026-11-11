@@ -48,11 +48,13 @@ defined-env ρ = (x : ℕ) → defined (ρ x)
 •-defined d ρ p h (succ x) = h x
 
 {- let x = M in N -}
-letᶜ-β : (M N : Den Env) (ρ : ⟨ Env ⟩) → letᶜ M N · ρ ＝ seq · (M · ρ) · (N · ((M · ρ) • ρ))
+letᶜ-β : (M N : Den Env) (ρ : ⟨ Env ⟩)
+  → letᶜ M N · ρ ＝ seq · (M · ρ) · (N · ((M · ρ) • ρ))
 letᶜ-β M N ρ = app-Λ (abs N · ρ) (M · ρ)
 
 {- a function, applied -}
-lamᶜ-β : (N : Den Env) (ρ : ⟨ Env ⟩) (d : ⟨ 𝔻 ⟩) → app · (lamᶜ N · ρ) · d ＝ seq · d · (N · (d • ρ))
+lamᶜ-β : (N : Den Env) (ρ : ⟨ Env ⟩) (d : ⟨ 𝔻 ⟩)
+  → app · (lamᶜ N · ρ) · d ＝ seq · d · (N · (d • ρ))
 lamᶜ-β N ρ d = app-Λ (abs N · ρ) d
 
 {- the code of a closure, applied to an environment and an argument -}
@@ -63,7 +65,8 @@ code₂-β B X Y =
  ∙ app-seq X (Λ · (curry₁ 𝔻 𝔻 𝔻 B · X)) Y
  ∙ ap (seq · X ·_) (app-Λ (curry₁ 𝔻 𝔻 𝔻 B · X) Y)
 
-codeᶜ-β : (N : Den Env) (X Y : ⟨ 𝔻 ⟩) → app · (app · codeᶜ N · X) · Y ＝ seq · X · (seq · Y · (N · env₂ X Y))
+codeᶜ-β : (N : Den Env) (X Y : ⟨ 𝔻 ⟩)
+  → app · (app · codeᶜ N · X) · Y ＝ seq · X · (seq · Y · (N · env₂ X Y))
 codeᶜ-β N = code₂-β (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N)
 
 {- the code of a closure, applied to its environment -}
@@ -102,7 +105,8 @@ letᶜ-cong : (M M' N N' : Den Env) (ρ ρ' : ⟨ Env ⟩)
   → M · ρ ＝ M' · ρ'
   → ((d : ⟨ 𝔻 ⟩) → defined d → N · (d • ρ) ＝ N' · (d • ρ'))
   → letᶜ M N · ρ ＝ letᶜ M' N' · ρ'
-letᶜ-cong M M' N N' ρ ρ' eM h = ap₂ (λ a b → app · a · b) (lamᶜ-cong N N' ρ ρ' h) eM
+letᶜ-cong M M' N N' ρ ρ' eM h =
+  ap₂ (λ a b → app · a · b) (lamᶜ-cong N N' ρ ρ' h) eM
 
 caseᶜ-cong : (L L' M M' N N' : Den Env) (ρ ρ' : ⟨ Env ⟩)
   → L · ρ ＝ L' · ρ'
@@ -111,4 +115,5 @@ caseᶜ-cong : (L L' M M' N N' : Den Env) (ρ ρ' : ⟨ Env ⟩)
   → caseᶜ L M N · ρ ＝ caseᶜ L' M' N' · ρ'
 caseᶜ-cong L L' M M' N N' ρ ρ' eL hM hN =
  ap₂ (λ a b → cases · a · b) eL
-   (ap₂ _,_ (strict-cong (abs M · ρ) (abs M' · ρ') hM) (strict-cong (abs N · ρ) (abs N' · ρ') hN))
+   (ap₂ _,_ (strict-cong (abs M · ρ) (abs M' · ρ') hM)
+       (strict-cong (abs N · ρ) (abs N' · ρ') hN))

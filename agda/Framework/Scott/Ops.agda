@@ -60,16 +60,23 @@ private
    ρ = being-defined-is-prop (unroll · d)
    ub : (i : I) → guarded d (α i) ⊑⟨ 𝔻 ⟩ guarded d (∐ 𝔻 δ)
    ub i = ∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ _ → α i) ρ (guarded d (∐ 𝔻 δ))
-            (λ p → transitivity 𝔻 _ _ _ (∐-is-upperbound 𝔻 δ i) (∐ˢˢ-is-upperbound 𝔻⊥ (λ _ → ∐ 𝔻 δ) ρ p))
+            (λ p →
+                transitivity 𝔻 _ _ _ (∐-is-upperbound 𝔻 δ i)
+                (∐ˢˢ-is-upperbound 𝔻⊥ (λ _ → ∐ 𝔻 δ) ρ p))
    lub : (u : ⟨ 𝔻 ⟩)
      → ((i : I) → guarded d (α i) ⊑⟨ 𝔻 ⟩ u)
      → guarded d (∐ 𝔻 δ) ⊑⟨ 𝔻 ⟩ u
    lub u h = ∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ _ → ∐ 𝔻 δ) ρ u
                (λ p → ∐-is-lowerbound-of-upperbounds 𝔻 δ u
-                        (λ i → transitivity 𝔻 _ _ _ (∐ˢˢ-is-upperbound 𝔻⊥ (λ _ → α i) ρ p) (h i)))
+                        (λ i →
+                            transitivity 𝔻 _ _ _
+                              (∐ˢˢ-is-upperbound 𝔻⊥ (λ _ → α i) ρ p) (h i)))
 
  guarded-c₁ : (e : ⟨ 𝔻 ⟩) → is-continuous 𝔻 𝔻 (λ d → guarded d e)
- guarded-c₁ e = pr₂ (∘₁ 𝔻 (𝓛ᵈ (obj Val 𝔻)) 𝔻 unroll (extend (obj Val 𝔻) 𝔻⊥ (const₁ (obj Val 𝔻) 𝔻 e)))
+ guarded-c₁ e =
+   pr₂
+   (∘₁ 𝔻 (𝓛ᵈ (obj Val 𝔻)) 𝔻 unroll
+     (extend (obj Val 𝔻) 𝔻⊥ (const₁ (obj Val 𝔻) 𝔻 e)))
 
 seq : DCPO[ 𝔻 , 𝔻 ⟹₁ 𝔻 ]
 seq = to-exp₁ 𝔻 𝔻 𝔻 (λ d → guarded d , guarded-c₂ d) guarded-c₁
@@ -83,7 +90,7 @@ strict = to-exp₁ (𝔻 ⟹₁ 𝔻) 𝔻 𝔻 s
   s g = (λ d → seq · d · (g · d)) ,
         pr₂ (∘₁ 𝔻 ((𝔻 ⟹₁ 𝔻) ×₁ 𝔻) 𝔻 (pair₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 seq g) (eval₁ 𝔻 𝔻))
 
-{- Functions -------------------------------------------------------------------}
+{- Functions ------------------------------------------------------------------}
 
 {- a function value: the strict function that agrees with g -}
 Λ : DCPO[ 𝔻 ⟹₁ 𝔻 , 𝔻 ]
@@ -100,11 +107,12 @@ app-br t = const₁ (obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) (const₁ 𝔻 �
 app : DCPO[ 𝔻 , 𝔻 ⟹₁ 𝔻 ]
 app = case (𝔻 ⟹𝔻) app-br
 
-{- Tuples ----------------------------------------------------------------------}
+{- Tuples ---------------------------------------------------------------------}
 
 tailᶜ : (n : ℕ) → DCPO[ Pow (Fin (succ n)) 𝔻 , Pow (Fin n) 𝔻 ]
 tailᶜ n = (λ ds i → ds (suc i)) ,
-          to-Pow-continuous (Fin n) 𝔻 (Pow (Fin (succ n)) 𝔻) (λ ds i → ds (suc i))
+          to-Pow-continuous (Fin n) 𝔻 (Pow (Fin (succ n)) 𝔻)
+            (λ ds i → ds (suc i))
             (λ i → pr₂ (at (Fin (succ n)) 𝔻 (suc i)))
 
 {- guard n ds e = e if each of the n values ds is defined, and ⊥ otherwise -}
@@ -139,7 +147,7 @@ proj-br i t = const₁ (obj (Payload t) 𝔻) 𝔻 ⊥𝔻
 proj : {n : ℕ} → Fin n → DCPO[ 𝔻 , 𝔻 ]
 proj i = case 𝔻⊥ (proj-br i)
 
-{- Pairs ------------------------------------------------------------------------}
+{- Pairs ----------------------------------------------------------------------}
 
 {- the two values a and b -}
 pick₂ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → Fin 2 → ⟨ 𝔻 ⟩
@@ -147,7 +155,9 @@ pick₂ a b zero = a
 pick₂ a b (suc zero) = b
 
 two : DCPO[ 𝔻 ×₁ 𝔻 , Pow (Fin 2) 𝔻 ]
-two = (λ p → pick₂ (pr₁ p) (pr₂ p)) , to-Pow-continuous (Fin 2) 𝔻 (𝔻 ×₁ 𝔻) (λ p → pick₂ (pr₁ p) (pr₂ p)) c
+two =
+  (λ p → pick₂ (pr₁ p) (pr₂ p))
+  , to-Pow-continuous (Fin 2) 𝔻 (𝔻 ×₁ 𝔻) (λ p → pick₂ (pr₁ p) (pr₂ p)) c
  where
   c : (i : Fin 2) → is-continuous (𝔻 ×₁ 𝔻) 𝔻 (λ p → pick₂ (pr₁ p) (pr₂ p) i)
   c zero = pr₂ (fst₁ 𝔻 𝔻)
@@ -173,7 +183,7 @@ car cdr : DCPO[ 𝔻 , 𝔻 ]
 car = component zero
 cdr = component (suc zero)
 
-{- Sums ------------------------------------------------------------------------}
+{- Sums -----------------------------------------------------------------------}
 
 inl : DCPO[ 𝔻 , 𝔻 ]
 inl = ∘₁ 𝔻 ((𝔻 ⟹₁ 𝔻) ×₁ 𝔻) 𝔻 (pair₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 seq (inj left)) (eval₁ 𝔻 𝔻)
@@ -185,7 +195,9 @@ inr = ∘₁ 𝔻 ((𝔻 ⟹₁ 𝔻) ×₁ 𝔻) 𝔻 (pair₁ 𝔻 (𝔻 ⟹�
    cases d (f , g) = f x if d is left x, g y if d is right y, else ⊥ -}
 {- a branch: apply the function that pick chooses to the payload -}
 branch : DCPO[ Br , 𝔻 ⟹₁ 𝔻 ] → DCPO[ 𝔻 , Br ⟹₁ 𝔻 ]
-branch pick = to-exp₁ 𝔻 Br 𝔻 (λ x → ∘₁ Br (𝔻 ⟹₁ 𝔻) 𝔻 pick (at-point₁ 𝔻 𝔻 x)) (λ b → pr₂ (pick · b))
+branch pick =
+  to-exp₁ 𝔻 Br 𝔻 (λ x → ∘₁ Br (𝔻 ⟹₁ 𝔻) 𝔻 pick (at-point₁ 𝔻 𝔻 x))
+  (λ b → pr₂ (pick · b))
 
 cases-br : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , Br ⟹₁ 𝔻 ]
 cases-br left = branch (fst₁ (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻))
@@ -197,7 +209,7 @@ cases-br t = const₁ (obj (Payload t) 𝔻) (Br ⟹₁ 𝔻) (const₁ Br 𝔻 
 cases : DCPO[ 𝔻 , Br ⟹₁ 𝔻 ]
 cases = case (Br ⟹𝔻) cases-br
 
-{- Environments ----------------------------------------------------------------}
+{- Environments ---------------------------------------------------------------}
 
 Env : DCPO₁
 Env = Pow ℕ 𝔻

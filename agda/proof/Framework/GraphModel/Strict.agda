@@ -24,7 +24,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 module proof.Framework.GraphModel.Strict where
 
-{- Strict operators ----------------------------------------------------------------}
+{- Strict operators -----------------------------------------------------------}
 
 NEs : ∀ n → Results (𝒫 Value) (replicate n ■) → Set
 NEs zero _ = ⊤
@@ -46,7 +46,7 @@ D ▷ O = record { op = λ Ds → op O ⟨ D , Ds ⟩
                ; cong = λ eq → cong O ⟨ up ≃-refl , eq ⟩
                ; ne-of = λ Ds w w∈ → proj₂ (ne-of O _ w w∈) }
 
-{- The operators -----------------------------------------------------------------}
+{- The operators --------------------------------------------------------------}
 
 app-op : Strict 3
 app-op = record { op = ⋆₂ ; cong = mono-≃ ⋆₂-mono
@@ -59,10 +59,16 @@ pair-op′ = record { op = pair ; cong = mono-≃ pair-mono ; ne-of = S }
         S _ ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩ = ⟨ ⟨ u , u∈ ⟩ , ⟨ ⟨ v , v∈ ⟩ , tt ⟩ ⟩
 
 car-op : Strict 1
-car-op = record { op = car ; cong = mono-≃ car-mono ; ne-of = λ { _ u ⟨ v , ∈ ⟩ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ } }
+car-op =
+  record
+  { op = car ; cong = mono-≃ car-mono ; ne-of =
+    λ { _ u ⟨ v , ∈ ⟩ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ } }
 
 cdr-op : Strict 1
-cdr-op = record { op = cdr ; cong = mono-≃ cdr-mono ; ne-of = λ { _ v ⟨ u , ∈ ⟩ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ } }
+cdr-op =
+  record
+  { op = cdr ; cong = mono-≃ cdr-mono ; ne-of =
+    λ { _ v ⟨ u , ∈ ⟩ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ } }
 
 tuple-op : ∀ n → Strict n
 tuple-op n = record { op = 𝒯 n ; cong = mono-≃ (𝒯-mono n) ; ne-of = S n }
@@ -95,6 +101,12 @@ inr-op′ = record { op = inr ; cong = mono-≃ inr-mono ; ne-of = S }
 {- case on D, with the branches E and F -}
 case-op′ : (E F : 𝒫 Value → 𝒫 Value) → Strict 1
 case-op′ E F = record { op = λ { ⟨ D , _ ⟩ → 𝒞 ⟨ D , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩ }
-  ; cong = λ eq → 𝒞-≃ {F = E} {E} {F} {F} (lower (proj₁ eq)) (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl)
-  ; ne-of = λ { _ w (inj₁ ⟨ v , ⟨ V , ⟨ l∈ , _ ⟩ ⟩ ⟩) → ⟨ ⟨ _ , l∈ v (here refl) ⟩ , tt ⟩
-               ; _ w (inj₂ ⟨ v , ⟨ V , ⟨ r∈ , _ ⟩ ⟩ ⟩) → ⟨ ⟨ _ , r∈ v (here refl) ⟩ , tt ⟩ } }
+  ; cong =
+    λ eq →
+    𝒞-≃ {F = E} {E} {F} {F} (lower (proj₁ eq)) (λ _ _ _ → ≃-refl)
+    (λ _ _ _ → ≃-refl)
+  ; ne-of =
+    λ { _ w (inj₁ ⟨ v , ⟨ V , ⟨ l∈ , _ ⟩ ⟩ ⟩)
+      → ⟨ ⟨ _ , l∈ v (here refl) ⟩ , tt ⟩
+               ; _ w (inj₂ ⟨ v , ⟨ V , ⟨ r∈ , _ ⟩ ⟩ ⟩)
+                   → ⟨ ⟨ _ , r∈ v (here refl) ⟩ , tt ⟩ } }

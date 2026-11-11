@@ -45,7 +45,8 @@ cdr ⟨ D , _ ⟩ v = Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D
 𝒯 zero Ds ⟨⟩ = True
 {- tuples are strict: a tuple has a value only when all of its components do -}
 𝒯 (suc n) Ds (tup[_]_ {n'} i d) =
-  Σ[ n≡ ∈ n' ≡ suc n ] d ∈ (nthD Ds (subst Fin n≡ i)) × (∀ j → nonempty (nthD Ds j))
+  Σ[ n≡ ∈ n' ≡ suc n ] d
+    ∈ (nthD Ds (subst Fin n≡ i)) × (∀ j → nonempty (nthD Ds j))
 𝒯 n Ds d = False
 
 proj : ∀ {n} → Fin n → DOp (𝒫 Value) (■ ∷ [])
@@ -64,15 +65,18 @@ inr ⟨ D , _ ⟩ _ = False
    inconsistent elements -}
 𝒞 : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
 𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w =
-    Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → left d ∈ D) × w ∈ E (mem (v ∷ V)) × (v ∷ V) ≈ (v ∷ V)
-  ⊎ Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → right d ∈ D) × w ∈ F (mem (v ∷ V)) × (v ∷ V) ≈ (v ∷ V)
+    Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → left d ∈ D) × w
+      ∈ E (mem (v ∷ V)) × (v ∷ V) ≈ (v ∷ V)
+  ⊎ Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → right d ∈ D) × w
+    ∈ F (mem (v ∷ V)) × (v ∷ V) ≈ (v ∷ V)
 
 Λ : DOp (𝒫 Value) (ν ■ ∷ [])
 Λ ⟨ f , _ ⟩ (V ↦ w) = w ∈ f (mem V) × V ≢ [] × V ≈ V
 Λ ⟨ f , _ ⟩ ν = True
 Λ ⟨ f , _ ⟩ d = False
 
-{- D, provided that each of the n sets in Ds is nonempty (for strict closures) -}
+{- D, provided that each of the n sets in Ds is nonempty (for strict
+   closures) -}
 guard-n : ∀ n → Results (𝒫 Value) (replicate n ■) → 𝒫 Value → 𝒫 Value
 guard-n n Ds D w = (∀ i → nonempty (nthD Ds i)) × w ∈ D
 

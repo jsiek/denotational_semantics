@@ -80,9 +80,11 @@ opaque
            roll
 
  {- taking a value apart, strictly -}
- case : (E : DCPO⊥ {𝓤₁} {𝓤₁}) → ((t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) → DCPO[ 𝔻 , E ⁻ ]
+ case : (E : DCPO⊥ {𝓤₁} {𝓤₁}) → ((t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ])
+   → DCPO[ 𝔻 , E ⁻ ]
  case E h = ∘₁ 𝔻 (𝓛ᵈ (obj Val 𝔻)) (E ⁻) unroll
-              (extend (obj Val 𝔻) E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h))
+              (extend (obj Val 𝔻) E
+                  (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h))
 
 {- a value is defined when unrolling it gives a tag and a payload
    (it is ⊥ exactly when it is not defined: ⊥-undefined, undefined-⊥) -}

@@ -77,7 +77,9 @@ ne-mem {V = v ∷ V} _ V⊆ = ⟨ v , V⊆ v (here refl) ⟩
 ≃-when : ∀ {T} {P : Set} {A B : 𝒫 T} → (∀ w → w ∈ A → P) → (∀ w → w ∈ B → P)
   → (P → A ≃ B)
   → A ≃ B
-≃-when pA pB eq = ⟨ (λ w w∈ → proj₁ (eq (pA w w∈)) w w∈) , (λ w w∈ → proj₂ (eq (pB w w∈)) w w∈) ⟩
+≃-when pA pB eq =
+  ⟨ (λ w w∈ → proj₁ (eq (pA w w∈)) w w∈)
+    , (λ w w∈ → proj₂ (eq (pB w w∈)) w w∈) ⟩
 
 {- a set has no element iff it is the empty set -}
 ¬nonempty⇔≃∅ : ∀ {T} {S : 𝒫 T} → (¬ nonempty S) ⇔ (S ≃ ∅)

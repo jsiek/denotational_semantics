@@ -15,7 +15,8 @@ open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.DenotProperties
 open import proof.Framework.GraphModel.Env
 
-module proof.Framework.GraphModel.Semantics (Op : Set) (sig : Op → List Sig) where
+module proof.Framework.GraphModel.Semantics (Op : Set)
+  (sig : Op → List Sig) where
 
 open import Framework.abt.AbstractBindingTree Op sig
 open import Framework.abt.Fold2 Op sig
@@ -57,7 +58,8 @@ continuous-arg ρ NE-ρ (ν b) (bind arg) =
 continuous-arg ρ NE-ρ (∁ b) (clear arg) =
       continuous-arg (λ x → init) (λ i → ⟨ error , refl ⟩) b arg
 
-continuous-args : ∀ {A} {{_ : Semantics {A}}} (ρ : Env A) (NE-ρ : nonempty-env ρ)
+continuous-args : ∀ {A} {{_ : Semantics {A}}} (ρ : Env A)
+  (NE-ρ : nonempty-env ρ)
     → ∀ bs → (args : Args bs) → Set₁
 continuous-args ρ NE-ρ [] Nil = pTrue
 continuous-args ρ NE-ρ (b ∷ bs) (! arg ,, args) = 
@@ -73,10 +75,11 @@ record ContinuousSemantics {A : Set} : Set₁ where
 open ContinuousSemantics {{...}}
 
 
-{- Preservation of a relation, e.g. ⊆ or consistency ---------------------------}
+{- Preservation of a relation, e.g. ⊆ or consistency --------------------------}
 
 module _ {A} {{_ : Semantics {A}}} (R : 𝒫 A → 𝒫 A → Set)
-    (R-op : opsig-rel-pres R sig interp-op interp-op) (R-init : R init init) where
+    (R-op : opsig-rel-pres R sig interp-op interp-op)
+      (R-init : R init init) where
   ⟦⟧-pres : ∀ {ρ ρ′} (M : ABT)
     → ρ ~ₑ[ R ] ρ′
     → R (⟦ M ⟧ ρ) (⟦ M ⟧ ρ′)
@@ -88,12 +91,14 @@ module _ {A} {{_ : Semantics {A}}} (R : 𝒫 A → 𝒫 A → Set)
     → results-rel-pres R bs (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′)
 
   ⟦⟧-pres (` x) ρR = ρR x
-  ⟦⟧-pres {ρ}{ρ′} (op ⦅ args ⦆) ρR = lower (R-op op (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′) (⟦⟧-pres-args args ρR))
+  ⟦⟧-pres {ρ}{ρ′} (op ⦅ args ⦆) ρR =
+    lower (R-op op (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′) (⟦⟧-pres-args args ρR))
   ⟦⟧-pres-arg (ast M) ρR = lift (⟦⟧-pres M ρR)
   ⟦⟧-pres-arg (bind arg) ρR X D XR = ⟦⟧-pres-arg arg (•-~ R ρR XR)
   ⟦⟧-pres-arg (clear arg) ρR = ⟦⟧-pres-arg arg (λ x → R-init)
   ⟦⟧-pres-args nil ρR = lift tt
-  ⟦⟧-pres-args (cons arg args) ρR = ⟨ ⟦⟧-pres-arg arg ρR , ⟦⟧-pres-args args ρR ⟩
+  ⟦⟧-pres-args (cons arg args) ρR =
+    ⟨ ⟦⟧-pres-arg arg ρR , ⟦⟧-pres-args args ρR ⟩
 
 {- Monotone -------------------------------------------------------------------}
 
@@ -123,7 +128,8 @@ module _ {A} {{_ : Semantics {A}}} (R : 𝒫 A → 𝒫 A → Set)
   → continuous-args ρ NE-ρ bs args
 
 ⟦⟧-continuous {A}{ρ}{NE-ρ} (` x) v v∈⟦M⟧ρ =
-   ⟨ (single-env x ⌈ v ⌉ ρ NE-ρ) , ⟨ (single-fin {A}{v}{x}) , ⟨ (single-⊆ v∈⟦M⟧ρ) ,
+   ⟨ (single-env x ⌈ v ⌉ ρ NE-ρ)
+       , ⟨ (single-fin {A}{v}{x}) , ⟨ (single-⊆ v∈⟦M⟧ρ) ,
      (v∈single[xv]x {A}{v}{x}) ⟩ ⟩ ⟩
 
 ⟦⟧-continuous {A}{ρ}{NE-ρ} (op ⦅ args ⦆) v v∈⟦M⟧ρ =

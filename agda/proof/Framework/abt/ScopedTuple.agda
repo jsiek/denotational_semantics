@@ -58,7 +58,8 @@ zip-intro {A} {B} R f {[]} tt tt = tt
 zip-intro {A} {B} R f {b ∷ bs} ⟨ x , xs ⟩ ⟨ y , ys ⟩ =
     ⟨ (f x y) , (zip-intro R f xs ys) ⟩
 
-map-pres-zip : ∀{ℓ}{bs}{A1 B1 : Scet {ℓ}}{A2 B2 : Scet {ℓ}} {xs ys} → (P : A1 ✖ B1) → (Q : A2 ✖ B2) → (f : A1 ⇨ A2) → (g : B1 ⇨ B2)
+map-pres-zip : ∀{ℓ}{bs}{A1 B1 : Scet {ℓ}}{A2 B2 : Scet {ℓ}} {xs ys}
+  → (P : A1 ✖ B1) → (Q : A2 ✖ B2) → (f : A1 ⇨ A2) → (g : B1 ⇨ B2)
   → zip (λ{b} → P {b}) {bs} xs ys
   → (∀{b}{x}{y} → P {b} x y → Q (f x) (g y))
   → zip Q (map f xs) (map g ys)
@@ -82,7 +83,8 @@ record Lift-Rel-Tuple {ℓ}{A B : Scet{ℓ}} (R : A ✖ B)
 Lift-Eq-Tuple : ∀{A : Set} → Lift-Rel-Tuple {A = λ _ → A}{λ _ → A} _≡_ _≡_
 Lift-Eq-Tuple = record { base = refl ; step = λ { refl refl → refl } }
 
-all→pred : ∀{bs A xs} → (P : 𝒫 A) → (P× : ∀ {bs} → Tuple bs A → Set) → (L : Lift-Pred-Tuple P P×)
+all→pred : ∀{bs A xs} → (P : 𝒫 A) → (P× : ∀ {bs} → Tuple bs A → Set)
+  → (L : Lift-Pred-Tuple P P×)
   → all P {bs} xs
   → P× xs
 all→pred {[]} {xs = tt} P P× L tt = Lift-Pred-Tuple.base L 
@@ -90,14 +92,16 @@ all→pred {b ∷ bs} {xs = ⟨ x , xs ⟩} P P× L ⟨ z , zs ⟩ =
     let IH = all→pred {bs} {xs = xs} P P× L zs in
     Lift-Pred-Tuple.step L z IH
 
-lift-pred : ∀{A : Scet} → (P : 𝒫 A) → (P× : ∀ {bs} → Tuple bs A → Set) → (L : Lift-Pred-Tuple P P×)
+lift-pred : ∀{A : Scet} → (P : 𝒫 A) → (P× : ∀ {bs} → Tuple bs A → Set)
+  → (L : Lift-Pred-Tuple P P×)
   → (∀ {b} (a : A b) → P {b} a)
   → {bs : Sigs} → (xs : Tuple bs A)
   → P× xs
 lift-pred {A} P P× L f {bs} xs =
   all→pred {bs}{A}{xs} P P× L (all-intro {A} P f {bs} xs)
 
-zip→rel : ∀{ℓ}{bs}{A B : Scet{ℓ}}{xs ys} → (R : A ✖ B) → (R× : ∀ {bs} → Tuple bs A → Tuple bs B → Set) → (L : Lift-Rel-Tuple R R×)
+zip→rel : ∀{ℓ}{bs}{A B : Scet{ℓ}}{xs ys} → (R : A ✖ B)
+  → (R× : ∀ {bs} → Tuple bs A → Tuple bs B → Set) → (L : Lift-Rel-Tuple R R×)
   → zip R {bs} xs ys
   → R× xs ys
 zip→rel {bs = []} {xs = tt} {tt} R R× L tt = Lift-Rel-Tuple.base L 
@@ -105,7 +109,10 @@ zip→rel {bs = b ∷ bs} {xs = ⟨ x , xs ⟩} {⟨ y , ys ⟩} R R× L ⟨ z ,
     let IH = zip→rel {bs = bs} {xs = xs} {ys} R R× L zs in
     Lift-Rel-Tuple.step L z IH
 
-zip-map→rel : ∀{ℓ}{bs}{A1 B1 : Scet {ℓ}}{A2 B2 : Scet {ℓ}}{xs ys} → (P : A1 ✖ B1) → (Q : A2 ✖ B2) → (R : ∀ {bs} → Tuple bs A2 → Tuple bs B2 → Set) → (f : A1 ⇨ A2) → (g : B1 ⇨ B2)
+zip-map→rel : ∀{ℓ}{bs}{A1 B1 : Scet {ℓ}}{A2 B2 : Scet {ℓ}}{xs ys}
+  → (P : A1 ✖ B1) → (Q : A2 ✖ B2)
+  → (R : ∀ {bs} → Tuple bs A2 → Tuple bs B2 → Set) → (f : A1 ⇨ A2)
+  → (g : B1 ⇨ B2)
   → (∀{b}{x}{y} → P{b} x y → Q{b} (f x) (g y))
   → (L : Lift-Rel-Tuple Q R)
   → zip P {bs} xs ys

@@ -31,19 +31,22 @@ open import Framework.abt.Sig using (Result; ∁)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using (List; []; _∷_; replicate; _++_)
 open import Data.List.Properties using (++-conicalˡ)
-open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻)
+open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ;
+  ∈-++⁻)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_]′)
 open import Data.Unit using (tt; ⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Data.Maybe using (Maybe; nothing; just)
 open import Level using (Lift; lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym;
+  trans; subst)
 
-{- ω, kinds and consistency -------------------------------------------------------}
+{- ω, kinds and consistency ---------------------------------------------------}
 
 ω~ : ∀ {v}
   → ω ~ v
@@ -108,7 +111,7 @@ Conv-ω : ∀ {D E}
   → ⊥
 Conv-ω D~ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ ω∈ = d≢ (~ω (D~ d ω d∈ ω∈))
 
-{- filters, and the values of a set -------------------------------------------------}
+{- filters, and the values of a set -------------------------------------------}
 
 ⇂-⊆ : ∀ {D P} → (D ⇂ P) ⊆ D
 ⇂-⊆ d d∈ = proj₁ d∈
@@ -152,17 +155,19 @@ Conv-mono : ∀ {D E}
   → Conv E
 Conv-mono D⊆ ⟨ d , d∈ ⟩ = ⟨ d , ⌊⌋-mono D⊆ d d∈ ⟩
 
-{- Bind: the monad laws, monotonicity and consistency --------------------------------}
+{- Bind: the monad laws, monotonicity and consistency -------------------------}
 
 {- left unit: bind on a set of values (a computation that returns them) -}
 ≫=-β : ∀ {D F} → Mono₁ F → Clean D → nonempty D → (D ≫= F) ≃ F D
 ≫=-β m cl ⟨ d , d∈ ⟩ =
-  ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → ⊥-elim (cl ω ω∈ refl) ; w (inj₂ ⟨ _ , w∈ ⟩) → m ⌊⌋-⊆ w w∈ })
+  ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → ⊥-elim (cl ω ω∈ refl) ; w (inj₂ ⟨ _ , w∈ ⟩)
+      → m ⌊⌋-⊆ w w∈ })
   , (λ w w∈ → inj₂ ⟨ ⟨ d , ⟨ d∈ , cl d d∈ ⟩ ⟩ , m (⌊⌋-clean cl) w w∈ ⟩) ⟩
 
 {- right unit -}
 ≫=-η : ∀ {D} → (D ≫= λ X → X) ≃ D
-≫=-η {D} = ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → ω∈ ; w (inj₂ ⟨ _ , w∈ ⟩) → proj₁ w∈ }) , G ⟩
+≫=-η {D} =
+  ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → ω∈ ; w (inj₂ ⟨ _ , w∈ ⟩) → proj₁ w∈ }) , G ⟩
   where
   G : D ⊆ (D ≫= λ X → X)
   G w w∈ with ω? w
@@ -174,7 +179,9 @@ Conv-mono D⊆ ⟨ d , d∈ ⟩ = ⟨ d , ⌊⌋-mono D⊆ d d∈ ⟩
 ≫=-assoc {D} {F} {G} m = ⟨ A , B ⟩
   where
   ⌊≫=⌋ : Conv D → ⌊ D ≫= F ⌋ ≃ ⌊ F ⌊ D ⌋ ⌋
-  ⌊≫=⌋ c = ⟨ (λ { u ⟨ inj₁ ⟨ refl , _ ⟩ , u≢ ⟩ → ⊥-elim (u≢ refl) ; u ⟨ inj₂ ⟨ _ , u∈ ⟩ , u≢ ⟩ → ⟨ u∈ , u≢ ⟩ })
+  ⌊≫=⌋ c =
+    ⟨ (λ { u ⟨ inj₁ ⟨ refl , _ ⟩ , u≢ ⟩
+      → ⊥-elim (u≢ refl) ; u ⟨ inj₂ ⟨ _ , u∈ ⟩ , u≢ ⟩ → ⟨ u∈ , u≢ ⟩ })
            , (λ u u∈ → ⟨ inj₂ ⟨ c , proj₁ u∈ ⟩ , proj₂ u∈ ⟩) ⟩
   A : ((D ≫= F) ≫= G) ⊆ (D ≫= λ X → F X ≫= G)
   A w (inj₁ ⟨ refl , inj₁ ⟨ _ , ω∈ ⟩ ⟩) = inj₁ ⟨ refl , ω∈ ⟩
@@ -188,22 +195,27 @@ Conv-mono D⊆ ⟨ d , d∈ ⟩ = ⟨ d , ⌊⌋-mono D⊆ d d∈ ⟩
   B w (inj₂ ⟨ c , inj₂ ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ ⟩) =
     inj₂ ⟨ ⟨ u , proj₂ (⌊≫=⌋ c) u u∈ ⟩ , m (proj₂ (⌊≫=⌋ c)) w w∈ ⟩
 
-≫=-mono : ∀ {D D' F F'} → D ⊆ D' → (∀ {X X'} → X ⊆ X' → F X ⊆ F' X') → (D ≫= F) ⊆ (D' ≫= F')
+≫=-mono : ∀ {D D' F F'} → D ⊆ D' → (∀ {X X'} → X ⊆ X' → F X ⊆ F' X')
+  → (D ≫= F) ⊆ (D' ≫= F')
 ≫=-mono D⊆ F⊆ w (inj₁ ⟨ refl , ω∈ ⟩) = inj₁ ⟨ refl , D⊆ ω ω∈ ⟩
-≫=-mono D⊆ F⊆ w (inj₂ ⟨ c , w∈ ⟩) = inj₂ ⟨ Conv-mono D⊆ c , F⊆ (⌊⌋-mono D⊆) w w∈ ⟩
+≫=-mono D⊆ F⊆ w (inj₂ ⟨ c , w∈ ⟩) =
+  inj₂ ⟨ Conv-mono D⊆ c , F⊆ (⌊⌋-mono D⊆) w w∈ ⟩
 
-≫=-consis : ∀ {D D' F F'} → Every _~_ D D' → (∀ {X X'} → Every _~_ X X' → Every _~_ (F X) (F' X'))
+≫=-consis : ∀ {D D' F F'} → Every _~_ D D'
+  → (∀ {X X'} → Every _~_ X X' → Every _~_ (F X) (F' X'))
   → Every _~_ (D ≫= F) (D' ≫= F')
 ≫=-consis D~ F~ u w (inj₁ ⟨ refl , _ ⟩) (inj₁ ⟨ refl , _ ⟩) = tt
-≫=-consis D~ F~ u w (inj₁ ⟨ refl , ω∈ ⟩) (inj₂ ⟨ c , _ ⟩) = ⊥-elim (ω-Conv D~ ω∈ c)
-≫=-consis D~ F~ u w (inj₂ ⟨ c , _ ⟩) (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (Conv-ω D~ c ω∈)
+≫=-consis D~ F~ u w (inj₁ ⟨ refl , ω∈ ⟩) (inj₂ ⟨ c , _ ⟩) =
+  ⊥-elim (ω-Conv D~ ω∈ c)
+≫=-consis D~ F~ u w (inj₂ ⟨ c , _ ⟩) (inj₁ ⟨ refl , ω∈ ⟩) =
+  ⊥-elim (Conv-ω D~ c ω∈)
 ≫=-consis D~ F~ u w (inj₂ ⟨ _ , u∈ ⟩) (inj₂ ⟨ _ , w∈ ⟩) = F~ (⌊⌋-~ D~) u w u∈ w∈
 
 ≫=-clean : ∀ {D F} → Clean D → Clean (F ⌊ D ⌋) → Clean (D ≫= F)
 ≫=-clean cD cF .ω (inj₁ ⟨ refl , ω∈ ⟩) refl = cD ω ω∈ refl
 ≫=-clean cD cF w (inj₂ ⟨ _ , w∈ ⟩) = cF w w∈
 
-{- Lifting a relation through the monad -------------------------------------------------}
+{- Lifting a relation through the monad ---------------------------------------}
 
 {- a consistent set with a value has no error -}
 con-clean : ∀ {D}
@@ -231,13 +243,16 @@ Lifted S D D' = ∀ d → d ∈ D → S d D'
 ≫=-lift : ∀ {S D D' F F'} → LiftRel S → Con D' → Lifted S D D'
   → (Conv D → Conv D' → Lifted S ⌊ D ⌋ ⌊ D' ⌋ → Lifted S (F ⌊ D ⌋) (F' ⌊ D' ⌋))
   → Lifted S (D ≫= F) (D' ≫= F')
-≫=-lift L cD' hD hF w (inj₁ ⟨ refl , ω∈ ⟩) = LiftRel.→ω L (inj₁ ⟨ refl , LiftRel.ω→ L (hD ω ω∈) ⟩)
+≫=-lift L cD' hD hF w (inj₁ ⟨ refl , ω∈ ⟩) =
+  LiftRel.→ω L (inj₁ ⟨ refl , LiftRel.ω→ L (hD ω ω∈) ⟩)
 ≫=-lift L cD' hD hF w (inj₂ ⟨ c@(⟨ d , ⟨ d∈ , d≢ ⟩ ⟩) , w∈ ⟩) =
-  S-mono (λ x x∈ → inj₂ ⟨ c' , x∈ ⟩) (hF c c' (λ a a∈ → S-mono (⌊⌋-clean (con-clean cD' c')) (hD a (proj₁ a∈))) w w∈)
+  S-mono (λ x x∈ → inj₂ ⟨ c' , x∈ ⟩)
+    (hF c c'
+      (λ a a∈ → S-mono (⌊⌋-clean (con-clean cD' c')) (hD a (proj₁ a∈))) w w∈)
   where open LiftRel L
         c' = S-val d≢ (hD d d∈)
 
-{- the check of a kernel --------------------------------------------------------------}
+{- the check of a kernel ------------------------------------------------------}
 
 {- every element of A that is not ω uses a value of kind k in X -}
 Needs : Kind → 𝒫 Value → 𝒫 Value → Set
@@ -251,7 +266,8 @@ checked-mono : ∀ {k X X' A A'}
   → X ⊆ X'
   → A ⊆ A'
   → checked k X A ⊆ checked k X' A'
-checked-mono X⊆ A⊆ w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩) = inj₁ ⟨ refl , ⟨ d , ⟨ X⊆ d d∈ , dk ⟩ ⟩ ⟩
+checked-mono X⊆ A⊆ w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩) =
+  inj₁ ⟨ refl , ⟨ d , ⟨ X⊆ d d∈ , dk ⟩ ⟩ ⟩
 checked-mono X⊆ A⊆ w (inj₂ w∈) = inj₂ (A⊆ w w∈)
 
 checked-consis : ∀ {k X X' A A'}
@@ -261,22 +277,28 @@ checked-consis : ∀ {k X X' A A'}
   → Needs k X' A'
   → Every _~_ (checked k X A) (checked k X' A')
 checked-consis X~ A~ n n' u w (inj₁ ⟨ refl , _ ⟩) (inj₁ ⟨ refl , _ ⟩) = tt
-checked-consis X~ A~ n n' u w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) (inj₂ w∈) with n' w w∈
+checked-consis X~ A~ n n' u w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) (inj₂ w∈)
+  with n' w w∈
 ... | inj₁ refl = tt
-... | inj₂ ⟨ v , ⟨ v∈ , vk ⟩ ⟩ = ⊥-elim (ek (trans (~-kind e v (X~ e v e∈ v∈)) vk))
-checked-consis X~ A~ n n' u w (inj₂ u∈) (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) with n u u∈
+... | inj₂ ⟨ v , ⟨ v∈ , vk ⟩ ⟩ =
+  ⊥-elim (ek (trans (~-kind e v (X~ e v e∈ v∈)) vk))
+checked-consis X~ A~ n n' u w (inj₂ u∈) (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩)
+  with n u u∈
 ... | inj₁ refl = tt
-... | inj₂ ⟨ v , ⟨ v∈ , vk ⟩ ⟩ = ⊥-elim (ek (trans (sym (~-kind v e (X~ v e v∈ e∈))) vk))
+... | inj₂ ⟨ v , ⟨ v∈ , vk ⟩ ⟩ =
+  ⊥-elim (ek (trans (sym (~-kind v e (X~ v e v∈ e∈))) vk))
 checked-consis X~ A~ n n' u w (inj₂ u∈) (inj₂ w∈) = A~ u w u∈ w∈
 
 {- the check passes on a set of values of kind k -}
 checked-ok : ∀ {k X A}
   → (∀ d → d ∈ X → kind d ≡ k)
   → checked k X A ≃ A
-checked-ok ok = ⟨ (λ { w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩) → ⊥-elim (dk (ok d d∈)) ; w (inj₂ w∈) → w∈ })
+checked-ok ok =
+  ⟨ (λ { w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩)
+    → ⊥-elim (dk (ok d d∈)) ; w (inj₂ w∈) → w∈ })
                 , (λ w w∈ → inj₂ w∈) ⟩
 
-{- Continuity --------------------------------------------------------------------------}
+{- Continuity -----------------------------------------------------------------}
 
 ⇂-cont : ∀ {E : VEnv → 𝒫 Value} {P ρ}
   → Cont E ρ
@@ -302,19 +324,26 @@ checked-ok ok = ⟨ (λ { w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩
 {- a bind is continuous when its operand is, and its continuation is,
    on the values of the operand -}
 {- (its continuation need only be continuous when the operand has a value) -}
-≫=-cont′ : ∀ {E : VEnv → 𝒫 Value} {G : VEnv → 𝒫 Value → 𝒫 Value} {ρ} → Mono E → Cont E ρ
-  → (∀ {ρ₁ ρ₂ X Y} → ρ₁ ⊆ₑ ρ₂ → X ⊆ Y → G ρ₁ X ⊆ G ρ₂ Y) → (Conv (E ρ) → Cont (λ ρ → G ρ ⌊ E ρ ⌋) ρ)
+≫=-cont′ : ∀ {E : VEnv → 𝒫 Value} {G : VEnv → 𝒫 Value → 𝒫 Value} {ρ}
+  → Mono E → Cont E ρ
+  → (∀ {ρ₁ ρ₂ X Y} → ρ₁ ⊆ₑ ρ₂ → X ⊆ Y → G ρ₁ X ⊆ G ρ₂ Y)
+    → (Conv (E ρ) → Cont (λ ρ → G ρ ⌊ E ρ ⌋) ρ)
   → Cont (λ ρ → E ρ ≫= G ρ) ρ
 ≫=-cont′ {E} {G} mE cE mG cG w (inj₁ ⟨ refl , ω∈ ⟩) with one E cE ω∈
 ... | ⟨ a , ω∈′ ⟩ = done (λ ρ → E ρ ≫= G ρ) a ω (inj₁ ⟨ refl , ω∈′ ⟩)
 ≫=-cont′ {E} {G} mE cE mG cG w (inj₂ ⟨ ⟨ d , d∈ ⟩ , w∈ ⟩)
-    with one (λ ρ → ⌊ E ρ ⌋) (⌊⌋-cont cE) d∈ | one (λ ρ → G ρ ⌊ E ρ ⌋) (cG ⟨ d , d∈ ⟩) w∈
+    with one (λ ρ → ⌊ E ρ ⌋) (⌊⌋-cont cE) d∈
+      | one (λ ρ → G ρ ⌊ E ρ ⌋) (cG ⟨ d , d∈ ⟩) w∈
 ... | ⟨ a , d∈′ ⟩ | ⟨ b , w∈′ ⟩ =
   done (λ ρ → E ρ ≫= G ρ) (approx-join a b) w
-    (inj₂ ⟨ ⟨ d , ⌊⌋-mono (mE (join-l a b)) d d∈′ ⟩ , mG (join-r a b) (⌊⌋-mono (mE (join-r a b))) w w∈′ ⟩)
+    (inj₂
+        ⟨ ⟨ d , ⌊⌋-mono (mE (join-l a b)) d d∈′ ⟩
+          , mG (join-r a b) (⌊⌋-mono (mE (join-r a b))) w w∈′ ⟩)
 
-≫=-cont : ∀ {E : VEnv → 𝒫 Value} {G : VEnv → 𝒫 Value → 𝒫 Value} {ρ} → Mono E → Cont E ρ
-  → (∀ {ρ₁ ρ₂ X Y} → ρ₁ ⊆ₑ ρ₂ → X ⊆ Y → G ρ₁ X ⊆ G ρ₂ Y) → Cont (λ ρ → G ρ ⌊ E ρ ⌋) ρ
+≫=-cont : ∀ {E : VEnv → 𝒫 Value} {G : VEnv → 𝒫 Value → 𝒫 Value} {ρ}
+  → Mono E → Cont E ρ
+  → (∀ {ρ₁ ρ₂ X Y} → ρ₁ ⊆ₑ ρ₂ → X ⊆ Y → G ρ₁ X ⊆ G ρ₂ Y)
+    → Cont (λ ρ → G ρ ⌊ E ρ ⌋) ρ
   → Cont (λ ρ → E ρ ≫= G ρ) ρ
 ≫=-cont mE cE mG cG = ≫=-cont′ mE cE mG (λ _ → cG)
 
@@ -322,12 +351,14 @@ checked-cont : ∀ {k} {X A : VEnv → 𝒫 Value} {ρ}
   → Cont X ρ
   → Cont A ρ
   → Cont (λ ρ → checked k (X ρ) (A ρ)) ρ
-checked-cont {k} {X} {A} cX cA w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) with one X cX e∈
-... | ⟨ a , e∈′ ⟩ = done (λ ρ → checked k (X ρ) (A ρ)) a ω (inj₁ ⟨ refl , ⟨ e , ⟨ e∈′ , ek ⟩ ⟩ ⟩)
+checked-cont {k} {X} {A} cX cA w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩)
+  with one X cX e∈
+... | ⟨ a , e∈′ ⟩ =
+  done (λ ρ → checked k (X ρ) (A ρ)) a ω (inj₁ ⟨ refl , ⟨ e , ⟨ e∈′ , ek ⟩ ⟩ ⟩)
 checked-cont cX cA w (inj₂ w∈) with cA w w∈
 ... | ⟨ ρ′ , ⟨ f , ⟨ s , w∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , inj₂ w∈′ ⟩ ⟩ ⟩
 
-{- Operators: kernels under binds ------------------------------------------------------}
+{- Operators: kernels under binds ---------------------------------------------}
 
 {- an operator strict in its first operand, and the check of the kind of
    that operand; the operators of ErrorMonad.agda are these combinations
@@ -351,16 +382,23 @@ strict₂ {bs} g = swap {bs} (strict {■ ∷ bs} (swap {bs} g))
   → ρ ⊆ₑ ρ′
   → results-rel-pres _⊆_ bs (⟪ bs ⟫₊ Es ρ) (⟪ bs ⟫₊ Es ρ′)
 ⟪⟫₊-mono [] _ _ _ = ptt
-⟪⟫₊-mono (b ∷ bs) ⟨ E , Es ⟩ ⟨ ⟨ m , _ ⟩ , ok ⟩ ρ⊆ = ⟨ ⟪⟫-mono b m ρ⊆ , ⟪⟫₊-mono bs Es ok ρ⊆ ⟩
+⟪⟫₊-mono (b ∷ bs) ⟨ E , Es ⟩ ⟨ ⟨ m , _ ⟩ , ok ⟩ ρ⊆ =
+  ⟨ ⟪⟫-mono b m ρ⊆ , ⟪⟫₊-mono bs Es ok ρ⊆ ⟩
 
 strict-good : ∀ {P bs} {g : DOp (𝒫 Value) (■ ∷ bs)}
   → Good P (■ ∷ bs) g
   → Good P (■ ∷ bs) (strict g)
 strict-good {bs = bs} {g} G = record
-  { mono = λ { _ _ ⟨ lift D⊆ , Ds⊆ ⟩ → lift (≫=-mono D⊆ λ X⊆ → lower (mono G _ _ ⟨ lift X⊆ , Ds⊆ ⟩)) }
-  ; consis = λ p → λ { _ _ ⟨ lift D~ , Ds~ ⟩ → lift (≫=-consis D~ λ X~ → lower (consis G p _ _ ⟨ lift X~ , Ds~ ⟩)) }
+  { mono =
+      λ { _ _ ⟨ lift D⊆ , Ds⊆ ⟩
+        → lift (≫=-mono D⊆ λ X⊆ → lower (mono G _ _ ⟨ lift X⊆ , Ds⊆ ⟩)) }
+  ; consis =
+    λ p →
+    λ { _ _ ⟨ lift D~ , Ds~ ⟩
+      → lift (≫=-consis D~ λ X~ → lower (consis G p _ _ ⟨ lift X~ , Ds~ ⟩)) }
   ; cont = λ { ⟨ E , Es ⟩ NE ⟨ ok₁@(⟨ m , c ⟩) , ok ⟩ →
-      ≫=-cont m c (λ ρ⊆ X⊆ → lower (mono G _ _ ⟨ lift X⊆ , ⟪⟫₊-mono bs Es ok ρ⊆ ⟩))
+      ≫=-cont m c
+        (λ ρ⊆ X⊆ → lower (mono G _ _ ⟨ lift X⊆ , ⟪⟫₊-mono bs Es ok ρ⊆ ⟩))
         (cont G ⟨ (λ ρ → ⌊ E ρ ⌋) , Es ⟩ NE ⟨ ⌊⌋-ok ok₁ , ok ⟩) } }
 
 checkₒ-good : ∀ {P bs k} {g : DOp (𝒫 Value) (■ ∷ bs)}
@@ -368,18 +406,30 @@ checkₒ-good : ∀ {P bs k} {g : DOp (𝒫 Value) (■ ∷ bs)}
   → (∀ {X Ds} → Needs k X (g ⟨ X , Ds ⟩))
   → Good P (■ ∷ bs) (checkₒ k g)
 checkₒ-good G n = record
-  { mono = λ { _ _ Ds⊆@(⟨ lift X⊆ , _ ⟩) → lift (checked-mono X⊆ (lower (mono G _ _ Ds⊆))) }
-  ; consis = λ p → λ { _ _ Ds~@(⟨ lift X~ , _ ⟩) → lift (checked-consis X~ (lower (consis G p _ _ Ds~)) n n) }
-  ; cont = λ { Es@(⟨ E , _ ⟩) NE ok@(⟨ ⟨ _ , c ⟩ , _ ⟩) → checked-cont c (cont G Es NE ok) } }
+  { mono =
+      λ { _ _ Ds⊆@(⟨ lift X⊆ , _ ⟩)
+        → lift (checked-mono X⊆ (lower (mono G _ _ Ds⊆))) }
+  ; consis =
+    λ p →
+    λ { _ _ Ds~@(⟨ lift X~ , _ ⟩)
+      → lift (checked-consis X~ (lower (consis G p _ _ Ds~)) n n) }
+  ; cont =
+    λ { Es@(⟨ E , _ ⟩) NE ok@(⟨ ⟨ _ , c ⟩ , _ ⟩)
+      → checked-cont c (cont G Es NE ok) } }
 
 swap-good : ∀ {P bs} {g : DOp (𝒫 Value) (■ ∷ ■ ∷ bs)}
   → Good P (■ ∷ ■ ∷ bs) g
   → Good P (■ ∷ ■ ∷ bs) (swap g)
 swap-good G = record
-  { mono = λ { ⟨ D , ⟨ E , Ds ⟩ ⟩ ⟨ D' , ⟨ E' , Ds' ⟩ ⟩ ⟨ r , ⟨ s , t ⟩ ⟩ → mono G ⟨ E , ⟨ D , Ds ⟩ ⟩ ⟨ E' , ⟨ D' , Ds' ⟩ ⟩ ⟨ s , ⟨ r , t ⟩ ⟩ }
-  ; consis = λ p → λ { ⟨ D , ⟨ E , Ds ⟩ ⟩ ⟨ D' , ⟨ E' , Ds' ⟩ ⟩ ⟨ r , ⟨ s , t ⟩ ⟩ →
+  { mono =
+      λ { ⟨ D , ⟨ E , Ds ⟩ ⟩ ⟨ D' , ⟨ E' , Ds' ⟩ ⟩ ⟨ r , ⟨ s , t ⟩ ⟩
+        → mono G ⟨ E , ⟨ D , Ds ⟩ ⟩ ⟨ E' , ⟨ D' , Ds' ⟩ ⟩ ⟨ s , ⟨ r , t ⟩ ⟩ }
+  ; consis =
+    λ p → λ { ⟨ D , ⟨ E , Ds ⟩ ⟩ ⟨ D' , ⟨ E' , Ds' ⟩ ⟩ ⟨ r , ⟨ s , t ⟩ ⟩ →
       consis G p ⟨ E , ⟨ D , Ds ⟩ ⟩ ⟨ E' , ⟨ D' , Ds' ⟩ ⟩ ⟨ s , ⟨ r , t ⟩ ⟩ }
-  ; cont = λ { ⟨ E₁ , ⟨ E₂ , Es ⟩ ⟩ NE ⟨ o₁ , ⟨ o₂ , os ⟩ ⟩ → cont G ⟨ E₂ , ⟨ E₁ , Es ⟩ ⟩ NE ⟨ o₂ , ⟨ o₁ , os ⟩ ⟩ } }
+  ; cont =
+    λ { ⟨ E₁ , ⟨ E₂ , Es ⟩ ⟩ NE ⟨ o₁ , ⟨ o₂ , os ⟩ ⟩
+      → cont G ⟨ E₂ , ⟨ E₁ , Es ⟩ ⟩ NE ⟨ o₂ , ⟨ o₁ , os ⟩ ⟩ } }
 
 {- a filter of the result, and of the first operand -}
 ⇂-good : ∀ {P bs Q} {g : DOp (𝒫 Value) bs}
@@ -395,8 +445,11 @@ in⇂-good : ∀ {P bs Q} {g : DOp (𝒫 Value) (■ ∷ bs)}
   → Good P (■ ∷ bs) (λ { ⟨ X , Ds ⟩ → g ⟨ X ⇂ Q , Ds ⟩ })
 in⇂-good G = record
   { mono = λ { _ _ ⟨ lift X⊆ , r ⟩ → mono G _ _ ⟨ lift (⇂-mono X⊆) , r ⟩ }
-  ; consis = λ p → λ { _ _ ⟨ lift X~ , r ⟩ → consis G p _ _ ⟨ lift (⇂-~ X~) , r ⟩ }
-  ; cont = λ { ⟨ E , Es ⟩ NE ⟨ ok₁ , ok ⟩ → cont G ⟨ (λ ρ → E ρ ⇂ _) , Es ⟩ NE ⟨ ⇂-ok ok₁ , ok ⟩ } }
+  ; consis =
+    λ p → λ { _ _ ⟨ lift X~ , r ⟩ → consis G p _ _ ⟨ lift (⇂-~ X~) , r ⟩ }
+  ; cont =
+    λ { ⟨ E , Es ⟩ NE ⟨ ok₁ , ok ⟩
+      → cont G ⟨ (λ ρ → E ρ ⇂ _) , Es ⟩ NE ⟨ ⇂-ok ok₁ , ok ⟩ } }
 
 strict₂-good : ∀ {P bs} {g : DOp (𝒫 Value) (■ ∷ ■ ∷ bs)}
   → Good P (■ ∷ ■ ∷ bs) g
@@ -404,19 +457,23 @@ strict₂-good : ∀ {P bs} {g : DOp (𝒫 Value) (■ ∷ ■ ∷ bs)}
 strict₂-good G = swap-good (strict-good (swap-good G))
 
 {- n operands, bound left to right -}
-⊆s-refl : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) → results-rel-pres _⊆_ (replicate n ■) Ds Ds
+⊆s-refl : ∀ n (Ds : Results (𝒫 Value) (replicate n ■))
+  → results-rel-pres _⊆_ (replicate n ■) Ds Ds
 ⊆s-refl zero _ = ptt
 ⊆s-refl (suc n) ⟨ D , Ds ⟩ = ⟨ lift (λ d z → z) , ⊆s-refl n Ds ⟩
 
-Rel⊆ : ∀ n → (Results (𝒫 Value) (replicate n ■) → 𝒫 Value) → (Results (𝒫 Value) (replicate n ■) → 𝒫 Value) → Set₁
-Rel⊆ n K K' = ∀ {Xs Ys} → results-rel-pres _⊆_ (replicate n ■) Xs Ys → K Xs ⊆ K' Ys
+Rel⊆ : ∀ n → (Results (𝒫 Value) (replicate n ■) → 𝒫 Value)
+  → (Results (𝒫 Value) (replicate n ■) → 𝒫 Value) → Set₁
+Rel⊆ n K K' =
+  ∀ {Xs Ys} → results-rel-pres _⊆_ (replicate n ■) Xs Ys → K Xs ⊆ K' Ys
 
 binds-mono : ∀ n {Ds Ds' K K'}
   → results-rel-pres _⊆_ (replicate n ■) Ds Ds'
   → Rel⊆ n K K'
   → binds n Ds K ⊆ binds n Ds' K'
 binds-mono zero _ mK = mK ptt
-binds-mono (suc n) ⟨ lift D⊆ , Ds⊆ ⟩ mK = ≫=-mono D⊆ (λ X⊆ → binds-mono n Ds⊆ (λ Xs⊆ → mK ⟨ lift X⊆ , Xs⊆ ⟩))
+binds-mono (suc n) ⟨ lift D⊆ , Ds⊆ ⟩ mK =
+  ≫=-mono D⊆ (λ X⊆ → binds-mono n Ds⊆ (λ Xs⊆ → mK ⟨ lift X⊆ , Xs⊆ ⟩))
 
 binds-consis : ∀ n {Ds Ds' K K'}
   → results-rel-pres (Every _~_) (replicate n ■) Ds Ds'
@@ -425,10 +482,12 @@ binds-consis : ∀ n {Ds Ds' K K'}
      → Every _~_ (K Xs) (K' Ys))
   → Every _~_ (binds n Ds K) (binds n Ds' K')
 binds-consis zero _ cK = cK ptt
-binds-consis (suc n) ⟨ lift D~ , Ds~ ⟩ cK = ≫=-consis D~ (λ X~ → binds-consis n Ds~ (λ Xs~ → cK ⟨ lift X~ , Xs~ ⟩))
+binds-consis (suc n) ⟨ lift D~ , Ds~ ⟩ cK =
+  ≫=-consis D~ (λ X~ → binds-consis n Ds~ (λ Xs~ → cK ⟨ lift X~ , Xs~ ⟩))
 
 {- (its continuation need only be continuous when the operands have values) -}
-binds-cont′ : ∀ n (Es : Bodies (replicate n ■)) {K : VEnv → Results (𝒫 Value) (replicate n ■) → 𝒫 Value} {ρ}
+binds-cont′ : ∀ n (Es : Bodies (replicate n ■))
+  {K : VEnv → Results (𝒫 Value) (replicate n ■) → 𝒫 Value} {ρ}
   → nonempty-env ρ
   → OK (replicate n ■) Es ρ
   → (  ∀ {ρ₁ ρ₂ Xs Ys}
@@ -442,11 +501,19 @@ binds-cont′ : ∀ n (Es : Bodies (replicate n ■)) {K : VEnv → Results (�
   → Cont (λ ρ → binds n (⟪ replicate n ■ ⟫₊ Es ρ) (K ρ)) ρ
 binds-cont′ zero Es NE ok mK cK = cK ptt ptt (λ ())
 binds-cont′ (suc n) ⟨ E , Es ⟩ NE ⟨ ok₁@(⟨ m , c ⟩) , ok ⟩ mK cK =
-  ≫=-cont′ m c (λ ρ⊆ X⊆ → binds-mono n (⟪⟫₊-mono (replicate n ■) Es ok ρ⊆) (λ Xs⊆ → mK ρ⊆ ⟨ lift X⊆ , Xs⊆ ⟩))
-    (λ cv → binds-cont′ n Es NE ok (λ ρ⊆ Xs⊆ → mK ρ⊆ ⟨ lift (⌊⌋-mono (m ρ⊆)) , Xs⊆ ⟩)
-       (λ Ms okM ne → cK ⟨ (λ ρ → ⌊ E ρ ⌋) , Ms ⟩ ⟨ ⌊⌋-ok ok₁ , okM ⟩ (λ { zero → cv ; (suc i) → ne i })))
+  ≫=-cont′ m c
+    (λ ρ⊆ X⊆ →
+      binds-mono n (⟪⟫₊-mono (replicate n ■) Es ok ρ⊆)
+      (λ Xs⊆ → mK ρ⊆ ⟨ lift X⊆ , Xs⊆ ⟩))
+    (λ cv →
+        binds-cont′ n Es NE ok
+        (λ ρ⊆ Xs⊆ → mK ρ⊆ ⟨ lift (⌊⌋-mono (m ρ⊆)) , Xs⊆ ⟩)
+       (λ Ms okM ne →
+           cK ⟨ (λ ρ → ⌊ E ρ ⌋) , Ms ⟩ ⟨ ⌊⌋-ok ok₁ , okM ⟩
+             (λ { zero → cv ; (suc i) → ne i })))
 
-binds-cont : ∀ n (Es : Bodies (replicate n ■)) {K : VEnv → Results (𝒫 Value) (replicate n ■) → 𝒫 Value} {ρ}
+binds-cont : ∀ n (Es : Bodies (replicate n ■))
+  {K : VEnv → Results (𝒫 Value) (replicate n ■) → 𝒫 Value} {ρ}
   → nonempty-env ρ
   → OK (replicate n ■) Es ρ
   → (  ∀ {ρ₁ ρ₂ Xs Ys}
@@ -466,46 +533,66 @@ binds-β : ∀ n {Ds K}
   → binds n Ds K ≃ K Ds
 binds-β zero mK _ = ≃-refl
 binds-β (suc n) {⟨ D , Ds ⟩} mK cn =
-  ≃-trans (≫=-β (λ X⊆ → binds-mono n (⊆s-refl n Ds) (λ Xs⊆ → mK ⟨ lift X⊆ , Xs⊆ ⟩)) (proj₁ (cn zero)) (proj₂ (cn zero)))
+  ≃-trans
+    (≫=-β (λ X⊆ → binds-mono n (⊆s-refl n Ds) (λ Xs⊆ → mK ⟨ lift X⊆ , Xs⊆ ⟩))
+      (proj₁ (cn zero)) (proj₂ (cn zero)))
           (binds-β n (λ Xs⊆ → mK ⟨ lift (λ d z → z) , Xs⊆ ⟩) (λ i → cn (suc i)))
 
 {- equal operands, and continuations equal on their values -}
-≫=-≃ : ∀ {D D' F F'} → D ≃ D' → (Conv D → Conv D' → F ⌊ D ⌋ ≃ F' ⌊ D' ⌋) → (D ≫= F) ≃ (D' ≫= F')
+≫=-≃ : ∀ {D D' F F'} → D ≃ D' → (Conv D → Conv D' → F ⌊ D ⌋ ≃ F' ⌊ D' ⌋)
+  → (D ≫= F) ≃ (D' ≫= F')
 ≫=-≃ ⟨ D⊆ , D⊇ ⟩ eq =
   ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → inj₁ ⟨ refl , D⊆ ω ω∈ ⟩
-       ; w (inj₂ ⟨ c , w∈ ⟩) → inj₂ ⟨ Conv-mono D⊆ c , proj₁ (eq c (Conv-mono D⊆ c)) w w∈ ⟩ })
+       ; w (inj₂ ⟨ c , w∈ ⟩)
+           → inj₂ ⟨ Conv-mono D⊆ c , proj₁ (eq c (Conv-mono D⊆ c)) w w∈ ⟩ })
   , (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → inj₁ ⟨ refl , D⊇ ω ω∈ ⟩
-       ; w (inj₂ ⟨ c' , w∈ ⟩) → inj₂ ⟨ Conv-mono D⊇ c' , proj₂ (eq (Conv-mono D⊇ c') c') w w∈ ⟩ }) ⟩
+       ; w (inj₂ ⟨ c' , w∈ ⟩)
+           → inj₂
+             ⟨ Conv-mono D⊇ c' , proj₂ (eq (Conv-mono D⊇ c') c') w w∈ ⟩ }) ⟩
 
 {- the left unit on a set of values, at its values: no monotonicity needed -}
 ≫=-val-β : ∀ {D F} → Val D → (D ≫= F) ≃ F ⌊ D ⌋
 ≫=-val-β ⟨ cl , ⟨ d , d∈ ⟩ ⟩ =
-  ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → ⊥-elim (cl ω ω∈ refl) ; w (inj₂ ⟨ _ , w∈ ⟩) → w∈ })
+  ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩)
+      → ⊥-elim (cl ω ω∈ refl) ; w (inj₂ ⟨ _ , w∈ ⟩) → w∈ })
   , (λ w w∈ → inj₂ ⟨ ⟨ d , ⟨ d∈ , cl d d∈ ⟩ ⟩ , w∈ ⟩) ⟩
 
 ≫=-cong : ∀ {D F F'} → (Conv D → F ⌊ D ⌋ ≃ F' ⌊ D ⌋) → (D ≫= F) ≃ (D ≫= F')
-≫=-cong eq = ⟨ (λ { w (inj₁ e) → inj₁ e ; w (inj₂ ⟨ c , w∈ ⟩) → inj₂ ⟨ c , proj₁ (eq c) w w∈ ⟩ })
-             , (λ { w (inj₁ e) → inj₁ e ; w (inj₂ ⟨ c , w∈ ⟩) → inj₂ ⟨ c , proj₂ (eq c) w w∈ ⟩ }) ⟩
+≫=-cong eq =
+  ⟨ (λ { w (inj₁ e) → inj₁ e ; w (inj₂ ⟨ c , w∈ ⟩)
+    → inj₂ ⟨ c , proj₁ (eq c) w w∈ ⟩ })
+             ,
+               (λ { w (inj₁ e) → inj₁ e ; w (inj₂ ⟨ c , w∈ ⟩)
+                 → inj₂ ⟨ c , proj₂ (eq c) w w∈ ⟩ }) ⟩
 
 {- the bound operands: values of the operands -}
-Bound : ∀ n → Results (𝒫 Value) (replicate n ■) → Results (𝒫 Value) (replicate n ■) → Set
-Bound n Xs Ds = ∀ i → nthD Xs i ⊆ nthD Ds i × Clean (nthD Xs i) × nonempty (nthD Xs i)
+Bound : ∀ n → Results (𝒫 Value) (replicate n ■)
+  → Results (𝒫 Value) (replicate n ■) → Set
+Bound n Xs Ds =
+  ∀ i → nthD Xs i ⊆ nthD Ds i × Clean (nthD Xs i) × nonempty (nthD Xs i)
 
 binds-cong : ∀ n {Ds K K'}
   → (∀ {Xs} → Bound n Xs Ds → K Xs ≃ K' Xs)
   → binds n Ds K ≃ binds n Ds K'
 binds-cong zero eq = eq (λ ())
 binds-cong (suc n) {⟨ D , Ds ⟩} {K} {K'} eq =
-  ≫=-cong {D} {λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)} {λ X → binds n Ds (λ Xs → K' ⟨ X , Xs ⟩)} λ { ⟨ d , d∈ ⟩ → binds-cong n λ b → eq λ { zero → ⟨ ⌊⌋-⊆ , ⟨ (λ e e∈ → proj₂ e∈) , ⟨ d , d∈ ⟩ ⟩ ⟩ ; (suc i) → b i } }
+  ≫=-cong {D} {λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)}
+    {λ X → binds n Ds (λ Xs → K' ⟨ X , Xs ⟩)}
+    λ { ⟨ d , d∈ ⟩ → binds-cong n λ b →
+      eq
+      λ { zero
+        → ⟨ ⌊⌋-⊆ , ⟨ (λ e e∈ → proj₂ e∈) , ⟨ d , d∈ ⟩ ⟩ ⟩ ; (suc i) → b i } }
 
 binds-assoc : ∀ n {Ds K G}
   → Mono₁ G
   → (binds n Ds K ≫= G) ≃ binds n Ds (λ Xs → K Xs ≫= G)
 binds-assoc zero m = ≃-refl
 binds-assoc (suc n) {⟨ D , Ds ⟩} {K} {G} m =
-  ≃-trans (≫=-assoc {D} {λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)} {G} m) (≫=-cong {D} {λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩) ≫= G} {λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩ ≫= G)} (λ _ → binds-assoc n m))
+  ≃-trans (≫=-assoc {D} {λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)} {G} m)
+    (≫=-cong {D} {λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩) ≫= G}
+      {λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩ ≫= G)} (λ _ → binds-assoc n m))
 
-{- The operators are Good -------------------------------------------------------------}
+{- The operators are Good -----------------------------------------------------}
 
 ⋆-needs : ∀ {F X} → Needs fun F (⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩)
 ⋆-needs w ⟨ V , ⟨ f∈ , _ ⟩ ⟩ = inj₂ ⟨ V ↦ w , ⟨ f∈ , refl ⟩ ⟩
@@ -514,7 +601,10 @@ binds-assoc (suc n) {⟨ D , Ds ⟩} {K} {G} m =
 Λᵐ-good = ⇂-good Λ-good
 
 ⋆ᵐ-good : ∀ {P} → Good P (■ ∷ ■ ∷ []) ⋆ᵐ
-⋆ᵐ-good = strict-good (checkₒ-good (strict₂-good ⋆-good) (λ {X} {Ds} → ≫=-needs {D = proj₁ Ds} (λ {Y} → ⋆-needs {X} {Y})))
+⋆ᵐ-good =
+  strict-good
+  (checkₒ-good (strict₂-good ⋆-good)
+    (λ {X} {Ds} → ≫=-needs {D = proj₁ Ds} (λ {Y} → ⋆-needs {X} {Y})))
 
 {- n binds of the operands of a Good kernel -}
 binds-good : ∀ {P} n {g : DOp (𝒫 Value) (replicate n ■)}
@@ -522,14 +612,19 @@ binds-good : ∀ {P} n {g : DOp (𝒫 Value) (replicate n ■)}
   → Good P (replicate n ■) (λ Ds → binds n Ds g)
 binds-good n G = record
   { mono = λ _ _ Ds⊆ → lift (binds-mono n Ds⊆ (λ Xs⊆ → lower (mono G _ _ Xs⊆)))
-  ; consis = λ p _ _ Ds~ → lift (binds-consis n Ds~ (λ Xs~ → lower (consis G p _ _ Xs~)))
-  ; cont = λ Es NE ok → binds-cont n Es NE ok (λ _ Xs⊆ → lower (mono G _ _ Xs⊆)) (λ Ms okM → cont G Ms NE okM) }
+  ; consis =
+    λ p _ _ Ds~ → lift (binds-consis n Ds~ (λ Xs~ → lower (consis G p _ _ Xs~)))
+  ; cont =
+    λ Es NE ok →
+    binds-cont n Es NE ok (λ _ Xs⊆ → lower (mono G _ _ Xs⊆))
+    (λ Ms okM → cont G Ms NE okM) }
 
 𝒯ᵐ-good : ∀ {P} n → Good P (replicate n ■) (𝒯ᵐ n)
 𝒯ᵐ-good n = binds-good n (𝒯-good n)
 
 projᵐ-good : ∀ {P n} (i : Fin n) → Good P (■ ∷ []) (projᵐ i)
-projᵐ-good i = strict-good (checkₒ-good (proj-good i) (λ d d∈ → inj₂ ⟨ _ , ⟨ d∈ , refl ⟩ ⟩))
+projᵐ-good i =
+  strict-good (checkₒ-good (proj-good i) (λ d d∈ → inj₂ ⟨ _ , ⟨ d∈ , refl ⟩ ⟩))
 
 inlᵐ-good : ∀ {P} → Good P (■ ∷ []) inlᵐ
 inlᵐ-good = strict-good inl-good
@@ -538,24 +633,36 @@ inrᵐ-good : ∀ {P} → Good P (■ ∷ []) inrᵐ
 inrᵐ-good = strict-good inr-good
 
 𝒞-needs : ∀ {X Q F G} → Needs inj X (𝒞 ⟨ X ⇂ Q , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩)
-𝒞-needs w (inj₁ ⟨ v , ⟨ V , ⟨ ls , _ ⟩ ⟩ ⟩) = inj₂ ⟨ left v , ⟨ proj₁ (ls v (here refl)) , refl ⟩ ⟩
-𝒞-needs w (inj₂ ⟨ v , ⟨ V , ⟨ rs , _ ⟩ ⟩ ⟩) = inj₂ ⟨ right v , ⟨ proj₁ (rs v (here refl)) , refl ⟩ ⟩
+𝒞-needs w (inj₁ ⟨ v , ⟨ V , ⟨ ls , _ ⟩ ⟩ ⟩) =
+  inj₂ ⟨ left v , ⟨ proj₁ (ls v (here refl)) , refl ⟩ ⟩
+𝒞-needs w (inj₂ ⟨ v , ⟨ V , ⟨ rs , _ ⟩ ⟩ ⟩) =
+  inj₂ ⟨ right v , ⟨ proj₁ (rs v (here refl)) , refl ⟩ ⟩
 
 𝒞ᵐ-good : ∀ {P} → Good P (■ ∷ ν ■ ∷ ν ■ ∷ []) 𝒞ᵐ
-𝒞ᵐ-good = strict-good (checkₒ-good (in⇂-good {Q = ValPayload} 𝒞-good) (λ {X} {Ds} → 𝒞-needs {X} {ValPayload} {proj₁ Ds} {proj₁ (proj₂ Ds)}))
+𝒞ᵐ-good =
+  strict-good
+  (checkₒ-good (in⇂-good {Q = ValPayload} 𝒞-good)
+    (λ {X} {Ds} → 𝒞-needs {X} {ValPayload} {proj₁ Ds} {proj₁ (proj₂ Ds)}))
 
 letᵐ-good : ∀ {P} → Good P (■ ∷ ν ■ ∷ []) letᵐ
 letᵐ-good {P} = record
   { mono = λ { ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D⊆ , ⟨ F⊆ , _ ⟩ ⟩ →
-      mono (⋆ᵐ-good {P}) _ _ ⟨ mono (Λᵐ-good {P}) ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F⊆ , ptt ⟩ , ⟨ D⊆ , ptt ⟩ ⟩ }
-  ; consis = λ p → λ { ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ →
-      consis (⋆ᵐ-good {P}) p _ _ ⟨ consis (Λᵐ-good {P}) p ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩ }
+      mono (⋆ᵐ-good {P}) _ _
+        ⟨ mono (Λᵐ-good {P}) ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F⊆ , ptt ⟩
+          , ⟨ D⊆ , ptt ⟩ ⟩ }
+  ; consis =
+    λ p → λ { ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ →
+      consis (⋆ᵐ-good {P}) p _ _
+        ⟨ consis (Λᵐ-good {P}) p ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩
+          , ⟨ D~ , ptt ⟩ ⟩ }
   ; cont = λ { ⟨ M , ⟨ N , _ ⟩ ⟩ NE ⟨ okM , ⟨ okN , _ ⟩ ⟩ →
-      cont (⋆ᵐ-good {P}) ⟨ (λ ρ → Λᵐ ⟨ (λ X → N (X • ρ)) , ptt ⟩) , ⟨ M , ptt ⟩ ⟩ NE
-        ⟨ ⟨ mono-env (ν ■ ∷ []) (mono (Λᵐ-good {P})) ⟨ N , ptt ⟩ ⟨ okN , ptt ⟩ , cont (Λᵐ-good {P}) ⟨ N , ptt ⟩ NE ⟨ okN , ptt ⟩ ⟩
+      cont (⋆ᵐ-good {P})
+        ⟨ (λ ρ → Λᵐ ⟨ (λ X → N (X • ρ)) , ptt ⟩) , ⟨ M , ptt ⟩ ⟩ NE
+        ⟨ ⟨ mono-env (ν ■ ∷ []) (mono (Λᵐ-good {P})) ⟨ N , ptt ⟩ ⟨ okN , ptt ⟩
+            , cont (Λᵐ-good {P}) ⟨ N , ptt ⟩ NE ⟨ okN , ptt ⟩ ⟩
         , ⟨ okM , ptt ⟩ ⟩ } }
 
-{- Congruences ----------------------------------------------------------------------}
+{- Congruences ----------------------------------------------------------------}
 
 ⋆ᵐ-≃ : ∀ {D D' E E'}
   → D ≃ D'
@@ -590,13 +697,15 @@ BodyEq F F' = ∀ V → V ≢ [] → V ≈ V → NoErr V → F (mem V) ≃ F' (m
 Λᵐ-≃ : ∀ {F F'}
   → BodyEq F F'
   → Λᵐ ⟨ F , ptt ⟩ ≃ Λᵐ ⟨ F' , ptt ⟩
-Λᵐ-≃ eq = ⟨ G (λ V a b c → proj₁ (eq V a b c)) , G (λ V a b c → proj₂ (eq V a b c)) ⟩
+Λᵐ-≃ eq =
+  ⟨ G (λ V a b c → proj₁ (eq V a b c)) , G (λ V a b c → proj₂ (eq V a b c)) ⟩
   where
   G : ∀ {A B}
     → (∀ V → V ≢ [] → V ≈ V → NoErr V → A (mem V) ⊆ B (mem V))
     → Λᵐ ⟨ A , ptt ⟩ ⊆ Λᵐ ⟨ B , ptt ⟩
   G h ν r = r
-  G h (V ↦ w) ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ = ⟨ ⟨ h V ne c n w w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩
+  G h (V ↦ w) ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ =
+    ⟨ ⟨ h V ne c n w w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩
 
 letᵐ-≃ : ∀ {D D' F F'}
   → D ≃ D'
@@ -611,11 +720,28 @@ BodyIn F F' = ∀ V → V ≢ [] → V ≈ V → NoErr V → F (mem V) ⊆ F' (m
   → X ⊆ X'
   → BodyIn A A'
   → BodyIn B B'
-  → 𝒞 ⟨ X ⇂ ValPayload , ⟨ A , ⟨ B , ptt ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ X' ⇂ ValPayload , ⟨ A' , ⟨ B' , ptt ⟩ ⟩ ⟩
+  → 𝒞 ⟨ X ⇂ ValPayload , ⟨ A , ⟨ B , ptt ⟩ ⟩ ⟩
+    ⊆ 𝒞 ⟨ X' ⇂ ValPayload , ⟨ A' , ⟨ B' , ptt ⟩ ⟩ ⟩
 𝒞⇂-⊆ X⊆ A⊆ B⊆ w (inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-  inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → ⇂-mono {P = ValPayload} X⊆ _ (all d d∈)) , ⟨ A⊆ (v ∷ V) (λ ()) c (λ ω∈ → proj₂ (all ω ω∈) refl) w w∈ , c ⟩ ⟩ ⟩ ⟩
+  inj₁
+    ⟨ v
+      ,
+      ⟨ V
+        ,
+          ⟨ (λ d d∈ → ⇂-mono {P = ValPayload} X⊆ _ (all d d∈))
+            ,
+              ⟨ A⊆ (v ∷ V) (λ ()) c (λ ω∈ → proj₂ (all ω ω∈) refl) w
+                w∈ , c ⟩ ⟩ ⟩ ⟩
 𝒞⇂-⊆ X⊆ A⊆ B⊆ w (inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-  inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → ⇂-mono {P = ValPayload} X⊆ _ (all d d∈)) , ⟨ B⊆ (v ∷ V) (λ ()) c (λ ω∈ → proj₂ (all ω ω∈) refl) w w∈ , c ⟩ ⟩ ⟩ ⟩
+  inj₂
+    ⟨ v
+      ,
+      ⟨ V
+        ,
+          ⟨ (λ d d∈ → ⇂-mono {P = ValPayload} X⊆ _ (all d d∈))
+            ,
+              ⟨ B⊆ (v ∷ V) (λ ()) c (λ ω∈ → proj₂ (all ω ω∈) refl) w
+                w∈ , c ⟩ ⟩ ⟩ ⟩
 
 𝒞ᵐ-≃ : ∀ {D D' F F' G G'}
   → D ≃ D'
@@ -623,10 +749,18 @@ BodyIn F F' = ∀ V → V ≢ [] → V ≈ V → NoErr V → F (mem V) ⊆ F' (m
   → BodyEq G G'
   → 𝒞ᵐ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞ᵐ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
 𝒞ᵐ-≃ {F = F} {F'} {G} {G'} D≃ F≃ G≃ =
-  ⟨ ≫=-mono (proj₁ D≃) (λ X⊆ → checked-mono X⊆ (𝒞⇂-⊆ {A = F} {F'} {G} {G'} X⊆ (λ V a b c → proj₁ (F≃ V a b c)) (λ V a b c → proj₁ (G≃ V a b c))))
-  , ≫=-mono (proj₂ D≃) (λ X⊆ → checked-mono X⊆ (𝒞⇂-⊆ {A = F'} {F} {G'} {G} X⊆ (λ V a b c → proj₂ (F≃ V a b c)) (λ V a b c → proj₂ (G≃ V a b c)))) ⟩
+  ⟨ ≫=-mono (proj₁ D≃)
+      (λ X⊆ →
+        checked-mono X⊆
+        (𝒞⇂-⊆ {A = F} {F'} {G} {G'} X⊆ (λ V a b c → proj₁ (F≃ V a b c))
+          (λ V a b c → proj₁ (G≃ V a b c))))
+  , ≫=-mono (proj₂ D≃)
+    (λ X⊆ →
+      checked-mono X⊆
+        (𝒞⇂-⊆ {A = F'} {F} {G'} {G} X⊆ (λ V a b c → proj₂ (F≃ V a b c))
+          (λ V a b c → proj₂ (G≃ V a b c)))) ⟩
 
-{- β laws ----------------------------------------------------------------------------}
+{- β laws ---------------------------------------------------------------------}
 
 Λᵐ-clean : ∀ {F} → Clean (Λᵐ ⟨ F , ptt ⟩)
 Λᵐ-clean ω ⟨ () , _ ⟩ refl
@@ -641,7 +775,10 @@ BodyIn F F' = ∀ V → V ≢ [] → V ≈ V → NoErr V → F (mem V) ⊆ F' (m
 ⋆-r : ∀ {F X Y}
   → X ⊆ Y
   → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩ ⊆ ⋆ ⟨ F , ⟨ Y , ptt ⟩ ⟩
-⋆-r {F} {X} {Y} X⊆ = lower (⋆-mono ⟨ F , ⟨ X , ptt ⟩ ⟩ ⟨ F , ⟨ Y , ptt ⟩ ⟩ ⟨ lift (λ d z → z) , ⟨ lift X⊆ , ptt ⟩ ⟩)
+⋆-r {F} {X} {Y} X⊆ =
+  lower
+  (⋆-mono ⟨ F , ⟨ X , ptt ⟩ ⟩ ⟨ F , ⟨ Y , ptt ⟩ ⟩
+    ⟨ lift (λ d z → z) , ⟨ lift X⊆ , ptt ⟩ ⟩)
 
 ⋆ᵐ-val : ∀ {F D}
   → Clean F
@@ -650,7 +787,13 @@ BodyIn F F' = ∀ V → V ≢ [] → V ≈ V → NoErr V → F (mem V) ⊆ F' (m
   → ⋆ᵐ ⟨ F , ⟨ D , ptt ⟩ ⟩ ≃ (D ≫= λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩)
 ⋆ᵐ-val {F} {D} clF neF kF =
   ≃-trans (≫=-β {F = λ G → checked fun G (D ≫= λ X → ⋆ ⟨ G , ⟨ X , ptt ⟩ ⟩)}
-                (λ X⊆ → checked-mono X⊆ (≫=-mono (λ d z → z) (λ Y⊆ → lower (⋆-mono ⟨ _ , ⟨ _ , ptt ⟩ ⟩ ⟨ _ , ⟨ _ , ptt ⟩ ⟩ ⟨ lift X⊆ , ⟨ lift Y⊆ , ptt ⟩ ⟩))))
+                (λ X⊆ →
+                    checked-mono X⊆
+                    (≫=-mono (λ d z → z)
+                      (λ Y⊆ →
+                        lower
+                          (⋆-mono ⟨ _ , ⟨ _ , ptt ⟩ ⟩ ⟨ _ , ⟨ _ , ptt ⟩ ⟩
+                            ⟨ lift X⊆ , ⟨ lift Y⊆ , ptt ⟩ ⟩))))
                 clF neF)
           (checked-ok kF)
 
@@ -662,12 +805,14 @@ BodyIn F F' = ∀ V → V ≢ [] → V ≈ V → NoErr V → F (mem V) ⊆ F' (m
   → Clean D
   → ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ≃ F D
 Λᵐ-β {F} {D} m fin cD clD =
-  ⟨ (λ w w∈ → proj₁ (Λ-β m fin cD) w (A w w∈)) , (λ w w∈ → B w (proj₂ (Λ-β m fin cD) w w∈)) ⟩
+  ⟨ (λ w w∈ → proj₁ (Λ-β m fin cD) w (A w w∈))
+      , (λ w w∈ → B w (proj₂ (Λ-β m fin cD) w w∈)) ⟩
   where
   A : ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⊆ letD ⟨ D , ⟨ F , ptt ⟩ ⟩
   A w ⟨ V , ⟨ ⟨ e∈ , _ ⟩ , r ⟩ ⟩ = ⟨ V , ⟨ e∈ , r ⟩ ⟩
   B : letD ⟨ D , ⟨ F , ptt ⟩ ⟩ ⊆ ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
-  B w ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ e∈ , (λ ω∈ → clD ω (V⊆ ω ω∈) refl) ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
+  B w ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ =
+    ⟨ V , ⟨ ⟨ e∈ , (λ ω∈ → clD ω (V⊆ ω ω∈) refl) ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
 
 {- let x = D in F x means F D, for D a consistent set of values -}
 letᵐ-β : ∀ {F D}
@@ -678,7 +823,9 @@ letᵐ-β : ∀ {F D}
   → letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ F D
 letᵐ-β {F} {D} m fin cD ⟨ clD , neD ⟩ =
   ≃-trans (⋆ᵐ-val {Λᵐ ⟨ F , ptt ⟩} {D} Λᵐ-clean ⟨ ν , ⟨ tt , tt ⟩ ⟩ Λᵐ-fun)
-  (≃-trans (≫=-β {F = λ X → ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} (⋆-r {Λᵐ ⟨ F , ptt ⟩}) clD neD) (Λᵐ-β m fin cD clD))
+  (≃-trans
+      (≫=-β {F = λ X → ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ X , ptt ⟩ ⟩}
+        (⋆-r {Λᵐ ⟨ F , ptt ⟩}) clD neD) (Λᵐ-β m fin cD clD))
 
 {- a case on an injection of a consistent set of values D takes its
    branch on D -}
@@ -690,12 +837,21 @@ private
     → (∀ d → d ∈ D → t d ∈ op ⟨ D , ptt ⟩)
     → Clean D
     → nonempty D
-    → 𝒞ᵐ ⟨ D ≫= (λ X → op ⟨ X , ptt ⟩) , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ op ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
+    → 𝒞ᵐ ⟨ D ≫= (λ X → op ⟨ X , ptt ⟩) , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
+      ≃ 𝒞 ⟨ op ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
   𝒞ᵐ-inj {D} {F} {G} t op m cl k i clD ⟨ d , d∈ ⟩ =
-    ≃-trans (𝒞ᵐ-≃ {F = F} {F} {G} {G} (≫=-β m clD ⟨ d , d∈ ⟩) (λ _ _ _ _ → ≃-refl) (λ _ _ _ _ → ≃-refl))
-    (≃-trans (≫=-β (λ X⊆ → checked-mono X⊆ (𝒞⇂-⊆ {A = F} {F} {G} {G} X⊆ (λ _ _ _ _ w z → z) (λ _ _ _ _ w z → z))) (cl clD) ⟨ t d , i d d∈ ⟩)
+    ≃-trans
+      (𝒞ᵐ-≃ {F = F} {F} {G} {G} (≫=-β m clD ⟨ d , d∈ ⟩) (λ _ _ _ _ → ≃-refl)
+        (λ _ _ _ _ → ≃-refl))
+    (≃-trans
+        (≫=-β
+          (λ X⊆ →
+            checked-mono X⊆
+              (𝒞⇂-⊆ {A = F} {F} {G} {G} X⊆ (λ _ _ _ _ w z → z)
+                (λ _ _ _ _ w z → z))) (cl clD) ⟨ t d , i d d∈ ⟩)
     (≃-trans (checked-ok (λ e e∈ → proj₁ (k e e∈)))
-       (𝒞-≃ {F = F} {F} {G} {G} ⟨ ⇂-⊆ , ⇂-all (λ e e∈ → proj₂ (k e e∈)) ⟩ (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl))))
+       (𝒞-≃ {F = F} {F} {G} {G} ⟨ ⇂-⊆ , ⇂-all (λ e e∈ → proj₂ (k e e∈)) ⟩
+           (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl))))
 
 𝒞ᵐ-inl-β : ∀ {D F G}
   → Mono₁ F
@@ -704,7 +860,9 @@ private
   → Val D
   → 𝒞ᵐ ⟨ inlᵐ ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ F D
 𝒞ᵐ-inl-β {F = F} {G} m fin cD ⟨ clD , neD ⟩ =
-  ≃-trans (𝒞ᵐ-inj {F = F} {G} left inl (λ X⊆ → lower (inl-mono _ _ ⟨ lift X⊆ , ptt ⟩)) (λ { c ω () refl })
+  ≃-trans
+    (𝒞ᵐ-inj {F = F} {G} left inl (λ X⊆ → lower (inl-mono _ _ ⟨ lift X⊆ , ptt ⟩))
+      (λ { c ω () refl })
              (λ { (left v) v∈ → ⟨ refl , clD v v∈ ⟩ }) (λ e e∈ → e∈) clD neD)
           (𝒞-inl-β {G = G} m fin cD)
 
@@ -715,7 +873,9 @@ private
   → Val D
   → 𝒞ᵐ ⟨ inrᵐ ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ G D
 𝒞ᵐ-inr-β {F = F} {G} m fin cD ⟨ clD , neD ⟩ =
-  ≃-trans (𝒞ᵐ-inj {F = F} {G} right inr (λ X⊆ → lower (inr-mono _ _ ⟨ lift X⊆ , ptt ⟩)) (λ { c ω () refl })
+  ≃-trans
+    (𝒞ᵐ-inj {F = F} {G} right inr
+      (λ X⊆ → lower (inr-mono _ _ ⟨ lift X⊆ , ptt ⟩)) (λ { c ω () refl })
              (λ { (right v) v∈ → ⟨ refl , clD v v∈ ⟩ }) (λ e e∈ → e∈) clD neD)
           (𝒞-inr-β {F = F} m fin cD)
 
@@ -729,7 +889,8 @@ binds-clean : ∀ n {Ds K}
   → Clean (binds n Ds K)
 binds-clean zero _ cK = cK
 binds-clean (suc n) {⟨ D , Ds ⟩} {K} cs cK =
-  ≫=-clean {F = λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)} (cs zero) (binds-clean n (λ i → cs (suc i)) cK)
+  ≫=-clean {F = λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)} (cs zero)
+    (binds-clean n (λ i → cs (suc i)) cK)
 
 {- a projection from a tuple of nonempty sets -}
 projᵐ-𝒯 : ∀ n (Xs : Results (𝒫 Value) (replicate n ■))
@@ -737,10 +898,14 @@ projᵐ-𝒯 : ∀ n (Xs : Results (𝒫 Value) (replicate n ■))
   → (i : Fin n)
   → projᵐ i ⟨ 𝒯 n Xs , ptt ⟩ ≃ nthD Xs i
 projᵐ-𝒯 (suc n) Xs ne i =
-  ≃-trans (≫=-β {F = λ X → checked (tup (suc n)) X (proj i ⟨ X , ptt ⟩)} (λ X⊆ → checked-mono X⊆ (λ d → X⊆ (tup[ i ] d)))
-                 (𝒯-clean (suc n)) ⟨ tup[ i ] _ , ⟨ refl , ⟨ proj₂ (ne i) , ne ⟩ ⟩ ⟩)
+  ≃-trans
+    (≫=-β {F = λ X → checked (tup (suc n)) X (proj i ⟨ X , ptt ⟩)}
+      (λ X⊆ → checked-mono X⊆ (λ d → X⊆ (tup[ i ] d)))
+                 (𝒯-clean (suc n))
+                   ⟨ tup[ i ] _ , ⟨ refl , ⟨ proj₂ (ne i) , ne ⟩ ⟩ ⟩)
   (≃-trans (checked-ok (λ { (tup[ j ] d) ⟨ refl , _ ⟩ → refl }))
-     ⟨ (λ { d ⟨ refl , ⟨ d∈ , _ ⟩ ⟩ → d∈ }) , (λ d d∈ → ⟨ refl , ⟨ d∈ , ne ⟩ ⟩) ⟩)
+     ⟨ (λ { d ⟨ refl , ⟨ d∈ , _ ⟩ ⟩ → d∈ })
+         , (λ d d∈ → ⟨ refl , ⟨ d∈ , ne ⟩ ⟩) ⟩)
 
 {- a projection from a tuple of sets of values -}
 projᵐ-𝒯ᵐ : ∀ n (Ds : Results (𝒫 Value) (replicate n ■))
@@ -748,9 +913,10 @@ projᵐ-𝒯ᵐ : ∀ n (Ds : Results (𝒫 Value) (replicate n ■))
   → (i : Fin n)
   → projᵐ i ⟨ 𝒯ᵐ n Ds , ptt ⟩ ≃ nthD Ds i
 projᵐ-𝒯ᵐ n Ds cn i =
-  ≃-trans (projᵐ-≃ i (binds-β n (λ Xs⊆ → lower (𝒯-mono n _ _ Xs⊆)) cn)) (projᵐ-𝒯 n Ds (λ j → proj₂ (cn j)) i)
+  ≃-trans (projᵐ-≃ i (binds-β n (λ Xs⊆ → lower (𝒯-mono n _ _ Xs⊆)) cn))
+    (projᵐ-𝒯 n Ds (λ j → proj₂ (cn j)) i)
 
-{- Closures and pairs (Clos3, Clos4) --------------------------------------------------}
+{- Closures and pairs (Clos3, Clos4) ------------------------------------------}
 
 ΛΛᵐ-good : ∀ {P} → Good P (∁ (ν (ν ■)) ∷ []) ΛΛᵐ
 ΛΛᵐ-good = ⇂-good ΛΛ-good
@@ -758,28 +924,41 @@ projᵐ-𝒯ᵐ n Ds cn i =
 closᵐ-good : ∀ {P} n → Good P (∁ (ν (ν ■)) ∷ replicate n ■) (closᵐ n)
 closᵐ-good {P} n = record
   { mono = λ { ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ →
-      mono (⋆ᵐ-good {P}) _ _ ⟨ mono (ΛΛᵐ-good {P}) ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F⊆ , ptt ⟩
+      mono (⋆ᵐ-good {P}) _ _
+        ⟨ mono (ΛΛᵐ-good {P}) ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F⊆ , ptt ⟩
                              , ⟨ mono (𝒯ᵐ-good {P} n) Ds Ds' Ds⊆ , ptt ⟩ ⟩ }
   ; consis = λ p → λ { ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ →
-      consis (⋆ᵐ-good {P}) p _ _ ⟨ consis (ΛΛᵐ-good {P}) p ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩
-                                 , ⟨ consis (𝒯ᵐ-good {P} n) p Ds Ds' Ds~ , ptt ⟩ ⟩ }
+      consis (⋆ᵐ-good {P}) p _ _
+        ⟨ consis (ΛΛᵐ-good {P}) p ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩
+                                 ,
+                                     ⟨ consis (𝒯ᵐ-good {P} n) p Ds Ds'
+                                       Ds~ , ptt ⟩ ⟩ }
   ; cont = λ { ⟨ B , Es ⟩ NE ⟨ okB , oks ⟩ →
       cont (⋆ᵐ-good {P}) ⟨ (λ ρ → ΛΛᵐ (⟪ ∁ (ν (ν ■)) ∷ [] ⟫₊ ⟨ B , ptt ⟩ ρ))
                          , ⟨ (λ ρ → 𝒯ᵐ n (⟪ replicate n ■ ⟫₊ Es ρ)) , ptt ⟩ ⟩ NE
         ⟨ ⟨ (λ _ d d∈ → d∈) , const-cont NE ⟩
-        , ⟨ ⟨ mono-env (replicate n ■) (mono (𝒯ᵐ-good {P} n)) Es oks , cont (𝒯ᵐ-good {P} n) Es NE oks ⟩ , ptt ⟩ ⟩ } }
+        ,
+            ⟨ ⟨ mono-env (replicate n ■) (mono (𝒯ᵐ-good {P} n)) Es oks
+              , cont (𝒯ᵐ-good {P} n) Es NE oks ⟩ , ptt ⟩ ⟩ } }
 
 pairᵐ-good : ∀ {P} → Good P (■ ∷ ■ ∷ []) pairᵐ
 pairᵐ-good = binds-good 2 pair-good
 
 carᵐ-good : ∀ {P} → Good P (■ ∷ []) carᵐ
-carᵐ-good = strict-good (checkₒ-good car-good (λ { w ⟨ v , p∈ ⟩ → inj₂ ⟨ _ , ⟨ p∈ , refl ⟩ ⟩ }))
+carᵐ-good =
+  strict-good
+  (checkₒ-good car-good (λ { w ⟨ v , p∈ ⟩ → inj₂ ⟨ _ , ⟨ p∈ , refl ⟩ ⟩ }))
 
 cdrᵐ-good : ∀ {P} → Good P (■ ∷ []) cdrᵐ
-cdrᵐ-good = strict-good (checkₒ-good cdr-good (λ { w ⟨ u , p∈ ⟩ → inj₂ ⟨ _ , ⟨ p∈ , refl ⟩ ⟩ }))
+cdrᵐ-good =
+  strict-good
+  (checkₒ-good cdr-good (λ { w ⟨ u , p∈ ⟩ → inj₂ ⟨ _ , ⟨ p∈ , refl ⟩ ⟩ }))
 
 callᵐ-good : ∀ {P} → Good P (■ ∷ ■ ∷ ■ ∷ []) callᵐ
-callᵐ-good = binds-good 3 (checkₒ-good ⋆₂-good (λ { w ⟨ U , ⟨ ⟨ V , ⟨ f∈ , _ ⟩ ⟩ , _ ⟩ ⟩ → inj₂ ⟨ _ , ⟨ f∈ , refl ⟩ ⟩ }))
+callᵐ-good =
+  binds-good 3
+  (checkₒ-good ⋆₂-good
+    (λ { w ⟨ U , ⟨ ⟨ V , ⟨ f∈ , _ ⟩ ⟩ , _ ⟩ ⟩ → inj₂ ⟨ _ , ⟨ f∈ , refl ⟩ ⟩ }))
 
 {- the values of a bind are values of its continuation, on the values of
    its operand; the values of a check are values of its kernel -}
@@ -805,11 +984,26 @@ callᵐ-good = binds-good 3 (checkₒ-good ⋆₂-good (λ { w ⟨ U , ⟨ ⟨ V
      → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ]
          V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ E × w ∈ F (mem V) (mem U))
   → F T E ⊆ ⋆ᵐ ⟨ ⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ T , ptt ⟩ ⟩ , ⟨ E , ptt ⟩ ⟩
-ΛΛᵐ-β {F} {T} {E} cT cE clT clE ⟨ t , t∈ ⟩ neE fin w w∈ with ΛΛ-β {F} cT cE fin w w∈
+ΛΛᵐ-β {F} {T} {E} cT cE clT clE ⟨ t , t∈ ⟩ neE fin w w∈
+  with ΛΛ-β {F} cT cE fin w w∈
 ... | ⟨ U , ⟨ ⟨ V , ⟨ e∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
-  proj₂ (⋆ᵐ-val {G} {E} clG ⟨ ν , ⟨ t ∷ [] , ⟨ ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ nt , tt ⟩ ⟩ , ⟨ single⊆ t∈ , (λ ()) ⟩ ⟩ ⟩ ⟩ kG) w
+  proj₂
+    (⋆ᵐ-val {G} {E} clG
+      ⟨ ν
+        ,
+          ⟨ t ∷ []
+            ,
+              ⟨ ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ nt , tt ⟩ ⟩
+                , ⟨ single⊆ t∈ , (λ ()) ⟩ ⟩ ⟩ ⟩ kG) w
     (proj₂ (≫=-β {F = λ Y → ⋆ ⟨ G , ⟨ Y , ptt ⟩ ⟩} (⋆-r {G}) clE neE) w
-      ⟨ U , ⟨ ⟨ V , ⟨ ⟨ e∈ , ⟨ (λ ω∈ → clT ω (V⊆ ω ω∈) refl) , (λ ω∈ → clE ω (U⊆ ω ω∈) refl) ⟩ ⟩ , ⟨ V⊆ , neV ⟩ ⟩ ⟩
+      ⟨ U
+          ,
+          ⟨ ⟨ V
+            ,
+            ⟨ ⟨ e∈
+              ,
+                ⟨ (λ ω∈ → clT ω (V⊆ ω ω∈) refl)
+                  , (λ ω∈ → clE ω (U⊆ ω ω∈) refl) ⟩ ⟩ , ⟨ V⊆ , neV ⟩ ⟩ ⟩
             , ⟨ U⊆ , neU ⟩ ⟩ ⟩)
   where
   G = ⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ T , ptt ⟩ ⟩
@@ -826,7 +1020,7 @@ callᵐ-good = binds-good 3 (checkₒ-good ⋆₂-good (λ { w ⟨ U , ⟨ ⟨ V
   kG ν _ = refl
   kG (U ↦ x) _ = refl
 
-{- Sets of values ----------------------------------------------------------------------}
+{- Sets of values -------------------------------------------------------------}
 
 Val⇒Conv : ∀ {D}
   → Val D
@@ -856,12 +1050,14 @@ Val-≃ : ∀ {D E}
   → D ≃ E
   → Val D
   → Val E
-Val-≃ ⟨ D⊆ , E⊆ ⟩ ⟨ cl , ⟨ d , d∈ ⟩ ⟩ = ⟨ (λ e e∈ → cl e (E⊆ e e∈)) , ⟨ d , D⊆ d d∈ ⟩ ⟩
+Val-≃ ⟨ D⊆ , E⊆ ⟩ ⟨ cl , ⟨ d , d∈ ⟩ ⟩ =
+  ⟨ (λ e e∈ → cl e (E⊆ e e∈)) , ⟨ d , D⊆ d d∈ ⟩ ⟩
 
 {- Val is compositional through bind -}
 ≫=-val : ∀ {D F} → Val D → (∀ {X} → Val X → Val (F X)) → Val (D ≫= F)
 ≫=-val {D} {F} vD hF with hF (⌊⌋-val (Val⇒Conv vD))
-... | ⟨ clF , ⟨ w , w∈ ⟩ ⟩ = ⟨ ≫=-clean {F = F} (proj₁ vD) clF , ⟨ w , inj₂ ⟨ Val⇒Conv vD , w∈ ⟩ ⟩ ⟩
+... | ⟨ clF , ⟨ w , w∈ ⟩ ⟩ =
+  ⟨ ≫=-clean {F = F} (proj₁ vD) clF , ⟨ w , inj₂ ⟨ Val⇒Conv vD , w∈ ⟩ ⟩ ⟩
 
 binds-val : ∀ n {Ds K}
   → AllVal n Ds
@@ -870,14 +1066,18 @@ binds-val : ∀ n {Ds K}
 binds-val zero _ hK = hK (λ ())
 binds-val (suc n) {⟨ D , Ds ⟩} {K} vs hK =
   ≫=-val {F = λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)} (vs zero)
-    (λ vX → binds-val n (λ i → vs (suc i)) (λ vXs → hK (λ { zero → vX ; (suc i) → vXs i })))
+    (λ vX →
+        binds-val n (λ i → vs (suc i))
+        (λ vXs → hK (λ { zero → vX ; (suc i) → vXs i })))
 
 𝒯-val : ∀ n {Xs}
   → AllVal n Xs
   → Val (𝒯 n Xs)
 𝒯-val zero _ = ⟨ 𝒯-clean zero , ⟨ ⟨⟩ , tt ⟩ ⟩
 𝒯-val (suc n) vs with proj₂ (vs zero)
-... | ⟨ d , d∈ ⟩ = ⟨ 𝒯-clean (suc n) , ⟨ tup[ zero ] d , ⟨ refl , ⟨ d∈ , (λ j → proj₂ (vs j)) ⟩ ⟩ ⟩ ⟩
+... | ⟨ d , d∈ ⟩ =
+  ⟨ 𝒯-clean (suc n)
+    , ⟨ tup[ zero ] d , ⟨ refl , ⟨ d∈ , (λ j → proj₂ (vs j)) ⟩ ⟩ ⟩ ⟩
 
 𝒯ᵐ-val : ∀ n {Ds}
   → AllVal n Ds
@@ -887,12 +1087,16 @@ binds-val (suc n) {⟨ D , Ds ⟩} {K} vs hK =
 inlᵐ-val : ∀ {D}
   → Val D
   → Val (inlᵐ ⟨ D , ptt ⟩)
-inlᵐ-val vD = ≫=-val {F = λ X → inl ⟨ X , ptt ⟩} vD λ { ⟨ _ , ⟨ d , d∈ ⟩ ⟩ → ⟨ (λ { .ω () refl }) , ⟨ left d , d∈ ⟩ ⟩ }
+inlᵐ-val vD =
+  ≫=-val {F = λ X → inl ⟨ X , ptt ⟩} vD
+  λ { ⟨ _ , ⟨ d , d∈ ⟩ ⟩ → ⟨ (λ { .ω () refl }) , ⟨ left d , d∈ ⟩ ⟩ }
 
 inrᵐ-val : ∀ {D}
   → Val D
   → Val (inrᵐ ⟨ D , ptt ⟩)
-inrᵐ-val vD = ≫=-val {F = λ X → inr ⟨ X , ptt ⟩} vD λ { ⟨ _ , ⟨ d , d∈ ⟩ ⟩ → ⟨ (λ { .ω () refl }) , ⟨ right d , d∈ ⟩ ⟩ }
+inrᵐ-val vD =
+  ≫=-val {F = λ X → inr ⟨ X , ptt ⟩} vD
+  λ { ⟨ _ , ⟨ d , d∈ ⟩ ⟩ → ⟨ (λ { .ω () refl }) , ⟨ right d , d∈ ⟩ ⟩ }
 
 {- left unit, for an operator whose kernel is Good -}
 strict-β : ∀ {P bs} {g : DOp (𝒫 Value) (■ ∷ bs)}
@@ -901,17 +1105,21 @@ strict-β : ∀ {P bs} {g : DOp (𝒫 Value) (■ ∷ bs)}
   → results-rel-pres _⊆_ bs Ds Ds
   → Val D
   → strict g ⟨ D , Ds ⟩ ≃ g ⟨ D , Ds ⟩
-strict-β G Ds⊆ ⟨ cl , ne ⟩ = ≫=-β (λ X⊆ → lower (mono G _ _ ⟨ lift X⊆ , Ds⊆ ⟩)) cl ne
+strict-β G Ds⊆ ⟨ cl , ne ⟩ =
+  ≫=-β (λ X⊆ → lower (mono G _ _ ⟨ lift X⊆ , Ds⊆ ⟩)) cl ne
 
 {- the check passes on a consistent set with a value of its kind -}
 checked-con : ∀ {k X A}
   → Con X
   → Σ[ d ∈ Value ] d ∈ X × kind d ≡ k → checked k X A ≃ A
-checked-con cX ⟨ d , ⟨ d∈ , dk ⟩ ⟩ = checked-ok (λ e e∈ → trans (~-kind e d (cX e d e∈ d∈)) dk)
+checked-con cX ⟨ d , ⟨ d∈ , dk ⟩ ⟩ =
+  checked-ok (λ e e∈ → trans (~-kind e d (cX e d e∈ d∈)) dk)
 
 {- a let binds its operand into the plain application of its function -}
-letᵐ-unfold : ∀ {D F} → letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ (D ≫= λ X → ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ X , ptt ⟩ ⟩)
-letᵐ-unfold {D} {F} = ⋆ᵐ-val {Λᵐ ⟨ F , ptt ⟩} {D} Λᵐ-clean ⟨ ν , ⟨ tt , tt ⟩ ⟩ Λᵐ-fun
+letᵐ-unfold : ∀ {D F}
+  → letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ (D ≫= λ X → ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ X , ptt ⟩ ⟩)
+letᵐ-unfold {D} {F} =
+  ⋆ᵐ-val {Λᵐ ⟨ F , ptt ⟩} {D} Λᵐ-clean ⟨ ν , ⟨ tt , tt ⟩ ⟩ Λᵐ-fun
 
 {- n binds preserve lifted relations -}
 binds-lift : ∀ {S} n {Ds Ds' : Results (𝒫 Value) (replicate n ■)} {K K'}
@@ -925,9 +1133,12 @@ binds-lift : ∀ {S} n {Ds Ds' : Results (𝒫 Value) (replicate n ■)} {K K'}
   → Lifted S (binds n Ds K) (binds n Ds' K')
 binds-lift zero L c h hK = hK (λ ()) (λ ())
 binds-lift (suc n) {⟨ D , Ds ⟩} {⟨ D' , Ds' ⟩} {K} {K'} L c h hK =
-  ≫=-lift {F = λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)} {F' = λ X → binds n Ds' (λ Xs → K' ⟨ X , Xs ⟩)} L (c zero) (h zero)
+  ≫=-lift {F = λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)}
+    {F' = λ X → binds n Ds' (λ Xs → K' ⟨ X , Xs ⟩)} L (c zero) (h zero)
     λ _ _ hX → binds-lift n L (λ i → c (suc i)) (λ i → h (suc i))
-      (λ cl hs → hK (λ { zero → (λ e e∈ → proj₂ e∈) ; (suc i) → cl i }) (λ { zero → hX ; (suc i) → hs i }))
+      (λ cl hs →
+          hK (λ { zero → (λ e e∈ → proj₂ e∈) ; (suc i) → cl i })
+          (λ { zero → hX ; (suc i) → hs i }))
 
 {- the call of a closure, a pair of code G (a set of values) and an
    environment T, on E: its code's body on T and E -}
@@ -942,14 +1153,22 @@ pair-call-β : ∀ {F T E}
          V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ E × w ∈ F (mem V) (mem U))
   → let P = pair ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ T , ptt ⟩ ⟩ in
       F T E ⊆ callᵐ ⟨ carᵐ ⟨ P , ptt ⟩ , ⟨ cdrᵐ ⟨ P , ptt ⟩ , ⟨ E , ptt ⟩ ⟩ ⟩
-pair-call-β {F} {T} {E} cT cE ⟨ clT , ⟨ t , t∈ ⟩ ⟩ ⟨ clE , neE ⟩ fin w w∈ with ΛΛ-β {F} cT cE fin w w∈
+pair-call-β {F} {T} {E} cT cE ⟨ clT , ⟨ t , t∈ ⟩ ⟩ ⟨ clE , neE ⟩ fin w w∈
+  with ΛΛ-β {F} cT cE fin w w∈
 ... | ⟨ U , ⟨ ⟨ V , ⟨ e∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
-  inj₂ ⟨ ⟨ _ , c∈ ⟩ , inj₂ ⟨ ⟨ t , d∈ t t∈ ⟩ , inj₂ ⟨ ⟨ proj₁ neE , ⟨ proj₂ neE , clE _ (proj₂ neE) ⟩ ⟩
+  inj₂
+    ⟨ ⟨ _ , c∈ ⟩
+      , inj₂
+      ⟨ ⟨ t , d∈ t t∈ ⟩
+        , inj₂ ⟨ ⟨ proj₁ neE , ⟨ proj₂ neE , clE _ (proj₂ neE) ⟩ ⟩
        , inj₂ ⟨ U , ⟨ ⟨ V , ⟨ c∈ , ⟨ (λ v v∈ → d∈ v (V⊆ v v∈)) , neV ⟩ ⟩ ⟩
-                    , ⟨ (λ u u∈ → ⟨ U⊆ u u∈ , clE u (U⊆ u u∈) ⟩) , neU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+                    ,
+                        ⟨ (λ u u∈ → ⟨ U⊆ u u∈ , clE u (U⊆ u u∈) ⟩)
+                          , neU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
   where
   e∈ᵐ : _ ∈ ΛΛᵐ ⟨ F , ptt ⟩
-  e∈ᵐ = ⟨ e∈ , ⟨ (λ ω∈ → clT ω (V⊆ ω ω∈) refl) , (λ ω∈ → clE ω (U⊆ ω ω∈) refl) ⟩ ⟩
+  e∈ᵐ =
+    ⟨ e∈ , ⟨ (λ ω∈ → clT ω (V⊆ ω ω∈) refl) , (λ ω∈ → clE ω (U⊆ ω ω∈) refl) ⟩ ⟩
   P = pair ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ T , ptt ⟩ ⟩
   cP : Conv P
   cP = ⟨ ⦅ ν , t ⦆ , ⟨ ⟨ ⟨ tt , tt ⟩ , t∈ ⟩ , (λ ()) ⟩ ⟩
@@ -958,9 +1177,10 @@ pair-call-β {F} {T} {E} cT cE ⟨ clT , ⟨ t , t∈ ⟩ ⟩ ⟨ clE , neE ⟩ 
   d∈ : ∀ v
     → v ∈ T
     → v ∈ ⌊ cdrᵐ ⟨ P , ptt ⟩ ⌋
-  d∈ v v∈ = ⟨ inj₂ ⟨ cP , inj₂ ⟨ ν , ⟨ ⟨ ⟨ tt , tt ⟩ , v∈ ⟩ , (λ ()) ⟩ ⟩ ⟩ , clT v v∈ ⟩
+  d∈ v v∈ =
+    ⟨ inj₂ ⟨ cP , inj₂ ⟨ ν , ⟨ ⟨ ⟨ tt , tt ⟩ , v∈ ⟩ , (λ ()) ⟩ ⟩ ⟩ , clT v v∈ ⟩
 
-{- Code and machine state (Clos5, Imp, CFG, X86) ------------------------------------}
+{- Code and machine state (Clos5, Imp, CFG, X86) ------------------------------}
 
 {- a function of two arguments, consistent in both, is consistent -}
 ΛΛᵐ-con : ∀ {F : 𝒫 Value → 𝒫 Value → 𝒫 Value}
@@ -974,29 +1194,33 @@ pair-call-β {F} {T} {E} cT cE ⟨ clT , ⟨ t , t∈ ⟩ ⟩ ⟨ clE , neE ⟩ 
 errcode-con : Con errcode
 errcode-con = ΛΛᵐ-con (λ _ _ _ _ _ _ → Con-⌈⌉ ω)
 
-{- Congruences of the binders, from equal operands ----------------------------------}
+{- Congruences of the binders, from equal operands ----------------------------}
 
 𝒞ᵐ-RR : ∀ {D F G D' F' G'}
-  → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
+  → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
+    ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
   → 𝒞ᵐ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞ᵐ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
 𝒞ᵐ-RR {F = F} {G} {F' = F'} {G'} ⟨ D≃ , ⟨ F≃ , ⟨ G≃ , _ ⟩ ⟩ ⟩ =
-  𝒞ᵐ-≃ {F = F} {F'} {G} {G'} (lower D≃) (λ _ _ _ _ → lower (F≃ _ _ ≃-refl)) (λ _ _ _ _ → lower (G≃ _ _ ≃-refl))
+  𝒞ᵐ-≃ {F = F} {F'} {G} {G'} (lower D≃) (λ _ _ _ _ → lower (F≃ _ _ ≃-refl))
+    (λ _ _ _ _ → lower (G≃ _ _ ≃-refl))
 
 letᵐ-RR : ∀ {D F D' F'}
   → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt ⟩ ⟩ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
   → letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ letᵐ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
-letᵐ-RR {F = F} {F' = F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = letᵐ-≃ {F = F} {F'} (lower D≃) (λ _ _ _ _ → lower (F≃ _ _ ≃-refl))
+letᵐ-RR {F = F} {F' = F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ =
+  letᵐ-≃ {F = F} {F'} (lower D≃) (λ _ _ _ _ → lower (F≃ _ _ ≃-refl))
 
 ΛΛᵐ-≃ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value}
   → (∀ X Y → F X Y ≃ F' X Y)
   → ΛΛᵐ ⟨ F , ptt ⟩ ≃ ΛΛᵐ ⟨ F' , ptt ⟩
 ΛΛᵐ-≃ eq = ⟨ ⇂-mono (proj₁ (ΛΛ-≃ eq)) , ⇂-mono (proj₂ (ΛΛ-≃ eq)) ⟩
 
-{- Binds and lets -------------------------------------------------------------------}
+{- Binds and lets -------------------------------------------------------------}
 
 {- a let is the bind of its body, when the body is monotone and finitary
    on the values of the operand -}
-letᵐ-≫= : ∀ {D G} → Mono₁ G → Con D → (Conv D → Finitary G ⌊ D ⌋) → letᵐ ⟨ D , ⟨ G , ptt ⟩ ⟩ ≃ (D ≫= G)
+letᵐ-≫= : ∀ {D G} → Mono₁ G → Con D → (Conv D → Finitary G ⌊ D ⌋)
+  → letᵐ ⟨ D , ⟨ G , ptt ⟩ ⟩ ≃ (D ≫= G)
 letᵐ-≫= {D} {G} mG cD fin =
   ≃-trans (letᵐ-unfold {D} {G})
     (≫=-cong {D} {λ X → ⋆ ⟨ Λᵐ ⟨ G , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} {G}
@@ -1007,7 +1231,8 @@ binds-≃ : ∀ n {Ds Es K}
   → Rel⊆ n K K
   → RRs (replicate n ■) Ds Es
   → binds n Ds K ≃ binds n Es K
-binds-≃ n mK eq = ⟨ binds-mono n (proj₁ (RRs⇒⊆ eq)) mK , binds-mono n (proj₂ (RRs⇒⊆ eq)) mK ⟩
+binds-≃ n mK eq =
+  ⟨ binds-mono n (proj₁ (RRs⇒⊆ eq)) mK , binds-mono n (proj₂ (RRs⇒⊆ eq)) mK ⟩
 
 {- code is a set of values -}
 ΛΛᵐ-val : ∀ {F} → Val (ΛΛᵐ ⟨ F , ptt ⟩)
@@ -1015,12 +1240,16 @@ binds-≃ n mK eq = ⟨ binds-mono n (proj₁ (RRs⇒⊆ eq)) mK , binds-mono n 
 
 {- code is equal when its bodies are, on finite sets of values -}
 BodyEq₂ : (𝒫 Value → 𝒫 Value → 𝒫 Value) → (𝒫 Value → 𝒫 Value → 𝒫 Value) → Set
-BodyEq₂ F F' = ∀ V U → V ≢ [] → V ≈ V → NoErr V → U ≢ [] → U ≈ U → NoErr U → F (mem V) (mem U) ≃ F' (mem V) (mem U)
+BodyEq₂ F F' =
+  ∀ V U → V ≢ [] → V ≈ V → NoErr V → U ≢ [] → U ≈ U → NoErr U
+  → F (mem V) (mem U) ≃ F' (mem V) (mem U)
 
 ΛΛᵐ-≃′ : ∀ {F F'}
   → BodyEq₂ F F'
   → ΛΛᵐ ⟨ F , ptt ⟩ ≃ ΛΛᵐ ⟨ F' , ptt ⟩
-ΛΛᵐ-≃′ {F} {F'} eq = ⟨ G (λ V U a b c d e f → proj₁ (eq V U a b c d e f)) , G (λ V U a b c d e f → proj₂ (eq V U a b c d e f)) ⟩
+ΛΛᵐ-≃′ {F} {F'} eq =
+  ⟨ G (λ V U a b c d e f → proj₁ (eq V U a b c d e f))
+    , G (λ V U a b c d e f → proj₂ (eq V U a b c d e f)) ⟩
   where
   G : ∀ {A B : 𝒫 Value → 𝒫 Value → 𝒫 Value}
     → (  ∀ V U
@@ -1035,9 +1264,10 @@ BodyEq₂ F F' = ∀ V U → V ≢ [] → V ≈ V → NoErr V → U ≢ [] → U
   G h ν r = r
   G h (V ↦ ν) r = r
   G h (V ↦ (U ↦ w)) ⟨ ⟨ ⟨ w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ neV , cV ⟩ ⟩ , ⟨ nV , nU ⟩ ⟩ =
-    ⟨ ⟨ ⟨ h V U neV cV nV neU cU nU w w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ neV , cV ⟩ ⟩ , ⟨ nV , nU ⟩ ⟩
+    ⟨ ⟨ ⟨ h V U neV cV nV neU cU nU w w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ neV , cV ⟩ ⟩
+        , ⟨ nV , nU ⟩ ⟩
 
-{- Operators as binds of kernels ---------------------------------------------------}
+{- Operators as binds of kernels ----------------------------------------------}
 
 {- an operator on n operands that binds them, left to right, and applies a
    monotone kernel to their values -}
@@ -1060,25 +1290,35 @@ bindsₖ-≃ {n} O = binds-≃ n (kmono O)
 _▷_ : ∀ {n} → 𝒫 Value
   → Kernel (suc n)
   → Kernel n
-D ▷ O = mkK (λ Xs → kern O ⟨ D , Xs ⟩) (λ s → kmono O ⟨ lift (λ d d∈ → d∈) , s ⟩)
+D ▷ O =
+  mkK (λ Xs → kern O ⟨ D , Xs ⟩) (λ s → kmono O ⟨ lift (λ d d∈ → d∈) , s ⟩)
 
 ▷-clean : ∀ {n} (O : Kernel (suc n)) {X} Ds
   → Clean X
   → bindsₖ (⌊ X ⌋ ▷ O) Ds ≃ bindsₖ (X ▷ O) Ds
-▷-clean {n} O Ds cl = ⟨ binds-mono n (⊆s-refl n Ds) (λ s → kmono O ⟨ lift ⌊⌋-⊆ , s ⟩)
-                      , binds-mono n (⊆s-refl n Ds) (λ s → kmono O ⟨ lift (⌊⌋-clean cl) , s ⟩) ⟩
+▷-clean {n} O Ds cl =
+  ⟨ binds-mono n (⊆s-refl n Ds) (λ s → kmono O ⟨ lift ⌊⌋-⊆ , s ⟩)
+                      , binds-mono n (⊆s-refl n Ds)
+                        (λ s → kmono O ⟨ lift (⌊⌋-clean cl) , s ⟩) ⟩
 
 {- the operators, as binds of these kernels (by definition) -}
 call-k : Kernel 3
-call-k = mkK (λ { ⟨ F , ⟨ E , ⟨ X , _ ⟩ ⟩ ⟩ → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩) })
+call-k =
+  mkK
+  (λ { ⟨ F , ⟨ E , ⟨ X , _ ⟩ ⟩ ⟩
+    → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩) })
   (λ s → checked-mono (lower (proj₁ s)) (lower (⋆₂-mono _ _ s)))
 
 pair-k : Kernel 2
 pair-k = mkK pair (λ s → lower (pair-mono _ _ s))
 
 car-k cdr-k inl-k inr-k : Kernel 1
-car-k = mkK (λ { ⟨ X , _ ⟩ → checked prod X (car ⟨ X , ptt ⟩) }) (λ s → checked-mono (lower (proj₁ s)) (lower (car-mono _ _ s)))
-cdr-k = mkK (λ { ⟨ X , _ ⟩ → checked prod X (cdr ⟨ X , ptt ⟩) }) (λ s → checked-mono (lower (proj₁ s)) (lower (cdr-mono _ _ s)))
+car-k =
+  mkK (λ { ⟨ X , _ ⟩ → checked prod X (car ⟨ X , ptt ⟩) })
+  (λ s → checked-mono (lower (proj₁ s)) (lower (car-mono _ _ s)))
+cdr-k =
+  mkK (λ { ⟨ X , _ ⟩ → checked prod X (cdr ⟨ X , ptt ⟩) })
+  (λ s → checked-mono (lower (proj₁ s)) (lower (cdr-mono _ _ s)))
 inl-k = mkK (λ { ⟨ X , _ ⟩ → inl ⟨ X , ptt ⟩ }) (λ s → lower (inl-mono _ _ s))
 inr-k = mkK (λ { ⟨ X , _ ⟩ → inr ⟨ X , ptt ⟩ }) (λ s → lower (inr-mono _ _ s))
 
@@ -1091,10 +1331,15 @@ get-k {n} i = mkK (λ { ⟨ X , _ ⟩ → checked (tup n) X (proj i ⟨ X , ptt 
 
 {- case on its first operand, with the branches E and F -}
 case-k : (E F : 𝒫 Value → 𝒫 Value) → Kernel 1
-case-k E F = mkK (λ { ⟨ X , _ ⟩ → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩) })
-  (λ s → checked-mono (lower (proj₁ s)) (𝒞⇂-⊆ {A = E} {E} {F} {F} (lower (proj₁ s)) (λ _ _ _ _ w w∈ → w∈) (λ _ _ _ _ w w∈ → w∈)))
+case-k E F =
+  mkK
+  (λ { ⟨ X , _ ⟩ → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩) })
+  (λ s →
+      checked-mono (lower (proj₁ s))
+      (𝒞⇂-⊆ {A = E} {E} {F} {F} (lower (proj₁ s)) (λ _ _ _ _ w w∈ → w∈)
+        (λ _ _ _ _ w w∈ → w∈)))
 
-{- Finitary continuations: a bind and a case commute with a bind ---------------------}
+{- Finitary continuations: a bind and a case commute with a bind --------------}
 
 {- G uses only a finite, nonempty part of any nonempty set -}
 FinOn : (𝒫 Value → 𝒫 Value) → Set₁
@@ -1110,21 +1355,40 @@ many-runs : ∀ {F : 𝒫 Value → 𝒫 Value} {X}
   → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ X × mem U ⊆ F (mem V)
 many-runs mF [] ne _ = ⊥-elim (ne refl)
 many-runs mF (u ∷ []) _ runs with runs u (here refl)
-... | ⟨ V , ⟨ neV , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩ = ⟨ V , ⟨ neV , ⟨ V⊆ , (λ { _ (here refl) → u∈ }) ⟩ ⟩ ⟩
-many-runs mF (u ∷ u' ∷ U) _ runs with runs u (here refl) | many-runs mF (u' ∷ U) (λ ()) (λ d d∈ → runs d (there d∈))
+... | ⟨ V , ⟨ neV , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩ =
+  ⟨ V , ⟨ neV , ⟨ V⊆ , (λ { _ (here refl) → u∈ }) ⟩ ⟩ ⟩
+many-runs mF (u ∷ u' ∷ U) _ runs
+  with runs u (here refl)
+  | many-runs mF (u' ∷ U) (λ ()) (λ d d∈ → runs d (there d∈))
 ... | ⟨ V , ⟨ neV , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩ | ⟨ V' , ⟨ _ , ⟨ V'⊆ , U⊆ ⟩ ⟩ ⟩ =
-  ⟨ V ++ V' , ⟨ (λ eq → neV (++-conicalˡ V V' eq)) , ⟨ (λ d d∈ → [ V⊆ d , V'⊆ d ]′ (∈-++⁻ V d∈))
-  , (λ { _ (here refl) → mF (λ _ → ∈-++⁺ˡ) _ u∈ ; d (there d∈) → mF (λ _ → ∈-++⁺ʳ V) d (U⊆ d d∈) }) ⟩ ⟩ ⟩
+  ⟨ V ++ V'
+      ,
+      ⟨ (λ eq → neV (++-conicalˡ V V' eq))
+        , ⟨ (λ d d∈ → [ V⊆ d , V'⊆ d ]′ (∈-++⁻ V d∈))
+  ,
+      (λ { _ (here refl) → mF (λ _ → ∈-++⁺ˡ) _ u∈ ; d (there d∈)
+        → mF (λ _ → ∈-++⁺ʳ V) d (U⊆ d d∈) }) ⟩ ⟩ ⟩
 
 {- a bind of a finitary operand into a finitary continuation is finitary -}
-≫=-fin : ∀ {F G X} → Mono₁ F → Finitary F X → Mono₁ G → FinOn G → Finitary (λ Y → F Y ≫= G) X
+≫=-fin : ∀ {F G X} → Mono₁ F → Finitary F X → Mono₁ G → FinOn G
+  → Finitary (λ Y → F Y ≫= G) X
 ≫=-fin mF fin mG fG w (inj₁ ⟨ refl , ω∈ ⟩) with fin ω ω∈
-... | ⟨ V , ⟨ ne , ⟨ V⊆ , ω∈' ⟩ ⟩ ⟩ = ⟨ V , ⟨ ne , ⟨ V⊆ , inj₁ ⟨ refl , ω∈' ⟩ ⟩ ⟩ ⟩
+... | ⟨ V , ⟨ ne , ⟨ V⊆ , ω∈' ⟩ ⟩ ⟩ =
+  ⟨ V , ⟨ ne , ⟨ V⊆ , inj₁ ⟨ refl , ω∈' ⟩ ⟩ ⟩ ⟩
 ≫=-fin {F} {G} {X} mF fin mG fG w (inj₂ ⟨ c , w∈ ⟩) with fG ⌊ F X ⌋ c w w∈
-... | ⟨ U , ⟨ neU , ⟨ U⊆ , w∈' ⟩ ⟩ ⟩ with many-runs mF U neU (λ u u∈ → fin u (proj₁ (U⊆ u u∈)))
+... | ⟨ U , ⟨ neU , ⟨ U⊆ , w∈' ⟩ ⟩ ⟩
+  with many-runs mF U neU (λ u u∈ → fin u (proj₁ (U⊆ u u∈)))
 ... | ⟨ V , ⟨ neV , ⟨ V⊆ , U⊆' ⟩ ⟩ ⟩ =
-  ⟨ V , ⟨ neV , ⟨ V⊆ , inj₂ ⟨ c' , mG (λ u u∈ → ⟨ U⊆' u u∈ , proj₂ (U⊆ u u∈) ⟩) w w∈' ⟩ ⟩ ⟩ ⟩
-  where c' = let ⟨ u , u∈ ⟩ = E≢[]⇒nonempty-mem neU in ⟨ u , ⟨ U⊆' u u∈ , proj₂ (U⊆ u u∈) ⟩ ⟩
+  ⟨ V
+      ,
+      ⟨ neV
+        ,
+          ⟨ V⊆
+            , inj₂
+              ⟨ c' , mG (λ u u∈ → ⟨ U⊆' u u∈ , proj₂ (U⊆ u u∈) ⟩) w w∈' ⟩ ⟩ ⟩ ⟩
+  where c' =
+         let ⟨ u , u∈ ⟩ =
+              E≢[]⇒nonempty-mem neU in ⟨ u , ⟨ U⊆' u u∈ , proj₂ (U⊆ u u∈) ⟩ ⟩
 
 {- a check commutes with a bind -}
 checked-≫= : ∀ {k X A G} → Mono₁ G → (checked k X A ≫= G) ≃ checked k X (A ≫= G)
@@ -1133,11 +1397,18 @@ checked-≫= {k} {X} {A} {G} mG = ⟨ L , R ⟩
   L : (checked k X A ≫= G) ⊆ checked k X (A ≫= G)
   L w (inj₁ ⟨ refl , inj₁ ⟨ _ , b ⟩ ⟩) = inj₁ ⟨ refl , b ⟩
   L w (inj₁ ⟨ refl , inj₂ ω∈ ⟩) = inj₂ (inj₁ ⟨ refl , ω∈ ⟩)
-  L w (inj₂ ⟨ ⟨ d , d∈ ⟩ , w∈ ⟩) = inj₂ (inj₂ ⟨ ⟨ d , ⟨ ⌊checked⌋ {k} {X} {A} d d∈ , proj₂ d∈ ⟩ ⟩ , mG (λ e e∈ → ⟨ ⌊checked⌋ {k} {X} {A} e e∈ , proj₂ e∈ ⟩) w w∈ ⟩)
+  L w (inj₂ ⟨ ⟨ d , d∈ ⟩ , w∈ ⟩) =
+    inj₂
+    (inj₂
+      ⟨ ⟨ d , ⟨ ⌊checked⌋ {k} {X} {A} d d∈ , proj₂ d∈ ⟩ ⟩
+        , mG (λ e e∈ → ⟨ ⌊checked⌋ {k} {X} {A} e e∈ , proj₂ e∈ ⟩) w w∈ ⟩)
   R : checked k X (A ≫= G) ⊆ (checked k X A ≫= G)
   R w (inj₁ ⟨ refl , b ⟩) = inj₁ ⟨ refl , inj₁ ⟨ refl , b ⟩ ⟩
   R w (inj₂ (inj₁ ⟨ refl , ω∈ ⟩)) = inj₁ ⟨ refl , inj₂ ω∈ ⟩
-  R w (inj₂ (inj₂ ⟨ ⟨ d , d∈ ⟩ , w∈ ⟩)) = inj₂ ⟨ ⟨ d , ⟨ inj₂ (proj₁ d∈) , proj₂ d∈ ⟩ ⟩ , mG (λ e e∈ → ⟨ inj₂ (proj₁ e∈) , proj₂ e∈ ⟩) w w∈ ⟩
+  R w (inj₂ (inj₂ ⟨ ⟨ d , d∈ ⟩ , w∈ ⟩)) =
+    inj₂
+    ⟨ ⟨ d , ⟨ inj₂ (proj₁ d∈) , proj₂ d∈ ⟩ ⟩
+      , mG (λ e e∈ → ⟨ inj₂ (proj₁ e∈) , proj₂ e∈ ⟩) w w∈ ⟩
 
 {- the values of one branch of a case, from finitely many payload sets,
    come from the branch on their union -}
@@ -1150,65 +1421,111 @@ gather-runs : ∀ {Q : 𝒫 Value} {E G : 𝒫 Value → 𝒫 Value} {w}
   → (∀ u → u ∈ mem U → Σ[ W ∈ List Value ] W ≢ [] × mem W ⊆ Q × u ∈ E (mem W))
   → (∀ u → u ∈ mem U → u ≢ ω)
   → w ∈ G (mem U)
-  → Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → Q d) × w ∈ (E (mem (v ∷ V)) ≫= G) × (v ∷ V) ≈ (v ∷ V)
+  → Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → Q d) × w
+    ∈ (E (mem (v ∷ V)) ≫= G) × (v ∷ V) ≈ (v ∷ V)
 gather-runs cQ mE mG U neU runs nω w∈ with many-runs mE U neU runs
 ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
 ... | ⟨ v ∷ V , ⟨ _ , ⟨ V⊆ , U⊆ ⟩ ⟩ ⟩ =
-  ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ inj₂ ⟨ conv , mG (λ u u∈ → ⟨ U⊆ u u∈ , nω u u∈ ⟩) _ w∈ ⟩ , Con⇒≈ (v ∷ V) cQ V⊆ ⟩ ⟩ ⟩ ⟩
-  where conv = let ⟨ u , u∈ ⟩ = E≢[]⇒nonempty-mem neU in ⟨ u , ⟨ U⊆ u u∈ , nω u u∈ ⟩ ⟩
+  ⟨ v
+      ,
+      ⟨ V
+        ,
+          ⟨ V⊆
+            ,
+              ⟨ inj₂ ⟨ conv , mG (λ u u∈ → ⟨ U⊆ u u∈ , nω u u∈ ⟩) _ w∈ ⟩
+                , Con⇒≈ (v ∷ V) cQ V⊆ ⟩ ⟩ ⟩ ⟩
+  where conv =
+         let ⟨ u , u∈ ⟩ = E≢[]⇒nonempty-mem neU in ⟨ u , ⟨ U⊆ u u∈ , nω u u∈ ⟩ ⟩
 
 {- a case commutes with a finitary bind -}
 𝒞-≫= : ∀ {P E F G} → Con P → Mono₁ E → Mono₁ F → Mono₁ G → FinOn G
-  → (𝒞 ⟨ P , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩ ≫= G) ≃ 𝒞 ⟨ P , ⟨ (λ Y → E Y ≫= G) , ⟨ (λ Y → F Y ≫= G) , ptt ⟩ ⟩ ⟩
+  → (𝒞 ⟨ P , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩ ≫= G)
+    ≃ 𝒞 ⟨ P , ⟨ (λ Y → E Y ≫= G) , ⟨ (λ Y → F Y ≫= G) , ptt ⟩ ⟩ ⟩
 𝒞-≫= {P} {E} {F} {G} cP mE mF mG fG = ⟨ L , R ⟩
   where
   C = 𝒞 ⟨ P , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩
   L : (C ≫= G) ⊆ 𝒞 ⟨ P , ⟨ (λ Y → E Y ≫= G) , ⟨ (λ Y → F Y ≫= G) , ptt ⟩ ⟩ ⟩
-  L w (inj₁ ⟨ refl , inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩) = inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩
-  L w (inj₁ ⟨ refl , inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩) = inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩
+  L w (inj₁ ⟨ refl , inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩) =
+    inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩
+  L w (inj₁ ⟨ refl , inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩) =
+    inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩
   L w (inj₂ ⟨ cv , w∈ ⟩) with fG ⌊ C ⌋ cv w w∈
   ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
   ... | ⟨ u₀ ∷ U , ⟨ _ , ⟨ U⊆ , w∈' ⟩ ⟩ ⟩ with proj₁ (U⊆ u₀ (here refl))
   ...   | inj₁ ⟨ v₀ , ⟨ V₀ , ⟨ all₀ , _ ⟩ ⟩ ⟩ =
-    inj₁ (gather-runs (λ d d' d∈ d'∈ → cP _ _ d∈ d'∈) mE mG (u₀ ∷ U) (λ ()) runs (λ u u∈ → proj₂ (U⊆ u u∈)) w∈')
+    inj₁
+      (gather-runs (λ d d' d∈ d'∈ → cP _ _ d∈ d'∈) mE mG (u₀ ∷ U) (λ ()) runs
+        (λ u u∈ → proj₂ (U⊆ u u∈)) w∈')
     where
     runs : ∀ u
       → u ∈ mem (u₀ ∷ U)
       → Σ[ W ∈ List Value ] W ≢ [] × mem W ⊆ (λ d → left d ∈ P) × u ∈ E (mem W)
     runs u u∈ with proj₁ (U⊆ u u∈)
-    ... | inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈' , _ ⟩ ⟩ ⟩ ⟩ = ⟨ v ∷ V , ⟨ (λ ()) , ⟨ all , u∈' ⟩ ⟩ ⟩
-    ... | inj₂ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩ = ⊥-elim (cP _ _ (all₀ v₀ (here refl)) (all v (here refl)))
+    ... | inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈' , _ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ v ∷ V , ⟨ (λ ()) , ⟨ all , u∈' ⟩ ⟩ ⟩
+    ... | inj₂ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩ =
+      ⊥-elim (cP _ _ (all₀ v₀ (here refl)) (all v (here refl)))
   ...   | inj₂ ⟨ v₀ , ⟨ V₀ , ⟨ all₀ , _ ⟩ ⟩ ⟩ =
-    inj₂ (gather-runs (λ d d' d∈ d'∈ → cP _ _ d∈ d'∈) mF mG (u₀ ∷ U) (λ ()) runs (λ u u∈ → proj₂ (U⊆ u u∈)) w∈')
+    inj₂
+      (gather-runs (λ d d' d∈ d'∈ → cP _ _ d∈ d'∈) mF mG (u₀ ∷ U) (λ ()) runs
+        (λ u u∈ → proj₂ (U⊆ u u∈)) w∈')
     where
     runs : ∀ u
       → u ∈ mem (u₀ ∷ U)
       → Σ[ W ∈ List Value ] W ≢ [] × mem W ⊆ (λ d → right d ∈ P) × u ∈ F (mem W)
     runs u u∈ with proj₁ (U⊆ u u∈)
-    ... | inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈' , _ ⟩ ⟩ ⟩ ⟩ = ⟨ v ∷ V , ⟨ (λ ()) , ⟨ all , u∈' ⟩ ⟩ ⟩
-    ... | inj₁ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩ = ⊥-elim (cP _ _ (all₀ v₀ (here refl)) (all v (here refl)))
+    ... | inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈' , _ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ v ∷ V , ⟨ (λ ()) , ⟨ all , u∈' ⟩ ⟩ ⟩
+    ... | inj₁ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩ =
+      ⊥-elim (cP _ _ (all₀ v₀ (here refl)) (all v (here refl)))
   R : 𝒞 ⟨ P , ⟨ (λ Y → E Y ≫= G) , ⟨ (λ Y → F Y ≫= G) , ptt ⟩ ⟩ ⟩ ⊆ (C ≫= G)
-  R w (inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) = inj₁ ⟨ refl , inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩
+  R w (inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) =
+    inj₁ ⟨ refl , inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩
   R w (inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₂ ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) =
-    inj₂ ⟨ ⟨ u , ⟨ inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ u∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ u∈ ⟩ ⟩
-         , mG (λ e e∈ → ⟨ inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ e∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ e∈ ⟩) w w∈ ⟩
-  R w (inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) = inj₁ ⟨ refl , inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩
+    inj₂
+      ⟨ ⟨ u , ⟨ inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ u∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ u∈ ⟩ ⟩
+         , mG
+           (λ e e∈ →
+             ⟨ inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ e∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ e∈ ⟩) w
+             w∈ ⟩
+  R w (inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) =
+    inj₁ ⟨ refl , inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩
   R w (inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₂ ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) =
-    inj₂ ⟨ ⟨ u , ⟨ inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ u∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ u∈ ⟩ ⟩
-         , mG (λ e e∈ → ⟨ inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ e∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ e∈ ⟩) w w∈ ⟩
+    inj₂
+      ⟨ ⟨ u , ⟨ inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ u∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ u∈ ⟩ ⟩
+         , mG
+           (λ e e∈ →
+             ⟨ inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ e∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ e∈ ⟩) w
+             w∈ ⟩
 
 {- so the case of the monad commutes with a finitary bind -}
 𝒞ᵐ-≫= : ∀ {A F₁ F₂ G} → Con A → Mono₁ F₁ → Mono₁ F₂ → Mono₁ G → FinOn G
-  → (𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩ ≫= G) ≃ 𝒞ᵐ ⟨ A , ⟨ (λ Y → F₁ Y ≫= G) , ⟨ (λ Y → F₂ Y ≫= G) , ptt ⟩ ⟩ ⟩
+  → (𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩ ≫= G)
+    ≃ 𝒞ᵐ ⟨ A , ⟨ (λ Y → F₁ Y ≫= G) , ⟨ (λ Y → F₂ Y ≫= G) , ptt ⟩ ⟩ ⟩
 𝒞ᵐ-≫= {A} {F₁} {F₂} {G} cA m₁ m₂ mG fG =
-  ≃-trans (≫=-assoc {A} {λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)} mG)
-    (≫=-cong {A} {λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩) ≫= G}
-               {λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ (λ Y → F₁ Y ≫= G) , ⟨ (λ Y → F₂ Y ≫= G) , ptt ⟩ ⟩ ⟩)} λ _ → ≃-trans (checked-≫= mG)
-       (⟨ checked-mono (λ d z → z) (proj₁ eq) , checked-mono (λ d z → z) (proj₂ eq) ⟩))
+  ≃-trans
+    (≫=-assoc {A}
+      {λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)} mG)
+    (≫=-cong {A}
+        {λ X →
+          checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩) ≫= G}
+               {λ X →
+                   checked inj X
+                     (𝒞
+                       ⟨ X ⇂ ValPayload
+                         ,
+                           ⟨ (λ Y → F₁ Y ≫= G)
+                             , ⟨ (λ Y → F₂ Y ≫= G) , ptt ⟩ ⟩ ⟩)} λ _ →
+                             ≃-trans (checked-≫= mG)
+       (⟨ checked-mono (λ d z → z) (proj₁ eq)
+           , checked-mono (λ d z → z) (proj₂ eq) ⟩))
   where
-  eq = 𝒞-≫= {⌊ A ⌋ ⇂ ValPayload} {F₁} {F₂} {G} (Con-⊆ cA (λ d d∈ → proj₁ (proj₁ d∈))) m₁ m₂ mG fG
+  eq =
+    𝒞-≫= {⌊ A ⌋ ⇂ ValPayload} {F₁} {F₂} {G}
+    (Con-⊆ cA (λ d d∈ → proj₁ (proj₁ d∈))) m₁ m₂ mG fG
 
-{- An optional continuation: a bind into a finitary continuation (lift locals) ------}
+{- An optional continuation: a bind into a finitary continuation (lift locals)
+   ------}
 
 K⟨_⟩ : Maybe (𝒫 Value → 𝒫 Value) → 𝒫 Value → 𝒫 Value
 K⟨ nothing ⟩ D = D
@@ -1247,7 +1564,8 @@ K-ok : ∀ k
   → Mono₁ F
   → FinOn F
   → KOK (just (λ X → K⟨ k ⟩ (F X)))
-K-ok k ok mF fF = ⟨ (λ X⊆ → K-mono k ok (mF X⊆)) , (λ Y neY → K-fin k ok mF (fF Y neY)) ⟩
+K-ok k ok mF fF =
+  ⟨ (λ X⊆ → K-mono k ok (mF X⊆)) , (λ Y neY → K-fin k ok mF (fF Y neY)) ⟩
 
 {- K commutes with a bind and with a case -}
 let-law : ∀ k
@@ -1263,7 +1581,8 @@ case-law : ∀ k
   → Con A
   → Mono₁ F₁
   → Mono₁ F₂
-  → K⟨ k ⟩ (𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩) ≃ 𝒞ᵐ ⟨ A , ⟨ (λ X → K⟨ k ⟩ (F₁ X)) , ⟨ (λ X → K⟨ k ⟩ (F₂ X)) , ptt ⟩ ⟩ ⟩
+  → K⟨ k ⟩ (𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)
+      ≃ 𝒞ᵐ ⟨ A , ⟨ (λ X → K⟨ k ⟩ (F₁ X)) , ⟨ (λ X → K⟨ k ⟩ (F₂ X)) , ptt ⟩ ⟩ ⟩
 case-law nothing _ cA m₁ m₂ = ≃-refl
 case-law (just G) ⟨ mG , fG ⟩ cA m₁ m₂ = 𝒞ᵐ-≫= cA m₁ m₂ mG fG
 
@@ -1274,7 +1593,8 @@ callᵐ-≃ : ∀ {L L' M M' N N'}
   → M ≃ M'
   → N ≃ N'
   → callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ ≃ callᵐ ⟨ L' , ⟨ M' , ⟨ N' , ptt ⟩ ⟩ ⟩
-callᵐ-≃ L≃ M≃ N≃ = mono-≃ (mono (callᵐ-good {⊤})) ⟨ lift L≃ , ⟨ lift M≃ , ⟨ lift N≃ , ptt ⟩ ⟩ ⟩
+callᵐ-≃ L≃ M≃ N≃ =
+  mono-≃ (mono (callᵐ-good {⊤})) ⟨ lift L≃ , ⟨ lift M≃ , ⟨ lift N≃ , ptt ⟩ ⟩ ⟩
 
 pairᵐ-≃ : ∀ {D D' E E'}
   → D ≃ D'
@@ -1301,8 +1621,12 @@ payloadᵐ-mono D⊆ = ≫=-mono D⊆ P
   where
   P : ∀ {X X'}
     → X ⊆ X'
-    → checked inj X (payloadD (X ⇂ ValPayload)) ⊆ checked inj X' (payloadD (X' ⇂ ValPayload))
-  P X⊆ = checked-mono X⊆ (λ { v (inj₁ l) → inj₁ (⇂-mono {P = ValPayload} X⊆ _ l) ; v (inj₂ r) → inj₂ (⇂-mono {P = ValPayload} X⊆ _ r) })
+    → checked inj X (payloadD (X ⇂ ValPayload))
+      ⊆ checked inj X' (payloadD (X' ⇂ ValPayload))
+  P X⊆ =
+    checked-mono X⊆
+    (λ { v (inj₁ l) → inj₁ (⇂-mono {P = ValPayload} X⊆ _ l) ; v (inj₂ r)
+      → inj₂ (⇂-mono {P = ValPayload} X⊆ _ r) })
 
 payloadᵐ-≃ : ∀ {D D'}
   → D ≃ D'
@@ -1313,10 +1637,11 @@ strictᵐ-≃ : ∀ {D D' E E'}
   → D ≃ D'
   → E ≃ E'
   → strictᵐ D E ≃ strictᵐ D' E'
-strictᵐ-≃ ⟨ D⊆ , D⊇ ⟩ ⟨ E⊆ , E⊇ ⟩ = ⟨ ≫=-mono D⊆ (λ _ → E⊆) , ≫=-mono D⊇ (λ _ → E⊇) ⟩
+strictᵐ-≃ ⟨ D⊆ , D⊇ ⟩ ⟨ E⊆ , E⊇ ⟩ =
+  ⟨ ≫=-mono D⊆ (λ _ → E⊆) , ≫=-mono D⊇ (λ _ → E⊇) ⟩
 
 
-{- What a bind needs of its operand: an error, or a value ---------------------------}
+{- What a bind needs of its operand: an error, or a value ---------------------}
 
 {- D holds an error or has a value -}
 Has : 𝒫 Value → Set
@@ -1376,7 +1701,9 @@ strictᵐ-≃′ X≃ has ωX val = ≃-trans (strictᵐ-skip has ωX val) X≃
 strictᵐ-self : ∀ {D Z}
   → Z ≃ D
   → strictᵐ D Z ≃ D
-strictᵐ-self Z≃ = ≃-trans (strictᵐ-skip (λ w w∈ → ne-has ⟨ w , proj₁ Z≃ w w∈ ⟩) (λ ω∈ → proj₂ Z≃ ω ω∈)
+strictᵐ-self Z≃ =
+  ≃-trans
+  (strictᵐ-skip (λ w w∈ → ne-has ⟨ w , proj₁ Z≃ w w∈ ⟩) (λ ω∈ → proj₂ Z≃ ω ω∈)
   (λ w w∈ w≢ → ⟨ w , ⟨ proj₁ Z≃ w w∈ , w≢ ⟩ ⟩)) Z≃
 
 {- a call Errs on an error in its operands, left to right; a value of it
@@ -1387,7 +1714,8 @@ callᵐ-ω : ∀ {L M N}
   → ω ∈ callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩
 callᵐ-ω (inj₁ ωL) _ = inj₁ ⟨ refl , ωL ⟩
 callᵐ-ω (inj₂ cL) (inj₁ ωM) = inj₂ ⟨ cL , inj₁ ⟨ refl , ωM ⟩ ⟩
-callᵐ-ω (inj₂ cL) (inj₂ ⟨ cM , ωN ⟩) = inj₂ ⟨ cL , inj₂ ⟨ cM , inj₁ ⟨ refl , ωN ⟩ ⟩ ⟩
+callᵐ-ω (inj₂ cL) (inj₂ ⟨ cM , ωN ⟩) =
+  inj₂ ⟨ cL , inj₂ ⟨ cM , inj₁ ⟨ refl , ωN ⟩ ⟩ ⟩
 
 callᵐ-conv : ∀ {L M N w}
   → w ∈ callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩
@@ -1400,18 +1728,28 @@ callᵐ-conv (inj₂ ⟨ _ , inj₂ ⟨ cM , inj₂ ⟨ cN , _ ⟩ ⟩ ⟩) _ = 
 
 {- the elements of a let of a set of values: its body on finite parts of it -}
 LetEntry : 𝒫 Value → (𝒫 Value → 𝒫 Value) → 𝒫 Value
-LetEntry D H w = Σ[ V ∈ List Value ] V ≢ [] × V ≈ V × NoErr V × mem V ⊆ D × w ∈ H (mem V)
+LetEntry D H w =
+  Σ[ V ∈ List Value ] V ≢ [] × V ≈ V × NoErr V × mem V ⊆ D × w ∈ H (mem V)
 
 letᵐ-entries : ∀ {D H}
   → Val D
   → letᵐ ⟨ D , ⟨ H , ptt ⟩ ⟩ ≃ LetEntry D H
 letᵐ-entries {D} {H} vD =
-  ≃-trans (letᵐ-unfold {D} {H}) (≃-trans (≫=-val-β {F = λ X → ⋆ ⟨ Λᵐ ⟨ H , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} vD)
-    ⟨ (λ { w ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ → ⟨ V , ⟨ ne , ⟨ c , ⟨ n , ⟨ (λ d d∈ → proj₁ (V⊆ d d∈)) , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ })
+  ≃-trans (letᵐ-unfold {D} {H})
+    (≃-trans (≫=-val-β {F = λ X → ⋆ ⟨ Λᵐ ⟨ H , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} vD)
+    ⟨ (λ { w ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
+        →
+          ⟨ V
+            , ⟨ ne , ⟨ c , ⟨ n , ⟨ (λ d d∈ → proj₁ (V⊆ d d∈)) , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ })
     , (λ { w ⟨ V , ⟨ ne , ⟨ c , ⟨ n , ⟨ V⊆ , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ →
-             ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ (λ d d∈ → ⟨ V⊆ d d∈ , (λ { refl → n d∈ }) ⟩) , ne ⟩ ⟩ ⟩ }) ⟩)
+             ⟨ V
+                 ,
+                   ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩
+                     ,
+                       ⟨ (λ d d∈ → ⟨ V⊆ d d∈ , (λ { refl → n d∈ }) ⟩)
+                         , ne ⟩ ⟩ ⟩ }) ⟩)
 
-{- Laws used by adequacy for Clos5 and X86 --------------------------------------------}
+{- Laws used by adequacy for Clos5 and X86 ------------------------------------}
 
 {- the call of code, on an environment and an argument that are sets of
    values, runs its body on them -}
@@ -1425,10 +1763,20 @@ callᵐ-β : ∀ {F T E}
      → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ]
          V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ E × w ∈ F (mem V) (mem U))
   → F T E ⊆ callᵐ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ T , ⟨ E , ptt ⟩ ⟩ ⟩
-callᵐ-β {F} cT cE vT@(⟨ clT , _ ⟩) vE@(⟨ clE , _ ⟩) fin w w∈ with ΛΛ-β {F} cT cE fin w w∈
+callᵐ-β {F} cT cE vT@(⟨ clT , _ ⟩) vE@(⟨ clE , _ ⟩) fin w w∈
+  with ΛΛ-β {F} cT cE fin w w∈
 ... | ⟨ U , ⟨ ⟨ V , ⟨ e∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
-  inj₂ ⟨ ⟨ ν , ⟨ ⟨ tt , tt ⟩ , (λ ()) ⟩ ⟩ , inj₂ ⟨ Val⇒Conv vT , inj₂ ⟨ Val⇒Conv vE , inj₂
-    ⟨ U , ⟨ ⟨ V , ⟨ ⟨ ⟨ e∈ , ⟨ (λ ω∈ → clT ω (V⊆ ω ω∈) refl) , (λ ω∈ → clE ω (U⊆ ω ω∈) refl) ⟩ ⟩ , (λ ()) ⟩
+  inj₂
+    ⟨ ⟨ ν , ⟨ ⟨ tt , tt ⟩ , (λ ()) ⟩ ⟩
+      , inj₂ ⟨ Val⇒Conv vT , inj₂ ⟨ Val⇒Conv vE , inj₂
+    ⟨ U
+        ,
+        ⟨ ⟨ V
+          ,
+          ⟨ ⟨ ⟨ e∈
+            ,
+              ⟨ (λ ω∈ → clT ω (V⊆ ω ω∈) refl)
+                , (λ ω∈ → clE ω (U⊆ ω ω∈) refl) ⟩ ⟩ , (λ ()) ⟩
                 , ⟨ (λ v v∈ → ⟨ V⊆ v v∈ , clT v (V⊆ v v∈) ⟩) , neV ⟩ ⟩ ⟩
           , ⟨ (λ u u∈ → ⟨ U⊆ u u∈ , clE u (U⊆ u u∈) ⟩) , neU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
 
@@ -1436,9 +1784,15 @@ pairᵐ-val : ∀ {D E}
   → Val D
   → Val E
   → Val (pairᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩)
-pairᵐ-val {D} {E} vD vE = ≫=-val {F = λ X → E ≫= λ Y → pair ⟨ X , ⟨ Y , ptt ⟩ ⟩} vD λ vX →
-  ≫=-val {F = λ Y → pair ⟨ _ , ⟨ Y , ptt ⟩ ⟩} vE λ { vY → ⟨ (λ { .ω () refl }) , ⟨ ⦅ proj₁ (proj₂ vX) , proj₁ (proj₂ vY) ⦆
-                                                         , ⟨ proj₂ (proj₂ vX) , proj₂ (proj₂ vY) ⟩ ⟩ ⟩ }
+pairᵐ-val {D} {E} vD vE =
+  ≫=-val {F = λ X → E ≫= λ Y → pair ⟨ X , ⟨ Y , ptt ⟩ ⟩} vD λ vX →
+  ≫=-val {F = λ Y → pair ⟨ _ , ⟨ Y , ptt ⟩ ⟩} vE
+    λ { vY → ⟨ (λ { .ω () refl }) , ⟨ ⦅ proj₁ (proj₂ vX) , proj₁ (proj₂ vY) ⦆
+                                                         ,
+                                                             ⟨ proj₂ (proj₂ vX)
+                                                               , proj₂
+                                                                 (proj₂
+                                                                   vY) ⟩ ⟩ ⟩ }
 
 {- the components of a pair of sets of values -}
 carᵐ-pair : ∀ {D E}
@@ -1446,14 +1800,34 @@ carᵐ-pair : ∀ {D E}
   → Val E
   → D ⊆ carᵐ ⟨ pairᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩ , ptt ⟩
 carᵐ-pair vD@(⟨ clD , _ ⟩) vE@(⟨ _ , ⟨ b , b∈ ⟩ ⟩) d d∈ =
-  inj₂ ⟨ Val⇒Conv (pairᵐ-val vD vE) , inj₂ ⟨ b , ⟨ inj₂ ⟨ Val⇒Conv vD , inj₂ ⟨ Val⇒Conv vE , ⟨ ⟨ d∈ , clD d d∈ ⟩ , ⟨ b∈ , proj₁ vE b b∈ ⟩ ⟩ ⟩ ⟩ , (λ ()) ⟩ ⟩ ⟩
+  inj₂
+    ⟨ Val⇒Conv (pairᵐ-val vD vE)
+      , inj₂
+      ⟨ b
+        ,
+          ⟨ inj₂
+            ⟨ Val⇒Conv vD
+              , inj₂
+                ⟨ Val⇒Conv vE
+                  , ⟨ ⟨ d∈ , clD d d∈ ⟩ , ⟨ b∈ , proj₁ vE b b∈ ⟩ ⟩ ⟩ ⟩
+                    , (λ ()) ⟩ ⟩ ⟩
 
 cdrᵐ-pair : ∀ {D E}
   → Val D
   → Val E
   → E ⊆ cdrᵐ ⟨ pairᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩ , ptt ⟩
 cdrᵐ-pair vD@(⟨ _ , ⟨ a , a∈ ⟩ ⟩) vE@(⟨ clE , _ ⟩) d d∈ =
-  inj₂ ⟨ Val⇒Conv (pairᵐ-val vD vE) , inj₂ ⟨ a , ⟨ inj₂ ⟨ Val⇒Conv vD , inj₂ ⟨ Val⇒Conv vE , ⟨ ⟨ a∈ , proj₁ vD a a∈ ⟩ , ⟨ d∈ , clE d d∈ ⟩ ⟩ ⟩ ⟩ , (λ ()) ⟩ ⟩ ⟩
+  inj₂
+    ⟨ Val⇒Conv (pairᵐ-val vD vE)
+      , inj₂
+      ⟨ a
+        ,
+          ⟨ inj₂
+            ⟨ Val⇒Conv vD
+              , inj₂
+                ⟨ Val⇒Conv vE
+                  , ⟨ ⟨ a∈ , proj₁ vD a a∈ ⟩ , ⟨ d∈ , clE d d∈ ⟩ ⟩ ⟩ ⟩
+                    , (λ ()) ⟩ ⟩ ⟩
 
 isinlᵐ-mono : ∀ {D D'}
   → D ⊆ D'
@@ -1463,8 +1837,11 @@ isinlᵐ-mono D⊆ = ≫=-mono D⊆ P
   P : ∀ {X X'}
     → X ⊆ X'
     → checked inj X (isinlD X) ⊆ checked inj X' (isinlD X')
-  P X⊆ = checked-mono X⊆ (λ { w (inj₁ ⟨ u , ⟨ l , e ⟩ ⟩) → inj₁ ⟨ u , ⟨ X⊆ _ l , e ⟩ ⟩
-                             ; w (inj₂ ⟨ u , ⟨ r , e ⟩ ⟩) → inj₂ ⟨ u , ⟨ X⊆ _ r , e ⟩ ⟩ })
+  P X⊆ =
+    checked-mono X⊆
+    (λ { w (inj₁ ⟨ u , ⟨ l , e ⟩ ⟩) → inj₁ ⟨ u , ⟨ X⊆ _ l , e ⟩ ⟩
+                             ; w (inj₂ ⟨ u , ⟨ r , e ⟩ ⟩)
+                                 → inj₂ ⟨ u , ⟨ X⊆ _ r , e ⟩ ⟩ })
 
 {- a let of finitely many values of its operand: its body on them -}
 letᵐ-intro : ∀ {D F V w}
@@ -1475,8 +1852,14 @@ letᵐ-intro : ∀ {D F V w}
   → w ∈ F (mem V)
   → w ∈ letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩
 letᵐ-intro {D} {F} {V} ne c n V⊆ w∈ = proj₂ (letᵐ-unfold {D} {F}) _
-  (inj₂ ⟨ ⟨ proj₁ v , ⟨ V⊆ _ (proj₂ v) , (λ e → n (subst (λ x → x ∈ mem V) e (proj₂ v))) ⟩ ⟩
-        , ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ (λ d d∈ → ⟨ V⊆ d d∈ , (λ { refl → n d∈ }) ⟩) , ne ⟩ ⟩ ⟩ ⟩)
+  (inj₂
+      ⟨ ⟨ proj₁ v
+        , ⟨ V⊆ _ (proj₂ v) , (λ e → n (subst (λ x → x ∈ mem V) e (proj₂ v))) ⟩ ⟩
+        ,
+            ⟨ V
+              ,
+                ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩
+                  , ⟨ (λ d d∈ → ⟨ V⊆ d d∈ , (λ { refl → n d∈ }) ⟩) , ne ⟩ ⟩ ⟩ ⟩)
   where v = E≢[]⇒nonempty-mem ne
 
 letᵐ-ω : ∀ {D F}
@@ -1494,7 +1877,8 @@ letᵐ-ω {D} {F} ω∈ = proj₂ (letᵐ-unfold {D} {F}) ω (inj₁ ⟨ refl , 
   → U ≈ U
   → NoErr U
   → (V ↦ (U ↦ w)) ∈ ΛΛᵐ ⟨ F , ptt ⟩
-ΛΛᵐ-entry w∈ neV cV nV neU cU nU = ⟨ ⟨ ⟨ w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ neV , cV ⟩ ⟩ , ⟨ nV , nU ⟩ ⟩
+ΛΛᵐ-entry w∈ neV cV nV neU cU nU =
+  ⟨ ⟨ ⟨ w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ neV , cV ⟩ ⟩ , ⟨ nV , nU ⟩ ⟩
 
 callᵐ-intro : ∀ {L M N V U w}
   → (V ↦ (U ↦ w)) ∈ L
@@ -1504,13 +1888,21 @@ callᵐ-intro : ∀ {L M N V U w}
   → mem U ⊆ ⌊ N ⌋
   → w ∈ callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩
 callᵐ-intro {V = V} {U} e∈ neV neU V⊆ U⊆ =
-  inj₂ ⟨ ⟨ _ , ⟨ e∈ , (λ ()) ⟩ ⟩ , inj₂ ⟨ ⟨ proj₁ v , V⊆ _ (proj₂ v) ⟩ , inj₂ ⟨ ⟨ proj₁ u , U⊆ _ (proj₂ u) ⟩
-       , inj₂ ⟨ U , ⟨ ⟨ V , ⟨ ⟨ e∈ , (λ ()) ⟩ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+  inj₂
+    ⟨ ⟨ _ , ⟨ e∈ , (λ ()) ⟩ ⟩
+      , inj₂
+      ⟨ ⟨ proj₁ v , V⊆ _ (proj₂ v) ⟩ , inj₂ ⟨ ⟨ proj₁ u , U⊆ _ (proj₂ u) ⟩
+       , inj₂
+           ⟨ U
+             ,
+               ⟨ ⟨ V , ⟨ ⟨ e∈ , (λ ()) ⟩ , ⟨ V⊆ , neV ⟩ ⟩ ⟩
+                 , ⟨ U⊆ , neU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
   where v = E≢[]⇒nonempty-mem neV
         u = E≢[]⇒nonempty-mem neU
 
 {- n binds: their operands' values, and an error in them, left to right -}
-⌊_⌋s : ∀ {n} → Results (𝒫 Value) (replicate n ■) → Results (𝒫 Value) (replicate n ■)
+⌊_⌋s : ∀ {n} → Results (𝒫 Value) (replicate n ■)
+  → Results (𝒫 Value) (replicate n ■)
 ⌊_⌋s {zero} _ = ptt
 ⌊_⌋s {suc n} ⟨ D , Ds ⟩ = ⟨ ⌊ D ⌋ , ⌊ Ds ⌋s ⟩
 
@@ -1519,7 +1911,8 @@ binds-intro : ∀ n {Ds : Results (𝒫 Value) (replicate n ■)} {K w}
   → w ∈ K ⌊ Ds ⌋s
   → w ∈ binds n Ds K
 binds-intro zero c w∈ = w∈
-binds-intro (suc n) {⟨ D , Ds ⟩} c w∈ = inj₂ ⟨ c zero , binds-intro n (λ i → c (suc i)) w∈ ⟩
+binds-intro (suc n) {⟨ D , Ds ⟩} c w∈ =
+  inj₂ ⟨ c zero , binds-intro n (λ i → c (suc i)) w∈ ⟩
 
 conv-⌊⌋s : ∀ n {Ds : Results (𝒫 Value) (replicate n ■)}
   → (∀ i → Conv (nthD Ds i))
@@ -1543,14 +1936,18 @@ errs-mono : ∀ n {Ds Es}
   → Errs n Ds
   → Errs n Es
 errs-mono (suc n) ⟨ lift D⊆ , _ ⟩ (inj₁ ω∈) = inj₁ (D⊆ ω ω∈)
-errs-mono (suc n) ⟨ lift D⊆ , s ⟩ (inj₂ ⟨ c , e ⟩) = inj₂ ⟨ Conv-mono D⊆ c , errs-mono n s e ⟩
+errs-mono (suc n) ⟨ lift D⊆ , s ⟩ (inj₂ ⟨ c , e ⟩) =
+  inj₂ ⟨ Conv-mono D⊆ c , errs-mono n s e ⟩
 
 {- the check of a single value of the wrong kind Errs -}
 bad-one : ∀ {k} u {F : 𝒫 Value → 𝒫 Value}
   → u ≢ ω
   → kind u ≢ k
   → ω ∈ (mem (u ∷ []) ≫= λ X → checked k X (F X))
-bad-one u u≢ k≢ = inj₂ ⟨ ⟨ u , ⟨ here refl , u≢ ⟩ ⟩ , inj₁ ⟨ refl , ⟨ u , ⟨ ⟨ here refl , u≢ ⟩ , k≢ ⟩ ⟩ ⟩ ⟩
+bad-one u u≢ k≢ =
+  inj₂
+  ⟨ ⟨ u , ⟨ here refl , u≢ ⟩ ⟩
+    , inj₁ ⟨ refl , ⟨ u , ⟨ ⟨ here refl , u≢ ⟩ , k≢ ⟩ ⟩ ⟩ ⟩
 
 isinlᵐ-consis : ∀ {D D'}
   → Every _~_ D D'
@@ -1561,8 +1958,10 @@ isinlᵐ-consis D~ = ≫=-consis D~ λ X~ → checked-consis X~ (K~ X~) needs ne
     → Every _~_ X X'
     → Every _~_ (isinlD X) (isinlD X')
   K~ X~ _ _ (inj₁ ⟨ _ , ⟨ _ , refl ⟩ ⟩) (inj₁ ⟨ _ , ⟨ _ , refl ⟩ ⟩) = tt
-  K~ X~ _ _ (inj₁ ⟨ _ , ⟨ u∈ , refl ⟩ ⟩) (inj₂ ⟨ _ , ⟨ v∈ , refl ⟩ ⟩) = ⊥-elim (X~ _ _ u∈ v∈)
-  K~ X~ _ _ (inj₂ ⟨ _ , ⟨ u∈ , refl ⟩ ⟩) (inj₁ ⟨ _ , ⟨ v∈ , refl ⟩ ⟩) = ⊥-elim (X~ _ _ u∈ v∈)
+  K~ X~ _ _ (inj₁ ⟨ _ , ⟨ u∈ , refl ⟩ ⟩) (inj₂ ⟨ _ , ⟨ v∈ , refl ⟩ ⟩) =
+    ⊥-elim (X~ _ _ u∈ v∈)
+  K~ X~ _ _ (inj₂ ⟨ _ , ⟨ u∈ , refl ⟩ ⟩) (inj₁ ⟨ _ , ⟨ v∈ , refl ⟩ ⟩) =
+    ⊥-elim (X~ _ _ u∈ v∈)
   K~ X~ _ _ (inj₂ ⟨ _ , ⟨ _ , refl ⟩ ⟩) (inj₂ ⟨ _ , ⟨ _ , refl ⟩ ⟩) = tt
   needs : ∀ {X} → Needs inj X (isinlD X)
   needs _ (inj₁ ⟨ u , ⟨ u∈ , refl ⟩ ⟩) = inj₂ ⟨ left u , ⟨ u∈ , refl ⟩ ⟩

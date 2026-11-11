@@ -11,7 +11,8 @@
 
 -}
 
-module Framework.Syntax.Kit {S T : Set} (V : S → T → Set) (_▷_ : S → T → S) (Tm : S → T → Set) where
+module Framework.Syntax.Kit {S T : Set} (V : S → T → Set) (_▷_ : S → T → S)
+  (Tm : S → T → Set) where
 
 record Kit : Set₁ where
   field

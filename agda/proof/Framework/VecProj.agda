@@ -36,7 +36,8 @@ module _ {A B : Set} {R : A → B → Set} where
   len-bad {n = zero} {ws = []} ne [] with () ← ne refl
   len-bad {n = suc n} {ws = []} ne [] = refl
   len-bad {n = zero} {ws = _ ∷ _} ne (_ ∷ rs) = refl
-  len-bad {n = suc n} {ws = _ ∷ _} ne (_ ∷ rs) = len-bad (λ e → ne (cong suc e)) rs
+  len-bad {n = suc n} {ws = _ ∷ _} ne (_ ∷ rs) =
+    len-bad (λ e → ne (cong suc e)) rs
 
   proj-pw : ∀ {n} (i : Fin n) {xs} {ws : Vec B n}
     → Pointwise R xs (toList ws)
@@ -49,6 +50,8 @@ module _ {A B : Set} {R : A → B → Set} where
     → Pointwise R xs (toList ws)
     → proj i xs ≡ nothing
   proj-bad zero {ws = []} ne [] = refl
-  proj-bad zero {ws = _ ∷ _} ne (r ∷ rs) rewrite len-bad (λ e → ne (cong suc e)) rs = refl
+  proj-bad zero {ws = _ ∷ _} ne (r ∷ rs) rewrite len-bad
+    (λ e → ne (cong suc e)) rs = refl
   proj-bad (suc i) {ws = []} ne [] = refl
-  proj-bad (suc i) {ws = _ ∷ _} ne (r ∷ rs) = proj-bad i (λ e → ne (cong suc e)) rs
+  proj-bad (suc i) {ws = _ ∷ _} ne (r ∷ rs) =
+    proj-bad i (λ e → ne (cong suc e)) rs

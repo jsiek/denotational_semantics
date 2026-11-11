@@ -10,12 +10,14 @@ open import Framework.abt.Var using (Var)
 -}
 module proof.Framework.Syntax.ScopeRename (Op : Set) (sig : Op → List Sig) where
 
-open import Framework.abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind; clear; nil; cons)
-  renaming (ABT to AST; Arg to Arg; Args to Args)
-open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-arg; rename-args; shift)
-open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args) public
+open import Framework.abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind;
+  clear; nil; cons) renaming (ABT to AST; Arg to Arg; Args to Args)
+open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-arg;
+  rename-args; shift)
+open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args)
+  public
 
-{- Renaming ----------------------------------------------------------------------}
+{- Renaming -------------------------------------------------------------------}
 
 Fits : ℕ → ℕ → (Var → Var) → Set
 Fits k k' r = ∀ x → x < k → r x < k'
@@ -47,7 +49,8 @@ ws-rename-arg r (bind a) h w = ws-rename-arg (ext r) a (fits-ext h) w
 ws-rename-arg r (clear a) h w = w
 
 ws-rename-args r nil h w = tt
-ws-rename-args r (cons a args) h (w , ws) = ws-rename-arg r a h w , ws-rename-args r args h ws
+ws-rename-args r (cons a args) h (w , ws) =
+  ws-rename-arg r a h w , ws-rename-args r args h ws
 
 ws-shift : ∀ {k} M
   → WS k M

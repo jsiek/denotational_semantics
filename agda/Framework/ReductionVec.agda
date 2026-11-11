@@ -13,5 +13,6 @@ open import Framework.Reduction Obs o-error using (Red; val; step-in)
 open import Data.Nat using (suc)
 open import Data.Vec using (Vec; _∷_)
 
-red-∷ : ∀ {A : Set} {n} (M : A) (Ms : Vec A n) → Red A → Red (Vec A n) → Red (Vec A (suc n))
+red-∷ : ∀ {A : Set} {n} (M : A) (Ms : Vec A n) → Red A → Red (Vec A n)
+  → Red (Vec A (suc n))
 red-∷ M Ms r rs = step-in (_∷ Ms) r (step-in (M ∷_) rs val)

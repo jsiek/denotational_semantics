@@ -17,7 +17,8 @@ open import Data.List using (List)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 
-module proof.Framework.GraphModel.SemanticsUtil (Op : Set) (sig : Op → List Sig) where
+module proof.Framework.GraphModel.SemanticsUtil (Op : Set)
+  (sig : Op → List Sig) where
 
 open import Framework.abt.AbstractBindingTree Op sig
 open import proof.Framework.GraphModel.Semantics Op sig
@@ -44,10 +45,16 @@ module Laws (C : ContinuousSemantics {Value}) where
     → nonempty E
     → Con T
     → Con E
-    → ⟦ N ⟧ (E • T • ρ) ⊆ ⋆ ⟨ ⋆ ⟨ ΛΛ ⟨ (λ X Y → ⟦ N ⟧ (Y • X • ρ)) , ptt ⟩ , ⟨ T , ptt ⟩ ⟩ , ⟨ E , ptt ⟩ ⟩
-  clos-β N {ρ} NE neT neE cT cE = ΛΛ-β {λ X Y → ⟦ N ⟧ (Y • X • ρ)} cT cE (body2-continuous N ρ NE neT neE)
+    → ⟦ N ⟧ (E • T • ρ)
+      ⊆
+      ⋆
+      ⟨ ⋆ ⟨ ΛΛ ⟨ (λ X Y → ⟦ N ⟧ (Y • X • ρ)) , ptt ⟩ , ⟨ T , ptt ⟩ ⟩
+        , ⟨ E , ptt ⟩ ⟩
+  clos-β N {ρ} NE neT neE cT cE =
+    ΛΛ-β {λ X Y → ⟦ N ⟧ (Y • X • ρ)} cT cE (body2-continuous N ρ NE neT neE)
 
 
-module GoodSemantics (P : Set) (𝕆 : DOpSig (𝒫 Value) sig) (good : ∀ op → Good P (sig op) (𝕆 op)) where
+module GoodSemantics (P : Set) (𝕆 : DOpSig (𝒫 Value) sig)
+  (good : ∀ op → Good P (sig op) (𝕆 op)) where
   open Core.GoodSemantics P 𝕆 good public
   open Laws Cont-Sem public using (let-β; clos-β)

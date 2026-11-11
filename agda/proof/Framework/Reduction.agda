@@ -26,11 +26,13 @@ module proof.Framework.Reduction (Obs : Set) (o-error : Obs) where
 
 open import Framework.Smallstep Obs
 open import proof.Framework.Smallstep Obs using (Plus; plus)
-open import proof.Framework.Simulation Obs using (FSim; Answers≺; stops; steps; stutters; runs; equivalent)
+open import proof.Framework.Simulation Obs using (FSim; Answers≺; stops; steps;
+  stutters; runs; equivalent)
 open import Framework.Reduction Obs o-error public
 
 open import Framework.abt.Sig using (Sig; ■)
-open import Framework.abt.AbstractBindingTree using (ABT; Args; nil; cons; ast; `_)
+open import Framework.abt.AbstractBindingTree using (ABT; Args; nil; cons; ast;
+  `_)
 open import Framework.ListUtil using (args→list; proj; has-length)
 import Framework.Syntax.Scope as Sc
 import proof.Framework.Syntax.Subst as Sb
@@ -44,7 +46,8 @@ import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 
 toNext-to : ∀ {A o} {r : Red A} {M}
   → toNext o r ≡ next M
@@ -57,7 +60,7 @@ val-in : ∀ {A B} {f : A → B} {r k}
   → step-in f r k ≡ k
 val-in refl = refl
 
-{- Runs ------------------------------------------------------------------------}
+{- Runs -----------------------------------------------------------------------}
 
 module _ {T : Set} (red : T → Red T) where
 
@@ -99,7 +102,8 @@ module _ {T : Set} {red : T → Red T} where
   one s = plus s ε
 
 {- g is a frame: g X reduces X first, and then continues with κ X -}
-record Frame {T U : Set} (redT : T → Red T) (redU : U → Red U) (g : T → U) : Set where
+record Frame {T U : Set} (redT : T → Red T) (redU : U → Red U)
+  (g : T → U) : Set where
   constructor frame
   field
     κ : T → Red U
@@ -145,15 +149,20 @@ frame-id {red = red} = frame (λ _ → val) (λ X → lemma (red X))
         lemma error = refl
         lemma (to _) = refl
 
-frame-∘ : ∀ {T U V : Set} {redT : T → Red T} {redU : U → Red U} {redV : V → Red V}
+frame-∘ : ∀ {T U V : Set} {redT : T → Red T} {redU : U → Red U}
+  {redV : V → Red V}
     {h : T → U} {f : U → V}
   → Frame redT redU h
   → Frame redU redV f
   → Frame redT redV (λ x → f (h x))
 frame-∘ {redT = redT} {h = h} {f = f} (frame κh eqh) (frame κf eqf) =
-  frame _ (λ X → trans (eqf _) (trans (cong (λ r → step-in f r (κf (h X))) (eqh X)) (step-in-∘ {f = f} {h = h} (redT X))))
+  frame _
+    (λ X →
+      trans (eqf _)
+      (trans (cong (λ r → step-in f r (κf (h X))) (eqh X))
+        (step-in-∘ {f = f} {h = h} (redT X))))
 
-{- Answers ---------------------------------------------------------------------}
+{- Answers --------------------------------------------------------------------}
 
 {- how a target term M' answers the reduction r of a source term M, for a
    relation R between source and target terms and a predicate Val on the
@@ -161,7 +170,8 @@ frame-∘ {redT = redT} {h = h} {f = f} (frame κh eqh) (frame κf eqf) =
 data Ans {S T : Set} (red : T → Red T) (Val : T → Set) (R : S → T → Set) (M : S)
   : Red S → T → Set where
   val : ∀ {M' V'} → Star* red M' V' → Val V' → R M V' → Ans red Val R M val M'
-  error : ∀ {M' W'} → Star* red M' W' → red W' ≡ error → Ans red Val R M error M'
+  error : ∀ {M' W'} → Star* red M' W' → red W' ≡ error
+    → Ans red Val R M error M'
   to : ∀ {M₁ M' M₁'} → Plus* red M' M₁' → R M₁ M₁' → Ans red Val R M (to M₁) M'
 
 module _ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set} where
@@ -188,7 +198,8 @@ module _ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set}
   ans-skip refl a = a
 
 {- congruence: the reduction of the subterm X of f X, in the frame g -}
-ans-in : ∀ {S S' T U : Set} {redT : T → Red T} {redU : U → Red U} {ValT : T → Set} {ValU : U → Set}
+ans-in : ∀ {S S' T U : Set} {redT : T → Red T} {redU : U → Red U}
+  {ValT : T → Set} {ValU : U → Set}
     {R : S → T → Set} {R' : S' → U → Set} {f : S → S'} {g : T → U} {X X' r k}
   → Frame redT redU g
   → (∀ {Y Y'} → R Y Y' → R' (f Y) (g Y'))
@@ -200,21 +211,24 @@ ans-in G c (error σ w) k = error (star-in G σ) (error-in G w)
 ans-in G c (val σ v m) k = ans-star (star-in G σ) (k v m)
 
 {- a result that may be missing, related pointwise -}
-ret?-ans : ∀ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set} {M mv mw X}
+ret?-ans : ∀ {S T : Set} {red : T → Red T} {Val : T → Set}
+  {R : S → T → Set} {M mv mw X}
   → M.Pointwise R mv mw
   → red X ≡ ret? mw
   → Ans red Val R M (ret? mv) X
 ret?-ans (M.just r) e = to (one e) r
 ret?-ans M.nothing e = error ε e
 
-{- The operands of tuples ------------------------------------------------------}
+{- The operands of tuples -----------------------------------------------------}
 
 {- the operands of two tuples, related pointwise -}
 data Pw {Op₁ Op₂ : Set} {sig₁ : Op₁ → List Sig} {sig₂ : Op₂ → List Sig}
   (R : ABT Op₁ sig₁ → ABT Op₂ sig₂ → Set)
-  : ∀ {n} → Args Op₁ sig₁ (replicate n ■) → Args Op₂ sig₂ (replicate n ■) → Set where
+  : ∀ {n} → Args Op₁ sig₁ (replicate n ■)
+    → Args Op₂ sig₂ (replicate n ■) → Set where
   [] : Pw R nil nil
-  _∷_ : ∀ {n M M'} {as : Args Op₁ sig₁ (replicate n ■)} {as' : Args Op₂ sig₂ (replicate n ■)}
+  _∷_ : ∀ {n M M'} {as : Args Op₁ sig₁ (replicate n ■)}
+    {as' : Args Op₂ sig₂ (replicate n ■)}
     → R M M' → Pw R as as' → Pw R (cons (ast M) as) (cons (ast M') as')
 
 module _ {Op₁ Op₂ : Set} {sig₁ : Op₁ → List Sig} {sig₂ : Op₂ → List Sig}
@@ -263,25 +277,30 @@ module _ {Op₁ Op₂ : Set} {sig₁ : Op₁ → List Sig} {sig₂ : Op₂ → L
 
 {- the operands of a tuple, each with the property P -}
 infixr 5 _∷_
-data Each {Op : Set} {sig : Op → List Sig} (P : ABT Op sig → Set) : ∀ {n} → Args Op sig (replicate n ■) → Set where
+data Each {Op : Set} {sig : Op → List Sig} (P : ABT Op sig → Set) : ∀ {n}
+  → Args Op sig (replicate n ■) → Set where
   [] : Each P nil
-  _∷_ : ∀ {n M} {as : Args Op sig (replicate n ■)} → P M → Each P as → Each P (cons (ast M) as)
+  _∷_ : ∀ {n M} {as : Args Op sig (replicate n ■)} → P M → Each P as
+    → Each P (cons (ast M) as)
 
 module _ {Op : Set} {sig : Op → List Sig} where
 
   {- a tuple has as many components as its operands -}
-  has-length-args : ∀ {n} (as : Args Op sig (replicate n ■)) → has-length n (args→list as) ≡ true
+  has-length-args : ∀ {n} (as : Args Op sig (replicate n ■))
+    → has-length n (args→list as) ≡ true
   has-length-args {zero} nil = refl
   has-length-args {suc n} (cons (ast M) as) = has-length-args as
 
   {- a component of a tuple -}
-  each-proj : ∀ {P : ABT Op sig → Set} {n m} (i : Fin n) {as : Args Op sig (replicate m ■)} {V}
+  each-proj : ∀ {P : ABT Op sig → Set} {n m} (i : Fin n)
+    {as : Args Op sig (replicate m ■)} {V}
     → Each P as
     → proj i (args→list as) ≡ just V
     → P V
   each-proj zero [] ()
   each-proj (suc i) [] ()
-  each-proj {n = suc n} zero {cons (ast M) as} (p ∷ ps) e with has-length n (args→list as)
+  each-proj {n = suc n} zero {cons (ast M) as} (p ∷ ps) e
+    with has-length n (args→list as)
   each-proj zero (p ∷ ps) refl | true = p
   each-proj zero (p ∷ ps) () | false
   each-proj (suc i) (p ∷ ps) e = each-proj i ps e
@@ -290,39 +309,53 @@ module _ {Op : Set} {sig : Op → List Sig} where
    red-args is red-cons (cons-eq: by refl) and the target's values reduce
    to val -}
 module _ {Op₁ Op₂ : Set} {sig₁ : Op₁ → List Sig} {sig₂ : Op₂ → List Sig}
-  {redT : ABT Op₂ sig₂ → Red (ABT Op₂ sig₂)} {Val : ABT Op₂ sig₂ → Set} {R : ABT Op₁ sig₁ → ABT Op₂ sig₂ → Set}
-  (redT* : ∀ {n} → Args Op₂ sig₂ (replicate n ■) → Red (Args Op₂ sig₂ (replicate n ■)))
-  (cons-eq : ∀ {n} X (as : Args Op₂ sig₂ (replicate n ■)) → redT* (cons (ast X) as) ≡ red-cons X as (redT X) (redT* as))
+  {redT : ABT Op₂ sig₂ → Red (ABT Op₂ sig₂)} {Val : ABT Op₂ sig₂ → Set}
+    {R : ABT Op₁ sig₁ → ABT Op₂ sig₂ → Set}
+  (redT* : ∀ {n} → Args Op₂ sig₂ (replicate n ■)
+      → Red (Args Op₂ sig₂ (replicate n ■)))
+  (cons-eq : ∀ {n} X (as : Args Op₂ sig₂ (replicate n ■))
+      → redT* (cons (ast X) as) ≡ red-cons X as (redT X) (redT* as))
   (val-red : ∀ {V} → Val V → redT V ≡ val) where
 
   ans-cons : ∀ {n M M' r r'} {as : Args Op₁ sig₁ (replicate n ■)} {as'}
     → Pw R as as'
     → Ans redT Val R M r M'
     → Ans redT* (Each Val) (Pw R) as r' as'
-    → Ans redT* (Each Val) (Pw R) (cons (ast M) as) (red-cons M as r r') (cons (ast M') as')
+    → Ans redT* (Each Val) (Pw R) (cons (ast M) as) (red-cons M as r r')
+      (cons (ast M') as')
   ans-cons rs a as = ans-in (frame _ (λ X → cons-eq X _)) (_∷ rs) a
-    λ v m → ans-in (frame {g = λ Xs → cons (ast _) Xs} _ (λ Xs → trans (cons-eq _ Xs) (val-in (val-red v)))) (m ∷_) as
+    λ v m →
+      ans-in
+      (frame {g = λ Xs → cons (ast _) Xs} _
+        (λ Xs → trans (cons-eq _ Xs) (val-in (val-red v)))) (m ∷_) as
       λ vs ms → val ε (v ∷ vs) (m ∷ ms)
 
 {- the operands of a context h are reduced left to right: in a frame,
    once those before them are values -}
-module _ {Op : Set} {sig : Op → List Sig} (red : ABT Op sig → Red (ABT Op sig)) (Val : ABT Op sig → Set) where
+module _ {Op : Set} {sig : Op → List Sig} (red : ABT Op sig → Red (ABT Op sig))
+  (Val : ABT Op sig → Set) where
 
   LR : ∀ {n} → (Args Op sig (replicate n ■) → ABT Op sig) → Set
   LR {zero} h = ⊤
-  LR {suc n} h = (∀ Ms → Frame red red (λ X → h (cons (ast X) Ms))) × (∀ {V} → Val V → LR (λ Ms → h (cons (ast V) Ms)))
+  LR {suc n} h =
+    (∀ Ms → Frame red red (λ X → h (cons (ast X) Ms)))
+    × (∀ {V} → Val V → LR (λ Ms → h (cons (ast V) Ms)))
 
 
 {- a context of one operand -}
-lr1 : ∀ {Op sig} {red : ABT Op sig → Red (ABT Op sig)} {Val} (h : Args Op sig (replicate 1 ■) → ABT Op sig) (κ : ABT Op sig → Red (ABT Op sig))
+lr1 : ∀ {Op sig} {red : ABT Op sig → Red (ABT Op sig)} {Val}
+  (h : Args Op sig (replicate 1 ■) → ABT Op sig)
+  (κ : ABT Op sig → Red (ABT Op sig))
   → (  ∀ X
-     → red (h (cons (ast X) nil)) ≡ step-in (λ Y → h (cons (ast Y) nil)) (red X) (κ X))
+     → red (h (cons (ast X) nil))
+       ≡ step-in (λ Y → h (cons (ast Y) nil)) (red X) (κ X))
   → LR red Val h
 lr1 h κ e = (λ { nil → frame κ e }) , λ _ → tt
 
 {- the context of all the operands -}
 lr-args : ∀ {Op sig} {red : ABT Op sig → Red (ABT Op sig)} {Val}
-    (red* : ∀ {n} → Args Op sig (replicate n ■) → Red (Args Op sig (replicate n ■)))
+    (red* : ∀ {n} → Args Op sig (replicate n ■)
+        → Red (Args Op sig (replicate n ■)))
   → (  ∀ {n} X (as : Args Op sig (replicate n ■))
      → red* (cons (ast X) as) ≡ red-cons X as (red X) (red* as))
   → (∀ {V} → Val V → red V ≡ val)
@@ -331,7 +364,9 @@ lr-args : ∀ {Op sig} {red : ABT Op sig → Red (ABT Op sig)} {Val}
   → LR red Val G
 lr-args red* ce vr {zero} F = tt
 lr-args red* ce vr {suc n} F =
-  (λ Ms → frame-∘ (frame _ (λ X → ce X Ms)) F) , λ v → lr-args red* ce vr (frame-∘ (frame _ (λ Xs → trans (ce _ Xs) (val-in (vr v)))) F)
+  (λ Ms → frame-∘ (frame _ (λ X → ce X Ms)) F) , λ v →
+    lr-args red* ce vr
+    (frame-∘ (frame _ (λ Xs → trans (ce _ Xs) (val-in (vr v)))) F)
 
 {- what a substitution may map a variable to: a variable, or a value, for
    a property Value of terms that substitution keeps -}
@@ -363,7 +398,8 @@ module VarOrValue {Op : Set} {sig : Op → List Sig} (Value : ABT Op sig → Set
     → ∀ x
     → VV (exts σ x)
   vv-exts h zero = vv-var 0
-  vv-exts {σ} h (suc x) = subst VV (sym (rename-sub suc (σ x))) (vv-sub (λ y → vv-var (suc y)) (h x))
+  vv-exts {σ} h (suc x) =
+    subst VV (sym (rename-sub suc (σ x))) (vv-sub (λ y → vv-var (suc y)) (h x))
 
   {- one value, for variable 0 -}
   vv-one : ∀ {V}
@@ -397,7 +433,7 @@ module VarOrValue {Op : Set} {sig : Op → List Sig} (Value : ABT Op sig → Set
   vvs-values [] _ = []
   vvs-values (v ∷ vs) (w , ws) = vv-value v w ∷ vvs-values vs ws
 
-{- Answers of a machine that ignore the index ------------------------------------}
+{- Answers of a machine that ignore the index ---------------------------------}
 
 module _ {S₁ : Set} {L : Machine} {R : S₁ → State L → Set} where
 
@@ -426,9 +462,10 @@ module _ {S₁ : Set} {L : Machine} {R : S₁ → State L → Set} where
   any-i (runs π fin) = runs π fin
   any-i (stutters () m)
 
-{- The end theorem -------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
-module _ {A B : Set} {obs₁ : A → Obs} {red₁ : A → Red A} {obs₂ : B → Obs} {red₂ : B → Red B}
+module _ {A B : Set} {obs₁ : A → Obs} {red₁ : A → Red A} {obs₂ : B → Obs}
+  {red₂ : B → Red B}
   {Val : B → Set} (val-red : ∀ {V} → Val V → red₂ V ≡ val)
   (R : A → B → Set) (sim : ∀ {M M'} → R M M' → Ans red₂ Val R M (red₁ M) M')
   (obs-R : ∀ {V V'} → R V V' → red₁ V ≡ val → Val V' → obs₁ V ≡ obs₂ V') where
@@ -454,14 +491,18 @@ module _ {A B : Set} {obs₁ : A → Obs} {red₁ : A → Red A} {obs₂ : B →
         → red₁ M ≡ r
         → Ans red₂ Val R M r M'
         → Answers≺ L₂ (λ _ → R) i (toNext (obs₁ M) r) M'
-      answer e (val σ v m) rewrite obs-R m e v = finish σ (cong (toNext (obs₂ _)) (val-red v))
+      answer e (val σ v m) rewrite obs-R m e v =
+        finish σ (cong (toNext (obs₂ _)) (val-red v))
       answer e (error σ w) = finish σ (cong (toNext (obs₂ _)) w)
-      answer e (to (plus s σ) m) = steps {j = 0} (plus (cong (toNext (obs₂ _)) s) (star σ)) m
+      answer e (to (plus s σ) m) =
+        steps {j = 0} (plus (cong (toNext (obs₂ _)) s) (star σ)) m
 
   red-fsim : ∀ {M M'}
     → R M M'
     → FSim (reduction obs₁ red₁ M) (reduction obs₂ red₂ M')
-  red-fsim {M' = P} m = record { match = λ _ → R ; init = 0 , m ; sim = λ m → answer P refl (sim m) }
+  red-fsim {M' = P} m =
+    record
+    { match = λ _ → R ; init = 0 , m ; sim = λ m → answer P refl (sim m) }
 
   red-equivalent : ∀ {M M'}
     → R M M'

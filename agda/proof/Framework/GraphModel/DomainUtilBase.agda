@@ -75,7 +75,8 @@ depth-⋵ : ∀ {v V}
   → v ⋵ V
   → depth v ≤ depths V
 depth-⋵ {v} {.v ∷ V} (here refl) = m≤m⊔n (depth v) (depths V)
-depth-⋵ {v} {u ∷ V} (there v∈) = ≤-trans (depth-⋵ v∈) (m≤n⊔m (depth u) (depths V))
+depth-⋵ {v} {u ∷ V} (there v∈) =
+  ≤-trans (depth-⋵ v∈) (m≤n⊔m (depth u) (depths V))
 
 {- Bnd k V says that every element of V has depth less than k -}
 Bnd : ℕ → List Value → Set
@@ -98,7 +99,7 @@ Bnd-Untag (tupT i) bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
 Bnd-Untag leftT bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
 Bnd-Untag rightT bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
 
-{- Finite sets ------------------------------------------------------------------}
+{- Finite sets ----------------------------------------------------------------}
 
 ne-⊆ : ∀ {V₁ V₂ : List Value}
   → mem V₁ ⊆ mem V₂

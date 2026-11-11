@@ -1,6 +1,7 @@
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong; cong₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong;
+  cong₂)
 open import Framework.abt.Sig using (Sig)
 open import Framework.abt.Var using (Var)
 
@@ -14,7 +15,7 @@ open import Framework.abt.AbstractBindingTree Op sig
   renaming (ABT to AST)
 open import Framework.Syntax.Rename Op sig public
 
-{- Renaming lemmas ----------------------------------------------------------------}
+{- Renaming lemmas ------------------------------------------------------------}
 
 private
   Pw : (Var → Var) → (Var → Var) → Set
@@ -44,7 +45,8 @@ rename-cong-arg eq (ast M) = cong ast (rename-cong eq M)
 rename-cong-arg eq (bind a) = cong bind (rename-cong-arg (ext-cong eq) a)
 rename-cong-arg eq (clear a) = refl
 rename-cong-args eq nil = refl
-rename-cong-args eq (cons a as) = cong₂ cons (rename-cong-arg eq a) (rename-cong-args eq as)
+rename-cong-args eq (cons a as) =
+  cong₂ cons (rename-cong-arg eq a) (rename-cong-args eq as)
 
 rename-fuse : ∀ f g M → rename f (rename g M) ≡ rename (λ x → f (g x)) M
 rename-fuse-arg : ∀ f g {b} (a : Arg b)
@@ -55,13 +57,15 @@ rename-fuse f g (` x) = refl
 rename-fuse f g (op ⦅ as ⦆) = cong (op ⦅_⦆) (rename-fuse-args f g as)
 rename-fuse-arg f g (ast M) = cong ast (rename-fuse f g M)
 rename-fuse-arg f g (bind a) =
-  cong bind (trans (rename-fuse-arg (ext f) (ext g) a) (rename-cong-arg ext-fuse a))
+  cong bind
+    (trans (rename-fuse-arg (ext f) (ext g) a) (rename-cong-arg ext-fuse a))
   where ext-fuse : Pw (λ x → ext f (ext g x)) (ext (λ x → f (g x)))
         ext-fuse zero = refl
         ext-fuse (suc x) = refl
 rename-fuse-arg f g (clear a) = refl
 rename-fuse-args f g nil = refl
-rename-fuse-args f g (cons a as) = cong₂ cons (rename-fuse-arg f g a) (rename-fuse-args f g as)
+rename-fuse-args f g (cons a as) =
+  cong₂ cons (rename-fuse-arg f g a) (rename-fuse-args f g as)
 
 rename-id : ∀ M → rename (λ x → x) M ≡ M
 rename-id-arg : ∀ {f b}
@@ -75,7 +79,9 @@ rename-id-args : ∀ {f bs}
 rename-id (` x) = refl
 rename-id (op ⦅ as ⦆) = cong (op ⦅_⦆) (rename-id-args (λ x → refl) as)
 rename-id-arg eq (ast M) = cong ast (trans (rename-cong eq M) (rename-id M))
-rename-id-arg eq (bind a) = cong bind (rename-id-arg (λ { zero → refl ; (suc x) → cong suc (eq x) }) a)
+rename-id-arg eq (bind a) =
+  cong bind (rename-id-arg (λ { zero → refl ; (suc x) → cong suc (eq x) }) a)
 rename-id-arg eq (clear a) = refl
 rename-id-args eq nil = refl
-rename-id-args eq (cons a as) = cong₂ cons (rename-id-arg eq a) (rename-id-args eq as)
+rename-id-args eq (cons a as) =
+  cong₂ cons (rename-id-arg eq a) (rename-id-args eq as)

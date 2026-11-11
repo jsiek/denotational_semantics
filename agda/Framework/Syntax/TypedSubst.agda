@@ -17,7 +17,8 @@
 open import Data.List using (List; []; _∷_)
 open import Framework.Membership using (_∋_; Z; S)
 
-module Framework.Syntax.TypedSubst {T : Set} (Tm : List T → T → Set) (`_ : ∀ {Γ A} → Γ ∋ A → Tm Γ A) where
+module Framework.Syntax.TypedSubst {T : Set} (Tm : List T → T → Set)
+  (`_ : ∀ {Γ A} → Γ ∋ A → Tm Γ A) where
 
 open import Framework.Syntax.Kit {List T} {T} _∋_ (λ Γ A → A ∷ Γ) Tm public
 
@@ -38,7 +39,8 @@ varK = record { K = _∋_ ; vr = λ x → x ; tm = `_ ; wk = S }
    variable to `V` and the others as `σ` does; `∅` is the empty substitution.
    (Their type `Sub tmK` is spelled out because `tmK` is defined below.) -}
 infixr 5 _•_
-_•_ : ∀ {Γ Δ A} → Tm Δ A → (∀ {B} → Γ ∋ B → Tm Δ B) → ∀ {B} → (A ∷ Γ) ∋ B → Tm Δ B
+_•_ : ∀ {Γ Δ A} → Tm Δ A → (∀ {B} → Γ ∋ B → Tm Δ B) → ∀ {B}
+  → (A ∷ Γ) ∋ B → Tm Δ B
 (V • σ) Z = V
 (V • σ) (S x) = σ x
 
@@ -47,7 +49,8 @@ _•_ : ∀ {Γ Δ A} → Tm Δ A → (∀ {B} → Γ ∋ B → Tm Δ B) → ∀
 
 {- Renaming and substitution: the traversal with `varK` and with `tmK`.
    The traversal is a parameter because `tmK` weakens a term by renaming it. -}
-module Substitution (trav : (𝒦 : Kit) → ∀ {Γ Δ A} → Sub 𝒦 Γ Δ → Tm Γ A → Tm Δ A) where
+module Substitution
+  (trav : (𝒦 : Kit) → ∀ {Γ Δ A} → Sub 𝒦 Γ Δ → Tm Γ A → Tm Δ A) where
 
   ren : ∀ {Γ Δ A} → (∀ {B} → Γ ∋ B → Δ ∋ B) → Tm Γ A → Tm Δ A
   ren r = trav varK r

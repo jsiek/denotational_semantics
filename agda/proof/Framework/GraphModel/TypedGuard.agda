@@ -25,11 +25,18 @@ open import Relation.Binary.PropositionalEquality using (refl)
 
 guardᵖ-good : ∀ P → Good ⊤ (■ ∷ []) (λ Ds → guardᵖ P (proj₁ Ds))
 guardᵖ-good P = mk-good
-  (λ { _ _ ⟨ lift D⊆ , _ ⟩ → lift λ { w ⟨ ⟨ d , ⟨ d∈ , p ⟩ ⟩ , w∈ ⟩ → ⟨ ⟨ d , ⟨ D⊆ d d∈ , p ⟩ ⟩ , D⊆ w w∈ ⟩ } })
+  (λ { _ _ ⟨ lift D⊆ , _ ⟩
+      → lift
+        λ { w ⟨ ⟨ d , ⟨ d∈ , p ⟩ ⟩ , w∈ ⟩
+          → ⟨ ⟨ d , ⟨ D⊆ d d∈ , p ⟩ ⟩ , D⊆ w w∈ ⟩ } })
   (λ { _ _ ⟨ lift D~ , _ ⟩ → lift λ u w u∈ w∈ → D~ u w (proj₂ u∈) (proj₂ w∈) })
   (λ { ⟨ E , _ ⟩ NE ⟨ ⟨ m , c ⟩ , _ ⟩ w ⟨ ⟨ d , ⟨ d∈ , p ⟩ ⟩ , w∈ ⟩ →
-    let ⟨ a , V⊆ ⟩ = many E NE m c (d ∷ w ∷ []) (λ { _ (here refl) → d∈ ; _ (there (here refl)) → w∈ })
-    in done (λ ρ → guardᵖ P (E ρ)) a w ⟨ ⟨ d , ⟨ V⊆ d (here refl) , p ⟩ ⟩ , V⊆ w (there (here refl)) ⟩ })
+    let ⟨ a , V⊆ ⟩ =
+         many E NE m c (d ∷ w ∷ [])
+         (λ { _ (here refl) → d∈ ; _ (there (here refl)) → w∈ })
+    in
+        done (λ ρ → guardᵖ P (E ρ)) a w
+          ⟨ ⟨ d , ⟨ V⊆ d (here refl) , p ⟩ ⟩ , V⊆ w (there (here refl)) ⟩ })
 
 guardᵖ-≃ : ∀ P {D D'}
   → D ≃ D'

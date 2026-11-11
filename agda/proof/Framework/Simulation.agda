@@ -41,7 +41,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 data Answers≺ {S₁ : Set} (L₂ : Machine) (R : ℕ → S₁ → State L₂ → Set) (i : ℕ)
   : Next S₁ → State L₂ → Set where
   stops : ∀ {o s₂} → Final L₂ s₂ o → Answers≺ L₂ R i (stop o) s₂
-  steps : ∀ {j s₁' s₂ s₂'} → Plus L₂ s₂ s₂' → R j s₁' s₂' → Answers≺ L₂ R i (next s₁') s₂
+  steps : ∀ {j s₁' s₂ s₂'} → Plus L₂ s₂ s₂' → R j s₁' s₂'
+    → Answers≺ L₂ R i (next s₁') s₂
   stutters : ∀ {j s₁' s₂} → j < i → R j s₁' s₂ → Answers≺ L₂ R i (next s₁') s₂
   runs : ∀ {o s₂ t} → Plus L₂ s₂ t → Final L₂ t o → Answers≺ L₂ R i (stop o) s₂
 
@@ -77,19 +78,23 @@ record FSim (L₁ L₂ : Machine) : Set₁ where
   field
     match : ℕ → State L₁ → State L₂ → Set
     init : Σ[ i ∈ ℕ ] match i (start L₁) (start L₂)
-    sim : ∀ {i s₁ s₂} → match i s₁ s₂ → Answers≺ L₂ match i (Machine.step L₁ s₁) s₂
+    sim : ∀ {i s₁ s₂} → match i s₁ s₂
+      → Answers≺ L₂ match i (Machine.step L₁ s₁) s₂
 
 {- simulations in which every step is matched by a target plus -}
 plus-simulation : ∀ {L₁ L₂ : Machine} (R : State L₁ → State L₂ → Set)
   → R (start L₁) (start L₂)
   → (∀ {s₁ s₂} → R s₁ s₂ → Answers L₂ R (Machine.step L₁ s₁) s₂)
   → FSim L₁ L₂
-plus-simulation R m₀ sim = record { match = λ _ → R ; init = 0 , m₀ ; sim = λ m → answers≺ {j = 0} (sim m) }
+plus-simulation R m₀ sim =
+  record
+  { match = λ _ → R ; init = 0 , m₀ ; sim = λ m → answers≺ {j = 0} (sim m) }
 
 {- simulations whose source lags i steps behind a state related (R) to the
    target's: the source's steps until then are matched by none (stutter),
    and a related state's are answered by sim -}
-record Lag (L₁ : Machine) {S₂ : Set} (R : State L₁ → S₂ → Set) (i : ℕ) (s₁ : State L₁) (s₂ : S₂) : Set where
+record Lag (L₁ : Machine) {S₂ : Set} (R : State L₁ → S₂ → Set) (i : ℕ)
+  (s₁ : State L₁) (s₂ : S₂) : Set where
   constructor lag
   field
     {t} : State L₁
@@ -121,9 +126,12 @@ module _ {L₁ : Machine} {S₂ : Set} {R : State L₁ → S₂ → Set} where
     → Σ[ i ∈ ℕ ] Lag L₁ R i s₁' s₂ → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
   lag-step st (i , lag τ m) = suc i , lag (suc st τ) m
 
-lag-fsim : ∀ {L₁ L₂ : Machine} {R : State L₁ → State L₂ → Set} → Σ[ i ∈ ℕ ] Lag L₁ R i (start L₁) (start L₂)
-  → (∀ {i s₁ s₂} → R s₁ s₂ → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ s₁) s₂) → FSim L₁ L₂
-lag-fsim {L₁} {L₂} {R} m₀ sim = record { match = Lag L₁ R ; init = m₀ ; sim = go }
+lag-fsim : ∀ {L₁ L₂ : Machine} {R : State L₁ → State L₂ → Set}
+  → Σ[ i ∈ ℕ ] Lag L₁ R i (start L₁) (start L₂)
+  → (∀ {i s₁ s₂} → R s₁ s₂ → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ s₁) s₂)
+    → FSim L₁ L₂
+lag-fsim {L₁} {L₂} {R} m₀ sim =
+  record { match = Lag L₁ R ; init = m₀ ; sim = go }
   where
   go : ∀ {i s₁ s₂}
     → Lag L₁ R i s₁ s₂
@@ -142,7 +150,11 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
   sim-step : ∀ {i s₁ s₁' s₂}
     → match i s₁ s₂
     → step s₁ ≡ next s₁'
-    → Σ[ j ∈ ℕ ] ((Σ[ s₂' ∈ State L₂ ] Plus L₂ s₂ s₂' × match j s₁' s₂') ⊎ (j < i × match j s₁' s₂))
+    → Σ[ j
+      ∈ ℕ
+      ]
+      ((Σ[ s₂' ∈ State L₂ ] Plus L₂ s₂ s₂' × match j s₁' s₂')
+        ⊎ (j < i × match j s₁' s₂))
   sim-step {s₁ = s₁} m st with step s₁ | sim m
   sim-step m refl | next _ | steps π m' = _ , inj₁ (_ , π , m')
   sim-step m refl | next _ | stutters lt m' = _ , inj₂ (lt , m')
@@ -207,7 +219,8 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
     → Terminates L₂ o
     → Terminates L₁ o
   backward-terminates (t , τ , fin) with star→steps τ
-  ... | n , τn = back fin n (proj₁ init) (×-wellFounded <-wellFounded <-wellFounded _)
+  ... | n , τn =
+    back fin n (proj₁ init) (×-wellFounded <-wellFounded <-wellFounded _)
                    (proj₂ init) τn
 
   {- the end theorem: a forward simulation between machines (deterministic
@@ -217,9 +230,11 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
   equivalent = record
     { terminates = λ o → forward-terminates , backward-terminates
     ; diverges = (λ d → never-final-diverges λ τ fin →
-                          diverges-not-terminates d (backward-terminates (_ , τ , fin)))
+                          diverges-not-terminates d
+                            (backward-terminates (_ , τ , fin)))
                , (λ d → never-final-diverges λ σ fin →
-                          diverges-not-terminates d (forward-terminates (_ , σ , fin)))
+                          diverges-not-terminates d
+                            (forward-terminates (_ , σ , fin)))
     }
 
 {- equivalence composes -}

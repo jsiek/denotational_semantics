@@ -21,7 +21,8 @@ open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Env
 open import Framework.abt.Sig
 
-module proof.Framework.GraphModel.SemanticsUses (Op : Set) (sig : Op → List Sig) where
+module proof.Framework.GraphModel.SemanticsUses (Op : Set)
+  (sig : Op → List Sig) where
 
 open import Framework.abt.AbstractBindingTree Op sig
 open import proof.Framework.Syntax.Uses Op sig
@@ -41,7 +42,8 @@ module _ {A : Set} {{S : Semantics {A}}} where
     → results-rel-pres _⊆_ bs (⟦ as ⟧₊ ρ) (⟦ as ⟧₊ ρ′)
 
   ⟦⟧-uses (` x) r = r x refl
-  ⟦⟧-uses (op ⦅ as ⦆) {ρ} {ρ′} r = lower (mono-op op (⟦ as ⟧₊ ρ) (⟦ as ⟧₊ ρ′) (⟦⟧-uses-args as r))
+  ⟦⟧-uses (op ⦅ as ⦆) {ρ} {ρ′} r =
+    lower (mono-op op (⟦ as ⟧₊ ρ) (⟦ as ⟧₊ ρ′) (⟦⟧-uses-args as r))
 
   ⟦⟧-uses-arg (ast M) r = lift (⟦⟧-uses M r)
   ⟦⟧-uses-arg (bind a) r X Y X⊆ = ⟦⟧-uses-arg a r′
@@ -55,19 +57,23 @@ module _ {A : Set} {{S : Semantics {A}}} where
 
   ⟦⟧-uses-args nil r = ptt
   ⟦⟧-uses-args (cons a as) r =
-    ⟨ ⟦⟧-uses-arg a (λ x u → r x (inj₁ u)) , ⟦⟧-uses-args as (λ x u → r x (inj₂ u)) ⟩
+    ⟨ ⟦⟧-uses-arg a (λ x u → r x (inj₁ u))
+        , ⟦⟧-uses-args as (λ x u → r x (inj₂ u)) ⟩
 
   {- a term that uses no variables means the same in every environment -}
   ⟦⟧-closed : ∀ (M : ABT)
     → (∀ x → Uses x M → ⊥)
     → ∀ (ρ ρ′ : Env A)
     → ⟦ M ⟧ ρ ≃ ⟦ M ⟧ ρ′
-  ⟦⟧-closed M none ρ ρ′ = ⟨ ⟦⟧-uses M (λ x u → ⊥-elim (none x u)) , ⟦⟧-uses M (λ x u → ⊥-elim (none x u)) ⟩
+  ⟦⟧-closed M none ρ ρ′ =
+    ⟨ ⟦⟧-uses M (λ x u → ⊥-elim (none x u))
+      , ⟦⟧-uses M (λ x u → ⊥-elim (none x u)) ⟩
 
   {- so does a term with no free variables -}
   ⟦⟧-closed₀ : ∀ (M : ABT)
     → bound M ≡ 0
     → ∀ (ρ ρ′ : Env A)
     → ⟦ M ⟧ ρ ≃ ⟦ M ⟧ ρ′
-  ⟦⟧-closed₀ M c = ⟦⟧-closed M (λ x u → n≮0 (subst (x Data.Nat.<_) c (uses-bound x M u)))
+  ⟦⟧-closed₀ M c =
+    ⟦⟧-closed M (λ x u → n≮0 (subst (x Data.Nat.<_) c (uses-bound x M u)))
     where import Data.Nat

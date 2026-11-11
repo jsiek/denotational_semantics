@@ -1,7 +1,8 @@
 open import Data.List using (List)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (Σ-syntax; _×_; _,_; proj₁; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; subst₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
+  subst₂)
 open import Framework.abt.Sig using (Sig)
 
 {-
@@ -13,10 +14,13 @@ open import Framework.abt.Sig using (Sig)
   under every related substitution (≈-subst). The substitutions may be
   restricted by a predicate Ok that holds for renamings.
 -}
-module proof.Framework.Syntax.SubstRel (Op₁ : Set) (sig₁ : Op₁ → List Sig) (Op₂ : Set) (sig₂ : Op₂ → List Sig) where
+module proof.Framework.Syntax.SubstRel (Op₁ : Set) (sig₁ : Op₁ → List Sig)
+  (Op₂ : Set) (sig₂ : Op₂ → List Sig) where
 
-open import Framework.abt.AbstractBindingTree Op₁ sig₁ using () renaming (ABT to AST₁; `_ to `₁_)
-open import Framework.abt.AbstractBindingTree Op₂ sig₂ using () renaming (ABT to AST₂; `_ to `₂_)
+open import Framework.abt.AbstractBindingTree Op₁ sig₁ using () renaming (ABT to
+  AST₁; `_ to `₁_)
+open import Framework.abt.AbstractBindingTree Op₂ sig₂ using () renaming (ABT to
+  AST₂; `_ to `₂_)
 import proof.Framework.Syntax.Subst Op₁ sig₁ as S₁
 import proof.Framework.Syntax.Subst Op₂ sig₂ as S₂
 import Framework.Syntax.Rename Op₁ sig₁ as R₁
@@ -27,7 +31,8 @@ module Closure (_≈_ : AST₁ → AST₂ → Set) (var≈ : ∀ {x} → (`₁ x
   (ok-var : ∀ {σ σ'} → (∀ x → Σ[ y ∈ ℕ ] σ x ≡ `₁ y × σ' x ≡ `₂ y) → Ok σ σ')
   (ok-exts : ∀ {σ σ'} → Ok σ σ' → Ok (S₁.exts σ) (S₂.exts σ'))
   (sub≈ : ∀ (P : S₁.Subst → S₂.Subst → Set)
-          → (∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x) → (∀ {σ σ'} → P σ σ' → Ok σ σ')
+          → (∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x)
+            → (∀ {σ σ'} → P σ σ' → Ok σ σ')
           → (∀ {σ σ'} → P σ σ' → P (S₁.exts σ) (S₂.exts σ'))
           → ∀ {σ σ' M M'} → P σ σ' → M ≈ M' → S₁.sub σ M ≈ S₂.sub σ' M') where
 
@@ -64,7 +69,8 @@ module Closure (_≈_ : AST₁ → AST₂ → Set) (var≈ : ∀ {x} → (`₁ x
   sub-exts : ∀ {σ σ'}
     → SubP σ σ'
     → SubP (S₁.exts σ) (S₂.exts σ')
-  sub-exts (p , ok) = (λ { zero → var≈ ; (suc x) → ≈-rename suc (p x) }) , ok-exts ok
+  sub-exts (p , ok) =
+    (λ { zero → var≈ ; (suc x) → ≈-rename suc (p x) }) , ok-exts ok
 
   ≈-subst : ∀ {σ σ' M M'}
     → SubP σ σ'

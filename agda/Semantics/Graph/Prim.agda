@@ -32,4 +32,5 @@ out (bool false) = right ⟨⟩
 {- a primitive applies to the integers in its operands -}
 primD : Prim → DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 primD p ⟨ D , ⟨ E , _ ⟩ ⟩ v =
-  Σ[ n ∈ ℤ ] Σ[ m ∈ ℤ ] const {Int} n ∈ D × const {Int} m ∈ E × v ≡ out (δ p n m)
+  Σ[ n ∈ ℤ ] Σ[ m ∈ ℤ ] const {Int} n ∈ D × const {Int} m ∈ E × v
+    ≡ out (δ p n m)

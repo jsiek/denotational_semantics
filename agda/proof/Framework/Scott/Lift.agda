@@ -24,7 +24,8 @@ open import Framework.Scott.Base pt fe
 open import Framework.Scott.Lift pt fe pe
 open import Lifting.Miscelanea 𝓤₀ using (value-is-constant)
 
-module _ (A : DCPO₁) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓛ᵈ A ⟩) (δ : is-Directed (𝓛ᵈ A) α) where
+module _ (A : DCPO₁) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓛ᵈ A ⟩)
+  (δ : is-Directed (𝓛ᵈ A) α) where
 
  private
   s : ⟨ 𝓛ᵈ A ⟩
@@ -45,7 +46,8 @@ module _ (A : DCPO₁) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓛ᵈ A ⟩) (δ : is
   where
    ub : (j : J) → β j ⊑⟨ A ⟩ pr₁ (pr₂ s) p
    ub (i , pᵢ) = transport (λ - → β (i , pᵢ) ⊑⟨ A ⟩ -)
-                   (value-is-constant s (pr₁ (∐-is-upperbound (𝓛ᵈ A) {I} {α} δ i) pᵢ) p)
+                   (value-is-constant s
+                       (pr₁ (∐-is-upperbound (𝓛ᵈ A) {I} {α} δ i) pᵢ) p)
                    (pr₂ (∐-is-upperbound (𝓛ᵈ A) {I} {α} δ i) pᵢ)
    lub : (u : ⟨ A ⟩)
      → ((j : J) → β j ⊑⟨ A ⟩ u)
@@ -56,7 +58,9 @@ module _ (A : DCPO₁) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓛ᵈ A ⟩) (δ : is
      u' = pr₁ s , (λ _ → u) , being-defined-is-prop s
      below : s ⊑⟨ 𝓛ᵈ A ⟩ u'
      below = ∐-is-lowerbound-of-upperbounds (𝓛ᵈ A) {I} {α} δ u'
-               (λ i → (λ pᵢ → pr₁ (∐-is-upperbound (𝓛ᵈ A) {I} {α} δ i) pᵢ) , (λ pᵢ → h (i , pᵢ)))
+               (λ i →
+                   (λ pᵢ → pr₁ (∐-is-upperbound (𝓛ᵈ A) {I} {α} δ i) pᵢ)
+                   , (λ pᵢ → h (i , pᵢ)))
 
  {- the values of the defined elements are directed, when one is -}
  lift-values-directed : ∥ J ∥
@@ -64,13 +68,15 @@ module _ (A : DCPO₁) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓛ᵈ A ⟩) (δ : is
  lift-values-directed q = q , semi
   where
    semi : is-semidirected (underlying-order A) β
-   semi (i , pᵢ) (j , pⱼ) = ∥∥-functor step (semidirected-if-Directed (𝓛ᵈ A) α δ i j)
+   semi (i , pᵢ) (j , pⱼ) =
+     ∥∥-functor step (semidirected-if-Directed (𝓛ᵈ A) α δ i j)
     where
      step : (Σ k ꞉ I , (α i ⊑⟨ 𝓛ᵈ A ⟩ α k) × (α j ⊑⟨ 𝓛ᵈ A ⟩ α k))
        → Σ m ꞉ J , (β (i , pᵢ) ⊑⟨ A ⟩ β m) × (β (j , pⱼ) ⊑⟨ A ⟩ β m)
      step (k , (f , g) , (f' , g')) =
       (k , f pᵢ) , g pᵢ ,
-      transport (λ - → β (j , pⱼ) ⊑⟨ A ⟩ pr₁ (pr₂ (α k)) -) (being-defined-is-prop (α k) (f' pⱼ) (f pᵢ)) (g' pⱼ)
+      transport (λ - → β (j , pⱼ) ⊑⟨ A ⟩ pr₁ (pr₂ (α k)) -)
+        (being-defined-is-prop (α k) (f' pⱼ) (f pᵢ)) (g' pⱼ)
 
  {- so a property closed under directed sups in A holds of the value of
     the sup when it holds of the values of the elements -}

@@ -16,12 +16,16 @@ open import Data.Fin using (Fin; zero; suc)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Level using (_⊔_)
 
-data Thin {a b} {A : Set a} {B : Set b} (R : A → B → Set) : ∀ {n} (fl : Vec Bool n) → Vec A n → Vec B (count fl) → Set (a ⊔ b) where
+data Thin {a b} {A : Set a} {B : Set b} (R : A → B → Set) : ∀ {n}
+  (fl : Vec Bool n) → Vec A n → Vec B (count fl) → Set (a ⊔ b) where
   [] : Thin R [] [] []
-  keep : ∀ {n fl x y xs ys} → R x y → Thin R {n} fl xs ys → Thin R (true ∷ fl) (x ∷ xs) (y ∷ ys)
-  drop : ∀ {n fl x xs ys} → Thin R {n} fl xs ys → Thin R (false ∷ fl) (x ∷ xs) ys
+  keep : ∀ {n fl x y xs ys} → R x y → Thin R {n} fl xs ys
+    → Thin R (true ∷ fl) (x ∷ xs) (y ∷ ys)
+  drop : ∀ {n fl x xs ys} → Thin R {n} fl xs ys
+    → Thin R (false ∷ fl) (x ∷ xs) ys
 
-thin-lookup : ∀ {a b} {A : Set a} {B : Set b} {R : A → B → Set} {n fl x y} {xs : Vec A n} {ys}
+thin-lookup : ∀ {a b} {A : Set a} {B : Set b} {R : A → B → Set} {n fl x y}
+  {xs : Vec A n} {ys}
   → R x y
   → Thin R fl xs ys
   → ∀ i
@@ -29,7 +33,8 @@ thin-lookup : ∀ {a b} {A : Set a} {B : Set b} {R : A → B → Set} {n fl x y}
   → R (lookup (x ∷ xs) i) (lookup (y ∷ ys) (squeeze fl i))
 thin-lookup r th zero _ = r
 thin-lookup r (keep r' th) (suc zero) _ = r'
-thin-lookup {fl = true ∷ fl} r (keep r' th) (suc (suc i)) k with squeeze fl (suc i) | thin-lookup r th (suc i) k
+thin-lookup {fl = true ∷ fl} r (keep r' th) (suc (suc i)) k
+  with squeeze fl (suc i) | thin-lookup r th (suc i) k
 ... | zero | t = t
 ... | suc j | t = t
 thin-lookup r (drop th) (suc (suc i)) k = thin-lookup r th (suc i) k

@@ -27,7 +27,8 @@ cdr-witness : ∀ {L} FV
   → mem FV ⊆ cdr ⟨ L , ptt ⟩
   → Σ[ P ∈ List Value ] mem P ⊆ L × mem FV ⊆ cdr ⟨ mem P , ptt ⟩
 cdr-witness [] _ = ⟨ [] , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩
-cdr-witness (fv ∷ FV) FV⊆ with FV⊆ fv (here refl) | cdr-witness FV (λ d d∈ → FV⊆ d (there d∈))
+cdr-witness (fv ∷ FV) FV⊆
+  with FV⊆ fv (here refl) | cdr-witness FV (λ d d∈ → FV⊆ d (there d∈))
 ... | ⟨ u , u∈ ⟩ | ⟨ P , ⟨ P⊆ , FV⊆P ⟩ ⟩ = ⟨ ⦅ u , fv ⦆ ∷ P , ⟨ P⊆′ , FV⊆′ ⟩ ⟩
   where
   P⊆′ : mem (⦅ u , fv ⦆ ∷ P) ⊆ _

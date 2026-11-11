@@ -15,7 +15,8 @@ module proof.Framework.Syntax.Scope (Op : Set) (sig : Op → List Sig) where
 open import Framework.abt.AbstractBindingTree Op sig
   renaming (ABT to AST)
 open import Framework.Syntax.Scope Op sig public
-open import proof.Framework.Syntax.Uses Op sig using (Uses; UsesArg; UsesArgs; bound; bound-arg; bound-args)
+open import proof.Framework.Syntax.Uses Op sig using (Uses; UsesArg; UsesArgs;
+  bound; bound-arg; bound-args)
 
 ws-uses : ∀ {k x} M
   → WS k M
@@ -56,4 +57,5 @@ ws-bound-arg (ast M) w = ws-bound M w
 ws-bound-arg {k = k} (bind a) w = ∸-monoˡ-≤ 1 (ws-bound-arg a w)
 ws-bound-arg (clear a) w = z≤n
 ws-bound-args nil w = z≤n
-ws-bound-args (cons a args) (w , ws) = ⊔-lub (ws-bound-arg a w) (ws-bound-args args ws)
+ws-bound-args (cons a args) (w , ws) =
+  ⊔-lub (ws-bound-arg a w) (ws-bound-args args ws)

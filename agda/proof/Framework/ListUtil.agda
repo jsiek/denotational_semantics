@@ -10,17 +10,20 @@ open import Framework.ListUtil public
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; []; _∷_; _∷ʳ_; _++_; [_]; length; replicate; reverse)
+open import Data.List using (List; []; _∷_; _∷ʳ_; _++_; [_]; length; replicate;
+  reverse)
 import Data.List
 import Data.Maybe
-open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; reverse-involutive; length-reverse; reverse-map)
+open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse;
+  reverse-involutive; length-reverse; reverse-map)
 open import Data.List.Relation.Unary.Any using (Any; here; there)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
 open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; s≤s; z≤n)
 open import Data.Product using (Σ-syntax; _×_; _,_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong)
 open import Framework.abt.Sig using (■)
 open import Framework.abt.AbstractBindingTree using (ABT; Args)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil)
@@ -89,15 +92,20 @@ reverse-‼-split vs k {b} e with ‼-split (reverse vs) k e
   , trans (sym (reverse-involutive vs))
       (trans (cong reverse e')
         (trans (reverse-++ xs (b ∷ ys))
-          (trans (cong (_++ reverse xs) (unfold-reverse b ys)) (++-assoc (reverse ys) [ b ] (reverse xs)))))
+          (trans (cong (_++ reverse xs) (unfold-reverse b ys))
+              (++-assoc (reverse ys) [ b ] (reverse xs)))))
   , length-reverse xs
 
-reverse-‼-suffix : ∀ (xs : List A) b ys → reverse (xs ++ b ∷ ys) ‼ length ys ≡ just b
+reverse-‼-suffix : ∀ (xs : List A) b ys
+  → reverse (xs ++ b ∷ ys) ‼ length ys ≡ just b
 reverse-‼-suffix xs b ys =
   trans (cong (_‼ length ys)
           (trans (reverse-++ xs (b ∷ ys))
-            (trans (cong (_++ reverse xs) (unfold-reverse b ys)) (++-assoc (reverse ys) [ b ] (reverse xs)))))
-        (trans (cong (λ m → (reverse ys ++ b ∷ reverse xs) ‼ m) (sym (length-reverse ys))) (‼-++ (reverse ys)))
+            (trans (cong (_++ reverse xs) (unfold-reverse b ys))
+                (++-assoc (reverse ys) [ b ] (reverse xs)))))
+        (trans
+            (cong (λ m → (reverse ys ++ b ∷ reverse xs) ‼ m)
+              (sym (length-reverse ys))) (‼-++ (reverse ys)))
 
 length-snoc : ∀ (vs : List A) v → length (vs ∷ʳ v) ≡ suc (length vs)
 length-snoc [] v = refl
@@ -134,21 +142,25 @@ module _ {R : A → B → Set} where
 
 
 {- projecting from a mapped list -}
-has-length-map : ∀ (f : A → B) n (vs : List A) → has-length n (Data.List.map f vs) ≡ has-length n vs
+has-length-map : ∀ (f : A → B) n (vs : List A)
+  → has-length n (Data.List.map f vs) ≡ has-length n vs
 has-length-map f zero [] = refl
 has-length-map f zero (_ ∷ _) = refl
 has-length-map f (suc n) [] = refl
 has-length-map f (suc n) (v ∷ vs) = has-length-map f n vs
 
-proj-map : ∀ (f : A → B) {n} (i : Fin n) (vs : List A) → proj i (Data.List.map f vs) ≡ Data.Maybe.map f (proj i vs)
+proj-map : ∀ (f : A → B) {n} (i : Fin n) (vs : List A)
+  → proj i (Data.List.map f vs) ≡ Data.Maybe.map f (proj i vs)
 proj-map f zero [] = refl
 proj-map f (suc i) [] = refl
 proj-map f (suc i) (v ∷ vs) = proj-map f i vs
-proj-map f {suc n} zero (v ∷ vs) rewrite has-length-map f n vs with has-length n vs
+proj-map f {suc n} zero (v ∷ vs) rewrite has-length-map f n vs
+  with has-length n vs
 ... | true = refl
 ... | false = refl
 
-‼-map : ∀ (f : A → B) (xs : List A) k → Data.List.map f xs ‼ k ≡ Data.Maybe.map f (xs ‼ k)
+‼-map : ∀ (f : A → B) (xs : List A) k
+  → Data.List.map f xs ‼ k ≡ Data.Maybe.map f (xs ‼ k)
 ‼-map f [] k = refl
 ‼-map f (x ∷ xs) zero = refl
 ‼-map f (x ∷ xs) (suc k) = ‼-map f xs k
@@ -156,7 +168,8 @@ proj-map f {suc n} zero (v ∷ vs) rewrite has-length-map f n vs with has-length
 {- element k of the reverse of a mapped list (a table of definitions) -}
 reverse-map-‼ : ∀ (f : A → B) (xs : List A) k
   → reverse (Data.List.map f xs) ‼ k ≡ Data.Maybe.map f (reverse xs ‼ k)
-reverse-map-‼ f xs k = trans (cong (_‼ k) (sym (reverse-map f xs))) (‼-map f (reverse xs) k)
+reverse-map-‼ f xs k =
+  trans (cong (_‼ k) (sym (reverse-map f xs))) (‼-map f (reverse xs) k)
 
 ‼-any : ∀ (xs : List A) k {x}
   → xs ‼ k ≡ just x
@@ -172,4 +185,5 @@ args→list-hom : ∀ {Op sig Op' sig'} (f : ABT Op sig → ABT Op' sig')
   → ∀ {n} (as : Args Op sig (replicate n ■))
   → args→list (g as) ≡ Data.List.map f (args→list as)
 args→list-hom f g cons {zero} Nil = refl
-args→list-hom f g cons {suc n} (M ,, as) rewrite cons M as = cong (f M ∷_) (args→list-hom f g cons as)
+args→list-hom f g cons {suc n} (M ,, as) rewrite cons M as =
+  cong (f M ∷_) (args→list-hom f g cons as)

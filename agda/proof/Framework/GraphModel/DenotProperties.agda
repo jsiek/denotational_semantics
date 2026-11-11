@@ -25,9 +25,11 @@ Every-⊆ : ∀ {T R A B U V}
   → Every R U V
 Every-⊆ A~B U⊆A V⊆B a b a∈U b∈V = A~B a b (U⊆A a a∈U) (V⊆B b b∈V)
 
-consistent : ∀ {A : Set} (consistent : A → A → Set) bs b → DFun (𝒫 A) bs b → Set₁
+consistent : ∀ {A : Set} (consistent : A → A → Set) bs b
+  → DFun (𝒫 A) bs b → Set₁
 consistent consistent bs b 𝒻 = fun-rel-pres (Every consistent) bs b 𝒻 𝒻
 
-𝕆-consistent : ∀ {A : Set} (consistent : A → A → Set) {Op} sig → DOpSig {Op = Op} (𝒫 A) sig → Set₁
+𝕆-consistent : ∀ {A : Set} (consistent : A → A → Set) {Op} sig
+  → DOpSig {Op = Op} (𝒫 A) sig → Set₁
 𝕆-consistent consistent sig 𝕆 = opsig-rel-pres (Every consistent) sig 𝕆 𝕆
 

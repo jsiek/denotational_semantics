@@ -33,9 +33,11 @@ module _ (T : 𝓤₀ ̇ ) (T-is-set : is-set T) (G : T → DCPO₁) where
    → {I : 𝓤₀ ̇ } (α : I → ⟨ Σᵈ T T-is-set G ⟩)
    → (δ : is-Directed (Σᵈ T T-is-set G) α)
    → ((i : I) → Q (pr₁ (α i)) (pr₂ (α i)))
-   → Q (pr₁ (∐ (Σᵈ T T-is-set G) {I} {α} δ)) (pr₂ (∐ (Σᵈ T T-is-set G) {I} {α} δ))
+   → Q (pr₁ (∐ (Σᵈ T T-is-set G) {I} {α} δ))
+     (pr₂ (∐ (Σᵈ T T-is-set G) {I} {α} δ))
  Σ-sup-ind Q Q-sup α δ h =
-  Q-sup (tag T T-is-set G α δ) (in-summand T T-is-set G α δ) (in-summand-is-directed T T-is-set G α δ)
+  Q-sup (tag T T-is-set G α δ) (in-summand T T-is-set G α δ)
+    (in-summand-is-directed T T-is-set G α δ)
     (λ i → tr-Q (tag-eq T T-is-set G α δ i) (h i))
   where
    tr-Q : {s t : T}

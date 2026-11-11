@@ -27,6 +27,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; subst)
 ℬ B k _ _ = False
 
 {- component i of a tuple of n results -}
-nthD : ∀ {n}{ℓ}{A : Set ℓ} → Results A (replicate n ■) → (i : Fin n) → Result A ■
+nthD : ∀ {n}{ℓ}{A : Set ℓ} → Results A (replicate n ■) → (i : Fin n)
+  → Result A ■
 nthD {.(suc _)} ⟨ D , Ds ⟩ zero = D
 nthD {.(suc _)} ⟨ D , Ds ⟩ (suc i) = nthD Ds i
