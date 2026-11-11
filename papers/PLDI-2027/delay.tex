@@ -380,8 +380,10 @@ the lemma applied to the one-element list $[c]$ gives
 $\den{M} \ALR [c]$, and clause~1 gives $c \in \den{M}$. If
 $\den{\pass{split}(M)}$ contains an element $v$, the lemma applied
 to $[v]$ and clause~2 show that $\den{M}$ is nonempty. Preservation
-follows from the relation $\sqsubseteq$ of
-Figure~\ref{fig:preserve}. For a constant, $c \sqsubseteq D'$ means
+follows in the same way from the routine induction on $M$ mentioned
+above, which shows that if $v \in \den{M}\rho$ then
+$v \sqsubseteq \den{\pass{split}(M)}\rho'$, for environments related
+pointwise by ${\sqsubseteq}$. For a constant, $c \sqsubseteq D'$ means
 $c \in D'$, and $v \sqsubseteq D'$ implies $D' \neq \emptyset$.
 
 \subsection{Proof of Compiler Correctness with Scott Domains}
