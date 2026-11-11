@@ -178,8 +178,8 @@ Appendix~\ref{app:cfg} into
 The first and fourth instructions push 5 and then 4, and the seventh,
 $\kw{movq}\;\%\kw{rax}, 0$, pops both slots and pushes 3, so the frame goes from
 $5, 4$ to $3$. Writing a slot also closes the open closure. The type of an open closure records the slot it
-came from, and a slot write may pop or replace that slot, so the slot rule of
-the typing of destinations (Appendix~\ref{app:instr}) resets the open closure
+came from, and a slot write may pop or replace that slot, so the rule
+\rulename{dst-slot} (Appendix~\ref{app:instr}) resets the open closure
 to $\cdot$, and $\mathit{put}$ closes it by setting it to $\mathsf{none}$. The
 instructions other than $\kw{callq}$ update the state as $\mathit{instr}$
 specifies.

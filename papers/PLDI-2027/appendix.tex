@@ -163,7 +163,7 @@ Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
   \qquad
   \dfrac{c \text{ a constant of base type } B}{\Gamma \vdash c : B}
   \\[14pt]
-  \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n)}
+  \dfrac{\Gamma \vdash M_i : A_i \quad 1 \leq i \leq n}
         {\Gamma \vdash \kw{tuple}\;(M_1, \ldots, M_n) : \kw{tup}(A_1, \ldots, A_n)}
   \qquad
   \dfrac{\Gamma \vdash M : \kw{tup}(A_1, \ldots, A_n) \quad 1 \leq i \leq n}
@@ -197,12 +197,12 @@ A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
 its captured values.
 \defhead{Typing of closures}{\Gamma \vdash M : A}
 \[
-  \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
+  \dfrac{\Gamma \vdash M_i : A_i \quad 1 \leq i \leq n \qquad
          x_1{:}A_1, \ldots, x_n{:}A_n, y{:}A \vdash N : C}
         {\Gamma \vdash \kw{clos}\;(\vec{x}, y.\,N)\;\vec{M} : A \rightarrow C}\;\text{(Clos)}
 \]
 \[
-  \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
+  \dfrac{\Gamma \vdash M_i : A_i \quad 1 \leq i \leq n \qquad
          z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
         {\Gamma \vdash \kw{clos}\;(z, y.\,N)\;\vec{M} : A \rightarrow C}\;\text{(EnvClos)}
 \]
@@ -263,8 +263,8 @@ $\Sigma; \Gamma \vdash M : A$. The other forms are typed as in PairClos.
 \[
   \dfrac{k < m}{\Sigma; \Gamma \vdash f_k : \kw{code}(\Delta_k; A_k \rightarrow C_k)}
   \qquad
-  \dfrac{\Sigma; z{:}\kw{tup}(\Delta_k), y{:}A_k \vdash N_k : C_k \ (k < m)
-         \quad \Sigma; \emptyset \vdash M : A}
+  \dfrac{\Sigma; z{:}\kw{tup}(\Delta_k), y{:}A_k \vdash N_k : C_k \quad k < m
+         \qquad \Sigma; \emptyset \vdash M : A}
         {\vdash (d_0, \ldots, d_{m-1};\; M) : A}
 \]
 where $d_k = \kw{code}\;(z, y.\,N_k)$. A term means a set given a table $T$ that gives each definition its
@@ -308,8 +308,8 @@ in Mon, over slots.
         {\Sigma; \Delta \vdash \kw{case}\;a\;|\Delta|\;e_1\;e_2 : C}
 \]
 \[
-  \dfrac{\Sigma; \kw{tup}(\Delta_k), A_k \vdash e_k : C_k \ (k < m)
-         \quad \Sigma; \emptyset \vdash e : A}
+  \dfrac{\Sigma; \kw{tup}(\Delta_k), A_k \vdash e_k : C_k \quad k < m
+         \qquad \Sigma; \emptyset \vdash e : A}
         {\vdash (e_0, \ldots, e_{m-1};\; e) : A}
 \]
 A definition starts with its environment in slot 0 and its argument in
@@ -344,10 +344,10 @@ it assigns, like a $\kw{let}$.
 CFG, the target of \pass{explicate control}, organizes each function body as a
 control-flow graph. A function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered
 blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the
-type $R$ of the function body's result, the list
-$\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the blocks it
+type $A$ of the function body's result, the list
+$\vec{\Delta} = \vec{\Delta}_0, \ldots, \vec{\Delta}_{j-1}$ of the frames of the blocks it
 may jump to, and its own frame $\Delta$. A label $l$ is an index into
-$\vec{\Delta}$. Block $t_l$ is typed over the blocks older than it, so control
+$\vec{\Delta}$, and $\vec{\Delta}_l$ is the frame that block $t_l$ starts in. Block $t_l$ is typed over the blocks older than it, so control
 flow is acyclic. Here $\Delta' \sqsubseteq \Delta$ says that $\Delta'$ is a
 prefix of $\Delta$; an assignment to slot $|\Delta'|$ pops the slots from
 $|\Delta'|$ on and pushes the new value. In the same way,
@@ -371,26 +371,26 @@ and \pass{explicate control} translates that into the tail
 \]
 The third assignment, with $\Delta'$ empty, pops slots 0 and 1,
 which hold $z$ and $w$, and pushes $y$ as slot 0.
-\defhead{Typing of CFG}{\Sigma; R; \vec{\Delta}; \Delta \vdash t}
+\defhead{Typing of CFG}{\Sigma; A; \vec{\Delta}; \Delta \vdash t}
 \[
-  \dfrac{\Sigma; \Delta \vdash \rhs : R}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{return}\;\rhs}
+  \dfrac{\Sigma; \Delta \vdash \rhs : A}{\Sigma; A; \vec{\Delta}; \Delta \vdash \kw{return}\;\rhs}
   \qquad
-  \dfrac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash \rhs : A \quad
-         \Sigma; R; \vec{\Delta}; \Delta', A \vdash t}
-        {\Sigma; R; \vec{\Delta}; \Delta \vdash |\Delta'| \mathrel{:=} \rhs;\; t}
+  \dfrac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash \rhs : C \quad
+         \Sigma; A; \vec{\Delta}; \Delta', C \vdash t}
+        {\Sigma; A; \vec{\Delta}; \Delta \vdash |\Delta'| \mathrel{:=} \rhs;\; t}
   \qquad
-  \dfrac{\Delta_l = \Delta}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{goto}\;l}
+  \dfrac{\vec{\Delta}_l = \Delta}{\Sigma; A; \vec{\Delta}; \Delta \vdash \kw{goto}\;l}
 \]
 \[
-  \dfrac{\Sigma; \Delta \vdash a : A + B \quad \Delta' \sqsubseteq \Delta \quad
-         \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
-        {\Sigma; R; \vec{\Delta}; \Delta \vdash
+  \dfrac{\Sigma; \Delta \vdash a : A_1 + A_2 \quad \Delta' \sqsubseteq \Delta \quad
+         \vec{\Delta}_{l_1} = \Delta', A_1 \quad \vec{\Delta}_{l_2} = \Delta', A_2}
+        {\Sigma; A; \vec{\Delta}; \Delta \vdash
          \kw{case}\;a\;|\Delta'|\;l_1\;l_2}
 \]
 \[
-  \dfrac{\Sigma; R; \Delta_0, \ldots, \Delta_{l-1}; \Delta_l \vdash t_l \ (l < j) \quad
-         \Sigma; R; \vec{\Delta}; \Delta \vdash t}
-        {\Sigma; R; \Delta \vdash (t_0, \ldots, t_{j-1};\; t)}
+  \dfrac{\Sigma; A; \vec{\Delta}_0, \ldots, \vec{\Delta}_{l-1}; \vec{\Delta}_l \vdash t_l \quad l < j \qquad
+         \Sigma; A; \vec{\Delta}; \Delta \vdash t}
+        {\Sigma; A; \Delta \vdash (t_0, \ldots, t_{j-1};\; t)}
 \]
 A definition's function body starts in the frame $\kw{tup}(\Delta_k), A_k$ with
 result type $C_k$, and the main function body in the empty frame. A tail means a
@@ -420,19 +420,29 @@ expression and no continuation.
 \label{app:instr}
 \agda{FPC/Language/X86.agda, FPC/Semantics/GraphModel/X86.agda}
 
-\instr\ is the target language, produced by \pass{select instructions}; Section~\ref{sec:compiler} describes its instructions informally. An instruction is typed by the type of the machine state it starts in
-and the one it leaves. A state type
-$\psi = \langle \Theta; \Delta; O; F \rangle$ gives the types $\Theta$
-of the registers, the frame $\Delta$ of the slots assigned so far, the
-open closure $O$ (none, written $\cdot$, or a slot $x$ of $\Delta$ of a
-function type), and whether the flag $F$ is set. A register holds a
-value of a type $A$, the code $\kw{opencode}(A \rightarrow C)$ of the
-open closure, the environment $\kw{openenv}$ of the open closure, or
-nothing. The types $\kw{opencode}(A \rightarrow C)$ and $\kw{openenv}$
-refer to whichever closure is open, and they show only its argument
-and result types, as its function type does. A function body declares the size $n$ of its frame. The
-operands are typed by these rules, with the atoms typed as in Imp in
-the frame of the state.
+\instr\ is the target language, produced by \pass{select instructions};
+Section~\ref{sec:compiler} describes its instructions informally. An instruction
+is typed by the type of the machine state it starts in and the one it leaves. A
+state type $\psi = \langle \Theta; \Delta; O; F \rangle$ gives the types
+$\Theta$ of the registers, the frame $\Delta$ of the slots assigned so far, the
+open closure $O$, and whether the flag $F$ is set. The open closure $O$ is
+either none, written $\cdot$, or the slot $x$ of $\Delta$, of a function type,
+that holds the closure that $\kw{fst}$ opened. The register types $\Theta$ map
+a register $r$ to either nothing, indicating an unset register, or the type
+$\Theta(r)$ of what it holds: a value of a type $A$, the code
+$\kw{opencode}(A \rightarrow C)$ of the open closure, or the environment
+$\kw{openenv}$ of the open closure; $\emptyset$ maps every register to
+nothing. The type $\kw{opencode}(A \rightarrow C)$ is
+the type of the function reference of the open closure, i.e., it refers to the
+name of the global function definition that takes an argument of type $A$ and
+returns a $C$. $\kw{openenv}$ is the type of the closing environment of the open
+closure, the tuple of the values it captured. Neither names the types of the
+environment, which the function type $A \rightarrow C$ of the closure hides. We
+write $\tau$ for any of these types of what a register holds,
+$\tau ::= A \mid \kw{opencode}(A \rightarrow C) \mid \kw{openenv}$; operands
+and destinations are typed at $\tau$, since they may be registers. Every
+function body, the main one included, declares the size $n$ of its frame. The operands of an
+instruction are typed by these rules, with the atoms typed as in Imp in the frame of the state.
 \defhead{Typing of operands}{\Sigma; \psi \vdash a : \tau}
 \[
   \dfrac{\Sigma; \Delta \vdash a : A}{\Sigma; \langle \Theta; \Delta; O; F \rangle \vdash a : A}
@@ -444,101 +454,183 @@ the frame of the state.
   \qquad
   \dfrac{\Sigma; \psi \vdash a : \mu X.\, A}{\Sigma; \psi \vdash \kw{unfold}\;a : A[\mu X.\, A / X]}
 \]
-A destination is written at a type $\tau$ and leaves a new state,
-$n \vdash d : \psi \Rightarrow_\tau \psi'$. A write to a slot pops
-slots from the frame, pushes the new value, and closes the open closure.
+A destination, where an instruction writes a value, is either a register or a
+slot of the frame. Writing a value of type $\tau$ to a destination $d$ changes
+the state $\psi$ to a new state $\psi'$, written
+$n \vdash d : \psi \Rightarrow_\tau \psi'$. A register can hold a value of any
+type $\tau$ (\rulename{dst-reg}), but a slot holds only a value of a type $A$
+(\rulename{dst-slot}), and it must be below
+the frame size $n$ that the enclosing function body declares. A write to a slot pops slots from the frame, pushes the new
+value, and closes the open closure. In \rulename{dst-slot}, as in CFG
+(Appendix~\ref{app:cfg}), $\Delta' \sqsubseteq \Delta$ says that $\Delta'$ is
+a prefix of $\Delta$, the part of the frame that the write keeps, and
+$|\Delta'|$ is its length, so the new value goes to the slot $|\Delta'|$ just
+past it.
 \defhead{Typing of destinations}{n \vdash d : \psi \Rightarrow_\tau \psi'}
 \[
   n \vdash \%r : \langle \Theta; \Delta; O; F \rangle \Rightarrow_\tau \langle \Theta[r{:}\tau]; \Delta; O; F \rangle
-  \qquad
+  \;\;\rulename{dst-reg}
+\]
+\[
   \dfrac{\Delta' \sqsubseteq \Delta \quad |\Delta'| < n}
         {n \vdash |\Delta'| : \langle \Theta; \Delta; O; F \rangle \Rightarrow_A \langle \Theta; \Delta', A; \cdot; F \rangle}
+  \;\rulename{dst-slot}
 \]
-An object $\kw{pair}(a_1, a_2)$ has type $A \rightarrow C$ when
-$a_1 : \kw{code}(\Delta; A \rightarrow C)$ and $a_2 : \kw{tup}(\Delta)$;
-tuples and injections of operands are typed as in \fpc. With
-$\psi = \langle \Theta; \Delta; O; F \rangle$ and operands typed in
-$\psi$, the instructions are typed as follows.
+An object $o$, which $\kw{alloc}$ allocates, is built from operands
+typed in the state $\psi$. A closure $\kw{pair}(a_1, a_2)$ pairs the
+code of a definition with the tuple of its environment, whose types
+$\Delta$ its function type hides.
+\defhead{Typing of objects}{\Sigma; \psi \vdash o : A}
+\[
+  \dfrac{\Sigma; \psi \vdash a_1 : \kw{code}(\Delta; A \rightarrow C) \quad
+         \Sigma; \psi \vdash a_2 : \kw{tup}(\Delta)}
+        {\Sigma; \psi \vdash \kw{pair}(a_1, a_2) : A \rightarrow C}
+  \qquad
+  \dfrac{\Sigma; \psi \vdash a_i : A_i \quad 1 \leq i \leq n}
+        {\Sigma; \psi \vdash \kw{tuple}(a_1, \ldots, a_n) : \kw{tup}(A_1, \ldots, A_n)}
+\]
+\[
+  \dfrac{\Sigma; \psi \vdash a : A}{\Sigma; \psi \vdash \kw{inl}(a) : A + C}
+  \qquad
+  \dfrac{\Sigma; \psi \vdash a : C}{\Sigma; \psi \vdash \kw{inr}(a) : A + C}
+\]
+With
+$\psi = \langle \Theta; \Delta; O; F \rangle$, the instructions are typed
+as follows, using the typing of operands, objects, and destinations above.
 \defhead{Typing of instructions}{\Sigma; n \vdash i : \psi \Rightarrow \psi'}
 \[
 \begin{array}{@{}c@{}}
-  \dfrac{a : \tau \quad n \vdash d : \psi \Rightarrow_\tau \psi'}
-        {\Sigma; n \vdash \kw{movq}\; a, d : \psi \Rightarrow \psi'}
+  \dfrac{\Sigma; \psi \vdash a : \tau \quad n \vdash d : \psi \Rightarrow_\tau \psi'}
+        {\Sigma; n \vdash \kw{movq}\; a, d : \psi \Rightarrow \psi'}\;\rulename{ins-movq}
   \qquad
-  \dfrac{a : \kw{Int} \quad \Theta(r) = \kw{Int}}
-        {\Sigma; n \vdash \kw{subq}\; a, \%r : \psi \Rightarrow \psi}
+  \dfrac{\Sigma; \psi \vdash a : \kw{Int} \quad \Theta(r) = \kw{Int}}
+        {\Sigma; n \vdash \kw{subq}\; a, \%r : \psi \Rightarrow \psi}\;\rulename{ins-subq}
   \\[14pt]
-  \dfrac{a_1 : \kw{Int} \quad a_2 : \kw{Int}}
-        {\Sigma; n \vdash \kw{cmpq}\; a_2, a_1 : \psi \Rightarrow \langle \Theta; \Delta; O; \kw{set} \rangle}
+  \dfrac{\Sigma; \psi \vdash a_1 : \kw{Int} \quad \Sigma; \psi \vdash a_2 : \kw{Int}}
+        {\Sigma; n \vdash \kw{cmpq}\; a_2, a_1 : \psi \Rightarrow \langle \Theta; \Delta; O; \kw{set} \rangle}\;\rulename{ins-cmpq}
   \\[14pt]
   \dfrac{n \vdash d : \langle \Theta; \Delta; O; \kw{set} \rangle \Rightarrow_{\kw{Bool}} \psi'}
-        {\Sigma; n \vdash \kw{sete}\; d : \langle \Theta; \Delta; O; \kw{set} \rangle \Rightarrow \psi'}
+        {\Sigma; n \vdash \kw{sete}\; d : \langle \Theta; \Delta; O; \kw{set} \rangle \Rightarrow \psi'}\;\rulename{ins-sete}
   \qquad
-  \dfrac{o : A \quad n \vdash d : \psi \Rightarrow_A \psi'}
-        {\Sigma; n \vdash \kw{alloc}\; o, d : \psi \Rightarrow \psi'}
+  \dfrac{\Sigma; \psi \vdash o : A \quad n \vdash d : \psi \Rightarrow_A \psi'}
+        {\Sigma; n \vdash \kw{alloc}\; o, d : \psi \Rightarrow \psi'}\;\rulename{ins-alloc}
   \\[14pt]
-  \dfrac{a : \kw{tup}(A_1, \ldots, A_m) \quad n \vdash d : \psi \Rightarrow_{A_i} \psi'}
-        {\Sigma; n \vdash \kw{load}\; \kw{get}_i\; a, d : \psi \Rightarrow \psi'}
+  \dfrac{\Sigma; \psi \vdash a : \kw{tup}(A_1, \ldots, A_m) \quad 1 \leq i \leq m \quad n \vdash d : \psi \Rightarrow_{A_i} \psi'}
+        {\Sigma; n \vdash \kw{load}\; \kw{get}_i\; a, d : \psi \Rightarrow \psi'}\;\rulename{ins-load}
   \\[14pt]
   \dfrac{x : A \rightarrow C \in \Delta}
         {\Sigma; n \vdash \kw{fst}\; x, \%r : \psi \Rightarrow
-         \langle \mathit{wipe}(\Theta)[r{:}\kw{opencode}(A \rightarrow C)]; \Delta; x; F \rangle}
+         \langle \mathit{wipe}(\Theta)[r{:}\kw{opencode}(A \rightarrow C)]; \Delta; x; F \rangle}\;\rulename{ins-fst}
   \\[14pt]
   \Sigma; n \vdash \kw{snd}\; x, \%r : \langle \Theta; \Delta; x; F \rangle \Rightarrow
-    \langle \Theta[r{:}\kw{openenv}]; \Delta; x; F \rangle
+    \langle \Theta[r{:}\kw{openenv}]; \Delta; x; F \rangle\;\rulename{ins-snd}
   \\[14pt]
-  \dfrac{a : \kw{opencode}(A \rightarrow C) \quad \Theta(\kw{rdi}) = \kw{openenv}
+  \dfrac{\Sigma; \psi \vdash a : \kw{opencode}(A \rightarrow C) \quad \Theta(\kw{rdi}) = \kw{openenv}
          \quad \Theta(\kw{rsi}) = A}
-        {\Sigma; n \vdash \kw{callq}\; a : \psi \Rightarrow \langle \kw{rax}{:}C; \Delta; \cdot; \kw{unset} \rangle}
+        {\Sigma; n \vdash \kw{callq}\; a : \psi \Rightarrow \langle \kw{rax}{:}C; \Delta; \cdot; \kw{unset} \rangle}\;\rulename{ins-callq}
 \end{array}
 \]
 The rules for $\kw{fst}$, $\kw{snd}$, and $\kw{callq}$ together ensure
-that a call combines the code and the environment of one closure. The
-instruction $\kw{fst}\;x, \%r$ opens the closure in slot $x$. It
-records $x$ as the open closure and gives $r$ the type
-$\kw{opencode}(A \rightarrow C)$, which hides the frame of the
-closure's environment, as the existential type of PairClos does. The
-instruction $\kw{snd}\;x, \%r$ requires $x$ to be the open closure and
-gives $r$ the type $\kw{openenv}$. The instruction $\kw{callq}$
-requires its code operand to have type $\kw{opencode}(A \rightarrow C)$,
-$\kw{rdi}$ to have type $\kw{openenv}$, and $\kw{rsi}$ to have type
-$A$. These types do not name the closure, so two further rules keep
-the code and the environment together. First, $\mathit{wipe}(\Theta)$
-unsets the registers that hold the code or the environment of an
-earlier open closure, so the registers of types
-$\kw{opencode}(A \rightarrow C)$ and $\kw{openenv}$ always belong to
-the same closure. Second, a write to a slot closes the open closure
-(the slot rule of the typing of destinations), so $\kw{snd}$ runs only
-while slot $x$ still holds the closure that $\kw{fst}$ opened. After
-the call, only $\kw{rax}$ is set, and no closure is open.
+that a call combines the code and the environment of one closure.
+\pass{select instructions} (Appendix~\ref{app:pass-select}) translates a call
+$\kw{callc}\;x\;a$ of the closure in slot $x$ on the argument $a$ to
+\[
+  \kw{fst}\; x, \%\kw{rax};\; \kw{snd}\; x, \%\kw{rdi};\; \kw{movq}\; a, \%\kw{rsi};\; \kw{callq}\; \%\kw{rax}
+\]
+and then moves the result from $\kw{rax}$ to its destination. This is the
+order in which $\kw{fst}$, $\kw{snd}$, and $\kw{callq}$ generally appear: open
+the closure, load its environment, stage the argument, and call. The
+instruction $\kw{fst}\;x, \%r$ opens the closure in slot $x$
+(\rulename{ins-fst}). It records $x$ as the open closure and gives $r$ the
+type $\kw{opencode}(A \rightarrow C)$, which hides the frame of the
+closure's environment, as the existential type of PairClos does: a closure
+of type $A \rightarrow C$ has the type
+$\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times \kw{tup}(\Delta)$.
+The instruction $\kw{snd}\;x, \%r$ requires $x$ to be the open closure and
+gives $r$ the type $\kw{openenv}$ (\rulename{ins-snd}). Together,
+$\kw{fst}$ and $\kw{snd}$ act as the eliminator $\kw{unpack}$ of this
+existential type. The instruction $\kw{callq}$ requires its code operand to
+have type $\kw{opencode}(A \rightarrow C)$, $\kw{rdi}$ to have type
+$\kw{openenv}$, and $\kw{rsi}$ to have type $A$ (\rulename{ins-callq}).
+These types do not name the closure, so two further constraints keep the code
+and the environment together. First, $\mathit{wipe}(\Theta)$ unsets the
+registers that hold the code or the environment of an earlier open
+closure, so the registers of types $\kw{opencode}(A \rightarrow C)$ and
+$\kw{openenv}$ always belong to the same closure. Unlike $\kw{unpack}$,
+which can be nested so that its body sees the witnesses of several
+packages at once, at most one closure is open at a time, and opening a
+closure ends the previous unpack. Second, a write to a slot closes the open
+closure (\rulename{dst-slot}), so $\kw{snd}$ runs only while slot $x$ still
+holds the closure that $\kw{fst}$ opened. After the call, only $\kw{rax}$
+is set, and no closure is open.
 
-A sequence $s$ is typed by the result
-type $R$, the frames $\vec{\Delta}$ of the blocks it may jump to, and
-its starting state. As in CFG, $\kw{case}\;x\;y\;l_1\;l_2$ writes the
-payload of the injection in slot $x$ to slot $y$, with $y = |\Delta'|$,
-and then jumps to block $l_1$ or $l_2$.
-\defhead{Typing of sequences}{\Sigma; n; R; \vec{\Delta} \vdash s : \psi}
+A sequence $s$ has the result type $A$ of its function body, written
+$s : A$, in its starting state $\psi$ and with the frames $\vec{\Delta}$ of the
+blocks it may jump to. $\kw{retq}$ requires that $\kw{rax}$ holds an $A$, and
+$\kw{jmp}$ need not constrain $A$, because the block it jumps to has the same
+result type $A$. As in CFG, $\kw{case}\;x\;y\;l_1\;l_2$ writes the
+payload of the injection in slot $x$ to slot $y$, with $y = |\Delta'|$, and then
+jumps to block $l_1$ or $l_2$. A label $l$ is an index into $\vec{\Delta}$, and
+$\vec{\Delta}_l$ is the frame that block $l$ starts in. Because $\kw{jmp}$ does
+not change the frame at runtime, its premise requires the current frame $\Delta$
+to be $\vec{\Delta}_l$, i.e., the frame of the target block. Because $\kw{case}$
+cuts the frame to $\Delta'$ and writes a payload of type $A_1$ or $A_2$ to slot
+$|\Delta'|$, it requires blocks $l_1$ and $l_2$ to start in $\Delta', A_1$ and
+$\Delta', A_2$. Only the frame passes from one block to the next. The registers,
+the open closure, and the flag do not, since every block starts with them unset.
+\todo{As I explain these typing rules, I realize that they are difficult to
+  understand unless we explain the runtime. Maybe moving this explanation after
+  the runtime explanation should help. --Darshal}
+\defhead{Typing of sequences}{\Sigma; n; \psi; \vec{\Delta} \vdash s : A}
 \[
-  \dfrac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; R; \vec{\Delta} \vdash s : \psi'}
-        {\Sigma; n; R; \vec{\Delta} \vdash i;\; s : \psi}
+  \dfrac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; \psi'; \vec{\Delta} \vdash s : A}
+        {\Sigma; n; \psi; \vec{\Delta} \vdash i;\; s : A}
 \]
 \[
-  \dfrac{\Theta(\kw{rax}) = R}{\Sigma; n; R; \vec{\Delta} \vdash \kw{retq} : \langle \Theta; \Delta; O; F \rangle}
+  \dfrac{\Theta(\kw{rax}) = A}{\Sigma; n; \langle \Theta; \Delta; O; F \rangle; \vec{\Delta} \vdash \kw{retq} : A}
 \]
 \[
-  \dfrac{\Delta_l = \Delta}{\Sigma; n; R; \vec{\Delta} \vdash \kw{jmp}\;l : \langle \Theta; \Delta; O; F \rangle}
+  \dfrac{\vec{\Delta}_l = \Delta}{\Sigma; n; \langle \Theta; \Delta; O; F \rangle; \vec{\Delta} \vdash \kw{jmp}\;l : A}
 \]
 \[
-  \dfrac{x : A + B \in \Delta \quad \Delta' \sqsubseteq \Delta \quad |\Delta'| < n \quad
-         \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
-        {\Sigma; n; R; \vec{\Delta} \vdash \kw{case}\;x\;|\Delta'|\;l_1\;l_2 : \langle \Theta; \Delta; O; F \rangle}
+  \dfrac{x : A_1 + A_2 \in \Delta \quad \Delta' \sqsubseteq \Delta \quad |\Delta'| < n \quad
+         \vec{\Delta}_{l_1} = \Delta', A_1 \quad \vec{\Delta}_{l_2} = \Delta', A_2}
+        {\Sigma; n; \langle \Theta; \Delta; O; F \rangle; \vec{\Delta} \vdash \kw{case}\;x\;|\Delta'|\;l_1\;l_2 : A}
 \]
-A block starts in the state $\langle \emptyset; \Delta_l; \cdot;
-\kw{unset} \rangle$, and blocks are acyclic as in CFG. A definition
-$b_k$ of signature $(\Delta_k; A_k \rightarrow C_k)$ starts with its
-environment in $\kw{rdi}$ and its argument in $\kw{rsi}$, in the state
-$\langle \kw{rdi}{:}\kw{tup}(\Delta_k), \kw{rsi}{:}A_k; \emptyset; \cdot;
-\kw{unset} \rangle$, and has result type $C_k$.
+A function body $(n;\, s_0, \ldots, s_{j-1};\, s)$ has result type $A$ in the
+state $\psi$ that its start sequence $s$ begins in, written
+$\Sigma; \psi \vdash b : A$. A program
+$(b_0, \ldots, b_{m-1};\, b)$ is typed by the table
+$\Sigma = \Sigma_0, \ldots, \Sigma_{m-1}$ of the signatures
+$\Sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its definitions, as in GlobalFun,
+written $\Sigma \vdash P : A$. The projections of a signature give its
+environment, domain, and codomain:
+$\mathit{env}(\Delta; A \rightarrow C) = \Delta$, the types of the values its
+definition's closures capture; $\mathit{dom}(\Delta; A \rightarrow C) = A$, the
+type of its argument; and $\mathit{cod}(\Delta; A \rightarrow C) = C$, the type
+of its result. So definition $b_k$ starts with an environment of type
+$\kw{tup}(\mathit{env}(\Sigma_k))$ and an argument of type
+$\mathit{dom}(\Sigma_k)$, and has result type $\mathit{cod}(\Sigma_k)$.
+\defhead{Typing of function bodies and programs}{\Sigma; \psi \vdash b : A \qquad \Sigma \vdash P : A}
+\[
+  \dfrac{\Sigma; n; \langle \emptyset; \vec{\Delta}_l; \cdot; \kw{unset} \rangle;
+           \vec{\Delta}_0, \ldots, \vec{\Delta}_{l-1} \vdash s_l : A \quad l < j
+         \qquad \Sigma; n; \psi; \vec{\Delta} \vdash s : A}
+        {\Sigma; \psi \vdash (n;\, s_0, \ldots, s_{j-1};\, s) : A}
+\]
+\[
+  \dfrac{\begin{array}{c}
+           \Sigma; \langle \kw{rdi}{:}\kw{tup}(\mathit{env}(\Sigma_k)), \kw{rsi}{:}\mathit{dom}(\Sigma_k); \emptyset; \cdot;
+             \kw{unset} \rangle \vdash b_k : \mathit{cod}(\Sigma_k) \quad k < m\\
+           \Sigma; \langle \emptyset; \emptyset; \cdot; \kw{unset} \rangle \vdash b : A
+         \end{array}}
+        {\Sigma \vdash (b_0, \ldots, b_{m-1};\, b) : A}
+\]
+Each block $s_l$ starts with its registers and flag unset, no closure open,
+and the frame $\vec{\Delta}_l$, and may jump only to the blocks older than it,
+so blocks are acyclic as in CFG. A definition starts with its environment in
+$\kw{rdi}$, its argument in $\kw{rsi}$, and an empty frame; the main function
+body starts with nothing set.
 
 The semantics of a sequence is a function of the frame $\sigma$, the
 registers $R$ (a map from registers to sets), and the flag $F$ (a set);
