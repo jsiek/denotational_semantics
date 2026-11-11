@@ -23,9 +23,10 @@
   The fundamental lemma (adequate) is by induction on the sequence, given
   that the blocks it may jump to are adequate (AdeqB) and that the table
   is related to the code pointers (𝕋), as for the graph model
-  (FPC/proof/Adequacy/X86LogRel.agda): the frame, the registers and the
-  flag of the semantics are related to those of the interpreter
-  (RelState), and the open closure is that of its slot (OpR). The table
+  (FPC/proof/Adequacy/X86LogRel.agda): the initialized slots of the
+  frame (X86Frame.agda), the registers and the flag of the semantics are
+  related to those of the interpreter (RelState), and the open closure
+  is that of its slot (OpR). The table
   of the program is related (tab): each definition is related to its
   code pointer given that the table of the older ones is, by the
   fundamental lemma for its body.
@@ -41,12 +42,10 @@ open import UF.Base using (ap₂)
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Framework.abt.GSubst using (_•_)
-open import Framework.Lookup using (pop)
-open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import Language.Prim using (Prim; sub; eq; int; bool) renaming (δ to δᴾ)
 open import FPC.Language.Type using (Type; Ctx; base; tup; _⊹_; _⇒_; μ; code;
   _∋_; Z; S; idx; lvl) renaming (unroll to unrollᵗ)
-open import FPC.Language.X86
+open import FPC.Language.X86 hiding (none)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.X86 using (RV; MV; RegVals; rv;
@@ -54,6 +53,7 @@ open import FPC.Semantics.ClockedInterpreters.X86 using (RV; MV; RegVals; rv;
   args; put; equal; bit; size; code-of; env-of; run; jump; call) renaming
   (⟨_,_,_,_⟩ to mach; obj to objᵢ)
 open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
+open import FPC.Semantics.Slots using (Slots; read; write; empty)
 open import proof.Semantics.Interp.Clock using (Result; ret; _>>=_; Stable;
   st-now; st-bind; stable-unique)
 open import proof.Framework.Lookup using (lvl-<)
@@ -95,8 +95,9 @@ open import proof.Framework.Scott.Semantics pt fe pe using (Den; abs; init;
   init-defined; code₂; module Over)
 open import Semantics.Scott.Prim pt fe pe using (primD; out; prim-br₁; prim-br₂)
 open import FPC.Semantics.ScottDomains.Ops pt fe pe using (Table; tables;
-  tables-yes; tables-no)
-open import FPC.Semantics.ScottDomains.CFG pt fe pe using (drop)
+  tables-yes; tables-no; absAt) renaming (write to writeᵈ)
+open import FPC.proof.Adequacy.ScottDomains.X86Frame pt fe pe using
+  (module Frames)
 open import FPC.Semantics.ScottDomains.X86 pt fe pe using (RegsD; 𝕊; Kont;
   regsᶜ; flagᶜ; argsᶜ; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs) renaming
   (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to
@@ -1071,8 +1072,8 @@ module _ {Σ : List DSig}
  Relᵣ (codeα A B) d v = Rel d v
  Relᵣ tupα d v = Rel d v
 
- FrameRel : ∀ {Δ} → ⟨ Envᵈ ⟩ → Frame Δ → 𝓤₁ ̇
- FrameRel {Δ} σ φ = ∀ {A} (x : Δ ∋ A) → Rel (σ (idx x)) (lookup φ x)
+ {- the initialized slots are related -}
+ open Frames {V = Val} Rel renaming (FR to FrameRel)
 
  RegsRel : ∀ {η Γ} → ⟨ RegsD ⟩ → RegVals Σ η Γ → 𝓤₁ ̇
  RegsRel {Γ = Γ} R ρ =
@@ -1082,7 +1083,7 @@ module _ {Σ : List DSig}
  FlagRel {true} F b = Rel F (bit {Σ} b)
  FlagRel {false} F _ = 𝟙
 
- record RelState {η ψ} (𝔰 : ⟨ 𝕊 ⟩) (m : Mach Σ η ψ) : 𝓤₁ ̇ where
+ record RelState {η Δ₀} {ψ : St Δ₀} (𝔰 : ⟨ 𝕊 ⟩) (m : Mach Σ η ψ) : 𝓤₁ ̇ where
   constructor rst
   field
    fr : FrameRel (pr₁ 𝔰) (frame m)
@@ -1090,22 +1091,6 @@ module _ {Σ : List DSig}
    fl : FlagRel (pr₂ (pr₂ 𝔰)) (flag m)
    op : OpR (frame m) (St.op ψ) η (clo m)
  open RelState
-
- frame-drop-rel : ∀ {Δ' Δ}
-   → (p : Δ' ⊑ Δ)
-   → {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ}
-   → FrameRel σ φ
-   → FrameRel (drop p · σ) (pop p φ)
- frame-drop-rel here⊑ h x = h x
- frame-drop-rel (there⊑ p) {σ} {v ∷ φ} h x =
-   frame-drop-rel p {σ = λ i → σ (succ i)} (λ y → h (S y)) x
-
- frame-ext-rel : ∀ {Δ A} {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} {d : ⟨ 𝔻 ⟩} {v : Val A}
-   → Rel d v
-   → FrameRel σ φ
-   → FrameRel (d • σ) (v ∷ φ)
- frame-ext-rel r h Z = r
- frame-ext-rel r h (S x) = h x
 
  regs-upd-rel : ∀ r {η Γ τ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ} {D}
    {v : RV Σ η τ}
@@ -1141,12 +1126,12 @@ module _ {Σ : List DSig}
 
  {- the environment of the open closure is related to the second component of
     its slot -}
- snd-rel : ∀ {Δ A B} {φ : Frame Δ} {x : Δ ∋ A ⇒ B} {η}
-   {o : Val (tup η)} {D : ⟨ 𝔻 ⟩}
+ snd-rel : ∀ {Δ I A B} {φ : Slots Val Δ I} {x : Δ ∋ A ⇒ B} {η}
+   {o : Val (tup η)} {σ : ⟨ Envᵈ ⟩}
    → OpR φ (just (opened x)) η o
-   → Rel D (lookup φ x)
-   → Rel (cdr · D) o
- snd-rel {φ = φ} {x} agree r = cdr-rel (lookup φ x) r
+   → FrameRel σ φ
+   → Rel (cdr · σ (idx x)) o
+ snd-rel {φ = φ} {x} (agree i) h = cdr-rel (read φ x i) (slot-at h x i)
 
  {- a call of code: the result, then the rest -}
  callq-rel : ∀ {η A B R'} (c : Val (code η A B)) {F X Y K : ⟨ 𝔻 ⟩}
@@ -1187,17 +1172,18 @@ module _ {Σ : List DSig}
 
  module _ {T : Table Σ} (𝕋T : 𝕋 T) where
 
-  arg-rel : ∀ {η ψ τ} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ} (a : Arg Σ ψ τ)
+  arg-rel : ∀ {η Δ₀} {ψ : St Δ₀} {τ} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ}
+    (a : Arg Σ ψ τ)
     → RelState 𝔰 m
     → Relᵣ τ (𝒪 T a · 𝔰) (arg a m)
-  arg-rel (atom (var x)) RS = fr RS x
+  arg-rel (atom (var x i)) RS = slot-at (fr RS) x i
   arg-rel (atom (lit B c)) RS = Rel-const c
   arg-rel (atom (ref f)) RS = 𝕋T f
   arg-rel (reg r e) RS = rg RS r e
   arg-rel (a ↑) RS = Rel-fold (arg-rel a RS)
   arg-rel {m = m} (a ↓) RS = Rel-unfold (arg a m) (arg-rel a RS)
 
-  args-tup : ∀ {η ψ Δ} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ}
+  args-tup : ∀ {η Δ₀} {ψ : St Δ₀} {Δ} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ}
     (as : All (λ A → Arg Σ ψ (ty A)) Δ)
     → RelState 𝔰 m
     → (n : ℕ)
@@ -1205,7 +1191,8 @@ module _ {Σ : List DSig}
   args-tup [] RS n = ⋆
   args-tup (a ∷ as) RS n = stage (arg-rel a RS) n , args-tup as RS n
 
-  obj-rel : ∀ {η ψ B} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ} (o : Obj Σ ψ B)
+  obj-rel : ∀ {η Δ₀} {ψ : St Δ₀} {B} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ}
+    (o : Obj Σ ψ B)
     → RelState 𝔰 m
     → Rel (object T o · 𝔰) (objᵢ o m)
   obj-rel (pair c e) RS = Rel-pair (arg-rel c RS) (arg-rel e RS)
@@ -1214,7 +1201,8 @@ module _ {Σ : List DSig}
   obj-rel (inr a) RS = Rel-inr (arg-rel a RS)
 
   {- a write of D, then κ -}
-  put-rel : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {η} {m : Mach Σ η ψ} {v : RV Σ η τ}
+  put-rel : ∀ {Δ} {ψ ψ' : St Δ} {τ} (d : Dst ψ τ ψ') {η} {m : Mach Σ η ψ}
+    {v : RV Σ η τ}
     (𝔰 : ⟨ 𝕊 ⟩) (D : Den 𝕊) (κ : Kont)
       {B} {c : ℕ → Result (Val B)}
     → RelState 𝔰 m
@@ -1224,29 +1212,27 @@ module _ {Σ : List DSig}
   put-rel (reg r) (σ , R , F) D κ (rst fa ra fla oa) hD k =
     k (σ , R [ r ≔ₛ D · (σ , R , F) ] , F)
     (rst fa (regs-upd-rel r ra hD) fla oa)
-  put-rel (slot p _) {m = m} {v = v} (σ , RF) D κ {c = c}
+  put-rel {τ = ty A} (slot x p) {m = m} {v = v} (σ , RF) D κ {c = c}
     (rst fa ra fla oa) hD k q =
     RelE-＝ {c = c}
       (app-Λ _ (D · (σ , RF)) ∙ seq-defined (D · (σ , RF)) (κ · 𝔰') qD)
-      (k 𝔰' (rst fr' ra fla none)) q
+      (k 𝔰' (rst (fr-restrict p (fr-write x hD fa)) ra fla none)) q
    where
     𝔰' : ⟨ 𝕊 ⟩
-    𝔰' = ((D · (σ , RF)) • (drop p · σ) , RF)
+    𝔰' = (writeᵈ (idx x) σ (D · (σ , RF)) , RF)
     qD : defined (D · (σ , RF))
     qD =
       seq-defined-l (D · (σ , RF)) (κ · 𝔰')
       (transport defined (app-Λ _ (D · (σ , RF))) q)
-    fr' : FrameRel ((D · (σ , RF)) • (drop p · σ)) (v ∷ pop p (frame m))
-    fr' Z = hD
-    fr' (S x) = frame-drop-rel p fa x
 
   {- the blocks bs are adequate -}
-  AdeqB : ∀ {n R Bs} → Blocks Σ n R Bs → 𝓤₁ ̇
-  AdeqB {R = R} {Bs} bs =
-    ∀ {Δ} (l : Bs ∋ Δ) {η} {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} → FrameRel σ φ
+  AdeqB : ∀ {Δ R Bs} → Blocks Σ Δ R Bs → 𝓤₁ ̇
+  AdeqB {Δ} {R} {Bs} bs =
+    ∀ {I} (l : Bs ∋ I) {η} {σ : ⟨ Envᵈ ⟩} {φ : Slots Val Δ I}
+    → FrameRel σ φ
     → RelE (blocksₛ T bs l · σ) (λ ck → jump ds ck bs η l φ)
 
-  adequate : ∀ {n R Bs ψ} (k : Seq Σ n R Bs ψ) {bs : Blocks Σ n R Bs}
+  adequate : ∀ {Δ R Bs ψ} (k : Seq Σ Δ R Bs ψ) {bs : Blocks Σ Δ R Bs}
     → AdeqB bs
     → ∀ {η} {m : Mach Σ η ψ} (𝔰 : ⟨ 𝕊 ⟩)
     → RelState 𝔰 m
@@ -1256,7 +1242,7 @@ module _ {Σ : List DSig}
     put-rel d 𝔰 (𝒪 T a) (⟦_⟧ˢ T k (blocksₛ T bs)) RS (arg-rel a RS)
     (λ 𝔰' RS' → adequate k AB 𝔰' RS')
   adequate (subq a r e ∷ k) {bs} AB {m = m} 𝔰 RS =
-    put-rel {n = 0} (reg r) 𝔰
+    put-rel (reg {τ = ℤty} r) 𝔰
       (op₂ (primD sub) (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 r)) (𝒪 T a))
       (⟦_⟧ˢ T k (blocksₛ T bs)) RS
       (prim-rel sub (cast e (regs m ⦅ r ⦆)) (arg a m) (rg RS r e)
@@ -1275,14 +1261,15 @@ module _ {Σ : List DSig}
   adequate (load i a d ∷ k) {bs} AB {m = m} 𝔰 RS =
     put-rel d 𝔰 (op₁ (proj (pos i)) (𝒪 T a)) (⟦_⟧ˢ T k (blocksₛ T bs)) RS
       (nth-rel i (arg a m) (arg-rel a RS)) (λ 𝔰' RS' → adequate k AB 𝔰' RS')
-  adequate (loadfst x r ∷ k) AB {m = m} (σ , R , F) RS =
+  adequate (loadfst x i r ∷ k) AB {m = m} (σ , R , F) RS =
     adequate k AB (σ , R [ r ≔ₛ car · σ (idx x) ] , F)
       (rst (fr RS)
           (regs-upd-rel r (regs-wipe-rel (rg RS))
-            (car-rel (lookup (frame m) x) (fr RS x))) (fl RS) agree)
+            (car-rel (read (frame m) x i) (slot-at (fr RS) x i)))
+          (fl RS) (agree i))
   adequate (loadsnd {x = opened x} r ∷ k) AB (σ , R , F) RS =
     adequate k AB (σ , R [ r ≔ₛ cdr · σ (idx x) ] , F)
-      (rst (fr RS) (regs-upd-rel r (rg RS) (snd-rel (op RS) (fr RS x)))
+      (rst (fr RS) (regs-upd-rel r (rg RS) (snd-rel (op RS) (fr RS)))
           (fl RS) (op RS))
   adequate (callq a e₁ e₂ ∷ k) AB {m = m} 𝔰@(σ , R , F) RS =
     callq-rel (arg a m) (arg-rel a RS) (rg RS rdi e₁) (rg RS rsi e₂)
@@ -1295,43 +1282,43 @@ module _ {Σ : List DSig}
   adequate (retq e) AB {m = m} 𝔰 RS q =
     cast e (regs m ⦅ rax ⦆) , ∣ ev (st-now (λ _ → ≡-refl)) ∣ , rg RS rax e
   adequate (jmp l) AB {m = m} (σ , RF) RS = AB l (fr RS)
-  adequate (case x p _ l₁ l₂) {bs} AB {η} {m = m} (σ , RF) RS =
-    sel (lookup (frame m) x) (fr RS x)
+  adequate (case x i y z l₁ l₂) {bs} AB {η} {m = m} (σ , RF) RS =
+    sel (read (frame m) x i) (slot-at (fr RS) x i)
    where
     br : ⟨ Br ⟩
     br =
-      (strict · (abs (blocksₛ T bs l₁) · (drop p · σ))
-        , strict · (abs (blocksₛ T bs l₂) · (drop p · σ)))
+      (strict · (absAt (idx y) (blocksₛ T bs l₁) · σ)
+        , strict · (absAt (idx z) (blocksₛ T bs l₂) · σ))
     sel : (v : Val (_ ⊹ _))
       → Rel (σ (idx x)) v
       → RelE (cases · σ (idx x) · br)
           (λ ck →
-              either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m)))
-              (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m))))
+              either v (λ u → jump ds ck bs η l₁ (write (frame m) y u))
+              (λ u → jump ds ck bs η l₂ (write (frame m) z u)))
     sel (inl u) r q = inv-case (Rel-inv r (cases-defined (σ (idx x)) br q)) q
      where
       inv-case : Inv (σ (idx x)) (inl u)
         → RelE (cases · σ (idx x) · br)
-          (λ ck → jump ds ck bs η l₁ (u ∷ pop p (frame m)))
-      inv-case (_ , y , eqx , s-left , my) =
+          (λ ck → jump ds ck bs η l₁ (write (frame m) y u))
+      inv-case (_ , w , eqx , s-left , my) =
         RelE-＝
           (ap (λ - → cases · - · br) eqx
-            ∙ ap (_· br) (case-inj (Br ⟹𝔻) cases-br left y))
-          (RelE-strict (abs (blocksₛ T bs l₁) · (drop p · σ)) y
-             (λ _ → AB l₁ (frame-ext-rel (rel my) (frame-drop-rel p (fr RS)))))
+            ∙ ap (_· br) (case-inj (Br ⟹𝔻) cases-br left w))
+          (RelE-strict (absAt (idx y) (blocksₛ T bs l₁) · σ) w
+             (λ _ → AB l₁ (fr-write y (rel my) (fr RS))))
     sel (inr u) r q = inv-case (Rel-inv r (cases-defined (σ (idx x)) br q)) q
      where
       inv-case : Inv (σ (idx x)) (inr u)
         → RelE (cases · σ (idx x) · br)
-          (λ ck → jump ds ck bs η l₂ (u ∷ pop p (frame m)))
-      inv-case (_ , y , eqx , s-right , my) =
+          (λ ck → jump ds ck bs η l₂ (write (frame m) z u))
+      inv-case (_ , w , eqx , s-right , my) =
         RelE-＝
           (ap (λ - → cases · - · br) eqx
-            ∙ ap (_· br) (case-inj (Br ⟹𝔻) cases-br right y))
-          (RelE-strict (abs (blocksₛ T bs l₂) · (drop p · σ)) y
-             (λ _ → AB l₂ (frame-ext-rel (rel my) (frame-drop-rel p (fr RS)))))
+            ∙ ap (_· br) (case-inj (Br ⟹𝔻) cases-br right w))
+          (RelE-strict (absAt (idx z) (blocksₛ T bs l₂) · σ) w
+             (λ _ → AB l₂ (fr-write z (rel my) (fr RS))))
 
-  blocks-adeq : ∀ {n R Bs} (bs : Blocks Σ n R Bs) → AdeqB bs
+  blocks-adeq : ∀ {Δ R Bs} (bs : Blocks Σ Δ R Bs) → AdeqB bs
   blocks-adeq (bs ▷ k) Z {σ = σ} FR =
     adequate k (blocks-adeq bs) (σ , (λ _ → init) , init)
       (rst FR (λ { rax () ; rdi () ; rsi () }) ⋆ none)
@@ -1356,8 +1343,8 @@ module _ {Σ : List DSig}
     shift : ∀ {X Y : ⟨ 𝔻 ⟩} {e : Val (tup Δ)} {a : Val A}
       → RelE (Bf · (X , Y))
         (λ ck →
-          run ds ck (Body.blocks b) Δ (mach (rv tt e a) [] tt tt)
-          (Body.start b))
+          run ds ck (Body.blocks b) Δ
+            (mach (rv tt e a) (empty (Body.frame b)) tt tt) (Body.start b))
       → RelE (Bf · (X , Y)) (Call f e a)
     shift h q = let (v , t , r) = h q in
       v
@@ -1382,7 +1369,7 @@ module _ {Σ : List DSig}
           (RelE-strict (curry₁ 𝔻 𝔻 𝔻 Bf · X) (ε∞ m · y)
              (λ _ →
                  shift (adequate (Body.start b) (blocks-adeq (Body.blocks b)) _
-                             (rst (λ ())
+                             (rst fr-empty
                                  (λ { rax () ; rdi ≡-refl
                                    → Rel-ε n r ; rsi ≡-refl → Rel-ε m r' })
                                      ⋆ none))))
@@ -1453,13 +1440,12 @@ module _ {Σ : List DSig}
 
  {- Adequacy: main returns a related value from some clock on -----------------}
 
- adequacy : ∀ {A} (b : Body Σ A (entry []))
-   → RelE ⟦ program ds b
-     ⟧ₜ
+ adequacy : ∀ {A} (b : Body Σ A begin)
+   → RelE ⟦ program ds b ⟧ₜ
      (λ ck →
        run ds ck (Body.blocks b)
-       [] (mach (rv tt tt tt) [] tt tt) (Body.start b))
+       [] (mach (rv tt tt tt) (empty (Body.frame b)) tt tt) (Body.start b))
  adequacy b =
    adequate tab (Body.start b) (blocks-adeq tab (Body.blocks b))
      ((λ _ → init) , (λ _ → init) , init)
-     (rst (λ ()) (λ { rax () ; rdi () ; rsi () }) ⋆ none)
+     (rst fr-empty (λ { rax () ; rdi () ; rsi () }) ⋆ none)
