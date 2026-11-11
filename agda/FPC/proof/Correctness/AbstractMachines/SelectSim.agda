@@ -59,7 +59,7 @@ block-sel (bs ▷ t) Z = refl
 block-sel (bs ▷ t) (S l) = block-sel bs l
 
 {- The start of a definition: the moves of %rdi and %rsi to their slots
-   give the frame of its environment and argument -------------------------------}
+   give the frame of its environment and argument -------------------------}
 
 start≡ : ∀ {V : Type → Set} {Δ A B} (p : (A ∷ B ∷ []) ⊑ Δ) (e : V B) (w : V A)
   → restrict (⊆-refl {I = none Δ I.⊕ ⊑-∋ p (S Z) I.⊕ ⊑-∋ p Z})

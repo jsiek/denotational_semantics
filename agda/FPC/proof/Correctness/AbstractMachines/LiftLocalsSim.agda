@@ -55,7 +55,7 @@ open import Function using (flip)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
   cong; cong₂)
 
-{- The frame and the environment -----------------------------------------------}
+{- The frame and the environment ---------------------------------------------}
 
 {- the slot ρ x of the frame φ holds the value of x in γ -}
 record Rel {Σ Γ Δ} {I : Inits Δ} (ρ : LL.Slots Γ Δ) (γ : C.Env Σ Γ)
@@ -168,14 +168,16 @@ module Sim {Σ : List DSig} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) 
     move
       (step⁺
         (trans st
-          (cong (λ d → next (I.enter ds₁ d e w κ₁)) (lookup-map lift-body ds g))))
+          (cong (λ d → next (I.enter ds₁ d e w κ₁))
+            (lookup-map lift-body ds g))))
       (plus-star π
         (cong (λ d → next (C.eval d _ _)) (lookup-map ⌜_⌝ ds g) ◅ ε))
       (eval~ (rel-params _ e w) k)
 
   choose : ∀ {Γ Δ A' B'} {I : Inits Δ} {v₁ : C.Val Σ (A' ⊹ B')}
     (v : C.Val Σ (A' ⊹ B')) {e₁ : M.Exp Σ (A' ∷ Γ) A} {e₂ : M.Exp Σ (B' ∷ Γ) A}
-    {x y} {ρ : LL.Slots Γ Δ} {D₁ D₂} {q₁ : binds e₁ D₁ ⊑ Δ} {q₂ : binds e₂ D₂ ⊑ Δ}
+    {x y} {ρ : LL.Slots Γ Δ} {D₁ D₂} {q₁ : binds e₁ D₁ ⊑ Δ}
+    {q₂ : binds e₂ D₂ ⊑ Δ}
     .{ok₁ : Inited (ext x ρ) (I ⊕ x)} .{ok₂ : Inited (ext y ρ) (I ⊕ y)}
     .{o₁ o₂} {γ} {φ : I.Frame Σ Δ I}
     → v₁ ≡ v
