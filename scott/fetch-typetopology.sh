@@ -32,10 +32,11 @@ fi
 APPDIR=$($AGDA --print-agda-app-dir)
 VERSION=$($AGDA --numeric-version)
 {
+  # awk, not cat: a last line without a newline would run into ours
   if [ -f "$APPDIR/libraries-$VERSION" ]; then
-    cat "$APPDIR/libraries-$VERSION"
+    awk '{print}' "$APPDIR/libraries-$VERSION"
   elif [ -f "$APPDIR/libraries" ]; then
-    cat "$APPDIR/libraries"
+    awk '{print}' "$APPDIR/libraries"
   fi
   echo "$TT/typetopology.agda-lib"
 } > "$DEPS/libraries"
