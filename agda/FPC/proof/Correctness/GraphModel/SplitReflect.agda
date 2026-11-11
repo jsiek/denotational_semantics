@@ -87,19 +87,11 @@ reflect-nth : ∀ {Γ Δ Δ'} (Ms : All (Tm Γ) Δ') {r : Ren Γ Δ} {ρ ρ'} �
   → (i : Fin (length Δ')) → Approx (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits r Ms ⟧s' ρ') i)
 reflect-𝒯 : ∀ {Γ Δ Δ'} (Ms : All (Tm Γ) Δ') {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
   → Approx (𝒯 (length Δ') (⟦ Ms ⟧s ρ)) (𝒯 (length Δ') (⟦ splits r Ms ⟧s' ρ'))
-
 {- by consistency, all the results of a target case come from the branch B on the side s -}
 reflect-branch : ∀ {Γ Δ} {A₁ A₂ A C : Type} (s : Tag) (L : Tm Γ (A₁ ⊹ A₂)) (B : Tm (A ∷ Γ) C) {r : Ren Γ Δ} {ρ ρ' C} → Envs r ρ ρ'
   → ∀ v → tag s v ∈ ⟦ split r L ⟧' ρ' → (∀ {a b} → tag s a ~ tag s b → a ~ b)
   → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)
   → Approx C (⟦ split (ext r) B ⟧' (Untag s (⟦ split r L ⟧' ρ') • ρ'))
-reflect-branch s L B {r} E v sv s~ B⊆ V' V'⊆ =
-  ApproxLR-mono (B⊆ NE-s)
-    (split-reflect B (ext-envs E NE-s (Untag-con s s~ (S3.con L ρ~)) (Untag-con s s~ (S4.con (split r L) ρ'~))
-       (Approx-untag s (split-reflect L E))) V' V'⊆)
-  where
-  open Envs E
-  NE-s = Approx-ne (Approx-untag s (split-reflect L E)) ⟨ v , sv ⟩
 
 split-reflect (` x) E = Envs.ρ⊳ E x
 
@@ -225,6 +217,14 @@ reflect-𝒯 {Δ' = _ ∷ Δ'} Ms {r} {ρ} {ρ'} E = Approx-fold₀ (λ _ ()) tu
     sub : mem (w ∷ W') ⊆ nthD Ds' i
     sub d d∈ with W'⊆ d d∈
     ... | ⟨ refl , ⟨ d∈' , _ ⟩ ⟩ = d∈'
+
+reflect-branch s L B {r} E v sv s~ B⊆ V' V'⊆ =
+  ApproxLR-mono (B⊆ NE-s)
+    (split-reflect B (ext-envs E NE-s (Untag-con s s~ (S3.con L ρ~)) (Untag-con s s~ (S4.con (split r L) ρ'~))
+       (Approx-untag s (split-reflect L E))) V' V'⊆)
+  where
+  open Envs E
+  NE-s = Approx-ne (Approx-untag s (split-reflect L E)) ⟨ v , sv ⟩
 
 {- The end theorem (backward half) --------------------------------------------}
 
