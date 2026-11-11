@@ -1,19 +1,19 @@
 {-
 
   This module proves the backward half of the correctness of split
-  (EnvClosμ → PairClosμ) in Scott domains. The relation Refl d d' is the
+  (EnvClosμ → PairClosμ) in Scott domains. The relation Reflect d d' is the
   relation of SplitRel.agda that approximates the meaning d' of the target
   program. So if the meaning of the target program is defined, then the
   meaning of the source program is defined and related to it.
 
   As in SplitPreserve.agda, this module handles the two constructs where
-  the languages differ. For a closure (Refl-clos), a call of the target
+  the languages differ. For a closure (Reflect-clos), a call of the target
   pair, seen in an approximation of depth m + 2, shows its result at depth
   m (callₛ). That result lies below the approximation of depth m of the
   call of the pair itself (callₛ-below), and the relation is downward
-  closed. For a call (Refl-call), the approximation of depth n of the
+  closed. For a call (Reflect-call), the approximation of depth n of the
   result is the sup of the approximations of the calls on approximations
-  of the code, the environment, and the argument (Rf-approx). Each of
+  of the code, the environment, and the argument (Reflect-approx). Each of
   those lies below the approximation of a call at a greater depth, and the
   clause for pairs relates that call.
 
@@ -46,24 +46,24 @@ open import proof.Framework.Scott.Values pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe
 open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
 
-Refl : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
-Refl d d' = Rel reflect d' d
+Reflect : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
+Reflect d d' = Rel reflect d' d
 
 {- Closures -------------------------------------------------------------------}
 
 {- As in SplitPreserve.agda, a source closure means its code applied
    to the tuple t of its free variables, and a target closure means the
    pair of its code and the tuple t'. Suppose t and t' are related by
-   Refl, and the bodies B and B' give related results on related
+   Reflect, and the bodies B and B' give related results on related
    environments X, X' and related arguments Y, Y'. Then the application
-   of the source code to t is related by Refl to the pair of the target
+   of the source code to t is related by Reflect to the pair of the target
    code and t'. -}
-Refl-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
-  → Refl t t'
-  → (∀ {X X' Y Y'} → Refl X X' → Refl Y Y'
-      → Refl (B · env₂ X Y) (B' · env₂ X' Y'))
-  → Refl (appᵈ · codeᶜ B · t) (pairᵈ · codeᶜ B' · t')
-Refl-clos B B' {t} {t'} ht hB =
+Reflect-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
+  → Reflect t t'
+  → (∀ {X X' Y Y'} → Reflect X X' → Reflect Y Y'
+      → Reflect (B · env₂ X Y) (B' · env₂ X' Y'))
+  → Reflect (appᵈ · codeᶜ B · t) (pairᵈ · codeᶜ B' · t')
+Reflect-clos B B' {t} {t'} ht hB =
   Rel-from-defined λ q →
     let qt' = pr₂ (pair-defined← (codeᶜ B') t' q)
         qt = Rel-defined ht qt'
@@ -80,8 +80,8 @@ Refl-clos B B' {t} {t'} ht hB =
   {- If a and a' are related, then calling the target closure on a' is
      related to calling the source closure on a. -}
   body : ∀ {a a'}
-    → Refl a a'
-    → Refl (strict · s · a) (appᵈ · (appᵈ · codeᶜ B' · t') · a')
+    → Reflect a a'
+    → Reflect (strict · s · a) (appᵈ · (appᵈ · codeᶜ B' · t') · a')
   body {a} {a'} ha =
     transport (λ - → Rel reflect - (strict · s · a)) (codeᶜ-β B' t' a' ⁻¹)
     (Rel-seq-l (Rel-seq ha (hB ht ha)))
@@ -105,10 +105,10 @@ Refl-clos B B' {t} {t'} ht hB =
    every j, then F · x is related to d, because F · x is the sup of the
    F · e j x (approx-∐) and the relation is closed under directed sups
    (R-sup). -}
-Rf-approx : (n : ℕ) (d : ⟨ 𝔻 ⟩) (F : DCPO[ 𝔻 , 𝓓 n ]) (x : ⟨ 𝔻 ⟩)
+Reflect-approx : (n : ℕ) (d : ⟨ 𝔻 ⟩) (F : DCPO[ 𝔻 , 𝓓 n ]) (x : ⟨ 𝔻 ⟩)
   → ((j : ℕ) → R reflect n (F · e j x) d)
   → R reflect n (F · x) d
-Rf-approx n d F x h =
+Reflect-approx n d F x h =
   transport (λ - → R reflect n - d) (approx-∐ (𝓓 n) F x ⁻¹)
     (R-sup reflect n d (λ j → F · e j x)
         (image-is-directed' 𝔻 (𝓓 n) F {ℕ} {λ k → e k x} (e-directed x)) h)
@@ -123,14 +123,14 @@ private
    application, which is expected to be a function, and l' is the meaning
    of the translated operator, which is expected to be a pair of code and
    environment. The call applies the code car · l' to the environment cdr
-   · l' and then to the argument a'. If l and l' are related by Refl and a
-   and a' are related by Refl, then the application of l to a and the call
-   of l' on a' are related by Refl. -}
-Refl-call : {l l' a a' : ⟨ 𝔻 ⟩}
-  → Refl l l'
-  → Refl a a'
-  → Refl (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
-Refl-call {l} {l'} {a} {a'} hl ha =
+   · l' and then to the argument a'. If l and l' are related by Reflect and a
+   and a' are related by Reflect, then the application of l to a and the call
+   of l' on a' are related by Reflect. -}
+Reflect-call : {l l' a a' : ⟨ 𝔻 ⟩}
+  → Reflect l l'
+  → Reflect a a'
+  → Reflect (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
+Reflect-call {l} {l'} {a} {a'} hl ha =
   Rel-from-defined λ q →
     Rel-inv hl
       (component-defined zero l'
@@ -161,9 +161,9 @@ Refl-call {l} {l'} {a} {a'} hl ha =
     → ((n : ℕ) → Call n (approx n pr cd) s)
     → Rel reflect (call cd a') (strict · s · a)
   call-fun cd s m = rel λ n →
-    Rf-approx n (strict · s · a) (in-arg n (appᵈ · c · env)) a' λ j →
-    Rf-approx n (strict · s · a) (in-env n c (e j a')) env λ i →
-    Rf-approx n (strict · s · a) (in-code n (e i env) (e j a')) c λ l →
+    Reflect-approx n (strict · s · a) (in-arg n (appᵈ · c · env)) a' λ j →
+    Reflect-approx n (strict · s · a) (in-env n c (e j a')) env λ i →
+    Reflect-approx n (strict · s · a) (in-code n (e i env) (e j a')) c λ l →
       core n l i j
    where
     c = cd zero
