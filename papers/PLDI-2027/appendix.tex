@@ -290,8 +290,10 @@ operation on atoms are GlobalFun terms already.
 
 Imp, the target of \pass{lift locals}, replaces variables by slots of a stack frame. A body runs in a frame of slots, typed by the list
 $\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
-far; slot $x < j$ has type $A_x$. An assignment and a $\kw{case}$ write
-the next slot, $|\Delta|$. Atoms and simple expressions are typed as
+far; slot $x < j$ has type $A_x$. An assignment $x \mathrel{:=} e_1;\; e_2$
+writes the value of $e_1$ to slot $x$, and $\kw{case}\;a\;x\;e_1\;e_2$
+writes the payload of the injection $a$ to slot $x$ and then runs $e_1$
+or $e_2$. In both, $x$ is the next slot, $|\Delta|$. Atoms and simple expressions are typed as
 in Mon, over slots.
 \defhead{Typing of Imp}{\Sigma; \Delta \vdash e : C}
 \[
@@ -303,7 +305,7 @@ in Mon, over slots.
 \[
   \dfrac{\Sigma; \Delta \vdash a : A + B \quad
          \Sigma; \Delta, A \vdash e_1 : C \quad \Sigma; \Delta, B \vdash e_2 : C}
-        {\Sigma; \Delta \vdash \kw{case}\;a\;(|\Delta|.\,e_1)\;(|\Delta|.\,e_2) : C}
+        {\Sigma; \Delta \vdash \kw{case}\;a\;|\Delta|\;e_1\;e_2 : C}
 \]
 \[
   \dfrac{\Sigma; \kw{tup}(\Delta_k), A_k \vdash e_k : C_k \ (k < m)
@@ -325,7 +327,7 @@ it assigns, like a $\kw{let}$.
   \den{\rhs}_T\sigma\kappa & = & \kappa(\mathcal{S}\den{\rhs}\sigma)\\
   \den{x \mathrel{:=} e_1;\; e_2}_T\sigma\kappa & = &
     \den{e_1}_T\sigma\,(\mlam{D} \Lambda(\mlam{X} \den{e_2}_T\sigma[x{:=}X]\kappa) \app D)\\
-  \den{\kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)}_T\sigma\kappa & = &
+  \den{\kw{case}\;a\;x\;e_1\;e_2}_T\sigma\kappa & = &
     \mathcal{C}(\mathcal{A}\den{a}\sigma,\;
       \mlam{X} \den{e_1}_T\sigma[x{:=}X]\kappa,\;
       \mlam{X} \den{e_2}_T\sigma[x{:=}X]\kappa)\\
@@ -348,7 +350,10 @@ may jump to, and its own frame $\Delta$. A label $l$ is an index into
 $\vec{\Delta}$. Block $t_l$ is typed over the blocks older than it, so control
 flow is acyclic. Here $\Delta' \sqsubseteq \Delta$ says that $\Delta'$ is a
 prefix of $\Delta$; an assignment to slot $|\Delta'|$ pops the slots from
-$|\Delta'|$ on and pushes the new value. The popped slots hold the variables
+$|\Delta'|$ on and pushes the new value. In the same way,
+$\kw{case}\;a\;x\;l_1\;l_2$ writes the payload of the injection $a$ to
+slot $x$, with $x = |\Delta'|$, and then jumps to block $l_1$ or $l_2$.
+The slots that an assignment pops hold the variables
 bound inside the expression whose value the assignment writes, and these
 variables are out of scope after the assignment. For example, \pass{lift locals}
 translates
@@ -380,7 +385,7 @@ which hold $z$ and $w$, and pushes $y$ as slot 0.
   \dfrac{\Sigma; \Delta \vdash a : A + B \quad \Delta' \sqsubseteq \Delta \quad
          \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
         {\Sigma; R; \vec{\Delta}; \Delta \vdash
-         \kw{case}\;a\;(|\Delta'|.\,l_1)\;(|\Delta'|.\,l_2)}
+         \kw{case}\;a\;|\Delta'|\;l_1\;l_2}
 \]
 \[
   \dfrac{\Sigma; R; \Delta_0, \ldots, \Delta_{l-1}; \Delta_l \vdash t_l \ (l < j) \quad
@@ -399,7 +404,7 @@ frame $\sigma|_x$, and then pushes the new value as slot $x$.
   \den{x \mathrel{:=} \rhs;\; t}_{T,B}\sigma & = &
     \Lambda(\mlam{X} \den{t}_{T,B}\,\sigma|_x[x{:=}X]) \app \mathcal{S}\den{\rhs}\sigma\\
   \den{\kw{goto}\;l}_{T,B}\sigma & = & B(l)(\sigma)\\
-  \den{\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)}_{T,B}\sigma & = &
+  \den{\kw{case}\;a\;x\;l_1\;l_2}_{T,B}\sigma & = &
     \mathcal{C}(\mathcal{A}\den{a}\sigma,\;
       \mlam{X} B(l_1)(\sigma|_x[x{:=}X]),\;
       \mlam{X} B(l_2)(\sigma|_x[x{:=}X]))
@@ -509,7 +514,9 @@ the call, only $\kw{rax}$ is set, and no closure is open.
 
 A sequence $s$ is typed by the result
 type $R$, the frames $\vec{\Delta}$ of the blocks it may jump to, and
-its starting state.
+its starting state. As in CFG, $\kw{case}\;x\;y\;l_1\;l_2$ writes the
+payload of the injection in slot $x$ to slot $y$, with $y = |\Delta'|$,
+and then jumps to block $l_1$ or $l_2$.
 \defhead{Typing of sequences}{\Sigma; n; R; \vec{\Delta} \vdash s : \psi}
 \[
   \dfrac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; R; \vec{\Delta} \vdash s : \psi'}
@@ -524,7 +531,7 @@ its starting state.
 \[
   \dfrac{x : A + B \in \Delta \quad \Delta' \sqsubseteq \Delta \quad |\Delta'| < n \quad
          \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
-        {\Sigma; n; R; \vec{\Delta} \vdash \kw{case}\;x\;(|\Delta'|.\,l_1)\;(|\Delta'|.\,l_2) : \langle \Theta; \Delta; O; F \rangle}
+        {\Sigma; n; R; \vec{\Delta} \vdash \kw{case}\;x\;|\Delta'|\;l_1\;l_2 : \langle \Theta; \Delta; O; F \rangle}
 \]
 A block starts in the state $\langle \emptyset; \Delta_l; \cdot;
 \kw{unset} \rangle$, and blocks are acyclic as in CFG. A definition
@@ -578,7 +585,7 @@ $\{\langle\rangle\}$; only a call can diverge, so only it is strict.
   \den{i;\; s}_B & = & \den{i}\,\den{s}_B\\
   \den{\kw{retq}}_B\,\sigma R F & = & R(\kw{rax})\\
   \den{\kw{jmp}\;l}_B\,\sigma R F & = & B(l)(\sigma)\\
-  \den{\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)}_B\,\sigma R F & = &
+  \den{\kw{case}\;x\;y\;l_1\;l_2}_B\,\sigma R F & = &
     \mathcal{C}(\sigma(x),\;
       \mlam{X} B(l_1)(\sigma|_y[y{:=}X]),\;
       \mlam{X} B(l_2)(\sigma|_y[y{:=}X]))
@@ -882,7 +889,7 @@ slot 1, and the main expression starts with no variables in scope.
   \pass{lift}_\Gamma(\kw{let}\;x = M\;\kw{in}\;N) & = &
     |\Gamma| \mathrel{:=} \pass{lift}_\Gamma(M);\; \pass{lift}_{\Gamma, x}(N)\\
   \pass{lift}_\Gamma(\kw{case}\;a\;(x.\,M)\;(y.\,N)) & = &
-    \kw{case}\;\pass{lift}_\Gamma(a)\;(|\Gamma|.\,\pass{lift}_{\Gamma, x}(M))\;(|\Gamma|.\,\pass{lift}_{\Gamma, y}(N))\\
+    \kw{case}\;\pass{lift}_\Gamma(a)\;|\Gamma|\;\pass{lift}_{\Gamma, x}(M)\;\pass{lift}_{\Gamma, y}(N)\\
   \pass{lift}(\kw{code}\;(z, y.\,N)) & = & \pass{lift}_{z, y}(N)\\
   \pass{lift}((d_0, \ldots, d_{m-1};\; M)) & = &
     (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; \pass{lift}_{\emptyset}(M))
@@ -910,11 +917,11 @@ $l_2$.
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \pass{tail}(\rhs) & = & \kw{return}\;\rhs\\
   \pass{tail}(x \mathrel{:=} e_1;\; e_2) & = & \pass{assign}(e_1, x, \pass{tail}(e_2))\\
-  \pass{tail}(\kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)) & = & \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)
+  \pass{tail}(\kw{case}\;a\;x\;e_1\;e_2) & = & \kw{case}\;a\;x\;l_1\;l_2
     \quad \text{where } l_i = \pass{add}(\pass{tail}(e_i))\\[4pt]
   \pass{assign}(\rhs, x, k) & = & x \mathrel{:=} \rhs;\; k\\
   \pass{assign}(x' \mathrel{:=} e_1;\; e_2, x, k) & = & \pass{assign}(e_1, x', \pass{assign}(e_2, x, k))\\
-  \pass{assign}(\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2), x, k) & = & \kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)\\
+  \pass{assign}(\kw{case}\;a\;x'\;e_1\;e_2, x, k) & = & \kw{case}\;a\;x'\;l_1\;l_2\\
   & & \quad \text{where } l = \pass{add}(k) \text{ and } l_i = \pass{add}(\pass{assign}(e_i, x, \kw{goto}\;l))\\[4pt]
   \pass{explicate}(e) & = & (\vec{t};\; t)
     \quad \text{where } t = \pass{tail}(e) \text{ and } \vec{t} \text{ are the blocks it adds}
@@ -961,7 +968,7 @@ so $\kw{callc}$ and $\kw{case}$ take a slot.
   \pass{tail}(\kw{return}\;\rhs) & = & \pass{sel}(\rhs, \kw{ret}, \kw{retq})\\
   \pass{tail}(x \mathrel{:=} \rhs;\; t) & = & \pass{sel}(\rhs, \kw{to}\;x, \pass{tail}(t))\\
   \pass{tail}(\kw{goto}\;l) & = & \kw{jmp}\; l\\
-  \pass{tail}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)) & = & \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)
+  \pass{tail}(\kw{case}\;x\;y\;l_1\;l_2) & = & \kw{case}\;x\;y\;l_1\;l_2
 \end{array}
 \]
 The frame of a function body has as many slots as the largest frame that any of its tails starts in or writes, which $\mathit{slots}$ computes. With $\Delta$ the frame a tail starts in:
@@ -969,7 +976,7 @@ The frame of a function body has as many slots as the largest frame that any of 
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \mathit{slots}(\kw{return}\;\rhs) = \mathit{slots}(\kw{goto}\;l) & = & |\Delta|\\
   \mathit{slots}(x \mathrel{:=} \rhs;\; t) & = & \max(|\Delta|, \mathit{slots}(t))\\
-  \mathit{slots}(\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)) & = & \max(|\Delta|, x + 1)\\[4pt]
+  \mathit{slots}(\kw{case}\;a\;x\;l_1\;l_2) & = & \max(|\Delta|, x + 1)\\[4pt]
   \pass{select}((t_0, \ldots, t_{j-1};\; t)) & = &
     (n;\; \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\; \pass{tail}(t))\\
   \pass{select}^{+}((t_0, \ldots, t_{j-1};\; t)) & = &
@@ -1101,11 +1108,11 @@ We show the first branch; the second is the same:
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \den{\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2)}_T\,\sigma\,\kappa_{x,k}
+  \den{\kw{case}\;a\;x'\;e_1\;e_2}_T\,\sigma\,\kappa_{x,k}
     & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,k},\; \ldots) & \text{(Imp)}\\
     & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,\kw{goto}\,l},\; \ldots) & \text{(join point $l$)}\\
     & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} B(l_1)(\sigma[x'{:=}X]),\; \ldots) & \text{(ind.\ hyp.)}\\
-    & = & \den{\kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)}_{T',B}\,\sigma & \text{(CFG)}
+    & = & \den{\kw{case}\;a\;x'\;l_1\;l_2}_{T',B}\,\sigma & \text{(CFG)}
 \end{array}
 \]}
 A further lemma says that blocks added later do not change the meaning

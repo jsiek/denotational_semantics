@@ -222,7 +222,7 @@ the caller resumes with its own $B$.
     \mathit{run}_k(B, m_v, s) \\
   \mathit{run}_k(B, m, \kw{retq}) &= \mathsf{ret}\; m(\kw{rax}) \\
   \mathit{run}_k(B, \langle R, \sigma, u, b\rangle, \kw{jmp}\;l) &= \mathit{jump}_k(B, l, \sigma) \\
-  \mathit{run}_k(B, \langle R, \sigma, u, b\rangle, \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)) &= \begin{cases}
+  \mathit{run}_k(B, \langle R, \sigma, u, b\rangle, \kw{case}\;x\;y\;l_1\;l_2) &= \begin{cases}
       \mathit{jump}_k(B, l_1, \sigma|_y[y{:=}v]) & \text{if } \sigma(x) = \kw{inl}\,v\\
       \mathit{jump}_k(B, l_2, \sigma|_y[y{:=}v]) & \text{if } \sigma(x) = \kw{inr}\,v
     \end{cases} \\[4pt]
@@ -338,7 +338,7 @@ In the notation of Appendix~\ref{app:interp}, a state of the machine of \instr, 
   \mathit{run}(\kw{retq}, B, \mathit{retK}(s, B', \sigma') :: \Sigma, m) &\longrightarrow \mathit{run}(s, B', \Sigma, m') \\
  & \quad\text{where $m'$ has the frame $\sigma'$ and only $\kw{rax}$ set, to $m(\kw{rax})$} \\
   \mathit{run}(\kw{jmp}\;l, B, \Sigma, m) &\longrightarrow \mathit{run}(s_l, B_l, \Sigma, m_\sigma) \\
-  \mathit{run}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2), B, \Sigma, m) &\longrightarrow \mathit{run}(s_{l_1}, B_{l_1}, \Sigma, m_{\sigma|_y[y{:=}v]}) \\
+  \mathit{run}(\kw{case}\;x\;y\;l_1\;l_2, B, \Sigma, m) &\longrightarrow \mathit{run}(s_{l_1}, B_{l_1}, \Sigma, m_{\sigma|_y[y{:=}v]}) \\
  & \quad\text{if } \sigma(x) = \kw{inl}\,v \\
  & \text{(and likewise for $\kw{inr}$ and $l_2$)}
 \end{align*}

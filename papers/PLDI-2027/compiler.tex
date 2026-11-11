@@ -68,10 +68,10 @@
   \qquad P ::= (\vec{d};\, M)\\[3pt]
 \text{Imp} & a & ::= & x \mid c \mid f_k
   \qquad \rhs ::= a \mid o\;\vec{a}\\
- & e & ::= & \rhs \mid x \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)
+ & e & ::= & \rhs \mid x \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;x\;e_1\;e_2
   \qquad P ::= (e_0, \ldots, e_{m-1};\, e)\\[3pt]
 \text{CFG} & t & ::= & \kw{return}\;\rhs \mid x \mathrel{:=} \rhs;\; t \mid \kw{goto}\;l
-  \mid \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)\\
+  \mid \kw{case}\;a\;x\;l_1\;l_2\\
  & b & ::= & (t_0, \ldots, t_{j-1};\, t)
   \qquad P ::= (\vec{b};\, b)\\[3pt]
 \instr & a & ::= & x \mid c \mid f_k \mid \%r \mid \kw{fold}\;a \mid \kw{unfold}\;a
@@ -81,7 +81,7 @@
  & i & ::= & \kw{movq}\;a, d \mid \kw{subq}\;a, \%r \mid \kw{cmpq}\;a_2, a_1
   \mid \kw{sete}\;d \mid \kw{alloc}\;o, d \mid \kw{load}\;\kw{get}_i\;a, d\\
  & & \mid & \kw{fst}\;x, \%r \mid \kw{snd}\;x, \%r \mid \kw{callq}\;a\\
- & s & ::= & i;\; s \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)\\
+ & s & ::= & i;\; s \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;y\;l_1\;l_2\\
  & b & ::= & (n;\, s_0, \ldots, s_{j-1};\, s)
   \qquad P ::= (\vec{b};\, b)
 \end{array}
