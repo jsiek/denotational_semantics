@@ -1,20 +1,22 @@
 {-
 
-  Correctness of split (EnvClosμ → PairClosμ) in Scott domains, the backward
-  half: what the compiled program produces, the source produces too
-  (Refl d d', the relation of SplitRel.agda that approximates the target
-  d').
+  This module proves the backward half of the correctness of split
+  (EnvClosμ → PairClosμ) in Scott domains. The relation Refl d d' is the
+  relation of SplitRel.agda that approximates the target value d'. So
+  if the target program produces a value, then the source program
+  produces a related value.
 
-  What is left from SplitRel.agda are the two constructs where the
-  languages differ, as in SplitPreserve.agda. A closure (Refl-clos): a
-  call of the target pair, seen in an approximation of depth m + 2,
-  shows its result at depth m (callₛ), below the approximation of the
-  call of the pair itself (callₛ-below). A call (Refl-call): the
-  approximation of depth n of the result of a call is the sup of the
-  approximations of the calls of the approximations of the code, the
-  environment and the argument (Rf-approx); each of those is below the
-  approximation of a call at a greater depth, of which the clause for
-  pairs speaks.
+  As in SplitPreserve.agda, this module handles the two constructs
+  where the languages differ. For a closure (Refl-clos), a call of the
+  target pair, seen in an approximation of depth m + 2, shows its
+  result at depth m (callₛ). That result lies below the approximation
+  of depth m of the call of the pair itself (callₛ-below), and the
+  relation is downward closed. For a call (Refl-call), the
+  approximation of depth n of the result is the sup of the
+  approximations of the calls on approximations of the code, the
+  environment, and the argument (Rf-approx). Each of those lies below
+  the approximation of a call at a greater depth, and the clause for
+  pairs relates that call.
 
 -}
 
@@ -47,8 +49,12 @@ open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
 Refl : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
 Refl d d' = Rel reflect d' d
 
-{- Closures --------------------------------------------------------------------------}
+{- Closures -------------------------------------------------------------------}
 
+{- Suppose the tuples t and t' of free variables are related, and the
+   bodies B and B' give related results on related environments and
+   related arguments. Then the source closure and the target pair are
+   related by Refl. -}
 Refl-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
   → Refl t t'
   → (∀ {X X' Y Y'} → Refl X X' → Refl Y Y' → Refl (B · env₂ X Y) (B' · env₂ X' Y'))
@@ -65,11 +71,13 @@ Refl-clos B B' {t} {t'} ht hB =
   BE = ∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ B
   G' = ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ B')) Λ
   s = curry₁ 𝔻 𝔻 𝔻 BE · t
-  {- the closure, called on related arguments -}
+  {- If a and a' are related, then calling the target closure on a' is
+     related to calling the source closure on a. -}
   body : ∀ {a a'}
     → Refl a a'
     → Refl (strict · s · a) (appᵈ · (appᵈ · codeᶜ B' · t') · a')
   body {a} {a'} ha = transport (λ - → Rel reflect - (strict · s · a)) (codeᶜ-β B' t' a' ⁻¹) (Rel-seq-l (Rel-seq ha (hB ht ha)))
+  {- The clause for the target pair (Call) holds at every depth. -}
   calls : (n : ℕ)
     → Call n (approx n pr (pick₂ (codeᶜ B') t')) (strict · s)
   calls zero = ⋆
@@ -80,10 +88,12 @@ Refl-clos B B' {t} {t'} ht hB =
       (transport (R reflect m (π∞ m · (appᵈ · (appᵈ · codeᶜ B' · t') · (ε∞ m · v)))) (seq-idem a (s · a) ⁻¹)
          (stage (body (Rel-ε m r)) m))
 
-{- Calls -------------------------------------------------------------------------------}
+{- Calls ----------------------------------------------------------------------}
 
-{- a property of the approximations of a continuous map, at the
-   approximations of its argument, holds at the argument -}
+{- Suppose F maps 𝔻 into stage n. If F · e j x is related to d for
+   every j, then F · x is related to d, because F · x is the sup of the
+   F · e j x (approx-∐) and the relation is closed under directed sups
+   (R-sup). -}
 Rf-approx : (n : ℕ) (d : ⟨ 𝔻 ⟩) (F : DCPO[ 𝔻 , 𝓓 n ]) (x : ⟨ 𝔻 ⟩)
   → ((j : ℕ) → R reflect n (F · e j x) d)
   → R reflect n (F · x) d
@@ -97,13 +107,15 @@ private
  ≤+' zero b = ≤-refl b
  ≤+' (succ a) b = ≤-trans b (a + b) (succ (a + b)) (≤+' a b) (≤-succ (a + b))
 
+{- If l and l' are related and a and a' are related, then calling the
+   pair l' on a' is related to applying the function value l to a. -}
 Refl-call : {l l' a a' : ⟨ 𝔻 ⟩}
   → Refl l l'
   → Refl a a'
   → Refl (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
 Refl-call {l} {l'} {a} {a'} hl ha =
   Rel-from-defined λ q →
-    Rel-cases hl (component-defined zero l' (app-defined (car · l') (cdr · l') (app-defined (appᵈ · (car · l') · (cdr · l')) a' q)))
+    Rel-inv hl (component-defined zero l' (app-defined (car · l') (cdr · l') (app-defined (appᵈ · (car · l') · (cdr · l')) a' q)))
       (λ u v → Rel reflect (appᵈ · (appᵈ · (car · u) · (cdr · u)) · a') (appᵈ · v · a))
       (λ {t} {t'} x y e m → transport₂ (Rel reflect)
                               (ap₂ (λ c d → appᵈ · (appᵈ · c · d) · a') (case-inj 𝔻⊥ (component-br zero) t x)
@@ -111,7 +123,9 @@ Refl-call {l} {l'} {a} {a'} hl ha =
                               (ap (_· a) (case-inj (𝔻 ⟹𝔻) app-br t' y) ⁻¹)
                               (call-ok x y e m))
  where
-  {- maps for approximating one operand of a call at a time -}
+  {- The maps in-arg, in-env, and in-code approximate one operand of a
+     call at a time, namely the argument, the environment, and the
+     code. -}
   in-arg : (n : ℕ) (f : ⟨ 𝔻 ⟩) → DCPO[ 𝔻 , 𝓓 n ]
   in-arg n f = ∘₁ 𝔻 𝔻 (𝓓 n) (appᵈ · f) (π∞ n)
   in-env : (n : ℕ) (c a : ⟨ 𝔻 ⟩) → DCPO[ 𝔻 , 𝓓 n ]
@@ -154,7 +168,9 @@ Refl-call {l} {l'} {a} {a'} hl ha =
       j≤ : j ≤ K
       j≤ = ≤-trans j k' K (≤+' (l + i) j) (≤+ k' n)
 
-  {- a call of a value that is not a pair is ⊥ -}
+  {- If the called target value is not a pair, then its code and its
+     environment are ⊥𝔻. So the call is ⊥𝔻, which is related to every
+     source value. -}
   ⊥-call : ∀ {w}
     → Rel reflect (appᵈ · (appᵈ · ⊥𝔻 · ⊥𝔻) · a') w
   ⊥-call = transport (λ - → Rel reflect - _) ((ap (λ - → appᵈ · - · a') (app-⊥ ⊥𝔻) ∙ app-⊥ a') ⁻¹) Rel-⊥

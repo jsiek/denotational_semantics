@@ -1,11 +1,13 @@
 {-
 
-  Correctness of split (EnvClosμ → PairClosμ) in Scott domains: a closed
-  program and its translation produce the same constants, and one is
-  defined exactly when the other is, as in the graph model
-  (FPC/proof/Correctness/GraphModel/SplitCorrect.agda). Forward by Pres,
-  backward by Refl (SplitTerms.agda): in either relation a defined value
-  related to a constant is that constant (Rel-const-is).
+  This module proves the correctness of split (EnvClosμ → PairClosμ) in
+  Scott domains. A closed program and its translation produce the same
+  constants, and one of them is defined if and only if the other is, as
+  in the graph model (FPC/proof/Correctness/GraphModel/SplitCorrect.agda).
+  The forward direction follows from split-pres and the backward
+  direction from split-refl (SplitTerms.agda), because in either
+  relation a defined value that is related to a constant is that
+  constant (Rel-const-is).
 
 -}
 
@@ -36,7 +38,8 @@ open import FPC.proof.Correctness.ScottDomains.SplitTerms pt fe pe using (split-
 open import FPC.Semantics.ScottDomains.EnvClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₃)
 open import FPC.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄)
 
-{- a defined value related to a constant is that constant -}
+{- If a defined value w is related to a constant, then w is that
+   constant. -}
 Rel-const-is : ∀ {δ w} (B : Base) (c : base-rep B)
   → Rel δ (const B c) w
   → defined w

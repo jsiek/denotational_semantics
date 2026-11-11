@@ -1,12 +1,16 @@
 {-
 
-  Backward (reflect) direction of split (EnvClosμ → PairClosμ) in the graph
-  model, as for typed split (ISWIM/proof/Correctness/Graph/SplitReflect.agda),
-  with the approximant logical relation ApproxLR of SplitRel (source
-  sets against finite target approximants). The target call (callc) is
-  the source application on the calls collected from finitely many
-  pairs (collect). There is no project, so no acc-reflect; fold and
-  unfold are the identity on both sides.
+  This module proves the backward (reflect) direction of split
+  (EnvClosμ → PairClosμ) in the graph model, as for typed split
+  (ISWIM/proof/Correctness/Graph/SplitReflect.agda). It uses the
+  approximant logical relation ApproxLR of SplitRel.agda, which relates
+  source sets to finite target approximants. Finitely many results of a
+  target call (callc) come from finitely many pairs, and collect
+  gathers those pairs into a self-contained call. The clause app-obs of
+  the relation then relates the source application to these results.
+  FPC has no project construct, so this module needs no counterpart of
+  acc-reflect. The constructs fold and unfold mean the identity on both
+  sides.
 
 -}
 
@@ -46,7 +50,9 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 
 module FPC.proof.Correctness.GraphModel.SplitReflect where
 
-{- a target call W' ⊆ L' ⊙ N' is a self-contained call: a finite V ⊆ L' maps a finite U ⊆ N' to W' -}
+{- If every element of the finite list W' is a result of the call
+   L' ⊙ N', then some finite V ⊆ L' maps some finite U ⊆ N' to W' by a
+   self-contained call. -}
 collect : ∀ (L' N' : 𝒫 Value) W' → mem W' ⊆ (L' ⊙ N')
   → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ] mem V ⊆ L' × mem U ⊆ N' × SelfContainedMaps V U W'
 collect L' N' [] _ =
@@ -87,7 +93,13 @@ reflect-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Envs Γ ρ ρ'
   → (i : Fin (length Δ)) → Approx (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits Ms ⟧s' ρ') i)
 reflect-𝒯 : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Envs Γ ρ ρ'
   → Approx (𝒯 (length Δ) (⟦ Ms ⟧s ρ)) (𝒯 (length Δ) (⟦ splits Ms ⟧s' ρ'))
-{- by consistency, all the results of a target case come from the branch B on the side s -}
+{- Suppose the target scrutinee contains a value tagged s, and the
+   source branch B, run on the payloads tagged s of the source
+   scrutinee, produces results within C. Then C approximates the target
+   branch run on the payloads tagged s of the target scrutinee. The case
+   for case in split-reflect first uses the consistency of the target
+   scrutinee to show that all results of the target case come from the
+   same branch. -}
 reflect-branch : ∀ {Γ} {A₁ A₂ A C : Type} (s : Tag) (L : Tm Γ (A₁ ⊹ A₂)) (B : Tm (A ∷ Γ) C) {ρ ρ' C} → Envs Γ ρ ρ'
   → ∀ v → tag s v ∈ ⟦ split L ⟧' ρ' → (∀ {a b} → tag s a ~ tag s b → a ~ b)
   → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)

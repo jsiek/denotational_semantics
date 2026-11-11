@@ -1,18 +1,21 @@
 {-
 
-  Correctness of split (EnvClosμ → PairClosμ) in Scott domains, the forward
-  half: what a source program produces, the compiled one produces too
-  (Pres, the relation of SplitRel.agda that approximates the source).
+  This module proves the forward half of the correctness of split
+  (EnvClosμ → PairClosμ) in Scott domains. The relation Pres is the
+  relation of SplitRel.agda that approximates the source value. So if
+  the source program produces a value, then the target program produces
+  a related value.
 
-  What is left from SplitRel.agda are the two constructs where the
-  languages differ. A EnvClosμ closure is its code applied to the tuple of
-  its free variables, a function value; its translation is the pair of
-  the translated code and the tuple (Pres-clos). An application of a
-  function value is related to a call of a pair (Pres-call): the
-  approximation of depth n of the result is the sup of the
-  approximations of the applications to the approximations of the
-  argument (approx-∐), and each of those is related, by the relation of
-  the closures at a greater depth.
+  SplitRel.agda handles every construct except the two where the
+  languages differ, and this module handles those two. An EnvClosμ
+  closure is its code applied to the tuple of its free variables, which
+  gives a function value. Its translation is the pair of the translated
+  code and the tuple (Pres-clos). An application of a function value is
+  related to a call of a pair (Pres-call). The approximation of depth n
+  of the application is the sup of the approximations of depth n of
+  the function applied to the approximations e k a of the argument
+  (approx-∐). The relation of the closures at the greater depth k + n
+  relates each of those to the call.
 
 -}
 
@@ -42,8 +45,10 @@ open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
 Pres : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
 Pres = Rel preserve
 
-{- Closures: related when the tuples are and the bodies are on related
-   arguments -}
+{- Suppose the tuples t and t' of free variables are related, and the
+   bodies B and B' give related results on related environments and
+   related arguments. Then the source closure and the target pair are
+   related. -}
 Pres-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
   → Pres t t'
   → (∀ {X X' Y Y'} → Pres X X' → Pres Y Y' → Pres (B · env₂ X Y) (B' · env₂ X' Y'))
@@ -64,14 +69,15 @@ Pres-clos B B' {t} {t'} ht hB =
   G = ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 BE) Λ
   G' = ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ B')) Λ
 
-{- Calls: an application of a function value, and a call of a pair -}
+{- If l and l' are related and a and a' are related, then applying the
+   function value l to a is related to calling the pair l' on a'. -}
 Pres-call : {l l' a a' : ⟨ 𝔻 ⟩}
   → Pres l l'
   → Pres a a'
   → Pres (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
 Pres-call {l} {l'} {a} {a'} hl ha =
   Rel-from-defined λ q →
-    Rel-cases hl (app-defined l a q) (λ u v → Pres (appᵈ · u · a) (appᵈ · (appᵈ · (car · v) · (cdr · v)) · a'))
+    Rel-inv hl (app-defined l a q) (λ u v → Pres (appᵈ · u · a) (appᵈ · (appᵈ · (car · v) · (cdr · v)) · a'))
       (λ {t} {t'} x y e m → transport₂ Pres (ap (_· a) (case-inj (𝔻 ⟹𝔻) app-br t x) ⁻¹)
                                             (ap₂ (λ c d → appᵈ · (appᵈ · c · d) · a') (case-inj 𝔻⊥ (component-br zero) t' y)
                                                  (case-inj 𝔻⊥ (component-br (suc zero)) t' y) ⁻¹)

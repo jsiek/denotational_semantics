@@ -1,36 +1,43 @@
 {-
 
-  A design experiment for the reflection half of split (EnvClosμ → PairClosμ)
-  in the graph model, in no proof's total: the approximant logical
-  relation of SplitRel with a target *set* T of bounded depth, possibly
-  infinite, in place of the finite target list V (the paper, §4.2,
-  "Design alternatives: which sides to relate", fourth bullet).
+  This module is a design experiment for the reflection half of split
+  (EnvClosμ → PairClosμ) in the graph model, separate from the size
+  totals of the proofs. It replaces the finite target list V of the
+  approximant logical relation of SplitRel.agda with a target set T of
+  bounded depth, which may be infinite. The paper discusses this
+  alternative in Section 4.2 ("Design alternatives: which sides to
+  relate", fourth bullet).
 
-  ApproxLRSet≤ k D T has the four clauses of ApproxLRLayer, by recursion
-  on the bound k, for T whose elements all have depth < k (the
-  definition itself is total). The finite parts of a call stay lists,
-  since they are parts of one graph value: the arguments U₀ and the
-  environments FV of a code entry FV ↦ (U₀ ↦ w). The self-contained
-  calls become sets (SelfContainedMapsS T U W): the arguments U and the results W of the
-  calls of T may be infinite, and they are bounded by k when T is
-  bounded by k + 1. The projection clause relates Untag t D to the whole
-  set Untag t T, so it needs no quantifier over its subsets.
+  ApproxLRSet≤ k D T consists of the four clauses of ApproxLRLayer and
+  is defined by recursion on the bound k. It is meant for a set T whose
+  elements all have depth less than k, although the definition makes
+  sense for every T. The finite parts of a call stay lists, because
+  they are parts of one graph value. These parts are the arguments U₀
+  and the environments FV of a code entry FV ↦ (U₀ ↦ w). The
+  self-contained calls become sets (SelfContainedMapsS T U W), because
+  the arguments U and the results W of the calls of T may be infinite.
+  If T is bounded by k + 1, then U and W are bounded by k. The
+  projection clause relates Untag t D to the whole set Untag t T, so it
+  needs no quantifier over subsets.
 
-  ApproxLRSet⇒ and ApproxLRSet⇐ (together ApproxLRSet⇔) prove, by one
-  induction on k, that the set relation on a set bounded by k is the
-  relation on each of its finite sublists, Approx D T of SplitRel:
+  ApproxLRSet⇒ and ApproxLRSet⇐, together ApproxLRSet⇔, prove by one
+  induction on k that, on a set T bounded by k, the set relation agrees
+  with the relation on each finite sublist of T (Approx D T of
+  SplitRel.agda):
 
     Bnd𝒫 k T → (ApproxLRSet≤ k D T ⇔ ∀ V → mem V ⊆ T → ApproxLR D V)
 
-  Each direction of the step uses the other direction at k, on the
-  arguments of the calls, which are in negative position. (⇒) passes a
-  finite self-contained call of V ⊆ T to the set clause as the sets mem U
-  and mem W. (⇐) cuts an infinite call into finite pieces: a finite W₀ ⊆ W
-  comes from finitely many code entries of T, whose pairs and the pairs
-  that supply their environments (cdr-witness) form a finite V ⊆ T, and
-  whose arguments form a finite U₁ ⊆ U (collectS); the relation of E to
-  U gives the one to U₁, the consistency of U that of U₁, and the
-  clause of the finite relation at V gives D ● E related to W₀.
+  Each direction of the induction step uses the other direction at k on
+  the arguments of the calls, because the arguments occur in negative
+  position. The direction (⇒) passes a finite self-contained call of
+  V ⊆ T to the set clause as the sets mem U and mem W. The direction
+  (⇐) cuts an infinite call into finite pieces. A finite W₀ ⊆ W comes
+  from finitely many code entries of T. Their pairs, together with the
+  pairs that supply their environments (cdr-witness), form a finite
+  V ⊆ T, and their arguments form a finite U₁ ⊆ U (collectS). The
+  relation of E to U gives the relation of E to U₁, and the consistency
+  of U gives the consistency of U₁. The clause of the finite relation at
+  V then relates D ● E to W₀.
 
 -}
 
@@ -55,7 +62,7 @@ open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module FPC.proof.Correctness.GraphModel.SplitDesignBoundedSets where
 
-{- Bounded sets ------------------------------------------------------------------}
+{- Bounded sets ---------------------------------------------------------------}
 
 Bnd𝒫 : ℕ → 𝒫 Value → Set
 Bnd𝒫 k T = ∀ v → v ∈ T → depth v < k
@@ -68,8 +75,9 @@ Bnd𝒫-Untag (tupT i) bT d d∈ = <-shrink ≤-refl (bT _ d∈)
 Bnd𝒫-Untag leftT bT d d∈ = <-shrink ≤-refl (bT _ d∈)
 Bnd𝒫-Untag rightT bT d d∈ = <-shrink ≤-refl (bT _ d∈)
 
-{- The function entries of a target set, and its self-contained calls ----------}
+{- Usable entries and self-contained calls of a target set -------------------}
 
+{- UsableEntryS is UsableEntry for a target set T in place of a list. -}
 record UsableEntryS (T : 𝒫 Value) (U₀ : List Value) (w : Value) : Set where
   constructor usable-entryS
   field
@@ -79,13 +87,16 @@ record UsableEntryS (T : 𝒫 Value) (U₀ : List Value) (w : Value) : Set where
     FV≢[] : FV ≢ []
     FV⊆ : mem FV ⊆ cdr ⟨ T , ptt ⟩
 
-{- T maps U to W, as in SelfContainedMaps, with sets of arguments U and results W -}
+{- SelfContainedMapsS T U W says that T maps U to W, as in
+   SelfContainedMaps, where the arguments U and the results W are
+   sets. -}
 record SelfContainedMapsS (T U W : 𝒫 Value) : Set where
   field
     results : ∀ w → w ∈ W → Σ[ U₀ ∈ List Value ] UsableEntryS T U₀ w × U₀ ≢ [] × mem U₀ ⊆ U
     args : ∀ u → u ∈ U → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] UsableEntryS T U₀ w × u ⋵ U₀
 
-{- an entry of a finite V ⊆ T is one of T -}
+{- If V ⊆ T, then every usable entry of the list V is a usable entry of
+   the set T. -}
 UsableEntry→S : ∀ {V T U₀ w} → mem V ⊆ T → UsableEntry V U₀ w → UsableEntryS T U₀ w
 UsableEntry→S V⊆ (usable-entry FV t e∈ neFV FV⊆) =
   usable-entryS FV t (V⊆ _ e∈) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , V⊆ _ i ⟩)
@@ -96,8 +107,9 @@ SelfContainedMaps→S V⊆ cs = record
   ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = SelfContainedMaps.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩ ⟩
   }
 
-{- an entry of T is one of a finite V ⊆ T: its pair and the pairs that
-   supply its environments -}
+{- Every usable entry of T is a usable entry of some finite V ⊆ T. The
+   list V consists of the entry's pair and the pairs that supply its
+   environments. -}
 S→UsableEntry : ∀ {T U₀ w} → UsableEntryS T U₀ w → Σ[ V ∈ List Value ] mem V ⊆ T × UsableEntry V U₀ w
 S→UsableEntry {T} {U₀} {w} (usable-entryS FV t e∈ neFV FV⊆) with cdr-witness FV FV⊆
 ... | ⟨ P , ⟨ P⊆T , FV⊆P ⟩ ⟩ =
@@ -115,8 +127,8 @@ Bnd-SelfContainedMapsS-args bT cs u u∈ =
 Bnd-SelfContainedMapsS-apps : ∀ {k T U W} → Bnd𝒫 (suc k) T → SelfContainedMapsS T U W → Bnd𝒫 k W
 Bnd-SelfContainedMapsS-apps bT cs w w∈ = proj₂ (Bnd-UsableEntryS bT (proj₁ (proj₂ (SelfContainedMapsS.results cs w w∈))))
 
-{- the results W₀ ⊆ W, finitely many, of a self-contained call of T come
-   from a finite V ⊆ T that maps finitely many arguments U₁ ⊆ U to W₀ -}
+{- If T maps U to W and W₀ is a finite part of W, then some finite
+   V ⊆ T maps some finite U₁ ⊆ U to W₀. -}
 collectS : ∀ {T U W} → SelfContainedMapsS T U W → ∀ W₀ → mem W₀ ⊆ W
   → Σ[ V ∈ List Value ] Σ[ U₁ ∈ List Value ] mem V ⊆ T × mem U₁ ⊆ U × SelfContainedMaps V U₁ W₀
 collectS cs [] _ = ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
@@ -134,7 +146,7 @@ collectS cs (w ∷ W₀) W₀⊆
   ++⊆ : ∀ {A B : List Value} {D} → mem A ⊆ D → mem B ⊆ D → mem (A ++ B) ⊆ D
   ++⊆ {A} A⊆ B⊆ d d∈ = [ A⊆ d , B⊆ d ]′ (∈-++⁻ A d∈)
 
-{- The relation on bounded target sets -----------------------------------------}
+{- The relation on bounded target sets ----------------------------------------}
 
 record ApproxLRSetLayer (Q : 𝒫 Value → 𝒫 Value → Set₁) (D T : 𝒫 Value) : Set₁ where
   field
@@ -147,7 +159,7 @@ ApproxLRSet≤ : ℕ → 𝒫 Value → 𝒫 Value → Set₁
 ApproxLRSet≤ zero D T = pTrue
 ApproxLRSet≤ (suc k) D T = ApproxLRSetLayer (ApproxLRSet≤ k) D T
 
-{- The relation on a bounded set is the relation on its finite sublists ---------}
+{- Agreement of the set relation with the list relation ----------------------}
 
 ApproxLRSet⇒ : ∀ k {D T} → Bnd𝒫 k T → ApproxLRSet≤ k D T → Approx D T
 ApproxLRSet⇐ : ∀ k {D T} → Bnd𝒫 k T → Approx D T → ApproxLRSet≤ k D T

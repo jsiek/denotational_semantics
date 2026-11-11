@@ -1,12 +1,16 @@
 {-
 
-  Forward (preserve) direction of split (EnvClosμ → PairClosμ) in the graph
-  model, as for typed split (ISWIM/proof/Correctness/Graph/SplitPreserve.agda),
-  by the logical relation between single source values and target sets
-  (v ⊑ D'), by recursion on the value: a source function is exhibited
-  by a target closure, a set with a pair, whose calls (⊙, callc)
-  exhibit its results. There is no project, so no acc-preserve; fold
-  and unfold are the identity on both sides.
+  This module proves the forward (preserve) direction of split
+  (EnvClosμ → PairClosμ) in the graph model, as for typed split
+  (ISWIM/proof/Correctness/Graph/SplitPreserve.agda). The logical
+  relation v ⊑ D' (Figure 4 of the paper) relates a single source value
+  v to a set D' of target values, and it is defined by recursion on v.
+  A source entry U ↦ w is related to D' when D' contains a pair and,
+  for every consistent set E' related to the elements of U, the result
+  w is related to the call D' ⊙ E', which computes callc. FPC has no
+  project construct, so this module needs no counterpart of
+  acc-preserve. The constructs fold and unfold mean the identity on
+  both sides.
 
 -}
 
@@ -45,7 +49,7 @@ open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module FPC.proof.Correctness.GraphModel.SplitPreserve where
 
-{- The relation -----------------------------------------------------------------}
+{- The relation ---------------------------------------------------------------}
 
 ⋆⋆-mono : ∀ {C C' Y Y' X X'} → C ⊆ C' → Y ⊆ Y' → X ⊆ X' → (C ● Y) ● X ⊆ (C' ● Y') ● X'
 ⋆⋆-mono {C} {C'} {Y} {Y'} C⊆ Y⊆ = ●-mono {C ● Y} {C' ● Y'} (●-mono C⊆ Y⊆)
@@ -53,7 +57,7 @@ module FPC.proof.Correctness.GraphModel.SplitPreserve where
 ⊙-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
 ⊙-mono-l {D₁} {D₂} D⊆ = ⋆⋆-mono {car ⟨ D₁ , ptt ⟩} {car ⟨ D₂ , ptt ⟩} {cdr ⟨ D₁ , ptt ⟩} {cdr ⟨ D₂ , ptt ⟩} (λ { u ⟨ v , p ⟩ → ⟨ v , D⊆ _ p ⟩ }) (λ { v ⟨ u , p ⟩ → ⟨ u , D⊆ _ p ⟩ }) (λ d z → z)
 
-{- a closure: a set with a pair -}
+{- PairV D' says that D' contains a pair, as a target closure does. -}
 PairV : 𝒫 Value → Set
 PairV D' = Σ[ u ∈ Value ] Σ[ t ∈ Value ] ⦅ u , t ⦆ ∈ D'
 
@@ -123,7 +127,11 @@ preserve-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Envs Γ ρ ρ'
   → ∀ i v → v ∈ nthD (⟦ Ms ⟧s ρ) i → v ⊑ nthD (⟦ splits Ms ⟧s' ρ') i
 preserve-𝒯 : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Envs Γ ρ ρ'
   → ∀ v → v ∈ 𝒯 (length Δ) (⟦ Ms ⟧s ρ) → v ⊑ 𝒯 (length Δ) (⟦ splits Ms ⟧s' ρ')
-{- the body B of a binder, on the meaning X' of the target's bound term, which satisfies the source's U -}
+{- preserve-body handles the body B of a binder (case or let). Suppose
+   every element of the nonempty list U is related to the consistent set
+   X', and the translated body, with X' bound, produces results within
+   Y' whenever X' is nonempty. If B, with U bound, produces v, then v is
+   related to Y'. -}
 preserve-body : ∀ {Γ A C} (B : Tm (A ∷ Γ) C) {ρ ρ' U X' Y'} → Envs Γ ρ ρ' → U ≢ [] → Con X'
   → (∀ u → u ∈ mem U → u ⊑ X') → (nonempty X' → ⟦ split B ⟧' (X' • ρ') ⊆ Y') → ∀ v → v ∈ ⟦ B ⟧ (mem U • ρ) → v ⊑ Y'
 
@@ -192,7 +200,7 @@ preserve-𝒯 {Δ = _ ∷ _} Ms E (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ 
 preserve-body B E neU c U⊑ B⊆ v v∈ = ⊑-mono v (B⊆ ne) (preserve B (ext-envs E ne c U⊑) v v∈)
   where ne = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (U⊑ u u∈)
 
-{- The end theorem (forward half) ------------------------------------------------}
+{- The end theorem (forward half) ---------------------------------------------}
 
 Envs₀ : Envs [] ρ₀ ρ₀
 Envs₀ = envs (λ _ → ⟨ ⟨⟩ , refl ⟩) (λ _ → Con-⌈⌉ ⟨⟩) (λ ())

@@ -1,10 +1,11 @@
 {-
 
-  Correctness of split (EnvClosμ → PairClosμ) in Scott domains: the
-  fundamental lemma of each half, by induction on terms. The two are
-  the same induction, over a relation S between source and target
-  values that the operators preserve (module Terms); it is instantiated
-  with Pres (SplitPreserve.agda) and Refl (SplitReflect.agda).
+  This module proves the fundamental lemma of each half of the
+  correctness of split (EnvClosμ → PairClosμ) in Scott domains, by
+  induction on terms. The two halves share one induction (module Terms),
+  which works for any relation _∼_ between source and target values
+  that the operators preserve. We instantiate it with Pres
+  (SplitPreserve.agda) and with Refl (SplitReflect.agda).
 
 -}
 
@@ -56,7 +57,8 @@ module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
   (S-seq : ∀ {d d' e e'} → d ∼ d' → e ∼ e' → seq · d · e ∼ seq · d' · e')
   where
 
-  {- the environments are related pointwise -}
+  {- SEnv ρ ρ' says that the source environment ρ and the target
+     environment ρ' are related at every variable of Γ. -}
   SEnv : ∀ {Γ : Ctx} → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇
   SEnv {Γ} ρ ρ' = ∀ {C} (x : Γ ∋ C) → (ρ (idx x)) ∼ (ρ' (idx x))
 
@@ -64,6 +66,8 @@ module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
   ext-env ha h Z = ha
   ext-env ha h (S x) = h x
 
+  {- The fundamental lemma. If the environments are related, then the
+     meaning of M and the meaning of its translation are related. -}
   ok : ∀ {Γ A} (M : Tm Γ A) {ρ ρ' : ⟨ Env ⟩} → SEnv {Γ} ρ ρ' → ⟦ M ⟧₃ · ρ ∼ ⟦ split M ⟧₄ · ρ'
   oks : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ' : ⟨ Env ⟩} → SEnv {Γ} ρ ρ'
     → (i : Fin (length Δ)) → ((⟦ Ms ⟧s₃ · ρ) i) ∼ ((⟦ splits Ms ⟧s₄ · ρ') i)
@@ -90,9 +94,16 @@ module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
   oks (M ∷ Ms) h zero = ok M h
   oks (M ∷ Ms) h (suc i) = oks Ms h i
 
-  {- the meaning of a program and of its translation are related -}
+  {- The meanings of a closed program and of its translation are
+     related. -}
   split-ok : ∀ {A} (M : Tm [] A) → ⟦ M ⟧₃ · ρ₀ ∼ ⟦ split-program M ⟧₄ · ρ₀
   split-ok M = ok M (λ ())
+
+{- The two instances of Terms. The forward one uses Pres and gives
+   split-pres. The backward one uses Refl and gives split-refl. Because
+   Refl d d' is Rel reflect d' d, the backward instance passes the
+   source and target arguments of Rel-case and of its premises in
+   swapped order. -}
 
 open Terms Pres Pres-clos Pres-call Rel-const Rel-tuple Rel-proj Rel-inl Rel-inr Rel-case Rel-prim Rel-seq
   using () renaming (split-ok to split-pres) public
