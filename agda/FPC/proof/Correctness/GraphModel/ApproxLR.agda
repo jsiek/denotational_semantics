@@ -1,7 +1,7 @@
 {-
 
   The approximant logical relation of the paper (Section 4.2, Figure 5)
-  and Lemma 4.2 (depth irrelevance and unfolding), for the reflection
+  and Lemma 4.4 (depth irrelevance and unfolding), for the reflection
   half of split (EnvClosμ → PairClosμ) in the graph model.
 
   ApproxLR D V relates a set D of source (EnvClosμ) elements to a finite
@@ -9,11 +9,11 @@
   since a target closure is a set of pairs whose calls combine the codes
   and environments of several pairs (SelfContainedMaps). ApproxLRLayer is the four
   clauses, with the recursive occurrence left open (Q); ApproxLR≤ k is
-  the paper's ≼ₖ, and ApproxLR its ≼. The index is only a termination
+  the paper's ⊵ₖ, and ApproxLR its ⊵. The index is only a termination
   device: any index that bounds the depth of V gives the same relation
-  (ApproxLR-depth-irrelevant, Lemma 4.2 (1)), so ApproxLR is its four
+  (ApproxLR-depth-irrelevant, Lemma 4.4 (1)), so ApproxLR is its four
   clauses with ApproxLR at the recursive occurrences (unfold and fold,
-  Lemma 4.2 (2)). The relation is monotone in D (ApproxLR-mono) and
+  Lemma 4.4 (2)). The relation is monotone in D (ApproxLR-mono) and
   antitone in V (ApproxLR-⊆).
 
   This module is a proof module: the theorem statements do not use it.
@@ -127,12 +127,12 @@ ApproxLRLayer-map bk bj to from o = record
   }
   where open ApproxLRLayer o
 
-{- Figure 5: D ≼ₖ V -}
+{- Figure 5: D ⊵ₖ V -}
 ApproxLR≤ : ℕ → 𝒫 Value → List Value → Set₁
 ApproxLR≤ zero D V = pTrue
 ApproxLR≤ (suc k) D V = ApproxLRLayer (ApproxLR≤ k) D V
 
-{- Figure 5: D ≼ V, at an index one more than the depth of V -}
+{- Figure 5: D ⊵ V, at an index one more than the depth of V -}
 ApproxLR : 𝒫 Value → List Value → Set₁
 ApproxLR D V = ApproxLR≤ (suc (depths V)) D V
 
@@ -159,15 +159,15 @@ private
     }
     where open ApproxLRLayer r
 
-{- Lemma 4.2 (1): if every element of V has depth less than k and less
-   than j, then D ≼ₖ V implies D ≼ⱼ V (and so, swapping k and j, the
+{- Lemma 4.4 (1): if every element of V has depth less than k and less
+   than j, then D ⊵ₖ V implies D ⊵ⱼ V (and so, swapping k and j, the
    converse) -}
 ApproxLR-depth-irrelevant : ∀ {k j D V} → Bnd k V → Bnd j V → ApproxLR≤ k D V → ApproxLR≤ j D V
 ApproxLR-depth-irrelevant {j = zero} _ _ _ = ptt
 ApproxLR-depth-irrelevant {zero} {suc j} bk _ _ = ApproxLR≤-data (suc j) (λ v v∈ → ⊥-elim (n≮0 (bk v v∈)))
 ApproxLR-depth-irrelevant {suc k} {suc j} bk bj = ApproxLRLayer-map bk bj ApproxLR-depth-irrelevant ApproxLR-depth-irrelevant
 
-{- Lemma 4.2 (2): D ≼ V if and only if its four clauses hold with ≼ at the
+{- Lemma 4.4 (2): D ⊵ V if and only if its four clauses hold with ⊵ at the
    recursive occurrences -}
 unfold : ∀ {D V} → ApproxLR D V → ApproxLRLayer ApproxLR D V
 unfold {V = V} = ApproxLRLayer-map bV bV (λ b _ → ApproxLR-depth-irrelevant b (Bnd-depths _)) (λ _ → ApproxLR-depth-irrelevant (Bnd-depths _))
