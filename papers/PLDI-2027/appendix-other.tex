@@ -632,20 +632,20 @@ pair of stage $m + 2$ therefore gives its result at stage $m$:
     & \iff & \mathsf{true} \qquad \text{for } n < 2
 \end{array}
 \]
-\defhead{Related values}{d \SRel{\pm} w \qquad \mathit{Pres}(d, d') \qquad \mathit{Refl}(d, d')}
+\defhead{Related values}{d \SRel{\pm} w \qquad \mathit{Pres}(d, d') \qquad \mathit{Reflect}(d, d')}
 \[
   d \SRel{\pm} w \iff \forall n.\; \pi^\infty_n(d) \SR{\pm}{n} w
   \qquad
   \mathit{Pres}(d, d') \iff d \SRel{+} d'
   \qquad
-  \mathit{Refl}(d, d') \iff d' \SRel{-} d
+  \mathit{Reflect}(d, d') \iff d' \SRel{-} d
 \]
 \caption{The relations of the Scott-domain proof of \pass{split closure},
   between a source (EnvClos) value $d$ and a target (PairClos) value
   $d'$. The superscript $\pm$ stands for either direction. We read
   $s \SR{\pm}{n} w$ as ``$s$ and $w$ are related at stage $n$'',
   $\mathit{Pres}(d, d')$ as ``$d'$ preserves $d$'', and
-  $\mathit{Refl}(d, d')$ as ``$d$ reflects $d'$''. Here $g'$ is
+  $\mathit{Reflect}(d, d')$ as ``$d$ reflects $d'$''. Here $g'$ is
   the strict function that agrees with $g$ on defined values.}
 \label{fig:scott-delay}
 \end{figure}
@@ -697,7 +697,7 @@ of $\mathbb{D}_m$, and part~2 absorbs the difference.
 
 \paragraph{The fundamental lemma}
 
-Write $\sim$ for either $\mathit{Pres}$ or $\mathit{Refl}$. Both relate
+Write $\sim$ for either $\mathit{Pres}$ or $\mathit{Reflect}$. Both relate
 $\bot$ to every value in the approximated position, and the operators
 that EnvClos and PairClos share preserve both.
 
@@ -757,7 +757,7 @@ $\den{\pass{split}(M)}\rho_0$ is defined.
 
 The empty environments are related, so Lemma~\ref{lem:scott-fundamental}
 gives that $\den{M}\rho_0$ and $\den{\pass{split}(M)}\rho_0$ are
-related by both $\mathit{Pres}$ and $\mathit{Refl}$. In either
+related by both $\mathit{Pres}$ and $\mathit{Reflect}$. In either
 relation, a defined approximated value has a defined partner, and a
 defined value related to a constant is that constant. Preservation
 gives the forward implications and reflection the backward ones.

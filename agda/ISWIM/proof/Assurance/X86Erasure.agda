@@ -630,8 +630,7 @@ erase-correct (program ds b) = equivalent (Sim.fsim ds b)
 {- The X86ᵀ machine errs only at a chk that fails: any property Q of such states
    holds of a state that stops with o-error -}
 only-chk : ∀ {Σ} (ds : All (λ m → Body Σ (called m)) Σ) (Q : T.State Σ → Set)
-  →
-    (  ∀ {n Bs Γ Δ O F ψ'} {t} {x : Δ ∋ Any}
+  → (  ∀ {n Bs Γ Δ O F ψ'} {t} {x : Δ ∋ Any}
       {d : Dst n (st (Γ [ rax ↦ nothing ]) Δ O false) (ty ⟪ flat t ⟫) ψ'}
        {k : Seq Σ n Bs ψ'} {bs σ η} {m : T.Mach Σ η (st Γ Δ O F)}
      → V.proj? t (T.frame m ! x) ≡ nothing

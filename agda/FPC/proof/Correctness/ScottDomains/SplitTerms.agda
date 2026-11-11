@@ -9,7 +9,7 @@
   The correctness proof of split has two halves, and each half needs
   the fundamental lemma for its own relation. The forward half
   (preservation) uses the relation Pres of SplitPreserve.agda, and the
-  backward half (reflection) uses the relation Refl of
+  backward half (reflection) uses the relation Reflect of
   SplitReflect.agda. The two inductions are the same except for the
   relation. So the module Terms below does the induction once, for an
   arbitrary relation, and the end of this file instantiates it twice.
@@ -53,31 +53,28 @@ open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
 open import FPC.proof.Correctness.ScottDomains.SplitPreserve pt fe pe using
   (Pres; Pres-clos; Pres-call)
 open import FPC.proof.Correctness.ScottDomains.SplitReflect pt fe pe using
-  (Refl; Refl-clos; Refl-call)
+  (Reflect; Reflect-clos; Reflect-call)
 
 {- Terms is a parameterized module so that one induction on terms can
-   serve both halves of the correctness proof. The forward half needs
-   the fundamental lemma for Pres, and the backward half needs it for
-   Refl. The induction is the same for both relations, because it
-   relies only on the fact that each operator takes related arguments
-   to related results. So Terms abstracts over the relation _∼_ and
-   over exactly those facts, and the end of this file instantiates it
-   once with Pres and once with Refl.
-
-   The facts are one hypothesis for each construct of EnvClosμ other
+   serve both halves of the correctness proof. The forward half needs the
+   fundamental lemma for Pres, and the backward half needs it for Reflect.
+   The induction is the same for both relations, because it relies only on
+   the fact that each operator takes related arguments to related results.
+   So Terms abstracts over the relation _∼_ and over exactly those facts,
+   and the end of this file instantiates it once with Pres and once with
+   Reflect. The facts are one hypothesis for each construct of EnvClosμ other
    than variables, fold, and unfold. The case of a variable uses the
-   hypothesis that the environments are related, and fold and unfold
-   mean the identity in both languages, so these three constructs need
-   no hypothesis. Only two hypotheses, S-clos and S-call, are about
-   constructs that split changes, and these are proved separately for
-   each relation (SplitPreserve.agda and SplitReflect.agda). The other
-   eight are about constructs whose source and target operators are the
-   same: constants, tuples, projections, the two injections, case,
-   primitives, and seq, which let uses. For both relations, the lemmas
-   Rel-const, ..., Rel-seq of SplitRel.agda prove them. The backward
-   instance adapts these lemmas, because Pres s t is Rel preserve s t,
-   with the source value first, while Refl s t is Rel reflect t s, with
-   the target value first. -}
+   hypothesis that the environments are related, and fold and unfold mean
+   the identity in both languages, so these three constructs need no
+   hypothesis. Only two hypotheses, S-clos and S-call, are about
+   constructs that split changes, and these are proved separately for each
+   relation (SplitPreserve.agda and SplitReflect.agda). The other eight
+   are about constructs whose source and target operators are the same:
+   constants, tuples, projections, the two injections, case, primitives,
+   and seq, which let uses. For both relations, the lemmas Rel-const, ...,
+   Rel-seq of SplitRel.agda prove them. The backward instance adapts these
+   lemmas, because Pres s t is Rel preserve s t, with the source side
+   first, while Reflect s t is Rel reflect t s, with the target side first. -}
 
 module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
   (S-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩} → t ∼ t'
@@ -154,15 +151,25 @@ module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
   split-ok M = ok M (λ ())
 
 {- The two instances of Terms. The forward one uses Pres and gives
-   split-pres. The backward one uses Refl and gives split-refl. Because
-   Refl d d' is Rel reflect d' d, the backward instance passes the
+   split-pres. The backward one uses Reflect and gives split-refl. Because
+   Reflect d d' is Rel reflect d' d, the backward instance passes the
    source and target arguments of Rel-case and of its premises in
    swapped order. -}
 
-open Terms Pres Pres-clos Pres-call Rel-const Rel-tuple Rel-proj Rel-inl Rel-inr
-  Rel-case Rel-prim Rel-seq using () renaming (split-ok to split-pres) public
-open Terms Refl Refl-clos Refl-call Rel-const (λ k h → Rel-tuple k h) (λ i h →
-  Rel-proj i h) (λ h → Rel-inl h) (λ h → Rel-inr h) (λ f g f' g' h hf hg →
-  Rel-case f' g' f g h (λ {a} {a'} r → hf {a'} {a} r) (λ {a} {a'} r → hg {a'}
-  {a} r)) (λ p h h' → Rel-prim p h h') (λ h h' → Rel-seq h h') using () renaming
-  (split-ok to split-refl) public
+open Terms Pres Pres-clos Pres-call
+  Rel-const Rel-tuple Rel-proj Rel-inl Rel-inr Rel-case Rel-prim Rel-seq
+  using () renaming (split-ok to split-pres) public
+
+open Terms Reflect Reflect-clos Reflect-call
+  Rel-const
+  (λ k h → Rel-tuple k h)
+  (λ i h → Rel-proj i h)
+  (λ h → Rel-inl h)
+  (λ h → Rel-inr h)
+  (λ f g f' g' h hf hg →
+     Rel-case f' g' f g h
+       (λ {a} {a'} r → hf {a'} {a} r)
+       (λ {a} {a'} r → hg {a'} {a} r))
+  (λ p h h' → Rel-prim p h h')
+  (λ h h' → Rel-seq h h')
+  using () renaming (split-ok to split-refl) public

@@ -111,8 +111,7 @@ PushRel n m U Xs Xs' idx b = ∀ ρ₁ ρ₂ → (∀ k → U (n + k) → ρ₁ 
 PruneOK : ∀ n (U : ℕ → Set) (fvs : Args (replicate n ■)) (P : Pruned)
   (b : ℕ → ℕ) (ρ ρ' : Env Value) → Set₁
 PruneOK n U fvs P b ρ ρ' = ∀ {K K'}
-  →
-    (∀ {Xs Xs'} → AllVal n Xs → (∀ i → Con (nthD Xs i))
+  → (∀ {Xs Xs'} → AllVal n Xs → (∀ i → Con (nthD Xs i))
       → PushRel n (count P) U Xs Xs' (index P) b → K Xs ≃ K' Xs')
   → binds n (⟦ fvs ⟧₊ ρ) K ≃ binds (count P) (⟦ kept P ⟧₊ ρ') K'
 

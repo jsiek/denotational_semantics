@@ -341,8 +341,7 @@ isinl-adeq (inr v) h =
   bind-rel {v = inr v} isinlD h
   λ { w (inj₁ ⟨ u , ⟨ l , refl ⟩ ⟩) → ⊥-elim (proj₂ (h _ (proj₁ l)))
                                                 ; w (inj₂ ⟨ u , ⟨ _ , refl ⟩ ⟩)
-                                                  →
-                                                  ⟨ refl
+                                                  → ⟨ refl
                                                     , ⟨ tt , ⟨ refl , tt ⟩ ⟩ ⟩ }
 
 {- the code and environment of a closure -}

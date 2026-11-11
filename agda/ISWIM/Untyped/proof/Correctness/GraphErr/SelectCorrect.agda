@@ -295,8 +295,7 @@ case-core n x {A} {F₁} {F₂} tg with x <? n
                                          ⟨ []
                                            ,
                                              ⟨ (λ { _ (here refl)
-                                               →
-                                                 ⟨ ⟨ tag , (λ ()) ⟩
+                                               → ⟨ ⟨ tag , (λ ()) ⟩
                                                    , (λ ()) ⟩ })
                                                      ,
                                                        ⟨ w∈
@@ -324,8 +323,7 @@ case-core n x {A} {F₁} {F₂} tg with x <? n
                                          ⟨ []
                                            ,
                                              ⟨ (λ { _ (here refl)
-                                               →
-                                                 ⟨ ⟨ tag , (λ ()) ⟩
+                                               → ⟨ ⟨ tag , (λ ()) ⟩
                                                    , (λ ()) ⟩ })
                                                      ,
                                                        ⟨ w∈

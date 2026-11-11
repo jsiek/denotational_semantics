@@ -1738,8 +1738,7 @@ letᵐ-entries {D} {H} vD =
   ≃-trans (letᵐ-unfold {D} {H})
     (≃-trans (≫=-val-β {F = λ X → ⋆ ⟨ Λᵐ ⟨ H , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} vD)
     ⟨ (λ { w ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
-        →
-          ⟨ V
+        → ⟨ V
             , ⟨ ne , ⟨ c , ⟨ n , ⟨ (λ d d∈ → proj₁ (V⊆ d d∈)) , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ })
     , (λ { w ⟨ V , ⟨ ne , ⟨ c , ⟨ n , ⟨ V⊆ , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ →
              ⟨ V
