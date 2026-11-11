@@ -21,8 +21,8 @@
     slot x, as CFGμ's case: a branch writes the payload to slot y or z
     and runs its block.
   * The code of a definition is Λ X. Λ Y. its body, with X in %rdi and Y
-    in %rsi, in an empty frame; definitions are given meaning as in
-    GlobalFunμ (tables).
+    in %rsi, in the frame that holds init in every slot; definitions
+    are given meaning as in GlobalFunμ (tables).
 
 -}
 
