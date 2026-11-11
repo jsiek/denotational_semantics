@@ -385,20 +385,20 @@ term takes its own step.
   \mathit{red}(V) &= \mathsf{val} \\
   \mathit{red}(L\;M) &= \mathsf{to}\,(L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
  &= \mathsf{to}\,(V\;M') &&\text{if } L = V,\ \mathit{red}(M) = \mathsf{to}\,M' \\
- &= \mathsf{to}\,(N[x{:=}W]) &&\text{if } L = \lambda x.\,N,\ M = W \\
+ &= \mathsf{to}\,(N[W/x]) &&\text{if } L = \lambda x.\,N,\ M = W \\
   \mathit{red}(\kw{tuple}\,(\vec{V}, M, \vec{M})) &= \mathsf{to}\,(\kw{tuple}\,(\vec{V}, M', \vec{M})) &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
   \mathit{red}(\kw{get}_i\,M) &= \mathsf{to}\,(\kw{get}_i\,M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
  &= \mathsf{to}\,V_i &&\text{if } M = \kw{tuple}\,(V_1, \ldots, V_n) \\
   \mathit{red}(\kw{inl}\,M) &= \mathsf{to}\,(\kw{inl}\,M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
  & &&\text{(likewise $\kw{inr}$ and $\kw{fold}$)} \\
   \mathit{red}(\kw{case}\;L\;(x.\,M)\;(y.\,N)) &= \mathsf{to}\,(\kw{case}\;L'\;(x.\,M)\;(y.\,N)) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
- &= \mathsf{to}\,(M[x{:=}V]) &&\text{if } L = \kw{inl}\,V \\
- &= \mathsf{to}\,(N[y{:=}V]) &&\text{if } L = \kw{inr}\,V \\
+ &= \mathsf{to}\,(M[V/x]) &&\text{if } L = \kw{inl}\,V \\
+ &= \mathsf{to}\,(N[V/y]) &&\text{if } L = \kw{inr}\,V \\
   \mathit{red}(\kw{prim}_p\;L\;M) &= \mathsf{to}\,(\kw{prim}_p\;L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
  &= \mathsf{to}\,(\kw{prim}_p\;V\;M') &&\text{if } L = V,\ \mathit{red}(M) = \mathsf{to}\,M' \\
  &= \mathsf{to}\,\delta_p(n, m) &&\text{if } L = n,\ M = m \\
   \mathit{red}(\kw{let}\;x{=}M\;\kw{in}\;N) &= \mathsf{to}\,(\kw{let}\;x{=}M'\;\kw{in}\;N) &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
- &= \mathsf{to}\,(N[x{:=}V]) &&\text{if } M = V \\
+ &= \mathsf{to}\,(N[V/x]) &&\text{if } M = V \\
   \mathit{red}(\kw{unfold}\;M) &= \mathsf{to}\,(\kw{unfold}\;M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
  &= \mathsf{to}\,V &&\text{if } M = \kw{fold}\,V \\
   \mathit{red}(M) &= \mathsf{error} &&\text{otherwise}
