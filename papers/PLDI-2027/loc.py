@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Count code lines of the compiler-correctness proofs, and of the audit
-surface.
+"""Measure the code of the compiler-correctness proofs, and of the audit
+surface, in lexical tokens (the default) or in lines (--lines).
 
 Run from the repository root:  python3 papers/PLDI-2027/loc.py
 which prints the tables of FPC (agda/FPC/), the main experiment, and
@@ -12,10 +12,10 @@ errors).  Further tables:
                 agda/ISWIM/Untyped/
   --mu          the FPC tables only
   --mu-detail   FPC against the ISWIM pipeline, row by row, per style
-  --tokens      measure in lexical tokens instead of lines (with any of
-                the above): a parenthesis, brace, `;` or `@` is one token,
-                and so is every other run of non-whitespace characters
-  --chars       measure in non-whitespace characters instead of lines
+  --lines       measure in code lines instead of lexical tokens (with any
+                of the above); --tokens, the default, is accepted too
+  --chars       measure in non-whitespace characters instead of lexical
+                tokens
   --mixed       mixing semantics on FPC: simplify in the graph model,
                 the other passes by the interpreters, joined by a bridge
   --scott       the fifth FPC column, denotational: Scott domains,
@@ -32,7 +32,23 @@ errors).  Further tables:
 A code line is a line that is not blank, not a comment ({- -} blocks,
 -- line comments) and not part of an import statement (`import` or
 `open import`, with its continuation lines): imports depend on how
-finely a development is split into modules, not on its content.  Every
+finely a development is split into modules, not on its content.
+
+The default measure is lexical tokens, because a count of lines depends
+on layout (where a long statement is broken, whether each premise of a
+lemma has a line of its own), and a count of lexical tokens does not.  The
+lexical tokens are those of the code lines above (so no comments, blank
+lines or imports), as Agda's lexer sees them, approximately: the
+whitespace-separated words, split further at Agda's delimiters, each of
+which is a token by itself: a parenthesis or brace ( ) { } (and {{ }}),
+`;`, `@`, and a `.` that starts a word (a dot pattern or an irrelevant
+binder, as in `.(x : A)`).  So an identifier or an operator, however many
+Unicode characters it has, is one token when whitespace separates it
+(`⟦_⟧₃`, `ρ'`, `→`, `＝`, `ΛΛ-⋆`), and so is a qualified name (`S.Env`), as
+in Agda.  String literals are not treated specially (the proofs have
+none).  Every number in the tables is in lexical tokens, or in lines with
+--lines; Tables 1 and 2 (--tables, --artifact) also give each total in
+lines.  Every
 .agda file under agda/ (except agda/old/ and the four All.agda) must
 belong to exactly one group; the script fails otherwise, so new modules
 cannot go uncounted.
@@ -803,14 +819,20 @@ IMPORT_START = re.compile(r'(\s*)(?:open\s+)?import\b')
 _CODE = {}
 
 
-# What code_lines measures: 'lines' (the default), 'tokens' (--tokens) or
-# 'chars' (--chars), on the same code lines in every case.
-MEASURE = 'lines'
+# What code_lines measures: 'tokens' (lexical tokens, the default),
+# 'lines' (--lines) or 'chars' (--chars), on the same code lines in every
+# case (see the definition of a lexical token above).
+MEASURE = 'tokens'
+# the name of the measure in the tables and the prose
+UNIT = 'lexical tokens'
+UNITS = {'tokens': 'lexical tokens', 'lines': 'lines', 'chars': 'non-whitespace characters'}
 
-# An approximation of Agda's lexer: a parenthesis, brace, `;` or `@` is a
-# token, and so is every other run of non-whitespace characters (so a name
-# such as `ΛΛ-⋆` or `ρ'` is one token).
-TOKEN = re.compile(r'\{\{|\}\}|[(){};@]|[^\s(){};@]+')
+# Agda's lexer, approximately: a parenthesis, a brace, `;`, `@` or a `.`
+# that starts a word (a dot pattern or an irrelevant binder) is a token by
+# itself, and so is every other run of non-whitespace characters, so that a
+# name such as `ΛΛ-⋆`, `⟦_⟧₃`, `ρ'`, a qualified name such as `S.Env`, or
+# an operator such as `→` or `＝` is one token.
+TOKEN = re.compile(r'\{\{|\}\}|[(){};@]|\.(?=[^\s.(){};@])|[^\s(){};@]+')
 
 
 def measure(line, how):
@@ -1150,7 +1172,7 @@ class Count:
         print()
 
         reach, infra, fr = self.reach, self.infra, self.freach
-        print(f'| language-independent infrastructure{tag(P)} (not in the totals) | lines | '
+        print(f'| language-independent infrastructure{tag(P)} (not in the totals) | {UNIT} | '
               + ' | '.join(f'used by {label(s)}' for s in mcols) + ' |')
         print('|---|---:|' + '---:|' * len(mcols))
         itotal = {s: 0 for s in mcols}
@@ -1165,7 +1187,7 @@ class Count:
                 print(f'| {gname} | {self.counts[(side, gname)]} | ' + ' | '.join(row) + ' |')
         print(f'| **total** | {self.lines(infra)} | ' + ' | '.join(str(itotal[s]) for s in mcols) + ' |')
         print()
-        print(f"Adequacy uses {self.ilines(infra, fr[adeq])} lines of the infrastructure, "
+        print(f"Adequacy uses {self.ilines(infra, fr[adeq])} {UNIT} of the infrastructure, "
               f"{self.ilines(infra, fr[adeq] - fr[sides[0]])} of them not used by the denotational proof.")
         print()
         print(f'| adequacy{tag(P)} (denotational side only) | graph model | graph model with errors |')
@@ -1186,7 +1208,7 @@ class Count:
         print()
         exps = [(side, gname) for side, gname, _ in GROUPS if side == P['exp']]
         if exps:
-            print(f'| experiment{tag(P)} (not in the totals) | lines |')
+            print(f'| experiment{tag(P)} (not in the totals) | {UNIT} |')
             print('|---|---:|')
             for side, gname in exps:
                 print(f'| {gname} | {self.counts[(side, gname)]} |')
@@ -1216,7 +1238,7 @@ class Count:
         def flines(fs):
             return sum(code_lines(f) for f in fs)
         sh = {s: {f for f in sreach[s] if kind(f) == 'shared'} for s in cols}
-        print(f'| audit surface{tag(P)} (not in the totals) | lines | '
+        print(f'| audit surface{tag(P)} (not in the totals) | {UNIT} | '
               + ' | '.join(f'read for {any_label(s)}' for s in cols) + ' |')
         print('|---|---:|' + '---:|' * len(cols))
         print(f'| languages, compiler passes, syntax, base types (shared) | {flines(set().union(*sh.values()))} | '
@@ -1253,7 +1275,7 @@ class Count:
     def print_modules(self, R):
         P, reach = R['P'], self.reach
         users_of = P['sides'] + (P['adeq'], P['gerr'], P['gadeq'])
-        print(f'| shared module{tag(P)} | lines | used by |')
+        print(f'| shared module{tag(P)} | {UNIT} | used by |')
         print('|---|---:|---|')
         for un in sorted(R['shared'], key=lambda x: self.display(x)):
             users = [name(s) for s in users_of if un in reach[s]]
@@ -1262,7 +1284,7 @@ class Count:
             who = 'all four proofs' if un in R['by_all'] else ', '.join(users)
             print(f'| {self.display(un)} | {self.ulines(un)} | {who} |')
         print()
-        print(f'| infrastructure module{tag(P)} | lines | used by |')
+        print(f'| infrastructure module{tag(P)} | {UNIT} | used by |')
         print('|---|---:|---|')
         for un in sorted(self.infra, key=lambda x: self.display(x)):
             users = [name(s) for s in users_of if self.uses(un, self.freach[s])]
@@ -1271,7 +1293,7 @@ class Count:
 
         def mods(us):
             return ', '.join(f'{self.display(un)} ({self.ulines(un)})' for un in us) or 'none'
-        print(f"Shared by all four proofs, not counted: {len(R['by_all'])} modules, {self.lines(R['by_all'])} lines.")
+        print(f"Shared by all four proofs, not counted: {len(R['by_all'])} modules, {self.lines(R['by_all'])} {UNIT}.")
         for s in users_of:
             print(f'Counted in {name(s)}: {mods(R["extra"][s])}.')
         for s in (P['gerr'], P['gadeq']):
@@ -1281,10 +1303,10 @@ class Count:
         if unused:
             print(f'Shared but used by no proof: {mods(unused)}.')
         ex = 'examples' if P is TYPED else 'uexamples'
-        print(f"Examples, not counted: {self.counts[(ex, 'examples')]} lines.")
+        print(f"Examples, not counted: {self.counts[(ex, 'examples')]} {UNIT}.")
         print()
         print("Module (+ proof/): the definitions are on the audit surface, the lemmas "
-              "in its proof/ half; the lines are those of both.")
+              f"in its proof/ half; the {UNIT} are those of both.")
         print()
 
     def errors_infra(self, P):
@@ -1295,7 +1317,7 @@ class Count:
         den, gerr, adeq, gadeq = P['sides'][0], P['gerr'], P['adeq'], P['gadeq']
         rd = reach[adeq] - reach[den]
         ra = reach[gadeq] - reach[gerr]
-        print(f'| infrastructure group{tag(P)} | lines | graph model | graph model with errors | both '
+        print(f'| infrastructure group{tag(P)} | {UNIT} | graph model | graph model with errors | both '
               '| adequacy adds: graph model | adequacy adds: graph model with errors |')
         print('|---|---:|---:|---:|---:|---:|---:|')
         tot = [0] * 6
@@ -1323,7 +1345,7 @@ class Count:
 def assurance(c):
     """The assurance of the typed pipeline (not in the totals, nor in the
     comparison): what checks that X86ᵀ is faithful to untyped X86."""
-    print('| assurance (not in the totals) | lines |')
+    print(f'| assurance (not in the totals) | {UNIT} |')
     print('|---|---:|')
     for side, gname, _ in GROUPS:
         if side == 'assure':
@@ -1731,8 +1753,8 @@ def mu_main(c, T, M):
     print('| **total** | ' + ' | '.join(bold_min([M['total'][s] for s in MU_SIDES])) + ' |')
     print()
     mush = {un for un, (side, _) in c.group_of.items() if side == 'mu-shared'}
-    print(f"Shared by all four, not counted: FPC's languages and passes ({c.lines(mush & M['by_all'])} lines) "
-          f"and {c.lines(M['by_all'] - mush)} lines of the ISWIM pipeline's (the primitives, registers).")
+    print(f"Shared by all four, not counted: FPC's languages and passes ({c.lines(mush & M['by_all'])} {UNIT}) "
+          f"and {c.lines(M['by_all'] - mush)} {UNIT} of the ISWIM pipeline's (the primitives, registers).")
     for s in MU_SIDES:
         if M['extra'][s] or M['borrowed'][s]:
             print(f'Counted in the semantics row of {MU_LABELS[s]}: '
@@ -1774,7 +1796,7 @@ def mu_main(c, T, M):
           'the well-formedness of compiled programs are in all three columns, and the X86μ rows of the '
           'two alternatives (the X86μ machine) are in both.')
     print()
-    print('| no-error lemmas (not in any total) | lines |')
+    print(f'| no-error lemmas (not in any total) | {UNIT} |')
     print('|---|---:|')
     tot = 0
     for side, gname, _ in GROUPS:
@@ -1786,7 +1808,7 @@ def mu_main(c, T, M):
 
     # infrastructure by use
     cols = MU_SIDES + ('mu-adeq',)
-    print('| language-independent infrastructure (FPC, not in the totals) | lines | '
+    print(f'| language-independent infrastructure (FPC, not in the totals) | {UNIT} | '
           + ' | '.join(f'used by {MU_LABELS[s]}' for s in cols) + ' |')
     print('|---|---:|' + '---:|' * len(cols))
     itotal = {s: 0 for s in cols}
@@ -1812,7 +1834,7 @@ def mu_main(c, T, M):
     if c.munreached:
         print('Not on the audit surface: the semantics of the intermediate languages, outside FPC/proof/ '
               'but reached by no theorem statement (only the proofs use them): '
-              f'{len(c.munreached)} modules, {sum(code_lines(f) for f in c.munreached)} lines.')
+              f'{len(c.munreached)} modules, {sum(code_lines(f) for f in c.munreached)} {UNIT}.')
         print()
     mu_modules(c, M)
 
@@ -1823,7 +1845,7 @@ def mu_modules(c, M):
     cols = MU_SIDES + ('mu-adeq',)
     reach = M['reach']
     shared = {un for un, (side, _) in c.group_of.items() if side in ('shared', 'mu-shared')}
-    print('| shared module (FPC) | lines | used by |')
+    print(f'| shared module (FPC) | {UNIT} | used by |')
     print('|---|---:|---|')
     for un in sorted(shared, key=lambda x: c.display(x)):
         users = [any_name(s) for s in cols if un in reach[s]]
@@ -1833,13 +1855,13 @@ def mu_modules(c, M):
     print()
     reused = {un for s in cols for un in reach[s] if not c.group_of[un][0].startswith('mu-')
               and un not in c.infra and un not in shared}
-    print("| the ISWIM pipeline's module reused by FPC | lines | used by |")
+    print(f"| the ISWIM pipeline's module reused by FPC | {UNIT} | used by |")
     print('|---|---:|---|')
     for un in sorted(reused, key=lambda x: c.display(x)):
         print(f'| {c.display(un)} | {c.ulines(un)} | '
               + ', '.join(any_name(s) for s in cols if un in reach[s]) + ' |')
     print()
-    print('| infrastructure module (FPC) | lines | used by |')
+    print(f'| infrastructure module (FPC) | {UNIT} | used by |')
     print('|---|---:|---|')
     for un in sorted(c.infra | M['minfra'], key=lambda x: c.display(x)):
         users = [any_name(s) for s in cols if c.uses(un, M['freach'][s])]
@@ -1847,10 +1869,10 @@ def mu_modules(c, M):
             print(f'| {c.display(un)} | {c.ulines(un)} | {", ".join(users)} |')
     print()
     mex = [f for f in c.every if c.seen[f][0] == 'mu-examples']
-    print(f"Examples, not counted: {sum(code_lines(f) for f in mex)} lines.")
+    print(f"Examples, not counted: {sum(code_lines(f) for f in mex)} {UNIT}.")
     print()
     print("Module (+ proof/): the definitions are on the audit surface, the lemmas "
-          "in its proof/ half; the lines are those of both.")
+          f"in its proof/ half; the {UNIT} are those of both.")
     print()
 
 
@@ -1943,11 +1965,11 @@ def mixed_brief(c, M, X):
               '| the interpreters |')
     print()
     print(f"The bridge at FPC (its graph semantics against its interpreter, both directions) is "
-          f"{X['rows']['bridge']} lines: it is the ISWIM row of the graph model's adequacy (for the "
+          f"{X['rows']['bridge']} {UNIT}: it is the ISWIM row of the graph model's adequacy (for the "
           f"interpreters), shared, against {c.counts[('mu-adeq-cek', 'ISWIM')]} for the FPC CEK machine. "
           "Each total counts it once: the mixed totals stand alone, and are not added to adequacy's. "
           f"The estimates count each further bridge at "
-          f"{X['core']} lines (the FPC bridge without the tuples of sets), each further language's graph "
+          f"{X['core']} {UNIT} (the FPC bridge without the tuples of sets), each further language's graph "
           "semantics and the tables (`Ops`), and no change to the composition.")
     print()
 
@@ -2148,13 +2170,13 @@ def scott_report(c, M):
           'simplify row, as the graph model does; its split row includes the calls of approximated '
           'closures (`proof.Framework.Scott.StageCall`).')
     print()
-    print('| infrastructure of the Scott column (not in the total) | lines |')
+    print(f'| infrastructure of the Scott column (not in the total) | {UNIT} |')
     print('|---|---:|')
     for r, n in S['infra']:
         print(f'| {r} | {n} |')
     print(f"| **total** | {S['itotal']} |")
     print()
-    print(f"Theorem statements (FPC/Theorems/CorrectWrtScottDomains.agda): {S['thm']} lines.")
+    print(f"Theorem statements (FPC/Theorems/CorrectWrtScottDomains.agda): {S['thm']} {UNIT}.")
     print()
     print('| adequacy for the clocked interpreters (reported separately) | graph model | Scott domains |')
     print('|---|---:|---:|')
@@ -2170,7 +2192,7 @@ def scott_report(c, M):
         print('Reused by the Scott column\'s adequacy: ' + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
                                                                for un in sorted(S['areused'])) + '.')
         print()
-    print(f"Theorem statements (FPC/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda): {S['athm']} lines.")
+    print(f"Theorem statements (FPC/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda): {S['athm']} {UNIT}.")
     print()
     typetopology_report()
 
@@ -2212,7 +2234,7 @@ def typetopology_counts():
         for line in t.split('\n'):
             line = re.sub(r'--.*', '', line).strip()
             if line and not re.match(r'(open\s+)?import\b', line):
-                n += 1
+                n += measure(line, MEASURE)
         return n
 
     seen, todo = {}, [A + 'AllScott.agda']
@@ -2252,7 +2274,7 @@ def typetopology_report():
     mods, lines_ = counts
     dom = sum(lines_.get(k, 0) for k in TT_DOMAIN)
     found = sum(lines_.values()) - dom
-    print('| TypeTopology imported by the Scott column (not in any total) | modules | lines |')
+    print(f'| TypeTopology imported by the Scott column (not in any total) | modules | {UNIT} |')
     print('|---|---:|---:|')
     print(f"| domain theory and lifting ({', '.join(TT_DOMAIN)}) | {sum(mods.get(k, 0) for k in TT_DOMAIN)} | {dom} |")
     print(f"| foundations (the rest: {', '.join(sorted(k for k in lines_ if k not in TT_DOMAIN))}) "
@@ -2262,22 +2284,15 @@ def typetopology_report():
     print()
 
 
-def artifact_tables(c, M):
-    """Tables 1 and 2 of the paper: the five correctness proofs, row by row,
-    and the infrastructure each relies on (--artifact)."""
+def table_numbers(c, M):
+    """The numbers of Tables 1 and 2 in the current measure (MEASURE): the
+    rows of Table 1, its totals, and the rows of Table 2."""
     S = scott_analyze(c, M)
-    cols = ['graph model', 'Scott domains', 'machines', 'interpreters', 'reduction']
-    order = ['mu-den', 'scott', 'mu-op', 'mu-ck', 'mu-red']
     scott = {r: n for r, _, n in S['cells']}
-    names = {'CC: capture': 'capture', 'CC: prune': 'prune', 'CC: concretize': 'concretize',
-             'CC: split': 'split closure', 'CC: hoist': 'hoist', 'rco': 'remove complex operands'}
-    print('## Table 1: lines of Agda in the five correctness proofs')
-    print()
-    print('| | ' + ' | '.join(cols) + ' |')
-    print('|---|' + '---:|' * len(cols))
+    rows = []
     for r in ROWS:
         ns = []
-        for s in order:
+        for s in TABLE_ORDER:
             if s == 'scott':
                 ns.append(scott.get(r))
                 continue
@@ -2286,10 +2301,8 @@ def artifact_tables(c, M):
                 n = (n or 0) + c.lines(M['extra'][s]) + c.lines(M['borrowed'][s]) or None
             ns.append(n)
         if any(n is not None for n in ns):
-            print(f'| {names.get(r, r)} | ' + ' | '.join(bold_min(ns)) + ' |')
-    totals = [S['total'] if s == 'scott' else M['total'][s] for s in order]
-    print('| **total** | ' + ' | '.join(bold_min(totals)) + ' |')
-    print()
+            rows.append((r, ns))
+    totals = [S['total'] if s == 'scott' else M['total'][s] for s in TABLE_ORDER]
     # the infrastructure that each column reaches (as in mu_main), and the
     # Scott column's (scott_report), with TypeTopology's domain theory
     infra = {s: 0 for s in MU_SIDES}
@@ -2306,32 +2319,67 @@ def artifact_tables(c, M):
     mods, lines_ = tt
     dom = sum(lines_.get(k, 0) for k in TT_DOMAIN)
     found = sum(lines_.values()) - dom
-    ours = [S['itotal'] if s == 'scott' else infra[s] for s in order]
-    ttd = [dom if s == 'scott' else None for s in order]
-    print('## Table 2: lines of Agda in the infrastructure that each proof relies on')
+    ours = [S['itotal'] if s == 'scott' else infra[s] for s in TABLE_ORDER]
+    ttd = [dom if s == 'scott' else None for s in TABLE_ORDER]
+    with_infra = [t + o + (d or 0) for t, o, d in zip(totals, ours, ttd)]
+    return dict(rows=rows, totals=totals, ours=ours, ttd=ttd, with_infra=with_infra, found=found)
+
+
+TABLE_ORDER = ['mu-den', 'scott', 'mu-op', 'mu-ck', 'mu-red']
+
+
+def artifact_tables(c, M):
+    """Tables 1 and 2 of the paper: the five correctness proofs, row by row,
+    and the infrastructure each relies on (--artifact), in the current
+    measure (lexical tokens, unless --lines), each with its totals in lines
+    too when the measure is not lines."""
+    global MEASURE
+    cols = ['graph model', 'Scott domains', 'machines', 'interpreters', 'reduction']
+    names = {'CC: capture': 'capture', 'CC: prune': 'prune', 'CC: concretize': 'concretize',
+             'CC: split': 'split closure', 'CC: hoist': 'hoist', 'rco': 'remove complex operands'}
+    N = table_numbers(c, M)
+    L = None
+    if MEASURE != 'lines':
+        # the same tables in lines, for their totals
+        saved, MEASURE = MEASURE, 'lines'
+        c2 = Count()
+        L = table_numbers(c2, mu_analyze(c2))
+        MEASURE = saved
+    print(f'## Table 1: {UNIT} of Agda in the five correctness proofs')
     print()
     print('| | ' + ' | '.join(cols) + ' |')
     print('|---|' + '---:|' * len(cols))
-    print('| our infrastructure | ' + ' | '.join(bold_min(ours)) + ' |')
-    print("| TypeTopology's domain theory | " + ' | '.join('—' if n is None else str(n) for n in ttd) + ' |')
-    print('| **total with Table 1** | '
-          + ' | '.join(bold_min([t + o + (d or 0) for t, o, d in zip(totals, ours, ttd)])) + ' |')
+    for r, ns in N['rows']:
+        print(f'| {names.get(r, r)} | ' + ' | '.join(bold_min(ns)) + ' |')
+    print('| **total** | ' + ' | '.join(bold_min(N['totals'])) + ' |')
+    if L:
+        print('| total in lines | ' + ' | '.join(bold_min(L['totals'])) + ' |')
+    print()
+    print(f'## Table 2: {UNIT} of Agda in the infrastructure that each proof relies on')
+    print()
+    print('| | ' + ' | '.join(cols) + ' |')
+    print('|---|' + '---:|' * len(cols))
+    print('| our infrastructure | ' + ' | '.join(bold_min(N['ours'])) + ' |')
+    print("| TypeTopology's domain theory | "
+          + ' | '.join('—' if n is None else str(n) for n in N['ttd']) + ' |')
+    print('| **total with Table 1** | ' + ' | '.join(bold_min(N['with_infra'])) + ' |')
+    if L:
+        print('| total with Table 1, in lines | ' + ' | '.join(bold_min(L['with_infra'])) + ' |')
     print()
     print("Not counted for any column: the Agda standard library and TypeTopology's general "
-          f"foundations ({found} lines).")
+          f"foundations ({N['found']} {UNIT}" + (f", {L['found']} lines" if L else '') + ").")
 
 
 def main():
-    global MEASURE
+    global MEASURE, UNIT
     args = sys.argv[1:]
-    if '--tokens' in args:
-        MEASURE = 'tokens'
+    if '--lines' in args:
+        MEASURE = 'lines'
     elif '--chars' in args:
         MEASURE = 'chars'
-    if MEASURE != 'lines':
-        print(f'(All counts below are in {"lexical tokens" if MEASURE == "tokens" else "non-whitespace characters"}, '
-              'not lines, though the tables still say "lines".)')
-        print()
+    UNIT = UNITS[MEASURE]
+    print(f'(All counts below are in {UNIT}.)')
+    print()
     c = Count()
     mu_check(c)
     mu_red_check(c)

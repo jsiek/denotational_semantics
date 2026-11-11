@@ -158,9 +158,9 @@ README_REWRITES = [
      '  pragma, other than the `--without-K` option of the abt extract.\n'
      '* `make tables` prints Tables 1 and 2 of the paper\n'
      '  (`python3 loc.py --artifact`).\n\n', 1),
-    (r'\| Table 1 \(lines of the five proofs\) \| `\.\./\.\./papers/PLDI-2027/loc\.py` \|[^\n]*\n'
+    (r'\| Table 1 \(lexical tokens of the five proofs\) \| `\.\./\.\./papers/PLDI-2027/loc\.py` \|[^\n]*\n'
      r'\| Table 2 \(infrastructure\) \| `\.\./\.\./papers/PLDI-2027/loc\.py` \|[^\n]*\n',
-     '| Table 1 (lines of the five proofs) | `../../loc.py` | `make tables` (`python3 loc.py --artifact`) |\n'
+     '| Table 1 (lexical tokens of the five proofs) | `../../loc.py` | `make tables` (`python3 loc.py --artifact`) |\n'
      '| Table 2 (infrastructure) | `../../loc.py` | `make tables` (`python3 loc.py --artifact`) |\n', 1),
     (r'`python3 papers/PLDI-2027/loc\.py --mu` checks this and prints the size\n'
      r'of each style\'s surface \(the Scott column\'s is the closure of\n'
@@ -279,7 +279,8 @@ standard library and TypeTopology.  It changes these files:
 typetopology.agda-lib is TypeTopology's library file, unchanged.
 """
 
-LOC_DOC = '''"""Count code lines of the compiler-correctness proofs of the artifact.
+LOC_DOC = '''"""Measure the code of the compiler-correctness proofs of the artifact, in
+lexical tokens (the default) or in lines (--lines).
 
 Run from the root of the artifact:  python3 loc.py --artifact
 (or `make tables`), which prints Tables 1 and 2 of the paper.
@@ -296,6 +297,17 @@ A code line is a line that is not blank, not a comment ({- -} blocks,
 -- line comments) and not part of an import statement (`import` or
 `open import`, with its continuation lines): imports depend on how
 finely a development is split into modules, not on its content.
+
+The tables count the lexical tokens of the code lines, because a count of
+lines depends on layout and a count of lexical tokens does not; each
+total is also given in lines.  The lexical tokens are those of Agda's
+lexer, approximately: the whitespace-separated words, split further at
+Agda's delimiters, each of which is a token by itself: a parenthesis or
+brace ( ) { } (and {{ }}), `;`, `@`, and a `.` that starts a word (a dot
+pattern or an irrelevant binder, as in `.(x : A)`).  So an identifier or
+an operator, however many Unicode characters it has, is one token when
+whitespace separates it (`⟦_⟧₃`, `ρ'`, `→`, `＝`), and so is a qualified
+name (`S.Env`).
 
 A proof's total is its own modules plus the shared modules it reaches
 (transitively, through imports) that are not reached by all four of the
