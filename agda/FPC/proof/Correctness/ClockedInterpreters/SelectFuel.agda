@@ -30,7 +30,7 @@ import FPC.Language.Imp as I
 open import FPC.Language.X86
 open import FPC.Compiler.Select
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
-open import FPC.Framework.Slots using (Slots; read; write; restrict; empty;
+open import FPC.Semantics.Slots using (Slots; read; write; restrict; empty;
   params)
 open import FPC.proof.Framework.SlotsProp using (restrict-id)
 open import Framework.Membership using (⊑-∋)

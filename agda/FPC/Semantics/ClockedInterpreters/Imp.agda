@@ -3,7 +3,7 @@
   A clocked interpreter for Impμ (FPC/Language/Imp.agda), the output of
   lift locals, as the one for Impᵀ (ISWIM/Semantics/Interp/Typed/Imp.agda),
   in a fixed frame. A body runs in a frame that holds a value for each
-  initialized slot (Fr Δ I, FPC/Framework/Slots.agda); assign x e₁ e₂
+  initialized slot (Fr Δ I, FPC/Semantics/Slots.agda); assign x e₁ e₂
   writes the value of e₁ to slot x and runs e₂, and case writes the
   payload to the slot of its branch. An atom reads its slot. The values
   are those of GlobalFunμ (FPC/Semantics/ClockedInterpreters/GlobalFun.agda),
@@ -18,7 +18,7 @@ module FPC.Semantics.ClockedInterpreters.Imp where
 open import FPC.Language.Type
 open import FPC.Language.Imp
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
-open import FPC.Framework.Slots using (Slots; read; write; empty; params)
+open import FPC.Semantics.Slots using (Slots; read; write; empty; params)
 open import Semantics.Interp.Clock
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 

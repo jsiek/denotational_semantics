@@ -27,7 +27,7 @@ open Imp using (⊆-refl; ⊆-⊕⊕)
 open import FPC.Language.CFG
 open import FPC.Compiler.Explicate
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
-open import FPC.Framework.Slots using (write; restrict; params)
+open import FPC.Semantics.Slots using (write; restrict; params)
 open import FPC.proof.Framework.SlotsProp using (restrict-id; restrict-fresh)
 open import proof.Semantics.Interp.Clock
 import FPC.Semantics.ClockedInterpreters.GlobalFun as C

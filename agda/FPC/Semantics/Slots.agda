@@ -10,7 +10,7 @@
 
 -}
 
-module FPC.Framework.Slots where
+module FPC.Semantics.Slots where
 
 open import FPC.Language.Type
 open import FPC.Language.Frame

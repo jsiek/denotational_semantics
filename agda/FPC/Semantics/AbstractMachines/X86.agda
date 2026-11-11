@@ -9,17 +9,20 @@
   whose types are those of k's start; η is α, the types of the open
   closure's environment (the witness that the type of a closure hides),
   so a register of type codeα A B holds a value of type code η A B, and
-  one of type tupα a tuple of type tup η. The frame holds the slots
-  assigned so far; an unset register, an unset flag and the open
+  one of type tupα a tuple of type tup η. The frame is fixed: it holds
+  a value for each initialized slot (FPC/Semantics/Slots.agda), and a
+  write to a slot initializes it and keeps the slots that the rest
+  starts with (restrict); an unset register, an unset flag and the open
   closure (when there is none) hold nothing (⊤).
 
   load fst x opens the closure in slot x (η := the types of its
   environment), and records its code and environment, which load snd
   reads. callq runs the start of the definition of its code with %rdi
-  and %rsi, pushing the rest of the caller's sequence, its blocks and
-  its frame; retq returns %rax to it. ↑ and ↓ fold and unfold a value;
-  case assigns the payload of an injection and jumps by its side.
-  Nothing fails.
+  and %rsi, in the definition's frame with no slot initialized, pushing
+  the rest of the caller's sequence, its blocks and its frame; retq
+  returns %rax to it. ↑ and ↓ fold and unfold a value; case writes the
+  payload of an injection to the slot of its side and jumps by its
+  side. Nothing fails.
 
 -}
 
@@ -28,8 +31,8 @@ module FPC.Semantics.AbstractMachines.X86 where
 open import Language.Prim using (sub)
 open import FPC.Language.Type
 open import FPC.Language.X86
-open import Framework.Lookup using (pop)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Semantics.Slots using (read; write; restrict; empty)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import FPC.Semantics.AbstractMachines.GlobalFun using (Val; code; pack;
   const; tup; inl; inr; fold; obs; int; elems; choose; unfoldᵥ; δᵀ) public
@@ -75,11 +78,11 @@ module _ (Σ : List DSig) where
   Flag false = ⊤
 
   {- the registers, frame, open closure and flag of a state of type ψ -}
-  record Mach (η : Ctx) (ψ : St) : Set where
+  record Mach (η : Ctx) {Δ : Ctx} (ψ : St Δ) : Set where
     constructor ⟨_,_,_,_⟩
     field
       regs : RegVals η (St.rs ψ)
-      frame : Frame Σ (St.fr ψ)
+      frame : Frame Σ Δ (St.ini ψ)
       envα : Opened η (St.op ψ)
       flag : Flag (St.fl ψ)
 
@@ -112,22 +115,25 @@ module _ {Σ : List DSig} where
     rv (wipeᵥ (Regs.ax Γ) (RegVals.ax ρ)) (wipeᵥ (Regs.di Γ) (RegVals.di ρ))
       (wipeᵥ (Regs.si Γ) (RegVals.si ρ))
 
-  arg : ∀ {η ψ τ} → Arg Σ ψ τ → Mach Σ η ψ → RV Σ η τ
+  arg : ∀ {η Δ} {ψ : St Δ} {τ} → Arg Σ ψ τ → Mach Σ η ψ → RV Σ η τ
   arg (atom a) m = value-of (frame m) a
   arg (reg r e) m = cast e (regs m ⦅ r ⦆)
   arg (a ↑) m = fold (arg a m)
   arg (a ↓) m = unfoldᵥ (arg a m)
 
-  args : ∀ {η ψ Δ} → All (λ A → Arg Σ ψ (ty A)) Δ → Mach Σ η ψ → All (Val Σ) Δ
+  args : ∀ {η Δ Δ'} {ψ : St Δ} → All (λ A → Arg Σ ψ (ty A)) Δ' → Mach Σ η ψ
+    → All (Val Σ) Δ'
   args [] m = []
   args (a ∷ as) m = arg a m ∷ args as m
 
   {- d := v -}
-  put : ∀ {n η ψ τ ψ'} → Dst n ψ τ ψ' → RV Σ η τ → Mach Σ η ψ → Mach Σ η ψ'
+  put : ∀ {η Δ} {ψ ψ' : St Δ} {τ} → Dst ψ τ ψ' → RV Σ η τ → Mach Σ η ψ
+    → Mach Σ η ψ'
   put (reg r) v m = ⟨ regs m [ r ≔ v ] , frame m , envα m , flag m ⟩
-  put (slot p _) v m = ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
+  put (slot x p) v m =
+    ⟨ regs m , restrict p (write (frame m) x v) , tt , flag m ⟩
 
-  obj : ∀ {η ψ A} → Obj Σ ψ A → Mach Σ η ψ → Val Σ A
+  obj : ∀ {η Δ} {ψ : St Δ} {A} → Obj Σ ψ A → Mach Σ η ψ → Val Σ A
   obj (pair c e) m = pack (arg c m) (arg e m)
   obj (tuple as) m = tup (args as m)
   obj (inl a) m = inl (arg a m)
@@ -150,35 +156,36 @@ module _ {Σ : List DSig} where
 data Stack (Σ : List DSig) : Type → Set where
   halt : ∀ {A} → Stack Σ A
   {- the caller -}
-  retK : ∀ {n R Bs Δ B} → Seq Σ n R Bs (returned Δ B) → Blocks Σ n R Bs
-    → Frame Σ Δ → Stack Σ R → Stack Σ B
+  retK : ∀ {Δ R Bs I B} → Seq Σ Δ R Bs (returned I B) → Blocks Σ Δ R Bs
+    → Frame Σ Δ I → Stack Σ R → Stack Σ B
 
 data State (Σ : List DSig) : Set where
-  run : ∀ {n R Bs ψ} → Seq Σ n R Bs ψ → Blocks Σ n R Bs → Stack Σ R → (η : Ctx)
-    → Mach Σ η ψ → State Σ
+  run : ∀ {Δ R Bs ψ} → Seq Σ Δ R Bs ψ → Blocks Σ Δ R Bs → Stack Σ R
+    → (η : Ctx) → Mach Σ η ψ → State Σ
 
 {- the machine for a program with the definitions ds -}
 module _ {Σ : List DSig}
   (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
 
   {- run a block, in the frame φ -}
-  go : ∀ {n R Δ} → Blk Σ n R Δ → Stack Σ R → ∀ η → Frame Σ Δ → State Σ
+  go : ∀ {Δ R I} → Blk Σ Δ R I → Stack Σ R → ∀ η → Frame Σ Δ I → State Σ
   go (blk bs k) σ η φ = run k bs σ η ⟨ rv tt tt tt , φ , tt , tt ⟩
 
-  {- call code f with the environment e and the argument w -}
+  {- call code f with the environment e and the argument w, in the
+     frame of f with no slot initialized -}
   enter : ∀ {η A B} → Val Σ (code η A B) → Val Σ (tup η) → Val Σ A → Stack Σ B
     → Next (State Σ)
   enter {η} (code f) e w σ =
     next
     (run (Body.start (lookup ds f)) (Body.blocks (lookup ds f)) σ η
-      ⟨ rv tt e w , [] , tt , tt ⟩)
+      ⟨ rv tt e w , empty (Body.frame (lookup ds f)) , tt , tt ⟩)
 
   step : State Σ → Next (State Σ)
   step (run (movq a d ∷ k) bs σ η m) = next (run k bs σ η (put d (arg a m) m))
   step (run (subq a r e ∷ k) bs σ η m) =
     next
       (run k bs σ η
-        (put {n = 0} (reg {τ = ℤty} r)
+        (put (reg {τ = ℤty} r)
           (δᵀ sub (int (cast {η = η} e (regs m ⦅ r ⦆))) (int (arg a m))) m))
   step (run (cmpq a₂ a₁ ∷ k) bs σ η m) =
     next
@@ -189,8 +196,8 @@ module _ {Σ : List DSig}
   step (run (alloc o d ∷ k) bs σ η m) = next (run k bs σ η (put d (obj o m) m))
   step (run (load i a d ∷ k) bs σ η m) =
     next (run k bs σ η (put d (lookup (elems (arg a m)) i) m))
-  step (run (loadfst x r ∷ k) bs σ η m) =
-    let v = lookup (frame m) x in
+  step (run (loadfst x i r ∷ k) bs σ η m) =
+    let v = read (frame m) x i in
     next
       (run k bs σ (size v)
         ⟨ wipeᵣ (regs m) [ r ≔ code-of v ] , frame m , env-of v , flag m ⟩)
@@ -203,16 +210,15 @@ module _ {Σ : List DSig}
   step (run (retq e) bs (retK k bs' φ σ) η m) =
     next (run k bs' σ η ⟨ rv (cast e (regs m ⦅ rax ⦆)) tt tt , φ , tt , tt ⟩)
   step (run (jmp l) bs σ η m) = next (go (block bs l) σ η (frame m))
-  step (run (case x p _ l₁ l₂) bs σ η m) =
+  step (run (case x i y z l₁ l₂) bs σ η m) =
     next
-      (choose (lookup (frame m) x)
-        (λ u → go (block bs l₁) σ η (u ∷ pop p (frame m)))
-                                      (λ u →
-                                          go (block bs l₂) σ η
-                                            (u ∷ pop p (frame m))))
+      (choose (read (frame m) x i)
+        (λ u → go (block bs l₁) σ η (write (frame m) y u))
+        (λ u → go (block bs l₂) σ η (write (frame m) z u)))
 
-{- a program starts with the start of main, with no slot, no register
-   and no flag -}
+{- a program starts with the start of main, with no slot initialized, no
+   register and no flag -}
 sem : ∀ {A} → Program A → Machine
-sem (program ds (body n bs k)) =
-  machine (State _) (step ds) (run k bs halt [] ⟨ rv tt tt tt , [] , tt , tt ⟩)
+sem (program ds (body Δ bs k)) =
+  machine (State _) (step ds)
+    (run k bs halt [] ⟨ rv tt tt tt , empty Δ , tt , tt ⟩)
