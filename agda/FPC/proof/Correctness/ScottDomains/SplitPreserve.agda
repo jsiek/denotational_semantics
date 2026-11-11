@@ -46,15 +46,19 @@ open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
 Pres : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
 Pres = Rel preserve
 
-{- Suppose the tuples t and t' of free variables are related, and the
-   bodies B and B' give related results on related environments and
-   related arguments. Then the source closure and the target pair are
-   related. -}
+{- A closure means different things in the two languages. In EnvClosμ,
+   it means its code applied to the tuple t of its free variables,
+   which gives a function value that awaits the argument. In PairClosμ,
+   it means the pair of its code and the tuple t', with no application.
+   Suppose t and t' are related, and the bodies B and B' give related
+   results on related environments X, X' and related arguments Y, Y'
+   (env₂ X Y is the environment that binds both). Then the application
+   of the source code to t is related to the pair of the target code
+   and t'. -}
 Pres-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
   → Pres t t'
-  →
-    (∀ {X X' Y Y'} → Pres X X' → Pres Y Y'
-      → Pres (B · env₂ X Y) (B' · env₂ X' Y'))
+  → (∀ {X X' Y Y'} → Pres X X' → Pres Y Y'
+       → Pres (B · env₂ X Y) (B' · env₂ X' Y'))
   → Pres (appᵈ · codeᶜ B · t) (pairᵈ · codeᶜ B' · t')
 Pres-clos B B' {t} {t'} ht hB =
   Rel-from-defined λ q →
@@ -89,16 +93,12 @@ Pres-call {l} {l'} {a} {a'} hl ha =
     Rel-inv hl (app-defined l a q)
       (λ u v → Pres (appᵈ · u · a) (appᵈ · (appᵈ · (car · v) · (cdr · v)) · a'))
       (λ {t} {t'} x y e m →
-          transport₂ Pres (ap (_· a) (case-inj (𝔻 ⟹𝔻) app-br t x) ⁻¹)
-                                            (ap₂
-                                                (λ c d →
-                                                  appᵈ · (appᵈ · c · d) · a')
-                                                  (case-inj 𝔻⊥
-                                                    (component-br zero) t' y)
-                                                 (case-inj 𝔻⊥
-                                                     (component-br (suc zero))
-                                                       t' y) ⁻¹)
-                              (call-ok x y e m))
+          transport₂ Pres
+            (ap (_· a) (case-inj (𝔻 ⟹𝔻) app-br t x) ⁻¹)
+            (ap₂ (λ c d → appᵈ · (appᵈ · c · d) · a')
+               (case-inj 𝔻⊥ (component-br zero) t' y)
+               (case-inj 𝔻⊥ (component-br (suc zero)) t' y) ⁻¹)
+            (call-ok x y e m))
  where
   call-fun : (s : DCPO[ 𝔻 , 𝔻 ]) (cd : Fin 2 → ⟨ 𝔻 ⟩)
     → ((n : ℕ) → M preserve n s-fun (approx n fun s) cd)

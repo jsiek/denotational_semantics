@@ -56,8 +56,7 @@ case-core : ∀ {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 V
   → Tagged A
   → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V))
   → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
-  →
-    ⋆
+  → ⋆
     ⟨ Λ
       ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩)
         , ptt ⟩ , ⟨ payloadD A , ptt ⟩ ⟩

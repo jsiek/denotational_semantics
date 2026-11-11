@@ -1221,8 +1221,7 @@ module _ (ds : List Body) (wfd : DefsWF ds) (con : ∀ k → Con (table ds k)) w
       ⟨ C , ⟨ alC , ⟨ Ext-trans E E'
       ,
           (λ { x refl
-            →
-              ⟨ n
+            → ⟨ n
                 ,
                   ⟨ m
                     ,
@@ -1232,8 +1231,7 @@ module _ (ds : List Body) (wfd : DefsWF ds) (con : ∀ k → Con (table ds k)) w
     put-step d (λ _ _ → 𝓕 (just b)) {m = just (bit b)} {φ = φ} {ρ = ρ}
       {stk = stk} {is = is} {j = j} {bs = bs} {f = just b} e
       λ { A₀ V refl al V⊆
-        →
-        ⟨ A₀
+        → ⟨ A₀
           ,
             ⟨ al
               , ⟨ (λ l u z → z) , (λ x x∈ → 𝒱-out (bool b) x (V⊆ x x∈)) ⟩ ⟩ ⟩ }

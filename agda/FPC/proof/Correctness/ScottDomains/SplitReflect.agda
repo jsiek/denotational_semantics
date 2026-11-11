@@ -52,14 +52,16 @@ Refl d d' = Rel reflect d' d
 
 {- Closures -------------------------------------------------------------------}
 
-{- Suppose the tuples t and t' of free variables are related, and the
-   bodies B and B' give related results on related environments and
-   related arguments. Then the source closure and the target pair are
-   related by Refl. -}
+{- As in SplitPreserve.agda, a source closure means its code applied
+   to the tuple t of its free variables, and a target closure means the
+   pair of its code and the tuple t'. Suppose t and t' are related by
+   Refl, and the bodies B and B' give related results on related
+   environments X, X' and related arguments Y, Y'. Then the application
+   of the source code to t is related by Refl to the pair of the target
+   code and t'. -}
 Refl-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
   → Refl t t'
-  →
-    (∀ {X X' Y Y'} → Refl X X' → Refl Y Y'
+  → (∀ {X X' Y Y'} → Refl X X' → Refl Y Y'
       → Refl (B · env₂ X Y) (B' · env₂ X' Y'))
   → Refl (appᵈ · codeᶜ B · t) (pairᵈ · codeᶜ B' · t')
 Refl-clos B B' {t} {t'} ht hB =

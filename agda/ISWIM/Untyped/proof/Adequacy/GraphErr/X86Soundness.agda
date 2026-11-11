@@ -1764,8 +1764,7 @@ module _ (ds : List Body) (wfd : DefsWF ds) where
     put-step d (λ _ _ → 𝓕 (just b)) {m = just (bit b)} {φ = φ} {ρ = ρ}
       {stk = stk} {is = is} {j = j} {bs = bs} {f = just b} e
       λ { A₀ V refl al V⊆
-          →
-          ⟨ A₀
+          → ⟨ A₀
             , ⟨ al , ⟨ Ext-refl , (λ x x∈ → 𝒱-out (bool b) x (V⊆ x x∈)) ⟩ ⟩ ⟩ }
   step-⊆ (run (testinl a ∷ is) j bs stk f φ ρ) e =
     flag-step Ff {m = arg φ ρ a >>= is-inl} {φ = φ} {ρ = ρ} {stk = stk}
@@ -2011,8 +2010,7 @@ module _ (ds : List Body) (wfd : DefsWF ds) where
      values of which it cannot build an object of shape sh from -}
   args-err : ∀ {φ ρ} acc as {k : List Val → Maybe Val}
     → args φ ρ acc as k ≡ nothing
-    →
-      (Σ[ A
+    → (Σ[ A
         ∈ Apx ] AL A φ ρ × Errs (length as) (𝒪s T⁺ (length φ) (σ̂ A) (ρ̂ A) as))
         ⊎ (Σ[ us ∈ List Val ] Evals φ ρ as us × k (reverse acc ++ us) ≡ nothing)
   args-err {φ} {ρ} acc [] {k} e =
@@ -2156,8 +2154,7 @@ module _ (ds : List Body) (wfd : DefsWF ds) where
       (put-final d (λ _ _ → 𝓕 (just b)) {m = just (bit b)} {is = is} {j} {bs}
         {stk} {just b} e
       (λ { A₀ V refl al V⊆
-          →
-            ⟨ A₀
+          → ⟨ A₀
               ,
                 ⟨ al
                   , ⟨ Ext-refl , (λ x x∈ → 𝒱-out (bool b) x (V⊆ x x∈)) ⟩ ⟩ ⟩ })
