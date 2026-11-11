@@ -75,7 +75,7 @@ program length of \citet{Halstead:1977aa}, does not. The counts include
 the semantics of the languages, the proof of each pass, and the
 composition of the passes. They exclude the code that all five proofs
 use unchanged: the intrinsically typed syntax of the languages and the
-functions that implement the passes (14,245 lexical tokens). We report
+functions that implement the passes (17,931 lexical tokens). We report
 separately the language-independent infrastructure of each style.
 
 \paragraph{AI Use}
@@ -101,20 +101,20 @@ definitions and every statement of the theorems and propositions.
 \cmidrule(lr){2-3}\cmidrule(l){4-6}
  & graph model & Scott domains & machines & interpreters & reduction\\
 \midrule
-semantics of the languages & 8,146 & \textbf{5,463} & 9,870 & 7,046 & 14,437\\
-lemmas shared by the passes & --- & 2,508 & 632 & --- & ---\\
+semantics of the languages & 9,602 & \textbf{6,026} & 10,601 & 7,773 & 15,168\\
+lemmas shared by the passes & --- & 3,186 & 2,971 & 2,289 & 2,289\\
 \pass{simplify} & \textbf{7,044} & 9,393 & 11,880 & 11,339 & 14,589\\
 \pass{enclose} & 3,462 & 4,355 & 6,728 & \textbf{3,221} & 11,716\\
 \pass{split closure} & 8,672 & 15,178 & 1,650 & \textbf{773} & 2,534\\
 \pass{hoist} & \textbf{2,796} & 3,282 & 4,740 & 3,387 & 4,275\\
 \pass{remove complex operands} & 2,580 & 3,608 & 3,244 & \textbf{2,018} & 4,064\\
-\pass{lift locals} & 892 & 1,065 & 1,107 & \textbf{444} & 3,514\\
-\pass{explicate control} & 1,603 & 1,860 & 2,282 & \textbf{1,502} & 2,282\\
-\pass{select instructions} & 2,087 & 3,063 & 2,779 & \textbf{1,043} & 2,779\\
-composition & 514 & 592 & 345 & 378 & \textbf{314}\\
+\pass{lift locals} & 1,924 & 2,016 & 2,315 & \textbf{1,597} & 7,137\\
+\pass{explicate control} & 2,158 & 3,875 & 3,084 & \textbf{1,941} & 3,084\\
+\pass{select instructions} & 2,153 & 3,428 & 3,067 & \textbf{1,144} & 3,067\\
+composition & 514 & 592 & 351 & 378 & \textbf{320}\\
 \midrule
-total & 37,796 & 50,367 & 45,257 & \textbf{31,151} & 60,504\\
-\emph{total in lines} & \emph{2,770} & \emph{3,563} & \emph{2,932} & \emph{2,061} & \emph{4,162}\\
+total & 40,905 & 54,939 & 50,631 & \textbf{35,860} & 68,243\\
+\emph{total in lines} & \emph{2,964} & \emph{3,859} & \emph{3,246} & \emph{2,351} & \emph{4,623}\\
 \bottomrule
 \end{tabular}
 \caption{Lexical tokens of Agda in the five correctness proofs. The smallest number in each row is in bold.}
@@ -130,7 +130,7 @@ total & 37,796 & 50,367 & 45,257 & \textbf{31,151} & 60,504\\
 our infrastructure & 27,985 & 25,506 & 6,951 & \textbf{6,541} & 20,213\\
 TypeTopology's domain theory & --- & 68,938 & --- & --- & ---\\
 \midrule
-total with Table~\ref{tab:loc} & 65,781 & 144,811 & 52,208 & \textbf{37,692} & 80,717\\
+total with Table~\ref{tab:loc} & 68,890 & 149,383 & 57,582 & \textbf{42,401} & 88,456\\
 \bottomrule
 \end{tabular}
 \caption{Lexical tokens of Agda in the infrastructure that each proof relies on,
@@ -141,19 +141,19 @@ total with Table~\ref{tab:loc} & 65,781 & 144,811 & 52,208 & \textbf{37,692} & 8
 Table~\ref{tab:loc} gives the sizes of the proofs for each pass of the
 compiler, with one column per semantic style, with the totals in the
 last rows. The proof with clocked interpreters is the smallest, at
-31,151 lexical tokens, followed by the graph model at 37,796, abstract
-machines at 45,257, and reduction semantics at 60,504. One pass decides the graph
-model's place. The proof of \pass{split closure} alone is 8,672, nearly a quarter of the
+35,860 lexical tokens, followed by the graph model at 40,905, abstract
+machines at 50,631, and reduction semantics at 68,243. One pass decides the graph
+model's place. The proof of \pass{split closure} alone is 8,672, more than a fifth of the
 total, against 773 to 2,534 in the operational styles. Without
-\pass{split closure}, the graph model would be the smallest, at 29,124
-against 30,378 for the interpreters. The second denotational proof,
-with Scott domains, is 50,367, between the abstract machines and
+\pass{split closure}, the graph model would be the smallest, at 32,233
+against 35,087 for the interpreters. The second denotational proof,
+with Scott domains, is 54,939, between the abstract machines and
 reduction semantics: 1.3 times the graph model, and larger in every
 row but the semantics of the languages. Counting the infrastructure
 (Table~\ref{tab:infra}) changes the order. The interpreters remain the
-smallest at 37,692, followed by the machines at 52,208, the graph
-model at 65,781, reduction semantics at 80,717, and Scott domains at
-144,811. For comparison, \citet{Benton:2010aa} report 4,400 lines of
+smallest at 42,401, followed by the machines at 57,582, the graph
+model at 68,890, reduction semantics at 88,456, and Scott domains at
+149,383. For comparison, \citet{Benton:2010aa} report 4,400 lines of
 Coq for their domain theory, against 6,327 lines for
 TypeTopology's.
 
@@ -181,8 +181,8 @@ passes, which we discuss in turn.
 For \pass{enclose}, \pass{remove
   complex operands}, \pass{lift locals}, \pass{explicate control}, and
 \pass{select instructions}, both the graph-model and the interpreter
-proofs are short. The interpreter proofs are smaller, but by less
-than 8\% for \pass{enclose} and \pass{explicate control}. The Scott-domain proofs of these passes are 1.2 to 2.9 times the
+proofs are short. The interpreter proofs are smaller, but by only
+7\% for \pass{enclose} and 10\% for \pass{explicate control}. The Scott-domain proofs of these passes are 1.3 to 3.0 times the
 interpreter proofs, for the reasons given at the end of this
 section. The congruence cases take one line per construct in both
 styles. The difference lies in the obligations of the graph model.
@@ -191,11 +191,12 @@ sets to be nonempty or consistent, and some laws have premises, such as
 the $\beta$-law of Lemma~\ref{lem:beta} and the commuting conversions
 that move a $\kw{let}$ or $\kw{case}$ past a continuation. An
 interpreter computes a single value, so these obligations do not arise.
-These obligations cost the most in the graph-model proofs of
-\pass{lift locals}, whose continuation-passing semantics needs a
-commuting conversion, and of \pass{select instructions}, whose
-function prologue needs two uses of Lemma~\ref{lem:beta}; both are
-about twice the interpreter proofs. The tendency concerns the interpreters
+These obligations cost the most in the graph-model proof of
+\pass{select instructions}, whose function prologue needs two uses of
+Lemma~\ref{lem:beta}, and which is about twice the interpreter proof.
+The commuting conversion that the continuation-passing semantics of
+Imp needs makes the graph-model proof of \pass{lift locals} 1.2 times
+the interpreter proof. The tendency concerns the interpreters
 only. The proofs in the reduction semantics, which works by
 substitution, are often several times larger even for these passes, as for \pass{enclose} and
 \pass{lift locals}.
@@ -249,7 +250,7 @@ next.
 
 The two denotational proofs have the same structure, yet the
 Scott-domain proof is 1.3 times the graph model, larger in every row
-but the semantics: 1.2 to 1.5 times for the equational passes, and 15,178
+but the semantics: 1.05 to 1.8 times for the equational passes, and 15,178
 lexical tokens against 8,672 for \pass{split closure}. Three properties of Scott
 domains explain much of the difference. First, Scott values are
 infinite, so the relation for \pass{split closure} is built by stages
@@ -259,7 +260,7 @@ between stages takes 3,785 of the 15,178 lexical tokens of its proof. Second,
 relating calls across stages takes 5,890, the largest
 share. Third, the universal domain is a sum of tagged values. The
 primitives and tagged values take 1,387 lexical tokens, and the shared
-lemmas (2,508) are laws of strictness and definedness, which replace
+lemmas (3,186) are mostly laws of strictness and definedness, which replace
 nonemptiness; in exchange, the proof needs no consistency. The
 graph-model relations recurse on finite elements, and neither of the
 first two costs arises. The infrastructure widens the gap further
