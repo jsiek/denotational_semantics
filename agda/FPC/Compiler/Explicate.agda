@@ -74,8 +74,8 @@ explicate-tail (I.case a x _ y _ e₁ e₂) bs with explicate-tail e₁ bs
     (case a x y (⊑-∋ (there⊑ g₂) Z) Z)
 
 explicate-body : ∀ {Σ R Γ} → I.Body Σ Γ R → Body Σ R Γ
-explicate-body (I.body Δ p e) with explicate-tail e []
-... | out _ bs t = body Δ p bs t
+explicate-body (I.body Δ p e) =
+  body Δ p (Out.made (explicate-tail e [])) (Out.tail (explicate-tail e []))
 
 {- the pass, for a whole program -}
 explicate : ∀ {A} → I.Program A → Program A
