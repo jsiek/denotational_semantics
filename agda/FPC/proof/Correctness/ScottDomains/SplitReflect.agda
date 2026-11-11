@@ -49,7 +49,8 @@ Refl d d' = Rel reflect d' d
 
 {- Closures --------------------------------------------------------------------------}
 
-Refl-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩} → Refl t t'
+Refl-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
+  → Refl t t'
   → (∀ {X X' Y Y'} → Refl X X' → Refl Y Y' → Refl (B · env₂ X Y) (B' · env₂ X' Y'))
   → Refl (appᵈ · codeᶜ B · t) (pairᵈ · codeᶜ B' · t')
 Refl-clos B B' {t} {t'} ht hB =
@@ -65,9 +66,12 @@ Refl-clos B B' {t} {t'} ht hB =
   G' = ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ B')) Λ
   s = curry₁ 𝔻 𝔻 𝔻 BE · t
   {- the closure, called on related arguments -}
-  body : ∀ {a a'} → Refl a a' → Refl (strict · s · a) (appᵈ · (appᵈ · codeᶜ B' · t') · a')
+  body : ∀ {a a'}
+    → Refl a a'
+    → Refl (strict · s · a) (appᵈ · (appᵈ · codeᶜ B' · t') · a')
   body {a} {a'} ha = transport (λ - → Rel reflect - (strict · s · a)) (codeᶜ-β B' t' a' ⁻¹) (Rel-seq-l (Rel-seq ha (hB ht ha)))
-  calls : (n : ℕ) → Call n (approx n pr (pick₂ (codeᶜ B') t')) (strict · s)
+  calls : (n : ℕ)
+    → Call n (approx n pr (pick₂ (codeᶜ B') t')) (strict · s)
   calls zero = ⋆
   calls (succ zero) = ⋆
   calls (succ (succ m)) v a r =
@@ -81,17 +85,21 @@ Refl-clos B B' {t} {t'} ht hB =
 {- a property of the approximations of a continuous map, at the
    approximations of its argument, holds at the argument -}
 Rf-approx : (n : ℕ) (d : ⟨ 𝔻 ⟩) (F : DCPO[ 𝔻 , 𝓓 n ]) (x : ⟨ 𝔻 ⟩)
-  → ((j : ℕ) → R reflect n (F · e j x) d) → R reflect n (F · x) d
+  → ((j : ℕ) → R reflect n (F · e j x) d)
+  → R reflect n (F · x) d
 Rf-approx n d F x h =
   transport (λ - → R reflect n - d) (approx-∐ (𝓓 n) F x ⁻¹)
     (R-sup reflect n d (λ j → F · e j x) (image-is-directed' 𝔻 (𝓓 n) F {ℕ} {λ k → e k x} (e-directed x)) h)
 
 private
- ≤+' : (a b : ℕ) → b ≤ (a + b)
+ ≤+' : (a b : ℕ)
+   → b ≤ (a + b)
  ≤+' zero b = ≤-refl b
  ≤+' (succ a) b = ≤-trans b (a + b) (succ (a + b)) (≤+' a b) (≤-succ (a + b))
 
-Refl-call : {l l' a a' : ⟨ 𝔻 ⟩} → Refl l l' → Refl a a'
+Refl-call : {l l' a a' : ⟨ 𝔻 ⟩}
+  → Refl l l'
+  → Refl a a'
   → Refl (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
 Refl-call {l} {l'} {a} {a'} hl ha =
   Rel-from-defined λ q →
@@ -111,7 +119,8 @@ Refl-call {l} {l'} {a} {a'} hl ha =
   in-code : (n : ℕ) (y a : ⟨ 𝔻 ⟩) → DCPO[ 𝔻 , 𝓓 n ]
   in-code n y a = ∘₁ 𝔻 𝔻 (𝓓 n) (∘₁ 𝔻 𝔻 𝔻 (app-at y) (app-at a)) (π∞ n)
 
-  call-fun : (cd : Fin 2 → ⟨ 𝔻 ⟩) (s : DCPO[ 𝔻 , 𝔻 ]) → ((n : ℕ) → Call n (approx n pr cd) s)
+  call-fun : (cd : Fin 2 → ⟨ 𝔻 ⟩) (s : DCPO[ 𝔻 , 𝔻 ])
+    → ((n : ℕ) → Call n (approx n pr cd) s)
     → Rel reflect (call cd a') (strict · s · a)
   call-fun cd s m = rel λ n →
     Rf-approx n (strict · s · a) (in-arg n (appᵈ · c · env)) a' λ j →
@@ -120,7 +129,8 @@ Refl-call {l} {l'} {a} {a'} hl ha =
    where
     c = cd zero
     env = cd (suc zero)
-    core : (n l i j : ℕ) → R reflect n (π∞ n · (appᵈ · (appᵈ · e l c · e i env) · e j a')) (strict · s · a)
+    core : (n l i j : ℕ)
+      → R reflect n (π∞ n · (appᵈ · (appᵈ · e l c · e i env) · e j a')) (strict · s · a)
     core n l i j =
       R-mono reflect n (π∞ n · G) (π∞ n · (appᵈ · (appᵈ · e l c · e i env) · e j a')) (strict · s · a)
         (monotone-if-continuous 𝔻 (𝓓 n) (π∞ n) _ _
@@ -145,10 +155,12 @@ Refl-call {l} {l'} {a} {a'} hl ha =
       j≤ = ≤-trans j k' K (≤+' (l + i) j) (≤+ k' n)
 
   {- a call of a value that is not a pair is ⊥ -}
-  ⊥-call : ∀ {w} → Rel reflect (appᵈ · (appᵈ · ⊥𝔻 · ⊥𝔻) · a') w
+  ⊥-call : ∀ {w}
+    → Rel reflect (appᵈ · (appᵈ · ⊥𝔻 · ⊥𝔻) · a') w
   ⊥-call = transport (λ - → Rel reflect - _) ((ap (λ - → appᵈ · - · a') (app-⊥ ⊥𝔻) ∙ app-⊥ a') ⁻¹) Rel-⊥
 
-  call-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩) (e : Same reflect t t')
+  call-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+    → (e : Same reflect t t')
     → ((n : ℕ) → M reflect n e (approx n t x) y)
     → Rel reflect (appᵈ · (appᵈ · (component-br zero t · x) · (component-br (suc zero) t · x)) · a') (app-br t' · y · a)
   call-ok cd s s-pr m = call-fun cd s m

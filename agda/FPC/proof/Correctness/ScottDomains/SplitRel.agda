@@ -81,7 +81,8 @@ data Same : Dir → Tag → Tag → 𝓤₀ ̇ where
   s-fun : Same preserve fun pr
   s-pr : Same reflect pr fun
 
-Same-prop : ∀ {δ t t'} → is-prop (Same δ t t')
+Same-prop : ∀ {δ t t'}
+  → is-prop (Same δ t t')
 Same-prop s-con s-con = refl
 Same-prop s-tup s-tup = refl
 Same-prop s-left s-left = refl
@@ -115,16 +116,24 @@ Call (succ zero) cd s = 𝟙
 Call (succ (succ m)) cd s = (v : ⟨ 𝓓 m ⟩) (a : ⟨ 𝔻 ⟩) → R reflect m v a → R reflect m (callₛ m cd v) (strict · s · a)
 
 {- the payloads of values with the same tags, from related values -}
-M-at : ∀ {δ n t t' x y} (e : Same δ t t') → Match δ n (t , x) (t' , y) → M δ n e x y
+M-at : ∀ {δ n t t' x y}
+  → (e : Same δ t t')
+  → Match δ n (t , x) (t' , y)
+  → M δ n e x y
 M-at {δ} {n} {x = x} {y} e (e' , m) = transport (λ e → M δ n e x y) (Same-prop e' e) m
 
 {- The relations are propositions ------------------------------------------------}
 
-R-prop : (δ : Dir) (n : ℕ) (s : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩) → is-prop (R δ n s w)
-M-prop : (δ : Dir) (n : ℕ) {t t' : Tag} (e : Same δ t t') (x : ⟨ obj (Payload t) (𝓓 n) ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+R-prop : (δ : Dir) (n : ℕ) (s : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩)
+  → is-prop (R δ n s w)
+M-prop : (δ : Dir) (n : ℕ) {t t' : Tag}
+  → (e : Same δ t t')
+  → (x : ⟨ obj (Payload t) (𝓓 n) ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
   → is-prop (M δ n e x y)
-Call-prop : (n : ℕ) (cd : Fin 2 → ⟨ 𝓓 n ⟩) (s : DCPO[ 𝔻 , 𝔻 ]) → is-prop (Call n cd s)
-Match-prop : (δ : Dir) (n : ℕ) (v : ⟨ obj Val (𝓓 n) ⟩) (u : ⟨ obj Val 𝔻 ⟩) → is-prop (Match δ n v u)
+Call-prop : (n : ℕ) (cd : Fin 2 → ⟨ 𝓓 n ⟩) (s : DCPO[ 𝔻 , 𝔻 ])
+  → is-prop (Call n cd s)
+Match-prop : (δ : Dir) (n : ℕ) (v : ⟨ obj Val (𝓓 n) ⟩) (u : ⟨ obj Val 𝔻 ⟩)
+  → is-prop (Match δ n v u)
 
 R-prop δ zero s w = 𝟙-is-prop
 R-prop δ (succ n) s w =
@@ -146,13 +155,24 @@ Match-prop δ n (t , x) (t' , y) = Σ-is-prop Same-prop (λ e → M-prop δ n e 
 
 {- Downward closed in the approximated value ---------------------------------------}
 
-R-mono : (δ : Dir) (n : ℕ) (s s' : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩) → s' ⊑⟨ 𝓓 n ⟩ s → R δ n s w → R δ n s' w
+R-mono : (δ : Dir) (n : ℕ) (s s' : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩)
+  → s' ⊑⟨ 𝓓 n ⟩ s
+  → R δ n s w
+  → R δ n s' w
 Match-mono : (δ : Dir) (n : ℕ) (v v' : ⟨ obj Val (𝓓 n) ⟩) (u : ⟨ obj Val 𝔻 ⟩)
-  → v' ⊑⟨ obj Val (𝓓 n) ⟩ v → Match δ n v u → Match δ n v' u
-M-mono : (δ : Dir) (n : ℕ) {t t' : Tag} (e : Same δ t t') (x x' : ⟨ obj (Payload t) (𝓓 n) ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
-  → x' ⊑⟨ obj (Payload t) (𝓓 n) ⟩ x → M δ n e x y → M δ n e x' y
+  → v' ⊑⟨ obj Val (𝓓 n) ⟩ v
+  → Match δ n v u
+  → Match δ n v' u
+M-mono : (δ : Dir) (n : ℕ) {t t' : Tag}
+  → (e : Same δ t t')
+  → (x x' : ⟨ obj (Payload t) (𝓓 n) ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+  → x' ⊑⟨ obj (Payload t) (𝓓 n) ⟩ x
+  → M δ n e x y
+  → M δ n e x' y
 Call-mono : (n : ℕ) (cd cd' : Fin 2 → ⟨ 𝓓 n ⟩) (s : DCPO[ 𝔻 , 𝔻 ])
-  → ((i : Fin 2) → cd' i ⊑⟨ 𝓓 n ⟩ cd i) → Call n cd s → Call n cd' s
+  → ((i : Fin 2) → cd' i ⊑⟨ 𝓓 n ⟩ cd i)
+  → Call n cd s
+  → Call n cd' s
 
 R-mono δ zero s s' w le h = ⋆
 R-mono δ (succ n) s s' w (f , g) h p' =
@@ -174,21 +194,30 @@ Call-mono (succ (succ m)) cd cd' s le h v a r =
 
 {- Admissible: closed under directed sups of the approximated value --------------}
 
-R-sup : (δ : Dir) (n : ℕ) (w : ⟨ 𝔻 ⟩) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓓 n ⟩) (d : is-Directed (𝓓 n) α)
-  → ((i : I) → R δ n (α i) w) → R δ n (∐ (𝓓 n) {I} {α} d) w
-M-sup : (δ : Dir) (n : ℕ) {t t' : Tag} (e : Same δ t t') (y : ⟨ obj (Payload t') 𝔻 ⟩) {I : 𝓤₀ ̇ }
-  (β : I → ⟨ obj (Payload t) (𝓓 n) ⟩) (d : is-Directed (obj (Payload t) (𝓓 n)) β)
-  → ((i : I) → M δ n e (β i) y) → M δ n e (∐ (obj (Payload t) (𝓓 n)) {I} {β} d) y
-Call-sup : (n : ℕ) (s : DCPO[ 𝔻 , 𝔻 ]) {I : 𝓤₀ ̇ } (β : I → Fin 2 → ⟨ 𝓓 n ⟩) (d : is-Directed (Pow (Fin 2) (𝓓 n)) β)
-  → ((i : I) → Call n (β i) s) → Call n (∐ (Pow (Fin 2) (𝓓 n)) {I} {β} d) s
+R-sup : (δ : Dir) (n : ℕ) (w : ⟨ 𝔻 ⟩) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓓 n ⟩)
+  → (d : is-Directed (𝓓 n) α)
+  → ((i : I) → R δ n (α i) w)
+  → R δ n (∐ (𝓓 n) {I} {α} d) w
+M-sup : (δ : Dir) (n : ℕ) {t t' : Tag}
+  → (e : Same δ t t')
+  → (y : ⟨ obj (Payload t') 𝔻 ⟩) {I : 𝓤₀ ̇ } (β : I → ⟨ obj (Payload t) (𝓓 n) ⟩)
+  → (d : is-Directed (obj (Payload t) (𝓓 n)) β)
+  → ((i : I) → M δ n e (β i) y)
+  → M δ n e (∐ (obj (Payload t) (𝓓 n)) {I} {β} d) y
+Call-sup : (n : ℕ) (s : DCPO[ 𝔻 , 𝔻 ]) {I : 𝓤₀ ̇ } (β : I → Fin 2 → ⟨ 𝓓 n ⟩)
+  → (d : is-Directed (Pow (Fin 2) (𝓓 n)) β)
+  → ((i : I) → Call n (β i) s)
+  → Call n (∐ (Pow (Fin 2) (𝓓 n)) {I} {β} d) s
 
 R-sup δ zero w α d h = ⋆
 R-sup δ (succ n) w {I} α d h = stage-sup-ind n α d Q Q-sup h
  where
   Q : ⟨ obj Val (𝓓 n) ⟩ → 𝓤₁ ̇
   Q v = Σ q ꞉ defined w , Match δ n v (view w q)
-  Q-sup : {K : 𝓤₀ ̇ } (γ : K → ⟨ obj Val (𝓓 n) ⟩) (ε : is-Directed (obj Val (𝓓 n)) γ) → ((k : K) → Q (γ k))
-        → Q (∐ (obj Val (𝓓 n)) {K} {γ} ε)
+  Q-sup : {K : 𝓤₀ ̇ } (γ : K → ⟨ obj Val (𝓓 n) ⟩)
+    → (ε : is-Directed (obj Val (𝓓 n)) γ)
+    → ((k : K) → Q (γ k))
+    → Q (∐ (obj Val (𝓓 n)) {K} {γ} ε)
   Q-sup {K} γ ε hγ =
     ∥∥-rec (Σ-is-prop (defined-is-prop w) (λ q → Match-prop δ n _ (view w q)))
       (λ k → let q = pr₁ (hγ k) in
@@ -218,14 +247,28 @@ Call-sup (succ (succ m)) s {I} β d h v a r =
 
 {- Moving between stages -------------------------------------------------------------}
 
-R-π : (δ : Dir) (n : ℕ) (s : ⟨ 𝓓 (succ n) ⟩) (w : ⟨ 𝔻 ⟩) → R δ (succ n) s w → R δ n (π n s) w
-R-ε : (δ : Dir) (n : ℕ) (s : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩) → R δ n s w → R δ (succ n) (ε n s) w
-M-π : (δ : Dir) (n : ℕ) {t t' : Tag} (e : Same δ t t') (x : ⟨ obj (Payload t) (𝓓 (succ n)) ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
-  → M δ (succ n) e x y → M δ n e (fmap (Payload t) (𝓓 (succ n)) (𝓓 n) (π' n) (ε' n) x) y
-M-ε : (δ : Dir) (n : ℕ) {t t' : Tag} (e : Same δ t t') (x : ⟨ obj (Payload t) (𝓓 n) ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
-  → M δ n e x y → M δ (succ n) e (fmap (Payload t) (𝓓 n) (𝓓 (succ n)) (ε' n) (π' n) x) y
-Call-π : (n : ℕ) (cd : Fin 2 → ⟨ 𝓓 (succ n) ⟩) (s : DCPO[ 𝔻 , 𝔻 ]) → Call (succ n) cd s → Call n (λ i → π n (cd i)) s
-Call-ε : (n : ℕ) (cd : Fin 2 → ⟨ 𝓓 n ⟩) (s : DCPO[ 𝔻 , 𝔻 ]) → Call n cd s → Call (succ n) (λ i → ε n (cd i)) s
+R-π : (δ : Dir) (n : ℕ) (s : ⟨ 𝓓 (succ n) ⟩) (w : ⟨ 𝔻 ⟩)
+  → R δ (succ n) s w
+  → R δ n (π n s) w
+R-ε : (δ : Dir) (n : ℕ) (s : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩)
+  → R δ n s w
+  → R δ (succ n) (ε n s) w
+M-π : (δ : Dir) (n : ℕ) {t t' : Tag}
+  → (e : Same δ t t')
+  → (x : ⟨ obj (Payload t) (𝓓 (succ n)) ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+  → M δ (succ n) e x y
+  → M δ n e (fmap (Payload t) (𝓓 (succ n)) (𝓓 n) (π' n) (ε' n) x) y
+M-ε : (δ : Dir) (n : ℕ) {t t' : Tag}
+  → (e : Same δ t t')
+  → (x : ⟨ obj (Payload t) (𝓓 n) ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+  → M δ n e x y
+  → M δ (succ n) e (fmap (Payload t) (𝓓 n) (𝓓 (succ n)) (ε' n) (π' n) x) y
+Call-π : (n : ℕ) (cd : Fin 2 → ⟨ 𝓓 (succ n) ⟩) (s : DCPO[ 𝔻 , 𝔻 ])
+  → Call (succ n) cd s
+  → Call n (λ i → π n (cd i)) s
+Call-ε : (n : ℕ) (cd : Fin 2 → ⟨ 𝓓 n ⟩) (s : DCPO[ 𝔻 , 𝔻 ])
+  → Call n cd s
+  → Call (succ n) (λ i → ε n (cd i)) s
 
 R-π δ zero s w h = ⋆
 R-π δ (succ n) s w h = transport (λ - → R δ (succ n) - w) (π-succ n s ⁻¹) (λ p →
@@ -261,11 +304,15 @@ Call-ε (succ (succ m)) cd s h w a r =
   transport (λ - → R reflect (succ m) - (strict · s · a)) (callₛ-ε m cd w ⁻¹)
     (R-ε reflect m (callₛ m cd (π m w)) (strict · s · a) (h (π m w) a (R-π reflect m w a r)))
 
-R-πs : (δ : Dir) (k n : ℕ) (s : ⟨ 𝓓 (k + n) ⟩) (w : ⟨ 𝔻 ⟩) → R δ (k + n) s w → R δ n (πs k n s) w
+R-πs : (δ : Dir) (k n : ℕ) (s : ⟨ 𝓓 (k + n) ⟩) (w : ⟨ 𝔻 ⟩)
+  → R δ (k + n) s w
+  → R δ n (πs k n s) w
 R-πs δ zero n s w h = h
 R-πs δ (succ k) n s w h = R-πs δ k n (π (k + n) s) w (R-π δ (k + n) s w h)
 
-R-εs : (δ : Dir) (k n : ℕ) (s : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩) → R δ n s w → R δ (k + n) (εs k n s) w
+R-εs : (δ : Dir) (k n : ℕ) (s : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩)
+  → R δ n s w
+  → R δ (k + n) (εs k n s) w
 R-εs δ zero n s w h = h
 R-εs δ (succ k) n s w h = R-ε δ (k + n) (εs k n s) w (R-εs δ k n s w h)
 
@@ -277,14 +324,24 @@ record Rel (δ : Dir) (a w : ⟨ 𝔻 ⟩) : 𝓤₁ ̇ where
 open Rel public
 
 {- an approximation related at its stage is related -}
-Rel-ε : ∀ {δ} (n : ℕ) {s : ⟨ 𝓓 n ⟩} {w : ⟨ 𝔻 ⟩} → R δ n s w → Rel δ (ε∞ n · s) w
+Rel-ε : ∀ {δ} (n : ℕ) {s : ⟨ 𝓓 n ⟩} {w : ⟨ 𝔻 ⟩}
+  → R δ n s w
+  → Rel δ (ε∞ n · s) w
 Rel-ε {δ} n {s} {w} h = rel λ m → go m (split m n)
  where
-  down : (m k n : ℕ) → n ＝ k + m → (s : ⟨ 𝓓 n ⟩) → R δ n s w → R δ m (π∞ m · (ε∞ n · s)) w
+  down : (m k n : ℕ)
+    → n ＝ k + m
+    → (s : ⟨ 𝓓 n ⟩)
+    → R δ n s w
+    → R δ m (π∞ m · (ε∞ n · s)) w
   down m k .(k + m) refl s h = transport (λ - → R δ m - w) (π∞-ε∞-down k m s ⁻¹) (R-πs δ k m s w h)
-  up : (k m : ℕ) → m ＝ k + n → R δ m (π∞ m · (ε∞ n · s)) w
+  up : (k m : ℕ)
+    → m ＝ k + n
+    → R δ m (π∞ m · (ε∞ n · s)) w
   up k .(k + n) refl = transport (λ - → R δ (k + n) - w) (π∞-ε∞-up k n s ⁻¹) (R-εs δ k n s w h)
-  go : (m : ℕ) → Split m n → R δ m (π∞ m · (ε∞ n · s)) w
+  go : (m : ℕ)
+    → Split m n
+    → R δ m (π∞ m · (ε∞ n · s)) w
   go m (lower k e) = down m k n e s h
   go m (higher k e) = up k m e
 
@@ -295,36 +352,52 @@ approx : (n : ℕ) (t : Tag) → ⟨ obj (Payload t) 𝔻 ⟩ → ⟨ obj (Paylo
 approx n t x = fmap (Payload t) 𝔻 (𝓓 n) (π∞ n) (ε∞ n) x
 
 {- related payloads at every depth, of values made with tags -}
-Rel-inj : ∀ {δ t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩) (e : Same δ t t')
-  → ((n : ℕ) → M δ n e (approx n t x) y) → Rel δ (inj t · x) (inj t' · y)
+Rel-inj : ∀ {δ t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+  → (e : Same δ t t')
+  → ((n : ℕ) → M δ n e (approx n t x) y)
+  → Rel δ (inj t · x) (inj t' · y)
 Rel-inj {δ} {t} {t'} x y e h = rel λ
   { zero → ⋆
   ; (succ n) → transport (λ - → R δ (succ n) - (inj t' · y)) (π∞-inj n t x ⁻¹)
                  (λ p → defined-inj t' y , transport (Match δ n (t , approx n t x)) (view-inj t' y (defined-inj t' y) ⁻¹) (e , h n)) }
 
 {- only a defined approximated value needs to be related -}
-Rel-from-defined : ∀ {δ a w} → (defined a → Rel δ a w) → Rel δ a w
+Rel-from-defined : ∀ {δ a w}
+  → (defined a → Rel δ a w)
+  → Rel δ a w
 Rel-from-defined {a = a} h = rel λ { zero → ⋆ ; (succ n) p → stage (h (π∞-defined n a p)) (succ n) p }
 
-Rel-⊥ : ∀ {δ w} → Rel δ ⊥𝔻 w
+Rel-⊥ : ∀ {δ w}
+  → Rel δ ⊥𝔻 w
 Rel-⊥ = Rel-from-defined (λ q → 𝟘-elim (⊥-undefined q))
 
 {- the other value of a defined one is defined -}
-Rel-defined : ∀ {δ a w} → Rel δ a w → defined a → defined w
+Rel-defined : ∀ {δ a w}
+  → Rel δ a w
+  → defined a
+  → defined w
 Rel-defined {a = a} h q = pr₁ (stage h 1 (defined-π∞ 0 a q))
 
 {- the tags and payloads of the other value of one made with a tag -}
-Rel-view : ∀ {δ t w} (x : ⟨ obj (Payload t) 𝔻 ⟩) → Rel δ (inj t · x) w → (q : defined w)
-  → (n : ℕ) → Match δ n (t , approx n t x) (view w q)
+Rel-view : ∀ {δ t w} (x : ⟨ obj (Payload t) 𝔻 ⟩)
+  → Rel δ (inj t · x) w
+  → (q : defined w)
+  → (n : ℕ)
+  → Match δ n (t , approx n t x) (view w q)
 Rel-view {δ} {t} {w} x h q n =
   transport (λ q' → Match δ n (t , approx n t x) (view w q')) (defined-is-prop w _ q)
     (pr₂ (transport (λ - → R δ (succ n) - w) (π∞-inj n t x) (stage h (succ n)) ⋆))
 
 {- so related values, with a defined approximated one, are made with tags
    whose payloads are related -}
-Rel-cases : ∀ {δ a w} → Rel δ a w → defined a → (P : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇ )
-  → (∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩) (e : Same δ t t')
-       → ((n : ℕ) → M δ n e (approx n t x) y) → P (inj t · x) (inj t' · y))
+Rel-cases : ∀ {δ a w}
+  → Rel δ a w
+  → defined a
+  → (P : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇ )
+  → (∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+       → (e : Same δ t t')
+       → ((n : ℕ) → M δ n e (approx n t x) y)
+       → P (inj t · x) (inj t' · y))
   → P a w
 Rel-cases {δ} {a} {w} h q P k =
   transport₂ P (inj-view a q ⁻¹) (inj-view w q' ⁻¹)
@@ -334,26 +407,34 @@ Rel-cases {δ} {a} {w} h q P k =
   V = Rel-view (pr₂ (view a q)) (transport (λ - → Rel δ - w) (inj-view a q) h) q'
 
 {- seq -}
-Rel-seq : ∀ {δ d d' e e'} → Rel δ d d' → Rel δ e e' → Rel δ (seq · d · e) (seq · d' · e')
+Rel-seq : ∀ {δ d d' e e'}
+  → Rel δ d d'
+  → Rel δ e e'
+  → Rel δ (seq · d · e) (seq · d' · e')
 Rel-seq {δ} {d} {d'} {e} {e'} hd he =
   Rel-from-defined λ q →
     transport₂ (Rel δ) (seq-defined d e (seq-defined-l d e q) ⁻¹)
                        (seq-defined d' e' (Rel-defined hd (seq-defined-l d e q)) ⁻¹) he
 
 {- an approximated value guarded by seq -}
-Rel-seq-l : ∀ {δ d a w} → Rel δ a w → Rel δ (seq · d · a) w
+Rel-seq-l : ∀ {δ d a w}
+  → Rel δ a w
+  → Rel δ (seq · d · a) w
 Rel-seq-l {δ} {d} {a} {w} h =
   Rel-from-defined λ q → transport (λ - → Rel δ - w) (seq-defined d a (seq-defined-l d a q) ⁻¹) h
 
 {- Constants, tuples, injections -}
 
-Rel-const : ∀ {δ} B c → Rel δ (const B c) (const B c)
+Rel-const : ∀ {δ} B c
+  → Rel δ (const B c) (const B c)
 Rel-const B c = Rel-inj ⋆ ⋆ s-con (λ n → ⋆)
 
-Rel-unit : ∀ {δ} → Rel δ unit unit
+Rel-unit : ∀ {δ}
+  → Rel δ unit unit
 Rel-unit = Rel-inj (λ ()) (λ ()) s-tup (λ n ())
 
-Rel-tuple : ∀ {δ} (k : ℕ) {ds ds' : Fin k → ⟨ 𝔻 ⟩} → ((i : Fin k) → Rel δ (ds i) (ds' i))
+Rel-tuple : ∀ {δ} (k : ℕ) {ds ds' : Fin k → ⟨ 𝔻 ⟩}
+  → ((i : Fin k) → Rel δ (ds i) (ds' i))
   → Rel δ (tupleᵈ k · ds) (tupleᵈ k · ds')
 Rel-tuple {δ} k {ds} {ds'} h =
   Rel-from-defined λ q →
@@ -361,25 +442,34 @@ Rel-tuple {δ} k {ds} {ds'} h =
                        (guard-defined k ds' (λ i → Rel-defined (h i) (tuple-defined← k ds q i)) (inj (tup k) · ds') ⁻¹)
       (Rel-inj ds ds' s-tup (λ n i → stage (h i) n))
 
-Rel-inl : ∀ {δ d d'} → Rel δ d d' → Rel δ (inlᵈ · d) (inlᵈ · d')
+Rel-inl : ∀ {δ d d'}
+  → Rel δ d d'
+  → Rel δ (inlᵈ · d) (inlᵈ · d')
 Rel-inl {d = d} {d'} h = Rel-seq h (Rel-inj d d' s-left (stage h))
 
-Rel-inr : ∀ {δ d d'} → Rel δ d d' → Rel δ (inrᵈ · d) (inrᵈ · d')
+Rel-inr : ∀ {δ d d'}
+  → Rel δ d d'
+  → Rel δ (inrᵈ · d) (inrᵈ · d')
 Rel-inr {d = d} {d'} h = Rel-seq h (Rel-inj d d' s-right (stage h))
 
 {- Components of tuples -}
 
-Rel-proj : ∀ {δ} {k : ℕ} (i : Fin k) {d d' : ⟨ 𝔻 ⟩} → Rel δ d d' → Rel δ (proj i · d) (proj i · d')
+Rel-proj : ∀ {δ} {k : ℕ} (i : Fin k) {d d' : ⟨ 𝔻 ⟩}
+  → Rel δ d d'
+  → Rel δ (proj i · d) (proj i · d')
 Rel-proj {δ} {k} i {d} h =
   Rel-from-defined λ q →
     Rel-cases h (proj-defined i d q) (λ a b → Rel δ (proj i · a) (proj i · b))
       (λ {t} {t'} x y e m → transport₂ (Rel δ) (case-inj 𝔻⊥ (proj-br i) t x ⁻¹) (case-inj 𝔻⊥ (proj-br i) t' y ⁻¹) (br-ok x y e m))
  where
-  br-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩) (e : Same δ t t')
-    → ((n : ℕ) → M δ n e (approx n t x) y) → Rel δ (proj-br i t · x) (proj-br i t' · y)
+  br-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+    → (e : Same δ t t')
+    → ((n : ℕ) → M δ n e (approx n t x) y)
+    → Rel δ (proj-br i t · x) (proj-br i t' · y)
   br-ok {tup j} xs ys s-tup m = at-ok (j Nat.≟ k)
    where
-    at-ok : (q : Dec (j Eq.≡ k)) → Rel δ (at-tup j k i q · xs) (at-tup j k i q · ys)
+    at-ok : (q : Dec (j Eq.≡ k))
+      → Rel δ (at-tup j k i q · xs) (at-tup j k i q · ys)
     at-ok (yes Eq.refl) = rel λ n → m n i
     at-ok (no _) = Rel-⊥
   br-ok x y s-con m = Rel-⊥
@@ -390,7 +480,8 @@ Rel-proj {δ} {k} i {d} h =
 
 {- Cases: related branches give related results -}
 
-Rel-case : ∀ {δ d d'} (f g f' g' : DCPO[ 𝔻 , 𝔻 ]) → Rel δ d d'
+Rel-case : ∀ {δ d d'} (f g f' g' : DCPO[ 𝔻 , 𝔻 ])
+  → Rel δ d d'
   → (∀ {a a'} → Rel δ a a' → Rel δ (f · a) (f' · a'))
   → (∀ {a a'} → Rel δ a a' → Rel δ (g · a) (g' · a'))
   → Rel δ (cases · d · (strict · f , strict · g)) (cases · d' · (strict · f' , strict · g'))
@@ -403,8 +494,10 @@ Rel-case {δ} {d} f g f' g' h hf hg =
  where
   b = (strict · f , strict · g)
   b' = (strict · f' , strict · g')
-  br-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩) (e : Same δ t t')
-    → ((n : ℕ) → M δ n e (approx n t x) y) → Rel δ (cases-br t · x · b) (cases-br t' · y · b')
+  br-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+    → (e : Same δ t t')
+    → ((n : ℕ) → M δ n e (approx n t x) y)
+    → Rel δ (cases-br t · x · b) (cases-br t' · y · b')
   br-ok x y s-left m = Rel-seq (rel m) (hf (rel m))
   br-ok x y s-right m = Rel-seq (rel m) (hg (rel m))
   br-ok x y s-con m = Rel-⊥
@@ -414,12 +507,16 @@ Rel-case {δ} {d} f g f' g' h hf hg =
 
 {- Primitives -}
 
-Rel-out : ∀ {δ} (o : Out) → Rel δ (out o) (out o)
+Rel-out : ∀ {δ} (o : Out)
+  → Rel δ (out o) (out o)
 Rel-out (int z) = Rel-const Int z
 Rel-out (bool true) = Rel-inl Rel-unit
 Rel-out (bool false) = Rel-inr Rel-unit
 
-Rel-prim : ∀ {δ} (p : Prim) {d d' e e' : ⟨ 𝔻 ⟩} → Rel δ d d' → Rel δ e e' → Rel δ (primD p · d · e) (primD p · d' · e')
+Rel-prim : ∀ {δ} (p : Prim) {d d' e e' : ⟨ 𝔻 ⟩}
+  → Rel δ d d'
+  → Rel δ e e'
+  → Rel δ (primD p · d · e) (primD p · d' · e')
 Rel-prim {δ} p {d} {d'} {e} {e'} hd he =
   Rel-from-defined λ q →
     Rel-cases hd (primD-defined₁ p d e q) (λ u v → Rel δ (primD p · u · e) (primD p · v · e'))
@@ -427,7 +524,8 @@ Rel-prim {δ} p {d} {d'} {e} {e'} hd he =
                                                (ap (_· e') (case-inj (𝔻 ⟹𝔻) (prim-br₁ p) t' y) ⁻¹)
                               (br₁-ok x y s))
  where
-  br₂-ok : (z : ℤ) {t t' : Tag} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩) → Same δ t t'
+  br₂-ok : (z : ℤ) {t t' : Tag} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+    → Same δ t t'
     → Rel δ (prim-br₂ p z t · x) (prim-br₂ p z t' · y)
   br₂-ok z x y (s-con {B = Int} {w}) = Rel-out (δᵖ p z w)
   br₂-ok z x y (s-con {B = Nat}) = Rel-⊥
@@ -441,7 +539,8 @@ Rel-prim {δ} p {d} {d'} {e} {e'} hd he =
   br₂-ok z x y s-fun = Rel-⊥
   br₂-ok z x y s-pr = Rel-⊥
 
-  br₁-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩) → Same δ t t'
+  br₁-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+    → Same δ t t'
     → Rel δ (prim-br₁ p t · x · e) (prim-br₁ p t' · y · e')
   br₁-ok x y (s-con {B = Int} {z}) =
     Rel-from-defined λ q →

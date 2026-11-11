@@ -44,7 +44,8 @@ Pres = Rel preserve
 
 {- Closures: related when the tuples are and the bodies are on related
    arguments -}
-Pres-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩} → Pres t t'
+Pres-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
+  → Pres t t'
   → (∀ {X X' Y Y'} → Pres X X' → Pres Y Y' → Pres (B · env₂ X Y) (B' · env₂ X' Y'))
   → Pres (appᵈ · codeᶜ B · t) (pairᵈ · codeᶜ B' · t')
 Pres-clos B B' {t} {t'} ht hB =
@@ -64,7 +65,9 @@ Pres-clos B B' {t} {t'} ht hB =
   G' = ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ B')) Λ
 
 {- Calls: an application of a function value, and a call of a pair -}
-Pres-call : {l l' a a' : ⟨ 𝔻 ⟩} → Pres l l' → Pres a a'
+Pres-call : {l l' a a' : ⟨ 𝔻 ⟩}
+  → Pres l l'
+  → Pres a a'
   → Pres (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
 Pres-call {l} {l'} {a} {a'} hl ha =
   Rel-from-defined λ q →
@@ -74,7 +77,8 @@ Pres-call {l} {l'} {a} {a'} hl ha =
                                                  (case-inj 𝔻⊥ (component-br (suc zero)) t' y) ⁻¹)
                               (call-ok x y e m))
  where
-  call-fun : (s : DCPO[ 𝔻 , 𝔻 ]) (cd : Fin 2 → ⟨ 𝔻 ⟩) → ((n : ℕ) → M preserve n s-fun (approx n fun s) cd)
+  call-fun : (s : DCPO[ 𝔻 , 𝔻 ]) (cd : Fin 2 → ⟨ 𝔻 ⟩)
+    → ((n : ℕ) → M preserve n s-fun (approx n fun s) cd)
     → Pres (s · a) (call cd a')
   call-fun s cd m = rel λ n →
     transport (λ - → R preserve n - (call cd a')) (approx-∐ (𝓓 n) (∘₁ 𝔻 𝔻 (𝓓 n) s (π∞ n)) a ⁻¹)
@@ -87,7 +91,8 @@ Pres-call {l} {l'} {a} {a'} hl ha =
                      (R-πs preserve k n (π∞ (k + n) · (s · e (k + n) a)) (call cd a')
                         (m (k + n) (π∞ (k + n) · a) a' (stage ha (k + n)))))))
 
-  call-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩) (e : Same preserve t t')
+  call-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
+    → (e : Same preserve t t')
     → ((n : ℕ) → M preserve n e (approx n t x) y)
     → Pres (app-br t · x · a) (appᵈ · (appᵈ · (component-br zero t' · y) · (component-br (suc zero) t' · y)) · a')
   call-ok s cd s-fun m =
