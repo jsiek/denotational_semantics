@@ -115,7 +115,7 @@ Refl-call : {l l' a a' : ⟨ 𝔻 ⟩}
   → Refl (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
 Refl-call {l} {l'} {a} {a'} hl ha =
   Rel-from-defined λ q →
-    Rel-cases hl (component-defined zero l' (app-defined (car · l') (cdr · l') (app-defined (appᵈ · (car · l') · (cdr · l')) a' q)))
+    Rel-inv hl (component-defined zero l' (app-defined (car · l') (cdr · l') (app-defined (appᵈ · (car · l') · (cdr · l')) a' q)))
       (λ u v → Rel reflect (appᵈ · (appᵈ · (car · u) · (cdr · u)) · a') (appᵈ · v · a))
       (λ {t} {t'} x y e m → transport₂ (Rel reflect)
                               (ap₂ (λ c d → appᵈ · (appᵈ · c · d) · a') (case-inj 𝔻⊥ (component-br zero) t x)

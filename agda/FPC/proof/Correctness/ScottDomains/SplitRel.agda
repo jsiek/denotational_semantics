@@ -479,12 +479,12 @@ Rel-view {δ} {t} {w} x h q n =
     (pr₂ (transport (λ - → R δ (succ n) - w) (π∞-inj n t x)
             (stage h (succ n)) ⋆))
 
-{- Case analysis on related values. Suppose a and w are related and a is
-   defined. Then both are built from tags and payloads, their tags are
-   related by Same, and their payloads are related at every depth. So to
-   prove a property P of a and w, it suffices to prove P for values of
-   that form. -}
-Rel-cases : ∀ {δ a w}
+{- The inversion lemma for Rel, the converse of Rel-inj. Suppose a and w
+   are related and a is defined. Then both are built from tags and
+   payloads, their tags are related by Same, and their payloads are
+   related at every depth. The motive P delivers this conclusion. To
+   prove P a w, it suffices to prove P for values of that form. -}
+Rel-inv : ∀ {δ a w}
   → Rel δ a w
   → defined a
   → (P : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇ )
@@ -493,7 +493,7 @@ Rel-cases : ∀ {δ a w}
        → ((n : ℕ) → M δ n e (approx n t x) y)
        → P (inj t · x) (inj t' · y))
   → P a w
-Rel-cases {δ} {a} {w} h q P k =
+Rel-inv {δ} {a} {w} h q P k =
   transport₂ P (inj-view a q ⁻¹) (inj-view w q' ⁻¹)
     (k (pr₂ (view a q)) (pr₂ (view w q')) (pr₁ (V 0))
        (λ n → M-at (pr₁ (V 0)) (V n)))
@@ -563,7 +563,7 @@ Rel-proj : ∀ {δ} {k : ℕ} (i : Fin k) {d d' : ⟨ 𝔻 ⟩}
   → Rel δ (proj i · d) (proj i · d')
 Rel-proj {δ} {k} i {d} h =
   Rel-from-defined λ q →
-    Rel-cases h (proj-defined i d q) (λ a b → Rel δ (proj i · a) (proj i · b))
+    Rel-inv h (proj-defined i d q) (λ a b → Rel δ (proj i · a) (proj i · b))
       (λ {t} {t'} x y e m → transport₂ (Rel δ)
          (case-inj 𝔻⊥ (proj-br i) t x ⁻¹) (case-inj 𝔻⊥ (proj-br i) t' y ⁻¹)
          (br-ok x y e m))
@@ -596,7 +596,7 @@ Rel-case : ∀ {δ d d'} (f g f' g' : DCPO[ 𝔻 , 𝔻 ])
           (cases · d' · (strict · f' , strict · g'))
 Rel-case {δ} {d} f g f' g' h hf hg =
   Rel-from-defined λ q →
-    Rel-cases h (cases-defined d b q)
+    Rel-inv h (cases-defined d b q)
       (λ u v → Rel δ (cases · u · b) (cases · v · b'))
       (λ {t} {t'} x y e m → transport₂ (Rel δ)
          (ap (_· b) (case-inj (Br ⟹𝔻) cases-br t x) ⁻¹)
@@ -630,7 +630,7 @@ Rel-prim : ∀ {δ} (p : Prim) {d d' e e' : ⟨ 𝔻 ⟩}
   → Rel δ (primD p · d · e) (primD p · d' · e')
 Rel-prim {δ} p {d} {d'} {e} {e'} hd he =
   Rel-from-defined λ q →
-    Rel-cases hd (primD-defined₁ p d e q)
+    Rel-inv hd (primD-defined₁ p d e q)
       (λ u v → Rel δ (primD p · u · e) (primD p · v · e'))
       (λ {t} {t'} x y s m → transport₂ (Rel δ)
          (ap (_· e) (case-inj (𝔻 ⟹𝔻) (prim-br₁ p) t x) ⁻¹)
@@ -658,7 +658,7 @@ Rel-prim {δ} p {d} {d'} {e} {e'} hd he =
     → Rel δ (prim-br₁ p t · x · e) (prim-br₁ p t' · y · e')
   br₁-ok x y (s-con {B = Int} {z}) =
     Rel-from-defined λ q →
-      Rel-cases he (case-defined (prim-br₂ p z) e q)
+      Rel-inv he (case-defined (prim-br₂ p z) e q)
         (λ u v → Rel δ (case 𝔻⊥ (prim-br₂ p z) · u)
                        (case 𝔻⊥ (prim-br₂ p z) · v))
         (λ {t} {t'} x y s m → transport₂ (Rel δ)

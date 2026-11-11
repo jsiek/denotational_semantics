@@ -77,7 +77,7 @@ Pres-call : {l l' a a' : ⟨ 𝔻 ⟩}
   → Pres (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
 Pres-call {l} {l'} {a} {a'} hl ha =
   Rel-from-defined λ q →
-    Rel-cases hl (app-defined l a q) (λ u v → Pres (appᵈ · u · a) (appᵈ · (appᵈ · (car · v) · (cdr · v)) · a'))
+    Rel-inv hl (app-defined l a q) (λ u v → Pres (appᵈ · u · a) (appᵈ · (appᵈ · (car · v) · (cdr · v)) · a'))
       (λ {t} {t'} x y e m → transport₂ Pres (ap (_· a) (case-inj (𝔻 ⟹𝔻) app-br t x) ⁻¹)
                                             (ap₂ (λ c d → appᵈ · (appᵈ · c · d) · a') (case-inj 𝔻⊥ (component-br zero) t' y)
                                                  (case-inj 𝔻⊥ (component-br (suc zero)) t' y) ⁻¹)
