@@ -46,18 +46,18 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 
 module FPC.proof.Correctness.GraphModel.SplitReflect where
 
-{- a target call V' ⊆ L' ⊙ N' is a self-contained call: a finite W ⊆ L' maps a finite U ⊆ N' to V' -}
-collect : ∀ (L' N' : 𝒫 Value) V' → mem V' ⊆ (L' ⊙ N')
-  → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ] mem W ⊆ L' × mem U ⊆ N' × SelfContainedMaps W U V'
+{- a target call W' ⊆ L' ⊙ N' is a self-contained call: a finite V ⊆ L' maps a finite U ⊆ N' to W' -}
+collect : ∀ (L' N' : 𝒫 Value) W' → mem W' ⊆ (L' ⊙ N')
+  → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ] mem V ⊆ L' × mem U ⊆ N' × SelfContainedMaps V U W'
 collect L' N' [] _ =
   ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
-collect L' N' (w ∷ V') V'⊆
-    with V'⊆ w (here refl) | collect L' N' V' (λ d d∈ → V'⊆ d (there d∈))
+collect L' N' (w ∷ W') W'⊆
+    with W'⊆ w (here refl) | collect L' N' W' (λ d d∈ → W'⊆ d (there d∈))
 ... | ⟨ U₀ , ⟨ ⟨ FV , ⟨ ⟨ t , e∈L' ⟩ , ⟨ FV⊆Cdr , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆N' , neU₀ ⟩ ⟩ ⟩
-    | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩
+    | ⟨ V , ⟨ U , ⟨ V⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩
     with cdr-witness FV FV⊆Cdr
 ... | ⟨ C , ⟨ C⊆L' , FV⊆C ⟩ ⟩ =
-  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ ++⊆ (λ { _ (here refl) → e∈L' ; d (there d∈) → C⊆L' d d∈ }) W⊆ , ⟨ ++⊆ U₀⊆N' U⊆
+  ⟨ e ∷ (C ++ V) , ⟨ U₀ ++ U , ⟨ ++⊆ (λ { _ (here refl) → e∈L' ; d (there d∈) → C⊆L' d d∈ }) V⊆ , ⟨ ++⊆ U₀⊆N' U⊆
   , SelfContainedMaps-++ (record { results = λ { _ (here refl) → ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
                      ; args = λ u u∈ → ⟨ U₀ , ⟨ w , ⟨ ent , u∈ ⟩ ⟩ ⟩ })
              (SelfContainedMaps-⊆ (λ d d∈ → there (∈-++⁺ʳ C d∈)) cs) ⟩ ⟩ ⟩ ⟩
@@ -95,9 +95,9 @@ reflect-branch : ∀ {Γ Δ} {A₁ A₂ A C : Type} (s : Tag) (L : Tm Γ (A₁ �
 
 split-reflect (` x) E = Envs.ρ⊳ E x
 
-split-reflect (app L N) {r} {ρ' = ρ'} E V' V'⊆ with collect (⟦ split r L ⟧' ρ') (⟦ split r N ⟧' ρ') V' V'⊆
-... | ⟨ W , ⟨ U , ⟨ W⊆L' , ⟨ U⊆N' , cs ⟩ ⟩ ⟩ ⟩ =
-  ApproxLRLayer.app-obs (unfoldᴬ (split-reflect L E W W⊆L')) cs _ (S3.con N (Envs.ρ~ E))
+split-reflect (app L N) {r} {ρ' = ρ'} E W' W'⊆ with collect (⟦ split r L ⟧' ρ') (⟦ split r N ⟧' ρ') W' W'⊆
+... | ⟨ V , ⟨ U , ⟨ V⊆L' , ⟨ U⊆N' , cs ⟩ ⟩ ⟩ ⟩ =
+  ApproxLRLayer.app-obs (unfoldᴬ (split-reflect L E V V⊆L')) cs _ (S3.con N (Envs.ρ~ E))
     (Con-⊆ (S4.con (split r N) (Envs.ρ'~ E)) U⊆N') (split-reflect N E U U⊆N')
 
 split-reflect (lit B c) E V' V'⊆ = ApproxLR-data (λ v v∈ → ⟨ V'⊆ v v∈ , flat-data (ℬ-flat v (V'⊆ v v∈)) ⟩)
