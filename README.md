@@ -33,7 +33,8 @@ check them with
 
 which clones TypeTopology at a pinned commit into `_deps/` (not tracked),
 patches it, and checks the Scott-domain proofs against it and the
-standard library.
+standard library. After that, `.dir-locals.el` makes Emacs's Agda mode
+load files with the same libraries.
 
 ## The FPC development (PLDI 2027)
 
