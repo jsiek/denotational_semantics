@@ -186,11 +186,11 @@ sets to be nonempty or consistent, and some laws have premises, such as
 the $\beta$-law of Lemma~\ref{lem:beta} and the commuting conversions
 that move a $\kw{let}$ or $\kw{case}$ past a continuation. An
 interpreter computes a single value, so these obligations do not arise.
-They cost the most for \pass{lift locals}, whose continuation-passing
-semantics needs a commuting conversion, and for \pass{select
-  instructions}, whose function prologue needs two uses of
-Lemma~\ref{lem:beta}; these graph-model proofs are about 1.4 and 1.6
-times the interpreter proofs. The tendency concerns the interpreters
+These obligations cost the most in the graph-model proofs of
+\pass{lift locals}, whose continuation-passing semantics needs a
+commuting conversion, and of \pass{select instructions}, whose
+function prologue needs two uses of Lemma~\ref{lem:beta}; these proofs
+are about 1.4 and 1.6 times the interpreter proofs. The tendency concerns the interpreters
 only. The proofs in the reduction semantics, which works by
 substitution, are often several times larger even for these passes, as for \pass{enclose} and
 \pass{lift locals}.
