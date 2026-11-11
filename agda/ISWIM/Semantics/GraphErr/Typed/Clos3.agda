@@ -20,11 +20,13 @@ open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 ⟦_⟧ : ∀ {Γ A} → Tm Γ A → Env Value → 𝒫 Value
-⟦_⟧s : ∀ {Γ n} → Vec (Tm Γ Any) n → Env Value → Results (𝒫 Value) (replicate n ■)
+⟦_⟧s : ∀ {Γ n} → Vec (Tm Γ Any) n → Env Value
+  → Results (𝒫 Value) (replicate n ■)
 
 ⟦ ` x ⟧ ρ = ρ (idx x)
 ⟦ clos {n = n} N Ms ⟧ ρ =
-  𝒯ᵐ n (⟦ Ms ⟧s ρ) ≫= λ T → ⋆ ⟨ ΛΛᵐ ⟨ (λ X Y → ⟦ N ⟧ (Y • X • λ _ → init)) , ptt ⟩ , ⟨ T , ptt ⟩ ⟩
+  𝒯ᵐ n (⟦ Ms ⟧s ρ) ≫= λ T →
+    ⋆ ⟨ ΛΛᵐ ⟨ (λ X Y → ⟦ N ⟧ (Y • X • λ _ → init)) , ptt ⟩ , ⟨ T , ptt ⟩ ⟩
 ⟦ app L M ⟧ ρ = appᵗ (⟦ L ⟧ ρ) (⟦ M ⟧ ρ)
 ⟦ lit B c ⟧ ρ = ℬ B c ptt
 ⟦ tuple {n = n} Ms ⟧ ρ = 𝒯ᵐ n (⟦ Ms ⟧s ρ)

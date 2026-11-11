@@ -16,7 +16,8 @@ module ISWIM.proof.Correctness.Graph.CompilerCorrect where
 open import Framework.Primitives using (base-rep)
 open import Framework.Iff using (_⇔_)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const
+  to dconst)
 open import ISWIM.Language.ISWIM using (AST)
 open import ISWIM.Compiler.CaptureScope using (Closed)
 open import ISWIM.Compiler.Simplify using (simplify)
@@ -32,23 +33,30 @@ open import ISWIM.Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to �
 open import ISWIM.Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import ISWIM.Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
 open import ISWIM.Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
-open import ISWIM.proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
+open import ISWIM.proof.Correctness.Graph.SimplifyCorrect using
+  (simplify-correct)
 open import ISWIM.proof.Correctness.Graph.CastCorrect using (cast-correct)
 open import ISWIM.proof.Correctness.Graph.CaptureCorrect using (capture-correct)
 open import ISWIM.proof.Correctness.Graph.PruneCorrect using (prune-correct)
-open import ISWIM.proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct)
-open import ISWIM.proof.Correctness.Graph.SplitCorrect using (split-correct-const; split-correct-nonempty)
+open import ISWIM.proof.Correctness.Graph.ConcretizeCorrect using
+  (concretize-correct)
+open import ISWIM.proof.Correctness.Graph.SplitCorrect using
+  (split-correct-const; split-correct-nonempty)
 open import ISWIM.proof.Correctness.Graph.HoistCorrect using (hoist-correct)
 open import ISWIM.proof.Correctness.Graph.RCOCorrect using (rco-correct)
-open import ISWIM.proof.Correctness.Graph.LiftLocalsCorrect using (lift-locals-correct)
-open import ISWIM.proof.Correctness.Graph.ExplicateCorrect using (explicate-correct)
+open import ISWIM.proof.Correctness.Graph.LiftLocalsCorrect using
+  (lift-locals-correct)
+open import ISWIM.proof.Correctness.Graph.ExplicateCorrect using
+  (explicate-correct)
 open import ISWIM.proof.Correctness.Graph.SelectCorrect using (select-correct)
 
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
 {- the same constants, and nonempty together -}
 Same : 𝒫 Value → 𝒫 Value → Set
-Same D E = (∀ {B} (c : base-rep B) → (dconst c ∈ D) ⇔ (dconst c ∈ E)) × (nonempty D ⇔ nonempty E)
+Same D E =
+  (∀ {B} (c : base-rep B) → (dconst c ∈ D) ⇔ (dconst c ∈ E))
+  × (nonempty D ⇔ nonempty E)
 
 ⇔∘ : ∀ {A B C : Set}
   → A ⇔ B
@@ -63,21 +71,33 @@ then : ∀ {D E E'}
   → Same D E'
 then ⟨ c , n ⟩ ⟨ E⊆ , E'⊆ ⟩ =
   ⟨ (λ k → ⇔∘ (c k) ⟨ E⊆ _ , E'⊆ _ ⟩)
-  , ⇔∘ n ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E'⊆ d d∈ ⟩ }) ⟩ ⟩
+  ,
+    ⇔∘ n
+    ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ })
+      , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E'⊆ d d∈ ⟩ }) ⟩ ⟩
 
 compile-same : ∀ (M : AST)
   → Closed M
   → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
-compile-same M c with ≃-trans (simplify-correct M) (≃-trans (cast-correct (simplify M) (simplify-closed M c))
-                       (≃-trans (capture-correct M₁) (≃-trans (prune-correct (capture M₁)) (concretize-correct M₂))))
+compile-same M c
+  with ≃-trans (simplify-correct M)
+  (≃-trans (cast-correct (simplify M) (simplify-closed M c))
+                       (≃-trans (capture-correct M₁)
+                           (≃-trans (prune-correct (capture M₁))
+                             (concretize-correct M₂))))
   where
   M₁ = cast-closed (simplify M)
   M₂ = prune-program (capture M₁)
 ... | ⟨ D⊆ , E⊆ ⟩ =
   then ⟨ (λ k → ⇔∘ ⟨ D⊆ _ , E⊆ _ ⟩ (split-correct-const M₃ k))
-       , ⇔∘ ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , D⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) ⟩ (split-correct-nonempty M₃) ⟩
+       ,
+         ⇔∘
+         ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , D⊆ d d∈ ⟩ })
+           , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) ⟩
+           (split-correct-nonempty M₃) ⟩
        (hoist-correct (compile₄ M))
-  where M₃ = concretize-program (prune-program (capture (cast-closed (simplify M))))
+  where M₃ =
+         concretize-program (prune-program (capture (cast-closed (simplify M))))
 
 compile-mon-same : ∀ (M : AST)
   → Closed M
@@ -87,14 +107,17 @@ compile-mon-same M c = then (compile-same M c) (rco-correct (compile M))
 compile-imp-same : ∀ (M : AST)
   → Closed M
   → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
-compile-imp-same M c = then (compile-mon-same M c) (lift-locals-correct (compile-mon M))
+compile-imp-same M c =
+  then (compile-mon-same M c) (lift-locals-correct (compile-mon M))
 
 compile-cfg-same : ∀ (M : AST)
   → Closed M
   → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
-compile-cfg-same M c = then (compile-imp-same M c) (explicate-correct (compile-imp M))
+compile-cfg-same M c =
+  then (compile-imp-same M c) (explicate-correct (compile-imp M))
 
 compile-x86-same : ∀ (M : AST)
   → Closed M
   → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
-compile-x86-same M c = then (compile-cfg-same M c) (select-correct (compile-cfg M))
+compile-x86-same M c =
+  then (compile-cfg-same M c) (select-correct (compile-cfg M))

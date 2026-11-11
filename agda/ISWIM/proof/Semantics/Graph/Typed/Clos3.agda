@@ -27,7 +27,8 @@ ok : ∀ {Γ A} (M : Tm Γ A) → Ok ⟦ M ⟧
 oks : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) → Oks (replicate n ■) (split n ⟦ Ms ⟧s)
 
 ok (` x) = var-ok (idx x)
-ok (clos N Ms) = ok-op ⋆-good ⟨ ΛΛ-ok (ok N) , ⟨ ok-vec (𝒯-good _) (oks Ms) , ptt ⟩ ⟩
+ok (clos N Ms) =
+  ok-op ⋆-good ⟨ ΛΛ-ok (ok N) , ⟨ ok-vec (𝒯-good _) (oks Ms) , ptt ⟩ ⟩
 ok (app L M) = ok-op ⋆-good ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
 ok (lit B c) = ok-op (ℬ-good B c) ptt
 ok (tuple Ms) = ok-vec (𝒯-good _) (oks Ms)

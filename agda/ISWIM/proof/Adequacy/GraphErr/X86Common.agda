@@ -25,18 +25,22 @@ open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ; suc; _<_; _≟_; _<?_)
 open import ISWIM.Language.Typed.X86
 
-module ISWIM.proof.Adequacy.GraphErr.X86Common {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
+module ISWIM.proof.Adequacy.GraphErr.X86Common {Σ : List ℕ}
+  (ds : All (λ m → Body Σ (called m)) Σ) where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ω; ν; Con; Con-⌈⌉; _•_)
-open import proof.Framework.GraphModel.ErrorMonad using (ΛΛᵐ-val; errcode-con) renaming (Val to Valᴰ)
+open import proof.Framework.GraphModel.Domain using (Value; ω; ν; Con; Con-⌈⌉;
+  _•_)
+open import proof.Framework.GraphModel.ErrorMonad using (ΛΛᵐ-val; errcode-con)
+  renaming (Val to Valᴰ)
 open import Framework.GraphModel.Env using (Env)
 open import Framework.GraphModel.ErrorMonad using (errcode)
 open import ISWIM.Semantics.GraphErr.Typed.Ops using (init; kindᶠ)
 open import Framework.GraphModel.ErrorMonad using (Kind)
 open import ISWIM.Semantics.GraphErr.Typed.Imp using (Table)
 open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (tbl)
-open import ISWIM.Semantics.GraphErr.Typed.X86 using (RegsD; called-regs; codeₜ) renaming (_[_≔_] to _[_≔ˢ_])
+open import ISWIM.Semantics.GraphErr.Typed.X86 using (RegsD; called-regs; codeₜ)
+  renaming (_[_≔_] to _[_≔ˢ_])
 open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 using (tbl-val)
 open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import Framework.Membership using (_⊑_; ⊑-∋)
@@ -53,15 +57,17 @@ open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat.Properties using (<⇒≢; n<1+n; m<n⇒m<1+n; <-trans)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst; subst₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym;
+  trans; cong; subst; subst₂)
 open import Relation.Nullary using (yes; no; ¬_)
 
 open Runs (step ds) public
 
-{- States over stacks ---------------------------------------------------------------}
+{- States over stacks ---------------------------------------------------------}
 
 infixr 5 _++ˢ_
 _++ˢ_ : Stack Σ → Stack Σ → Stack Σ
@@ -113,11 +119,12 @@ step-⊕ (run (je l₁ l₂) bs σ₀ η m) σ q | false with q
 ↠-⊕ σ done = done
 ↠-⊕ σ (_∷↠_ {s} q τ) = step-⊕ s σ q ∷↠ ↠-⊕ σ τ
 
-{- Returns and errors ---------------------------------------------------------------}
+{- Returns and errors ---------------------------------------------------------}
 
 {- a state that returns v from the empty stack -}
 data Returns : State Σ → Val Σ Any → Set where
-  rets : ∀ {n Bs Γ Δ O F η} {bs : Blocks Σ n Bs} {m : Mach Σ η (st Γ Δ O F)} (e : Γ ‹ rax › ≡ just (ty Any))
+  rets : ∀ {n Bs Γ Δ O F η} {bs : Blocks Σ n Bs} {m : Mach Σ η (st Γ Δ O F)}
+    (e : Γ ‹ rax › ≡ just (ty Any))
     → Returns (run (retq e) bs halt η m) (cast e (regs m ⦅ rax ⦆))
 
 ret-η : ∀ {t v} → Returns t v → ℕ
@@ -127,7 +134,8 @@ ret-η (rets {η = η} e) = η
 ret-next : ∀ {t v}
   → (r : Returns t v)
   → ∀ {n Bs Δ} (k : Seq Σ n Bs (returned Δ)) bs φ σ
-  → step ds (t ⊕ retK k bs φ σ) ≡ next (run k bs σ (ret-η r) ⟨ rv v tt tt , φ , tt , tt ⟩)
+  → step ds (t ⊕ retK k bs φ σ)
+    ≡ next (run k bs σ (ret-η r) ⟨ rv v tt tt , φ , tt , tt ⟩)
 ret-next (rets e) k bs φ σ = refl
 
 ret-stop : ∀ {t v}
@@ -151,8 +159,12 @@ Res-pre : ∀ {s s' w P}
   → s ↠ s'
   → Res w s' P
   → Res w s P
-Res-pre τ (inj₁ ⟨ e , er ⟩) = inj₁ ⟨ e , (λ σ → let ⟨ t , ⟨ τ' , q ⟩ ⟩ = er σ in ⟨ t , ⟨ ↠-⊕ σ τ ++↠ τ' , q ⟩ ⟩) ⟩
-Res-pre τ (inj₂ ⟨ v , ⟨ ⟨ t , ⟨ τ' , r ⟩ ⟩ , p ⟩ ⟩) = inj₂ ⟨ v , ⟨ ⟨ t , ⟨ τ ++↠ τ' , r ⟩ ⟩ , p ⟩ ⟩
+Res-pre τ (inj₁ ⟨ e , er ⟩) =
+  inj₁
+  ⟨ e
+    , (λ σ → let ⟨ t , ⟨ τ' , q ⟩ ⟩ = er σ in ⟨ t , ⟨ ↠-⊕ σ τ ++↠ τ' , q ⟩ ⟩) ⟩
+Res-pre τ (inj₂ ⟨ v , ⟨ ⟨ t , ⟨ τ' , r ⟩ ⟩ , p ⟩ ⟩) =
+  inj₂ ⟨ v , ⟨ ⟨ t , ⟨ τ ++↠ τ' , r ⟩ ⟩ , p ⟩ ⟩
 
 Res-step : ∀ {s s' w P}
   → step ds s ≡ next s'
@@ -173,7 +185,8 @@ Rets-det : ∀ {s v₁ v₂}
   → Rets s v₁
   → Rets s v₂
   → v₁ ≡ v₂
-Rets-det ⟨ t , ⟨ τ₁ , r₁ ⟩ ⟩ ⟨ t₂ , ⟨ τ₂ , r₂ ⟩ ⟩ with ↠-final-det τ₁ τ₂ (ret-stop r₁) (ret-stop r₂)
+Rets-det ⟨ t , ⟨ τ₁ , r₁ ⟩ ⟩ ⟨ t₂ , ⟨ τ₂ , r₂ ⟩ ⟩
+  with ↠-final-det τ₁ τ₂ (ret-stop r₁) (ret-stop r₂)
 Rets-det ⟨ _ , ⟨ _ , rets e ⟩ ⟩ ⟨ _ , ⟨ _ , rets .e ⟩ ⟩ | refl = refl
 
 {- a run does not both return and err -}
@@ -182,7 +195,8 @@ Rets-Errs : ∀ {s v}
   → Errs s
   → ⊥
 Rets-Errs {s} {v} ⟨ t , ⟨ τ , r ⟩ ⟩ er with er halt
-... | ⟨ t' , ⟨ τ' , q ⟩ ⟩ with ↠-final-det τ (subst (_↠ t') (⊕-halt s) τ') (ret-stop r) q
+... | ⟨ t' , ⟨ τ' , q ⟩ ⟩
+  with ↠-final-det τ (subst (_↠ t') (⊕-halt s) τ') (ret-stop r) q
 ... | refl = obs≢err v (stop-inj (trans (sym (ret-stop r)) q))
   where
   stop-inj : ∀ {o o' : Obs}
@@ -190,7 +204,7 @@ Rets-Errs {s} {v} ⟨ t , ⟨ τ , r ⟩ ⟩ er with er halt
     → o ≡ o'
   stop-inj refl = refl
 
-{- Values ----------------------------------------------------------------------------}
+{- Values ---------------------------------------------------------------------}
 
 pack-η : ∀ (v : Val Σ ⟪ fun ⟫) → v ≡ pack (code-of v) (env-of v)
 pack-η (pack c e) = refl
@@ -212,7 +226,7 @@ kindᶠ-inj {G} {H} e = trans (sym (inv G)) (trans (cong back e) (inv H))
   inv sum = refl
   inv fun = refl
 
-{- Related locations ---------------------------------------------------------------}
+{- Related locations ----------------------------------------------------------}
 
 {- the slot of the open closure holds it -}
 Op : ∀ {η Δ} (O : Maybe (Δ ∋ ⟪ fun ⟫)) → Frame Σ Δ → Opened Σ η O → Set
@@ -248,7 +262,8 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
   PF false F _ = ⊤
 
   {- the semantic ρ, R and F and the slots, registers and flag of m -}
-  record Rel {η ψ} (ρ : Env Value) (R : RegsD) (F : 𝒫 Value) (m : Mach Σ η ψ) : Set where
+  record Rel {η ψ} (ρ : Env Value) (R : RegsD) (F : 𝒫 Value)
+    (m : Mach Σ η ψ) : Set where
     constructor mr
     field
       fr : ∀ {A} (x : St.fr ψ ∋ A) → PS (ρ (idx x)) (frame m ! x)
@@ -268,10 +283,14 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
   reg-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} r {τ v D}
     → PR τ D v
     → Rel ρ R F m
-    → Rel {ψ = st (Γ [ r ↦ just τ ]) Δ O F'} ρ (R [ r ≔ˢ D ]) F ⟨ regs m [ r ≔ v ] , frame m , opened m , flag m ⟩
-  reg-rel rax h (mr f g l o) = mr f (λ { rax → h ; rdi → g rdi ; rsi → g rsi }) l o
-  reg-rel rdi h (mr f g l o) = mr f (λ { rax → g rax ; rdi → h ; rsi → g rsi }) l o
-  reg-rel rsi h (mr f g l o) = mr f (λ { rax → g rax ; rdi → g rdi ; rsi → h }) l o
+    → Rel {ψ = st (Γ [ r ↦ just τ ]) Δ O F'} ρ (R [ r ≔ˢ D ]) F
+      ⟨ regs m [ r ≔ v ] , frame m , opened m , flag m ⟩
+  reg-rel rax h (mr f g l o) =
+    mr f (λ { rax → h ; rdi → g rdi ; rsi → g rsi }) l o
+  reg-rel rdi h (mr f g l o) =
+    mr f (λ { rax → g rax ; rdi → h ; rsi → g rsi }) l o
+  reg-rel rsi h (mr f g l o) =
+    mr f (λ { rax → g rax ; rdi → g rdi ; rsi → h }) l o
 
   {- writing slot k, which pops the slots from k on and pushes the new value -}
   slot-rel : ∀ {η Γ Δ Δ' O F' A} {m : Mach Σ η (st Γ Δ O F')} {ρ R F}
@@ -279,12 +298,14 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
     → ∀ {v : Val Σ A} {D}
     → PS D v
     → Rel ρ R F m
-    → Rel {ψ = st Γ (A ∷ Δ') nothing F'} (D • drop p ρ) R F ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
+    → Rel {ψ = st Γ (A ∷ Δ') nothing F'} (D • drop p ρ) R F
+      ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
   slot-rel {m = m} {ρ} p h (mr f g l o) = mr fr′ g l tt
     where
     fr′ : ∀ {A} (x : _ ∋ A) → _
     fr′ Z = h
-    fr′ (S y) = subst₂ PS (sym (drop-idx p ρ y)) (sym (pop-! p (frame m) y)) (f (⊑-∋ p y))
+    fr′ (S y) =
+      subst₂ PS (sym (drop-idx p ρ y)) (sym (pop-! p (frame m) y)) (f (⊑-∋ p y))
 
   {- the flag, set -}
   flag-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} b {G}
@@ -303,15 +324,22 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
   {- %rax and the flag, unset by chk -}
   rax-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F G}
     → Rel ρ R F m
-    → Rel {ψ = st (Γ [ rax ↦ nothing ]) Δ O false} ρ (R [ rax ≔ˢ init ]) G ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩
+    → Rel {ψ = st (Γ [ rax ↦ nothing ]) Δ O false} ρ (R [ rax ≔ˢ init ]) G
+      ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩
   rax-rel (mr f g l o) = mr f (λ { rax → tt ; rdi → g rdi ; rsi → g rsi }) tt o
 
-  {- opening the closure in slot x wipes the code and environment of the last one -}
-  wipe-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (x : Δ ∋ ⟪ fun ⟫)
+  {- opening the closure in slot x wipes the code and environment of the last
+     one -}
+  wipe-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F}
+    (x : Δ ∋ ⟪ fun ⟫)
     → Rel ρ R F m
-    → Rel {ψ = st (wipe Γ) Δ (just x) F'} ρ R F ⟨ wipeᵣ (regs m) , frame m , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩
+    → Rel {ψ = st (wipe Γ) Δ (just x) F'} ρ R F
+      ⟨ wipeᵣ (regs m) , frame m
+        , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩
   wipe-rel {Γ = Γ} {m = m} x (mr f g l o) =
-    mr f (λ { rax → fg (Regs.ax Γ) (g rax) ; rdi → fg (Regs.di Γ) (g rdi) ; rsi → fg (Regs.si Γ) (g rsi) }) l (pack-η (frame m ! x))
+    mr f
+      (λ { rax → fg (Regs.ax Γ) (g rax) ; rdi → fg (Regs.di Γ) (g rdi) ; rsi
+        → fg (Regs.si Γ) (g rsi) }) l (pack-η (frame m ! x))
     where
     fg : ∀ {η η'} mt {D v}
       → PM {η} mt D v
@@ -321,7 +349,7 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
     fg (just tupα) h = tt
     fg nothing h = tt
 
-{- The table of the program -----------------------------------------------------------}
+{- The table of the program ---------------------------------------------------}
 
 T⁺ : Table
 T⁺ = tbl (codeₜ {Σ}) ds
@@ -332,7 +360,8 @@ Good T = ∀ k → Valᴰ (T k) × Con (T k)
 
 {- the code of each definition depends only on the older ones -}
 Indep : Set₁
-Indep = ∀ {n} (f : Σ ∋ n) {T T'} → Good T → Good T' → (∀ j → j < lvl f → T j ≃ T' j)
+Indep =
+  ∀ {n} (f : Σ ∋ n) {T T'} → Good T → Good T' → (∀ j → j < lvl f → T j ≃ T' j)
   → codeₜ T (ds ! f) ≃ codeₜ T' (ds ! f)
 
 {- the table T below p, and D above -}
@@ -359,7 +388,9 @@ cut-good {p} vD cD gT j with j <? p
 
 {- definition f, which the machine finds in ds, is the code of the
    table of the older ones, which is errcode above them -}
-tbl-at : ∀ {n} (f : Σ ∋ n) → Σ[ T ∈ Table ] T⁺ (lvl f) ≡ codeₜ T (ds ! f) × (∀ j → T j ≡ cut (lvl f) errcode T⁺ j)
+tbl-at : ∀ {n} (f : Σ ∋ n)
+  → Σ[ T ∈ Table ] T⁺ (lvl f)
+  ≡ codeₜ T (ds ! f) × (∀ j → T j ≡ cut (lvl f) errcode T⁺ j)
 tbl-at f = at ds f
   where
   c = codeₜ {Σ}
@@ -377,7 +408,8 @@ tbl-at f = at ds f
   ... | yes refl = ⊥-elim (¬< (n<1+n _))
   ... | no _ = out ps j (λ j< → ¬< (m<n⇒m<1+n j<))
   at : ∀ {ns n} (ps : All (λ m → Body Σ (called m)) ns) (f : ns ∋ n)
-    → Σ[ T ∈ Table ] tbl c ps (lvl f) ≡ c T (ps ! f) × (∀ j → T j ≡ cut (lvl f) errcode (tbl c ps) j)
+    → Σ[ T ∈ Table ] tbl c ps (lvl f)
+      ≡ c T (ps ! f) × (∀ j → T j ≡ cut (lvl f) errcode (tbl c ps) j)
   at {_ ∷ ns} (p ∷ ps) Z with length ns ≟ length ns
   ... | no ne = ⊥-elim (ne refl)
   ... | yes _ = ⟨ tbl c ps , ⟨ refl , pw ⟩ ⟩
@@ -388,9 +420,12 @@ tbl-at f = at ds f
     ... | no ¬< = out ps j ¬<
   at {_ ∷ ns} (p ∷ ps) (S f) with lvl f ≟ length ns | at ps f
   ... | yes e | _ = ⊥-elim (<⇒≢ (lvl-< f) e)
-  ... | no ne | ⟨ T , ⟨ e , pw ⟩ ⟩ = ⟨ T , ⟨ e , (λ j → trans (pw j) (agree j)) ⟩ ⟩
+  ... | no ne | ⟨ T , ⟨ e , pw ⟩ ⟩ =
+    ⟨ T , ⟨ e , (λ j → trans (pw j) (agree j)) ⟩ ⟩
     where
-    agree : ∀ j → cut (lvl f) errcode (tbl c ps) j ≡ cut (lvl f) errcode (tbl c (p ∷ ps)) j
+    agree : ∀ j
+      → cut (lvl f) errcode (tbl c ps) j
+      ≡ cut (lvl f) errcode (tbl c (p ∷ ps)) j
     agree j with j <? lvl f
     ... | yes j< = sym (cons p ps (<⇒≢ (<-trans j< (lvl-< f))))
     ... | no _ = refl
@@ -404,16 +439,33 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) {n} (f : Σ ∋ n) where
     e = proj₁ (proj₂ (tbl-at f))
     pw = proj₂ (proj₂ (tbl-at f))
     gT : Good T
-    gT j = subst (λ D → Valᴰ D × Con D) (sym (pw j)) (cut-good {lvl f} ΛΛᵐ-val errcode-con gT⁺ j)
+    gT j =
+      subst (λ D → Valᴰ D × Con D) (sym (pw j))
+      (cut-good {lvl f} ΛΛᵐ-val errcode-con gT⁺ j)
     below : ∀ {D} j
       → j < lvl f
       → T j ≃ cut (lvl f) D T⁺ j
-    below {D} j j< = ≃-reflexive (trans (pw j) (trans (cut-below {D = errcode} {T⁺} j<) (sym (cut-below {D = D} {T⁺} j<))))
+    below {D} j j< =
+      ≃-reflexive
+      (trans (pw j)
+        (trans (cut-below {D = errcode} {T⁺} j<)
+          (sym (cut-below {D = D} {T⁺} j<))))
 
   {- the code of f under the whole table is part of its entry -}
   fix-S : codeₜ T⁺ (ds ! f) ⊆ T⁺ (lvl f)
-  fix-S d d∈ = subst (d ∈_) (sym e) (proj₁ (ind f gT⁺ gT (λ j j< → ≃-trans (≃-reflexive (sym (cut-below {D = errcode} {T⁺} j<))) (≃-sym (below {errcode} j j<)))) d d∈)
+  fix-S d d∈ =
+    subst (d ∈_) (sym e)
+    (proj₁
+      (ind f gT⁺ gT
+        (λ j j< →
+          ≃-trans (≃-reflexive (sym (cut-below {D = errcode} {T⁺} j<)))
+            (≃-sym (below {errcode} j j<)))) d d∈)
 
-  {- its entry is its code under the older ones, and the empty function above them -}
+  {- its entry is its code under the older ones, and the empty function above
+     them -}
   fix-C : T⁺ (lvl f) ⊆ codeₜ (cut (lvl f) ⌈ ν ⌉ T⁺) (ds ! f)
-  fix-C d d∈ = proj₁ (ind f gT (cut-good {lvl f} ⟨ (λ { _ refl () }) , ⟨ ν , refl ⟩ ⟩ (Con-⌈⌉ ν) gT⁺) (below {⌈ ν ⌉})) d (subst (d ∈_) e d∈)
+  fix-C d d∈ =
+    proj₁
+    (ind f gT
+      (cut-good {lvl f} ⟨ (λ { _ refl () }) , ⟨ ν , refl ⟩ ⟩ (Con-⌈⌉ ν) gT⁺)
+        (below {⌈ ν ⌉})) d (subst (d ∈_) e d∈)

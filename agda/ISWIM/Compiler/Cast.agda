@@ -8,11 +8,13 @@
   * An operation projects its operand to the flat type it needs, at the
     point where the ISWIM machine checks it:
       (L M) ⇒ app (project tfun L') M'        (the operator, before M),
-      get i L ⇒ get i (project (ttup n i) L'),  case L … ⇒ case (project tsum L') …
+      get i L ⇒ get i (project (ttup n i) L'), case L … ⇒ case (project tsum L')
+      …
   * A primitive checks both operands after it has evaluated them both, so
     they are let-bound first:
       prim p L M ⇒ let x = L' in let y = M' in
-                     inject (out-flat p) (prim p (project tint x) (project tint y)).
+                     inject (out-flat p) (prim p (project tint x) (project tint
+                     y)).
 
   The pass is defined on well-scoped terms (WS k M: a closed program is
   WS 0, ISWIM/Compiler/CaptureScope.agda), so every variable becomes a typed
@@ -44,15 +46,18 @@ ext r zero = zero
 ext r (suc x) = suc (r x)
 
 cast : ∀ {k k'} → (Fin k → Fin k') → (M : AST) → WS k M → T.Tm k' Any
-casts : ∀ {k k' n} → (Fin k → Fin k') → (Ms : Args (replicate n ■)) → WS-args k Ms
+casts : ∀ {k k' n} → (Fin k → Fin k') → (Ms : Args (replicate n ■))
+  → WS-args k Ms
   → Vec (T.Tm k' Any) n
 
 cast r (` x) x<k = T.` r (fromℕ< x<k)
 cast r (lam ⦅ ⟩ N ,, Nil ⦆) (w , _) = T.inject fun (T.lam (cast (ext r) N w))
-cast r (app ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) = T.app (T.project tfun (cast r L wL)) (cast r M wM)
+cast r (app ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) =
+  T.app (T.project tfun (cast r L wL)) (cast r M wM)
 cast r (lit B k ⦅ Nil ⦆) _ = T.inject (base B) (T.lit B k)
 cast r (tuple n ⦅ Ms ⦆) w = T.inject (tup n) (T.tuple (casts r Ms w))
-cast r (get {suc n} i ⦅ M ,, Nil ⦆) (w , _) = T.get i (T.project (ttup n i) (cast r M w))
+cast r (get {suc n} i ⦅ M ,, Nil ⦆) (w , _) =
+  T.get i (T.project (ttup n i) (cast r M w))
 cast r (inl-op ⦅ M ,, Nil ⦆) (w , _) = T.inject sum (T.inl (cast r M w))
 cast r (inr-op ⦅ M ,, Nil ⦆) (w , _) = T.inject sum (T.inr (cast r M w))
 cast r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) =
@@ -61,7 +66,8 @@ cast r (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) =
   T.let′ (cast r L wL) (T.let′ (cast (λ x → suc (r x)) M wM)
     (T.inject (out-flat p) (T.prim p (T.project tint (T.` suc zero))
                                      (T.project tint (T.` zero)))))
-cast r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) (wM , wN , _) = T.let′ (cast r M wM) (cast (ext r) N wN)
+cast r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) (wM , wN , _) =
+  T.let′ (cast r M wM) (cast (ext r) N wN)
 
 casts {n = ℕ.zero} r Nil _ = []
 casts {n = suc n} r (M ,, Ms) (w , ws) = cast r M w ∷ casts r Ms ws

@@ -36,8 +36,10 @@ open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 open import ISWIM.Untyped.Language.Imp
 open import Semantics.Observation
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
-open import ISWIM.Semantics.CEK.Values using (Val; code; pair; const; tup; inl; inr; obs; prim?; Frame; _[_]≔_; zeros) public
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?;
+  machine)
+open import ISWIM.Semantics.CEK.Values using (Val; code; pair; const; tup; inl;
+  inr; obs; prim?; Frame; _[_]≔_; zeros) public
 open import Framework.ListUtil using (_‼_; proj)
 
 open import Data.Fin using (Fin)
@@ -131,7 +133,8 @@ goto nothing e κ = stop o-error
 {- run a body, if there is one, in a fresh frame with e and a; the caller's
    frame is φ -}
 call : Maybe Body → Val → Val → Frame → Cont → Next State
-call (just (body n b)) e a φ κ = next (eval b (e ∷ a ∷ zeros (n ∸ 2)) (callK φ κ))
+call (just (body n b)) e a φ κ =
+  next (eval b (e ∷ a ∷ zeros (n ∸ 2)) (callK φ κ))
 call nothing e a φ κ = stop o-error
 
 {- the machine for a program with global definitions ds -}
@@ -142,7 +145,8 @@ res ds (apply k e a) φ κ = call (global ds k) e a φ κ
 
 step : List Body → State → Next State
 step ds (eval (simple s) φ κ) = res ds (first φ s) φ κ
-step ds (eval (case a x e₁ e₂) φ κ) = next (eval (simple (atm a)) φ (caseK x e₁ e₂ κ))
+step ds (eval (case a x e₁ e₂) φ κ) =
+  next (eval (simple (atm a)) φ (caseK x e₁ e₂ κ))
 step ds (eval (assign x e₁ e₂) φ κ) = next (eval e₁ φ (assignK x e₂ κ))
 step ds (ret v φ halt) = stop (obs v)
 step ds (ret v φ (frm f κ)) = res ds (resume v f) φ κ

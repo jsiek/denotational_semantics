@@ -89,39 +89,46 @@ compile-correct-machine-converges = EndToEnd.compile-correct-machine-converges
 clos5-const-iff : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
-clos5-const-iff M c = AdequacyClos5.const-iff (compile M) (hoist-older (compile₄ M))
+  → (const k ∈ ⟦ compile M ⟧₅)
+    ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
+clos5-const-iff M c =
+  AdequacyClos5.const-iff (compile M) (hoist-older (compile₄ M))
 
 clos5-nonempty-iff : ∀ (M : ISWIM.AST)
   → Closed M
   → nonempty ⟦ compile M ⟧₅ ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
-clos5-nonempty-iff M c = AdequacyClos5.nonempty-iff (compile M) (hoist-older (compile₄ M))
+clos5-nonempty-iff M c =
+  AdequacyClos5.nonempty-iff (compile M) (hoist-older (compile₄ M))
 
 clos5-error-empty : ∀ (M : ISWIM.AST)
   → Closed M
   → Terminates (Clos5ᵀₘ.sem (compile M)) o-error
   → ∀ (d : Value)
   → ¬ (d ∈ ⟦ compile M ⟧₅)
-clos5-error-empty M c = AdequacyClos5.error-empty (compile M) (hoist-older (compile₄ M))
+clos5-error-empty M c =
+  AdequacyClos5.error-empty (compile M) (hoist-older (compile₄ M))
 
 clos5-diverges-empty : ∀ (M : ISWIM.AST)
   → Closed M
   → Diverges (Clos5ᵀₘ.sem (compile M))
   → ∀ (d : Value)
   → ¬ (d ∈ ⟦ compile M ⟧₅)
-clos5-diverges-empty M c = AdequacyClos5.diverges-empty (compile M) (hoist-older (compile₄ M))
+clos5-diverges-empty M c =
+  AdequacyClos5.diverges-empty (compile M) (hoist-older (compile₄ M))
 
 {- The X86ᵀ machine, for the programs compile-x86 produces -------------------}
 
 x86-const-iff : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
+  → (const k ∈ ⟦ compile-x86 M ⟧ₜ)
+    ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
 x86-const-iff = AdequacyX86.x86-const-iff
 
 x86-nonempty-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → nonempty ⟦ compile-x86 M ⟧ₜ ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
+  → nonempty ⟦ compile-x86 M ⟧ₜ
+    ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
 x86-nonempty-iff = AdequacyX86.x86-nonempty-iff
 
 {- End to end: the compiler, observed through the machines only -------------}
@@ -129,21 +136,25 @@ x86-nonempty-iff = AdequacyX86.x86-nonempty-iff
 end-to-end-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
 end-to-end-const = EndToEnd.end-to-end-const
 
 end-to-end-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
 end-to-end-converges = EndToEnd.end-to-end-converges
 
 end-to-end-x86-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
 end-to-end-x86-const = EndToEnd.end-to-end-x86-const
 
 end-to-end-x86-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
 end-to-end-x86-converges = EndToEnd.end-to-end-x86-converges

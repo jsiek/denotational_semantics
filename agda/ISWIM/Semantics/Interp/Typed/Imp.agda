@@ -36,7 +36,8 @@ module _ {Σ : List ℕ} where
   atom φ (ref f) = code f
 
   {- a simple expression, with call the calls -}
-  eval-simple : ∀ {Δ A} → (Val ⟪ fun ⟫ → Val Any → Result (Val Any)) → Env Δ → Simple Σ Δ A → Result (Val A)
+  eval-simple : ∀ {Δ A} → (Val ⟪ fun ⟫ → Val Any → Result (Val Any)) → Env Δ
+    → Simple Σ Δ A → Result (Val A)
   eval-simple call φ (atm a) = ret (atom φ a)
   eval-simple call φ (pack a b) = ret (pack (atom φ a) (atom φ b))
   eval-simple call φ (callc a b) = call (atom φ a) (atom φ b)
@@ -48,7 +49,8 @@ module _ {Σ : List ℕ} where
   eval-simple call φ (inject G a) = ret (dyn G (atom φ a))
   eval-simple call φ (project t a) = project? t (atom φ a)
 
-module _ {Σ : List ℕ} (ds : All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) Σ) where
+module _ {Σ : List ℕ}
+  (ds : All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) Σ) where
   open Vals Σ
 
   eval : ∀ {Δ A} → ℕ → Env Δ → Exp Σ Δ A → Result (Val A)
@@ -56,7 +58,8 @@ module _ {Σ : List ℕ} (ds : All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ [
 
   eval ck φ (simple s) = eval-simple (call ck) φ s
   eval ck φ (assign e₁ e₂) = do v ← eval ck φ e₁; eval ck (v ∷ φ) e₂
-  eval ck φ (case a e₁ e₂) = either (atom φ a) (λ v → eval ck (v ∷ φ) e₁) (λ v → eval ck (v ∷ φ) e₂)
+  eval ck φ (case a e₁ e₂) =
+    either (atom φ a) (λ v → eval ck (v ∷ φ) e₁) (λ v → eval ck (v ∷ φ) e₂)
 
   call zero f w = timeout
   call (suc ck) (pack (code f) e) w = eval ck (w ∷ e ∷ []) (ds ! f)

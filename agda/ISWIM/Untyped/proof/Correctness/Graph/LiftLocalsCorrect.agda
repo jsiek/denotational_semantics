@@ -2,9 +2,9 @@
 
   Correctness of lift locals (monadic Clos5 → Imp,
   Compiler/LiftLocals.agda) against the direct semantics of Imp
-  (proof/Semantics/Graph/ImpDirect.agda), an alternative to the main proof against the
-  continuation-passing semantics (LiftLocalsCorrectK.agda): the meaning
-  of the Imp program is that of the Clos5 program.
+  (proof/Semantics/Graph/ImpDirect.agda), an alternative to the main proof
+  against the continuation-passing semantics (LiftLocalsCorrectK.agda): the
+  meaning of the Imp program is that of the Clos5 program.
 
     lift-program-correct : ⟦ lift-program P mp ⟧ₚ ≃ ⟦ P ⟧ₚ
 
@@ -35,8 +35,10 @@ open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
 open import ISWIM.Untyped.Language.Clos5 using (program)
 open import ISWIM.Untyped.Language.Mon
-open import ISWIM.Untyped.Compiler.LiftLocals using (lift-atom; lift; height; lift-defs; lift-program)
-open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; ⟦_⟧ₚ)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-atom; lift; height;
+  lift-defs; lift-program)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_];
+  ⟦_⟧₊[_]; table; ⟦_⟧ₚ)
 open import ISWIM.Untyped.proof.Semantics.Graph.ImpDirect
   using (Store; _[_↦_]; 𝒜; caseₛ; letₛ)
   renaming (⟦_⟧[_] to ℐ⟦_⟧[_]; table to tableᵢ; ⟦_⟧ₚ to ℐ⟦_⟧ₚ)
@@ -58,7 +60,7 @@ open import Relation.Nullary using (yes; no)
 
 module ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCorrect where
 
-{- The invariant ---------------------------------------------------------------------}
+{- The invariant --------------------------------------------------------------}
 
 {- the store that r leaves agrees with ρ, if r has a value -}
 Out : ℕ → Env Value → 𝒫 Value × Store → Set
@@ -69,12 +71,30 @@ out-case : ∀ {d ρ A E₁ E₂}
   → (∀ X → Out d ρ (E₂ X))
   → Out d ρ (caseₛ A E₁ E₂)
 out-case R₁ R₂ ne = agree λ x x<d → ⟨
-    (λ { u (inj₁ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ ⟨ u∈ , ne' ⟩ , _ ⟩ ⟩ ⟩ ⟩) → proj₁ (at (R₁ _ ne') x x<d) u u∈
-          ; u (inj₂ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ ⟨ u∈ , ne' ⟩ , _ ⟩ ⟩ ⟩ ⟩) → proj₁ (at (R₂ _ ne') x x<d) u u∈ })
+    (λ { u (inj₁ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ ⟨ u∈ , ne' ⟩ , _ ⟩ ⟩ ⟩ ⟩)
+        → proj₁ (at (R₁ _ ne') x x<d) u u∈
+          ; u (inj₂ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ ⟨ u∈ , ne' ⟩ , _ ⟩ ⟩ ⟩ ⟩)
+              → proj₁ (at (R₂ _ ne') x x<d) u u∈ })
   , (case ne of λ { ⟨ w , inj₁ ⟨ v , ⟨ V , ⟨ l∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩ ⟩ u u∈ →
-            inj₁ ⟨ v , ⟨ V , ⟨ l∈ , ⟨ ⟨ proj₂ (at (R₁ _ ⟨ w , w∈ ⟩) x x<d) u u∈ , ⟨ w , w∈ ⟩ ⟩ , c ⟩ ⟩ ⟩ ⟩
+            inj₁
+              ⟨ v
+                ,
+                ⟨ V
+                  ,
+                    ⟨ l∈
+                      ,
+                        ⟨ ⟨ proj₂ (at (R₁ _ ⟨ w , w∈ ⟩) x x<d) u u∈
+                          , ⟨ w , w∈ ⟩ ⟩ , c ⟩ ⟩ ⟩ ⟩
           ; ⟨ w , inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩ ⟩ u u∈ →
-            inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ ⟨ proj₂ (at (R₂ _ ⟨ w , w∈ ⟩) x x<d) u u∈ , ⟨ w , w∈ ⟩ ⟩ , c ⟩ ⟩ ⟩ ⟩ }) ⟩
+            inj₂
+                ⟨ v
+                  ,
+                    ⟨ V
+                      ,
+                        ⟨ r∈
+                          ,
+                            ⟨ ⟨ proj₂ (at (R₂ _ ⟨ w , w∈ ⟩) x x<d) u u∈
+                              , ⟨ w , w∈ ⟩ ⟩ , c ⟩ ⟩ ⟩ ⟩ }) ⟩
 
 out-let : ∀ {d ρ D E}
   → (nonempty D → ∀ X → Out d ρ (E X))
@@ -82,7 +102,12 @@ out-let : ∀ {d ρ D E}
 out-let R ⟨ w , ⟨ V , ⟨ ⟨ w∈ , V≢ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ ⟩ = agree λ x x<d →
   ⟨ (λ { u ⟨ U , ⟨ ⟨ ⟨ u∈ , ne' ⟩ , _ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ →
          proj₁ (at (R (ne-mem neU U⊆) (mem U) ne') x x<d) u u∈ })
-  , (λ u u∈ → ⟨ V , ⟨ ⟨ ⟨ proj₂ (at (R (ne-mem ne V⊆) (mem V) ⟨ w , w∈ ⟩) x x<d) u u∈ , ⟨ w , w∈ ⟩ ⟩ , V≢ ⟩
+  ,
+    (λ u u∈ →
+      ⟨ V
+        ,
+        ⟨ ⟨ ⟨ proj₂ (at (R (ne-mem ne V⊆) (mem V) ⟨ w , w∈ ⟩) x x<d) u u∈
+          , ⟨ w , w∈ ⟩ ⟩ , V≢ ⟩
                     , ⟨ V⊆ , ne ⟩ ⟩ ⟩) ⟩
 
 {- ⋆ ⟨ F , D ⟩ has a value only if D does -}
@@ -93,7 +118,7 @@ out-let R ⟨ w , ⟨ V , ⟨ ⟨ w∈ , V≢ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ �
   → nonempty E
 ⋆-strict D⊆ w ⟨ V , ⟨ _ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne (λ u u∈ → D⊆ u (V⊆ u u∈))
 
-{- The pass preserves meanings ----------------------------------------------------}
+{- The pass preserves meanings ------------------------------------------------}
 
 module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
 
@@ -106,37 +131,54 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
     → d + height m ≤ n
     → Scope d ρ
     → Agree d σ ρ
-    → proj₁ (ℐ⟦ lift n d m ⟧[ T ] n σ) ≃ ⟦ M ⟧[ T' ] ρ × Out d ρ (ℐ⟦ lift n d m ⟧[ T ] n σ)
+    → proj₁ (ℐ⟦ lift n d m ⟧[ T ] n σ)
+      ≃ ⟦ M ⟧[ T' ] ρ × Out d ρ (ℐ⟦ lift n d m ⟧[ T ] n σ)
   lift-sem (atom a) H O A = ⟨ atom-≃ a H O A , (λ _ → A) ⟩
   lift-sem (app (a ∷ b ∷ c ∷ [])) H O A =
-    ⟨ mono-≃ ⋆₂-mono ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ⟨ up (atom-≃ c H O A) , ptt ⟩ ⟩ ⟩ , (λ _ → A) ⟩
+    ⟨ mono-≃ ⋆₂-mono
+        ⟨ up (atom-≃ a H O A)
+          , ⟨ up (atom-≃ b H O A) , ⟨ up (atom-≃ c H O A) , ptt ⟩ ⟩ ⟩
+          , (λ _ → A) ⟩
   lift-sem (pair (a ∷ b ∷ [])) H O A =
-    ⟨ mono-≃ pair-mono ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩ , (λ _ → A) ⟩
-  lift-sem (fst (a ∷ [])) H O A = ⟨ mono-≃ car-mono ⟨ up (atom-≃ a H O A) , ptt ⟩ , (λ _ → A) ⟩
-  lift-sem (snd (a ∷ [])) H O A = ⟨ mono-≃ cdr-mono ⟨ up (atom-≃ a H O A) , ptt ⟩ , (λ _ → A) ⟩
+    ⟨ mono-≃ pair-mono ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩
+        , (λ _ → A) ⟩
+  lift-sem (fst (a ∷ [])) H O A =
+    ⟨ mono-≃ car-mono ⟨ up (atom-≃ a H O A) , ptt ⟩ , (λ _ → A) ⟩
+  lift-sem (snd (a ∷ [])) H O A =
+    ⟨ mono-≃ cdr-mono ⟨ up (atom-≃ a H O A) , ptt ⟩ , (λ _ → A) ⟩
   lift-sem (tuple {k} {Ms} as) {ρ = ρ} H O A =
     ⟨ atoms-≃ as H O A (λ m Ds → 𝒯 m Ds ≃ 𝒯 k (⟦ Ms ⟧₊[ T' ] ρ))
                  (λ {m} eq q → ≃-trans (𝒯-≃ m (nthD-≃ _ _ eq)) q) ≃-refl
     , (λ _ → A) ⟩
-  lift-sem (get {i = i} (a ∷ [])) H O A = ⟨ proj-≃ i (atom-≃ a H O A) , (λ _ → A) ⟩
+  lift-sem (get {i = i} (a ∷ [])) H O A =
+    ⟨ proj-≃ i (atom-≃ a H O A) , (λ _ → A) ⟩
   lift-sem (inl (a ∷ [])) H O A = ⟨ inl-≃ (atom-≃ a H O A) , (λ _ → A) ⟩
   lift-sem (inr (a ∷ [])) H O A = ⟨ inr-≃ (atom-≃ a H O A) , (λ _ → A) ⟩
   lift-sem (prim {p} (a ∷ b ∷ [])) H O A =
-    ⟨ mono-≃ (primD-mono p) ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩ , (λ _ → A) ⟩
+    ⟨ mono-≃ (primD-mono p)
+        ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩ , (λ _ → A) ⟩
   lift-sem (case {M = M₁} {M₂} a m₁ m₂) {n} {d} {σ} {ρ} H O A with d <? n
   ... | no d≮n = ⊥-elim (d≮n (fits-< _ (fits {d} _ H)))
   ... | yes d<n =
-    ⟨ 𝒞-≃ {F = B m₁} {λ X → ⟦ M₁ ⟧[ T' ] (X • ρ)} {B m₂} {λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)}
-          (atom-≃ a H O A) (λ v V _ → proj₁ (IH₁ (mem (v ∷ V)))) (λ v V _ → proj₁ (IH₂ (mem (v ∷ V))))
+    ⟨ 𝒞-≃ {F = B m₁} {λ X → ⟦ M₁ ⟧[ T' ] (X • ρ)} {B m₂}
+        {λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)}
+          (atom-≃ a H O A) (λ v V _ → proj₁ (IH₁ (mem (v ∷ V))))
+            (λ v V _ → proj₁ (IH₂ (mem (v ∷ V))))
     , out-case {A = 𝒜 T n σ (lift-atom n d a)}
-               (λ X ne → weak (proj₂ (IH₁ X) ne)) (λ X ne → weak (proj₂ (IH₂ X) ne)) ⟩
+               (λ X ne → weak (proj₂ (IH₁ X) ne))
+                 (λ X ne → weak (proj₂ (IH₂ X) ne)) ⟩
     where
     B = λ {N} (m : Mon N) X → proj₁ (ℐ⟦ lift n (suc d) m ⟧[ T ] n (σ [ d ↦ X ]))
     H' = fits {d} (height m₁ ⊔ height m₂) H
-    IH₁ = λ X → lift-sem m₁ (⊔ˡ (height m₁) _ H') (scope-ext O) (agree-ext {X = X} A)
-    IH₂ = λ X → lift-sem m₂ (⊔ʳ _ (height m₂) H') (scope-ext O) (agree-ext {X = X} A)
+    IH₁ =
+      λ X →
+      lift-sem m₁ (⊔ˡ (height m₁) _ H') (scope-ext O) (agree-ext {X = X} A)
+    IH₂ =
+      λ X →
+      lift-sem m₂ (⊔ʳ _ (height m₂) H') (scope-ext O) (agree-ext {X = X} A)
   lift-sem (let′ {M₁} {M₂} m₁ m₂) {n} {d} {σ} {ρ} H O A with d <? n
-  ... | no d≮n = ⊥-elim (d≮n (fits-< _ (fits {d} (height m₂) (⊔ʳ (height m₁) _ H))))
+  ... | no d≮n =
+    ⊥-elim (d≮n (fits-< _ (fits {d} (height m₂) (⊔ʳ (height m₁) _ H))))
   ... | yes d<n =
     ⟨ ≃-when (⋆-strict {Λ ⟨ F , ptt ⟩} (λ _ w∈ → w∈))
                (⋆-strict {Λ ⟨ F' , ptt ⟩} (proj₂ (proj₁ IH₁)))
@@ -150,13 +192,15 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
     IH₂ = λ ne X → lift-sem m₂ (fits {d} _ (⊔ʳ (height m₁) _ H)) (scope-ext O)
       (agree-ext {X = X} (proj₂ IH₁ ne))
 
-{- Programs ---------------------------------------------------------------------}
+{- Programs -------------------------------------------------------------------}
 
 table-lift : ∀ {ds} (ms : All Mon ds) k → tableᵢ (lift-defs ms) k ≃ table ds k
 table-lift [] k = ≃-refl
 table-lift {N ∷ Ns} (m ∷ ms) k with k ≟ length (lift-defs ms) | k ≟ length Ns
 ... | yes _ | yes _ =
-  ΛΛ-≃ λ X Y → proj₁ (lift-sem (table-lift ms) m ≤-refl (scope-frame X Y) (agree-frame X Y))
+  ΛΛ-≃ λ X Y →
+    proj₁
+    (lift-sem (table-lift ms) m ≤-refl (scope-frame X Y) (agree-frame X Y))
 ... | no _ | no _ = table-lift ms k
 ... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-lift-defs ms)))
 ... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-lift-defs ms))))

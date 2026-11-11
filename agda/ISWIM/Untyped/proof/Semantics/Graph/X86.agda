@@ -1,9 +1,9 @@
 {-
 
   Lemmas about the semantics of X86 in the graph model
-  (ISWIM/Untyped/Semantics/Graph/X86.agda), used by the proofs of select instructions
-  of both pipelines (Correctness/Graph/SelectCorrect.agda, and that of
-  the preserved untyped pipeline): no slot holds both an inl and an inr
+  (ISWIM/Untyped/Semantics/Graph/X86.agda), used by the proofs of select
+  instructions of both pipelines (Correctness/Graph/SelectCorrect.agda, and that
+  of the preserved untyped pipeline): no slot holds both an inl and an inr
   (Tagged, Inv), and X86's case, which tests the operand (isinl), binds
   its payload and branches on the flag, means the case of the graph
   model (case-core).
@@ -56,16 +56,30 @@ case-core : ∀ {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 V
   → Tagged A
   → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V))
   → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
-  → ⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩ , ⟨ payloadD A , ptt ⟩ ⟩
+  →
+    ⋆
+    ⟨ Λ
+      ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩)
+        , ptt ⟩ , ⟨ payloadD A , ptt ⟩ ⟩
       ≃ 𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩
 case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
   where
   G : _
   G w ⟨ [] , ⟨ ⟨ _ , ⟨ ne , _ ⟩ ⟩ , _ ⟩ ⟩ = ⊥-elim (ne refl)
-  G w ⟨ v ∷ V , ⟨ ⟨ inj₁ ⟨ f , ⟨ _ , ⟨ fl , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
+  G w
+    ⟨ v ∷ V
+      ,
+      ⟨ ⟨ inj₁ ⟨ f , ⟨ _ , ⟨ fl , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩
+        , ⟨ V⊆ , _ ⟩ ⟩ ⟩
     with fl f (here refl)
   ... | inj₁ ⟨ u , ⟨ l∈ , _ ⟩ ⟩ =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (lefts (V⊆ d d∈))) , ⟨ proj₁ (F₁≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
+    inj₁
+      ⟨ v
+        ,
+        ⟨ V
+          ,
+            ⟨ (λ d d∈ → A⊆ _ (lefts (V⊆ d d∈)))
+              , ⟨ proj₁ (F₁≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
     where
     lefts : ∀ {d}
       → payloadD A d
@@ -73,10 +87,20 @@ case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
     lefts (inj₁ l) = l
     lefts (inj₂ r) = ⊥-elim (tg l∈ r)
   ... | inj₂ ⟨ _ , ⟨ _ , () ⟩ ⟩
-  G w ⟨ v ∷ V , ⟨ ⟨ inj₂ ⟨ f , ⟨ _ , ⟨ fr , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
+  G w
+    ⟨ v ∷ V
+      ,
+      ⟨ ⟨ inj₂ ⟨ f , ⟨ _ , ⟨ fr , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩
+        , ⟨ V⊆ , _ ⟩ ⟩ ⟩
     with fr f (here refl)
   ... | inj₂ ⟨ u , ⟨ r∈ , _ ⟩ ⟩ =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (rights (V⊆ d d∈))) , ⟨ proj₁ (F₂≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
+    inj₂
+      ⟨ v
+        ,
+        ⟨ V
+          ,
+            ⟨ (λ d d∈ → A⊆ _ (rights (V⊆ d d∈)))
+              , ⟨ proj₁ (F₂≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
     where
     rights : ∀ {d}
       → payloadD A d
@@ -86,12 +110,32 @@ case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
   ... | inj₁ ⟨ _ , ⟨ _ , () ⟩ ⟩
   H : _
   H w (inj₁ ⟨ v , ⟨ V , ⟨ l∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    ⟨ v ∷ V , ⟨ ⟨ inj₁ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → inj₁ ⟨ v , ⟨ A⊇ _ (l∈ v (here refl)) , refl ⟩ ⟩ })
-                                      , ⟨ proj₂ (F₁≃ (v ∷ V) c) w w∈ , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
+    ⟨ v ∷ V
+        ,
+        ⟨ ⟨ inj₁
+          ⟨ ⟨⟩
+            ,
+            ⟨ []
+              ,
+              ⟨ (λ { _ (here refl)
+                → inj₁ ⟨ v , ⟨ A⊇ _ (l∈ v (here refl)) , refl ⟩ ⟩ })
+                                      ,
+                                          ⟨ proj₂ (F₁≃ (v ∷ V) c) w w∈
+                                            , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
                 , ⟨ (λ ()) , c ⟩ ⟩
               , ⟨ (λ d d∈ → inj₁ (A⊇ _ (l∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩
   H w (inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    ⟨ v ∷ V , ⟨ ⟨ inj₂ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → inj₂ ⟨ v , ⟨ A⊇ _ (r∈ v (here refl)) , refl ⟩ ⟩ })
-                                      , ⟨ proj₂ (F₂≃ (v ∷ V) c) w w∈ , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
+    ⟨ v ∷ V
+        ,
+        ⟨ ⟨ inj₂
+          ⟨ ⟨⟩
+            ,
+            ⟨ []
+              ,
+              ⟨ (λ { _ (here refl)
+                → inj₂ ⟨ v , ⟨ A⊇ _ (r∈ v (here refl)) , refl ⟩ ⟩ })
+                                      ,
+                                          ⟨ proj₂ (F₂≃ (v ∷ V) c) w w∈
+                                            , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
                 , ⟨ (λ ()) , c ⟩ ⟩
               , ⟨ (λ d d∈ → inj₂ (A⊇ _ (r∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩

@@ -26,7 +26,8 @@ open import ISWIM.Untyped.Language.CFG
 open import Framework.ListUtil using (_‼_)
 open import Semantics.Interp.Clock
 open import ISWIM.Untyped.Semantics.Interp.Clos5 using (Val; code; obs)
-open import ISWIM.Untyped.Semantics.Interp.Imp using (Frame; zero-val; atom; eval-simple; inj?; set)
+open import ISWIM.Untyped.Semantics.Interp.Imp using (Frame; zero-val; atom;
+  eval-simple; inj?; set)
 
 open import Data.List using (List; []; _∷_; reverse; replicate; length)
 open import Data.Maybe using (Maybe; just; nothing)
@@ -49,10 +50,14 @@ module _ (ds : List Body) where
   call : ℕ → Maybe Body → Val → Val → Result Val
 
   tail ck bs φ (return s) = eval-simple (λ f → call ck (code? f)) φ s
-  tail ck bs φ (seq x s t) = do v ← eval-simple (λ f → call ck (code? f)) φ s; set φ x v λ φ' → tail ck bs φ' t
+  tail ck bs φ (seq x s t) =
+    do v ← eval-simple (λ f → call ck (code? f)) φ s; set φ x v λ φ' →
+        tail ck bs φ' t
   tail ck bs φ (goto l) = jump ck bs φ l
   tail ck bs φ (case a x l₁ l₂) =
-    do v ← atom φ a; inj? v >>= [ (λ w → set φ x w λ φ' → jump ck bs φ' l₁) , (λ w → set φ x w λ φ' → jump ck bs φ' l₂) ]
+    do v ← atom φ a; inj? v
+        >>= [ (λ w → set φ x w λ φ' → jump ck bs φ' l₁)
+        , (λ w → set φ x w λ φ' → jump ck bs φ' l₂) ]
 
   jump ck [] φ l = error
   jump ck (t ∷ bs) φ l with l ≟ length bs
@@ -61,8 +66,10 @@ module _ (ds : List Body) where
 
   call ck nothing e w = error
   call zero (just b) e w = timeout
-  call (suc ck) (just (body n bs t)) e w = tail ck bs (e ∷ w ∷ replicate (n ∸ 2) zero-val) t
+  call (suc ck) (just (body n bs t)) e w =
+    tail ck bs (e ∷ w ∷ replicate (n ∸ 2) zero-val) t
 
 {- a program starts with main, in a frame of zeros -}
 sem : Program → Semantics
-sem (program ds (body n bs t)) = semantics Val obs (λ ck → tail ds ck bs (replicate n zero-val) t)
+sem (program ds (body n bs t)) =
+  semantics Val obs (λ ck → tail ds ck bs (replicate n zero-val) t)

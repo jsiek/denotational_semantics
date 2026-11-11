@@ -29,7 +29,8 @@ data Tm (k : ℕ) : Ty → Set where
   get : ∀ {n} → Fin n → Tm k ⟪ tup n ⟫ → Tm k Any
   inl inr : Tm k Any → Tm k ⟪ sum ⟫
   case : Tm k ⟪ sum ⟫ → Tm (suc k) Any → Tm (suc k) Any → Tm k Any
-  prim : (p : Prim) → Tm k ⟪ base Int ⟫ → Tm k ⟪ base Int ⟫ → Tm k ⟪ out-flat p ⟫
+  prim : (p : Prim) → Tm k ⟪ base Int ⟫ → Tm k ⟪ base Int ⟫
+    → Tm k ⟪ out-flat p ⟫
   let′ : Tm k Any → Tm (suc k) Any → Tm k Any
   inject : (G : Flat) → Tm k ⟪ G ⟫ → Tm k Any
   project : (t : Tag) → Tm k Any → Tm k ⟪ flat t ⟫

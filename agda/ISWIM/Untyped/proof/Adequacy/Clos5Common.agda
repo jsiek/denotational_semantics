@@ -17,8 +17,10 @@ module ISWIM.Untyped.proof.Adequacy.Clos5Common (ds : List AST) where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (ν)
-open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (table) renaming (code to codeD)
-open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (table-ext; table-top)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (table) renaming
+  (code to codeD)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (table-ext;
+  table-top)
 open import proof.Framework.ListUtil using (reverse-‼-split)
 open import ISWIM.Untyped.Semantics.CEK.Clos5
 open import ISWIM.Untyped.proof.Compiler.HoistTable using (_⊑_)
@@ -37,11 +39,11 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans)
 open import Relation.Nullary using (yes; no)
 open import Data.Empty using (⊥-elim)
 
-{- Runs of the machine -----------------------------------------------------------}
+{- Runs of the machine --------------------------------------------------------}
 
 open Runs (step ds) public
 
-{- The table of global definitions ------------------------------------------------}
+{- The table of global definitions --------------------------------------------}
 
 {- the definition that the machine finds at k sits on top of the k
    definitions older than it -}

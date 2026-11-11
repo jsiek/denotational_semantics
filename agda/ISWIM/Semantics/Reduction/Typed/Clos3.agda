@@ -14,8 +14,10 @@ open import Language.Prim using (Prim)
 import Language.Prim as P
 open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import ISWIM.Language.Typed.Clos3
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
-open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl;
+  o-inr; o-error)
+open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to;
+  step-in; reduction)
 open import Framework.ReductionVec Obs o-error using (red-∷)
 
 open import Data.Bool using (if_then_else_)
@@ -86,7 +88,8 @@ get? : ∀ {A n} → Fin n → Tm [] A → A ≡ ⟪ tup n ⟫ → Red (Tm [] An
 get? i (tuple Vs) refl = to (lookup Vs i)
 get? i _ _ = error
 
-case? : ∀ {A} → Tm [] A → Tm (Any ∷ []) Any → Tm (Any ∷ []) Any → Red (Tm [] Any)
+case? : ∀ {A} → Tm [] A → Tm (Any ∷ []) Any → Tm (Any ∷ []) Any
+  → Red (Tm [] Any)
 case? (inl V) M N = to (M [ V ])
 case? (inr V) M N = to (N [ V ])
 case? _ M N = error
@@ -108,14 +111,17 @@ red : ∀ {A} → Tm [] A → Red (Tm [] A)
 reds : ∀ {n} → Vec (Tm [] Any) n → Red (Vec (Tm [] Any) n)
 red (` ())
 red (clos N Ms) = step-in (clos N) (reds Ms) val
-red (app L M) = step-in (λ L' → app L' M) (red L) (step-in (app L) (red M) (β L M))
+red (app L M) =
+  step-in (λ L' → app L' M) (red L) (step-in (app L) (red M) (β L M))
 red (lit B c) = val
 red (tuple Ms) = step-in tuple (reds Ms) val
 red (get i M) = step-in (get i) (red M) (get? i M refl)
 red (inl M) = step-in inl (red M) val
 red (inr M) = step-in inr (red M) val
 red (case L M N) = step-in (λ L' → case L' M N) (red L) (case? L M N)
-red (prim p L M) = step-in (λ L' → prim p L' M) (red L) (step-in (prim p L) (red M) (prim? p L M))
+red (prim p L M) =
+  step-in (λ L' → prim p L' M) (red L)
+  (step-in (prim p L) (red M) (prim? p L M))
 red (let′ M N) = step-in (λ M' → let′ M' N) (red M) (to (N [ M ]))
 red (inject G M) = step-in (inject G) (red M) val
 red (project t M) = step-in (project t) (red M) (project? t M)

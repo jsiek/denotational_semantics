@@ -30,7 +30,8 @@ open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.VecUtil using (_<><₂_)
-open import ISWIM.proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
+open import ISWIM.proof.Correctness.CEK.Common using (Lock; same-stop;
+  same-next; lock)
 import ISWIM.Semantics.CEK.Typed.Clos2 as Src
 import ISWIM.Semantics.CEK.Typed.Clos3 as Tgt
 
@@ -42,10 +43,11 @@ open import Data.List.Relation.Unary.All using ([]; _∷_)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Data.Vec.Relation.Binary.Pointwise.Inductive as V using ([]; _∷_)
 open import Language.Prim using (sub; eq)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
+  cong₂)
 open import Relation.Nullary using (yes; no; does)
 
-{- The simulation relation -----------------------------------------------------}
+{- The simulation relation ----------------------------------------------------}
 
 infix 4 _≈_ _≈k_ _~_
 
@@ -53,7 +55,8 @@ data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
   clos≈ : ∀ {n N} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws
     → Src.clos N vs ≈ Tgt.clos (concretize fv-ref N) ws
   const≈ : ∀ {B c} → Src.const {B} c ≈ Tgt.const c
-  tup≈ : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
+  tup≈ : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws
+    → Src.tup vs ≈ Tgt.tup ws
   inl≈ : ∀ {v w} → v ≈ w → Src.inl v ≈ Tgt.inl w
   inr≈ : ∀ {v w} → v ≈ w → Src.inr v ≈ Tgt.inr w
   dyn≈ : ∀ {G v w} → v ≈ w → Src.dyn G v ≈ Tgt.dyn G w
@@ -74,16 +77,21 @@ data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   appL : ∀ {k Γ M} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.appL M ρ₁ κ₁ ≈k Tgt.appL (concretize φ M) ρ₂ κ₂
   appR : ∀ {f g κ₁ κ₂} → f ≈ g → κ₁ ≈k κ₂ → Src.appR f κ₁ ≈k Tgt.appR g κ₂
-  tupK : ∀ {k Γ} {φ : Fin k → Ref Γ} {m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ ρ₂} {κ₁ κ₂}
+  tupK : ∀ {k Γ} {φ : Fin k → Ref Γ} {m j} {vs : Vec _ m} {ws : Vec _ m}
+    {Ms : Vec _ j} {ρ₁ ρ₂} {κ₁ κ₂}
     → V.Pointwise _≈_ vs ws → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.tupK vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (concs φ Ms) ρ₂ κ₂
-  closK : ∀ {n N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {n} N κ₁ ≈k Tgt.closK (concretize fv-ref N) κ₂
+  closK : ∀ {n N κ₁ κ₂} → κ₁ ≈k κ₂
+    → Src.closK {n} N κ₁ ≈k Tgt.closK (concretize fv-ref N) κ₂
   getK : ∀ {n i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {n} i κ₁ ≈k Tgt.getK i κ₂
   inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inlK κ₁ ≈k Tgt.inlK κ₂
   inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inrK κ₁ ≈k Tgt.inrK κ₂
-  caseK : ∀ {k Γ M N} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.caseK M N ρ₁ κ₁ ≈k Tgt.caseK (concretize (ext-ref φ) M) (concretize (ext-ref φ) N) ρ₂ κ₂
-  primL : ∀ {k Γ p M} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+  caseK : ∀ {k Γ M N} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂}
+    → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.caseK M N ρ₁ κ₁
+      ≈k Tgt.caseK (concretize (ext-ref φ) M) (concretize (ext-ref φ) N) ρ₂ κ₂
+  primL : ∀ {k Γ p M} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂}
+    → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.primL p M ρ₁ κ₁ ≈k Tgt.primL p (concretize φ M) ρ₂ κ₂
   primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Src.primR p n κ₁ ≈k Tgt.primR p n κ₂
   letK : ∀ {k Γ N} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
@@ -92,9 +100,11 @@ data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   projK : ∀ {G κ₁ κ₂} → κ₁ ≈k κ₂ → Src.projK G κ₁ ≈k Tgt.projK G κ₂
 
 data _~_ : Src.State → Tgt.State → Set where
-  eval~ : ∀ {k Γ A} {φ : Fin k → Ref Γ} {M : Tm k A} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+  eval~ : ∀ {k Γ A} {φ : Fin k → Ref Γ} {M : Tm k A} {ρ₁ ρ₂ κ₁ κ₂}
+    → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.eval M ρ₁ κ₁ ~ Tgt.eval (concretize φ M) ρ₂ κ₂
-  ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
+  ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+    → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
 {- Related values are observed alike, and primitives give related values -}
 obs≈ : ∀ {A} {v : Src.Val A} {w}
@@ -122,12 +132,13 @@ obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 proj~ : ∀ {H G v w κ₁ κ₂}
   → v ≈ w
   → κ₁ ≈k κ₂
-  → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁))) (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
+  → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁)))
+    (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
 proj~ {H} {G} r k with H ≟F flat G
 ... | yes refl = same-next (ret~ r k)
 ... | no _ = same-stop
 
-{- Related environments --------------------------------------------------------}
+{- Related environments -------------------------------------------------------}
 
 env-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ v} {w : Tgt.Val Any}
   → v ≈ w
@@ -146,20 +157,24 @@ env-clos : ∀ {n v w} {vs : Vec _ n} {ws}
 env-clos r rs zero = r
 env-clos r rs (suc i) = V.lookup rs i
 
-{- The simulation, for any Clos3ᵀ program P ------------------------------------}
+{- The simulation, for any Clos3ᵀ program P -----------------------------------}
 
 module _ (P : C3.Tm [] Any) where
 
   L₂ = Tgt.sem P
 
   {- reading a Ref -}
-  ref-run : ∀ {Γ} (r : Ref Γ) ρ κ → Plus L₂ (Tgt.eval (ref-tm r) ρ κ) (Tgt.ret (ref-val r ρ) κ)
+  ref-run : ∀ {Γ} (r : Ref Γ) ρ κ
+    → Plus L₂ (Tgt.eval (ref-tm r) ρ κ) (Tgt.ret (ref-val r ρ) κ)
   ref-run (var y) ρ κ = step⁺ refl
   ref-run (prj i y) ρ κ = plus refl (refl ◅ get-step (ρ Tgt.! y) ◅ ε)
-    where get-step : ∀ t → Tgt.step (Tgt.ret t (Tgt.getK i κ)) ≡ next (Tgt.ret (get-val i t) κ)
+    where get-step : ∀ t
+           → Tgt.step (Tgt.ret t (Tgt.getK i κ))
+           ≡ next (Tgt.ret (get-val i t) κ)
           get-step (Tgt.tup vs) = refl
 
-  tuple-next~ : ∀ {k Γ} {φ : Fin k → Ref Γ} {m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ ρ₂} {κ₁ κ₂}
+  tuple-next~ : ∀ {k Γ} {φ : Fin k → Ref Γ} {m j} {vs : Vec _ m} {ws : Vec _ m}
+    {Ms : Vec _ j} {ρ₁ ρ₂} {κ₁ κ₂}
     → V.Pointwise _≈_ vs ws
     → EnvRel φ ρ₁ ρ₂
     → κ₁ ≈k κ₂
@@ -170,7 +185,8 @@ module _ (P : C3.Tm [] Any) where
   sim : ∀ {s₁ s₂}
     → s₁ ~ s₂
     → Answers L₂ _~_ (Src.step s₁) s₂
-  sim (eval~ {φ = φ} {M = ` x} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) = steps (ref-run (φ x) ρ₂ κ₂) (ret~ (er x) k)
+  sim (eval~ {φ = φ} {M = ` x} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) =
+    steps (ref-run (φ x) ρ₂ κ₂) (ret~ (er x) k)
   sim (eval~ {M = clos N Ms} er k) = steps₁ refl (tuple-next~ [] er (closK k))
   sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))
   sim (eval~ {M = lit B c} er k) = steps₁ refl (ret~ const≈ k)
@@ -194,12 +210,16 @@ module _ (P : C3.Tm [] Any) where
   sim (ret~ (inl≈ r) (caseK er k)) = steps₁ refl (eval~ (env-ext r er) k)
   sim (ret~ (inr≈ r) (caseK er k)) = steps₁ refl (eval~ (env-ext r er) k)
   sim (ret~ const≈ (primL er k)) = steps₁ refl (eval~ er (primR k))
-  sim (ret~ (const≈ {c = m}) (primR {p} {n} k)) = steps₁ refl (ret~ (δ≈ p n m) k)
+  sim (ret~ (const≈ {c = m}) (primR {p} {n} k)) =
+    steps₁ refl (ret~ (δ≈ p n m) k)
   sim (ret~ r (letK er k)) = steps₁ refl (eval~ (env-ext r er) k)
   sim (ret~ r (injK k)) = steps₁ refl (ret~ (dyn≈ r) k)
   sim (ret~ (dyn≈ r) (projK k)) = lock (proj~ r k)
 
-{- The end theorem: for every closed Clos2ᵀ program ----------------------------}
+{- The end theorem: for every closed Clos2ᵀ program ---------------------------}
 
-concretize-correct : ∀ (M : Tm 0 Any) → Equivalent (Src.sem M) (Tgt.sem (concretize-program M))
-concretize-correct M = equivalent (plus-simulation _~_ (eval~ (λ ()) halt) (sim (concretize-program M)))
+concretize-correct : ∀ (M : Tm 0 Any)
+  → Equivalent (Src.sem M) (Tgt.sem (concretize-program M))
+concretize-correct M =
+  equivalent
+  (plus-simulation _~_ (eval~ (λ ()) halt) (sim (concretize-program M)))

@@ -27,11 +27,14 @@ open import ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim as S2 renaming
   (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂)
 open import ISWIM.Untyped.Compiler.Prune using (bind-n-ast)
 open import ISWIM.Untyped.Compiler.Capture
-open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; ρ₀)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env;
+  ρ₀)
 open import ISWIM.Untyped.proof.Correctness.Graph.ConcretizeCorrect
   using (init₀; push; apply-push; push-plus)
-open import ISWIM.Untyped.proof.Correctness.Graph.PruneCorrect using (unbind-bind; push-ne)
-open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
+open import ISWIM.Untyped.proof.Correctness.Graph.PruneCorrect using
+  (unbind-bind; push-ne)
+open import proof.Framework.GraphModel.Env using (nonempty-env;
+  extend-nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _<?_; _∸_)
 open import Data.Nat.Properties
@@ -41,7 +44,8 @@ open import Data.List using (List; []; _∷_; replicate)
 open import Data.List.Relation.Unary.Any using (here)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩ )
 open import Data.Sum using (inj₁; inj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym;
+  trans; cong)
 open import Relation.Nullary using (yes; no)
 
 module ISWIM.Untyped.proof.Correctness.Graph.CaptureCorrect where
@@ -63,7 +67,9 @@ push-vars : ∀ n (ρ σ : Env) k
 push-vars (suc n) ρ σ k k<sn with k <? n
 ... | yes k<n = push-vars n ρ (ρ n • σ) k k<n
 ... | no ¬k<n =
-  trans (cong (push (⟦ fv-vars n ⟧₊₂ ρ) (ρ n • σ)) (trans k≡n (sym (+-identityʳ n))))
+  trans
+    (cong (push (⟦ fv-vars n ⟧₊₂ ρ) (ρ n • σ))
+      (trans k≡n (sym (+-identityʳ n))))
         (trans (push-plus n _ (ρ n • σ) 0) (cong ρ (sym k≡n)))
   where
   k≡n : k ≡ n
@@ -101,11 +107,13 @@ enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel = ⟨ G , H ⟩
   {- the body finds its free variables where it found them before -}
   body≃ : ∀ U
     → U ≢ []
-    → ⟦ N ⟧ (mem U • ρ₁) ≃ apply-n m (⟦ bind-n-ast m (capture N) ⟧ₐ₂ init₀) Ds (mem U)
+    → ⟦ N ⟧ (mem U • ρ₁)
+      ≃ apply-n m (⟦ bind-n-ast m (capture N) ⟧ₐ₂ init₀) Ds (mem U)
   body≃ U neU rewrite apply-push m (bind-n-ast m (capture N)) init₀ Ds (mem U)
                     | unbind-bind m (capture N) =
     enc-correct N (mem U • ρ₁) (mem U • push Ds init₀)
-      (extend-nonempty-env (push-ne m Ds init₀ ne (λ _ → ⟨ ω , refl ⟩)) (E≢[]⇒nonempty-mem neU))
+      (extend-nonempty-env (push-ne m Ds init₀ ne (λ _ → ⟨ ω , refl ⟩))
+          (E≢[]⇒nonempty-mem neU))
       rel'
     where
     rel' : ∀ x
@@ -114,7 +122,9 @@ enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel = ⟨ G , H ⟩
     rel' zero _ = ≃-refl
     rel' (suc k) u =
       ≃-trans (rel k (inj₁ u))
-              (≃-reflexive (sym (push-vars m ρ₂ init₀ k (<-∸1 (uses-bound (suc k) N u)))))
+              (≃-reflexive
+                  (sym
+                    (push-vars m ρ₂ init₀ k (<-∸1 (uses-bound (suc k) N u)))))
 
   G : ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ ρ₁ ⊆ ⟦ capture (lam ⦅ ⟩ N ,, Nil ⦆) ⟧₂ ρ₂
   G ν tt = ⟨ ne , tt ⟩
@@ -127,7 +137,8 @@ enc-correct (app ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   ⋆-≃ (enc-correct L ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
       (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₂ (inj₁ u))))
 enc-correct (lit B k ⦅ Nil ⦆) ρ₁ ρ₂ NE rel = ≃-refl
-enc-correct (tuple n ⦅ args ⦆) ρ₁ ρ₂ NE rel = 𝒯-≃ n (enc-args-correct args ρ₁ ρ₂ NE rel)
+enc-correct (tuple n ⦅ args ⦆) ρ₁ ρ₂ NE rel =
+  𝒯-≃ n (enc-args-correct args ρ₁ ρ₂ NE rel)
 enc-correct (get i ⦅ M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   proj-≃ i (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
 enc-correct (inl-op ⦅ M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
@@ -138,8 +149,12 @@ enc-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ₁)} {λ X → ⟦ capture M ⟧₂ (X • ρ₂)}
       {λ X → ⟦ N ⟧ (X • ρ₁)} {λ X → ⟦ capture N ⟧₂ (X • ρ₂)}
       (enc-correct L ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
-      (λ v V _ → enc-correct M _ _ (NE-ext v) (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
-      (λ v V _ → enc-correct N _ _ (NE-ext v) (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
+      (λ v V _ →
+          enc-correct M _ _ (NE-ext v)
+          (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
+      (λ v V _ →
+          enc-correct N _ _ (NE-ext v)
+          (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
   where
   NE-ext : ∀ {V} v → nonempty-env (mem (v ∷ V) • ρ₂)
   NE-ext v = extend-nonempty-env NE ⟨ v , here refl ⟩
@@ -148,7 +163,8 @@ enc-correct (prim p ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
             (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₂ (inj₁ u))))
 enc-correct (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   ⋆-≃ (Λ-≃ {λ X → ⟦ N ⟧ (X • ρ₁)} {λ X → ⟦ capture N ⟧₂ (X • ρ₂)}
-         (λ V ne _ → enc-correct N _ _ (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne))
+         (λ V ne _ →
+             enc-correct N _ _ (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne))
                        (rel-ext N (λ x u → rel x (inj₂ (inj₁ u))))))
       (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
 
@@ -160,4 +176,5 @@ enc-args-correct {suc n} (M ,, args) ρ₁ ρ₂ NE rel (suc i) =
 {- The end theorem ------------------------------------------------------------}
 
 capture-correct-closed : ∀ (M : AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
-capture-correct-closed M = enc-correct M ρ₀ ρ₀ (λ _ → ⟨ ω , refl ⟩) (λ x _ → ≃-refl)
+capture-correct-closed M =
+  enc-correct M ρ₀ ρ₀ (λ _ → ⟨ ω , refl ⟩) (λ x _ → ≃-refl)

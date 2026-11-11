@@ -32,14 +32,16 @@
 
 module ISWIM.Untyped.proof.Correctness.CEK.ExplicateSim where
 
-open import ISWIM.Untyped.Language.Imp as Imp using (Atm; Exp; simple; atm; case; assign; body; program)
+open import ISWIM.Untyped.Language.Imp as Imp using (Atm; Exp; simple; atm;
+  case; assign; body; program)
 open import ISWIM.Untyped.Language.CFG using (Tail; goto; block)
 open import ISWIM.Untyped.Compiler.Explicate
 
 open import proof.Framework.ListUtil using (_‼_; reverse-map-‼)
-open import proof.Semantics.CEK.Smallstep using (Machine; next; plus; Star; ε; _◅_; Reach)
-open import proof.Semantics.CEK.Simulation
-  using (Answers≺; stops; steps; stutters; steps₁≺; after≺; FSim; Equivalent; equivalent; equiv-trans)
+open import proof.Semantics.CEK.Smallstep using (Machine; next; plus; Star; ε;
+  _◅_; Reach)
+open import proof.Semantics.CEK.Simulation using (Answers≺; stops; steps;
+  stutters; steps₁≺; after≺; FSim; Equivalent; equivalent; equiv-trans)
 import ISWIM.Untyped.Semantics.CEK.Imp as I
 import ISWIM.Untyped.Semantics.CEK.CFG as G
 
@@ -49,10 +51,11 @@ open import Data.Maybe using (just; nothing) renaming (map to mmap)
 open import Data.Nat using (ℕ; suc; _≤_; _≟_)
 open import Data.Nat.Properties using (≤-refl; m≤n⇒m≤1+n; <-irrefl)
 open import Data.Product using (Σ-syntax; _×_; _,_; proj₁; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong)
 open import Relation.Nullary using (yes; no)
 
-{- Blocks ------------------------------------------------------------------------}
+{- Blocks ---------------------------------------------------------------------}
 
 {- bs' is bs with newer blocks -}
 infix 4 _≼_
@@ -97,18 +100,23 @@ ex e (asgM x k) = explicate-assign e x k
 grows : ∀ e m bs → bs ≼ proj₂ (ex e m bs)
 grows (simple s) tailM bs = here
 grows (simple s) (asgM x k) bs = here
-grows (assign y e₁ e₂) tailM bs = ≼-trans (grows e₂ tailM bs) (grows e₁ (asgM y _) _)
-grows (assign y e₁ e₂) (asgM x k) bs = ≼-trans (grows e₂ (asgM x k) bs) (grows e₁ (asgM y _) _)
-grows (case a y e₁ e₂) tailM bs = there (≼-trans (there (grows e₁ tailM bs)) (grows e₂ tailM _))
+grows (assign y e₁ e₂) tailM bs =
+  ≼-trans (grows e₂ tailM bs) (grows e₁ (asgM y _) _)
+grows (assign y e₁ e₂) (asgM x k) bs =
+  ≼-trans (grows e₂ (asgM x k) bs) (grows e₁ (asgM y _) _)
+grows (case a y e₁ e₂) tailM bs =
+  there (≼-trans (there (grows e₁ tailM bs)) (grows e₂ tailM _))
 grows (case a y e₁ e₂) (asgM x k) bs =
-  there (≼-trans (there (≼-trans (there here) (grows e₁ (asgM x _) _))) (grows e₂ (asgM x _) _))
+  there
+    (≼-trans (there (≼-trans (there here) (grows e₁ (asgM x _) _)))
+      (grows e₂ (asgM x _) _))
 
 {- the assignments the Imp machine enters before e runs as a tail -}
 depth : Exp → ℕ
 depth (assign x e₁ e₂) = suc (depth e₁)
 depth _ = 0
 
-{- The simulation, for a program with table ds and main body n₀, e₀ ----------------}
+{- The simulation, for a program with table ds and main body n₀, e₀ -----------}
 
 module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
 
@@ -137,7 +145,8 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
       frm : ∀ f → κ₁ ≈ κ₂ → I.frm f κ₁ ≈ G.frm f κ₂
       callK : κ₁ ≈ κ₂ → I.callK φ κ₁ ≈ G.callK φ κ₂
       seqK : Ctl bs κ₁ (asgM x k) κ₂ → bs ≼ bs' → κ₁ ≈ G.seqK x k bs' κ₂
-      caseK : Br κ₁ e₁ κ₂ bs l₁ → Br κ₁ e₂ κ₂ bs l₂ → I.caseK x e₁ e₂ κ₁ ≈ G.caseK x l₁ l₂ bs κ₂
+      caseK : Br κ₁ e₁ κ₂ bs l₁ → Br κ₁ e₂ κ₂ bs l₂
+        → I.caseK x e₁ e₂ κ₁ ≈ G.caseK x l₁ l₂ bs κ₂
 
     {- κ₁ is the continuation of an expression that runs, made at the blocks
        bs in mode m, under κ₂ -}
@@ -145,10 +154,12 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
       tl : κ₁ ≈ κ₂ → Ctl bs κ₁ tailM κ₂
       asg : Ctl bs κ₁ m κ₂ → proj₂ (ex e m bs) ≼ bs'
         → Ctl bs' (I.assignK x e κ₁) (asgM x (proj₁ (ex e m bs))) κ₂
-      jmp : Ctl bs κ₁ (asgM x k) κ₂ → k ∷ bs ≼ bs' → Ctl bs' κ₁ (asgM x (goto (length bs))) κ₂
+      jmp : Ctl bs κ₁ (asgM x k) κ₂ → k ∷ bs ≼ bs'
+        → Ctl bs' κ₁ (asgM x (goto (length bs))) κ₂
 
     {- block l of bs runs e under κ₁ -}
-    data Br (κ₁ : I.Cont) (e : Exp) (κ₂ : G.Cont) (bs' : List Tail) (l : ℕ) : Set where
+    data Br (κ₁ : I.Cont) (e : Exp) (κ₂ : G.Cont) (bs' : List Tail)
+      (l : ℕ) : Set where
       br : Ctl bs κ₁ m κ₂ → block bs' l ≡ just (ex e m bs) → Br κ₁ e κ₂ bs' l
 
   data Match : ℕ → I.State → G.State → Set where
@@ -181,7 +192,8 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
     → Br κ₁ e κ₂ bs l
     → G.step ds₂ s₂ ≡ G.jump mφ (block bs l) κ₂
     → Ans i (I.goto mφ e κ₁) s₂
-  branch-br (br c eq) st = branch (trans st (cong (λ b → G.jump _ b _) eq)) λ φ → _ , ε , exec~ c here
+  branch-br (br c eq) st =
+    branch (trans st (cong (λ b → G.jump _ b _) eq)) λ φ → _ , ε , exec~ c here
 
   glob : ∀ n → G.global ds₂ n ≡ mmap explicate-body (Imp.global ds n)
   glob = reverse-map-‼ explicate-body ds
@@ -191,7 +203,8 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
     → G.step ds₂ s₂ ≡ G.call (mmap explicate-body mb) u w φ κ₂
     → Ans i (I.call mb u w φ κ₁) s₂
   call-ans nothing r st = stops st
-  call-ans (just (body n e)) r st = steps₁≺ st (exec~ {m = tailM} (tl (callK r)) here)
+  call-ans (just (body n e)) r st =
+    steps₁≺ st (exec~ {m = tailM} (tl (callK r)) here)
 
   res-ans : κ₁ ≈ κ₂
     → ∀ r
@@ -200,17 +213,24 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
   res-ans r (I.operand a f) st = steps₁≺ st (eval~ (frm f r))
   res-ans r (I.value (just v)) st = steps₁≺ st (ret~ r)
   res-ans r (I.value nothing) st = stops st
-  res-ans r (I.apply n u w) st = call-ans (Imp.global ds n) r (trans st (cong (λ mb → G.call mb u w _ _) (glob n)))
+  res-ans r (I.apply n u w) st =
+    call-ans (Imp.global ds n) r
+    (trans st (cong (λ mb → G.call mb u w _ _) (glob n)))
 
   sim : Match i s₁ s₂
     → Ans i (I.step ds s₁) s₂
   sim (exec~ {e = simple s} (tl r) p) = res-ans r (I.first _ s) refl
-  sim (exec~ {m = asgM x k} {e = simple s} c p) = res-ans (seqK c p) (I.first _ s) refl
-  sim (exec~ {m = tailM} {e = assign y e₁ e₂} c p) = stutters ≤-refl (exec~ (asg c here) p)
-  sim (exec~ {m = asgM x k} {e = assign y e₁ e₂} c p) = stutters ≤-refl (exec~ (asg c here) p)
+  sim (exec~ {m = asgM x k} {e = simple s} c p) =
+    res-ans (seqK c p) (I.first _ s) refl
+  sim (exec~ {m = tailM} {e = assign y e₁ e₂} c p) =
+    stutters ≤-refl (exec~ (asg c here) p)
+  sim (exec~ {m = asgM x k} {e = assign y e₁ e₂} c p) =
+    stutters ≤-refl (exec~ (asg c here) p)
   sim (exec~ {e = case a y e₁ e₂} (tl r) p) = steps₁≺ refl (eval~ (caseK
-    (br (tl r) (block-≼ (≼-trans (there (grows e₂ tailM _)) p))) (br (tl r) (block-≼ p))))
-  sim (exec~ {m = asgM x k} {e = case a y e₁ e₂} c p) = steps₁≺ refl (eval~ (caseK
+    (br (tl r) (block-≼ (≼-trans (there (grows e₂ tailM _)) p)))
+        (br (tl r) (block-≼ p))))
+  sim (exec~ {m = asgM x k} {e = case a y e₁ e₂} c p) =
+    steps₁≺ refl (eval~ (caseK
     (br (jmp c here) (block-≼ (≼-trans (there (grows e₂ (asgM x _) _)) p)))
     (br (jmp c (there (grows e₁ (asgM x _) _))) (block-≼ p))))
   sim (eval~ {a = a} r) = res-ans r (I.value (I.atom _ a)) refl
@@ -227,9 +247,11 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
   sim (ret~ {v = I.tup _} (caseK _ _)) = stops refl
 
   fsim : FSim (I.sem (program ds (body n₀ e₀))) L₂
-  fsim = record { match = Match ; init = _ , exec~ {m = tailM} (tl halt) here ; sim = sim }
+  fsim =
+    record
+    { match = Match ; init = _ , exec~ {m = tailM} (tl halt) here ; sim = sim }
 
-{- The end theorem ---------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
 explicate-correct : ∀ P → Equivalent (I.sem P) (G.sem (explicate P))
 explicate-correct (program ds (body n e)) = equivalent (Sim.fsim ds n e)

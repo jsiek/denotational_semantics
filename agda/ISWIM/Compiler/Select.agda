@@ -2,8 +2,8 @@
 
   Typed select instructions (CFGᵀ → X86ᵀ), after Essentials of
   Compilation: the instructions of select into untyped X86
-  (ISWIM/Compiler/SelectX86.agda), typed (ISWIM/Language/Typed/X86.agda). Without
-  the types they are the same instructions
+  (ISWIM/Compiler/SelectX86.agda), typed (ISWIM/Language/Typed/X86.agda).
+  Without the types they are the same instructions
   (ISWIM/proof/Compiler/SelectErase.agda, ISWIM/Theorems/X86Erasure.agda).
 
   * A slot is the typed index of CFGᵀ; the frame of a body has as many
@@ -55,7 +55,8 @@ depth-≥ (seq p s t) = m≤m⊔n _ _
 depth-≥ (goto l) = ≤-refl
 depth-≥ (case a p l₁ l₂) = m≤m⊔n _ _
 
-atms : ∀ {Σ Δ m Γ O F} → Vec (Atm Σ Δ Any) m → Vec (Arg Σ (st Γ Δ O F) (ty Any)) m
+atms : ∀ {Σ Δ m Γ O F} → Vec (Atm Σ Δ Any) m
+  → Vec (Arg Σ (st Γ Δ O F) (ty Any)) m
 atms [] = []
 atms (a ∷ as) = atom a ∷ atms as
 
@@ -68,45 +69,60 @@ after : ∀ {n Δ A Δ''} → Out n Δ A Δ'' → Regs → Maybe (Δ ∋ ⟪ fun
 after {Δ = Δ} {A} ret Γ O F = st (Γ [ rax ↦ just (ty A) ]) Δ O F
 after {A = A} (to {Δ'} p _) Γ O F = st Γ (A ∷ Δ') nothing F
 
-dst : ∀ {n Δ A Δ''} (o : Out n Δ A Δ'') {Γ O F} → Dst n (st Γ Δ O F) (ty A) (after o Γ O F)
+dst : ∀ {n Δ A Δ''} (o : Out n Δ A Δ'') {Γ O F}
+  → Dst n (st Γ Δ O F) (ty A) (after o Γ O F)
 dst ret = reg rax
 dst (to p lt) = slot p lt
 
 {- the code of s into o, then k, with any registers and flag -}
 sel : ∀ {Σ n Bs Δ A Δ''} → I.Simple Σ Δ A → (o : Out n Δ A Δ'')
-  → (∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)) → ∀ {Γ O F} → Seq Σ n Bs (st Γ Δ O F)
+  → (∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)) → ∀ {Γ O F}
+    → Seq Σ n Bs (st Γ Δ O F)
 sel (I.atm a) o k = movq (atom a) (dst o) ∷ k
 sel (I.pack c e) o k = alloc (pair (atom c) (atom e)) (dst o) ∷ k
 sel (I.callc (var x) a) o k =
-  loadfst x rax ∷ loadsnd rdi ∷ movq (atom a) (reg rsi) ∷ callq (reg rax refl) refl refl ∷ movq (reg rax refl) (dst o) ∷ k
+  loadfst x rax ∷ loadsnd rdi ∷ movq (atom a) (reg rsi)
+    ∷ callq (reg rax refl) refl refl ∷ movq (reg rax refl) (dst o) ∷ k
 sel (I.tuple as) o k = alloc (tuple (atms as)) (dst o) ∷ k
 sel (I.get i a) o k = load (get i) (atom a) (dst o) ∷ k
 sel (I.inl a) o k = alloc (inl (atom a)) (dst o) ∷ k
 sel (I.inr a) o k = alloc (inr (atom a)) (dst o) ∷ k
-sel (I.prim sub a b) o k = movq (atom a) (reg rax) ∷ subq (atom b) rax refl ∷ movq (reg rax refl) (dst o) ∷ k
+sel (I.prim sub a b) o k =
+  movq (atom a) (reg rax) ∷ subq (atom b) rax refl
+  ∷ movq (reg rax refl) (dst o) ∷ k
 sel (I.prim eq a b) o k = cmpq (atom b) (atom a) ∷ sete (dst o) ∷ k
 sel (I.inject G a) o k = movq (atom a ↑) (dst o) ∷ k
 sel (I.project t (var x)) o k = chk t x (dst o) ∷ k
 
-tail : ∀ {Σ n Bs Δ} (t : Tail Σ Bs Δ) → .(depth t ≤ n) → ∀ {Γ O F} → Seq Σ n Bs (st Γ Δ O F)
+tail : ∀ {Σ n Bs Δ} (t : Tail Σ Bs Δ) → .(depth t ≤ n) → ∀ {Γ O F}
+  → Seq Σ n Bs (st Γ Δ O F)
 tail (return s) le = sel s ret (retq refl)
-tail (seq p s t) le = sel s (to p (≤-trans (depth-≥ t) (≤-trans (m≤n⊔m _ _) le))) (tail t (≤-trans (m≤n⊔m _ _) le))
+tail (seq p s t) le =
+  sel s (to p (≤-trans (depth-≥ t) (≤-trans (m≤n⊔m _ _) le)))
+  (tail t (≤-trans (m≤n⊔m _ _) le))
 tail (goto l) le = jmp l
-tail (case a p l₁ l₂) le = testinl (atom a) ∷ load payload (atom a) (slot p (≤-trans (m≤n⊔m _ _) le)) ∷ je l₁ l₂
+tail (case a p l₁ l₂) le =
+  testinl (atom a)
+  ∷ load payload (atom a) (slot p (≤-trans (m≤n⊔m _ _) le)) ∷ je l₁ l₂
 
-blocks : ∀ {Σ n Bs} (bs : C.Blocks Σ Bs) → .(blocks-depth bs ≤ n) → Blocks Σ n Bs
+blocks : ∀ {Σ n Bs} (bs : C.Blocks Σ Bs) → .(blocks-depth bs ≤ n)
+  → Blocks Σ n Bs
 blocks C.[] le = []
-blocks (bs ▷ t) le = blocks bs (≤-trans (m≤n⊔m _ _) le) ▷ tail t (≤-trans (m≤m⊔n _ _) le)
+blocks (bs ▷ t) le =
+  blocks bs (≤-trans (m≤n⊔m _ _) le) ▷ tail t (≤-trans (m≤m⊔n _ _) le)
 
 {- main, in a frame of the slots its tails write -}
 main-body : ∀ {Σ} → C.Body Σ [] → Body Σ (entry [])
-main-body (C.body bs t) = body (blocks-depth bs ⊔ depth t) (blocks bs (m≤m⊔n _ _)) (tail t (m≤n⊔m _ _))
+main-body (C.body bs t) =
+  body (blocks-depth bs ⊔ depth t) (blocks bs (m≤m⊔n _ _)) (tail t (m≤n⊔m _ _))
 
-{- a definition: its start moves its environment and argument to slots 0 and 1 -}
+{- a definition: its start moves its environment and argument to slots 0 and
+   1 -}
 def-body : ∀ {Σ m} → C.Body Σ (Any ∷ ⟪ tup m ⟫ ∷ []) → Body Σ (called m)
 def-body (C.body bs t) =
   body (blocks-depth bs ⊔ depth t) (blocks bs (m≤m⊔n _ _))
-    (movq (reg rdi refl) (slot here⊑ (≤-trans (s≤s z≤n) le)) ∷ movq (reg rsi refl) (slot here⊑ le) ∷ tail t (m≤n⊔m _ _))
+    (movq (reg rdi refl) (slot here⊑ (≤-trans (s≤s z≤n) le))
+        ∷ movq (reg rsi refl) (slot here⊑ le) ∷ tail t (m≤n⊔m _ _))
   where le = ≤-trans (depth-≥ t) (m≤n⊔m _ _)
 
 {- the pass, for a whole program -}

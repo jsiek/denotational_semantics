@@ -1,9 +1,9 @@
 {-
 
-  The correctness of the compiler (ISWIM/Compiler/Pipeline.agda), by reduction semantics and
-  simulations: the public statements. The proofs (forward simulations)
-  are in ISWIM/proof/Correctness/Reduction/; each theorem here is one of
-  them, with its type written out, so that it can be read without
+  The correctness of the compiler (ISWIM/Compiler/Pipeline.agda), by reduction
+  semantics and simulations: the public statements. The proofs (forward
+  simulations) are in ISWIM/proof/Correctness/Reduction/; each theorem here is
+  one of them, with its type written out, so that it can be read without
   opening ISWIM/proof/.
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --capture--> Clos2ᵀ
@@ -16,14 +16,14 @@
   (ISWIM/Semantics/Reduction/ISWIM.agda) and the typed ones
   (ISWIM/Semantics/Reduction/Typed/). Monᵀ runs as its embedding ⌜ P ⌝ₚ
   (ISWIM/Language/Typed/Mon.agda) in Clos5ᵀ. Impᵀ, CFGᵀ and X86ᵀ have no
-  binders and keep their machines (here Lₘ.sem, ISWIM/Semantics/CEK/Typed/). A semantics terminates with an observation
-  (Semantics/Observation.agda) or diverges. Two semantics are Equivalent
-  (Framework/Smallstep.agda) when each terminates with o exactly when the
-  other does (o-error, an error, included), and one diverges exactly
-  when the other does.
+  binders and keep their machines (here Lₘ.sem, ISWIM/Semantics/CEK/Typed/). A
+  semantics terminates with an observation (Semantics/Observation.agda) or
+  diverges. Two semantics are Equivalent (Framework/Smallstep.agda) when each
+  terminates with o exactly when the other does (o-error, an error, included),
+  and one diverges exactly when the other does.
 
-  To read them: the languages (ISWIM/Language/, ISWIM/Language/Typed/), the passes
-  (ISWIM/Compiler/), the semantics, the observations, and the
+  To read them: the languages (ISWIM/Language/, ISWIM/Language/Typed/), the
+  passes (ISWIM/Compiler/), the semantics, the observations, and the
   precondition Closed (ISWIM/Compiler/CaptureScope.agda), for the untyped
   source only.
 
@@ -32,7 +32,8 @@
 module ISWIM.Theorems.Reduction where
 
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
-open import Semantics.Reduction.Smallstep using (Terminates; Diverges; Equivalent)
+open import Semantics.Reduction.Smallstep using (Terminates; Diverges;
+  Equivalent)
 
 import ISWIM.Language.ISWIM as ISWIM
 open import ISWIM.Language.Typed.Type using (Any)
@@ -58,7 +59,8 @@ open import ISWIM.Compiler.RCO using (rco-program)
 open import ISWIM.Compiler.LiftLocals using (lift-program)
 open import ISWIM.Compiler.Explicate using (explicate)
 open import ISWIM.Compiler.Select using (select)
-open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp;
+  compile-cfg; compile-x86)
 
 open import ISWIM.Compiler.CaptureScope using (Closed)
 
@@ -99,34 +101,43 @@ cast-correct : ∀ (M : ISWIM.AST)
   → Equivalent (ISWIMᵣ.sem M) (ISWIMᵀᵣ.sem (cast-closed M))
 cast-correct = CastRed.cast-correct
 
-capture-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀᵣ.sem M) (Clos2ᵀᵣ.sem (capture M))
+capture-correct : ∀ (M : ISWIMᵀ.Tm 0 Any)
+  → Equivalent (ISWIMᵀᵣ.sem M) (Clos2ᵀᵣ.sem (capture M))
 capture-correct = CaptureRed.capture-correct
 
-prune-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵣ.sem M) (Clos2ᵀᵣ.sem (prune-program M))
+prune-correct : ∀ (M : Clos2ᵀ.Tm 0 Any)
+  → Equivalent (Clos2ᵀᵣ.sem M) (Clos2ᵀᵣ.sem (prune-program M))
 prune-correct = PruneRed.prune-correct
 
-concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵣ.sem M) (Clos3ᵀᵣ.sem (concretize-program M))
+concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any)
+  → Equivalent (Clos2ᵀᵣ.sem M) (Clos3ᵀᵣ.sem (concretize-program M))
 concretize-correct = ConcretizeRed.concretize-correct
 
-split-correct : ∀ (M : Clos3ᵀ.Tm [] Any) → Equivalent (Clos3ᵀᵣ.sem M) (Clos4ᵀᵣ.sem (split-program M))
+split-correct : ∀ (M : Clos3ᵀ.Tm [] Any)
+  → Equivalent (Clos3ᵀᵣ.sem M) (Clos4ᵀᵣ.sem (split-program M))
 split-correct = SplitRed.split-correct
 
-hoist-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → Equivalent (Clos4ᵀᵣ.sem M) (Clos5ᵀᵣ.sem (hoist M))
+hoist-correct : ∀ (M : Clos4ᵀ.Tm [] Any)
+  → Equivalent (Clos4ᵀᵣ.sem M) (Clos5ᵀᵣ.sem (hoist M))
 hoist-correct = HoistRed.hoist-correct
 
-rco-correct : ∀ (P : Clos5ᵀ.Program) → Equivalent (Clos5ᵀᵣ.sem P) (Clos5ᵀᵣ.sem ⌜ rco-program P ⌝ₚ)
+rco-correct : ∀ (P : Clos5ᵀ.Program)
+  → Equivalent (Clos5ᵀᵣ.sem P) (Clos5ᵀᵣ.sem ⌜ rco-program P ⌝ₚ)
 rco-correct = RCORed.rco-correct
 
-lift-locals-correct : ∀ (P : Monᵀ.Program) → Equivalent (Clos5ᵀᵣ.sem ⌜ P ⌝ₚ) (Impᵀₘ.sem (lift-program P))
+lift-locals-correct : ∀ (P : Monᵀ.Program)
+  → Equivalent (Clos5ᵀᵣ.sem ⌜ P ⌝ₚ) (Impᵀₘ.sem (lift-program P))
 lift-locals-correct = LiftLocalsRed.lift-locals-correct
 
 {- explicate control and select instructions, between the machines of
    Impᵀ, CFGᵀ and X86ᵀ (the proofs of the CEK machine + simulation column) -}
-explicate-correct : ∀ (P : Impᵀ.Program) → Equivalent (Impᵀₘ.sem P) (CFGᵀₘ.sem (explicate P))
+explicate-correct : ∀ (P : Impᵀ.Program)
+  → Equivalent (Impᵀₘ.sem P) (CFGᵀₘ.sem (explicate P))
 explicate-correct = ExplicateSim.explicate-correct
 
 {- X86ᵀ's only trapped error is chk's, project's check -}
-select-correct : ∀ (P : CFGᵀ.Program) → Equivalent (CFGᵀₘ.sem P) (X86ᵀₘ.sem (select P))
+select-correct : ∀ (P : CFGᵀ.Program)
+  → Equivalent (CFGᵀₘ.sem P) (X86ᵀₘ.sem (select P))
 select-correct = SelectSim.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
@@ -164,17 +175,20 @@ compile-x86-correct = PipelineRed.compile-x86-correct
 compile-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ B k
-  → Terminates (ISWIMᵣ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵀᵣ.sem (compile M)) (o-const B k)
+  → Terminates (ISWIMᵣ.sem M) (o-const B k)
+    ⇔ Terminates (Clos5ᵀᵣ.sem (compile M)) (o-const B k)
 compile-const = PipelineRed.compile-const
 
 compile-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMᵣ.sem M)) ⇔ Converges (Terminates (Clos5ᵀᵣ.sem (compile M)))
+  → Converges (Terminates (ISWIMᵣ.sem M))
+    ⇔ Converges (Terminates (Clos5ᵀᵣ.sem (compile M)))
 compile-converges = PipelineRed.compile-converges
 
 compile-error : ∀ (M : ISWIM.AST)
   → Closed M
-  → Terminates (ISWIMᵣ.sem M) o-error ⇔ Terminates (Clos5ᵀᵣ.sem (compile M)) o-error
+  → Terminates (ISWIMᵣ.sem M) o-error
+    ⇔ Terminates (Clos5ᵀᵣ.sem (compile M)) o-error
 compile-error = PipelineRed.compile-error
 
 compile-diverges : ∀ (M : ISWIM.AST)

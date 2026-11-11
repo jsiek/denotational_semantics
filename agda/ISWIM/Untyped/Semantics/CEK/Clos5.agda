@@ -3,14 +3,14 @@
   A CEK-style abstract machine for Clos5 (call by value, left to right),
   as for Clos4 except for code: a program runs with its table of global
   definitions, a reference fun-ref k evaluates to a code pointer (code k),
-  and applying code k looks up definition k in the table, stopping with an error if
-  there is none. As in Clos4, the operator is checked to be code only at
+  and applying code k looks up definition k in the table, stopping with an error
+  if there is none. As in Clos4, the operator is checked to be code only at
   the call, after all three operands. See the design note in Smallstep.agda.
 
   Observations: as in Clos4, code pointers and pairs (closures) are
   observed as functions (o-fun). The values, their observations and the
-  primitives are in ISWIM/Semantics/CEK/Values.agda, shared with the machines of Imp,
-  CFG and X86.
+  primitives are in ISWIM/Semantics/CEK/Values.agda, shared with the machines of
+  Imp, CFG and X86.
 
 -}
 
@@ -21,7 +21,8 @@ open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import ISWIM.Untyped.Language.Clos5
 open import Semantics.Observation
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?;
+  machine)
 open import Framework.ListUtil
 open import ISWIM.Semantics.CEK.Values public
 
@@ -77,11 +78,13 @@ step ds (eval (lit B k ⦅ Nil ⦆) ρ κ) = next (ret (const B k) κ)
 step ds (eval (pair-op ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (pairL M ρ κ))
 step ds (eval (fst-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (fstK κ))
 step ds (eval (snd-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (sndK κ))
-step ds (eval (tuple n ⦅ args ⦆) ρ κ) = next (tuple-next [] (args→list args) ρ κ)
+step ds (eval (tuple n ⦅ args ⦆) ρ κ) =
+  next (tuple-next [] (args→list args) ρ κ)
 step ds (eval (get i ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (getK i κ))
 step ds (eval (inl-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inlK κ))
 step ds (eval (inr-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inrK κ))
-step ds (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ (caseK M N ρ κ))
+step ds (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) =
+  next (eval L ρ (caseK M N ρ κ))
 step ds (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step ds (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval M ρ (letK N ρ κ))
 step ds (ret v halt) = stop (obs v)

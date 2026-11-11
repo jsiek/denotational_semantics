@@ -2,7 +2,8 @@
 
   Backward (reflect) direction of the correctness of typed split
   (Clos3ᵀ → Clos4ᵀ) in the graph model with errors, with the approximant
-  logical relation ApproxLR of SplitRel, as in ISWIM/Untyped/proof/Correctness/GraphErr/SplitReflect.agda.
+  logical relation ApproxLR of SplitRel, as in
+  ISWIM/Untyped/proof/Correctness/GraphErr/SplitReflect.agda.
 
   The errors are reflected by the monad (ApproxLR-bind); each construct is then
   its kernel. The closure is reflected by its applications: callc binds
@@ -14,36 +15,44 @@
 
 open import proof.Framework.GraphModel.ErrorPrelude
 open import Framework.Primitives
-open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; 𝒞-left; 𝒞-right)
+open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; 𝒞; pair;
+  car; cdr; 𝒞-left; 𝒞-right)
 open import ISWIM.Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ; keep)
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat)
 open import proof.Framework.GraphModel.DomainUtilBase
-open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env;
+  extend-nonempty-env)
 open import ISWIM.proof.Semantics.GraphErr.Prim using (primD; out)
-open import ISWIM.Language.Typed.Type using (Ctx; Any; ⟪_⟫; code; tup; _∋_; Z; S; idx; flat)
-open import ISWIM.Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit; tuple; get; case; prim; let′; inject; project)
+open import ISWIM.Language.Typed.Type using (Ctx; Any; ⟪_⟫; code; tup; _∋_; Z;
+  S; idx; flat)
+open import ISWIM.Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit;
+  tuple; get; case; prim; let′; inject; project)
 import ISWIM.Language.Typed.Clos4 as T
 import ISWIM.proof.Semantics.GraphErr.Typed.Clos3 as S3
 open S3 using (⟦_⟧; ⟦_⟧s)
 import ISWIM.proof.Semantics.GraphErr.Typed.Clos4 as S4
-open S4 using (fin₁; fin₂; ΛΛᵐ-call; kind₄) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
+open S4 using (fin₁; fin₂; ΛΛᵐ-call; kind₄) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to
+  ⟦_⟧s')
 open import ISWIM.Compiler.Split using (split; splits; split-program)
 open import ISWIM.proof.Correctness.GraphErr.SplitRel
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; []; _∷_; _++_; replicate) renaming (map to lmap)
+open import Data.List using (List; []; _∷_; _++_; replicate) renaming (map to
+  lmap)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻; ∈-map⁺; ∈-map⁻)
 open import Data.Vec using (Vec; []; _∷_)
-open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩ )
+open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to
+  ⟨_,_⟩ )
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt; ⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym;
+  trans; subst)
 open import Level using (lift; lower)
 open import Language.Prim using (δ)
 
@@ -53,24 +62,45 @@ module ISWIM.proof.Correctness.GraphErr.SplitReflect where
 clean⌊⌋ : ∀ {D} → Clean ⌊ D ⌋
 clean⌊⌋ d d∈ = proj₂ d∈
 
-{- Collecting the finite witnesses of a target call ----------------------------}
+{- Collecting the finite witnesses of a target call ---------------------------}
 
 {- a target call V' ⊆ (car X' ● cdr X') ● N' is a batch of calls of a
    finite W ⊆ X' on a finite U ⊆ N' -}
 collect : ∀ (X' N' : 𝒫 Value)
   → Clean N'
   → ∀ V'
-  → mem V' ⊆ ⋆ ⟨ ⋆ ⟨ car ⟨ X' , ptt ⟩ , ⟨ cdr ⟨ X' , ptt ⟩ , ptt ⟩ ⟩ , ⟨ N' , ptt ⟩ ⟩
-  → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ] mem W ⊆ X' × mem U ⊆ N' × Calls W U V'
+  → mem V'
+    ⊆ ⋆ ⟨ ⋆ ⟨ car ⟨ X' , ptt ⟩ , ⟨ cdr ⟨ X' , ptt ⟩ , ptt ⟩ ⟩ , ⟨ N' , ptt ⟩ ⟩
+  → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ] mem W ⊆ X' × mem U
+    ⊆ N' × Calls W U V'
 collect X' N' clN [] _ =
-  ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () ; noerr = λ () } ⟩ ⟩ ⟩ ⟩
+  ⟨ []
+      ,
+      ⟨ []
+        ,
+          ⟨ (λ _ ())
+            ,
+              ⟨ (λ _ ())
+                , record
+                  { results = λ _ () ; args = λ _ () ; noerr = λ () } ⟩ ⟩ ⟩ ⟩
 collect X' N' clN (w ∷ V') V'⊆
     with V'⊆ w (here refl) | collect X' N' clN V' (λ d d∈ → V'⊆ d (there d∈))
-... | ⟨ U₀ , ⟨ ⟨ FV , ⟨ ⟨ t , e∈X' ⟩ , ⟨ FV⊆Cdr , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆N' , neU₀ ⟩ ⟩ ⟩
+...
+  |
+  ⟨ U₀ , ⟨ ⟨ FV , ⟨ ⟨ t , e∈X' ⟩ , ⟨ FV⊆Cdr , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆N' , neU₀ ⟩ ⟩ ⟩
     | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩
     with cdr-witness FV FV⊆Cdr
 ... | ⟨ C , ⟨ C⊆X' , FV⊆C ⟩ ⟩ =
-  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , record { results = res ; args = arg ; noerr = λ ω∈ → clN ω (U⊆' ω ω∈) refl } ⟩ ⟩ ⟩ ⟩
+  ⟨ e ∷ (C ++ W)
+      ,
+      ⟨ U₀ ++ U
+        ,
+          ⟨ W⊆'
+            ,
+              ⟨ U⊆'
+                , record
+                  { results = res ; args = arg ; noerr =
+                    λ ω∈ → clN ω (U⊆' ω ω∈) refl } ⟩ ⟩ ⟩ ⟩
   where
   e = ⦅ FV ↦ (U₀ ↦ w) , t ⦆
   inW : Pairs⊆ W (e ∷ (C ++ W))
@@ -85,13 +115,20 @@ collect X' N' clN (w ∷ V') V'⊆
   ... | inj₁ d∈U₀ = U₀⊆N' d d∈U₀
   ... | inj₂ d∈U = U⊆ d d∈U
   ent : CarEntry (e ∷ (C ++ W)) U₀ w
-  ent = car-entry FV t (here refl) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆C d d∈ in ⟨ u , there (∈-++⁺ˡ i) ⟩)
+  ent =
+    car-entry FV t (here refl) neFV
+    (λ d d∈ → let ⟨ u , i ⟩ = FV⊆C d d∈ in ⟨ u , there (∈-++⁺ˡ i) ⟩)
   res : ∀ x
     → x ⋵ (w ∷ V')
-    → Σ[ U₁ ∈ List Value ] CarEntry (e ∷ (C ++ W)) U₁ x × U₁ ≢ [] × mem U₁ ⊆ mem (U₀ ++ U)
+    → Σ[ U₁ ∈ List Value ] CarEntry (e ∷ (C ++ W)) U₁ x × U₁ ≢ [] × mem U₁
+      ⊆ mem (U₀ ++ U)
   res _ (here refl) = ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ d → ∈-++⁺ˡ) ⟩ ⟩ ⟩
   res x (there x∈) = let ⟨ U₁ , ⟨ e₁ , ⟨ ne , U₁⊆ ⟩ ⟩ ⟩ = Calls.results cs x x∈
-                     in ⟨ U₁ , ⟨ CarEntry-⊆ inW e₁ , ⟨ ne , (λ d d∈ → ∈-++⁺ʳ U₀ (U₁⊆ d d∈)) ⟩ ⟩ ⟩
+                     in
+                       ⟨ U₁
+                         ,
+                         ⟨ CarEntry-⊆ inW e₁
+                           , ⟨ ne , (λ d d∈ → ∈-++⁺ʳ U₀ (U₁⊆ d d∈)) ⟩ ⟩ ⟩
   arg : ∀ u
     → u ⋵ (U₀ ++ U)
     → Σ[ U₁ ∈ List Value ] Σ[ x ∈ Value ] CarEntry (e ∷ (C ++ W)) U₁ x × u ⋵ U₁
@@ -100,13 +137,15 @@ collect X' N' clN (w ∷ V') V'⊆
   ... | inj₂ u∈U = let ⟨ U₁ , ⟨ x , ⟨ e₁ , u∈₁ ⟩ ⟩ ⟩ = Calls.args cs u u∈U
                    in ⟨ U₁ , ⟨ x , ⟨ CarEntry-⊆ inW e₁ , u∈₁ ⟩ ⟩ ⟩
 
-{- Kernels, on related sets of values -------------------------------------------}
+{- Kernels, on related sets of values -----------------------------------------}
 
 tag-ApproxLR : ∀ {X X'}
   → Rel X X'
   → ∀ t
   → Rel (Untag t X) (Untag t X')
-tag-ApproxLR h t W W⊆ = ApproxLRLayer.tag-obs (unfold (h (lmap (tag t) W) mW)) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
+tag-ApproxLR h t W W⊆ =
+  ApproxLRLayer.tag-obs (unfold (h (lmap (tag t) W) mW)) t W
+  (λ d d∈ → ∈-map⁺ (tag t) d∈)
   where
   mW : mem (lmap (tag t) W) ⊆ _
   mW d d∈ with ∈-map⁻ (tag t) d∈
@@ -128,7 +167,10 @@ inl-ApproxLR {X} {X'} cl h V V⊆ = fold record
   kd : ∀ d
     → d ∈ inl ⟨ X' , ptt ⟩
     → Σ[ s ∈ Value ] s ∈ ⌊ inl ⟨ X , ptt ⟩ ⌋ × kind s ≡ kind₄ (kind d)
-  kd (left d) d∈ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = ApproxLR-conv (h _ (single⊆ d∈)) (cl d d∈) in ⟨ left s , ⟨ ⟨ s∈ , (λ ()) ⟩ , refl ⟩ ⟩
+  kd (left d) d∈ =
+    let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ =
+         ApproxLR-conv (h _ (single⊆ d∈)) (cl d d∈) in
+         ⟨ left s , ⟨ ⟨ s∈ , (λ ()) ⟩ , refl ⟩ ⟩
 
 inr-ApproxLR : ∀ {X X'}
   → Clean X'
@@ -146,7 +188,10 @@ inr-ApproxLR {X} {X'} cl h V V⊆ = fold record
   kd : ∀ d
     → d ∈ inr ⟨ X' , ptt ⟩
     → Σ[ s ∈ Value ] s ∈ ⌊ inr ⟨ X , ptt ⟩ ⌋ × kind s ≡ kind₄ (kind d)
-  kd (right d) d∈ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = ApproxLR-conv (h _ (single⊆ d∈)) (cl d d∈) in ⟨ right s , ⟨ ⟨ s∈ , (λ ()) ⟩ , refl ⟩ ⟩
+  kd (right d) d∈ =
+    let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ =
+         ApproxLR-conv (h _ (single⊆ d∈)) (cl d d∈) in
+         ⟨ right s , ⟨ ⟨ s∈ , (λ ()) ⟩ , refl ⟩ ⟩
 
 primD-ApproxLR : ∀ {p X X' Y Y'}
   → Rel X X'
@@ -158,10 +203,13 @@ primD-ApproxLR {p} {X} {X'} {Y} {Y'} hX hY V V⊆ = ApproxLR-data V⊆' dt
     → Rel A A'
     → const c ∈ A'
     → const c ∈ A
-  cst {c = c} h c∈ = ApproxLRLayer.const-obs (unfold (h (const c ∷ []) (single⊆ c∈))) c (here refl)
+  cst {c = c} h c∈ =
+    ApproxLRLayer.const-obs (unfold (h (const c ∷ []) (single⊆ c∈)))
+    c (here refl)
   V⊆' : mem V ⊆ primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩
   V⊆' v v∈ with V⊆ v v∈
-  ... | ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ = ⟨ n , ⟨ m , ⟨ cst hX n∈ , ⟨ cst hY m∈ , refl ⟩ ⟩ ⟩ ⟩
+  ... | ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
+    ⟨ n , ⟨ m , ⟨ cst hX n∈ , ⟨ cst hY m∈ , refl ⟩ ⟩ ⟩ ⟩
   dt : ∀ v
     → v ⋵ V
     → Data v
@@ -173,7 +221,8 @@ primD-ApproxLR {p} {X} {X'} {Y} {Y'} hX hY V V⊆ = ApproxLR-data V⊆' dt
   → (∀ i → Rel (nthD Xs i) (nthD Xs' i))
   → Rel (𝒯 n Xs) (𝒯 n Xs')
 𝒯-ApproxLR zero cl hs V V⊆ =
-  ApproxLR-data (λ v v∈ → proj₁ (𝒯0-flat v (V⊆ v v∈))) (λ v v∈ → flat-data (proj₂ (𝒯0-flat v (V⊆ v v∈))))
+  ApproxLR-data (λ v v∈ → proj₁ (𝒯0-flat v (V⊆ v v∈)))
+    (λ v v∈ → flat-data (proj₂ (𝒯0-flat v (V⊆ v v∈))))
 𝒯-ApproxLR (suc n) {Xs} {Xs'} cl hs V V⊆ = fold record
   { err-obs = λ ω∈ → ⊥-elim (V⊆ ω ω∈)
   ; const-obs = λ c c∈ → ⊥-elim (V⊆ _ c∈)
@@ -186,19 +235,25 @@ primD-ApproxLR {p} {X} {X'} {Y} {Y'} hX hY V V⊆ = ApproxLR-data V⊆' dt
   comp-ne : ∀ j
     → nonempty (nthD Xs' j)
     → nonempty (nthD Xs j)
-  comp-ne j ⟨ d , d∈ ⟩ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = ApproxLR-conv (hs j _ (single⊆ d∈)) (cl j d d∈) in ⟨ s , s∈ ⟩
+  comp-ne j ⟨ d , d∈ ⟩ =
+    let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ =
+         ApproxLR-conv (hs j _ (single⊆ d∈)) (cl j d d∈) in ⟨ s , s∈ ⟩
   kd : ∀ d
     → d ∈ 𝒯 (suc n) Xs'
     → Σ[ s ∈ Value ] s ∈ ⌊ 𝒯 (suc n) Xs ⌋ × kind s ≡ kind₄ (kind d)
   kd (tup[ i ] x) ⟨ refl , ⟨ x∈ , ne ⟩ ⟩ =
     let ⟨ y , y∈ ⟩ = comp-ne i ⟨ x , x∈ ⟩
-    in ⟨ tup[ i ] y , ⟨ ⟨ ⟨ refl , ⟨ y∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩ , (λ ()) ⟩ , refl ⟩ ⟩
+    in
+      ⟨ tup[ i ] y
+        , ⟨ ⟨ ⟨ refl , ⟨ y∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩ , (λ ()) ⟩ , refl ⟩ ⟩
   nth-case : ∀ {m} (i : Fin m) W'
     → mem W' ⊆ Untag (tupT i) (mem V)
     → ApproxLR (Untag (tupT i) (𝒯 (suc n) Xs)) W'
   nth-case i [] _ = ApproxLR-∅ (λ _ ())
   nth-case i (w ∷ W') W'⊆ with V⊆ _ (W'⊆ w (here refl))
-  ... | ⟨ refl , ⟨ _ , ne ⟩ ⟩ = ApproxLR-mono (λ d d∈ → ⟨ refl , ⟨ d∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩) (hs i (w ∷ W') sub)
+  ... | ⟨ refl , ⟨ _ , ne ⟩ ⟩ =
+    ApproxLR-mono (λ d d∈ → ⟨ refl , ⟨ d∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩)
+    (hs i (w ∷ W') sub)
     where
     sub : mem (w ∷ W') ⊆ nthD Xs' i
     sub d d∈ with V⊆ _ (W'⊆ d d∈)
@@ -215,9 +270,12 @@ ApproxLR-binds : ∀ n {Ds Ds' : Results (𝒫 Value) (replicate n ■)} {K K'}
   → Rel (binds n Ds K) (binds n Ds' K')
 ApproxLR-binds zero h c hK = hK (λ ()) (λ ())
 ApproxLR-binds (suc n) {⟨ D , Ds ⟩} {⟨ D' , Ds' ⟩} {K} {K'} h c hK =
-  ApproxLR-bind {F = λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)} {F' = λ X' → binds n Ds' (λ Xs' → K' ⟨ X' , Xs' ⟩)} (c zero) (h zero)
+  ApproxLR-bind {F = λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)}
+    {F' = λ X' → binds n Ds' (λ Xs' → K' ⟨ X' , Xs' ⟩)} (c zero) (h zero)
     λ _ _ hX → ApproxLR-binds n (λ i → h (suc i)) (λ i → c (suc i))
-      (λ cl hs → hK (λ { zero → clean⌊⌋ ; (suc i) → cl i }) (λ { zero → hX ; (suc i) → hs i }))
+      (λ cl hs →
+          hK (λ { zero → clean⌊⌋ ; (suc i) → cl i })
+          (λ { zero → hX ; (suc i) → hs i }))
 
 {- The fundamental lemma ------------------------------------------------------}
 
@@ -239,7 +297,8 @@ ext-envs : ∀ {Γ B} {ρ ρ' X X'}
   → Rel X X'
   → Envs (B ∷ Γ) (X • ρ) (X' • ρ')
 ext-envs (envs NE NE' ρ~ ρ'~ ρ⊳) nX nX' cX cX' h =
-  envs (extend-nonempty-env NE nX) (extend-nonempty-env NE' nX') (Con-• cX ρ~) (Con-• cX' ρ'~) λ { Z → h ; (S x) → ρ⊳ x }
+  envs (extend-nonempty-env NE nX) (extend-nonempty-env NE' nX') (Con-• cX ρ~)
+    (Con-• cX' ρ'~) λ { Z → h ; (S x) → ρ⊳ x }
 
 args-con : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ}
   → Con-env ρ
@@ -261,27 +320,37 @@ reflect-𝒯 : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ ρ'}
 
 split-reflect (` x) E = Envs.ρ⊳ E x
 
-split-reflect (lit B c) E V V⊆ = ApproxLR-data V⊆ (λ v v∈ → flat-data (ℬ-flat v (V⊆ v v∈)))
+split-reflect (lit B c) E V V⊆ =
+  ApproxLR-data V⊆ (λ v v∈ → flat-data (ℬ-flat v (V⊆ v v∈)))
 
 split-reflect (prim p L M) {ρ} {ρ'} E =
-  ApproxLR-bind {F = λ X → ⟦ M ⟧ ρ ≫= K X} {F' = λ X → ⟦ split M ⟧' ρ' ≫= K X} (S3.con L (Envs.ρ~ E)) (split-reflect L E) λ _ _ hX →
-  ApproxLR-bind {F = K ⌊ ⟦ L ⟧ ρ ⌋} {F' = K ⌊ ⟦ split L ⟧' ρ' ⌋} (S3.con M (Envs.ρ~ E)) (split-reflect M E) λ _ _ hY → primD-ApproxLR {p} hX hY
+  ApproxLR-bind {F = λ X → ⟦ M ⟧ ρ ≫= K X} {F' = λ X → ⟦ split M ⟧' ρ' ≫= K X}
+    (S3.con L (Envs.ρ~ E)) (split-reflect L E) λ _ _ hX →
+  ApproxLR-bind {F = K ⌊ ⟦ L ⟧ ρ ⌋} {F' = K ⌊ ⟦ split L ⟧' ρ' ⌋}
+    (S3.con M (Envs.ρ~ E)) (split-reflect M E) λ _ _ hY →
+    primD-ApproxLR {p} hX hY
   where K = λ X Y → primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩
 
 split-reflect (tuple Ms) = reflect-𝒯 Ms
 
 split-reflect (get i M) E =
-  ApproxLR-bind {F = λ X → proj i ⟨ X , ptt ⟩} {F' = λ X → proj i ⟨ X , ptt ⟩} (S3.con M (Envs.ρ~ E)) (split-reflect M E)
+  ApproxLR-bind {F = λ X → proj i ⟨ X , ptt ⟩} {F' = λ X → proj i ⟨ X , ptt ⟩}
+    (S3.con M (Envs.ρ~ E)) (split-reflect M E)
     λ _ _ hX → tag-ApproxLR hX (tupT i)
 
 split-reflect (L3.inl M) E =
-  ApproxLR-bind {F = λ X → inl ⟨ X , ptt ⟩} {F' = λ X → inl ⟨ X , ptt ⟩} (S3.con M (Envs.ρ~ E)) (split-reflect M E) λ _ _ hX → inl-ApproxLR clean⌊⌋ hX
+  ApproxLR-bind {F = λ X → inl ⟨ X , ptt ⟩} {F' = λ X → inl ⟨ X , ptt ⟩}
+    (S3.con M (Envs.ρ~ E)) (split-reflect M E) λ _ _ hX →
+    inl-ApproxLR clean⌊⌋ hX
 
 split-reflect (L3.inr M) E =
-  ApproxLR-bind {F = λ X → inr ⟨ X , ptt ⟩} {F' = λ X → inr ⟨ X , ptt ⟩} (S3.con M (Envs.ρ~ E)) (split-reflect M E) λ _ _ hX → inr-ApproxLR clean⌊⌋ hX
+  ApproxLR-bind {F = λ X → inr ⟨ X , ptt ⟩} {F' = λ X → inr ⟨ X , ptt ⟩}
+    (S3.con M (Envs.ρ~ E)) (split-reflect M E) λ _ _ hX →
+    inr-ApproxLR clean⌊⌋ hX
 
 split-reflect {Γ} (case L M N) {ρ} {ρ'} E =
-  ApproxLR-bind {F = λ Y → 𝒞 ⟨ Y ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩} {F' = λ Y → 𝒞 ⟨ Y ⇂ ValPayload , ⟨ F₁' , ⟨ F₂' , ptt ⟩ ⟩ ⟩}
+  ApproxLR-bind {F = λ Y → 𝒞 ⟨ Y ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩}
+    {F' = λ Y → 𝒞 ⟨ Y ⇂ ValPayload , ⟨ F₁' , ⟨ F₂' , ptt ⟩ ⟩ ⟩}
     (S3.con L ρ~) (split-reflect L E) λ _ _ hX → K hX
   where
   open Envs E
@@ -306,7 +375,10 @@ split-reflect {Γ} (case L M N) {ρ} {ρ'} E =
     → (nonempty (Untag s X) → ⟦ B ⟧ (Untag s X • ρ) ⊆ C)
     → Rel C (⟦ split B ⟧' (Untag s X' • ρ'))
   branch s B {C} hX vp vp⁻ s~ v sv B⊆ V' V'⊆ =
-    ApproxLR-mono (B⊆ NE-s) (split-reflect B (ext-envs E NE-s ⟨ v , sv ⟩ (Untag-con s s~ cX) (Untag-con s s~ cX') ρ⊳') V' V'⊆)
+    ApproxLR-mono (B⊆ NE-s)
+      (split-reflect B
+        (ext-envs E NE-s ⟨ v , sv ⟩ (Untag-con s s~ cX) (Untag-con s s~ cX')
+          ρ⊳') V' V'⊆)
     where
     hs = tag-ApproxLR hX s
     conv = ApproxLR-conv (hs (v ∷ []) (single⊆ (proj₁ sv))) (vp⁻ (proj₂ sv))
@@ -322,51 +394,72 @@ split-reflect {Γ} (case L M N) {ρ} {ρ'} E =
   K hX (w ∷ V') V'⊆ with V'⊆ w (here refl)
   ... | inj₁ ⟨ v , ⟨ _ , ⟨ allL , _ ⟩ ⟩ ⟩ =
     branch leftT M hX (λ y≢ → y≢) (λ y≢ → y≢) (λ c → c) v lv
-      (λ ne → 𝒞-left {X} {F₁} {F₂} (fin₁ (S3.ok M) NE ne) (Untag-con leftT (λ c → c) cX)) (w ∷ V') V'⊆F
+      (λ ne →
+          𝒞-left {X} {F₁} {F₂} (fin₁ (S3.ok M) NE ne)
+            (Untag-con leftT (λ c → c) cX)) (w ∷ V') V'⊆F
     where
     lv = allL v (here refl)
     V'⊆F : mem (w ∷ V') ⊆ F₁' (Lefts X')
     V'⊆F x x∈ with V'⊆ x x∈
-    ... | inj₁ ⟨ u , ⟨ U , ⟨ allL' , ⟨ x∈F , _ ⟩ ⟩ ⟩ ⟩ = proj₁ (S4.ok (split M)) (λ { zero → allL' ; (suc y) → λ d z → z }) x x∈F
-    ... | inj₂ ⟨ u , ⟨ U , ⟨ allR , _ ⟩ ⟩ ⟩ = ⊥-elim (cX' _ _ lv (allR u (here refl)))
+    ... | inj₁ ⟨ u , ⟨ U , ⟨ allL' , ⟨ x∈F , _ ⟩ ⟩ ⟩ ⟩ =
+      proj₁ (S4.ok (split M)) (λ { zero → allL' ; (suc y) → λ d z → z }) x x∈F
+    ... | inj₂ ⟨ u , ⟨ U , ⟨ allR , _ ⟩ ⟩ ⟩ =
+      ⊥-elim (cX' _ _ lv (allR u (here refl)))
   ... | inj₂ ⟨ v , ⟨ _ , ⟨ allR , _ ⟩ ⟩ ⟩ =
     branch rightT N hX (λ y≢ → y≢) (λ y≢ → y≢) (λ c → c) v rv
-      (λ ne → 𝒞-right {X} {F₁} {F₂} (fin₁ (S3.ok N) NE ne) (Untag-con rightT (λ c → c) cX)) (w ∷ V') V'⊆G
+      (λ ne →
+          𝒞-right {X} {F₁} {F₂} (fin₁ (S3.ok N) NE ne)
+            (Untag-con rightT (λ c → c) cX)) (w ∷ V') V'⊆G
     where
     rv = allR v (here refl)
     V'⊆G : mem (w ∷ V') ⊆ F₂' (Rights X')
     V'⊆G x x∈ with V'⊆ x x∈
-    ... | inj₂ ⟨ u , ⟨ U , ⟨ allR' , ⟨ x∈G , _ ⟩ ⟩ ⟩ ⟩ = proj₁ (S4.ok (split N)) (λ { zero → allR' ; (suc y) → λ d z → z }) x x∈G
-    ... | inj₁ ⟨ u , ⟨ U , ⟨ allL , _ ⟩ ⟩ ⟩ = ⊥-elim (cX' _ _ rv (allL u (here refl)))
+    ... | inj₂ ⟨ u , ⟨ U , ⟨ allR' , ⟨ x∈G , _ ⟩ ⟩ ⟩ ⟩ =
+      proj₁ (S4.ok (split N)) (λ { zero → allR' ; (suc y) → λ d z → z }) x x∈G
+    ... | inj₁ ⟨ u , ⟨ U , ⟨ allL , _ ⟩ ⟩ ⟩ =
+      ⊥-elim (cX' _ _ rv (allL u (here refl)))
 
 split-reflect (let′ M N) {ρ} {ρ'} E =
-  ApproxLR-bind {F = λ X → ⟦ N ⟧ (X • ρ)} {F' = λ X → ⟦ split N ⟧' (X • ρ')} (S3.con M ρ~) (split-reflect M E) λ c c' hX →
-    split-reflect N (ext-envs E c c' (Con-⊆ (S3.con M ρ~) ⌊⌋-⊆) (Con-⊆ (S4.con (split M) ρ'~) ⌊⌋-⊆) hX)
+  ApproxLR-bind {F = λ X → ⟦ N ⟧ (X • ρ)} {F' = λ X → ⟦ split N ⟧' (X • ρ')}
+    (S3.con M ρ~) (split-reflect M E) λ c c' hX →
+    split-reflect N
+      (ext-envs E c c' (Con-⊆ (S3.con M ρ~) ⌊⌋-⊆)
+        (Con-⊆ (S4.con (split M) ρ'~) ⌊⌋-⊆) hX)
   where open Envs E
 
 split-reflect (inject G M) E = split-reflect M E
 
 split-reflect (project t M) E =
-  ApproxLR-bind {F = λ X → checked G X (keep (λ k → k) t X)} {F' = λ X → checkedᵠ kind₄ G X (keep kind₄ t X)}
+  ApproxLR-bind {F = λ X → checked G X (keep (λ k → k) t X)}
+    {F' = λ X → checkedᵠ kind₄ G X (keep kind₄ t X)}
     (S3.con M (Envs.ρ~ E)) (split-reflect M E) λ _ _ hX →
-  ApproxLR-checkᵣ (λ b → inj₁ ⟨ refl , bad-reflect clean⌊⌋ hX b ⟩) (λ W W⊆ → ApproxLR-mono (λ x → inj₂) (ApproxLR-restrict t hX W W⊆))
+  ApproxLR-checkᵣ (λ b → inj₁ ⟨ refl , bad-reflect clean⌊⌋ hX b ⟩)
+    (λ W W⊆ → ApproxLR-mono (λ x → inj₂) (ApproxLR-restrict t hX W W⊆))
   where G = kindᶠ (flat t)
 
 split-reflect (app L M) {ρ} {ρ'} E =
-  ApproxLR-bind {F = λ F → F ● ⟦ M ⟧ ρ} {F' = λ P → Arg ≫= K P} (S3.con L ρ~) (split-reflect L E) λ _ _ hX →
-  ApproxLR-bindᵣ {A' = Arg} {F' = K P} (λ ω∈ → inj₁ ⟨ refl , ApproxLR-err (split-reflect M E _ (single⊆ ω∈)) ⟩) λ _ W W⊆ →
+  ApproxLR-bind {F = λ F → F ● ⟦ M ⟧ ρ} {F' = λ P → Arg ≫= K P} (S3.con L ρ~)
+    (split-reflect L E) λ _ _ hX →
+  ApproxLR-bindᵣ {A' = Arg} {F' = K P}
+    (λ ω∈ → inj₁ ⟨ refl , ApproxLR-err (split-reflect M E _ (single⊆ ω∈)) ⟩) λ _
+    W W⊆ →
   let ⟨ Ws , ⟨ U , ⟨ Ws⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩ = collect P ⌊ Arg ⌋ clean⌊⌋ W W⊆ in
   ApproxLRLayer.app-obs (unfold (hX Ws Ws⊆)) cs (⟦ M ⟧ ρ) (S3.con M ρ~)
-    (Con-⊆ (S4.con (split M) ρ'~) (λ d d∈ → proj₁ (U⊆ d d∈))) (split-reflect M E U (λ d d∈ → proj₁ (U⊆ d d∈)))
+    (Con-⊆ (S4.con (split M) ρ'~) (λ d d∈ → proj₁ (U⊆ d d∈)))
+      (split-reflect M E U (λ d d∈ → proj₁ (U⊆ d d∈)))
   where
   open Envs E
   Arg = ⟦ split M ⟧' ρ'
   P = ⌊ ⟦ split L ⟧' ρ' ⌋
-  K = λ P X → ⋆ ⟨ ⋆ ⟨ car ⟨ P , ptt ⟩ , ⟨ cdr ⟨ P , ptt ⟩ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
+  K =
+    λ P X →
+    ⋆ ⟨ ⋆ ⟨ car ⟨ P , ptt ⟩ , ⟨ cdr ⟨ P , ptt ⟩ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
 
 split-reflect (clos {n = n} N Ms) {ρ} {ρ'} E =
-  ApproxLR-bindᵣ {⟦ clos N Ms ⟧ ρ} {ΛΛᵐ ⟨ F' , ptt ⟩} {λ C → T' ≫= λ Y → pair ⟨ C , ⟨ Y , ptt ⟩ ⟩} (λ { ⟨ () , _ ⟩ }) λ _ →
-    ApproxLR-bind {F = λ Y → ⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ Y , ptt ⟩ ⟩} {F' = λ Y → pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ Y , ptt ⟩ ⟩}
+  ApproxLR-bindᵣ {⟦ clos N Ms ⟧ ρ} {ΛΛᵐ ⟨ F' , ptt ⟩}
+    {λ C → T' ≫= λ Y → pair ⟨ C , ⟨ Y , ptt ⟩ ⟩} (λ { ⟨ () , _ ⟩ }) λ _ →
+    ApproxLR-bind {F = λ Y → ⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ Y , ptt ⟩ ⟩}
+      {F' = λ Y → pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ Y , ptt ⟩ ⟩}
       (S3.con (tuple Ms) ρ~) (reflect-𝒯 Ms E) K
   where
   open Envs E
@@ -377,7 +470,8 @@ split-reflect (clos {n = n} N Ms) {ρ} {ρ'} E =
   K : Conv T
     → Conv T'
     → Rel ⌊ T ⌋ ⌊ T' ⌋
-    → Rel (⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ T ⌋ , ptt ⟩ ⟩) (pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩)
+    → Rel (⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ T ⌋ , ptt ⟩ ⟩)
+      (pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩)
   K ⟨ t₀ , t₀∈ ⟩ _ hT V' V'⊆ = fold record
     { err-obs = λ ω∈ → ⊥-elim (V'⊆ ω ω∈)
     ; const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
@@ -394,7 +488,11 @@ split-reflect (clos {n = n} N Ms) {ρ} {ρ'} E =
     pair-tag leftT ()
     pair-tag rightT ()
     ν∈ : ν ∈ ⌊ D ⌋
-    ν∈ = ⟨ ⟨ t₀ ∷ [] , ⟨ ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ { (here eq) → proj₂ t₀∈ (sym eq) }) , tt ⟩ ⟩
+    ν∈ =
+      ⟨ ⟨ t₀ ∷ []
+        ,
+        ⟨ ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩
+          , ⟨ (λ { (here eq) → proj₂ t₀∈ (sym eq) }) , tt ⟩ ⟩
                        , ⟨ single⊆ t₀∈ , (λ ()) ⟩ ⟩ ⟩ , (λ ()) ⟩
     kd : ∀ d
       → d ∈ pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩
@@ -412,14 +510,26 @@ split-reflect (clos {n = n} N Ms) {ρ} {ρ'} E =
       → ApproxLR (D ● Es) W'
     clos-app {W' = []} _ Es _ _ _ = ApproxLR-∅ (λ _ ())
     clos-app {U'} {w ∷ W'} cs Es cE U'~ rU =
-      ApproxLR-mono (λ x x∈ → inj₂ ⟨ vE , ΛΛᵐ-call {F} cT (Con-⊆ cE ⌊⌋-⊆) clean⌊⌋ clean⌊⌋ (fin₂ (S3.ok N) ⟨ t₀ , t₀∈ ⟩ vE) x x∈ ⟩)
-        (split-reflect N (envs NE-ρs NE-ρ'' (Con-• (Con-⊆ cE ⌊⌋-⊆) (Con-• cT (λ _ → Con-⌈⌉ ω))) ρ''~ ρs⊳ρ'') (w ∷ W') W⊆B)
+      ApproxLR-mono
+        (λ x x∈ →
+          inj₂
+          ⟨ vE
+            , ΛΛᵐ-call {F} cT (Con-⊆ cE ⌊⌋-⊆) clean⌊⌋ clean⌊⌋
+              (fin₂ (S3.ok N) ⟨ t₀ , t₀∈ ⟩ vE) x x∈ ⟩)
+        (split-reflect N
+            (envs NE-ρs NE-ρ''
+              (Con-• (Con-⊆ cE ⌊⌋-⊆) (Con-• cT (λ _ → Con-⌈⌉ ω))) ρ''~ ρs⊳ρ'')
+              (w ∷ W') W⊆B)
       where
       wit = Calls.results cs w (here refl)
       ent = proj₁ (proj₂ wit)
       u₀ = proj₁ (ne-mem (proj₁ (proj₂ (proj₂ wit))) (λ d d∈ → d∈))
-      u₀∈ = proj₂ (proj₂ (proj₂ wit)) u₀ (proj₂ (ne-mem (proj₁ (proj₂ (proj₂ wit))) (λ d d∈ → d∈)))
-      vE = ApproxLR-conv (ApproxLR-⊆ (single⊆ u₀∈) rU) (λ eq → Calls.noerr cs (subst (_⋵ U') eq u₀∈))
+      u₀∈ =
+        proj₂ (proj₂ (proj₂ wit)) u₀
+        (proj₂ (ne-mem (proj₁ (proj₂ (proj₂ wit))) (λ d d∈ → d∈)))
+      vE =
+        ApproxLR-conv (ApproxLR-⊆ (single⊆ u₀∈) rU)
+        (λ eq → Calls.noerr cs (subst (_⋵ U') eq u₀∈))
       fv₀ = proj₁ (ne-mem (CarEntry.FV≢[] ent) (λ d d∈ → d∈))
       fv₀∈ = proj₂ (ne-mem (CarEntry.FV≢[] ent) (λ d d∈ → d∈))
       ρ'' : Env Value
@@ -428,25 +538,38 @@ split-reflect (clos {n = n} N Ms) {ρ} {ρ'} E =
       W⊆B x x∈ with Calls.results cs x x∈
       ... | ⟨ U₁ , ⟨ car-entry FV t e∈ neFV FV⊆ , ⟨ _ , U₁⊆ ⟩ ⟩ ⟩ with V'⊆ _ e∈
       ... | ⟨ ⟨ ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ , _ ⟩ , _ ⟩ =
-        proj₁ (S4.ok (split N)) (λ { zero → U₁⊆ ; (suc zero) → FV⊆ ; (suc (suc y)) → λ d z → z }) x x∈B
+        proj₁ (S4.ok (split N))
+          (λ { zero → U₁⊆ ; (suc zero) → FV⊆ ; (suc (suc y)) → λ d z → z }) x
+          x∈B
       ρ''~ : Con-env ρ''
-      ρ''~ = Con-• U'~ (Con-• (Con-⊆ (Con-⊆ (S4.con (T.tuple (splits Ms)) ρ'~) ⌊⌋-⊆) Cdrs⊆T') (λ _ → Con-⌈⌉ ω))
-      NE-ρs = extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) ⟨ t₀ , t₀∈ ⟩) vE
+      ρ''~ =
+        Con-• U'~
+        (Con-• (Con-⊆ (Con-⊆ (S4.con (T.tuple (splits Ms)) ρ'~) ⌊⌋-⊆) Cdrs⊆T')
+          (λ _ → Con-⌈⌉ ω))
+      NE-ρs =
+        extend-nonempty-env
+        (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) ⟨ t₀ , t₀∈ ⟩) vE
       NE-ρ'' = extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩)
                  ⟨ fv₀ , CarEntry.FV⊆ ent fv₀ fv₀∈ ⟩) ⟨ u₀ , u₀∈ ⟩
-      ρs⊳ρ'' : ∀ {A} (x : (Any ∷ ⟪ tup n ⟫ ∷ []) ∋ A) → Rel ((⌊ Es ⌋ • ⌊ T ⌋ • (λ _ → ⌈ ω ⌉)) (idx x)) (ρ'' (idx x))
-      ρs⊳ρ'' Z Y' Y'⊆ = ApproxLR-mono (⌊⌋-clean (con-clean cE vE)) (ApproxLR-⊆ Y'⊆ rU)
+      ρs⊳ρ'' : ∀ {A} (x : (Any ∷ ⟪ tup n ⟫ ∷ []) ∋ A)
+        → Rel ((⌊ Es ⌋ • ⌊ T ⌋ • (λ _ → ⌈ ω ⌉)) (idx x)) (ρ'' (idx x))
+      ρs⊳ρ'' Z Y' Y'⊆ =
+        ApproxLR-mono (⌊⌋-clean (con-clean cE vE)) (ApproxLR-⊆ Y'⊆ rU)
       ρs⊳ρ'' (S Z) Y' Y'⊆ = hT Y' (λ y y∈ → Cdrs⊆T' y (Y'⊆ y y∈))
 
 reflect-nth (M ∷ Ms) E zero = split-reflect M E
 reflect-nth (M ∷ Ms) E (suc i) = reflect-nth Ms E i
 
-reflect-𝒯 {n = n} Ms E = ApproxLR-binds n (reflect-nth Ms E) (args-con Ms (Envs.ρ~ E)) (λ cl hs → 𝒯-ApproxLR n cl hs)
+reflect-𝒯 {n = n} Ms E =
+  ApproxLR-binds n (reflect-nth Ms E) (args-con Ms (Envs.ρ~ E))
+  (λ cl hs → 𝒯-ApproxLR n cl hs)
 
 {- The end theorem (backward half) --------------------------------------------}
 
 Envs₀ : Envs [] ρ₀ ρ₀
-Envs₀ = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ _ → Con-⌈⌉ ω) (λ ())
+Envs₀ =
+  envs (λ _ → ⟨ ω , refl ⟩) (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω)
+  (λ _ → Con-⌈⌉ ω) (λ ())
 
 reflect-error : ∀ (M : Tm [] Any)
   → ω ∈ ⟦ split-program M ⟧' ρ₀
@@ -456,9 +579,14 @@ reflect-error M ω∈ = ApproxLR-err (split-reflect M Envs₀ _ (single⊆ ω∈
 reflect-const : ∀ (M : Tm [] Any) {B} (c : base-rep B)
   → const c ∈ ⟦ split-program M ⟧' ρ₀
   → const c ∈ ⟦ M ⟧ ρ₀
-reflect-const M c c∈ = ApproxLRLayer.const-obs (unfold (split-reflect M Envs₀ _ (single⊆ c∈))) c (here refl)
+reflect-const M c c∈ =
+  ApproxLRLayer.const-obs (unfold (split-reflect M Envs₀ _ (single⊆ c∈)))
+  c (here refl)
 
 reflect-val : ∀ (M : Tm [] Any)
   → val∈ (⟦ split-program M ⟧' ρ₀)
   → val∈ (⟦ M ⟧ ρ₀)
-reflect-val M ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = let ⟨ s , ⟨ s∈ , s≢ ⟩ ⟩ = ApproxLR-conv (split-reflect M Envs₀ _ (single⊆ d∈)) d≢ in ⟨ s , ⟨ s∈ , s≢ ⟩ ⟩
+reflect-val M ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ =
+  let ⟨ s , ⟨ s∈ , s≢ ⟩ ⟩ =
+       ApproxLR-conv (split-reflect M Envs₀ _ (single⊆ d∈)) d≢ in
+       ⟨ s , ⟨ s∈ , s≢ ⟩ ⟩

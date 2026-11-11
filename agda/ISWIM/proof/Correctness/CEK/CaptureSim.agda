@@ -28,7 +28,8 @@ open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Framework.VecUtil using (_<><₂_)
-open import ISWIM.proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
+open import ISWIM.proof.Correctness.CEK.Common using (Lock; same-stop;
+  same-next; lock)
 import ISWIM.Semantics.CEK.Typed.ISWIM as Src
 import ISWIM.Semantics.CEK.Typed.Clos2 as Tgt
 
@@ -40,17 +41,20 @@ open import Data.Vec using (Vec; []; _∷_; lookup; map; allFin)
 open import Data.Vec.Properties using (tabulate-allFin; map-lookup-allFin)
 open import Data.Vec.Relation.Binary.Pointwise.Inductive as V using ([]; _∷_)
 open import Language.Prim using (sub; eq)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; cong₂; subst)
 open import Relation.Nullary using (yes; no; does)
 
-{- The simulation relation -----------------------------------------------------}
+{- The simulation relation ----------------------------------------------------}
 
 infix 4 _≈_ _≈k_ _~_
 
 data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
-  clo≈ : ∀ {k N} {ρ : Vec _ k} {vs} → V.Pointwise _≈_ ρ vs → Src.clo N ρ ≈ Tgt.clos (capture N) vs
+  clo≈ : ∀ {k N} {ρ : Vec _ k} {vs} → V.Pointwise _≈_ ρ vs
+    → Src.clo N ρ ≈ Tgt.clos (capture N) vs
   const≈ : ∀ {B c} → Src.const {B} c ≈ Tgt.const c
-  tup≈ : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
+  tup≈ : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws
+    → Src.tup vs ≈ Tgt.tup ws
   inl≈ : ∀ {v w} → v ≈ w → Src.inl v ≈ Tgt.inl w
   inr≈ : ∀ {v w} → v ≈ w → Src.inr v ≈ Tgt.inr w
   dyn≈ : ∀ {G v w} → v ≈ w → Src.dyn G v ≈ Tgt.dyn G w
@@ -63,7 +67,8 @@ data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   appL : ∀ {k M} {ρ₁ : Src.Env k} {ρ₂ κ₁ κ₂} → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
     → Src.appL M ρ₁ κ₁ ≈k Tgt.appL (capture M) ρ₂ κ₂
   appR : ∀ {f g κ₁ κ₂} → f ≈ g → κ₁ ≈k κ₂ → Src.appR f κ₁ ≈k Tgt.appR g κ₂
-  tupK : ∀ {k m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env k} {ρ₂} {κ₁ κ₂}
+  tupK : ∀ {k m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env k}
+    {ρ₂} {κ₁ κ₂}
     → V.Pointwise _≈_ vs ws → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
     → Src.tupK vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (encs Ms) ρ₂ κ₂
   getK : ∀ {n i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {n} i κ₁ ≈k Tgt.getK i κ₂
@@ -82,7 +87,8 @@ data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
 data _~_ : Src.State → Tgt.State → Set where
   eval~ : ∀ {k A} {M : Tm k A} {ρ₁ ρ₂ κ₁ κ₂} → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
     → Src.eval M ρ₁ κ₁ ~ Tgt.eval (capture M) ρ₂ κ₂
-  ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
+  ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+    → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
 {- Related values are observed alike, and primitives give related values -}
 obs≈ : ∀ {A} {v : Src.Val A} {w}
@@ -110,12 +116,13 @@ obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 proj~ : ∀ {H G v w κ₁ κ₂}
   → v ≈ w
   → κ₁ ≈k κ₂
-  → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁))) (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
+  → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁)))
+    (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
 proj~ {H} {G} r k with H ≟F flat G
 ... | yes refl = same-next (ret~ r k)
 ... | no _ = same-stop
 
-{- The simulation, for any Clos2ᵀ program P ------------------------------------}
+{- The simulation, for any Clos2ᵀ program P -----------------------------------}
 
 module _ (P : C2.Tm 0 Any) where
 
@@ -123,11 +130,14 @@ module _ (P : C2.Tm 0 Any) where
 
   {- evaluating the variables xs as the rest of a tuple -}
   capture-fvs : ∀ {k j m} (xs : Vec (Fin k) j) (vs : Vec _ m) ρ κ
-    → Star L₂ (Tgt.tuple-next vs (map C2.`_ xs) ρ κ) (Tgt.ret (Tgt.tup (vs <>< map (lookup ρ) xs)) κ)
+    → Star L₂ (Tgt.tuple-next vs (map C2.`_ xs) ρ κ)
+      (Tgt.ret (Tgt.tup (vs <>< map (lookup ρ) xs)) κ)
   capture-fvs [] vs ρ κ = ε
-  capture-fvs (x ∷ xs) vs ρ κ = refl ◅ refl ◅ capture-fvs xs (lookup ρ x ∷ vs) ρ κ
+  capture-fvs (x ∷ xs) vs ρ κ =
+    refl ◅ refl ◅ capture-fvs xs (lookup ρ x ∷ vs) ρ κ
 
-  tuple-next~ : ∀ {k m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env k} {ρ₂} {κ₁ κ₂}
+  tuple-next~ : ∀ {k m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j}
+    {ρ₁ : Src.Env k} {ρ₂} {κ₁ κ₂}
     → V.Pointwise _≈_ vs ws
     → ρ₁ ≈ρ ρ₂
     → κ₁ ≈k κ₂
@@ -140,7 +150,13 @@ module _ (P : C2.Tm 0 Any) where
     → Answers L₂ _~_ (Src.step s₁) s₂
   sim (eval~ {M = ` x} er k) = steps₁ refl (ret~ (V.lookup er x) k)
   sim (eval~ {n} {M = lam N} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) =
-    steps (plus refl (subst (λ Ms → Star L₂ (Tgt.tuple-next [] Ms ρ₂ κ') (Tgt.ret (Tgt.tup (map (lookup ρ₂) (allFin n))) κ')) (sym (tabulate-allFin C2.`_))
+    steps
+      (plus refl
+        (subst
+          (λ Ms →
+            Star L₂ (Tgt.tuple-next [] Ms ρ₂ κ')
+              (Tgt.ret (Tgt.tup (map (lookup ρ₂) (allFin n))) κ'))
+              (sym (tabulate-allFin C2.`_))
                        (capture-fvs (allFin n) [] ρ₂ κ') ◅◅ (refl ◅ ε)))
           (ret~ (clo≈ (subst (_≈ρ_ _) (sym (map-lookup-allFin ρ₂)) er)) k)
     where κ' = Tgt.closK (capture N) κ₂
@@ -165,12 +181,15 @@ module _ (P : C2.Tm 0 Any) where
   sim (ret~ (inl≈ r) (caseK er k)) = steps₁ refl (eval~ (r ∷ er) k)
   sim (ret~ (inr≈ r) (caseK er k)) = steps₁ refl (eval~ (r ∷ er) k)
   sim (ret~ const≈ (primL er k)) = steps₁ refl (eval~ er (primR k))
-  sim (ret~ (const≈ {c = m}) (primR {p} {n} k)) = steps₁ refl (ret~ (δ≈ p n m) k)
+  sim (ret~ (const≈ {c = m}) (primR {p} {n} k)) =
+    steps₁ refl (ret~ (δ≈ p n m) k)
   sim (ret~ r (letK er k)) = steps₁ refl (eval~ (r ∷ er) k)
   sim (ret~ r (injK k)) = steps₁ refl (ret~ (dyn≈ r) k)
   sim (ret~ (dyn≈ r) (projK k)) = lock (proj~ r k)
 
-{- The end theorem: for every closed ISWIMᵀ program ----------------------------}
+{- The end theorem: for every closed ISWIMᵀ program ---------------------------}
 
-capture-correct : ∀ (M : Tm 0 Any) → Equivalent (Src.sem M) (Tgt.sem (capture M))
-capture-correct M = equivalent (plus-simulation _~_ (eval~ [] halt) (sim (capture M)))
+capture-correct : ∀ (M : Tm 0 Any)
+  → Equivalent (Src.sem M) (Tgt.sem (capture M))
+capture-correct M =
+  equivalent (plus-simulation _~_ (eval~ [] halt) (sim (capture M)))

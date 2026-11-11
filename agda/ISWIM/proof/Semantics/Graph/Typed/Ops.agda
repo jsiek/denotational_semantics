@@ -10,7 +10,8 @@
 module ISWIM.proof.Semantics.Graph.Typed.Ops where
 
 open import ISWIM.Semantics.Graph.Typed.Ops public
-open import proof.Framework.GraphModel.TypedGuard using (guardᵖ-good; guardᵖ-≃) public
+open import proof.Framework.GraphModel.TypedGuard using (guardᵖ-good; guardᵖ-≃)
+  public
 open import proof.Framework.GraphModel.TypedOkBase public
 
 open import proof.Framework.GraphModel.Prelude

@@ -38,7 +38,9 @@ module ISWIM.proof.Compiler.Examples.CastExample where
 
 {- cast insertion to split, on a well-scoped closed program -}
 to-clos4 : (M : AST) → WS 0 M → Clos4ᵀ.Tm [] Any
-to-clos4 M w = split-program (concretize-program (prune-program (capture (cast-program M w))))
+to-clos4 M w =
+  split-program
+  (concretize-program (prune-program (capture (cast-program M w))))
 
 {- run a machine for at most n steps -}
 run : ℕ → (L : Machine) → Maybe Obs
@@ -55,7 +57,8 @@ five = lit Int (+ 5) ⦅ Nil ⦆
 
 {- (λx. x - 1) 5 -}
 dec5 : AST
-dec5 = app ⦅ lam ⦅ ⟩ prim sub ⦅ ` 0 ,, lit Int (+ 1) ⦅ Nil ⦆ ,, Nil ⦆ ,, Nil ⦆ ,, five ,, Nil ⦆
+dec5 = app ⦅ lam ⦅ ⟩ prim sub ⦅ ` 0 ,, lit Int (+ 1) ⦅ Nil ⦆ ,, Nil ⦆ ,, Nil ⦆
+  ,, five ,, Nil ⦆
 
 dec5-ws : WS 0 dec5
 dec5-ws = ((s≤s z≤n , tt , tt) , tt) , tt , tt
@@ -73,7 +76,8 @@ dec5ᵀ = refl
 dec5-iswim : run 20 (ISWIMₘ.sem dec5) ≡ just (o-const Int (+ 4))
 dec5-iswim = refl
 
-dec5-clos4 : run 60 (Clos4ᵀₘ.sem (to-clos4 dec5 dec5-ws)) ≡ just (o-const Int (+ 4))
+dec5-clos4 : run 60 (Clos4ᵀₘ.sem (to-clos4 dec5 dec5-ws))
+  ≡ just (o-const Int (+ 4))
 dec5-clos4 = refl
 
 {- 5 5: the ISWIM machine finds that 5 is not a function; the compiled

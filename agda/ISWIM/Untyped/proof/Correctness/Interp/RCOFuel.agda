@@ -39,23 +39,28 @@ open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import ISWIM.Untyped.Language.Clos5
 import ISWIM.Untyped.Language.Mon as Mon
 open import ISWIM.Untyped.Compiler.RCO
-open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-args)
+open import proof.Framework.Syntax.Rename Op sig using (ext; rename;
+  rename-args)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import proof.Framework.ListUtil using (_‼_; ‼-<; ‼-++; length-snoc; ‼-pw)
 open import proof.Semantics.Interp.Clock
-open import ISWIM.Untyped.Semantics.Interp.Clos5
-  using (Val; Env; code; pair; const; tup; inl; inr; eval; eval-args; call; code?; branch;
-         first; second; project; prim?)
+open import ISWIM.Untyped.Semantics.Interp.Clos5 using (Val; Env; code; pair;
+  const; tup; inl; inr; eval; eval-args; call; code?; branch; first; second;
+  project; prim?)
 import ISWIM.Untyped.Semantics.Interp.Clos5 as T
 import ISWIM.Semantics.Interp.ISWIM as ISWIM
 open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon)
 open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
-open import ISWIM.Untyped.proof.Correctness.Interp.CompilerFuel using (compile-correct)
-open import ISWIM.Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
+open import ISWIM.Untyped.proof.Correctness.Interp.CompilerFuel using
+  (compile-correct)
+open import ISWIM.Untyped.proof.Compiler.PipelineScope using (Scoped;
+  compile-scoped)
 
-open import Data.List using (List; []; _∷_; _++_; _∷ʳ_; [_]; length; replicate; reverse; map)
+open import Data.List using (List; []; _∷_; _++_; _∷ʳ_; [_]; length; replicate;
+  reverse; map)
 open import Data.List.Properties using (++-assoc)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_;
+  reverse⁺)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Maybe using (just)
 import Data.Maybe.Relation.Binary.Pointwise as M
@@ -63,10 +68,11 @@ open import Data.Nat using (ℕ; zero; suc; _+_; _<_; s≤s)
 open import Data.Product using (Σ-syntax; _×_; _,_)
 open import Data.Unit using (⊤; tt)
 open import Data.Vec using (Vec; []; _∷_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 open import Relation.Nullary using (yes; no)
 
-{- Scoping: a variable operand is bound -----------------------------------------}
+{- Scoping: a variable operand is bound ---------------------------------------}
 
 Bnd : ℕ → AST → Set
 Bnd k (` x) = x < k
@@ -104,7 +110,8 @@ rco-bnd (tuple n ⦅ Ms ⦆) w = lets-bnd _ tt
 rco-bnd (get i ⦅ Ms ⦆) w = lets-bnd _ tt
 rco-bnd (inl-op ⦅ Ms ⦆) w = lets-bnd _ tt
 rco-bnd (inr-op ⦅ Ms ⦆) w = lets-bnd _ tt
-rco-bnd (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) w = lets-bnd _ (case-bnd (atoms (atomize (rco L ,, Nil))))
+rco-bnd (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) w =
+  lets-bnd _ (case-bnd (atoms (atomize (rco L ,, Nil))))
   where case-bnd : ∀ {k j} As → Bnd k (case-on (rco M) (rco N) j As)
         case-bnd (A ,, Nil) = tt
 rco-bnd (prim p ⦅ Ms ⦆) w = lets-bnd _ tt
@@ -116,7 +123,7 @@ rco-bnds : ∀ {k n} (Ms : Args (replicate n ■))
 rco-bnds {n = zero} Nil w = tt
 rco-bnds {n = suc n} (M ,, Ms) (w , ws) = rco-bnd M w , rco-bnds Ms ws
 
-{- Evaluating operands, and evaluating under lets ---------------------------------}
+{- Evaluating operands, and evaluating under lets -----------------------------}
 
 ‼-shift : ∀ (us ρ : Env) x → (us ++ ρ) ‼ (length us + x) ≡ ρ ‼ x
 ‼-shift [] ρ x = refl
@@ -140,9 +147,11 @@ K-tup vs = ret (tup (reverse (revapp vs [])))
 module Gen (ds : List AST) where
 
   {- evaluate the operands left to right, then continue with their values -}
-  evals : ∀ {n} → ℕ → Env → Args (replicate n ■) → (Vec Val n → Result Val) → Result Val
+  evals : ∀ {n} → ℕ → Env → Args (replicate n ■) → (Vec Val n → Result Val)
+    → Result Val
   evals {zero} ck ρ Nil K = K []
-  evals {suc n} ck ρ (M ,, Ms) K = eval ds ck ρ M >>= λ v → evals ck ρ Ms (λ vs → K (v ∷ vs))
+  evals {suc n} ck ρ (M ,, Ms) K =
+    eval ds ck ρ M >>= λ v → evals ck ρ Ms (λ vs → K (v ∷ vs))
 
   K-app : ℕ → Vec Val 3 → Result Val
   K-app ck (f ∷ e ∷ w ∷ []) = call ds ck (code? ds f) (w ∷ e ∷ [])
@@ -150,29 +159,38 @@ module Gen (ds : List AST) where
   {- each construct evaluates its operands, then continues -}
   c-app : ∀ ck ρ As → eval ds ck ρ (app ⦅ As ⦆) ≡ evals ck ρ As (K-app ck)
   c-app ck ρ (L ,, M ,, N ,, Nil) = refl
-  c-pair : ∀ ck ρ As → eval ds ck ρ (pair-op ⦅ As ⦆) ≡ evals ck ρ As (K2 λ v w → ret (pair v w))
+  c-pair : ∀ ck ρ As
+    → eval ds ck ρ (pair-op ⦅ As ⦆) ≡ evals ck ρ As (K2 λ v w → ret (pair v w))
   c-pair ck ρ (L ,, M ,, Nil) = refl
   c-fst : ∀ ck ρ As → eval ds ck ρ (fst-op ⦅ As ⦆) ≡ evals ck ρ As (K1 first)
   c-fst ck ρ (M ,, Nil) = refl
   c-snd : ∀ ck ρ As → eval ds ck ρ (snd-op ⦅ As ⦆) ≡ evals ck ρ As (K1 second)
   c-snd ck ρ (M ,, Nil) = refl
-  c-get : ∀ {n} (i : _) ck ρ As → eval ds ck ρ (get {n} i ⦅ As ⦆) ≡ evals ck ρ As (K1 (project i))
+  c-get : ∀ {n} (i : _) ck ρ As
+    → eval ds ck ρ (get {n} i ⦅ As ⦆) ≡ evals ck ρ As (K1 (project i))
   c-get i ck ρ (M ,, Nil) = refl
-  c-inl : ∀ ck ρ As → eval ds ck ρ (inl-op ⦅ As ⦆) ≡ evals ck ρ As (K1 λ v → ret (inl v))
+  c-inl : ∀ ck ρ As
+    → eval ds ck ρ (inl-op ⦅ As ⦆) ≡ evals ck ρ As (K1 λ v → ret (inl v))
   c-inl ck ρ (M ,, Nil) = refl
-  c-inr : ∀ ck ρ As → eval ds ck ρ (inr-op ⦅ As ⦆) ≡ evals ck ρ As (K1 λ v → ret (inr v))
+  c-inr : ∀ ck ρ As
+    → eval ds ck ρ (inr-op ⦅ As ⦆) ≡ evals ck ρ As (K1 λ v → ret (inr v))
   c-inr ck ρ (M ,, Nil) = refl
-  c-prim : ∀ p ck ρ As → eval ds ck ρ (prim p ⦅ As ⦆) ≡ evals ck ρ As (K2 λ v w → from-maybe (prim? p v w))
+  c-prim : ∀ p ck ρ As
+    → eval ds ck ρ (prim p ⦅ As ⦆)
+    ≡ evals ck ρ As (K2 λ v w → from-maybe (prim? p v w))
   c-prim p ck ρ (L ,, M ,, Nil) = refl
 
-  args-evals : ∀ ck ρ acc {n} (As : Args (replicate n ■)) (k : List Val → Result Val)
-    → (eval-args ds ck ρ acc As >>= k) ≡ evals ck ρ As (λ vs → k (revapp vs acc))
+  args-evals : ∀ ck ρ acc {n} (As : Args (replicate n ■))
+    (k : List Val → Result Val)
+    → (eval-args ds ck ρ acc As >>= k)
+      ≡ evals ck ρ As (λ vs → k (revapp vs acc))
   args-evals ck ρ acc {zero} Nil k = refl
   args-evals ck ρ acc {suc n} (M ,, As) k =
     trans (bind-assoc (eval ds ck ρ M))
       (bind-cong (eval ds ck ρ M) λ v → args-evals ck ρ (v ∷ acc) As k)
 
-  c-tuple : ∀ ck ρ {n} (As : Args (replicate n ■)) → eval ds ck ρ (tuple n ⦅ As ⦆) ≡ evals ck ρ As K-tup
+  c-tuple : ∀ ck ρ {n} (As : Args (replicate n ■))
+    → eval ds ck ρ (tuple n ⦅ As ⦆) ≡ evals ck ρ As K-tup
   c-tuple ck ρ As = args-evals ck ρ [] As _
 
   {- Renaming: r takes each variable of ρ₁ to one of ρ₂ with the same value -}
@@ -200,34 +218,43 @@ module Gen (ds : List AST) where
   ren ck r (` x) h = cong from-maybe (h x)
   ren ck r (fun-ref k ⦅ Nil ⦆) h = refl
   ren ck r (app ⦅ L ,, M ,, N ,, Nil ⦆) h =
-    bind≡ (ren ck r L h) λ f → bind≡ (ren ck r M h) λ e → bind≡ (ren ck r N h) λ w → refl
+    bind≡ (ren ck r L h) λ f → bind≡ (ren ck r M h) λ e →
+      bind≡ (ren ck r N h) λ w → refl
   ren ck r (lit B k ⦅ Nil ⦆) h = refl
-  ren ck r (pair-op ⦅ L ,, M ,, Nil ⦆) h = bind≡ (ren ck r L h) λ v → bind≡ (ren ck r M h) λ w → refl
+  ren ck r (pair-op ⦅ L ,, M ,, Nil ⦆) h =
+    bind≡ (ren ck r L h) λ v → bind≡ (ren ck r M h) λ w → refl
   ren ck r (fst-op ⦅ M ,, Nil ⦆) h = bind≡ (ren ck r M h) λ v → refl
   ren ck r (snd-op ⦅ M ,, Nil ⦆) h = bind≡ (ren ck r M h) λ v → refl
   ren ck r (tuple n ⦅ Ms ⦆) h = bind≡ (ren-args ck r Ms h) λ vs → refl
   ren ck r (get i ⦅ M ,, Nil ⦆) h = bind≡ (ren ck r M h) λ v → refl
   ren ck r (inl-op ⦅ M ,, Nil ⦆) h = bind≡ (ren ck r M h) λ v → refl
   ren ck r (inr-op ⦅ M ,, Nil ⦆) h = bind≡ (ren ck r M h) λ v → refl
-  ren ck r {ρ₁} {ρ₂} (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) h = bind≡ (ren ck r L h) br
-    where br : ∀ v → branch ds ck ρ₁ M N v ≡ branch ds ck ρ₂ (rename (ext r) M) (rename (ext r) N) v
+  ren ck r {ρ₁} {ρ₂} (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) h =
+    bind≡ (ren ck r L h) br
+    where br : ∀ v
+           → branch ds ck ρ₁ M N v
+           ≡ branch ds ck ρ₂ (rename (ext r) M) (rename (ext r) N) v
           br (inl v) = ren ck (ext r) M (ren-ext v h)
           br (inr v) = ren ck (ext r) N (ren-ext v h)
           br (code k) = refl
           br (pair v w) = refl
           br (const B k) = refl
           br (tup vs) = refl
-  ren ck r (prim p ⦅ L ,, M ,, Nil ⦆) h = bind≡ (ren ck r L h) λ v → bind≡ (ren ck r M h) λ w → refl
-  ren ck r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) h = bind≡ (ren ck r M h) λ v → ren ck (ext r) N (ren-ext v h)
+  ren ck r (prim p ⦅ L ,, M ,, Nil ⦆) h =
+    bind≡ (ren ck r L h) λ v → bind≡ (ren ck r M h) λ w → refl
+  ren ck r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) h =
+    bind≡ (ren ck r M h) λ v → ren ck (ext r) N (ren-ext v h)
 
   ren-args ck r {zero} Nil h = refl
-  ren-args ck r {suc n} (M ,, Ms) h = bind≡ (ren ck r M h) λ v → ren-args ck r Ms h
+  ren-args ck r {suc n} (M ,, Ms) h =
+    bind≡ (ren ck r M h) λ v → ren-args ck r Ms h
 
   ren-evals : ∀ ck r {n ρ₁ ρ₂} (Ms : Args (replicate n ■)) {K}
     → Ren r ρ₁ ρ₂
     → evals ck ρ₁ Ms K ≡ evals ck ρ₂ (rename-args r Ms) K
   ren-evals ck r {zero} Nil h = refl
-  ren-evals ck r {suc n} (M ,, Ms) h = bind≡ (ren ck r M h) λ v → ren-evals ck r Ms h
+  ren-evals ck r {suc n} (M ,, Ms) h =
+    bind≡ (ren ck r M h) λ v → ren-evals ck r Ms h
 
   {- an atom whose variable is bound evaluates to a value, without calling -}
   atom-val : ∀ ck {ρ M}
@@ -242,7 +269,8 @@ module Gen (ds : List AST) where
   {- the variable bound by the last let of a chain, under us -}
   var-step : ∀ ck us {v ρ n} j {As : Args (replicate n ■)} {K}
     → length us ≡ j
-    → evals ck (us ++ v ∷ ρ) (` j ,, As) K ≡ evals ck (us ++ v ∷ ρ) As (λ vs → K (v ∷ vs))
+    → evals ck (us ++ v ∷ ρ) (` j ,, As) K
+      ≡ evals ck (us ++ v ∷ ρ) As (λ vs → K (v ∷ vs))
   var-step ck us {v} {ρ} _ refl rewrite ‼-++ us {v} {ρ} = refl
 
   {- The let chain: evaluating lets (binds (atomize Ms)) X evaluates the
@@ -257,15 +285,22 @@ module Gen (ds : List AST) where
   lets≈ ck ρ {zero} Nil b h = h [] refl
   lets≈ ck ρ {suc n} (M ,, Ms) {K} {X} (b , bs) h with atom? M
   ... | yes a with atom-val ck a b
-  ...   | v , e = trans (cong (_>>= λ v → evals ck ρ Ms (λ vs → K (v ∷ vs))) e) (lets≈ ck ρ Ms bs h')
+  ...   | v , e =
+    trans (cong (_>>= λ v → evals ck ρ Ms (λ vs → K (v ∷ vs))) e)
+    (lets≈ ck ρ Ms bs h')
     where
     Bd = atomize Ms
     h' : ∀ us
       → length us ≡ length (binds Bd)
-      → evals ck (us ++ ρ) (atoms Bd) (λ vs → K (v ∷ vs)) ≡ eval ds ck (us ++ ρ) X
+      → evals ck (us ++ ρ) (atoms Bd) (λ vs → K (v ∷ vs))
+        ≡ eval ds ck (us ++ ρ) X
     h' us eq =
       trans (cong (_>>= λ v → evals ck (us ++ ρ) (atoms Bd) (λ vs → K (v ∷ vs)))
-                  (sym (trans (sym (ren ck (length (binds Bd) +_) M (shift-ren us _ eq))) e)))
+                  (sym
+                      (trans
+                        (sym
+                          (ren ck (length (binds Bd) +_) M (shift-ren us _ eq)))
+                            e)))
             (h us eq)
   lets≈ ck ρ {suc n} (M ,, Ms) {K} {X} (b , bs) h | no _ =
     bind-cong (eval ds ck ρ M) λ v →
@@ -275,20 +310,25 @@ module Gen (ds : List AST) where
     Bd = atomize (rename-args suc Ms)
     h' : ∀ v us
       → length us ≡ length (binds Bd)
-      → evals ck (us ++ v ∷ ρ) (atoms Bd) (λ vs → K (v ∷ vs)) ≡ eval ds ck (us ++ v ∷ ρ) X
+      → evals ck (us ++ v ∷ ρ) (atoms Bd) (λ vs → K (v ∷ vs))
+        ≡ eval ds ck (us ++ v ∷ ρ) X
     h' v us eq =
       trans (sym (var-step ck us {v} {ρ} _ {atoms Bd} {K} eq))
-        (subst (λ ρ' → evals ck ρ' (` length (binds Bd) ,, atoms Bd) K ≡ eval ds ck ρ' X)
+        (subst
+            (λ ρ' →
+              evals ck ρ' (` length (binds Bd) ,, atoms Bd) K ≡ eval ds ck ρ' X)
                (++-assoc us [ v ] ρ)
                (h (us ∷ʳ v) (trans (length-snoc us v) (cong suc eq))))
 
   {- case on an atom, with the branches under j more lets -}
   case-hyp : ∀ ck ρ M N j us As
     → length us ≡ j
-    → evals ck (us ++ ρ) As (K1 (branch ds ck ρ M N)) ≡ eval ds ck (us ++ ρ) (case-on M N j As)
+    → evals ck (us ++ ρ) As (K1 (branch ds ck ρ M N))
+      ≡ eval ds ck (us ++ ρ) (case-on M N j As)
   case-hyp ck ρ M N j us (A ,, Nil) eq = bind-cong (eval ds ck (us ++ ρ) A) br
     where br : ∀ v → branch ds ck ρ M N v
-                   ≡ branch ds ck (us ++ ρ) (rename (ext (j +_)) M) (rename (ext (j +_)) N) v
+                   ≡ branch ds ck (us ++ ρ) (rename (ext (j +_)) M)
+                     (rename (ext (j +_)) N) v
           br (inl v) = ren ck (ext (j +_)) M (ren-ext v (shift-ren us j eq))
           br (inr v) = ren ck (ext (j +_)) N (ren-ext v (shift-ren us j eq))
           br (code k) = refl
@@ -296,7 +336,7 @@ module Gen (ds : List AST) where
           br (const B k) = refl
           br (tup vs) = refl
 
-{- The table -------------------------------------------------------------------}
+{- The table ------------------------------------------------------------------}
 
 {- definition k of map rco ds is rco of definition k of ds -}
 Def : AST → AST → Set
@@ -311,7 +351,7 @@ glob-pw w = ‼-pw (reverse⁺ (defs-pw w))
         defs-pw [] = []
         defs-pw (w ∷ ws) = (refl , w) ∷ defs-pw ws
 
-{- Clock for clock ----------------------------------------------------------------}
+{- Clock for clock ------------------------------------------------------------}
 
 module _ (ds : List AST) (wds : All (WS 2) ds) where
   private
@@ -335,12 +375,15 @@ module _ (ds : List AST) (wds : All (WS 2) ds) where
        → R.evals ck (us ++ ρ) As K' ≡ eval ds' ck (us ++ ρ) (f j As))
     → S.evals ck ρ Ms K ≡ eval ds' ck ρ (lift f (rco-args Ms))
   {- a construct that does not call -}
-  plain≈ : ∀ ck ρ {n} (Ms : Args (replicate n ■)) (op : Args (replicate n ■) → AST) {K}
+  plain≈ : ∀ ck ρ {n} (Ms : Args (replicate n ■))
+    (op : Args (replicate n ■) → AST) {K}
     → WS-args (length ρ) Ms
     → (∀ ρ' As → eval ds' ck ρ' (op As) ≡ R.evals ck ρ' As K)
     → S.evals ck ρ Ms K ≡ eval ds' ck ρ (lift (λ _ → op) (rco-args Ms))
   app≈ : ∀ ck vs → S.K-app ck vs ≡ R.K-app ck vs
-  call≈ : ∀ ck f w e → call ds ck (code? ds f) (w ∷ e ∷ []) ≡ call ds' ck (code? ds' f) (w ∷ e ∷ [])
+  call≈ : ∀ ck f w e
+    → call ds ck (code? ds f) (w ∷ e ∷ [])
+    ≡ call ds' ck (code? ds' f) (w ∷ e ∷ [])
   call-pw : ∀ ck {mN mN'}
     → M.Pointwise Def mN mN'
     → ∀ w e
@@ -350,7 +393,8 @@ module _ (ds : List AST) (wds : All (WS 2) ds) where
   run≈ ck ρ (fun-ref k ⦅ Nil ⦆) w = refl
   run≈ ck ρ (app ⦅ Ms ⦆) w =
     trans (S.c-app ck ρ Ms)
-      (op≈ ck ρ Ms (λ _ → app ⦅_⦆) w (app≈ ck) λ _ us As _ → sym (R.c-app ck (us ++ ρ) As))
+      (op≈ ck ρ Ms (λ _ → app ⦅_⦆) w (app≈ ck) λ _ us As _ →
+          sym (R.c-app ck (us ++ ρ) As))
   run≈ ck ρ (lit B k ⦅ Nil ⦆) w = refl
   run≈ ck ρ (pair-op ⦅ Ms ⦆) w =
     trans (S.c-pair ck ρ Ms) (plain≈ ck ρ Ms (pair-op ⦅_⦆) w (R.c-pair ck))
@@ -359,7 +403,8 @@ module _ (ds : List AST) (wds : All (WS 2) ds) where
   run≈ ck ρ (snd-op ⦅ Ms ⦆) w =
     trans (S.c-snd ck ρ Ms) (plain≈ ck ρ Ms (snd-op ⦅_⦆) w (R.c-snd ck))
   run≈ ck ρ (tuple n ⦅ Ms ⦆) w =
-    trans (S.c-tuple ck ρ Ms) (plain≈ ck ρ Ms (tuple n ⦅_⦆) w (λ ρ' → R.c-tuple ck ρ'))
+    trans (S.c-tuple ck ρ Ms)
+      (plain≈ ck ρ Ms (tuple n ⦅_⦆) w (λ ρ' → R.c-tuple ck ρ'))
   run≈ ck ρ (get i ⦅ Ms ⦆) w =
     trans (S.c-get i ck ρ Ms) (plain≈ ck ρ Ms (get i ⦅_⦆) w (R.c-get i ck))
   run≈ ck ρ (inl-op ⦅ Ms ⦆) w =
@@ -370,7 +415,8 @@ module _ (ds : List AST) (wds : All (WS 2) ds) where
     trans (bind≡ (run≈ ck ρ L wL) br≈)
       (R.lets≈ ck ρ (rco L ,, Nil) {K1 (branch ds' ck ρ (rco M) (rco N))}
         {case-on (rco M) (rco N) (length (binds Bc)) (atoms Bc)}
-        (rco-bnd L wL , tt) λ us eq → R.case-hyp ck ρ (rco M) (rco N) _ us (atoms Bc) eq)
+        (rco-bnd L wL , tt) λ us eq →
+          R.case-hyp ck ρ (rco M) (rco N) _ us (atoms Bc) eq)
     where Bc = atomize (rco L ,, Nil)
           br≈ : ∀ v → branch ds ck ρ M N v ≡ branch ds' ck ρ (rco M) (rco N) v
           br≈ (inl v) = run≈ ck (v ∷ ρ) M wM
@@ -389,9 +435,11 @@ module _ (ds : List AST) (wds : All (WS 2) ds) where
     bind≡ (run≈ ck ρ M wM) λ v → args≈ ck ρ Ms ws (λ vs → k (v ∷ vs))
 
   op≈ ck ρ Ms f w k h =
-    trans (args≈ ck ρ Ms w k) (R.lets≈ ck ρ (rco-args Ms) (rco-bnds Ms w) (λ us eq → h _ us _ eq))
+    trans (args≈ ck ρ Ms w k)
+      (R.lets≈ ck ρ (rco-args Ms) (rco-bnds Ms w) (λ us eq → h _ us _ eq))
 
-  plain≈ ck ρ Ms op w c = op≈ ck ρ Ms (λ _ → op) w (λ _ → refl) λ _ us As _ → sym (c (us ++ ρ) As)
+  plain≈ ck ρ Ms op w c =
+    op≈ ck ρ Ms (λ _ → op) w (λ _ → refl) λ _ us As _ → sym (c (us ++ ρ) As)
 
   app≈ ck (f ∷ e ∷ w ∷ []) = call≈ ck f w e
 
@@ -406,16 +454,18 @@ module _ (ds : List AST) (wds : All (WS 2) ds) where
   call-pw zero (M.just _) w e = refl
   call-pw (suc ck) {just N} (M.just (refl , wN)) w e = run≈ ck (w ∷ e ∷ []) N wN
 
-{- The end theorem: for every scoped Clos5 program --------------------------------}
+{- The end theorem: for every scoped Clos5 program ----------------------------}
 
 rco-correct : ∀ P
   → Scoped P
   → Equivalent (T.sem P) (T.sem (rco-program P))
 rco-correct (program ds M) (wds , w) = clocked-≡ λ ck → run≈ ds wds ck [] M w
 
-{- The whole compiler, into monadic normal form ------------------------------------}
+{- The whole compiler, into monadic normal form -------------------------------}
 
 compile-mon-correct : ∀ M
   → Closed M
   → Equivalent (ISWIM.sem M) (T.sem (compile-mon M))
-compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct (compile M) (compile-scoped M c))
+compile-mon-correct M c =
+  equiv-trans (compile-correct M c)
+  (rco-correct (compile M) (compile-scoped M c))

@@ -67,7 +67,8 @@ open import ISWIM.Compiler.RCO using (rco-program)
 open import ISWIM.Compiler.LiftLocals using (lift-program)
 open import ISWIM.Compiler.Explicate using (explicate)
 open import ISWIM.Compiler.Select using (select)
-open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp;
+  compile-cfg; compile-x86)
 
 open import ISWIM.Semantics.GraphErr.ISWIM using (⟦_⟧)
 open import ISWIM.Semantics.GraphErr.Typed.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵀ)
@@ -126,7 +127,8 @@ capture-correct = Capture.capture-correct
 prune-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ prune-program M ⟧₂ ρ₀
 prune-correct = Prune.prune-correct
 
-concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
+concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any)
+  → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = Concretize.concretize-correct
 
 {- split preserves and reflects an error, the constants a program
@@ -167,13 +169,16 @@ explicate-correct = Explicate.explicate-correct
 {- two meanings err together, hold the same constants, and hold a value
    together -}
 Same : 𝒫 Value → 𝒫 Value → Set
-Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((const c ∈ D) ⇔ (const c ∈ E))) × (val∈ D ⇔ val∈ E)
+Same D E =
+  ((ω ∈ D) ⇔ (ω ∈ E))
+  × (∀ {B} (c : base-rep B) → ((const c ∈ D) ⇔ (const c ∈ E)))
+  × (val∈ D ⇔ val∈ E)
 
 {- for every CFGᵀ program -}
 select-correct : ∀ (P : CFGᵀ.Program) → ⟦ P ⟧ᶜ ≃ ⟦ select P ⟧ₜ
 select-correct = Select.select-correct
 
-{- The whole compiler, for closed programs -------------------------------------}
+{- The whole compiler, for closed programs ------------------------------------}
 
 compile-correct : ∀ (M : ISWIM.AST)
   → Closed M
@@ -217,7 +222,8 @@ iswim-const-iff = AdequacyISWIM.const-iff
 
 iswim-converges-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → (Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω) ⇔ Converges (Terminates (ISWIMₘ.sem M))
+  → (Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω)
+    ⇔ Converges (Terminates (ISWIMₘ.sem M))
 iswim-converges-iff = AdequacyISWIM.converges-iff
 
 iswim-diverges-iff : ∀ (M : ISWIM.AST)
@@ -234,17 +240,20 @@ clos5-error-iff = Adequacy.clos5-error-iff
 clos5-const-iff : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
+  → (const k ∈ ⟦ compile M ⟧₅)
+    ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
 clos5-const-iff = Adequacy.clos5-const-iff
 
 clos5-converges-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → (Σ[ d ∈ Value ] d ∈ ⟦ compile M ⟧₅ × d ≢ ω) ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
+  → (Σ[ d ∈ Value ] d ∈ ⟦ compile M ⟧₅ × d ≢ ω)
+    ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
 clos5-converges-iff = Adequacy.clos5-converges-iff
 
 clos5-diverges-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → Diverges (Clos5ᵀₘ.sem (compile M)) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅))
+  → Diverges (Clos5ᵀₘ.sem (compile M))
+    ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅))
 clos5-diverges-iff = Adequacy.clos5-diverges-iff
 
 {- the X86ᵀ machine, for the programs compile-x86 produces -}
@@ -256,35 +265,41 @@ x86-error-iff = Adequacy.x86-error-iff
 x86-const-iff : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
+  → (const k ∈ ⟦ compile-x86 M ⟧ₜ)
+    ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
 x86-const-iff = Adequacy.x86-const-iff
 
 x86-converges-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₜ × d ≢ ω) ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
+  → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₜ × d ≢ ω)
+    ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
 x86-converges-iff = Adequacy.x86-converges-iff
 
 x86-diverges-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → Diverges (X86ᵀₘ.sem (compile-x86 M)) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile-x86 M ⟧ₜ))
+  → Diverges (X86ᵀₘ.sem (compile-x86 M))
+    ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile-x86 M ⟧ₜ))
 x86-diverges-iff = Adequacy.x86-diverges-iff
 
-{- The compiler, observed through the machines ---------------------------------}
+{- The compiler, observed through the machines --------------------------------}
 
 end-to-end-error : ∀ (M : ISWIM.AST)
   → Closed M
-  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) o-error
+  → Terminates (ISWIMₘ.sem M) o-error
+    ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) o-error
 end-to-end-error M c = Agree.error (Adequacy.end-to-end M c)
 
 end-to-end-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
 end-to-end-const M c = Agree.const (Adequacy.end-to-end M c)
 
 end-to-end-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
 end-to-end-converges M c = Agree.converges (Adequacy.end-to-end M c)
 
 end-to-end-diverges : ∀ (M : ISWIM.AST)
@@ -294,18 +309,21 @@ end-to-end-diverges M c = Agree.diverges (Adequacy.end-to-end M c)
 
 end-to-end-x86-error : ∀ (M : ISWIM.AST)
   → Closed M
-  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) o-error
+  → Terminates (ISWIMₘ.sem M) o-error
+    ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) o-error
 end-to-end-x86-error M c = Agree.error (Adequacy.end-to-end-x86 M c)
 
 end-to-end-x86-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
 end-to-end-x86-const M c = Agree.const (Adequacy.end-to-end-x86 M c)
 
 end-to-end-x86-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
 end-to-end-x86-converges M c = Agree.converges (Adequacy.end-to-end-x86 M c)
 
 end-to-end-x86-diverges : ∀ (M : ISWIM.AST)
@@ -316,18 +334,21 @@ end-to-end-x86-diverges M c = Agree.diverges (Adequacy.end-to-end-x86 M c)
 {- simplify, observed through the ISWIM machine -}
 simplify-machine-error : ∀ (M : ISWIM.AST)
   → Closed M
-  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (ISWIMₘ.sem (simplify M)) o-error
+  → Terminates (ISWIMₘ.sem M) o-error
+    ⇔ Terminates (ISWIMₘ.sem (simplify M)) o-error
 simplify-machine-error = SimplifyMachine.simplify-error
 
 simplify-machine-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (ISWIMₘ.sem (simplify M)) (o-const B k)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (ISWIMₘ.sem (simplify M)) (o-const B k)
 simplify-machine-const = SimplifyMachine.simplify-const
 
 simplify-machine-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (ISWIMₘ.sem (simplify M)))
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (ISWIMₘ.sem (simplify M)))
 simplify-machine-converges = SimplifyMachine.simplify-converges
 
 simplify-machine-diverges : ∀ (M : ISWIM.AST)

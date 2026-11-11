@@ -21,7 +21,8 @@ open import proof.Semantics.Interp.Clock
 open import Framework.Lookup using (_!_)
 import ISWIM.Semantics.Interp.Typed.Clos2 as S
 import ISWIM.Semantics.Interp.Typed.Clos3 as T
-open import ISWIM.proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ n → C3.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any}
+open import ISWIM.proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ n →
+  C3.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any}
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List.Relation.Unary.All using ([]; _∷_)
@@ -69,25 +70,32 @@ call≈ : ∀ ck {f g v w}
   → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
 run≈ ck (` x) {φ} E = ref≈ ck (φ x) (E x)
-run≈ ck (clos N Ms) E = bind-rel (runs≈ ck Ms E) λ vs → ret (pack≈ vs (same refl))
-run≈ ck (app L M) E = bind-rel (run≈ ck L E) λ f → bind-rel (run≈ ck M E) λ w → call≈ ck f w
+run≈ ck (clos N Ms) E =
+  bind-rel (runs≈ ck Ms E) λ vs → ret (pack≈ vs (same refl))
+run≈ ck (app L M) E =
+  bind-rel (run≈ ck L E) λ f → bind-rel (run≈ ck M E) λ w → call≈ ck f w
 run≈ ck (lit B c) E = ret const≈
 run≈ ck (tuple Ms) E = bind-rel (runs≈ ck Ms E) λ vs → ret (tup≈ vs)
 run≈ ck (get i M) E = bind-rel (run≈ ck M E) λ v → ret (nth≈ i v)
 run≈ ck (inl M) E = bind-rel (run≈ ck M E) λ v → ret (inl≈ v)
 run≈ ck (inr M) E = bind-rel (run≈ ck M E) λ v → ret (inr≈ v)
 run≈ ck (case L M N) E =
-  bind-rel (run≈ ck L E) λ u → either≈ u (λ v → run≈ ck M (env-ext v E)) (λ v → run≈ ck N (env-ext v E))
-run≈ ck (prim p L M) E = bind-rel (run≈ ck L E) λ v → bind-rel (run≈ ck M E) λ w → ret (δ≈ p v w)
+  bind-rel (run≈ ck L E) λ u →
+    either≈ u (λ v → run≈ ck M (env-ext v E)) (λ v → run≈ ck N (env-ext v E))
+run≈ ck (prim p L M) E =
+  bind-rel (run≈ ck L E) λ v → bind-rel (run≈ ck M E) λ w → ret (δ≈ p v w)
 run≈ ck (let′ M N) E = bind-rel (run≈ ck M E) λ v → run≈ ck N (env-ext v E)
 run≈ ck (inject G M) E = bind-rel (run≈ ck M E) λ v → ret (dyn≈ v)
 run≈ ck (project t M) E = bind-rel (run≈ ck M E) (project≈ t)
 
 runs≈ ck [] E = ret []
-runs≈ ck (M ∷ Ms) E = bind-rel (run≈ ck M E) λ v → bind-rel (runs≈ ck Ms E) λ vs → ret (v ∷ vs)
+runs≈ ck (M ∷ Ms) E =
+  bind-rel (run≈ ck M E) λ v → bind-rel (runs≈ ck Ms E) λ vs → ret (v ∷ vs)
 
 call≈ zero f w = timeout
-call≈ (suc ck) (pack≈ {c = N} rs (same refl)) w = run≈ ck N λ { zero → w ; (suc i) → lookup rs i }
+call≈ (suc ck) (pack≈ {c = N} rs (same refl)) w =
+  run≈ ck N λ { zero → w ; (suc i) → lookup rs i }
 
-concretize-correct : ∀ (M : Tm 0 Any) → Equivalent (S.sem M) (T.sem (concretize-program M))
+concretize-correct : ∀ (M : Tm 0 Any)
+  → Equivalent (S.sem M) (T.sem (concretize-program M))
 concretize-correct M = clocked _≈_ obs≈ λ ck → run≈ ck M λ ()

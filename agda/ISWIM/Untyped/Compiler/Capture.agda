@@ -24,7 +24,8 @@ module ISWIM.Untyped.Compiler.Capture where
   open import ISWIM.Untyped.Compiler.Prune using (bind-n-ast)
 
   {- one more than the largest variable a term uses, or 0 if it uses none -}
-  open import Framework.Syntax.Uses Source.Op Source.sig using (bound; bound-arg; bound-args)
+  open import Framework.Syntax.Uses Source.Op Source.sig using (bound;
+    bound-arg; bound-args)
 
   {- the free variables of a closure: ` (n - 1) , ... , ` 0 -}
   fv-vars : ∀ n → Args' (replicate n ■)
@@ -50,7 +51,8 @@ module ISWIM.Untyped.Compiler.Capture where
   capture (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
     case-op ⦅ capture L ,, ⟩ capture M ,, ⟩ capture N ,, Nil ⦆'
   capture (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ⦅ capture L ,, capture M ,, Nil ⦆'
-  capture (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ capture M ,, ⟩ capture N ,, Nil ⦆'
+  capture (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ capture M ,, ⟩
+    capture N ,, Nil ⦆'
 
   enc-args {zero} Nil = Nil
   enc-args {suc n} (M ,, args) = capture M ,, enc-args args

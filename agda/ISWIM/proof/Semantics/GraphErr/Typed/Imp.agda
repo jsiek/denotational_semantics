@@ -24,9 +24,12 @@ letᵗ-≃ : ∀ {D D' F F'}
   → D ≃ D'
   → BodyEq F F'
   → letᵗ D F ≃ letᵗ D' F'
-letᵗ-≃ {D} {D'} {F} {F'} D≃ F≃ = ≃-trans (≃-sym (letᵐ-unfold {D} {F})) (≃-trans (letᵐ-≃ D≃ F≃) (letᵐ-unfold {D'} {F'}))
+letᵗ-≃ {D} {D'} {F} {F'} D≃ F≃ =
+  ≃-trans (≃-sym (letᵐ-unfold {D} {F}))
+  (≃-trans (letᵐ-≃ D≃ F≃) (letᵐ-unfold {D'} {F'}))
 
-letᵗ-≫= : ∀ {D G} → Mono₁ G → Con D → (Conv D → Finitary G ⌊ D ⌋) → letᵗ D G ≃ (D ≫= G)
+letᵗ-≫= : ∀ {D G} → Mono₁ G → Con D → (Conv D → Finitary G ⌊ D ⌋)
+  → letᵗ D G ≃ (D ≫= G)
 letᵗ-≫= {D} {G} m c f = ≃-trans (≃-sym (letᵐ-unfold {D} {G})) (letᵐ-≫= m c f)
 
 case-lawᵗ : ∀ k
@@ -40,5 +43,10 @@ case-lawᵗ nothing _ cA m₁ m₂ = ≃-refl
 case-lawᵗ (just G) ⟨ mG , fG ⟩ {A} {F₁} {F₂} cA m₁ m₂ =
   ≃-trans (≫=-assoc {A} {λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩} mG)
     (≫=-cong {A} {λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩ ≫= G}
-      {λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ (λ Y → F₁ Y ≫= G) , ⟨ (λ Y → F₂ Y ≫= G) , ptt ⟩ ⟩ ⟩}
-      λ _ → 𝒞-≫= {⌊ A ⌋ ⇂ ValPayload} {F₁} {F₂} {G} (Con-⊆ cA (λ d d∈ → proj₁ (proj₁ d∈))) m₁ m₂ mG fG)
+      {λ X →
+          𝒞
+          ⟨ X ⇂ ValPayload
+            , ⟨ (λ Y → F₁ Y ≫= G) , ⟨ (λ Y → F₂ Y ≫= G) , ptt ⟩ ⟩ ⟩}
+      λ _ →
+        𝒞-≫= {⌊ A ⌋ ⇂ ValPayload} {F₁} {F₂} {G}
+        (Con-⊆ cA (λ d d∈ → proj₁ (proj₁ d∈))) m₁ m₂ mG fG)

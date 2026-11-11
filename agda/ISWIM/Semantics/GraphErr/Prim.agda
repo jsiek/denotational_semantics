@@ -20,4 +20,5 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 primᵐ : Prim → DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 primᵐ p ⟨ D , ⟨ E , _ ⟩ ⟩ =
-  D ≫= λ X → E ≫= λ Y → checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩))
+  D ≫= λ X → E ≫= λ Y →
+    checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩))

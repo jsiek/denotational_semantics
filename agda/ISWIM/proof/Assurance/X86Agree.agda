@@ -43,9 +43,10 @@ open import Data.Nat.Properties using (<⇒≢)
 open import Data.Product using (Σ-syntax; _×_; _,_)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Function using (_∘_)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym;
+  trans; cong)
 
-{- Erasure ---------------------------------------------------------------------}
+{- Erasure --------------------------------------------------------------------}
 
 ⌊_⌋ : ∀ {Σ A} → V.Val Σ A → X.Val
 ⌊_⌋* : ∀ {Σ n} → Vec (V.Val Σ Any) n → List X.Val
@@ -60,7 +61,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym
 ⌊ v ∷ vs ⌋* = ⌊ v ⌋ ∷ ⌊ vs ⌋*
 
 obs-⌊⌋ : ∀ {Σ A} (v : V.Val Σ A) → X.obs ⌊ v ⌋ ≡ V.obs v
-obs-⌊⌋* : ∀ {Σ n} (vs : Vec (V.Val Σ Any) n) → XV.obs-list ⌊ vs ⌋* ≡ V.obs-vec vs
+obs-⌊⌋* : ∀ {Σ n} (vs : Vec (V.Val Σ Any) n)
+  → XV.obs-list ⌊ vs ⌋* ≡ V.obs-vec vs
 obs-⌊⌋ (V.code f) = refl
 obs-⌊⌋ (V.pack c e) = refl
 obs-⌊⌋ (V.const c) = refl
@@ -84,8 +86,10 @@ has-len [] zero e = refl
 has-len (v ∷ vs) (suc n) e = has-len vs n (cong N.pred e)
 
 {- component i of a tuple, in X86 -}
-proj-ok : ∀ {Σ n} (vs : Vec (V.Val Σ Any) n) (i : Fin n) → proj i ⌊ vs ⌋* ≡ just ⌊ lookup vs i ⌋
-proj-ok {n = suc n} (v ∷ vs) zero = cong (λ b → if b then just ⌊ v ⌋ else nothing) (has-len _ n (len-⌊⌋ vs))
+proj-ok : ∀ {Σ n} (vs : Vec (V.Val Σ Any) n) (i : Fin n)
+  → proj i ⌊ vs ⌋* ≡ just ⌊ lookup vs i ⌋
+proj-ok {n = suc n} (v ∷ vs) zero =
+  cong (λ b → if b then just ⌊ v ⌋ else nothing) (has-len _ n (len-⌊⌋ vs))
 proj-ok (v ∷ vs) (suc i) = proj-ok vs i
 
 has-len⁻ : ∀ {A : Set} (vs : List A) n
@@ -106,7 +110,7 @@ proj-bad (v ∷ vs) {suc k} zero ne with has-length k vs in e
 ... | false = refl
 proj-bad (v ∷ vs) (suc i) ne = proj-bad vs i (ne ∘ cong suc)
 
-{- Frames ----------------------------------------------------------------------}
+{- Frames ---------------------------------------------------------------------}
 
 module _ {Σ : List ℕ} where
 
@@ -125,10 +129,15 @@ module _ {Σ : List ℕ} where
 
 upd : ∀ (φ : X.Frame) k w
   → k < length φ
-  → Σ[ φ' ∈ X.Frame ] φ X.[ k ]≔ w ≡ just φ' × φ' ‼ k ≡ just w × (∀ j → j ≢ k → φ' ‼ j ≡ φ ‼ j) × length φ' ≡ length φ
-upd (u ∷ φ) zero w _ = w ∷ φ , refl , refl , (λ { zero ne → ⊥-elim (ne refl) ; (suc j) _ → refl }) , refl
+  → Σ[ φ' ∈ X.Frame ] φ X.[ k ]≔ w ≡ just φ' × φ' ‼ k
+    ≡ just w × (∀ j → j ≢ k → φ' ‼ j ≡ φ ‼ j) × length φ' ≡ length φ
+upd (u ∷ φ) zero w _ =
+  w ∷ φ , refl , refl
+  , (λ { zero ne → ⊥-elim (ne refl) ; (suc j) _ → refl }) , refl
 upd (u ∷ φ) (suc k) w (s≤s lt) with upd φ k w lt
-... | φ' , e , r , o , l = u ∷ φ' , cong (mmap (u ∷_)) e , r , (λ { zero _ → refl ; (suc j) ne → o j (ne ∘ cong suc) }) , cong suc l
+... | φ' , e , r , o , l =
+  u ∷ φ' , cong (mmap (u ∷_)) e , r
+  , (λ { zero _ → refl ; (suc j) ne → o j (ne ∘ cong suc) }) , cong suc l
 
 {- slot |Δ'| := v, popping the slots from |Δ'| on -}
 write : ∀ {Σ Δ Δ' A} {φ : G.Frame Σ Δ} {φₓ}
@@ -136,7 +145,8 @@ write : ∀ {Σ Δ Δ' A} {φ : G.Frame Σ Δ} {φₓ}
   → (p : Δ' ⊑ Δ)
   → length Δ' < length φₓ
   → (v : V.Val Σ A)
-  → Σ[ φₓ' ∈ X.Frame ] φₓ X.[ length Δ' ]≔ ⌊ v ⌋ ≡ just φₓ' × Agree (v ∷ pop p φ) φₓ' × length φₓ' ≡ length φₓ
+  → Σ[ φₓ' ∈ X.Frame ] φₓ X.[ length Δ' ]≔ ⌊ v ⌋
+    ≡ just φₓ' × Agree (v ∷ pop p φ) φₓ' × length φₓ' ≡ length φₓ
 write {φ = φ} {φₓ} ag p lt v with upd φₓ _ ⌊ v ⌋ lt
 ... | φₓ' , e , r , o , l = φₓ' , e , agree ag' , l
   where

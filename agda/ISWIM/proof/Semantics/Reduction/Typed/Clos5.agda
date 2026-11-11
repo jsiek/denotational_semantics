@@ -24,7 +24,8 @@ open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All)
 open import Data.Nat using (ℕ)
 open import Data.Vec using (Vec; []; _∷_)
-open import Data.Vec.Relation.Unary.All using () renaming (All to Allᵥ; [] to []ᵥ; _∷_ to _∷ᵥ_)
+open import Data.Vec.Relation.Unary.All using () renaming (All to Allᵥ; [] to
+  []ᵥ; _∷_ to _∷ᵥ_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong₂)
 
 module _ {Σ : List ℕ} where
@@ -33,7 +34,8 @@ module _ {Σ : List ℕ} where
 
   data Value {Γ} : ∀ {A} → Tm Σ Γ A → Set where
     fun-ref : ∀ {n} {f : Σ ∋ n} → Value (fun-ref f)
-    pack : ∀ {n} {L : Tm Σ Γ (code n)} {M} → Value L → Value M → Value (pack L M)
+    pack : ∀ {n} {L : Tm Σ Γ (code n)} {M} → Value L → Value M
+      → Value (pack L M)
     lit : ∀ {B c} → Value (lit B c)
     tuple : ∀ {n} {Vs : Vec (Tm Σ Γ Any) n} → Allᵥ Value Vs → Value (tuple Vs)
     inl : ∀ {V} → Value V → Value (inl V)
@@ -63,8 +65,10 @@ module _ {Σ : List ℕ} where
 
   module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
     (R : ∀ {Γ Δ Θ} → Sub 𝒦₁ Γ Δ → Sub 𝒦₂ Δ Θ → Sub 𝒦₃ Γ Θ → Set)
-    (R-exts : ∀ {Γ Δ Θ B} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → R (exts 𝒦₁ {B = B} σ₁) (exts 𝒦₂ σ₂) (exts 𝒦₃ σ₃))
-    (R-var : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → ∀ {A} (x : Γ ∋ A)
+    (R-exts : ∀ {Γ Δ Θ B} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
+        → R σ₁ σ₂ σ₃ → R (exts 𝒦₁ {B = B} σ₁) (exts 𝒦₂ σ₂) (exts 𝒦₃ σ₃))
+    (R-var : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
+        → R σ₁ σ₂ σ₃ → ∀ {A} (x : Γ ∋ A)
       → trav 𝒦₂ σ₂ (Kit.tm 𝒦₁ (σ₁ x)) ≡ Kit.tm 𝒦₃ (σ₃ x)) where
 
     fuse : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
@@ -84,7 +88,8 @@ module _ {Σ : List ℕ} where
     fuse r (get i M) = cong (get i) (fuse r M)
     fuse r (inl M) = cong inl (fuse r M)
     fuse r (inr M) = cong inr (fuse r M)
-    fuse r (case L M N) rewrite fuse r L | fuse (R-exts r) M | fuse (R-exts r) N = refl
+    fuse r (case L M N) rewrite fuse r L | fuse (R-exts r) M
+      | fuse (R-exts r) N = refl
     fuse r (prim p L M) = cong₂ (prim p) (fuse r L) (fuse r M)
     fuse r (let′ M N) = cong₂ let′ (fuse r M) (fuse (R-exts r) N)
     fuse r (inject G M) = cong (inject G) (fuse r M)
@@ -106,8 +111,10 @@ module _ {Σ : List ℕ} where
   sub-id h (get i M) = cong (get i) (sub-id h M)
   sub-id h (inl M) = cong inl (sub-id h M)
   sub-id h (inr M) = cong inr (sub-id h M)
-  sub-id h (case L M N) = case≡ (sub-id h L) (sub-id (sub-id-exts h) M) (sub-id (sub-id-exts h) N)
-    where case≡ : ∀ {L L' M M' N N'} → L ≡ L' → M ≡ M' → N ≡ N' → case {Σ} {_} L M N ≡ case L' M' N'
+  sub-id h (case L M N) =
+    case≡ (sub-id h L) (sub-id (sub-id-exts h) M) (sub-id (sub-id-exts h) N)
+    where case≡ : ∀ {L L' M M' N N'} → L ≡ L' → M ≡ M' → N ≡ N'
+           → case {Σ} {_} L M N ≡ case L' M' N'
           case≡ refl refl refl = refl
   sub-id h (prim p L M) = cong₂ (prim p) (sub-id h L) (sub-id h M)
   sub-id h (let′ M N) = cong₂ let′ (sub-id h M) (sub-id (sub-id-exts h) N)

@@ -34,7 +34,8 @@ open import Data.List using (List; []; _∷_; length)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; _,_)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong)
 
 {- the runs of the ISWIM machine -}
 open Runs step public
@@ -93,7 +94,7 @@ shape-const {o-error} ()
   → Σ[ n ∈ ℤ ] Σ[ m ∈ ℤ ] o₁ ≡ o-const Int n × o₂ ≡ o-const Int m × r ≡ δ p n m
 δ?-inv p (o-const Int n) (o-const Int m) refl = n , m , refl , refl , refl
 
-{- Lengths ----------------------------------------------------------------------}
+{- Lengths --------------------------------------------------------------------}
 
 has-length→length : ∀ {A : Set} n (xs : List A)
   → has-length n xs ≡ true

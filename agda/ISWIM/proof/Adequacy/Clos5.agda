@@ -21,11 +21,13 @@ module ISWIM.proof.Adequacy.Clos5 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value) renaming (const to
+  dconst)
 open import ISWIM.Language.Typed.Clos5 using (Program; program)
 open import ISWIM.Semantics.Graph.Typed.Clos5 using (⟦_⟧ₚ)
 open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges; diverges-not-terminates; terminates-det)
+open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges;
+  diverges-not-terminates; terminates-det)
 open import ISWIM.Semantics.CEK.Typed.Clos5 using (sem; ret; halt; obs)
 open import ISWIM.proof.Compiler.HoistOlder using (OlderDefs)
 import ISWIM.proof.Adequacy.Clos5Common as C
@@ -40,7 +42,8 @@ adequacy : ∀ P → ∀ {d}
   → d ∈ ⟦ P ⟧ₚ
   → Σ[ v ∈ _ ] Terminates (sem P) (obs v) × LR.𝕍 (Program.defs P) d v
 adequacy (program ds M) d∈ with LR.adequate ds M (LR.tab-ds ds) (λ ()) d∈
-... | ⟨ v , ⟨ e , r ⟩ ⟩ = ⟨ v , ⟨ ⟨ ret v halt , ⟨ C.↠→star ds (e halt) , refl ⟩ ⟩ , r ⟩ ⟩
+... | ⟨ v , ⟨ e , r ⟩ ⟩ =
+  ⟨ v , ⟨ ⟨ ret v halt , ⟨ C.↠→star ds (e halt) , refl ⟩ ⟩ , r ⟩ ⟩
 
 const-iff : ∀ P
   → OlderDefs (Program.defs P)

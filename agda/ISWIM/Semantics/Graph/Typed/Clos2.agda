@@ -1,8 +1,8 @@
 {-
 
   The semantics of Clos2ᵀ (ISWIM/Language/Typed/Clos2.agda) in the graph model,
-  as that of Clos2 (ISWIM/Untyped/Semantics/Graph/Clos2Iswim.agda): a closure is strict
-  in its free variables (guard-n) and is the function of the argument
+  as that of Clos2 (ISWIM/Untyped/Semantics/Graph/Clos2Iswim.agda): a closure is
+  strict in its free variables (guard-n) and is the function of the argument
   whose body sees the argument and the meanings of the free variables;
   otherwise as ISWIMᵀ (ISWIM/Semantics/Graph/Typed/ISWIM.agda).
 
@@ -31,17 +31,20 @@ fv-env (suc n) ⟨ X , Xs ⟩ zero = X
 fv-env (suc n) ⟨ X , Xs ⟩ (suc i) = fv-env n Xs i
 
 ⟦_⟧ : ∀ {k A} → Tm k A → Env Value → 𝒫 Value
-⟦_⟧s : ∀ {k n} → Vec (Tm k Any) n → Env Value → Results (𝒫 Value) (replicate n ■)
+⟦_⟧s : ∀ {k n} → Vec (Tm k Any) n → Env Value
+  → Results (𝒫 Value) (replicate n ■)
 
 ⟦ ` x ⟧ ρ = ρ (toℕ x)
-⟦ clos {n = n} N Ms ⟧ ρ = guard-n n (⟦ Ms ⟧s ρ) (Λ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env n (⟦ Ms ⟧s ρ))) , ptt ⟩)
+⟦ clos {n = n} N Ms ⟧ ρ =
+  guard-n n (⟦ Ms ⟧s ρ) (Λ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env n (⟦ Ms ⟧s ρ))) , ptt ⟩)
 ⟦ app L M ⟧ ρ = ⋆ ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ lit B c ⟧ ρ = ℬ B c ptt
 ⟦ tuple {n = n} Ms ⟧ ρ = 𝒯 n (⟦ Ms ⟧s ρ)
 ⟦ get i M ⟧ ρ = proj i ⟨ ⟦ M ⟧ ρ , ptt ⟩
 ⟦ inl M ⟧ ρ = inlD ⟨ ⟦ M ⟧ ρ , ptt ⟩
 ⟦ inr M ⟧ ρ = inrD ⟨ ⟦ M ⟧ ρ , ptt ⟩
-⟦ case L M N ⟧ ρ = 𝒞 ⟨ ⟦ L ⟧ ρ , ⟨ (λ X → ⟦ M ⟧ (X • ρ)) , ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩ ⟩ ⟩
+⟦ case L M N ⟧ ρ =
+  𝒞 ⟨ ⟦ L ⟧ ρ , ⟨ (λ X → ⟦ M ⟧ (X • ρ)) , ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩ ⟩ ⟩
 ⟦ prim p L M ⟧ ρ = primD p ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ let′ M N ⟧ ρ = ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ inject G M ⟧ ρ = ⟦ M ⟧ ρ

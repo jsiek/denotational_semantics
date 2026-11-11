@@ -15,8 +15,10 @@ open import ISWIM.Language.Typed.Clos3 using (Tm)
 open import ISWIM.Compiler.Split using (split-program)
 open import ISWIM.Semantics.Graph.Typed.Clos3 using (⟦_⟧)
 open import ISWIM.Semantics.Graph.Typed.Clos4 renaming (⟦_⟧ to ⟦_⟧₄)
-open import ISWIM.proof.Correctness.Graph.SplitPreserve using (preserve-const; preserve-nonempty)
-open import ISWIM.proof.Correctness.Graph.SplitReflect using (reflect-const; reflect-nonempty)
+open import ISWIM.proof.Correctness.Graph.SplitPreserve using (preserve-const;
+  preserve-nonempty)
+open import ISWIM.proof.Correctness.Graph.SplitReflect using (reflect-const;
+  reflect-nonempty)
 
 open import Data.List using ([])
 open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩)

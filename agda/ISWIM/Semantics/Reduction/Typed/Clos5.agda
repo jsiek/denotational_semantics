@@ -15,8 +15,10 @@ import Language.Prim as P
 open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import ISWIM.Language.Typed.Clos5 hiding (wk; wks)
 open import Framework.Lookup using (_!_)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
-open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl;
+  o-inr; o-error)
+open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to;
+  step-in; reduction)
 open import Framework.ReductionVec Obs o-error using (red-∷)
 
 open import Data.Bool using (if_then_else_)
@@ -49,7 +51,8 @@ module _ {Σ : List ℕ} where
     trav σ (get i M) = get i (trav σ M)
     trav σ (inl M) = inl (trav σ M)
     trav σ (inr M) = inr (trav σ M)
-    trav σ (case L M N) = case (trav σ L) (trav (exts 𝒦 σ) M) (trav (exts 𝒦 σ) N)
+    trav σ (case L M N) =
+      case (trav σ L) (trav (exts 𝒦 σ) M) (trav (exts 𝒦 σ) N)
     trav σ (prim p L M) = prim p (trav σ L) (trav σ M)
     trav σ (let′ M N) = let′ (trav σ M) (trav (exts 𝒦 σ) N)
     trav σ (inject G M) = inject G (trav σ M)
@@ -90,7 +93,8 @@ module _ {Σ : List ℕ} where
   get? i (tuple Vs) refl = to (lookup Vs i)
   get? i _ _ = error
 
-  case? : ∀ {A} → Tm Σ [] A → Tm Σ (Any ∷ []) Any → Tm Σ (Any ∷ []) Any → Red (Tm Σ [] Any)
+  case? : ∀ {A} → Tm Σ [] A → Tm Σ (Any ∷ []) Any → Tm Σ (Any ∷ []) Any
+    → Red (Tm Σ [] Any)
   case? (inl V) M N = to (M [ V ])
   case? (inr V) M N = to (N [ V ])
   case? _ M N = error
@@ -110,18 +114,24 @@ module _ {Σ : List ℕ} where
 
   {- the reduction for a program with the definitions ds -}
   red : All (Code Σ) Σ → ∀ {A} → Tm Σ [] A → Red (Tm Σ [] A)
-  reds : All (Code Σ) Σ → ∀ {n} → Vec (Tm Σ [] Any) n → Red (Vec (Tm Σ [] Any) n)
+  reds : All (Code Σ) Σ → ∀ {n} → Vec (Tm Σ [] Any) n
+    → Red (Vec (Tm Σ [] Any) n)
   red ds (` ())
   red ds (fun-ref f) = val
-  red ds (pack L M) = step-in (λ L' → pack L' M) (red ds L) (step-in (pack L) (red ds M) val)
-  red ds (callc L M) = step-in (λ L' → callc L' M) (red ds L) (step-in (callc L) (red ds M) (call ds L M))
+  red ds (pack L M) =
+    step-in (λ L' → pack L' M) (red ds L) (step-in (pack L) (red ds M) val)
+  red ds (callc L M) =
+    step-in (λ L' → callc L' M) (red ds L)
+    (step-in (callc L) (red ds M) (call ds L M))
   red ds (lit B c) = val
   red ds (tuple Ms) = step-in tuple (reds ds Ms) val
   red ds (get i M) = step-in (get i) (red ds M) (get? i M refl)
   red ds (inl M) = step-in inl (red ds M) val
   red ds (inr M) = step-in inr (red ds M) val
   red ds (case L M N) = step-in (λ L' → case L' M N) (red ds L) (case? L M N)
-  red ds (prim p L M) = step-in (λ L' → prim p L' M) (red ds L) (step-in (prim p L) (red ds M) (prim? p L M))
+  red ds (prim p L M) =
+    step-in (λ L' → prim p L' M) (red ds L)
+    (step-in (prim p L) (red ds M) (prim? p L M))
   red ds (let′ M N) = step-in (λ M' → let′ M' N) (red ds M) (to (N [ M ]))
   red ds (inject G M) = step-in (inject G) (red ds M) val
   red ds (project t M) = step-in (project t) (red ds M) (project? t M)

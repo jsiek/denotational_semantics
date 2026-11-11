@@ -1,12 +1,12 @@
 {-
 
   The semantics of CFGᵀ (ISWIM/Language/Typed/CFG.agda) in the graph model
-  with errors, as that of CFG (ISWIM/Untyped/Semantics/GraphErr/CFG.agda). The frame
-  is the environment, as in Impᵀ (ISWIM/Semantics/GraphErr/Typed/Imp.agda);
-  a tail that pops the slots of a finished scope (p : Δ' ⊑ Δ) sees
-  the environment without them (drop). A label means the block it
-  indexes, under the meanings of the older blocks (blocks), so a jump
-  needs no check.
+  with errors, as that of CFG (ISWIM/Untyped/Semantics/GraphErr/CFG.agda). The
+  frame is the environment, as in Impᵀ
+  (ISWIM/Semantics/GraphErr/Typed/Imp.agda); a tail that pops the slots of a
+  finished scope (p : Δ' ⊑ Δ) sees the environment without them (drop). A label
+  means the block it indexes, under the meanings of the older blocks (blocks),
+  so a jump needs no check.
 
 -}
 
@@ -15,7 +15,8 @@ module ISWIM.Semantics.GraphErr.Typed.CFG where
 open import Framework.GraphModel.ErrorPrelude
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import ISWIM.Semantics.GraphErr.Typed.Ops
-open import ISWIM.Semantics.GraphErr.Typed.Imp using (Table; tbl; 𝒜; 𝒮; letᵗ) public
+open import ISWIM.Semantics.GraphErr.Typed.Imp using (Table; tbl; 𝒜; 𝒮; letᵗ)
+  public
 open import ISWIM.Language.Typed.Type hiding (_≟_)
 open import ISWIM.Language.Typed.CFG
 
@@ -37,7 +38,8 @@ drop (there⊑ p) ρ = drop p (λ i → ρ (suc i))
 ⟦ return s ⟧ᵗ T B ρ = 𝒮 s T ρ
 ⟦ seq p s t ⟧ᵗ T B ρ = letᵗ (𝒮 s T ρ) λ X → ⟦ t ⟧ᵗ T B (X • drop p ρ)
 ⟦ goto l ⟧ᵗ T B ρ = B l ρ
-⟦ case a p l₁ l₂ ⟧ᵗ T B ρ = caseᵗ (𝒜 a T ρ) (λ X → B l₁ (X • drop p ρ)) (λ X → B l₂ (X • drop p ρ))
+⟦ case a p l₁ l₂ ⟧ᵗ T B ρ =
+  caseᵗ (𝒜 a T ρ) (λ X → B l₁ (X • drop p ρ)) (λ X → B l₂ (X • drop p ρ))
 
 {- each block, with the meanings of the older ones -}
 blocks : ∀ {Σ Bs} → Blocks Σ Bs → Table → BEnv Bs

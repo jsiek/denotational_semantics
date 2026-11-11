@@ -28,8 +28,9 @@ open import ISWIM.proof.Semantics.GraphErr.Prim
 open import ISWIM.Language.ISWIM
 open import proof.Framework.Syntax.Uses Op sig
 open import ISWIM.proof.Semantics.GraphErr.ISWIM
-open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos2 as S2 using (apply-n; push; apply-push; push-plus; clos-β) renaming
-  (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂; ⟦⟧-monotone-arg to ⟦⟧-monotone-arg₂)
+open import ISWIM.Untyped.proof.Semantics.GraphErr.Clos2 as S2 using (apply-n;
+  push; apply-push; push-plus; clos-β) renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂;
+  ⟦_⟧₊ to ⟦_⟧₊₂; ⟦⟧-monotone-arg to ⟦⟧-monotone-arg₂)
 import ISWIM.Untyped.Language.Clos2 as L2
 open import ISWIM.Untyped.Compiler.Prune using (bind-n-ast)
 open import ISWIM.Untyped.Compiler.Capture
@@ -49,10 +50,11 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Data.Unit using (tt; ⊤)
 open import Level using (lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym;
+  trans; cong; subst)
 open import Relation.Nullary using (yes; no)
 
-{- Binding the free variables one at a time ------------------------------------}
+{- Binding the free variables one at a time -----------------------------------}
 
 init₀ : Env Value
 init₀ = λ _ → ⌈ ω ⌉
@@ -68,7 +70,9 @@ push-vars : ∀ n (ρ σ : Env Value) k
 push-vars (suc n) ρ σ k k<sn with k <? n
 ... | yes k<n = push-vars n ρ (ρ n • σ) k k<n
 ... | no ¬k<n =
-  trans (cong (push (⟦ fv-vars n ⟧₊₂ ρ) (ρ n • σ)) (trans k≡n (sym (+-identityʳ n))))
+  trans
+    (cong (push (⟦ fv-vars n ⟧₊₂ ρ) (ρ n • σ))
+      (trans k≡n (sym (+-identityʳ n))))
         (trans (push-plus n _ (ρ n • σ) 0) (cong ρ (sym k≡n)))
   where
   k≡n : k ≡ n
@@ -79,7 +83,8 @@ fv-vars-vals : ∀ m (ρ : Env Value)
   → (∀ k → k < m → Val (ρ k))
   → AllVal m (⟦ fv-vars m ⟧₊₂ ρ)
 fv-vars-vals (suc m) ρ V zero = V m (n<1+n m)
-fv-vars-vals (suc m) ρ V (suc i) = fv-vars-vals m ρ (λ k k< → V k (<-trans k< (n<1+n m))) i
+fv-vars-vals (suc m) ρ V (suc i) =
+  fv-vars-vals m ρ (λ k k< → V k (<-trans k< (n<1+n m))) i
 
 {- under a binder -}
 rel-ext : ∀ B {ρ₁ ρ₂ : Env Value} {X}
@@ -126,8 +131,10 @@ enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel = G
   body≃ : ∀ U
     → U ≢ []
     → NoErr U
-    → ⟦ N ⟧ (mem U • ρ₁) ≃ apply-n m (⟦ bind-n-ast m (capture N) ⟧ₐ₂ init₀) Ds (mem U)
-  body≃ U neU nU rewrite apply-push m (bind-n-ast m (capture N)) init₀ Ds (mem U)
+    → ⟦ N ⟧ (mem U • ρ₁)
+      ≃ apply-n m (⟦ bind-n-ast m (capture N) ⟧ₐ₂ init₀) Ds (mem U)
+  body≃ U neU nU rewrite apply-push m (bind-n-ast m (capture N))
+    init₀ Ds (mem U)
                       | unbind-bind m (capture N) =
     enc-correct N (mem U • ρ₁) (mem U • push Ds init₀) V' rel'
     where
@@ -135,56 +142,73 @@ enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel = G
       → x < bound N
       → Val ((mem U • push Ds init₀) x)
     V' zero _ = noerr-val U neU nU
-    V' (suc k) k< = subst Val (sym (push-vars m ρ₂ init₀ k (<-∸1 k<))) (Vm k (<-∸1 k<))
+    V' (suc k) k< =
+      subst Val (sym (push-vars m ρ₂ init₀ k (<-∸1 k<))) (Vm k (<-∸1 k<))
     rel' : ∀ x
       → Uses x N
       → (mem U • ρ₁) x ≃ (mem U • push Ds init₀) x
     rel' zero _ = ≃-refl
     rel' (suc k) u =
       ≃-trans (rel k (inj₁ u))
-              (≃-reflexive (sym (push-vars m ρ₂ init₀ k (<-∸1 (uses-bound (suc k) N u)))))
+              (≃-reflexive
+                  (sym
+                    (push-vars m ρ₂ init₀ k (<-∸1 (uses-bound (suc k) N u)))))
 
   G = ≃-trans (Λᵐ-≃ (λ U ne _ n → body≃ U ne n))
-        (≃-sym (clos-β m (bind-n-ast m (capture N)) init₀ (fv-vars-vals m ρ₂ Vm)))
+        (≃-sym
+            (clos-β m (bind-n-ast m (capture N)) init₀ (fv-vars-vals m ρ₂ Vm)))
 enc-correct (app ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ V rel =
   ⋆ᵐ-≃ (enc-correct L ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u)))
-       (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ˡ 0 x<))) (λ x u → rel x (inj₂ (inj₁ u))))
+       (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ˡ 0 x<)))
+           (λ x u → rel x (inj₂ (inj₁ u))))
 enc-correct (lit B k ⦅ Nil ⦆) ρ₁ ρ₂ V rel = ≃-refl
-enc-correct (tuple n ⦅ args ⦆) ρ₁ ρ₂ V rel = 𝒯ᵐ-≃ n (enc-args-correct args ρ₁ ρ₂ V rel)
+enc-correct (tuple n ⦅ args ⦆) ρ₁ ρ₂ V rel =
+  𝒯ᵐ-≃ n (enc-args-correct args ρ₁ ρ₂ V rel)
 enc-correct (get i ⦅ M ,, Nil ⦆) ρ₁ ρ₂ V rel =
-  projᵐ-≃ i (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ 0 x<)) (λ x u → rel x (inj₁ u)))
+  projᵐ-≃ i
+    (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ 0 x<)) (λ x u → rel x (inj₁ u)))
 enc-correct (inl-op ⦅ M ,, Nil ⦆) ρ₁ ρ₂ V rel =
-  inlᵐ-≃ (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ 0 x<)) (λ x u → rel x (inj₁ u)))
+  inlᵐ-≃
+    (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ 0 x<)) (λ x u → rel x (inj₁ u)))
 enc-correct (inr-op ⦅ M ,, Nil ⦆) ρ₁ ρ₂ V rel =
-  inrᵐ-≃ (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ 0 x<)) (λ x u → rel x (inj₁ u)))
+  inrᵐ-≃
+    (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ 0 x<)) (λ x u → rel x (inj₁ u)))
 enc-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel =
   𝒞ᵐ-≃ {F = λ X → ⟦ M ⟧ (X • ρ₁)} {λ X → ⟦ capture M ⟧₂ (X • ρ₂)}
        {λ X → ⟦ N ⟧ (X • ρ₁)} {λ X → ⟦ capture N ⟧₂ (X • ρ₂)}
        (enc-correct L ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u)))
        (λ W ne _ n → enc-correct M _ _
-          (vals-ext M (noerr-val W ne n) (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ˡ _ x<))))
+          (vals-ext M (noerr-val W ne n)
+              (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ˡ _ x<))))
           (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
        (λ W ne _ n → enc-correct N _ _
           (vals-ext N (noerr-val W ne n)
              (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ʳ (bound M ∸ 1) (<-⊔ˡ 0 x<)))))
           (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
 enc-correct (prim p ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ V rel =
-  primᵐ-≃ p (enc-correct L ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u)))
-            (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ˡ 0 x<))) (λ x u → rel x (inj₂ (inj₁ u))))
+  primᵐ-≃ p
+    (enc-correct L ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u)))
+            (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ˡ 0 x<)))
+                (λ x u → rel x (inj₂ (inj₁ u))))
 enc-correct (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel =
-  letᵐ-≃ (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u)))
+  letᵐ-≃
+    (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u)))
          (λ W ne _ n → enc-correct N _ _
-            (vals-ext N (noerr-val W ne n) (λ x x< → V x (<-⊔ʳ (bound M) (<-⊔ˡ 0 x<))))
+            (vals-ext N (noerr-val W ne n)
+                (λ x x< → V x (<-⊔ʳ (bound M) (<-⊔ˡ 0 x<))))
             (rel-ext N (λ x u → rel x (inj₂ (inj₁ u)))))
 
 enc-args-correct {suc n} (M ,, args) ρ₁ ρ₂ V rel zero =
   enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u))
 enc-args-correct {suc n} (M ,, args) ρ₁ ρ₂ V rel (suc i) =
-  enc-args-correct args ρ₁ ρ₂ (λ x x< → V x (<-⊔ʳ (bound M) x<)) (λ x u → rel x (inj₂ u)) i
+  enc-args-correct args ρ₁ ρ₂ (λ x x< → V x (<-⊔ʳ (bound M) x<))
+    (λ x u → rel x (inj₂ u)) i
 
-{- The end theorem: closed programs ----------------------------------------------}
+{- The end theorem: closed programs -------------------------------------------}
 
 capture-correct : ∀ (M : AST)
   → Closed M
   → ⟦ M ⟧ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
-capture-correct M c = enc-correct M ρ₀ ρ₀ (λ x x< → ⊥-elim (n≮0 (subst (x <_) c x<))) (λ x _ → ≃-refl)
+capture-correct M c =
+  enc-correct M ρ₀ ρ₀ (λ x x< → ⊥-elim (n≮0 (subst (x <_) c x<)))
+  (λ x _ → ≃-refl)

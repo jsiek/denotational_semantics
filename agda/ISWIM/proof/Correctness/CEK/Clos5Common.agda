@@ -28,12 +28,15 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
 
   private L = sem (program ds M₀)
 
-  atm-step : ∀ {Δ A} {φ : Env Σ Δ} {κ} (a : Atm Σ Δ A) → step ds (eval ⌜ a ⌝ᵃ φ κ) ≡ next (ret (atom φ a) κ)
+  atm-step : ∀ {Δ A} {φ : Env Σ Δ} {κ} (a : Atm Σ Δ A)
+    → step ds (eval ⌜ a ⌝ᵃ φ κ) ≡ next (ret (atom φ a) κ)
   atm-step (var x) = refl
   atm-step (lit B c) = refl
   atm-step (ref f) = refl
 
-  tuple-atoms : ∀ {Δ m j} {φ : Env Σ Δ} {κ} (vs : Vec _ m) (as : Vec (Atm Σ Δ Any) j)
+  tuple-atoms : ∀ {Δ m j} {φ : Env Σ Δ} {κ} (vs : Vec _ m)
+    (as : Vec (Atm Σ Δ Any) j)
     → Star L (tuple-next vs ⌜ as ⌝ᵛ φ κ) (ret (tup (vs <>< map (atom φ) as)) κ)
   tuple-atoms vs [] = ε
-  tuple-atoms {φ = φ} vs (a ∷ as) = atm-step a ◅ (refl ◅ tuple-atoms (atom φ a ∷ vs) as)
+  tuple-atoms {φ = φ} vs (a ∷ as) =
+    atm-step a ◅ (refl ◅ tuple-atoms (atom φ a ∷ vs) as)

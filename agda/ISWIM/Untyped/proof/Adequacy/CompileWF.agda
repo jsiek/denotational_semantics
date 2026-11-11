@@ -18,8 +18,10 @@ import ISWIM.Untyped.Language.Clos5 as C5
 import ISWIM.Untyped.proof.Adequacy.Clos5WF as F
 open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import ISWIM.Untyped.Compiler.Hoist
-open import ISWIM.Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
-open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (RB; glob-shape)
+open import ISWIM.Untyped.proof.Compiler.PipelineScope using (Scoped;
+  compile-scoped)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (RB;
+  glob-shape)
 open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile₄)
 
 open import Data.List using (List; []; _∷_; length)
@@ -63,7 +65,8 @@ glob-rb-arg (bind a) ds d = glob-rb-arg a ds d
 glob-rb-arg (clear a) ds d = glob-rb-arg a ds d
 
 glob-rb-args nil ds d = d
-glob-rb-args (cons a args) ds d = glob-rb-args args (proj₂ (glob-arg a ds)) (glob-rb-arg a ds d)
+glob-rb-args (cons a args) ds d =
+  glob-rb-args args (proj₂ (glob-arg a ds)) (glob-rb-arg a ds d)
 
 defs-wf : ∀ ds
   → DefsRB ds
@@ -72,7 +75,7 @@ defs-wf : ∀ ds
 defs-wf [] _ _ = tt
 defs-wf (N ∷ Ns) (r , rs) (w ∷ ws) = (r , w) , defs-wf Ns rs ws
 
-{- The compiler ----------------------------------------------------------------------}
+{- The compiler ---------------------------------------------------------------}
 
 compile-wf : ∀ M
   → Closed M

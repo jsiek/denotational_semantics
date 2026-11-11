@@ -30,13 +30,15 @@ open import Relation.Binary.PropositionalEquality using (_≡_; sym; subst)
 
 {- capture of a closed ISWIM program is well scoped -}
 module Captured where
-  open I using (`_; _⦅_⦆; lam; app; lit; tuple; get; inl-op; inr-op; case-op; prim; let-op)
+  open I using (`_; _⦅_⦆; lam; app; lit; tuple; get; inl-op; inr-op; case-op;
+    prim; let-op)
 
   bind-n-ws : ∀ m k N
     → WS (suc (m + k)) N
     → WS-arg k (bind-n-ast m N)
   bind-n-ws zero k N w = w
-  bind-n-ws (suc m) k N w = bind-n-ws m (suc k) N (subst (λ x → WS (suc x) N) (sym (+-suc m k)) w)
+  bind-n-ws (suc m) k N w =
+    bind-n-ws m (suc k) N (subst (λ x → WS (suc x) N) (sym (+-suc m k)) w)
 
   fv-vars-ws : ∀ m {k}
     → m ≤ k
@@ -63,7 +65,9 @@ module Captured where
   capture-ws (` x) b = b
   capture-ws (lam ⦅ ⟩ N ,, Nil ⦆) b =
     bind-n-ws (bound N ∸ 1) 0 (capture N)
-      (capture-ws N (subst (λ x → bound N ≤ suc x) (sym (+-identityʳ _)) (m≤n+m∸n (bound N) 1)))
+      (capture-ws N
+          (subst (λ x → bound N ≤ suc x) (sym (+-identityʳ _))
+            (m≤n+m∸n (bound N) 1)))
     , fv-vars-ws (bound N ∸ 1) (⊔ˡ _ _ b)
   capture-ws (app ⦅ L ,, M ,, Nil ⦆) b =
     capture-ws L (⊔ˡ _ _ b) , capture-ws M (⊔ˡ _ _ (⊔ʳ (bound L) _ b)) , tt
@@ -75,15 +79,18 @@ module Captured where
   capture-ws (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) b =
     capture-ws L (⊔ˡ _ _ b)
     , capture-ws M (∸1 (bound M) (⊔ˡ _ _ (⊔ʳ (bound L) _ b)))
-    , capture-ws N (∸1 (bound N) (⊔ˡ _ _ (⊔ʳ (bound M ∸ 1) _ (⊔ʳ (bound L) _ b))))
+    , capture-ws N
+      (∸1 (bound N) (⊔ˡ _ _ (⊔ʳ (bound M ∸ 1) _ (⊔ʳ (bound L) _ b))))
     , tt
   capture-ws (prim p ⦅ L ,, M ,, Nil ⦆) b =
     capture-ws L (⊔ˡ _ _ b) , capture-ws M (⊔ˡ _ _ (⊔ʳ (bound L) _ b)) , tt
   capture-ws (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) b =
-    capture-ws M (⊔ˡ _ _ b) , capture-ws N (∸1 (bound N) (⊔ˡ _ _ (⊔ʳ (bound M) _ b))) , tt
+    capture-ws M (⊔ˡ _ _ b)
+      , capture-ws N (∸1 (bound N) (⊔ˡ _ _ (⊔ʳ (bound M) _ b))) , tt
 
   enc-args-ws {zero} Nil b = tt
-  enc-args-ws {suc n} (M ,, args) b = capture-ws M (⊔ˡ _ _ b) , enc-args-ws args (⊔ʳ (bound M) _ b)
+  enc-args-ws {suc n} (M ,, args) b =
+    capture-ws M (⊔ˡ _ _ b) , enc-args-ws args (⊔ʳ (bound M) _ b)
 
 capture-closed : ∀ M
   → Closed M

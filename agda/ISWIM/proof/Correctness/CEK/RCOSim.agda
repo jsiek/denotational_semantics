@@ -38,21 +38,26 @@ open import ISWIM.Compiler.RCO
 open import Framework.Lookup using (_!_)
 open import proof.Framework.Lookup using (map-!)
 open import Semantics.Observation using (Obs; o-error)
-open import proof.Semantics.CEK.Smallstep using (next; stop; next?; Star; ε; _◅_; Plus; plus; step⁺; star-plus)
+open import proof.Semantics.CEK.Smallstep using (next; stop; next?; Star; ε;
+  _◅_; Plus; plus; step⁺; star-plus)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)
-open import proof.Framework.Both Obs using (Both; halt; move; both-fsim; pre₁; pre₂)
-open import ISWIM.proof.Correctness.CEK.Clos5Common using (atm-step; tuple-atoms)
+open import proof.Framework.Both Obs using (Both; halt; move; both-fsim; pre₁;
+  pre₂)
+open import ISWIM.proof.Correctness.CEK.Clos5Common using (atm-step;
+  tuple-atoms)
 open import Framework.VecUtil using (_+ʳ_; _<><_)
 open import ISWIM.Semantics.CEK.Typed.Clos5
 open import ISWIM.Semantics.CEK.Typed.Imp using (atom)
 
 open import Data.List using (List; []; _∷_)
-open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to
+  All-map)
 open import Data.Maybe using (just; nothing)
 open import Data.Nat using (ℕ)
 open import Data.Product using (_,_)
 open import Data.Vec using (Vec; []; _∷_; map)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 
 {- φ₂ holds at r x the value of x in φ₁ -}
 record ER {Σ Γ Δ} (r : Ren Γ Δ) (φ₁ : Env Σ Γ) (φ₂ : Env Σ Δ) : Set where
@@ -85,7 +90,7 @@ atom-ren e (var x) = at e x
 atom-ren e (lit B c) = refl
 atom-ren e (ref f) = refl
 
-{- The simulation, for a program with definitions ds and main M₀ ---------------}
+{- The simulation, for a program with definitions ds and main M₀ --------------}
 
 module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
 
@@ -99,23 +104,28 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
     infix 4 _≈_ _~_
     data _≈_ : ∀ {A} → Cont Σ A → Cont Σ A → Set where
       halt : halt ≈ halt
-      letK : ∀ {Γ Δ A B} {r : Ren Γ Δ} {N : Tm Σ (A ∷ Γ) B} {φ₁ φ₂ κ₁ κ₂} → ER r φ₁ φ₂ → κ₁ ≈ κ₂
+      letK : ∀ {Γ Δ A B} {r : Ren Γ Δ} {N : Tm Σ (A ∷ Γ) B} {φ₁ φ₂ κ₁ κ₂}
+        → ER r φ₁ φ₂ → κ₁ ≈ κ₂
         → letK N φ₁ κ₁ ≈ letK ⌜ rco N (ext r) ⌝ φ₂ κ₂
       {- a source frame, and the let of atomize -}
       pend : ∀ {Δ A B} {k : K Σ Δ A B} {φ₂ κ₁ κ₂}
         → (∀ {Δ'} (r' : Ren Δ Δ') φ₂' (a : Atm Σ Δ' A) → ER r' φ₂ φ₂'
-             → Both {L₁ = L₁} {L₂ = L₂} _~_ (ret (atom φ₂' a) κ₁) (eval ⌜ k r' a ⌝ φ₂' κ₂))
+             → Both {L₁ = L₁} {L₂ = L₂} _~_ (ret (atom φ₂' a) κ₁)
+               (eval ⌜ k r' a ⌝ φ₂' κ₂))
         → κ₁ ≈ letK ⌜ k S (var Z) ⌝ φ₂ κ₂
 
     data _~_ : State Σ → State Σ → Set where
-      eval~ : ∀ {Γ Δ A} {M : Tm Σ Γ A} {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂} → ER r φ₁ φ₂ → κ₁ ≈ κ₂
+      eval~ : ∀ {Γ Δ A} {M : Tm Σ Γ A} {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂}
+        → ER r φ₁ φ₂ → κ₁ ≈ κ₂
         → eval M φ₁ κ₁ ~ eval ⌜ rco M r ⌝ φ₂ κ₂
       ret~ : ∀ {A} {v : Val Σ A} {κ₁ κ₂} → κ₁ ≈ κ₂ → ret v κ₁ ~ ret v κ₂
 
   B = Both {L₁ = L₁} {L₂ = L₂} _~_
 
   KRel : ∀ {Δ A B} → Cont Σ A → K Σ Δ A B → Env Σ Δ → Cont Σ B → Set
-  KRel κ₁ k φ₂ κ₂ = ∀ {Δ'} (r' : Ren _ Δ') φ₂' (a : Atm Σ Δ' _) → ER r' φ₂ φ₂' → B (ret (atom φ₂' a) κ₁) (eval ⌜ k r' a ⌝ φ₂' κ₂)
+  KRel κ₁ k φ₂ κ₂ =
+    ∀ {Δ'} (r' : Ren _ Δ') φ₂' (a : Atm Σ Δ' _) → ER r' φ₂ φ₂'
+    → B (ret (atom φ₂' a) κ₁) (eval ⌜ k r' a ⌝ φ₂' κ₂)
 
   ret≡ : ∀ {A} {u u' : Val Σ A} {κ₁ κ₂}
     → u ≡ u'
@@ -137,7 +147,9 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
     → call ds f w κ₁ ~ call ds₂ f w κ₂
   call~ (pack (code g) e) w k =
     subst (λ N → eval (ds ! g) _ _ ~ eval N _ _)
-      (sym (trans (map-! ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds) g) (cong ⌜_⌝ (map-! (λ D → rco D (λ x → x)) ds g)))) (eval~ er-id k)
+      (sym
+          (trans (map-! ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds) g)
+            (cong ⌜_⌝ (map-! (λ D → rco D (λ x → x)) ds g)))) (eval~ er-id k)
 
   ret-both : ∀ {A} {κ₁ κ₂ : Cont Σ A}
     → κ₁ ≈ κ₂
@@ -151,13 +163,17 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
     → κ₁ ≈ κ₂
     → B (ret v (projK t κ₁)) (ret v (projK t κ₂))
   proj-both {t} v k with proj? t v in e
-  ... | just w = move (step⁺ (cong (next? o-error _) e)) (step⁺ (cong (next? o-error _) e)) (ret~ k)
+  ... | just w =
+    move (step⁺ (cong (next? o-error _) e))
+    (step⁺ (cong (next? o-error _) e)) (ret~ k)
   ... | nothing = halt (cong (next? o-error _) e) ε (cong (next? o-error _) e)
 
-  case-both : ∀ {Γ Δ} {N₁ N₂ : Tm Σ (Any ∷ Γ) Any} {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂} (v : Val Σ ⟪ sum ⟫)
+  case-both : ∀ {Γ Δ} {N₁ N₂ : Tm Σ (Any ∷ Γ) Any} {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂}
+    (v : Val Σ ⟪ sum ⟫)
     → ER r φ₁ φ₂
     → κ₁ ≈ κ₂
-    → B (ret v (caseK N₁ N₂ φ₁ κ₁)) (ret v (caseK ⌜ rco N₁ (ext r) ⌝ ⌜ rco N₂ (ext r) ⌝ φ₂ κ₂))
+    → B (ret v (caseK N₁ N₂ φ₁ κ₁))
+      (ret v (caseK ⌜ rco N₁ (ext r) ⌝ ⌜ rco N₂ (ext r) ⌝ φ₂ κ₂))
   case-both (inl u) e k = move (step⁺ refl) (step⁺ refl) (eval~ (er-ext e) k)
   case-both (inr u) e k = move (step⁺ refl) (step⁺ refl) (eval~ (er-ext e) k)
 
@@ -185,32 +201,45 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
   krel-proj : ∀ {Δ t} {φ₂ : Env Σ Δ} {κ₁ κ₂}
     → κ₁ ≈ κ₂
     → KRel (projK t κ₁) (λ _ a → M.project t a) φ₂ κ₂
-  krel-proj k r' φ₂' a e' = pre₂ _~_ refl (pre₂ _~_ (at₂ a) (proj-both (atom φ₂' a) k))
+  krel-proj k r' φ₂' a e' =
+    pre₂ _~_ refl (pre₂ _~_ (at₂ a) (proj-both (atom φ₂' a) k))
 
   krel-case : ∀ {Γ Δ} {N₁ N₂ : Tm Σ (Any ∷ Γ) Any} {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂}
     → ER r φ₁ φ₂
     → κ₁ ≈ κ₂
-    → KRel (caseK N₁ N₂ φ₁ κ₁) (λ r₁ a → M.case a (rco N₁ (ext λ x → r₁ (r x))) (rco N₂ (ext λ x → r₁ (r x)))) φ₂ κ₂
-  krel-case e k r₁ φ₂' a e₁ = pre₂ _~_ refl (pre₂ _~_ (at₂ a) (case-both (atom φ₂' a) (er-∘ e e₁) k))
+    → KRel (caseK N₁ N₂ φ₁ κ₁)
+      (λ r₁ a →
+        M.case a (rco N₁ (ext λ x → r₁ (r x))) (rco N₂ (ext λ x → r₁ (r x)))) φ₂
+        κ₂
+  krel-case e k r₁ φ₂' a e₁ =
+    pre₂ _~_ refl (pre₂ _~_ (at₂ a) (case-both (atom φ₂' a) (er-∘ e e₁) k))
 
-  {- the second operand of pack, callc and prim, after an atom a for the first -}
+  {- the second operand of pack, callc and prim, after an atom a for the
+     first -}
   krel-packR : ∀ {Δ n} {φ₂ : Env Σ Δ} (a : Atm Σ Δ (code n)) {κ₁ κ₂}
     → κ₁ ≈ κ₂
     → KRel (packR (atom φ₂ a) κ₁) (λ r₂ b → M.pack (ren r₂ a) b) φ₂ κ₂
-  krel-packR a k r₂ φ₂'' b e₂ = move (step⁺ refl) (plus refl (at₂ (ren r₂ a) ◅ refl ◅ at₂ b ◅ refl ◅ ε))
+  krel-packR a k r₂ φ₂'' b e₂ =
+    move (step⁺ refl) (plus refl (at₂ (ren r₂ a) ◅ refl ◅ at₂ b ◅ refl ◅ ε))
     (ret≡ (cong (λ u → pack u (atom φ₂'' b)) (sym (atom-ren e₂ a))) k)
 
   krel-callR : ∀ {Δ} {φ₂ : Env Σ Δ} (a : Atm Σ Δ ⟪ fun ⟫) {κ₁ κ₂}
     → κ₁ ≈ κ₂
     → KRel (callR (atom φ₂ a) κ₁) (λ r₂ b → M.callc (ren r₂ a) b) φ₂ κ₂
-  krel-callR {φ₂ = φ₂} a {κ₁} {κ₂} k r₂ φ₂'' b e₂ = move (step⁺ refl) (plus refl (at₂ (ren r₂ a) ◅ refl ◅ at₂ b ◅ refl ◅ ε))
-    (subst (λ F → call ds (atom φ₂ a) (atom φ₂'' b) κ₁ ~ call ds₂ F (atom φ₂'' b) κ₂) (sym (atom-ren e₂ a)) (call~ _ _ k))
+  krel-callR {φ₂ = φ₂} a {κ₁} {κ₂} k r₂ φ₂'' b e₂ =
+    move (step⁺ refl) (plus refl (at₂ (ren r₂ a) ◅ refl ◅ at₂ b ◅ refl ◅ ε))
+    (subst
+        (λ F →
+          call ds (atom φ₂ a) (atom φ₂'' b) κ₁ ~ call ds₂ F (atom φ₂'' b) κ₂)
+          (sym (atom-ren e₂ a)) (call~ _ _ k))
 
   krel-primR : ∀ {Δ p} {φ₂ : Env Σ Δ} (a : Atm Σ Δ ⟪ base Int ⟫) {κ₁ κ₂}
     → κ₁ ≈ κ₂
     → KRel (primR p (int (atom φ₂ a)) κ₁) (λ r₂ b → M.prim p (ren r₂ a) b) φ₂ κ₂
-  krel-primR {p = p} a k r₂ φ₂'' b e₂ = move (step⁺ refl) (plus refl (at₂ (ren r₂ a) ◅ refl ◅ at₂ b ◅ refl ◅ ε))
-    (ret≡ (cong (λ u → δᵀ p (int u) (int (atom φ₂'' b))) (sym (atom-ren e₂ a))) k)
+  krel-primR {p = p} a k r₂ φ₂'' b e₂ =
+    move (step⁺ refl) (plus refl (at₂ (ren r₂ a) ◅ refl ◅ at₂ b ◅ refl ◅ ε))
+    (ret≡
+        (cong (λ u → δᵀ p (int u) (int (atom φ₂'' b))) (sym (atom-ren e₂ a))) k)
 
   {- a tuple of atoms -}
   kv-tuple : ∀ {Δ j} {φ₂ : Env Σ Δ} {κ₁ κ₂}
@@ -221,7 +250,9 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
     → V ≡ map (atom φ₂') as
     → step ds s ≡ next (ret (tup V) κ₁)
     → B s (eval ⌜ M.tuple as ⌝ φ₂' κ₂)
-  kv-tuple k r' φ₂' as e' refl st = move (step⁺ st) (plus refl (tuple-atoms ds₂ ⌜ rco M₀ (λ x → x) ⌝ [] as)) (ret~ k)
+  kv-tuple k r' φ₂' as e' refl st =
+    move (step⁺ st)
+    (plus refl (tuple-atoms ds₂ ⌜ rco M₀ (λ x → x) ⌝ [] as)) (ret~ k)
 
   sim-eval : ∀ {Γ Δ A} (M : Tm Σ Γ A) {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂}
     → ER r φ₁ φ₂
@@ -231,8 +262,10 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
     → ER r φ₁ φ₂
     → KRel κ₁ k φ₂ κ₂
     → B (eval N φ₁ κ₁) (eval ⌜ atomize N r k ⌝ φ₂ κ₂)
-  atzs : ∀ {Γ Δ B' m j} (Ns : Vec (Tm Σ Γ Any) j) {r : Ren Γ Δ} {k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) j → M.Exp Σ Δ' B'}
-      {φ₁ φ₂} {vs : Vec _ m} {κ₁ : Cont Σ ⟪ tup (m +ʳ j) ⟫} {κ₂ : Cont Σ B'} {s₁}
+  atzs : ∀ {Γ Δ B' m j} (Ns : Vec (Tm Σ Γ Any) j) {r : Ren Γ Δ}
+    {k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) j → M.Exp Σ Δ' B'}
+      {φ₁ φ₂} {vs : Vec _ m} {κ₁ : Cont Σ ⟪ tup (m +ʳ j) ⟫}
+        {κ₂ : Cont Σ B'} {s₁}
     → ER r φ₁ φ₂
     → (  ∀ {Δ'} (r' : Ren Δ Δ') φ₂' (as : Vec (Atm Σ Δ' Any) j)
        → ER r' φ₂ φ₂'
@@ -246,15 +279,20 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
   krel-packL : ∀ {Γ Δ n} (N : Tm Σ Γ ⟪ tup n ⟫) {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂}
     → ER r φ₁ φ₂
     → κ₁ ≈ κ₂
-    → KRel (packL N φ₁ κ₁) (λ r₁ a → atomize N (λ x → r₁ (r x)) (λ r₂ b → M.pack (ren r₂ a) b)) φ₂ κ₂
+    → KRel (packL N φ₁ κ₁)
+      (λ r₁ a → atomize N (λ x → r₁ (r x)) (λ r₂ b → M.pack (ren r₂ a) b)) φ₂ κ₂
   krel-callL : ∀ {Γ Δ} (N : Tm Σ Γ Any) {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂}
     → ER r φ₁ φ₂
     → κ₁ ≈ κ₂
-    → KRel (callL N φ₁ κ₁) (λ r₁ a → atomize N (λ x → r₁ (r x)) (λ r₂ b → M.callc (ren r₂ a) b)) φ₂ κ₂
+    → KRel (callL N φ₁ κ₁)
+      (λ r₁ a → atomize N (λ x → r₁ (r x)) (λ r₂ b → M.callc (ren r₂ a) b)) φ₂
+      κ₂
   krel-primL : ∀ {Γ Δ p} (N : Tm Σ Γ ⟪ base Int ⟫) {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂}
     → ER r φ₁ φ₂
     → κ₁ ≈ κ₂
-    → KRel (primL p N φ₁ κ₁) (λ r₁ a → atomize N (λ x → r₁ (r x)) (λ r₂ b → M.prim p (ren r₂ a) b)) φ₂ κ₂
+    → KRel (primL p N φ₁ κ₁)
+      (λ r₁ a → atomize N (λ x → r₁ (r x)) (λ r₂ b → M.prim p (ren r₂ a) b)) φ₂
+      κ₂
 
   sim-eval (` x) e k = move (step⁺ refl) (step⁺ refl) (ret≡ (sym (at e x)) k)
   sim-eval (fun-ref f) e k = move (step⁺ refl) (step⁺ refl) (ret~ k)
@@ -267,37 +305,51 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
   sim-eval (inr N) e k = pre₁ _~_ refl refl (atz N e (krel-inr k))
   sim-eval (case L N₁ N₂) e k = pre₁ _~_ refl refl (atz L e (krel-case e k))
   sim-eval (prim p L N) e k = pre₁ _~_ refl refl (atz L e (krel-primL N e k))
-  sim-eval (let′ N₁ N₂) e k = move (step⁺ refl) (step⁺ refl) (eval~ e (letK e k))
+  sim-eval (let′ N₁ N₂) e k =
+    move (step⁺ refl) (step⁺ refl) (eval~ e (letK e k))
   sim-eval (inject G N) e k = pre₁ _~_ refl refl (atz N e (krel-inj k))
   sim-eval (project t N) e k = pre₁ _~_ refl refl (atz N e (krel-proj k))
 
   atz (` x) {r} {k} {φ₂ = φ₂} {κ₁} e kr =
-    pre₁ _~_ refl refl (subst (λ v → B (ret v κ₁) (eval ⌜ k (λ y → y) (var (r x)) ⌝ φ₂ _)) (at e x) (kr (λ y → y) φ₂ (var (r x)) er-id))
+    pre₁ _~_ refl refl
+      (subst (λ v → B (ret v κ₁) (eval ⌜ k (λ y → y) (var (r x)) ⌝ φ₂ _))
+        (at e x) (kr (λ y → y) φ₂ (var (r x)) er-id))
   atz (fun-ref f) e kr = pre₁ _~_ refl refl (kr (λ y → y) _ (ref f) er-id)
   atz (lit B c) e kr = pre₁ _~_ refl refl (kr (λ y → y) _ (lit B c) er-id)
   atz N@(pack _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
-  atz N@(callc _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
+  atz N@(callc _ _) {k = k} e kr =
+    pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
   atz N@(tuple _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
   atz N@(get _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
   atz N@(inl _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
   atz N@(inr _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
-  atz N@(case _ _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
-  atz N@(prim _ _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
+  atz N@(case _ _ _) {k = k} e kr =
+    pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
+  atz N@(prim _ _ _) {k = k} e kr =
+    pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
   atz N@(let′ _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
-  atz N@(inject _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
-  atz N@(project _ _) {k = k} e kr = pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
+  atz N@(inject _ _) {k = k} e kr =
+    pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
+  atz N@(project _ _) {k = k} e kr =
+    pre₂ _~_ refl (sim-eval N e (pend {k = k} kr))
 
   atzs [] e kv st = kv (λ y → y) _ [] er-id refl st
   atzs (N ∷ Ns) {vs = vs} e kv st =
     pre₁ _~_ st refl (atz N e λ r₁ φ₂' a e₁ →
       atzs Ns (er-∘ e e₁) (λ r₂ φ₂'' as e₂ eqL st' →
-        kv _ φ₂'' (ren r₂ a ∷ as) (er-∘ e₁ e₂) (trans eqL (cong (λ u → (u ∷ vs) <>< map (atom φ₂'') as) (sym (atom-ren e₂ a)))) st') refl)
+        kv _ φ₂'' (ren r₂ a ∷ as) (er-∘ e₁ e₂)
+            (trans eqL
+              (cong (λ u → (u ∷ vs) <>< map (atom φ₂'') as)
+                (sym (atom-ren e₂ a)))) st') refl)
 
-  krel-packL N e k r₁ φ₂' a e₁ = pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-packR a k))
+  krel-packL N e k r₁ φ₂' a e₁ =
+    pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-packR a k))
 
-  krel-callL N e k r₁ φ₂' a e₁ = pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-callR a k))
+  krel-callL N e k r₁ φ₂' a e₁ =
+    pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-callR a k))
 
-  krel-primL N e k r₁ φ₂' a e₁ = pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-primR a k))
+  krel-primL N e k r₁ φ₂' a e₁ =
+    pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-primR a k))
 
   sim : ∀ {s₁ s₂}
     → s₁ ~ s₂
@@ -305,7 +357,7 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
   sim (eval~ {M = M} e k) = sim-eval M e k
   sim (ret~ k) = ret-both k _
 
-{- The end theorem ---------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
 rco-correct : ∀ (P : Program) → Equivalent (sem P) (sem ⌜ rco-program P ⌝ₚ)
 rco-correct (program ds M) = equivalent (both-fsim _~_ (eval~ er-id halt) sim)

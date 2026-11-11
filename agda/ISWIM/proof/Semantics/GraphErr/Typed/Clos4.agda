@@ -15,15 +15,18 @@
 module ISWIM.proof.Semantics.GraphErr.Typed.Clos4 where
 
 open import ISWIM.Semantics.GraphErr.Typed.Clos4 public
-open import proof.Framework.GraphModel.TypedOk using (Ok; Oks; ok-op; Ok-≃; var-ok; const-ok; let-ok; split; ok-vec; fin₁; fin₂) public
-open import proof.Framework.GraphModel.TypedBinders using (code-ok; ΛΛᵐ-call; callc-good) public
+open import proof.Framework.GraphModel.TypedOk using (Ok; Oks; ok-op; Ok-≃;
+  var-ok; const-ok; let-ok; split; ok-vec; fin₁; fin₂) public
+open import proof.Framework.GraphModel.TypedBinders using (code-ok; ΛΛᵐ-call;
+  callc-good) public
 
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.Continuity using (ℬ-good)
 open import proof.Framework.GraphModel.ErrorMonad
-open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (get-good; case-good; prim-good; project-good)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (get-good;
+  case-good; prim-good; project-good)
 open import ISWIM.Language.Typed.Type using (Any; idx)
 open import ISWIM.Language.Typed.Clos4
 

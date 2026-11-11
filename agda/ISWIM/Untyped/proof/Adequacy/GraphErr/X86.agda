@@ -1,12 +1,12 @@
 {-
 
   Soundness and adequacy of the graph model with errors
-  (ISWIM/Untyped/Semantics/GraphErr/X86.agda, ⟦_⟧ₚ, here ⟦_⟧ₓ) for the X86 machine
-  (ISWIM/Semantics/CEK/X86.agda), for well-formed programs (WF,
+  (ISWIM/Untyped/Semantics/GraphErr/X86.agda, ⟦_⟧ₚ, here ⟦_⟧ₓ) for the X86
+  machine (ISWIM/Semantics/CEK/X86.agda), for well-formed programs (WF,
   Adequacy/GraphErr/X86WF.agda: each label refers to an older
   definition), which the compilers produce. As for Clos5
-  (ISWIM/Untyped/proof/Adequacy/GraphErr/Clos5.agda), the denotation tells all three outcomes
-  of the machine apart:
+  (ISWIM/Untyped/proof/Adequacy/GraphErr/Clos5.agda), the denotation tells all
+  three outcomes of the machine apart:
 
     error-iff     : ω ∈ ⟦ P ⟧ₓ exactly when the machine stops with an
                     error;
@@ -32,30 +32,37 @@ module ISWIM.Untyped.proof.Adequacy.GraphErr.X86 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ω) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value; ω) renaming (const
+  to dconst)
 open import ISWIM.Language.ISWIM using (AST)
 open import ISWIM.Language.X86 using (Program; program; body)
-open import ISWIM.Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import ISWIM.Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to
+  ⟦_⟧ₓ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; never-final-diverges)
 import ISWIM.Semantics.CEK.X86 as X86ₘ
 open import ISWIM.Semantics.CEK.X86 using (halt; halt?; obs)
-open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer;
+  shape-const)
 open import ISWIM.proof.Adequacy.GraphErr.Soundness using (shape-ω)
 open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86WF using (WF) public
-open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86Consistent using (table-con) public
-open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86Soundness using (soundness; sound-error) public
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86Consistent using
+  (table-con) public
+open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86Soundness using (soundness;
+  sound-error) public
 import ISWIM.Untyped.proof.Adequacy.GraphErr.X86Common as C
 import ISWIM.Untyped.proof.Adequacy.GraphErr.X86LogRel as LR
 
 open import Data.Empty using (⊥-elim)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; cong;
+  subst)
 open import Relation.Nullary using (¬_)
 
-{- Adequacy --------------------------------------------------------------------}
+{- Adequacy -------------------------------------------------------------------}
 
 {- an element other than ω is witnessed by a run to an answer of its shape -}
 adequacy : ∀ P
@@ -64,21 +71,25 @@ adequacy : ∀ P
   → d ∈ ⟦ P ⟧ₓ
   → d ≢ ω
   → Σ[ o ∈ Obs ] Terminates (X86ₘ.sem P) o × ShapeOf o d
-adequacy (program ds (body n bs b)) ⟨ wfd , ok ⟩ {d} d∈ d≢ with LR.adequate-main ds wfd ok d∈
+adequacy (program ds (body n bs b)) ⟨ wfd , ok ⟩ {d} d∈ d≢
+  with LR.adequate-main ds wfd ok d∈
 ... | inj₁ ⟨ e , _ ⟩ = ⊥-elim (d≢ e)
 ... | inj₂ ⟨ v , ⟨ r , rv ⟩ ⟩ with r halt
 ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ , e ⟩ ⟩ ⟩ ⟩ ⟩ =
-  ⟨ obs v , ⟨ ⟨ _ , ⟨ C.↠→star ds τ , cong halt? e ⟩ ⟩ , LR.𝕍-shape ds d v rv ⟩ ⟩
+  ⟨ obs v
+      , ⟨ ⟨ _ , ⟨ C.↠→star ds τ , cong halt? e ⟩ ⟩ , LR.𝕍-shape ds d v rv ⟩ ⟩
 
 {- ω is witnessed by a run to an error -}
 adequacy-error : ∀ P
   → WF P
   → ω ∈ ⟦ P ⟧ₓ
   → Terminates (X86ₘ.sem P) o-error
-adequacy-error (program ds (body n bs b)) ⟨ wfd , ok ⟩ ω∈ with LR.adequate-main ds wfd ok ω∈
+adequacy-error (program ds (body n bs b)) ⟨ wfd , ok ⟩ ω∈
+  with LR.adequate-main ds wfd ok ω∈
 ... | inj₁ ⟨ _ , er ⟩ with er halt
 ... | ⟨ t , ⟨ τ , st ⟩ ⟩ = ⟨ t , ⟨ C.↠→star ds τ , st ⟩ ⟩
-adequacy-error (program ds (body n bs b)) ⟨ wfd , ok ⟩ ω∈ | inj₂ ⟨ v , ⟨ _ , rv ⟩ ⟩ = ⊥-elim (LR.𝕍-ω ds {v} rv)
+adequacy-error (program ds (body n bs b)) ⟨ wfd , ok ⟩ ω∈
+  | inj₂ ⟨ v , ⟨ _ , rv ⟩ ⟩ = ⊥-elim (LR.𝕍-ω ds {v} rv)
 
 {- every element is witnessed by a run that terminates -}
 adequacy-terminates : ∀ P
@@ -86,10 +97,13 @@ adequacy-terminates : ∀ P
   → ∀ {d}
   → d ∈ ⟦ P ⟧ₓ
   → Σ[ o ∈ Obs ] Terminates (X86ₘ.sem P) o
-adequacy-terminates (program ds (body n bs b)) wf@(⟨ wfd , ok ⟩) {d} d∈ with LR.adequate-main ds wfd ok d∈
-... | inj₁ ⟨ refl , _ ⟩ = ⟨ o-error , adequacy-error (program ds (body n bs b)) wf d∈ ⟩
+adequacy-terminates (program ds (body n bs b)) wf@(⟨ wfd , ok ⟩) {d} d∈
+  with LR.adequate-main ds wfd ok d∈
+... | inj₁ ⟨ refl , _ ⟩ =
+  ⟨ o-error , adequacy-error (program ds (body n bs b)) wf d∈ ⟩
 ... | inj₂ ⟨ v , ⟨ r , _ ⟩ ⟩ with r halt
-... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ , e ⟩ ⟩ ⟩ ⟩ ⟩ = ⟨ obs v , ⟨ _ , ⟨ C.↠→star ds τ , cong halt? e ⟩ ⟩ ⟩
+... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ , e ⟩ ⟩ ⟩ ⟩ ⟩ =
+  ⟨ obs v , ⟨ _ , ⟨ C.↠→star ds τ , cong halt? e ⟩ ⟩ ⟩
 
 {- Soundness, for every observation -------------------------------------------}
 
@@ -108,13 +122,18 @@ sound-terminates : ∀ P
   → Terminates (X86ₘ.sem P) o
   → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₓ
 sound-terminates P wf {o-error} t = ⟨ ω , sound-error P wf t ⟩
-sound-terminates P wf {o-const B k} t = ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
-sound-terminates P wf {o-fun} t = ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
-sound-terminates P wf {o-tuple os} t = ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
-sound-terminates P wf {o-inl o} t = ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
-sound-terminates P wf {o-inr o} t = ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
+sound-terminates P wf {o-const B k} t =
+  ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
+sound-terminates P wf {o-fun} t =
+  ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
+sound-terminates P wf {o-tuple os} t =
+  ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
+sound-terminates P wf {o-inl o} t =
+  ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
+sound-terminates P wf {o-inr o} t =
+  ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
 
-{- Characterizations, for well-formed programs ----------------------------------}
+{- Characterizations, for well-formed programs --------------------------------}
 
 {- ω ∈ ⟦ P ⟧ₓ exactly when the machine stops with an error -}
 error-iff : ∀ P
@@ -155,6 +174,10 @@ diverges-iff : ∀ P
   → WF P
   → Diverges (X86ₘ.sem P) ⇔ (∀ d → ¬ (d ∈ ⟦ P ⟧ₓ))
 diverges-iff P wf =
-  ⟨ (λ div d d∈ → diverges-not-terminates div (proj₂ (adequacy-terminates P wf d∈)))
-  , (λ empty → never-final-diverges (λ σ fin → let ⟨ d , d∈ ⟩ = sound-terminates P wf ⟨ _ , ⟨ σ , fin ⟩ ⟩
+  ⟨ (λ div d d∈ →
+      diverges-not-terminates div (proj₂ (adequacy-terminates P wf d∈)))
+  ,
+    (λ empty →
+      never-final-diverges
+      (λ σ fin → let ⟨ d , d∈ ⟩ = sound-terminates P wf ⟨ _ , ⟨ σ , fin ⟩ ⟩
                                               in empty d d∈)) ⟩

@@ -31,7 +31,8 @@ data Tm (Γ : Ctx) : Ty → Set where
   get : ∀ {n} → Fin n → Tm Γ ⟪ tup n ⟫ → Tm Γ Any
   inl inr : Tm Γ Any → Tm Γ ⟪ sum ⟫
   case : Tm Γ ⟪ sum ⟫ → Tm (Any ∷ Γ) Any → Tm (Any ∷ Γ) Any → Tm Γ Any
-  prim : (p : Prim) → Tm Γ ⟪ base Int ⟫ → Tm Γ ⟪ base Int ⟫ → Tm Γ ⟪ out-flat p ⟫
+  prim : (p : Prim) → Tm Γ ⟪ base Int ⟫ → Tm Γ ⟪ base Int ⟫
+    → Tm Γ ⟪ out-flat p ⟫
   let′ : Tm Γ Any → Tm (Any ∷ Γ) Any → Tm Γ Any
   inject : (G : Flat) → Tm Γ ⟪ G ⟫ → Tm Γ Any
   project : (t : Tag) → Tm Γ Any → Tm Γ ⟪ flat t ⟫

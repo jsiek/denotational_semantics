@@ -58,6 +58,7 @@ value-trav (inject v) = inject (value-trav v)
 values-trav [] = []
 values-trav (v ∷ vs) = value-trav v ∷ values-trav vs
 
-lookup-travs : ∀ {𝒦 Γ Δ n} (σ : Sub 𝒦 Γ Δ) (Ms : Vec (Tm Γ Any) n) i → lookup (travs 𝒦 σ Ms) i ≡ trav 𝒦 σ (lookup Ms i)
+lookup-travs : ∀ {𝒦 Γ Δ n} (σ : Sub 𝒦 Γ Δ) (Ms : Vec (Tm Γ Any) n) i
+  → lookup (travs 𝒦 σ Ms) i ≡ trav 𝒦 σ (lookup Ms i)
 lookup-travs σ (M ∷ Ms) zero = refl
 lookup-travs σ (M ∷ Ms) (suc i) = lookup-travs σ Ms i

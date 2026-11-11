@@ -10,11 +10,14 @@
 
 module ISWIM.Untyped.proof.Correctness.CEK.CompilerX86Sim where
 
-open import ISWIM.Untyped.Compiler.Pipeline using (compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile-imp; compile-cfg;
+  compile-x86)
 open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equiv-trans)
-open import ISWIM.Untyped.proof.Correctness.CEK.LiftLocalsSim using (compile-imp-correct)
-open import ISWIM.Untyped.proof.Correctness.CEK.ExplicateSim using (explicate-correct)
+open import ISWIM.Untyped.proof.Correctness.CEK.LiftLocalsSim using
+  (compile-imp-correct)
+open import ISWIM.Untyped.proof.Correctness.CEK.ExplicateSim using
+  (explicate-correct)
 open import ISWIM.Untyped.proof.Correctness.CEK.SelectSim using (select-correct)
 import ISWIM.Semantics.CEK.ISWIM as S
 import ISWIM.Untyped.Semantics.CEK.CFG as G
@@ -23,9 +26,11 @@ import ISWIM.Semantics.CEK.X86 as X
 compile-cfg-correct : ∀ M
   → Closed M
   → Equivalent (S.sem M) (G.sem (compile-cfg M))
-compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))
+compile-cfg-correct M c =
+  equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))
 
 compile-x86-correct : ∀ M
   → Closed M
   → Equivalent (S.sem M) (X.sem (compile-x86 M))
-compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct (compile-cfg M))
+compile-x86-correct M c =
+  equiv-trans (compile-cfg-correct M c) (select-correct (compile-cfg M))

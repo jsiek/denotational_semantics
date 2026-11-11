@@ -21,15 +21,18 @@ open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.Laws using (⋆-ne)
 open import proof.Framework.GraphModel.Env using (Env; •-~)
-open import proof.Framework.GraphModel.TypedGraph using (ΛΛ-⋆; 𝒯-ne; 𝒯-intro; proj-𝒯)
+open import proof.Framework.GraphModel.TypedGraph using (ΛΛ-⋆; 𝒯-ne; 𝒯-intro;
+  proj-𝒯)
 open import proof.Framework.GraphModel.TypedOkBase using (fin-code)
 open import proof.Semantics.Graph.Prim using (primD-≃)
 open import ISWIM.Language.Typed.Type using (Any)
 open import ISWIM.Language.Typed.Clos2
 import ISWIM.Language.Typed.Clos3 as T
 open import ISWIM.proof.Semantics.Graph.Typed.Ops using (project-≃; init)
-open import ISWIM.proof.Semantics.Graph.Typed.Clos2 using (⟦_⟧; ⟦_⟧s; fv-env; fv-env-nth)
-open import ISWIM.proof.Semantics.Graph.Typed.Clos3 using (ok; con) renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
+open import ISWIM.proof.Semantics.Graph.Typed.Clos2 using (⟦_⟧; ⟦_⟧s; fv-env;
+  fv-env-nth)
+open import ISWIM.proof.Semantics.Graph.Typed.Clos3 using (ok; con) renaming
+  (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
 open import ISWIM.Compiler.Concretize
 
 open import Data.Fin using (Fin; zero; suc; toℕ)
@@ -46,7 +49,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 EnvRel : ∀ {k Γ} → (Fin k → Ref Γ) → Env Value → Env Value → Set
 EnvRel φ ρ₂ ρ₃ = ∀ x → ρ₂ (toℕ x) ≃ ⟦ ref-tm (φ x) ⟧₃ ρ₃
 
-shift-ok : ∀ {Γ A} (r : Ref Γ) X ρ → ⟦ ref-tm (shift-ref {A = A} r) ⟧₃ (X • ρ) ≡ ⟦ ref-tm r ⟧₃ ρ
+shift-ok : ∀ {Γ A} (r : Ref Γ) X ρ
+  → ⟦ ref-tm (shift-ref {A = A} r) ⟧₃ (X • ρ) ≡ ⟦ ref-tm r ⟧₃ ρ
 shift-ok (var x) X ρ = refl
 shift-ok (prj i x) X ρ = refl
 
@@ -55,7 +59,8 @@ rel-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₂ ρ₃}
   → ∀ {X}
   → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
 rel-ext rel zero = ≃-refl
-rel-ext {φ = φ} {ρ₃ = ρ₃} rel {X} (suc x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
+rel-ext {φ = φ} {ρ₃ = ρ₃} rel {X} (suc x) =
+  ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
 
 𝒯-con : ∀ n (Ys : Results (𝒫 Value) (replicate n ■))
   → (∀ j → Con (nthD Ys j))
@@ -88,7 +93,14 @@ concs-nth : ∀ {k Γ n} (Ms : Vec (Tm k Any) n) (φ : Fin k → Ref Γ) {ρ₂ 
 conc (` x) φ c rel = rel x
 conc (clos {n = n} N Ms) φ {ρ₂} {ρ₃} c rel =
   ⟨ (λ { w ⟨ ne , w∈ ⟩ → proj₁ (eq (λ i → ne→ i (ne i))) w w∈ })
-  , (λ w w∈ → let ne' = 𝒯-ne n (proj₂ (⋆-ne {ΛΛ ⟨ (λ X Y → ⟦ N' ⟧₃ (Y • X • λ _ → init)) , ptt ⟩} {𝒯 n Es} ⟨ w , w∈ ⟩)) in ⟨ (λ i → ne← i (ne' i)) , proj₂ (eq ne') w w∈ ⟩) ⟩
+  ,
+    (λ w w∈ →
+      let ne' =
+           𝒯-ne n
+             (proj₂
+               (⋆-ne {ΛΛ ⟨ (λ X Y → ⟦ N' ⟧₃ (Y • X • λ _ → init)) , ptt ⟩}
+                 {𝒯 n Es} ⟨ w , w∈ ⟩)) in
+                   ⟨ (λ i → ne← i (ne' i)) , proj₂ (eq ne') w w∈ ⟩) ⟩
   where
   N' = concretize fv-ref N
   Ds = ⟦ Ms ⟧s ρ₂
@@ -102,9 +114,12 @@ conc (clos {n = n} N Ms) φ {ρ₂} {ρ₃} c rel =
     → nonempty (nthD Ds i)
   ne← i ⟨ d , d∈ ⟩ = ⟨ d , proj₂ (concs-nth Ms φ c rel i) d d∈ ⟩
   eq : (∀ i → nonempty (nthD Es i))
-    → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env n Ds)) , ptt ⟩ ≃ ⟦ concretize φ (clos N Ms) ⟧₃ ρ₃
+    → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env n Ds)) , ptt ⟩
+      ≃ ⟦ concretize φ (clos N Ms) ⟧₃ ρ₃
   eq ne = ≃-trans (Λ-≃ body) (≃-sym (ΛΛ-⋆ cT (𝒯-intro n ne)
-            (λ X⊆ → proj₁ (ok N') (•-~ _⊆_ (•-~ _⊆_ (λ _ _ z → z) X⊆) (λ _ z → z))) (fin-code (ok N') (𝒯-intro n ne))))
+            (λ X⊆ →
+                proj₁ (ok N') (•-~ _⊆_ (•-~ _⊆_ (λ _ _ z → z) X⊆) (λ _ z → z)))
+                  (fin-code (ok N') (𝒯-intro n ne))))
     where
     cT = 𝒯-con n Es (cons-con (concs φ Ms) c)
     body : ∀ V
@@ -114,7 +129,8 @@ conc (clos {n = n} N Ms) φ {ρ₂} {ρ₃} c rel =
     body V _ cV = conc N fv-ref (Con-• (≈⇒Con cV) (Con-• cT (λ _ → Con-⌈⌉ ω)))
       λ { zero → ≃-refl
         ; (suc i) → ≃-trans (≃-reflexive (fv-env-nth n Ds i))
-                      (≃-trans (concs-nth Ms φ c rel i) (≃-sym (proj-𝒯 n ne i))) }
+                      (≃-trans (concs-nth Ms φ c rel i)
+                          (≃-sym (proj-𝒯 n ne i))) }
 conc (app L M) φ c rel = ⋆-≃ (conc L φ c rel) (conc M φ c rel)
 conc (lit B k) φ c rel = ≃-refl
 conc (tuple {n = n} Ms) φ c rel = 𝒯-≃ n (concs-nth Ms φ c rel)
@@ -123,12 +139,14 @@ conc (inl M) φ c rel = inl-≃ (conc M φ c rel)
 conc (inr M) φ c rel = inr-≃ (conc M φ c rel)
 conc (case L M N) φ {ρ₂} {ρ₃} c rel =
   𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) M ⟧₃ (X • ρ₃)}
-      {λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧₃ (X • ρ₃)} (conc L φ c rel)
+      {λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧₃ (X • ρ₃)}
+        (conc L φ c rel)
     (λ v V cV → conc M (ext-ref φ) (Con-• (≈⇒Con cV) c) (rel-ext rel))
     (λ v V cV → conc N (ext-ref φ) (Con-• (≈⇒Con cV) c) (rel-ext rel))
 conc (prim p L M) φ c rel = primD-≃ p (conc L φ c rel) (conc M φ c rel)
 conc (let′ M N) φ {ρ₂} {ρ₃} c rel =
-  letD-≃ {F = λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧₃ (X • ρ₃)} (conc M φ c rel)
+  letD-≃ {F = λ X → ⟦ N ⟧ (X • ρ₂)}
+    {λ X → ⟦ concretize (ext-ref φ) N ⟧₃ (X • ρ₃)} (conc M φ c rel)
     (λ V _ cV → conc N (ext-ref φ) (Con-• (≈⇒Con cV) c) (rel-ext rel))
 conc (inject G M) φ c rel = conc M φ c rel
 conc (project t M) φ c rel = project-≃ _ t (conc M φ c rel)

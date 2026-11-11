@@ -2,7 +2,8 @@
 
   A reduction semantics for ISWIM (call by value, left to right), by
   substitution. The values are functions, literals, tuples of values and
-  injections of values. See the design note in Semantics/Reduction/Smallstep.agda.
+  injections of values. See the design note in
+  Semantics/Reduction/Smallstep.agda.
 
 -}
 
@@ -13,7 +14,8 @@ open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import ISWIM.Language.ISWIM
 open import Semantics.Observation
-open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction; ret?; red-cons)
+open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to;
+  step-in; reduction; ret?; red-cons)
 open import Framework.Syntax.Subst Op sig using (_[_])
 open import Framework.ListUtil using (proj; args→list)
 
@@ -42,7 +44,8 @@ out (bool false) = inr-op ⦅ tuple 0 ⦅ Nil ⦆ ,, Nil ⦆
 
 {- the redexes, once the operands are values (r reduces the argument) -}
 app? : AST → Red AST → AST → Red AST
-app? F@(lam ⦅ ⟩ N ,, Nil ⦆) r M = step-in (λ M' → app ⦅ F ,, M' ,, Nil ⦆) r (to (N [ M ]))
+app? F@(lam ⦅ ⟩ N ,, Nil ⦆) r M =
+  step-in (λ M' → app ⦅ F ,, M' ,, Nil ⦆) r (to (N [ M ]))
 app? _ _ _ = error
 
 get? : ∀ {n} → Fin n → AST → Red AST
@@ -62,10 +65,12 @@ red-args : ∀ {n} → Args (replicate n ■) → Red (Args (replicate n ■))
 
 red (` x) = error
 red (lam ⦅ _ ⦆) = val
-red (app ⦅ L ,, M ,, Nil ⦆) = step-in (λ L' → app ⦅ L' ,, M ,, Nil ⦆) (red L) (app? L (red M) M)
+red (app ⦅ L ,, M ,, Nil ⦆) =
+  step-in (λ L' → app ⦅ L' ,, M ,, Nil ⦆) (red L) (app? L (red M) M)
 red (lit B k ⦅ Nil ⦆) = val
 red (tuple n ⦅ as ⦆) = step-in (λ as' → tuple n ⦅ as' ⦆) (red-args as) val
-red (get i ⦅ M ,, Nil ⦆) = step-in (λ M' → get i ⦅ M' ,, Nil ⦆) (red M) (get? i M)
+red (get i ⦅ M ,, Nil ⦆) =
+  step-in (λ M' → get i ⦅ M' ,, Nil ⦆) (red M) (get? i M)
 red (inl-op ⦅ M ,, Nil ⦆) = step-in (λ M' → inl-op ⦅ M' ,, Nil ⦆) (red M) val
 red (inr-op ⦅ M ,, Nil ⦆) = step-in (λ M' → inr-op ⦅ M' ,, Nil ⦆) (red M) val
 red (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
@@ -73,7 +78,8 @@ red (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
 red (prim p ⦅ L ,, M ,, Nil ⦆) =
   step-in (λ L' → prim p ⦅ L' ,, M ,, Nil ⦆) (red L)
     (step-in (λ M' → prim p ⦅ L ,, M' ,, Nil ⦆) (red M) (prim? p L M))
-red (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = step-in (λ M' → let-op ⦅ M' ,, ⟩ N ,, Nil ⦆) (red M) (to (N [ M ]))
+red (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = step-in (λ M' → let-op ⦅ M' ,, ⟩ N ,, Nil ⦆)
+  (red M) (to (N [ M ]))
 
 red-args {zero} Nil = val
 red-args {suc n} (M ,, as) = red-cons M as (red M) (red-args as)

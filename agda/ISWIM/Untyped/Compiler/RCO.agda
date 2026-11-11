@@ -85,7 +85,9 @@ atomize {suc n} (M ,, Ms) with atom? M
 {- f k on the atoms for the operands Ms, under the k lets for the
    complex ones -}
 lift : ∀ {n} → (ℕ → Args (replicate n ■) → AST) → Args (replicate n ■) → AST
-lift f Ms = lets (binds (atomize Ms)) (f (length (binds (atomize Ms))) (atoms (atomize Ms)))
+lift f Ms =
+  lets (binds (atomize Ms))
+  (f (length (binds (atomize Ms))) (atoms (atomize Ms)))
 
 {- case on an atom, with the branches M and N under k more lets -}
 case-on : AST → AST → ℕ → Args (■ ∷ []) → AST
@@ -106,7 +108,8 @@ rco (tuple n ⦅ Ms ⦆) = lift {n} (λ _ → tuple n ⦅_⦆) (rco-args Ms)
 rco (get i ⦅ Ms ⦆) = lift {1} (λ _ → get i ⦅_⦆) (rco-args Ms)
 rco (inl-op ⦅ Ms ⦆) = lift {1} (λ _ → inl-op ⦅_⦆) (rco-args Ms)
 rco (inr-op ⦅ Ms ⦆) = lift {1} (λ _ → inr-op ⦅_⦆) (rco-args Ms)
-rco (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = lift (case-on (rco M) (rco N)) (rco L ,, Nil)
+rco (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
+  lift (case-on (rco M) (rco N)) (rco L ,, Nil)
 rco (prim p ⦅ Ms ⦆) = lift {2} (λ _ → prim p ⦅_⦆) (rco-args Ms)
 rco (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ rco M ,, ⟩ rco N ,, Nil ⦆
 
@@ -127,7 +130,8 @@ mons-rename : ∀ r {n} (Ms : Args (replicate n ■))
   → Mons Ms
   → Mons (rename-args r Ms)
 mons-rename r {zero} Nil tt = tt
-mons-rename r {suc n} (M ,, Ms) ⟨ m , ms ⟩ = ⟨ mon-rename r m , mons-rename r Ms ms ⟩
+mons-rename r {suc n} (M ,, Ms) ⟨ m , ms ⟩ =
+  ⟨ mon-rename r m , mons-rename r Ms ms ⟩
 
 {- the lets bind monadic terms, and the atoms are atoms -}
 Good : ∀ {n} → Bound n → Set

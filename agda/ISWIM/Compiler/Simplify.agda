@@ -158,8 +158,10 @@ component i _ = nothing
 {- the branch (true for inl) that a case on a term known to be an
    injection takes, and the value it binds, if that value is small -}
 branch : Maybe Known → Maybe (Bool × AST)
-branch (just (val (inl-op ⦅ K ,, Nil ⦆))) = if small K then just (true , K) else nothing
-branch (just (val (inr-op ⦅ K ,, Nil ⦆))) = if small K then just (false , K) else nothing
+branch (just (val (inl-op ⦅ K ,, Nil ⦆))) =
+  if small K then just (true , K) else nothing
+branch (just (val (inr-op ⦅ K ,, Nil ⦆))) =
+  if small K then just (false , K) else nothing
 branch _ = nothing
 
 {- the term of a primitive's result -}
@@ -207,7 +209,8 @@ simp-case : ℕ → Facts → Info → AST → AST → Info
 simp-prim : Prim → Info → Info → Info
 
 simp f E (` x) = E x
-simp f E (lam ⦅ ⟩ N ,, Nil ⦆) = lam ⦅ ⟩ term (simp f (under E) N) ,, Nil ⦆ ∣ just (fun N E)
+simp f E (lam ⦅ ⟩ N ,, Nil ⦆) = lam ⦅ ⟩ term (simp f (under E) N) ,, Nil ⦆
+  ∣ just (fun N E)
 simp f E (app ⦅ L ,, M ,, Nil ⦆) = simp-app f E L (simp f E M)
 simp f E (lit B k ⦅ Nil ⦆) = self (lit B k ⦅ Nil ⦆)
 simp f E (tuple n ⦅ as ⦆) = info (tuple n ⦅ simp-args f E as ⦆)
@@ -229,7 +232,8 @@ simp-app f E L I with lam? L
 {- a call of a known function λ N, with fuel: its body is simplified at
    the call, with the operand bound (simp-let), and inlined if the result
    is small enough. The operator, known, has no effect, and is dropped -}
-simp-call (suc f) (T ∣ just (fun N E)) I with size (term (simp-let f E N I)) ≤ᵇ inline-size
+simp-call (suc f) (T ∣ just (fun N E)) I
+  with size (term (simp-let f E N I)) ≤ᵇ inline-size
 ... | true = simp-let f E N I
 ... | false = app ⦅ T ,, term I ,, Nil ⦆ ∣ nothing
 simp-call f J I = app ⦅ term J ,, term I ,, Nil ⦆ ∣ nothing
@@ -239,13 +243,16 @@ simp-call f J I = app ⦅ term J ,, term I ,, Nil ⦆ ∣ nothing
    stays bound by a let, and known; anything else stays bound by a let -}
 simp-let f E N I with small (term I) | value (term I)
 ... | true | _ = simp f (I • E) N
-... | false | true = let-op ⦅ term I ,, ⟩ term (simp f (known-as I E) N) ,, Nil ⦆ ∣ nothing
-... | false | false = let-op ⦅ term I ,, ⟩ term (simp f (under E) N) ,, Nil ⦆ ∣ nothing
+... | false | true = let-op ⦅ term I ,, ⟩ term (simp f (known-as I E) N)
+  ,, Nil ⦆ ∣ nothing
+... | false | false = let-op ⦅ term I ,, ⟩ term (simp f (under E) N)
+  ,, Nil ⦆ ∣ nothing
 
 {- a projection from a known tuple: the component, if it is small, and
    otherwise the projection, known to be the component -}
 simp-get i I with component i (known I)
-... | just K = if small K then self K else (get i ⦅ term I ,, Nil ⦆ ∣ just (val K))
+... | just K =
+  if small K then self K else (get i ⦅ term I ,, Nil ⦆ ∣ just (val K))
 ... | nothing = get i ⦅ term I ,, Nil ⦆ ∣ nothing
 
 {- a case on a known injection: the branch it takes -}
@@ -253,7 +260,8 @@ simp-case f E I M N with branch (known I)
 ... | just (true , K) = simp f (self K • E) M
 ... | just (false , K) = simp f (self K • E) N
 ... | nothing =
-  case-op ⦅ term I ,, ⟩ term (simp f (under E) M) ,, ⟩ term (simp f (under E) N) ,, Nil ⦆ ∣ nothing
+  case-op ⦅ term I ,, ⟩ term (simp f (under E) M) ,, ⟩ term (simp f (under E) N)
+    ,, Nil ⦆ ∣ nothing
 
 {- a primitive on known integers: its result -}
 simp-prim p I J with int-of (known I)

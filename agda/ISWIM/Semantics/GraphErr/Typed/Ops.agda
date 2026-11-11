@@ -26,7 +26,8 @@ open import Framework.GraphModel.Ops using (⋆; proj; 𝒞)
 open import Framework.GraphModel.TypedCheck using (checkedᵠ) public
 open import Semantics.Graph.Prim using (primD)
 open import Language.Prim using (Prim)
-open import ISWIM.Language.Typed.Type using (Flat; base; tup; sum; fun; Tag; tfun; tsum; tint; ttup; flat)
+open import ISWIM.Language.Typed.Type using (Flat; base; tup; sum; fun; Tag;
+  tfun; tsum; tint; ttup; flat)
 
 open import Data.Fin using (Fin)
 open import Data.Nat using (suc)

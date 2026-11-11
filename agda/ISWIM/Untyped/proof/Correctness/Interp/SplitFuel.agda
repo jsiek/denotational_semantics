@@ -37,14 +37,16 @@ open import proof.Framework.Syntax.Rename C4.Op C4.sig
   using (ext; rename; rename-args; shift; rename-fuse; rename-id)
 
 open import Data.List using (List; []; _∷_; replicate)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_;
+  reverse⁺)
 open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
+  cong₂; subst)
 open import Function using (_∘_)
 
-{- The relation -----------------------------------------------------------------}
+{- The relation ---------------------------------------------------------------}
 
 infix 4 _≈_
 
@@ -86,13 +88,14 @@ prim≈ : ∀ p {v₁ v₂ w₁ w₂}
   → v₁ ≈ w₁
   → v₂ ≈ w₂
   → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s
+  with δ? p (T.obs w₁) (T.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
 ... | just (bool true) = M.just (inl≈ (tup≈ []))
 ... | just (bool false) = M.just (inr≈ (tup≈ []))
 
-{- Clock for clock ---------------------------------------------------------------}
+{- Clock for clock ------------------------------------------------------------}
 
 {- what follows the let-bound closure: app (fst x) (snd x) (shift M') -}
 snd0 : C4.AST
@@ -111,7 +114,8 @@ apply≈ : ∀ ck r {ρ₁ ρ₂ f g} M
   → EnvRel r ρ₁ ρ₂
   → f ≈ g
   → RelResult _≈_ (S.apply ck ρ₁ M f)
-      (T.first g >>= T.apply ck (g ∷ ρ₂) snd0 (rename (ext r) (shift (split M))))
+      (T.first g
+          >>= T.apply ck (g ∷ ρ₂) snd0 (rename (ext r) (shift (split M))))
 call≈ : ∀ ck {ρ₁ ρ₂} N
   → EnvRel (λ x → x) ρ₁ ρ₂
   → RelResult _≈_ (S.call ck N ρ₁) (T.call (T.fun (split N)) ck ρ₂)
@@ -127,10 +131,12 @@ branch≈ : ∀ ck r {ρ₁ ρ₂ v w} M N
 
 run≈ ck r (` x) ρ = from-maybe-rel (ρ x)
 run≈ ck r (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) ρ =
-  bind-rel (rel-map (λ rs → tup≈ (reverse⁺ rs)) (args≈ ck r fvs ρ [])) λ e → ret (clos≈ e)
+  bind-rel (rel-map (λ rs → tup≈ (reverse⁺ rs)) (args≈ ck r fvs ρ [])) λ e →
+    ret (clos≈ e)
 run≈ ck r (app ⦅ L ,, M ,, Nil ⦆) ρ = bind-rel (run≈ ck r L ρ) (apply≈ ck r M ρ)
 run≈ ck r (lit B k ⦅ Nil ⦆) ρ = ret const≈
-run≈ ck r (tuple n ⦅ args ⦆) ρ = bind-rel (args≈ ck r args ρ []) (λ rs → ret (tup≈ (reverse⁺ rs)))
+run≈ ck r (tuple n ⦅ args ⦆) ρ =
+  bind-rel (args≈ ck r args ρ []) (λ rs → ret (tup≈ (reverse⁺ rs)))
 run≈ ck r (get i ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) get≈
   where
   get≈ : ∀ {v w}
@@ -141,24 +147,32 @@ run≈ ck r (get i ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) get≈
   get≈ const≈ = error
   get≈ (inl≈ _) = error
   get≈ (inr≈ _) = error
-run≈ ck r (inl-op ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → ret (inl≈ v))
-run≈ ck r (inr-op ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → ret (inr≈ v))
+run≈ ck r (inl-op ⦅ M ,, Nil ⦆) ρ =
+  bind-rel (run≈ ck r M ρ) (λ v → ret (inl≈ v))
+run≈ ck r (inr-op ⦅ M ,, Nil ⦆) ρ =
+  bind-rel (run≈ ck r M ρ) (λ v → ret (inr≈ v))
 run≈ ck r (prim p ⦅ L ,, M ,, Nil ⦆) ρ =
-  bind-rel (run≈ ck r L ρ) λ v → bind-rel (run≈ ck r M ρ) λ w → from-maybe-rel (prim≈ p v w)
+  bind-rel (run≈ ck r L ρ) λ v → bind-rel (run≈ ck r M ρ) λ w →
+    from-maybe-rel (prim≈ p v w)
 run≈ ck r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ =
   bind-rel (run≈ ck r L ρ) (branch≈ ck r M N ρ)
-run≈ ck r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → run≈ ck (ext r) N (env-ext v ρ))
+run≈ ck r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ =
+  bind-rel (run≈ ck r M ρ) (λ v → run≈ ck (ext r) N (env-ext v ρ))
 
 args≈ ck r {zero} Nil ρ rs = ret rs
 args≈ ck r {suc n} (M ,, args) ρ rs =
   bind-rel (run≈ ck r M ρ) (λ v → args≈ ck r args ρ (v ∷ rs))
 
-{- the operand sees past the let-bound closure: rename (ext r) ∘ shift = suc ∘ r -}
+{- the operand sees past the let-bound closure: rename (ext r) ∘ shift = suc ∘
+   r -}
 apply≈ ck r M ρ (clos≈ {N} v) =
   subst (λ M' → RelResult _≈_ _ (T.eval ck _ M' >>= _))
         (sym (rename-fuse (ext r) suc (split M)))
     (bind-rel (run≈ ck (λ x → suc (r x)) M ρ)
-      (λ w → call≈ ck N λ { zero → M.just w ; (suc zero) → M.just v ; (suc (suc x)) → M.nothing }))
+      (λ w →
+          call≈ ck N
+            λ { zero → M.just w ; (suc zero) → M.just v ; (suc (suc x))
+              → M.nothing }))
 apply≈ ck r M ρ const≈ = error
 apply≈ ck r M ρ (tup≈ _) = error
 apply≈ ck r M ρ (inl≈ _) = error
@@ -168,7 +182,8 @@ call≈ zero N ρ = timeout
 call≈ (suc ck) N ρ = run-id ck N ρ
 
 run-id ck {ρ₁} M ρ =
-  subst (RelResult _≈_ (S.eval ck ρ₁ M) ∘ T.eval ck _) (rename-id (split M)) (run≈ ck (λ x → x) M ρ)
+  subst (RelResult _≈_ (S.eval ck ρ₁ M) ∘ T.eval ck _) (rename-id (split M))
+    (run≈ ck (λ x → x) M ρ)
 
 branch≈ ck r M N ρ (inl≈ v) = run≈ ck (ext r) M (env-ext v ρ)
 branch≈ ck r M N ρ (inr≈ v) = run≈ ck (ext r) N (env-ext v ρ)

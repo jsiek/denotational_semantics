@@ -34,11 +34,13 @@ open import ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim as S2
 open import ISWIM.Untyped.proof.Semantics.Graph.Clos3Iswim as S3 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
 open import ISWIM.Untyped.Compiler.Concretize
-open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; Init; ρ₀; single⊆; ne-mem)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env;
+  Init; ρ₀; single⊆; ne-mem)
 open import proof.Framework.GraphModel.Env using (nonempty-env; •-~)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _<_; _<?_)
-open import Data.Nat.Properties using (+-suc; +-identityʳ; ≤-antisym; ≤-pred; ≮⇒≥; m+[n∸m]≡n)
+open import Data.Nat.Properties using (+-suc; +-identityʳ; ≤-antisym; ≤-pred;
+  ≮⇒≥; m+[n∸m]≡n)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
@@ -53,7 +55,7 @@ open import Level using (lift; lower)
 
 module ISWIM.Untyped.proof.Correctness.Graph.ConcretizeCorrect where
 
-{- Variables in Clos3 -----------------------------------------------------------}
+{- Variables in Clos3 ---------------------------------------------------------}
 
 ⟦_⟧ᵣ : Ref → Env → 𝒫 Value
 ⟦ var x ⟧ᵣ ρ = ρ x
@@ -76,7 +78,8 @@ rel-ext : ∀ {φ ρ₂ ρ₃}
   → ∀ X
   → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
 rel-ext rel X zero = ≃-refl
-rel-ext {φ} {ρ₃ = ρ₃} rel X (suc x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
+rel-ext {φ} {ρ₃ = ρ₃} rel X (suc x) =
+  ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
 
 {- The environment of a Clos2 closure's body ----------------------------------}
 
@@ -93,9 +96,11 @@ apply-push : ∀ k (a : Arg (ν-n k (ν ■))) (ρ : Env) Ds (Y : 𝒫 Value)
 apply-push zero (bind (ast N)) ρ _ Y = refl
 apply-push (suc k) (bind a) ρ ⟨ D , Ds ⟩ Y = apply-push k a (D • ρ) Ds Y
 
-push-plus : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ j → push Ds ρ (n + j) ≡ ρ j
+push-plus : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ j
+  → push Ds ρ (n + j) ≡ ρ j
 push-plus zero _ ρ j = refl
-push-plus (suc n) ⟨ D , Ds ⟩ ρ j rewrite sym (+-suc n j) = push-plus n Ds (D • ρ) (suc j)
+push-plus (suc n) ⟨ D , Ds ⟩ ρ j rewrite sym (+-suc n j) =
+  push-plus n Ds (D • ρ) (suc j)
 
 push-yes : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ k
   → (p : k < n)
@@ -103,14 +108,17 @@ push-yes : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ k
 push-yes (suc n) ⟨ D , Ds ⟩ ρ k p with k <? n
 ... | yes k<n = push-yes n Ds (D • ρ) k k<n
 ... | no ¬k<n =
-  trans (cong (push Ds (D • ρ)) (trans (≤-antisym (≤-pred p) (≮⇒≥ ¬k<n)) (sym (+-identityʳ n))))
+  trans
+    (cong (push Ds (D • ρ))
+      (trans (≤-antisym (≤-pred p) (≮⇒≥ ¬k<n)) (sym (+-identityʳ n))))
         (push-plus n Ds (D • ρ) 0)
 
 push-no : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ k
   → ¬ (k < n)
   → push Ds ρ k ≡ ρ (k ∸ n)
 push-no n Ds ρ k ¬k<n =
-  trans (cong (push Ds ρ) (sym (m+[n∸m]≡n (≮⇒≥ ¬k<n)))) (push-plus n Ds ρ (k ∸ n))
+  trans (cong (push Ds ρ) (sym (m+[n∸m]≡n (≮⇒≥ ¬k<n))))
+    (push-plus n Ds ρ (k ∸ n))
 
 proj-𝒯 : ∀ n (Ds : Results (𝒫 Value) (replicate n ■))
   → (∀ j → nonempty (nthD Ds j))
@@ -131,7 +139,8 @@ fv-env-rel n Ds₂ Ds₃ Y Ds≃ ne₃ zero = ≃-refl
 fv-env-rel n Ds₂ Ds₃ Y Ds≃ ne₃ (suc k) with k <? n
 ... | yes k<n =
   ≃-trans (≃-reflexive (push-yes n Ds₂ init₀ k k<n))
-          (≃-trans (Ds≃ (fv-index n k k<n)) (≃-sym (proj-𝒯 n Ds₃ ne₃ (fv-index n k k<n))))
+          (≃-trans (Ds≃ (fv-index n k k<n))
+              (≃-sym (proj-𝒯 n Ds₃ ne₃ (fv-index n k k<n))))
 ... | no ¬k<n = ≃-reflexive (push-no n Ds₂ init₀ k ¬k<n)
 
 ne-≃ : ∀ {n} {Ds Es : Results (𝒫 Value) (replicate n ■)}
@@ -146,7 +155,8 @@ T-ne : ∀ n (Ds : Results (𝒫 Value) (replicate n ■))
   → (∀ i → nonempty (nthD Ds i))
   → nonempty (𝒯 n Ds)
 T-ne zero _ _ = ⟨ ⟨⟩ , tt ⟩
-T-ne (suc n) Ds ne = ⟨ tup[ zero ] (proj₁ (ne zero)) , ⟨ refl , ⟨ proj₂ (ne zero) , ne ⟩ ⟩ ⟩
+T-ne (suc n) Ds ne =
+  ⟨ tup[ zero ] (proj₁ (ne zero)) , ⟨ refl , ⟨ proj₂ (ne zero) , ne ⟩ ⟩ ⟩
 
 T-ne⁻ : ∀ n (Ds : Results (𝒫 Value) (replicate n ■))
   → nonempty (𝒯 n Ds)
@@ -156,7 +166,8 @@ T-ne⁻ (suc n) Ds ⟨ tup[ i ] d , ⟨ refl , ⟨ _ , ne ⟩ ⟩ ⟩ = ne
 
 {- Closures -------------------------------------------------------------------}
 
-clos-correct : ∀ n (a : Arg (ν-n n (ν ■))) (Ds₂ Ds₃ : Results (𝒫 Value) (replicate n ■)) (N' : AST')
+clos-correct : ∀ n (a : Arg (ν-n n (ν ■)))
+  (Ds₂ Ds₃ : Results (𝒫 Value) (replicate n ■)) (N' : AST')
   → (∀ i → nthD Ds₂ i ≃ nthD Ds₃ i)
   → Con (𝒯 n Ds₃)
   → (  ∀ ρ₂ ρ₃
@@ -181,24 +192,36 @@ clos-correct n a Ds₂ Ds₃ N' Ds≃ cT body = ⟨ G , H ⟩
       (fv-env-rel n Ds₂ Ds₃ (mem U) Ds≃ (ne-≃ (λ i → proj₁ (Ds≃ i)) ne₂))
 
   G : guard-n n Ds₂ (Λ ⟨ apply-n n (⟦ a ⟧ₐ init₀) Ds₂ , ptt ⟩)
-      ⊆ ⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N' ⟧' (Y • X • init₀)) , ptt ⟩) , ptt ⟩ , ⟨ T , ptt ⟩ ⟩
+      ⊆
+        ⋆
+        ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N' ⟧' (Y • X • init₀)) , ptt ⟩) , ptt ⟩
+          , ⟨ T , ptt ⟩ ⟩
   G ν ⟨ ne₂ , tt ⟩ =
-    ⟨ proj₁ neT ∷ [] , ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ single⊆ (proj₂ neT) , (λ ()) ⟩ ⟩ ⟩
+    ⟨ proj₁ neT ∷ []
+        ,
+        ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ single⊆ (proj₂ neT) , (λ ()) ⟩ ⟩ ⟩
     where neT = T-ne n Ds₃ (ne-≃ (λ i → proj₁ (Ds≃ i)) ne₂)
   G (U ↦ x) ⟨ ne₂ , ⟨ x∈ , ⟨ neU , cU ⟩ ⟩ ⟩
-      with S3.body2-continuous N' init₀ (λ _ → ⟨ ω , refl ⟩) (T-ne n Ds₃ (ne-≃ (λ i → proj₁ (Ds≃ i)) ne₂))
+      with S3.body2-continuous N' init₀ (λ _ → ⟨ ω , refl ⟩)
+        (T-ne n Ds₃ (ne-≃ (λ i → proj₁ (Ds≃ i)) ne₂))
              (E≢[]⇒nonempty-mem neU) x (proj₁ (body≃ U cU ne₂) x x∈)
   ... | ⟨ V , ⟨ U' , ⟨ neV , ⟨ _ , ⟨ V⊆ , ⟨ U'⊆ , x∈′ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
-    ⟨ V , ⟨ ⟨ ⟨ S3.⟦⟧-monotone N' (•-~ _⊆_ (λ _ _ d∈ → d∈) U'⊆) x x∈′ , ⟨ neU , cU ⟩ ⟩
+    ⟨ V
+        ,
+        ⟨ ⟨ ⟨ S3.⟦⟧-monotone N' (•-~ _⊆_ (λ _ _ d∈ → d∈) U'⊆) x x∈′
+          , ⟨ neU , cU ⟩ ⟩
             , ⟨ neV , Con⇒≈ V cT V⊆ ⟩ ⟩ , ⟨ V⊆ , neV ⟩ ⟩ ⟩
 
-  H : ⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N' ⟧' (Y • X • init₀)) , ptt ⟩) , ptt ⟩ , ⟨ T , ptt ⟩ ⟩
+  H : ⋆
+    ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N' ⟧' (Y • X • init₀)) , ptt ⟩) , ptt ⟩
+      , ⟨ T , ptt ⟩ ⟩
       ⊆ guard-n n Ds₂ (Λ ⟨ apply-n n (⟦ a ⟧ₐ init₀) Ds₂ , ptt ⟩)
   H ν ⟨ V , ⟨ _ , ⟨ V⊆T , neV ⟩ ⟩ ⟩ =
     ⟨ ne-≃ (λ i → proj₂ (Ds≃ i)) (T-ne⁻ n Ds₃ (ne-mem neV V⊆T)) , tt ⟩
   H (U ↦ x) ⟨ V , ⟨ ⟨ ⟨ x∈ , neU ⟩ , _ ⟩ , ⟨ V⊆T , neV ⟩ ⟩ ⟩ =
     ⟨ ne₂ , ⟨ proj₂ (body≃ U (proj₂ neU) ne₂) x
-                (S3.⟦⟧-monotone N' (•-~ _⊆_ (•-~ _⊆_ (λ _ _ d∈ → d∈) V⊆T) (λ _ d∈ → d∈)) x x∈)
+                (S3.⟦⟧-monotone N'
+                    (•-~ _⊆_ (•-~ _⊆_ (λ _ _ d∈ → d∈) V⊆T) (λ _ d∈ → d∈)) x x∈)
             , neU ⟩ ⟩
     where
     ne₂ = ne-≃ (λ i → proj₂ (Ds≃ i)) (T-ne⁻ n Ds₃ (ne-mem neV V⊆T))
@@ -224,7 +247,8 @@ concretize-correct (` x) φ ρ₂ ρ₃ c rel =
   ≃-trans (rel x) (≃-reflexive (sym (ref-ok (φ x) ρ₃)))
 concretize-correct (clos-op n ⦅ ! clear a ,, fvs ⦆) φ ρ₂ ρ₃ c rel =
   clos-correct n a (⟦ fvs ⟧₊ ρ₂) (⟦ conc-args φ fvs ⟧₊' ρ₃) (conc-body n n a)
-    (nthD-≃ _ _ (args-correct fvs φ ρ₂ ρ₃ c rel)) (Clos3-con (tuple n ⦅ conc-args φ fvs ⦆') c)
+    (nthD-≃ _ _ (args-correct fvs φ ρ₂ ρ₃ c rel))
+      (Clos3-con (tuple n ⦅ conc-args φ fvs ⦆') c)
     (body-correct n n a)
 concretize-correct (app ⦅ L ,, M ,, Nil ⦆) φ ρ₂ ρ₃ c rel =
   ⋆-≃ (concretize-correct L φ ρ₂ ρ₃ c rel) (concretize-correct M φ ρ₂ ρ₃ c rel)
@@ -241,21 +265,35 @@ concretize-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) φ ρ₂ ρ₃ c
   𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) M ⟧' (X • ρ₃)}
       {λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧' (X • ρ₃)}
       (concretize-correct L φ ρ₂ ρ₃ c rel)
-      (λ v V cV → concretize-correct M (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c) (rel-ext rel (mem (v ∷ V))))
-      (λ v V cV → concretize-correct N (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c) (rel-ext rel (mem (v ∷ V))))
+      (λ v V cV →
+          concretize-correct M (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c)
+          (rel-ext rel (mem (v ∷ V))))
+      (λ v V cV →
+          concretize-correct N (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c)
+          (rel-ext rel (mem (v ∷ V))))
 concretize-correct (prim p ⦅ L ,, M ,, Nil ⦆) φ ρ₂ ρ₃ c rel =
-  primD-≃ p (concretize-correct L φ ρ₂ ρ₃ c rel) (concretize-correct M φ ρ₂ ρ₃ c rel)
+  primD-≃ p (concretize-correct L φ ρ₂ ρ₃ c rel)
+    (concretize-correct M φ ρ₂ ρ₃ c rel)
 concretize-correct (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) φ ρ₂ ρ₃ c rel =
-  ⋆-≃ (Λ-≃ {λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧' (X • ρ₃)} (λ V _ cV → concretize-correct N (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c) (rel-ext rel (mem V))))
+  ⋆-≃
+    (Λ-≃ {λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧' (X • ρ₃)}
+      (λ V _ cV →
+        concretize-correct N (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c)
+          (rel-ext rel (mem V))))
       (concretize-correct M φ ρ₂ ρ₃ c rel)
 
-body-correct n zero (bind (ast N)) ρ₂ ρ₃ rel = concretize-correct N (fv-ref n) ρ₂ ρ₃ rel
+body-correct n zero (bind (ast N)) ρ₂ ρ₃ rel =
+  concretize-correct N (fv-ref n) ρ₂ ρ₃ rel
 body-correct n (suc k) (bind a) = body-correct n k a
 
 args-correct {zero} Nil φ ρ₂ ρ₃ c rel = ptt
-args-correct {suc n} (M ,, args) φ ρ₂ ρ₃ c rel = ⟨ lift (concretize-correct M φ ρ₂ ρ₃ c rel) , args-correct args φ ρ₂ ρ₃ c rel ⟩
+args-correct {suc n} (M ,, args) φ ρ₂ ρ₃ c rel =
+  ⟨ lift (concretize-correct M φ ρ₂ ρ₃ c rel)
+    , args-correct args φ ρ₂ ρ₃ c rel ⟩
 
 {- The end theorem ------------------------------------------------------------}
 
-concretize-correct-closed : ∀ (M : AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ concretize-program M ⟧' ρ₀
-concretize-correct-closed M = concretize-correct M var ρ₀ ρ₀ (λ _ → Con-⌈⌉ ω) (λ x → ≃-refl)
+concretize-correct-closed : ∀ (M : AST)
+  → ⟦ M ⟧ ρ₀ ≃ ⟦ concretize-program M ⟧' ρ₀
+concretize-correct-closed M =
+  concretize-correct M var ρ₀ ρ₀ (λ _ → Con-⌈⌉ ω) (λ x → ≃-refl)

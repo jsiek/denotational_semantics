@@ -24,12 +24,17 @@ open import proof.Framework.GraphModel.Domain
 open import ISWIM.Untyped.Language.Clos5 using (Args)
 open import ISWIM.Untyped.Language.Mon
 import ISWIM.Untyped.Language.Imp as I
-open import ISWIM.Untyped.Compiler.LiftLocals using (lift-atom; lift-atoms; lift-defs; lift-program)
-open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; init)
-open import ISWIM.Untyped.Semantics.Graph.Imp using (Store; read; _[_↦_]; 𝒜; 𝒜s; frame)
-open import ISWIM.Untyped.proof.Correctness.Graph.RCOCorrect using (compile-mon-same)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift-atom; lift-atoms;
+  lift-defs; lift-program)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_];
+  ⟦_⟧₊[_]; ⟦_⟧ₚ; init)
+open import ISWIM.Untyped.Semantics.Graph.Imp using (Store; read; _[_↦_]; 𝒜; 𝒜s;
+  frame)
+open import ISWIM.Untyped.proof.Correctness.Graph.RCOCorrect using
+  (compile-mon-same)
 open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
+open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect using (Same;
+  Same-trans; ≃→Same)
 open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-imp)
 open import ISWIM.Untyped.Compiler.RCO using (rco-program-mon)
 open import ISWIM.proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
@@ -37,9 +42,10 @@ import ISWIM.Language.ISWIM as ISWIM
 open import proof.Framework.GraphModel.Env using (Env)
 open import Framework.Primitives using (base-rep)
 
-open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _⊔_; _<_; _≤_; _≟_; _<?_; s≤s)
-open import Data.Nat.Properties
-  using (≤-refl; ≤-trans; +-mono-≤; +-suc; m≤m⊔n; m≤n⊔m; m≤m+n; m∸n≤m; ≮⇒≥; <-irrefl; <-≤-trans)
+open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _⊔_; _<_; _≤_; _≟_; _<?_;
+  s≤s)
+open import Data.Nat.Properties using (≤-refl; ≤-trans; +-mono-≤; +-suc; m≤m⊔n;
+  m≤n⊔m; m≤m+n; m∸n≤m; ≮⇒≥; <-irrefl; <-≤-trans)
 open import Data.List using (length; replicate)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
@@ -50,7 +56,7 @@ open import Relation.Nullary using (yes; no)
 
 module ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCommon where
 
-{- Slots and stores ----------------------------------------------------------------}
+{- Slots and stores -----------------------------------------------------------}
 
 read-at : ∀ {n σ y}
   → y < n
@@ -102,7 +108,7 @@ fits-< {d} k H = ≤-trans (s≤s (m≤m+n d k)) H
   → d + b ≤ n
 ⊔ʳ {d} a b H = ≤-trans (+-mono-≤ (≤-refl {d}) (m≤n⊔m a b)) H
 
-{- The invariant ---------------------------------------------------------------------}
+{- The invariant --------------------------------------------------------------}
 
 {- at depth d, σ agrees with ρ: slot d ∸ (x + 1) means variable x -}
 record Agree (d : ℕ) (σ : Store) (ρ : Env Value) : Set where
@@ -132,7 +138,7 @@ weak : ∀ {d σ ρ X}
   → Agree d σ ρ
 weak A = agree λ x x<d → at A (suc x) (s≤s x<d)
 
-{- Atoms ----------------------------------------------------------------------------}
+{- Atoms ----------------------------------------------------------------------}
 
 module AtomsSame {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
 
@@ -143,7 +149,10 @@ module AtomsSame {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
     → Agree d σ ρ
     → 𝒜 T n σ (lift-atom n d a) ≃ ⟦ M ⟧[ T' ] ρ
   atom-≃ {n} {d} {h} {σ} (var x) H O A with x <? d
-  ... | yes x<d = ≃-trans (≃-reflexive (read-at (<-≤-trans (slot-< x<d) (≤-trans (m≤m+n d h) H)))) (at A x x<d)
+  ... | yes x<d =
+    ≃-trans
+    (≃-reflexive (read-at (<-≤-trans (slot-< x<d) (≤-trans (m≤m+n d h) H))))
+    (at A x x<d)
   ... | no x≮d = ≃-trans (≃-reflexive (read-out n σ)) (≃-sym (O x (≮⇒≥ x≮d)))
   atom-≃ (lit B k) _ _ _ = ≃-refl
   atom-≃ (ref k) _ _ _ = TT k
@@ -160,14 +169,17 @@ module AtomsSame {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
     → Q (length (lift-atoms n d as)) (𝒜s T n σ (lift-atoms n d as))
   atoms-≃ [] H O A Q resp q = q
   atoms-≃ (a ∷ as) H O A Q resp q =
-    atoms-≃ as H O A (λ m Ds → Q (suc m) ⟨ _ , Ds ⟩) (λ eq → resp ⟨ up ≃-refl , eq ⟩)
+    atoms-≃ as H O A (λ m Ds → Q (suc m) ⟨ _ , Ds ⟩)
+      (λ eq → resp ⟨ up ≃-refl , eq ⟩)
       (resp ⟨ up (atom-≃ a H O A) , RRs-refl _ ⟩ q)
 
-{- Programs ---------------------------------------------------------------------}
+{- Programs -------------------------------------------------------------------}
 
 {- a function body: the free variables in slot 0, the argument in slot 1 -}
 agree-frame : ∀ X Y → Agree 2 (frame X Y) (Y • X • (λ _ → init))
-agree-frame X Y = agree λ { zero _ → ≃-refl ; (suc zero) _ → ≃-refl ; (suc (suc x)) (s≤s (s≤s ())) }
+agree-frame X Y =
+  agree
+  λ { zero _ → ≃-refl ; (suc zero) _ → ≃-refl ; (suc (suc x)) (s≤s (s≤s ())) }
 
 scope-frame : ∀ X Y → Scope 2 (Y • X • (λ _ → init))
 scope-frame X Y = λ { (suc zero) (s≤s ()) ; (suc (suc x)) _ → ≃-refl }
@@ -184,7 +196,8 @@ length-lift-defs (m ∷ ms) rewrite length-lift-defs ms = refl
   and produces something exactly when it does. -}
 
 module Into (ℐ : I.Program → 𝒫 Value)
-  (lift-program-correct : ∀ P (mp : MonProgram P) → ℐ (lift-program P mp) ≃ ⟦ P ⟧ₚ) where
+  (lift-program-correct : ∀ P (mp : MonProgram P)
+      → ℐ (lift-program P mp) ≃ ⟦ P ⟧ₚ) where
 
   compile-imp-same : ∀ (M : ISWIM.AST) → Same (⟦ M ⟧ᵢ ρ₀) (ℐ (compile-imp M))
   compile-imp-same M = Same-trans (compile-mon-same M)

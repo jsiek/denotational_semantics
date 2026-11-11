@@ -29,29 +29,33 @@ module ISWIM.proof.Adequacy.GraphErr.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming
+  (const to dconst)
 open import ISWIM.Language.ISWIM
 open import ISWIM.proof.Semantics.GraphErr.ISWIM using (⟦_⟧)
 open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep
-  using (Terminates; Diverges; diverges-not-terminates; never-final-diverges; next; stop)
+open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges;
+  diverges-not-terminates; never-final-diverges; next; stop)
 open import ISWIM.Semantics.CEK.ISWIM
 open import ISWIM.Compiler.CaptureScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
-open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const; ↠→star)
-open import ISWIM.proof.Adequacy.GraphErr.Soundness using (soundness; sound-error; shape-ω) public
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer;
+  shape-const; ↠→star)
+open import ISWIM.proof.Adequacy.GraphErr.Soundness using (soundness;
+  sound-error; shape-ω) public
 open import ISWIM.proof.Adequacy.GraphErr.LogRel
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using ([])
 open import Data.Nat using (_<_)
 open import Data.Nat.Properties using (n≮0)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; subst)
 open import Relation.Nullary using (¬_)
 
-{- Adequacy --------------------------------------------------------------------}
+{- Adequacy -------------------------------------------------------------------}
 
 closed-𝔾 : ∀ M
   → Closed M
@@ -85,7 +89,8 @@ adequacy-terminates : ∀ M
   → Σ[ o ∈ Obs ] Terminates (sem M) o
 adequacy-terminates M c {d} d∈ with adequate M (closed-𝔾 M c) d∈
 ... | inj₁ ⟨ refl , _ ⟩ = ⟨ o-error , adequacy-error M c d∈ ⟩
-... | inj₂ ⟨ v , ⟨ e , _ ⟩ ⟩ = ⟨ obs v , ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩ ⟩
+... | inj₂ ⟨ v , ⟨ e , _ ⟩ ⟩ =
+  ⟨ obs v , ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩ ⟩
 
 {- Soundness, for every observation -------------------------------------------}
 
@@ -100,13 +105,14 @@ sound-terminates : ∀ M {o}
   → Terminates (sem M) o
   → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀
 sound-terminates M {o-error} t = ⟨ ω , sound-error M t ⟩
-sound-terminates M {o-const B k} t = ⟨ _ , proj₁ (proj₂ (soundness M t (λ ()))) ⟩
+sound-terminates M {o-const B k} t =
+  ⟨ _ , proj₁ (proj₂ (soundness M t (λ ()))) ⟩
 sound-terminates M {o-fun} t = ⟨ _ , proj₁ (proj₂ (soundness M t (λ ()))) ⟩
 sound-terminates M {o-tuple os} t = ⟨ _ , proj₁ (proj₂ (soundness M t (λ ()))) ⟩
 sound-terminates M {o-inl o} t = ⟨ _ , proj₁ (proj₂ (soundness M t (λ ()))) ⟩
 sound-terminates M {o-inr o} t = ⟨ _ , proj₁ (proj₂ (soundness M t (λ ()))) ⟩
 
-{- Characterizations ------------------------------------------------------------}
+{- Characterizations ----------------------------------------------------------}
 
 {- ω ∈ ⟦ M ⟧ ρ₀ exactly when the machine stops with an error -}
 error-iff : ∀ M
@@ -147,6 +153,10 @@ diverges-iff : ∀ M
   → Closed M
   → Diverges (sem M) ⇔ (∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀))
 diverges-iff M c =
-  ⟨ (λ div d d∈ → diverges-not-terminates div (proj₂ (adequacy-terminates M c d∈)))
-  , (λ empty → never-final-diverges (λ σ fin → let ⟨ d , d∈ ⟩ = sound-terminates M ⟨ _ , ⟨ σ , fin ⟩ ⟩
+  ⟨ (λ div d d∈ →
+      diverges-not-terminates div (proj₂ (adequacy-terminates M c d∈)))
+  ,
+    (λ empty →
+      never-final-diverges
+      (λ σ fin → let ⟨ d , d∈ ⟩ = sound-terminates M ⟨ _ , ⟨ σ , fin ⟩ ⟩
                                               in empty d d∈)) ⟩

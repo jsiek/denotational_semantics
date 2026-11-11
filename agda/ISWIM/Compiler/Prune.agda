@@ -67,7 +67,8 @@ keeps N = flags (λ i → uses N (suc i))
 opt : ∀ {k k' A} → (Fin k → Fin k') → Tm k A → Tm k' A
 opts : ∀ {k k' n} → (Fin k → Fin k') → Vec (Tm k Any) n → Vec (Tm k' Any) n
 opt r (` x) = ` r x
-opt r (clos N Ms) = clos (opt (squeeze (keeps N Ms)) N) (select (keeps N Ms) (opts r Ms))
+opt r (clos N Ms) =
+  clos (opt (squeeze (keeps N Ms)) N) (select (keeps N Ms) (opts r Ms))
 opt r (app L M) = app (opt r L) (opt r M)
 opt r (lit B c) = lit B c
 opt r (tuple Ms) = tuple (opts r Ms)
@@ -91,7 +92,8 @@ data Fl {k} : Bool → Bool → Tm k Any → Set where
   kept : ∀ {u M} → Fl u true M
   var : ∀ {u x} → ¬ T u → Fl u false (` x)
 
-flags-ok : ∀ {k n} (u : Fin n → Bool) (Ms : Vec (Tm k Any) n) i → Fl (u i) (lookup (flags u Ms) i) (lookup Ms i)
+flags-ok : ∀ {k n} (u : Fin n → Bool) (Ms : Vec (Tm k Any) n) i
+  → Fl (u i) (lookup (flags u Ms) i) (lookup Ms i)
 flags-ok u (M ∷ Ms) zero = ok M (u zero)
   where ok : ∀ M u → Fl u (keep? M u) M
         ok M true = kept

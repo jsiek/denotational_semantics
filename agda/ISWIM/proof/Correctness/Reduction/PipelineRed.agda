@@ -13,21 +13,26 @@ module ISWIM.proof.Correctness.Reduction.PipelineRed where
 
 open import ISWIM.Compiler.CaptureScope using (Closed)
 open import ISWIM.Compiler.Simplify using (simplify)
-open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp;
+  compile-cfg; compile-x86)
 open import ISWIM.Language.Typed.Mon using (⌜_⌝ₚ)
 open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
 open import Semantics.Observation
-open import Semantics.Reduction.Smallstep using (Equivalent; Terminates; Diverges)
+open import Semantics.Reduction.Smallstep using (Equivalent; Terminates;
+  Diverges)
 open import proof.Framework.Simulation Obs using (equiv-trans)
-open import ISWIM.proof.Correctness.Reduction.SimplifyRed using (simplify-correct)
+open import ISWIM.proof.Correctness.Reduction.SimplifyRed using
+  (simplify-correct)
 open import ISWIM.proof.Correctness.Reduction.CastRed using (cast-correct)
 open import ISWIM.proof.Correctness.Reduction.CaptureRed using (capture-correct)
 open import ISWIM.proof.Correctness.Reduction.PruneRed using (prune-correct)
-open import ISWIM.proof.Correctness.Reduction.ConcretizeRed using (concretize-correct)
+open import ISWIM.proof.Correctness.Reduction.ConcretizeRed using
+  (concretize-correct)
 open import ISWIM.proof.Correctness.Reduction.SplitRed using (split-correct)
 open import ISWIM.proof.Correctness.Reduction.HoistRed using (hoist-correct)
 open import ISWIM.proof.Correctness.Reduction.RCORed using (rco-correct)
-open import ISWIM.proof.Correctness.Reduction.LiftLocalsRed using (lift-locals-correct)
+open import ISWIM.proof.Correctness.Reduction.LiftLocalsRed using
+  (lift-locals-correct)
 open import ISWIM.proof.Correctness.CEK.ExplicateSim using (explicate-correct)
 open import ISWIM.proof.Correctness.CEK.SelectSim using (select-correct)
 import ISWIM.Semantics.Reduction.ISWIM as S
@@ -42,8 +47,10 @@ compile-correct : ∀ M
   → Closed M
   → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
-  equiv-trans (simplify-correct M c) (equiv-trans (cast-correct (simplify M) (simplify-closed M c))
-    (equiv-trans (capture-correct _) (equiv-trans (prune-correct _) (equiv-trans (concretize-correct _)
+  equiv-trans (simplify-correct M c)
+    (equiv-trans (cast-correct (simplify M) (simplify-closed M c))
+    (equiv-trans (capture-correct _)
+        (equiv-trans (prune-correct _) (equiv-trans (concretize-correct _)
       (equiv-trans (split-correct _) (hoist-correct _))))))
 
 compile-mon-correct : ∀ M
@@ -54,29 +61,35 @@ compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct _)
 compile-imp-correct : ∀ M
   → Closed M
   → Equivalent (S.sem M) (Impᵀₘ.sem (compile-imp M))
-compile-imp-correct M c = equiv-trans (compile-mon-correct M c) (lift-locals-correct _)
+compile-imp-correct M c =
+  equiv-trans (compile-mon-correct M c) (lift-locals-correct _)
 
 compile-cfg-correct : ∀ M
   → Closed M
   → Equivalent (S.sem M) (CFGᵀₘ.sem (compile-cfg M))
-compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct _)
+compile-cfg-correct M c =
+  equiv-trans (compile-imp-correct M c) (explicate-correct _)
 
 compile-x86-correct : ∀ M
   → Closed M
   → Equivalent (S.sem M) (X86ᵀₘ.sem (compile-x86 M))
-compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct _)
+compile-x86-correct M c =
+  equiv-trans (compile-cfg-correct M c) (select-correct _)
 
 {- in particular, for compile -}
 
 compile-const : ∀ M
   → Closed M
   → ∀ B k
-  → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (compile M)) (o-const B k)
-compile-const M c B k = Equivalent.terminates (compile-correct M c) (o-const B k)
+  → Terminates (S.sem M) (o-const B k)
+    ⇔ Terminates (T.sem (compile M)) (o-const B k)
+compile-const M c B k =
+  Equivalent.terminates (compile-correct M c) (o-const B k)
 
 compile-converges : ∀ M
   → Closed M
-  → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (compile M)))
+  → Converges (Terminates (S.sem M))
+    ⇔ Converges (Terminates (T.sem (compile M)))
 compile-converges M c =
     (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
   , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })

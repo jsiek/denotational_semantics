@@ -21,7 +21,8 @@
 module ISWIM.Theorems.Denotational where
 
 open import Framework.Primitives using (base-rep)
-open import Framework.GraphModel.SetsAsPredicates using (⌈_⌉; _∈_; nonempty; _≃_)
+open import Framework.GraphModel.SetsAsPredicates using (⌈_⌉; _∈_; nonempty;
+  _≃_)
 open import Framework.GraphModel.Env using (Env)
 open import Framework.GraphModel.Domain using (Value; const; ω)
 
@@ -49,7 +50,8 @@ open import ISWIM.Compiler.RCO using (rco-program)
 open import ISWIM.Compiler.LiftLocals using (lift-program)
 open import ISWIM.Compiler.Explicate using (explicate)
 open import ISWIM.Compiler.Select using (select)
-open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Compiler.Pipeline using (compile; compile-mon; compile-imp;
+  compile-cfg; compile-x86)
 
 open import ISWIM.Semantics.Graph.ISWIM using (⟦_⟧)
 open import ISWIM.Semantics.Graph.Typed.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵀ)
@@ -102,7 +104,8 @@ capture-correct = Capture.capture-correct
 prune-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ prune-program M ⟧₂ ρ₀
 prune-correct = Prune.prune-correct
 
-concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
+concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any)
+  → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = Concretize.concretize-correct
 
 {- split preserves and reflects the constants a program produces, and

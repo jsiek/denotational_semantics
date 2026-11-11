@@ -31,7 +31,8 @@ open import ISWIM.Untyped.Language.Clos2
 open import ISWIM.Untyped.Compiler.Prune hiding (bound; bound-arg; bound-args)
 open import ISWIM.Untyped.Compiler.Capture using (capture)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; ws-uses)
-open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed; capture-closed)
+open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed;
+  capture-closed)
 open import Semantics.Observation
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
@@ -43,17 +44,20 @@ import ISWIM.Untyped.proof.Correctness.Interp.CaptureFuel as EF
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using ([]; _∷_; replicate)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_;
+  reverse⁺)
 open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; z≤n)
-open import Data.Nat.Properties using (≤-pred; <-≤-trans; <-irrefl; +-suc; +-identityʳ; +-monoʳ-≤; n≮0)
+open import Data.Nat.Properties using (≤-pred; <-≤-trans; <-irrefl; +-suc;
+  +-identityʳ; +-monoʳ-≤; n≮0)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
 open import Data.Sum using (inj₁; inj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst; cong₂)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
-{- The relation -----------------------------------------------------------------}
+{- The relation ---------------------------------------------------------------}
 
 infix 4 _≈_
 
@@ -62,7 +66,8 @@ Lookup : T.Env → ℕ → T.Env → ℕ → Set
 data Agree (M : AST) (k : ℕ) (r : Var → Var) (ρ₁ ρ₂ : T.Env) : Set
 
 data _≈_ where
-  clo≈ : ∀ {N vs ws r} → Agree N 1 r vs ws → T.clos N vs ≈ T.clos (prune (ext-var r) N) ws
+  clo≈ : ∀ {N vs ws r} → Agree N 1 r vs ws
+    → T.clos N vs ≈ T.clos (prune (ext-var r) N) ws
   const≈ : ∀ {B k} → T.const B k ≈ T.const B k
   tup≈ : ∀ {vs ws} → Pointwise _≈_ vs ws → T.tup vs ≈ T.tup ws
   inl≈ : ∀ {v w} → v ≈ w → T.inl v ≈ T.inl w
@@ -73,7 +78,8 @@ Lookup ρ₁ x ρ₂ y =
   Σ[ v ∈ T.Val ] Σ[ w ∈ T.Val ] (ρ₁ ‼ x ≡ just v) × (ρ₂ ‼ y ≡ just w) × v ≈ w
 
 data Agree M k r ρ₁ ρ₂ where
-  agree : ∀ {j} → WS j M → (∀ x → Uses (k + x) M → Lookup ρ₁ x ρ₂ (r x)) → Agree M k r ρ₁ ρ₂
+  agree : ∀ {j} → WS j M → (∀ x → Uses (k + x) M → Lookup ρ₁ x ρ₂ (r x))
+    → Agree M k r ρ₁ ρ₂
 
 {- the values collected for the free variables of a closure, with m left:
    U k says that the code uses position k, and the positions k past the m
@@ -102,13 +108,14 @@ prim≈ : ∀ p {v₁ v₂ w₁ w₂}
   → v₁ ≈ w₁
   → v₂ ≈ w₂
   → M.Pointwise _≈_ (T.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s
+  with δ? p (T.obs w₁) (T.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
 ... | just (bool true) = M.just (inl≈ (tup≈ []))
 ... | just (bool false) = M.just (inr≈ (tup≈ []))
 
-{- Agreement of environments ---------------------------------------------------}
+{- Agreement of environments --------------------------------------------------}
 
 agree-ext : ∀ {M r ρ₁ ρ₂ v w}
   → v ≈ w
@@ -178,7 +185,8 @@ unbind-body : ∀ k (a : Arg (ν-n k (ν ■))) → unbind-n k a ≡ T.body k a
 unbind-body zero (bind (ast N)) = refl
 unbind-body (suc k) (bind a) = unbind-body k a
 
-opt-body-body : ∀ r k (a : Arg (ν-n k (ν ■))) → opt-body r k a ≡ prune r (T.body k a)
+opt-body-body : ∀ r k (a : Arg (ν-n k (ν ■)))
+  → opt-body r k a ≡ prune r (T.body k a)
 opt-body-body r zero (bind (ast N)) = refl
 opt-body-body r (suc k) (bind a) = opt-body-body r k a
 
@@ -189,7 +197,7 @@ ws-body zero k (bind (ast N)) w = w
 ws-body (suc n) k (bind a) w =
   subst (λ x → WS (suc x) (T.body n a)) (+-suc n k) (ws-body n (suc k) a w)
 
-{- Clock for clock ---------------------------------------------------------------}
+{- Clock for clock ------------------------------------------------------------}
 
 var≈ : ∀ ck {r ρ₁ ρ₂} x
   → Agree (` x) 0 r ρ₁ ρ₂
@@ -203,14 +211,17 @@ run≈ : ∀ ck {r ρ₁ ρ₂} M
 args≈ : ∀ ck {n r ρ₁ ρ₂ vs ws} (args : Args (replicate n ■))
   → Agree (tuple n ⦅ args ⦆) 0 r ρ₁ ρ₂
   → Pointwise _≈_ vs ws
-  → RelResult (Pointwise _≈_) (T.eval-args ck ρ₁ vs args) (T.eval-args ck ρ₂ ws (opt-args r args))
+  → RelResult (Pointwise _≈_) (T.eval-args ck ρ₁ vs args)
+    (T.eval-args ck ρ₂ ws (opt-args r args))
 {- the free variables of a closure: the source evaluates all of them, the
    target only those that prune-fvs keeps -}
-prune≈ : ∀ ck m {r ρ₁ ρ₂ U b vs ws} (dec : ∀ j → Dec (U j)) (fvs : Args (replicate m ■))
+prune≈ : ∀ ck m {r ρ₁ ρ₂ U b vs ws} (dec : ∀ j → Dec (U j))
+  (fvs : Args (replicate m ■))
   → Agree (tuple m ⦅ fvs ⦆) 0 r ρ₁ ρ₂
   → Collected U m b vs ws
   → RelResult (Collected U 0 (index (prune-fvs m r dec fvs b)))
-      (T.eval-args ck ρ₁ vs fvs) (T.eval-args ck ρ₂ ws (kept (prune-fvs m r dec fvs b)))
+      (T.eval-args ck ρ₁ vs fvs)
+        (T.eval-args ck ρ₂ ws (kept (prune-fvs m r dec fvs b)))
 apply≈ : ∀ ck {r ρ₁ ρ₂ f g} M
   → Agree M 0 r ρ₁ ρ₂
   → f ≈ g
@@ -222,16 +233,21 @@ branch≈ : ∀ ck {r ρ₁ ρ₂ v w} M N
   → Agree M 1 r ρ₁ ρ₂
   → Agree N 1 r ρ₁ ρ₂
   → v ≈ w
-  → RelResult _≈_ (T.branch ck ρ₁ M N v) (T.branch ck ρ₂ (prune (ext-var r) M) (prune (ext-var r) N) w)
+  → RelResult _≈_ (T.branch ck ρ₁ M N v)
+    (T.branch ck ρ₂ (prune (ext-var r) M) (prune (ext-var r) N) w)
 
 run≈ ck (` x) ag = var≈ ck x ag
-run≈ ck {r} {ρ₁} {ρ₂} (clos-op n ⦅ cons (clear a) fvs ⦆) (agree (wa , wfvs) look) =
+run≈ ck {r} {ρ₁} {ρ₂} (clos-op n ⦅ cons (clear a) fvs ⦆)
+  (agree (wa , wfvs) look) =
   subst (λ B → RelResult _≈_ (T.eval ck ρ₁ (clos-op n ⦅ cons (clear a) fvs ⦆))
-                             (T.eval-args ck ρ₂ [] (kept P) >>= λ ws → ret (T.clos B ws)))
+                             (T.eval-args ck ρ₂ [] (kept P) >>= λ ws →
+                                 ret (T.clos B ws)))
         (sym eq)
-        (bind-rel (prune≈ ck n U? fvs (agree wfvs (λ x u → look x (inj₂ u))) col₀)
+        (bind-rel
+            (prune≈ ck n U? fvs (agree wfvs (λ x u → look x (inj₂ u))) col₀)
                   (λ col → ret (clo≈ (agree sc (λ x u →
-                     Collected.look col x (subst (Uses (suc x)) (sym (unbind-body n a)) u))))))
+                     Collected.look col x
+                         (subst (Uses (suc x)) (sym (unbind-body n a)) u))))))
   where
   U = λ j → Uses (suc j) (unbind-n n a)
   U? = λ j → uses? (suc j) (unbind-n n a)
@@ -241,17 +257,23 @@ run≈ ck {r} {ρ₁} {ρ₂} (clos-op n ⦅ cons (clear a) fvs ⦆) (agree (wa 
      variables, since it is well scoped -}
   col₀ : Collected U n (λ k → k) [] []
   col₀ = collected λ k u → ⊥-elim (<-irrefl refl (<-≤-trans
-    (≤-pred (ws-uses (T.body n a) sc (subst (Uses (suc (n + k))) (unbind-body n a) u)))
+    (≤-pred
+        (ws-uses (T.body n a) sc
+          (subst (Uses (suc (n + k))) (unbind-body n a) u)))
     (+-monoʳ-≤ n z≤n)))
-  eq : T.body (count P) (bind-n-ast (count P) (opt-body (ext-var (index P)) n a))
+  eq : T.body (count P)
+    (bind-n-ast (count P) (opt-body (ext-var (index P)) n a))
        ≡ prune (ext-var (index P)) (T.body n a)
   eq = trans (EF.body-bind (count P) _) (opt-body-body (ext-var (index P)) n a)
 run≈ ck (app ⦅ L ,, M ,, Nil ⦆) ag =
   bind-rel (run≈ ck L (agree-sub proj₁ (λ x → inj₁) ag))
-           (apply≈ ck M (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag))
+           (apply≈ ck M
+               (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag))
 run≈ ck (lit B k ⦅ Nil ⦆) ag = ret const≈
-run≈ ck (tuple n ⦅ args ⦆) ag = bind-rel (args≈ ck args ag []) (λ rs → ret (tup≈ (reverse⁺ rs)))
-run≈ ck (get i ⦅ M ,, Nil ⦆) ag = bind-rel (run≈ ck M (agree-sub proj₁ (λ x → inj₁) ag)) get≈
+run≈ ck (tuple n ⦅ args ⦆) ag =
+  bind-rel (args≈ ck args ag []) (λ rs → ret (tup≈ (reverse⁺ rs)))
+run≈ ck (get i ⦅ M ,, Nil ⦆) ag =
+  bind-rel (run≈ ck M (agree-sub proj₁ (λ x → inj₁) ag)) get≈
   where
   get≈ : ∀ {v w}
     → v ≈ w
@@ -267,29 +289,41 @@ run≈ ck (inr-op ⦅ M ,, Nil ⦆) ag =
   bind-rel (run≈ ck M (agree-sub proj₁ (λ x → inj₁) ag)) (λ vw → ret (inr≈ vw))
 run≈ ck (prim p ⦅ L ,, M ,, Nil ⦆) ag =
   bind-rel (run≈ ck L (agree-sub proj₁ (λ x → inj₁) ag)) λ r →
-  bind-rel (run≈ ck M (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag)) λ s →
+  bind-rel
+    (run≈ ck M (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag))
+    λ s →
   from-maybe-rel (prim≈ p r s)
 run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ag =
   bind-rel (run≈ ck L (agree-sub proj₁ (λ x → inj₁) ag))
-    (branch≈ ck M N (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag)
-                    (agree-sub (λ w → proj₁ (proj₂ (proj₂ w))) (λ x u → inj₂ (inj₂ (inj₁ u))) ag))
+    (branch≈ ck M N
+        (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag)
+                    (agree-sub (λ w → proj₁ (proj₂ (proj₂ w)))
+                        (λ x u → inj₂ (inj₂ (inj₁ u))) ag))
 run≈ ck (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ag =
   bind-rel (run≈ ck M (agree-sub proj₁ (λ x → inj₁) ag)) λ vw →
-  run≈ ck N (agree-ext vw (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag))
+  run≈ ck N
+    (agree-ext vw
+      (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag))
 
 args≈ ck {zero} Nil ag rs = ret rs
 args≈ ck {suc n} (M ,, args) ag rs =
-  bind-rel (run≈ ck M (agree-hd ag)) (λ vw → args≈ ck args (agree-tl ag) (vw ∷ rs))
+  bind-rel (run≈ ck M (agree-hd ag))
+    (λ vw → args≈ ck args (agree-tl ag) (vw ∷ rs))
 
 prune≈ ck zero dec Nil ag col = ret col
 prune≈ ck (suc m) dec ((` y) ,, fvs) ag col with dec m
-... | yes _ = bind-rel (var≈ ck y (agree-hd ag)) (λ vw → prune≈ ck m dec fvs (agree-tl ag) (keep-col vw col))
+... | yes _ =
+  bind-rel (var≈ ck y (agree-hd ag))
+  (λ vw → prune≈ ck m dec fvs (agree-tl ag) (keep-col vw col))
 ... | no nu with agree-look ag y (inj₁ refl)
-...   | _ , _ , e , _ rewrite e = prune≈ ck m dec fvs (agree-tl ag) (drop-col nu col)
+...   | _ , _ , e , _ rewrite e =
+  prune≈ ck m dec fvs (agree-tl ag) (drop-col nu col)
 prune≈ ck (suc m) dec ((op ⦅ args ⦆) ,, fvs) ag col =
-  bind-rel (run≈ ck (op ⦅ args ⦆) (agree-hd ag)) (λ vw → prune≈ ck m dec fvs (agree-tl ag) (keep-col vw col))
+  bind-rel (run≈ ck (op ⦅ args ⦆) (agree-hd ag))
+    (λ vw → prune≈ ck m dec fvs (agree-tl ag) (keep-col vw col))
 
-apply≈ ck M ag (clo≈ {N} agN) = bind-rel (run≈ ck M ag) (λ vw → call≈ ck N (agree-ext vw agN))
+apply≈ ck M ag (clo≈ {N} agN) =
+  bind-rel (run≈ ck M ag) (λ vw → call≈ ck N (agree-ext vw agN))
 apply≈ ck M ag const≈ = error
 apply≈ ck M ag (tup≈ _) = error
 apply≈ ck M ag (inl≈ _) = error
@@ -304,17 +338,19 @@ branch≈ ck M N agM agN (clo≈ _) = error
 branch≈ ck M N agM agN const≈ = error
 branch≈ ck M N agM agN (tup≈ _) = error
 
-{- The end theorem -------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
 prune-correct : ∀ M
   → WS 0 M
   → Equivalent (T.sem M) (T.sem (prune-program M))
 prune-correct M c =
-  clocked _≈_ obs≈ (λ ck → run≈ ck M (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))))
+  clocked _≈_ obs≈
+    (λ ck → run≈ ck M (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))))
 
 {- capture, then prune, for closed ISWIM programs -}
 capture-prune-correct : ∀ M
   → Closed M
   → Equivalent (S.sem M) (T.sem (prune-program (capture M)))
 capture-prune-correct M c =
-  equiv-trans (EF.capture-correct M c) (prune-correct (capture M) (capture-closed M c))
+  equiv-trans (EF.capture-correct M c)
+    (prune-correct (capture M) (capture-closed M c))

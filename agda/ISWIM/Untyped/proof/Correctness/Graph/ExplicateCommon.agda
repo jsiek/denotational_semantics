@@ -19,15 +19,19 @@
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.Ops using (RRs; mono-≃; pair-mono; car-mono; cdr-mono; nthD-≃; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃)
-open import ISWIM.Untyped.Language.Imp as I
-  using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim; simple; case; assign)
+open import proof.Framework.GraphModel.Ops using (RRs; mono-≃; pair-mono;
+  car-mono; cdr-mono; nthD-≃; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃)
+open import ISWIM.Untyped.Language.Imp as I using (var; lit; fun-ref; atm; app;
+  fst; snd; tuple; get; prim; simple; case; assign)
 import ISWIM.Untyped.Language.CFG as C
 open import ISWIM.Untyped.Compiler.Explicate
 open import ISWIM.Untyped.Compiler.Pipeline using (compile-imp; compile-cfg)
-open import ISWIM.Untyped.Semantics.Graph.Imp using (Store; checked; 𝒜; 𝒜s; 𝒮; Table)
-open import ISWIM.Untyped.Semantics.Graph.CFG using (Blocks; blocks; ⟦_⟧ₚ) renaming (⟦_⟧[_] to ⟪_⟫[_])
-open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
+open import ISWIM.Untyped.Semantics.Graph.Imp using (Store; checked; 𝒜; 𝒜s; 𝒮;
+  Table)
+open import ISWIM.Untyped.Semantics.Graph.CFG using (Blocks; blocks; ⟦_⟧ₚ)
+  renaming (⟦_⟧[_] to ⟪_⟫[_])
+open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect using (Same;
+  Same-trans; ≃→Same)
 open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
 open import ISWIM.proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
 import ISWIM.Language.ISWIM as ISWIM
@@ -39,15 +43,17 @@ open import Data.List using (List; []; _∷_; _++_; length; replicate)
 open import Data.List.Properties using (++-assoc; length-++)
 open import Data.Nat using (ℕ; _<_; _≤_; _≟_; _<?_)
 open import Data.Nat.Properties using (<-irrefl; m≤n+m; <-≤-trans; n<1+n)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 open import Relation.Nullary using (yes; no)
 
 module ISWIM.Untyped.proof.Correctness.Graph.ExplicateCommon where
 
-{- Blocks -----------------------------------------------------------------------------}
+{- Blocks ---------------------------------------------------------------------}
 
 {- bs' is bs with newer blocks -}
 infix 4 _≼_
@@ -61,7 +67,8 @@ bs ≼ bs' = Σ[ more ∈ List C.Tail ] bs' ≡ more ++ bs
   → bs₁ ≼ bs₂
   → bs₂ ≼ bs₃
   → bs₁ ≼ bs₃
-≼-trans {bs₁} ⟨ m₁ , refl ⟩ ⟨ m₂ , refl ⟩ = ⟨ m₂ ++ m₁ , sym (++-assoc m₂ m₁ bs₁) ⟩
+≼-trans {bs₁} ⟨ m₁ , refl ⟩ ⟨ m₂ , refl ⟩ =
+  ⟨ m₂ ++ m₁ , sym (++-assoc m₂ m₁ bs₁) ⟩
 
 ≼-∷ : ∀ {t bs} → bs ≼ t ∷ bs
 ≼-∷ {t} = ⟨ t ∷ [] , refl ⟩
@@ -71,11 +78,15 @@ grows-assign (simple s) x k bs = ≼-refl
 grows-assign (assign y e₁ e₂) x k bs =
   ≼-trans (grows-assign e₂ x k bs) (grows-assign e₁ y _ _)
 grows-assign (case a y e₁ e₂) x k bs =
-  ≼-trans ≼-∷ (≼-trans (grows-assign e₁ x _ _) (≼-trans ≼-∷ (≼-trans (grows-assign e₂ x _ _) ≼-∷)))
+  ≼-trans
+    ≼-∷
+    (≼-trans (grows-assign e₁ x _ _)
+      (≼-trans ≼-∷ (≼-trans (grows-assign e₂ x _ _) ≼-∷)))
 
 grows-tail : ∀ e bs → bs ≼ proj₂ (explicate-tail e bs)
 grows-tail (simple s) bs = ≼-refl
-grows-tail (assign x e₁ e₂) bs = ≼-trans (grows-tail e₂ bs) (grows-assign e₁ x _ _)
+grows-tail (assign x e₁ e₂) bs =
+  ≼-trans (grows-tail e₂ bs) (grows-assign e₁ x _ _)
 grows-tail (case a x e₁ e₂) bs =
   ≼-trans (grows-tail e₁ bs) (≼-trans ≼-∷ (≼-trans (grows-tail e₂ _) ≼-∷))
 
@@ -87,14 +98,19 @@ module _ (T : Table) (n : ℕ) where
     → blocks T n (more ++ bs) l ≡ blocks T n bs l
   blocks-≼ [] bs l l< = refl
   blocks-≼ (t ∷ more) bs l l< with l ≟ length (more ++ bs)
-  ... | yes refl = ⊥-elim (<-irrefl refl (<-≤-trans l< (subst (length bs ≤_) (sym (length-++ more))
-                                                             (m≤n+m (length bs) (length more)))))
+  ... | yes refl =
+    ⊥-elim
+    (<-irrefl refl (<-≤-trans l< (subst (length bs ≤_) (sym (length-++ more))
+                                                             (m≤n+m (length bs)
+                                                                 (length
+                                                                   more)))))
   ... | no _ = blocks-≼ more bs l l<
 
   blocks-at : ∀ {t bs bs''}
     → t ∷ bs ≼ bs''
     → blocks T n bs'' (length bs) ≡ ⟪ t ⟫[ T ] n (blocks T n bs)
-  blocks-at {t} {bs} ⟨ more , refl ⟩ = trans (blocks-≼ more (t ∷ bs) (length bs) (n<1+n _)) top
+  blocks-at {t} {bs} ⟨ more , refl ⟩ =
+    trans (blocks-≼ more (t ∷ bs) (length bs) (n<1+n _)) top
     where
     top : blocks T n (t ∷ bs) (length bs) ≡ ⟪ t ⟫[ T ] n (blocks T n bs)
     top with length bs ≟ length bs
@@ -115,7 +131,7 @@ checked-≃ n {x} eq with x <? n
 ... | yes _ = eq
 ... | no _ = ≃-refl
 
-{- Tables that agree ------------------------------------------------------------------}
+{- Tables that agree ----------------------------------------------------------}
 
 {- for tables T (of CFG) and T' (of Imp) that agree -}
 module Agreeing {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
@@ -135,7 +151,8 @@ module Agreeing {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
   𝒮-≃ : ∀ s σ → 𝒮 T n σ s ≃ 𝒮 T' n σ s
   𝒮-≃ (atm a) σ = 𝒜-≃ a σ
   𝒮-≃ (app f e a) σ = ⋆-≃ (⋆-≃ (𝒜-≃ f σ) (𝒜-≃ e σ)) (𝒜-≃ a σ)
-  𝒮-≃ (I.pair a b) σ = mono-≃ pair-mono ⟨ lift (𝒜-≃ a σ) , ⟨ lift (𝒜-≃ b σ) , ptt ⟩ ⟩
+  𝒮-≃ (I.pair a b) σ =
+    mono-≃ pair-mono ⟨ lift (𝒜-≃ a σ) , ⟨ lift (𝒜-≃ b σ) , ptt ⟩ ⟩
   𝒮-≃ (fst a) σ = mono-≃ car-mono ⟨ lift (𝒜-≃ a σ) , ptt ⟩
   𝒮-≃ (snd a) σ = mono-≃ cdr-mono ⟨ lift (𝒜-≃ a σ) , ptt ⟩
   𝒮-≃ (tuple as) σ = 𝒯-≃ (length as) (nthD-≃ _ _ (𝒜s-≃ as σ))
@@ -149,10 +166,12 @@ module Agreeing {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
     → k ∷ bs ≼ bs₁
     → bs₁ ≼ bs''
     → ∀ σ
-    → ⟪ C.goto (length bs) ⟫[ T ] n (B bs'') σ ≃ ⟪ C.goto (length bs) ⟫[ T ] n (B bs₁) σ
-  goto-≃ e₁ e = at-σ (trans (blocks-at T n (≼-trans e₁ e)) (sym (blocks-at T n e₁)))
+    → ⟪ C.goto (length bs) ⟫[ T ] n (B bs'') σ
+      ≃ ⟪ C.goto (length bs) ⟫[ T ] n (B bs₁) σ
+  goto-≃ e₁ e =
+    at-σ (trans (blocks-at T n (≼-trans e₁ e)) (sym (blocks-at T n e₁)))
 
-{- The whole compiler, into CFG ---------------------------------------------------
+{- The whole compiler, into CFG ------------------------------------------------
 
   compile-cfg = explicate ∘ compile-imp (Compiler/Pipeline.agda): given
   that explicate and compile-imp preserve meanings, for a semantics ℐ of
@@ -164,7 +183,9 @@ module Into (ℐ : I.Program → 𝒫 Value)
   (explicate-correct : ∀ P → ⟦ explicate P ⟧ₚ ≃ ℐ P) where
 
   compile-cfg-same : ∀ (M : ISWIM.AST) → Same (⟦ M ⟧ᵢ ρ₀) ⟦ compile-cfg M ⟧ₚ
-  compile-cfg-same M = Same-trans (compile-imp-same M) (≃→Same (≃-sym (explicate-correct (compile-imp M))))
+  compile-cfg-same M =
+    Same-trans (compile-imp-same M)
+    (≃→Same (≃-sym (explicate-correct (compile-imp M))))
 
   compile-cfg-correct-const : ∀ (M : ISWIM.AST) → ∀ {B} (c : base-rep B)
     → (  const c ∈ ⟦ M ⟧ᵢ ρ₀

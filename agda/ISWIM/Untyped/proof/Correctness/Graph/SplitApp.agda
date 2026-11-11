@@ -22,7 +22,8 @@ open import ISWIM.Untyped.Language.Clos4
 open import proof.Framework.Syntax.Rename Op sig using (shift)
 open import ISWIM.Untyped.proof.Semantics.Graph.Clos4Iswim
 open import proof.Framework.GraphModel.RenameSem Op sig using (shift-≃)
-open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env; _●_; Car; Cdr; _⊙_; Cdr-mono; cdr-witness)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (Env;
+  _●_; Car; Cdr; _⊙_; Cdr-mono; cdr-witness)
 
 open import Data.List using (_∷_)
 open import Data.List.Relation.Unary.Any using (here; there)
@@ -34,7 +35,8 @@ module ISWIM.Untyped.proof.Correctness.Graph.SplitApp where
 {- the application, with the closure bound by a let -}
 let-app : AST → AST → AST
 let-app L' N' =
-  let-op ⦅ L' ,, ⟩ (app ⦅ (fst-op ⦅ (` 0) ,, Nil ⦆) ,, (snd-op ⦅ (` 0) ,, Nil ⦆) ,,
+  let-op ⦅ L' ,, ⟩
+    (app ⦅ (fst-op ⦅ (` 0) ,, Nil ⦆) ,, (snd-op ⦅ (` 0) ,, Nil ⦆) ,,
                           shift N' ,, Nil ⦆) ,, Nil ⦆
 
 let-app-≃ : ∀ (L' N' : AST) (ρ : Env)
@@ -46,9 +48,18 @@ let-app-≃ L' N' ρ cL = ⟨ G , H ⟩
   N = ⟦ N' ⟧ ρ
 
   G : ⟦ let-app L' N' ⟧ ρ ⊆ (L ⊙ N)
-  G w ⟨ V , ⟨ ⟨ ⟨ U₀ , ⟨ ⟨ FV , ⟨ ⟨ t , e∈ ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆ , neU₀ ⟩ ⟩ ⟩ , _ ⟩
+  G w
+    ⟨ V
+      ,
+      ⟨ ⟨ ⟨ U₀ , ⟨ ⟨ FV , ⟨ ⟨ t , e∈ ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆ , neU₀ ⟩ ⟩ ⟩
+        , _ ⟩
          , ⟨ V⊆L , _ ⟩ ⟩ ⟩ =
-    ⟨ U₀ , ⟨ ⟨ FV , ⟨ ⟨ t , V⊆L _ e∈ ⟩ , ⟨ (λ d d∈ → Cdr-mono V⊆L d (FV⊆ d d∈)) , neFV ⟩ ⟩ ⟩
+    ⟨ U₀
+        ,
+        ⟨ ⟨ FV
+          ,
+          ⟨ ⟨ t , V⊆L _ e∈ ⟩
+            , ⟨ (λ d d∈ → Cdr-mono V⊆L d (FV⊆ d d∈)) , neFV ⟩ ⟩ ⟩
            , ⟨ (λ d d∈ → proj₁ (shift-≃ N' (mem V) ρ) d (U₀⊆ d d∈)) , neU₀ ⟩ ⟩ ⟩
 
   H : (L ⊙ N) ⊆ ⟦ let-app L' N' ⟧ ρ
@@ -56,7 +67,9 @@ let-app-≃ L' N' ρ cL = ⟨ G , H ⟩
       with cdr-witness FV FV⊆
   ... | ⟨ P , ⟨ P⊆L , FV⊆P ⟩ ⟩ =
     ⟨ V , ⟨ ⟨ ⟨ U₀ , ⟨ ⟨ FV , ⟨ ⟨ t , here refl ⟩ , ⟨ cdrV , neFV ⟩ ⟩ ⟩
-                    , ⟨ (λ d d∈ → proj₂ (shift-≃ N' (mem V) ρ) d (U₀⊆ d d∈)) , neU₀ ⟩ ⟩ ⟩
+                    ,
+                        ⟨ (λ d d∈ → proj₂ (shift-≃ N' (mem V) ρ) d (U₀⊆ d d∈))
+                          , neU₀ ⟩ ⟩ ⟩
             , ⟨ (λ ()) , Con⇒≈ V cL V⊆L ⟩ ⟩
           , ⟨ V⊆L , (λ ()) ⟩ ⟩ ⟩
     where

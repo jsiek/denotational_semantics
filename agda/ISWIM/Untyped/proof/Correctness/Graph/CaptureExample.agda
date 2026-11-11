@@ -22,7 +22,8 @@ import ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim as S2
 import ISWIM.Untyped.Language.Clos2 as L2
 open import ISWIM.Untyped.Compiler.Capture using (capture)
 open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import ISWIM.Untyped.proof.Correctness.Graph.CaptureCorrect using (capture-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.Graph.CaptureCorrect using
+  (capture-correct-closed)
 
 open import Data.Nat using (ℕ)
 open import Data.List using ([]; _∷_)

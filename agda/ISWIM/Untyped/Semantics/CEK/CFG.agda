@@ -29,9 +29,8 @@ module ISWIM.Untyped.Semantics.CEK.CFG where
 open import ISWIM.Untyped.Language.CFG
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import ISWIM.Untyped.Semantics.CEK.Imp
-  using (Val; inl; inr; obs; Frame; Frm; atom; _[_]≔_; zeros; Res; operand; value; apply; first; resume)
-  public
+open import ISWIM.Untyped.Semantics.CEK.Imp using (Val; inl; inr; obs; Frame;
+  Frm; atom; _[_]≔_; zeros; Res; operand; value; apply; first; resume) public
 open import Framework.ListUtil using (_‼_)
 
 open import Data.List using (List; _∷_; reverse)
@@ -43,8 +42,10 @@ data Cont : Set where
   halt : Cont
   frm : Frm → Cont → Cont
   seqK : ℕ → Tail → List Tail → Cont → Cont       {- x := □; t -}
-  caseK : ℕ → ℕ → ℕ → List Tail → Cont → Cont     {- x := the payload; goto l₁ or l₂ -}
-  callK : Frame → Cont → Cont                      {- return to the caller's frame -}
+  {- x := the payload; goto l₁ or l₂ -}
+  caseK : ℕ → ℕ → ℕ → List Tail → Cont → Cont
+  {- return to the caller's frame -}
+  callK : Frame → Cont → Cont
 
 data State : Set where
   exec : Tail → Frame → List Tail → Cont → State
@@ -63,7 +64,8 @@ jump _ _ κ = stop o-error
 {- run the start of a body, if there is one, in a fresh frame with e and a;
    the caller's frame is φ -}
 call : Maybe Body → Val → Val → Frame → Cont → Next State
-call (just (body n bs t)) e a φ κ = next (exec t (e ∷ a ∷ zeros (n ∸ 2)) bs (callK φ κ))
+call (just (body n bs t)) e a φ κ =
+  next (exec t (e ∷ a ∷ zeros (n ∸ 2)) bs (callK φ κ))
 call nothing e a φ κ = stop o-error
 
 {- the machine for a program with global definitions ds -}
@@ -89,4 +91,5 @@ step ds (ret v φ (callK φ' κ)) = next (ret v φ' κ)
 
 {- a program starts with the start of its main body, in a frame of zeros -}
 sem : Program → Machine
-sem (program ds (body n bs t)) = machine State (step ds) (exec t (zeros n) bs halt)
+sem (program ds (body n bs t)) =
+  machine State (step ds) (exec t (zeros n) bs halt)

@@ -7,7 +7,8 @@
   them, with its type written out, so that it can be read without opening
   proof/.
 
-    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2
+          --concretize--> Clos3
           --split--> Clos4 --hoist--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -51,7 +52,8 @@ open import ISWIM.Untyped.Compiler.RCO using (rco-program)
 open import ISWIM.Untyped.Compiler.LiftLocals using (lift-program)
 open import ISWIM.Untyped.Compiler.Explicate using (explicate)
 open import ISWIM.Untyped.Compiler.Select using (select)
-open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon;
+  compile-imp; compile-cfg; compile-x86)
 
 open import ISWIM.Compiler.CaptureScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
@@ -103,10 +105,12 @@ concretize-correct : ∀ (M : Clos2.AST)
   → Equivalent (Clos2ₘ.sem M) (Clos3ₘ.sem (concretize-program M))
 concretize-correct = ConcretizeSim.concretize-correct
 
-split-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ₘ.sem M) (Clos4ₘ.sem (split M))
+split-correct : ∀ (M : Clos3.AST)
+  → Equivalent (Clos3ₘ.sem M) (Clos4ₘ.sem (split M))
 split-correct = SplitSim.split-correct
 
-hoist-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ₘ.sem M) (Clos5ₘ.sem (hoist M))
+hoist-correct : ∀ (M : Clos4.AST)
+  → Equivalent (Clos4ₘ.sem M) (Clos5ₘ.sem (hoist M))
 hoist-correct = HoistSim.hoist-correct
 
 {- remove complex operands, for well-scoped programs (which the compiler
@@ -122,10 +126,12 @@ lift-locals-correct : ∀ (P : Clos5.Program)
   → Equivalent (Clos5ₘ.sem P) (Impₘ.sem (lift-program P mp))
 lift-locals-correct = LiftLocalsSim.lift-correct
 
-explicate-correct : ∀ (P : Imp.Program) → Equivalent (Impₘ.sem P) (CFGₘ.sem (explicate P))
+explicate-correct : ∀ (P : Imp.Program)
+  → Equivalent (Impₘ.sem P) (CFGₘ.sem (explicate P))
 explicate-correct = ExplicateSim.explicate-correct
 
-select-correct : ∀ (P : CFG.Program) → Equivalent (CFGₘ.sem P) (X86ₘ.sem (select P))
+select-correct : ∀ (P : CFG.Program)
+  → Equivalent (CFGₘ.sem P) (X86ₘ.sem (select P))
 select-correct = SelectSim.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
@@ -163,17 +169,20 @@ compile-x86-correct = CompilerX86Sim.compile-x86-correct
 compile-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ B k
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
 compile-const = CompilerSim.compile-const
 
 compile-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
 compile-converges = CompilerSim.compile-converges
 
 compile-error : ∀ (M : ISWIM.AST)
   → Closed M
-  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (Clos5ₘ.sem (compile M)) o-error
+  → Terminates (ISWIMₘ.sem M) o-error
+    ⇔ Terminates (Clos5ₘ.sem (compile M)) o-error
 compile-error = CompilerSim.compile-error
 
 compile-diverges : ∀ (M : ISWIM.AST)

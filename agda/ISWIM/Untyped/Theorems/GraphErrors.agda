@@ -6,7 +6,8 @@
   here is one of them, with its type written out, so that it can be read
   without opening proof/.
 
-    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2
+          --concretize--> Clos3
           --split--> Clos4 --hoist--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -67,31 +68,43 @@ open import ISWIM.Untyped.Compiler.RCO using (rco-program)
 open import ISWIM.Untyped.Compiler.LiftLocals using (lift-program)
 open import ISWIM.Untyped.Compiler.Explicate using (explicate)
 open import ISWIM.Untyped.Compiler.Select using (select)
-open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon;
+  compile-imp; compile-cfg; compile-x86)
 open import ISWIM.Untyped.Compiler.PipelineScope using (Scoped)
 open import ISWIM.Compiler.CaptureScope using (Closed)
 open import Framework.GraphModel.ErrorMonad using (val∈)
 
 open import ISWIM.Semantics.GraphErr.ISWIM using (⟦_⟧)
-open import ISWIM.Untyped.Semantics.GraphErr.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)
-open import ISWIM.Untyped.Semantics.GraphErr.Clos3 using () renaming (⟦_⟧ to ⟦_⟧₃)
-open import ISWIM.Untyped.Semantics.GraphErr.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄)
-open import ISWIM.Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import ISWIM.Untyped.Semantics.GraphErr.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
-open import ISWIM.Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import ISWIM.Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos2 using () renaming (⟦_⟧ to
+  ⟦_⟧₂)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos3 using () renaming (⟦_⟧ to
+  ⟦_⟧₃)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos4 using () renaming (⟦_⟧ to
+  ⟦_⟧₄)
+open import ISWIM.Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to
+  ⟦_⟧₅)
+open import ISWIM.Untyped.Semantics.GraphErr.ImpK using () renaming (⟦_⟧ᴷₚ to
+  ⟦_⟧ᵢ)
+open import ISWIM.Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to
+  ⟦_⟧ᶜ)
+open import ISWIM.Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to
+  ⟦_⟧ₓ)
 
 import ISWIM.proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
 import ISWIM.Untyped.proof.Correctness.GraphErr.CaptureCorrect as CaptureCorrect
 import ISWIM.Untyped.proof.Correctness.GraphErr.PruneCorrect as PruneCorrect
-import ISWIM.Untyped.proof.Correctness.GraphErr.ConcretizeCorrect as ConcretizeCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.ConcretizeCorrect as
+  ConcretizeCorrect
 import ISWIM.Untyped.proof.Correctness.GraphErr.SplitPreserve as SplitCorrect
 import ISWIM.Untyped.proof.Correctness.GraphErr.HoistCorrect as HoistCorrect
 import ISWIM.Untyped.proof.Correctness.GraphErr.RCOCorrect as RCOCorrect
-import ISWIM.Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect as LiftLocalsCorrect
-import ISWIM.Untyped.proof.Correctness.GraphErr.ExplicateCorrect as ExplicateCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect as
+  LiftLocalsCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.ExplicateCorrect as
+  ExplicateCorrect
 import ISWIM.Untyped.proof.Correctness.GraphErr.SelectCorrect as SelectCorrect
-import ISWIM.Untyped.proof.Correctness.GraphErr.CompilerCorrect as CompilerCorrect
+import ISWIM.Untyped.proof.Correctness.GraphErr.CompilerCorrect as
+  CompilerCorrect
 import ISWIM.proof.Adequacy.GraphErr.ISWIM as Adequacy
 import ISWIM.proof.Adequacy.GraphErr.Simplify as SimplifyMachine
 import ISWIM.Untyped.proof.Adequacy.GraphErr.Clos5 as AdequacyClos5
@@ -128,7 +141,8 @@ prune-correct : ∀ (M : Clos2.AST)
   → ⟦ M ⟧₂ ρ₀ ≃ ⟦ prune-program M ⟧₂ ρ₀
 prune-correct = PruneCorrect.prune-correct
 
-concretize-correct : ∀ (M : Clos2.AST) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
+concretize-correct : ∀ (M : Clos2.AST)
+  → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = ConcretizeCorrect.concretize-correct-closed
 
 {- split changes how closures are represented, so it is not an equation:
@@ -181,7 +195,10 @@ select-correct = SelectCorrect.select-correct
 {- two meanings err together, hold the same constants, and hold a value
    together -}
 Same : 𝒫 Value → 𝒫 Value → Set
-Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((const c ∈ D) ⇔ (const c ∈ E))) × (val∈ D ⇔ val∈ E)
+Same D E =
+  ((ω ∈ D) ⇔ (ω ∈ E))
+  × (∀ {B} (c : base-rep B) → ((const c ∈ D) ⇔ (const c ∈ E)))
+  × (val∈ D ⇔ val∈ E)
 
 compile-correct : ∀ (M : ISWIM.AST)
   → Closed M
@@ -225,7 +242,8 @@ iswim-const-iff = Adequacy.const-iff
 
 iswim-converges-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → (Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω) ⇔ Converges (Terminates (ISWIMₘ.sem M))
+  → (Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω)
+    ⇔ Converges (Terminates (ISWIMₘ.sem M))
 iswim-converges-iff = Adequacy.converges-iff
 
 iswim-diverges-iff : ∀ (M : ISWIM.AST)
@@ -242,12 +260,14 @@ clos5-error-iff = AdequacyClos5.clos5-error-iff
 clos5-const-iff : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
+  → (const k ∈ ⟦ compile M ⟧₅)
+    ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
 clos5-const-iff = AdequacyClos5.clos5-const-iff
 
 clos5-converges-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → (Σ[ d ∈ Value ] d ∈ ⟦ compile M ⟧₅ × d ≢ ω) ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
+  → (Σ[ d ∈ Value ] d ∈ ⟦ compile M ⟧₅ × d ≢ ω)
+    ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
 clos5-converges-iff = AdequacyClos5.clos5-converges-iff
 
 clos5-diverges-iff : ∀ (M : ISWIM.AST)
@@ -264,17 +284,20 @@ x86-error-iff = AdequacyX86.x86-error-iff
 x86-const-iff : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
+  → (const k ∈ ⟦ compile-x86 M ⟧ₓ)
+    ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
 x86-const-iff = AdequacyX86.x86-const-iff
 
 x86-converges-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₓ × d ≢ ω) ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
+  → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₓ × d ≢ ω)
+    ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
 x86-converges-iff = AdequacyX86.x86-converges-iff
 
 x86-diverges-iff : ∀ (M : ISWIM.AST)
   → Closed M
-  → Diverges (X86ₘ.sem (compile-x86 M)) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile-x86 M ⟧ₓ))
+  → Diverges (X86ₘ.sem (compile-x86 M))
+    ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile-x86 M ⟧ₓ))
 x86-diverges-iff = AdequacyX86.x86-diverges-iff
 
 {- The compiler, observed through the machines: for a closed program, the
@@ -284,18 +307,21 @@ x86-diverges-iff = AdequacyX86.x86-diverges-iff
 
 end-to-end-error : ∀ (M : ISWIM.AST)
   → Closed M
-  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (Clos5ₘ.sem (compile M)) o-error
+  → Terminates (ISWIMₘ.sem M) o-error
+    ⇔ Terminates (Clos5ₘ.sem (compile M)) o-error
 end-to-end-error M c = EndToEnd.Agree.error (EndToEnd.end-to-end M c)
 
 end-to-end-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
 end-to-end-const M c = EndToEnd.Agree.const (EndToEnd.end-to-end M c)
 
 end-to-end-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
 end-to-end-converges M c = EndToEnd.Agree.converges (EndToEnd.end-to-end M c)
 
 end-to-end-diverges : ∀ (M : ISWIM.AST)
@@ -305,40 +331,48 @@ end-to-end-diverges M c = EndToEnd.Agree.diverges (EndToEnd.end-to-end M c)
 
 end-to-end-x86-error : ∀ (M : ISWIM.AST)
   → Closed M
-  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (X86ₘ.sem (compile-x86 M)) o-error
+  → Terminates (ISWIMₘ.sem M) o-error
+    ⇔ Terminates (X86ₘ.sem (compile-x86 M)) o-error
 end-to-end-x86-error M c = EndToEnd.Agree.error (EndToEnd.end-to-end-x86 M c)
 
 end-to-end-x86-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
 end-to-end-x86-const M c = EndToEnd.Agree.const (EndToEnd.end-to-end-x86 M c)
 
 end-to-end-x86-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
-end-to-end-x86-converges M c = EndToEnd.Agree.converges (EndToEnd.end-to-end-x86 M c)
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
+end-to-end-x86-converges M c =
+  EndToEnd.Agree.converges (EndToEnd.end-to-end-x86 M c)
 
 end-to-end-x86-diverges : ∀ (M : ISWIM.AST)
   → Closed M
   → Diverges (ISWIMₘ.sem M) ⇔ Diverges (X86ₘ.sem (compile-x86 M))
-end-to-end-x86-diverges M c = EndToEnd.Agree.diverges (EndToEnd.end-to-end-x86 M c)
+end-to-end-x86-diverges M c =
+  EndToEnd.Agree.diverges (EndToEnd.end-to-end-x86 M c)
 
 {- simplify, observed through the ISWIM machine -}
 simplify-machine-error : ∀ (M : ISWIM.AST)
   → Closed M
-  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (ISWIMₘ.sem (simplify M)) o-error
+  → Terminates (ISWIMₘ.sem M) o-error
+    ⇔ Terminates (ISWIMₘ.sem (simplify M)) o-error
 simplify-machine-error = SimplifyMachine.simplify-error
 
 simplify-machine-const : ∀ (M : ISWIM.AST)
   → Closed M
   → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (ISWIMₘ.sem (simplify M)) (o-const B k)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (ISWIMₘ.sem (simplify M)) (o-const B k)
 simplify-machine-const = SimplifyMachine.simplify-const
 
 simplify-machine-converges : ∀ (M : ISWIM.AST)
   → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (ISWIMₘ.sem (simplify M)))
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (ISWIMₘ.sem (simplify M)))
 simplify-machine-converges = SimplifyMachine.simplify-converges
 
 simplify-machine-diverges : ∀ (M : ISWIM.AST)

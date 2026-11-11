@@ -1,7 +1,8 @@
 {-
 
-  The values of the Clos2 reduction semantics (ISWIM.Untyped.Semantics.Reduction.Clos3.agda):
-  they reduce to val, and substitution keeps them values.
+  The values of the Clos2 reduction semantics
+  (ISWIM.Untyped.Semantics.Reduction.Clos3.agda): they reduce to val, and
+  substitution keeps them values.
 
 -}
 

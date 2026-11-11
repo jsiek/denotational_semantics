@@ -24,9 +24,10 @@ open import Framework.Primitives using (Int)
 open import ISWIM.Untyped.Language.Imp
 open import Framework.ListUtil using (_‼_)
 open import Semantics.Interp.Clock
-open import ISWIM.Untyped.Semantics.Interp.Clos5
-  using (Val; code; pair; const; tup; inl; inr; obs; prim?; project; first; second)
-open import ISWIM.Untyped.Semantics.Interp.Values using (Frame; zero-val; _[_]≔_) public
+open import ISWIM.Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const;
+  tup; inl; inr; obs; prim?; project; first; second)
+open import ISWIM.Untyped.Semantics.Interp.Values using (Frame; zero-val;
+  _[_]≔_) public
 
 open import Data.Integer using (+_)
 open import Data.List using (List; []; _∷_; reverse; replicate)
@@ -55,10 +56,12 @@ atoms φ vs [] = ret vs
 atoms φ vs (a ∷ as) = do v ← atom φ a; atoms φ (v ∷ vs) as
 
 {- the value of a simple expression, which leaves the frame as it is;
-   call f e w calls the operator f, shared with CFG (Semantics/Interp/CFG.agda) -}
+   call f e w calls the operator f, shared with CFG
+   (Semantics/Interp/CFG.agda) -}
 eval-simple : (Val → Val → Val → Result Val) → Frame → Simple → Result Val
 eval-simple call φ (atm a) = atom φ a
-eval-simple call φ (app f e a) = do f ← atom φ f; e ← atom φ e; w ← atom φ a; call f e w
+eval-simple call φ (app f e a) =
+  do f ← atom φ f; e ← atom φ e; w ← atom φ a; call f e w
 eval-simple call φ (pair a b) = do v ← atom φ a; w ← atom φ b; ret (pair v w)
 eval-simple call φ (fst a) = atom φ a >>= first
 eval-simple call φ (snd a) = atom φ a >>= second
@@ -66,7 +69,8 @@ eval-simple call φ (tuple as) = do vs ← atoms φ [] as; ret (tup (reverse vs)
 eval-simple call φ (get i a) = atom φ a >>= project i
 eval-simple call φ (inl a) = do v ← atom φ a; ret (inl v)
 eval-simple call φ (inr a) = do v ← atom φ a; ret (inr v)
-eval-simple call φ (prim p a b) = do v ← atom φ a; w ← atom φ b; from-maybe (prim? p v w)
+eval-simple call φ (prim p a b) =
+  do v ← atom φ a; w ← atom φ b; from-maybe (prim? p v w)
 
 {- the payload of an injection, on the left for inl -}
 inj? : Val → Result (Val ⊎ Val)
@@ -91,15 +95,20 @@ module _ (ds : List Body) where
   put : ℕ → Frame → ℕ → Val → Exp → Result (Val × Frame)
 
   eval ck φ (simple s) = here φ (eval-simple (λ f → call ck (code? f)) φ s)
-  eval ck φ (case a x e₁ e₂) = do v ← atom φ a; inj? v >>= [ (λ w → put ck φ x w e₁) , (λ w → put ck φ x w e₂) ]
-  eval ck φ (assign x e₁ e₂) = do p ← eval ck φ e₁; put ck (proj₂ p) x (proj₁ p) e₂
+  eval ck φ (case a x e₁ e₂) =
+    do v ← atom φ a; inj? v
+        >>= [ (λ w → put ck φ x w e₁) , (λ w → put ck φ x w e₂) ]
+  eval ck φ (assign x e₁ e₂) =
+    do p ← eval ck φ e₁; put ck (proj₂ p) x (proj₁ p) e₂
 
   call ck nothing e w = error
   call zero (just b) e w = timeout
-  call (suc ck) (just (body n x)) e w = value (eval ck (e ∷ w ∷ replicate (n ∸ 2) zero-val) x)
+  call (suc ck) (just (body n x)) e w =
+    value (eval ck (e ∷ w ∷ replicate (n ∸ 2) zero-val) x)
 
   put ck φ x v e = set φ x v λ φ' → eval ck φ' e
 
 {- a program starts with main, in a frame of zeros -}
 sem : Program → Semantics
-sem (program ds (body n e)) = semantics Val obs (λ ck → value (eval ds ck (replicate n zero-val) e))
+sem (program ds (body n e)) =
+  semantics Val obs (λ ck → value (eval ds ck (replicate n zero-val) e))

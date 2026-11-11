@@ -18,7 +18,8 @@ open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import ISWIM.Untyped.Language.Clos2
 open import Semantics.Observation
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?;
+  machine)
 open import Framework.ListUtil
 
 open import Data.Fin using (Fin)
@@ -42,14 +43,16 @@ data Cont : Set where
   appL : AST → Env → Cont → Cont
   appR : Val → Cont → Cont
   tupK : List Val → List AST → Env → Cont → Cont
-  closK : AST → List Val → List AST → Env → Cont → Cont  {- body, values so far, rest -}
+  {- body, values so far, rest -}
+  closK : AST → List Val → List AST → Env → Cont → Cont
   getK : ∀ {n} → Fin n → Cont → Cont
   inlK : Cont → Cont
   inrK : Cont → Cont
   caseK : AST → AST → Env → Cont → Cont
   primL : Prim → AST → Env → Cont → Cont   {- evaluating the first operand -}
   primR : Prim → Val → Cont → Cont         {- evaluating the second operand -}
-  letK : AST → Env → Cont → Cont           {- evaluating the bound term; next the body -}
+  {- evaluating the bound term; next the body -}
+  letK : AST → Env → Cont → Cont
 
 data State : Set where
   eval : AST → Env → Cont → State
@@ -102,7 +105,8 @@ step (eval (tuple n ⦅ args ⦆) ρ κ) = next (tuple-next [] (args→list args
 step (eval (get i ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (getK i κ))
 step (eval (inl-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inlK κ))
 step (eval (inr-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inrK κ))
-step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ (caseK M N ρ κ))
+step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) =
+  next (eval L ρ (caseK M N ρ κ))
 step (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval M ρ (letK N ρ κ))
 step (ret v halt) = stop (obs v)

@@ -5,7 +5,8 @@ open import proof.Framework.GraphModel.ErrorMonad
 open import ISWIM.proof.Semantics.GraphErr.Prim
 open import ISWIM.Language.ISWIM
 open import ISWIM.Semantics.GraphErr.ISWIM public hiding (⟦_⟧; init)
-open import proof.Framework.GraphModel.SemanticsCore Op sig using (module GoodSemantics)
+open import proof.Framework.GraphModel.SemanticsCore Op sig using (module
+  GoodSemantics)
 
 open import Data.Unit using (⊤; tt)
 

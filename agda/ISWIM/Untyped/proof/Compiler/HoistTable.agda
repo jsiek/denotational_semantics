@@ -16,10 +16,12 @@ open import ISWIM.Untyped.Compiler.Hoist
 open import proof.Framework.ListUtil using (_‼_; ‼-++)
 
 open import Data.List using ([]; _∷_; _++_; [_]; length; reverse)
-open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; length-reverse)
+open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse;
+  length-reverse)
 open import Data.Maybe using (just)
 open import Data.Product using (Σ-syntax; _,_; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 
 infix 4 _⊑_
 
@@ -52,7 +54,8 @@ glob-grows-arg : ∀ {b} (a : Arg b) ds → ds ⊑ proj₂ (glob-arg a ds)
 glob-grows-args : ∀ {bs} (args : Args bs) ds → ds ⊑ proj₂ (glob-args args ds)
 
 glob-grows (` x) ds = ⊑-refl
-glob-grows (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds = ⊑-∷ (glob-grows N ds)
+glob-grows (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds =
+  ⊑-∷ (glob-grows N ds)
 glob-grows (app ⦅ args ⦆) ds = glob-grows-args args ds
 glob-grows (lit B k ⦅ args ⦆) ds = glob-grows-args args ds
 glob-grows (pair-op ⦅ args ⦆) ds = glob-grows-args args ds

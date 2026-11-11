@@ -16,26 +16,30 @@ module ISWIM.Untyped.proof.Adequacy.GraphErr.X86Common (ds : List Body) where
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (ν)
 open import ISWIM.Language.X86 hiding (Body)
-open import ISWIM.Untyped.Semantics.GraphErr.X86 using (table; blocks; ⟦_⟧ᵇ; init) renaming (code to codeD)
+open import ISWIM.Untyped.Semantics.GraphErr.X86 using (table; blocks; ⟦_⟧ᵇ;
+  init) renaming (code to codeD)
 open import ISWIM.Semantics.CEK.X86
 open import proof.Framework.Runs using (module Runs)
 open import ISWIM.Untyped.proof.Adequacy.GraphErr.X86WF using (DefsWF)
 open import proof.Framework.ListUtil using (_‼_)
-open import proof.Framework.ListUtil using (‼-just; replicate-‼; reverse-‼-split; reverse-‼-suffix) public
+open import proof.Framework.ListUtil using (‼-just; replicate-‼;
+  reverse-‼-split; reverse-‼-suffix) public
 
 open import Data.List.Properties using (length-replicate)
 open import Data.Maybe using (Maybe; just; nothing)
-open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_; _∸_; _⊔_; _+_; s≤s; z≤n)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_; _∸_; _⊔_; _+_; s≤s;
+  z≤n)
 open import Data.Nat.Properties using (n<1+n; <⇒≢; <-≤-trans; ≤-trans; n≤1+n)
 open import Data.Product using (Σ-syntax; _×_; _,_; proj₂)
 open import Data.Unit using (tt)
 open import Data.Empty using (⊥-elim)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; trans;
+  cong)
 open import Relation.Nullary using (yes; no)
 
 open Runs (step ds) public
 
-{- Frames ---------------------------------------------------------------------------}
+{- Frames ---------------------------------------------------------------------}
 
 {- what an assignment to slot x does -}
 record Assigned (φ : Frame) (x : ℕ) (v : Val) (φ' : Frame) : Set where
@@ -48,7 +52,8 @@ record Assigned (φ : Frame) (x : ℕ) (v : Val) (φ' : Frame) : Set where
 ≔-inv : ∀ φ x {v φ'}
   → φ [ x ]≔ v ≡ just φ'
   → Assigned φ x v φ'
-≔-inv (u ∷ φ) zero refl = record { len = refl ; here = refl ; other = oth ; inside = s≤s z≤n }
+≔-inv (u ∷ φ) zero refl =
+  record { len = refl ; here = refl ; other = oth ; inside = s≤s z≤n }
   where
   oth : ∀ y
     → y ≢ zero
@@ -57,7 +62,8 @@ record Assigned (φ : Frame) (x : ℕ) (v : Val) (φ' : Frame) : Set where
   oth (suc y) ne = refl
 ≔-inv (u ∷ φ) (suc x) {v} e with φ [ x ]≔ v in e'
 ≔-inv (u ∷ φ) (suc x) refl | just φ'' = record
-  { len = cong suc (Assigned.len a) ; here = Assigned.here a ; other = oth ; inside = s≤s (Assigned.inside a) }
+  { len = cong suc (Assigned.len a) ; here = Assigned.here a ; other =
+      oth ; inside = s≤s (Assigned.inside a) }
   where
   a = ≔-inv φ x e'
   oth : ∀ y
@@ -95,7 +101,7 @@ frame-size zero = refl
 frame-size (suc zero) = refl
 frame-size (suc (suc n)) = cong (λ m → suc (suc m)) (length-replicate n)
 
-{- Blocks --------------------------------------------------------------------------}
+{- Blocks ---------------------------------------------------------------------}
 
 blocks-at : ∀ {T n} bs l {b bs'}
   → block-at bs l ≡ just (b , bs')
@@ -114,7 +120,7 @@ blocks-none (c ∷ bs) l e with l ≟ length bs
 blocks-none (c ∷ bs) l () | yes _
 ... | no _ = blocks-none bs l e
 
-{- The table of global definitions --------------------------------------------------}
+{- The table of global definitions --------------------------------------------}
 
 {- the definition that the machine finds at k sits on top of the k
    definitions older than it -}

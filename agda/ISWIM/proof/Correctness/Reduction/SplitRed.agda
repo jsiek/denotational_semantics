@@ -31,32 +31,37 @@ import Data.Integer as Z
 open import Data.List using (List; []; _∷_)
 open import Data.Vec using (Vec; []; _∷_)
 open import Data.Vec.Relation.Unary.All using (All; []; _∷_)
-open import Data.Vec.Relation.Binary.Pointwise.Inductive using (Pointwise; []; _∷_)
+open import Data.Vec.Relation.Binary.Pointwise.Inductive using (Pointwise; [];
+  _∷_)
 import Data.Vec.Relation.Binary.Pointwise.Inductive as PW
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; cong₂; subst)
 open import Relation.Nullary using (Dec; yes; no; does)
 
-{- The relation ----------------------------------------------------------------------}
+{- The relation ---------------------------------------------------------------}
 
 infix 4 _≈_
 data _≈_ : ∀ {Γ A} → Tm Γ A → C.Tm Γ A → Set where
   var≈ : ∀ {Γ A} {x : Γ ∋ A} → ` x ≈ C.` x
-  clos≈ : ∀ {Γ n} {N N'} {Ms : Vec (Tm Γ Any) n} {Ms'} → N ≈ N' → Pointwise _≈_ Ms Ms'
+  clos≈ : ∀ {Γ n} {N N'} {Ms : Vec (Tm Γ Any) n} {Ms'} → N ≈ N'
+    → Pointwise _≈_ Ms Ms'
     → clos N Ms ≈ C.pack (C.code N') (C.tuple Ms')
   app≈ : ∀ {Γ} {L L' M M'} → L ≈ L' → M ≈ M' → app {Γ} L M ≈ C.callc L' M'
   lit≈ : ∀ {Γ B c} → lit {Γ} B c ≈ C.lit B c
-  tuple≈ : ∀ {Γ n} {Ms : Vec (Tm Γ Any) n} {Ms'} → Pointwise _≈_ Ms Ms' → tuple Ms ≈ C.tuple Ms'
+  tuple≈ : ∀ {Γ n} {Ms : Vec (Tm Γ Any) n} {Ms'} → Pointwise _≈_ Ms Ms'
+    → tuple Ms ≈ C.tuple Ms'
   get≈ : ∀ {Γ n i} {M : Tm Γ ⟪ tup n ⟫} {M'} → M ≈ M' → get i M ≈ C.get i M'
   inl≈ : ∀ {Γ} {M M'} → M ≈ M' → inl {Γ} M ≈ C.inl M'
   inr≈ : ∀ {Γ} {M M'} → M ≈ M' → inr {Γ} M ≈ C.inr M'
   case≈ : ∀ {Γ} {L L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N'
     → case {Γ} L M N ≈ C.case L' M' N'
-  prim≈ : ∀ {Γ p} {L L' M M'} → L ≈ L' → M ≈ M' → prim {Γ} p L M ≈ C.prim p L' M'
+  prim≈ : ∀ {Γ p} {L L' M M'} → L ≈ L' → M ≈ M'
+    → prim {Γ} p L M ≈ C.prim p L' M'
   let≈ : ∀ {Γ} {M M' N N'} → M ≈ M' → N ≈ N' → let′ {Γ} M N ≈ C.let′ M' N'
   inject≈ : ∀ {Γ G} {M : Tm Γ ⟪ G ⟫} {M'} → M ≈ M' → inject G M ≈ C.inject G M'
   project≈ : ∀ {Γ t} {M M'} → M ≈ M' → project {Γ} t M ≈ C.project t M'
 
-{- The fundamental lemma ------------------------------------------------------------------}
+{- The fundamental lemma ------------------------------------------------------}
 
 split≈ : ∀ {Γ A} (M : Tm Γ A) → M ≈ split M
 splits≈ : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) → Pointwise _≈_ Ms (splits Ms)
@@ -76,14 +81,15 @@ split≈ (project t M) = project≈ (split≈ M)
 splits≈ [] = []
 splits≈ (M ∷ Ms) = split≈ M ∷ splits≈ Ms
 
-{- Closure under substitution -------------------------------------------------------------}
+{- Closure under substitution -------------------------------------------------}
 
 OK : ∀ {Γ Γ₂} (𝒦₁ : S.Kit) (𝒦₂ : T.Kit) → S.Sub 𝒦₁ Γ Γ₂ → T.Sub 𝒦₂ Γ Γ₂ → Set
 OK 𝒦₁ 𝒦₂ σ τ = ∀ {A} (x : _ ∋ A) → S.Kit.tm 𝒦₁ (σ x) ≈ T.Kit.tm 𝒦₂ (τ x)
 
 record KR (𝒦₁ : S.Kit) (𝒦₂ : T.Kit) : Set where
   field
-    rel-vr : ∀ {Γ B} → S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ {B ∷ Γ} Z) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ Z)
+    rel-vr : ∀ {Γ B}
+      → S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ {B ∷ Γ} Z) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ Z)
     rel-wk : ∀ {Γ A B} {a : S.Kit.K 𝒦₁ Γ A} {b} → S.Kit.tm 𝒦₁ a ≈ T.Kit.tm 𝒦₂ b
       → S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ {B = B} a) ≈ T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ b)
 
@@ -113,7 +119,8 @@ module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
   ≈-trav (get≈ r) ok = get≈ (≈-trav r ok)
   ≈-trav (inl≈ r) ok = inl≈ (≈-trav r ok)
   ≈-trav (inr≈ r) ok = inr≈ (≈-trav r ok)
-  ≈-trav (case≈ r s t) ok = case≈ (≈-trav r ok) (≈-trav s (ok-ext ok)) (≈-trav t (ok-ext ok))
+  ≈-trav (case≈ r s t) ok =
+    case≈ (≈-trav r ok) (≈-trav s (ok-ext ok)) (≈-trav t (ok-ext ok))
   ≈-trav (prim≈ r s) ok = prim≈ (≈-trav r ok) (≈-trav s ok)
   ≈-trav (let≈ r s) ok = let≈ (≈-trav r ok) (≈-trav s (ok-ext ok))
   ≈-trav (inject≈ r) ok = inject≈ (≈-trav r ok)
@@ -127,7 +134,7 @@ varKR = record { rel-vr = var≈ ; rel-wk = λ { var≈ → var≈ } }
 tmKR : KR S.tmK T.tmK
 tmKR = record { rel-vr = var≈ ; rel-wk = λ r → Trav.≈-trav varKR r λ _ → var≈ }
 
-{- The simulation ------------------------------------------------------------------------------}
+{- The simulation -------------------------------------------------------------}
 
 R : ∀ {A} → Tm [] A → C.Tm [] A → Set
 R = _≈_
@@ -177,11 +184,16 @@ sims : ∀ {n} {Ms : Vec _ n} {Ms'}
   → Ans T.reds (All Value) (Pointwise R) Ms (S.reds Ms) Ms'
 sim (var≈ {x = ()})
 sim (clos≈ {N' = N'} n rs) =
-  ans-in (frame-∘ {redU = T.red} {h = C.tuple} {f = C.pack (C.code N')} (frame _ λ _ → refl) (frame _ λ _ → refl))
-    (clos≈ n) (sims rs) λ vs ms → val ε (T.pack T.code (T.tuple vs)) (clos≈ n ms)
+  ans-in
+    (frame-∘ {redU = T.red} {h = C.tuple} {f = C.pack (C.code N')}
+      (frame _ λ _ → refl) (frame _ λ _ → refl))
+    (clos≈ n) (sims rs) λ vs ms →
+      val ε (T.pack T.code (T.tuple vs)) (clos≈ n ms)
 sim (app≈ r s) =
   ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
-    λ v m → ans-in (frame {g = C.callc _} _ λ _ → val-in (value-red v)) (app≈ m) (sim s) λ w m' → β-sim v m w m'
+    λ v m →
+      ans-in (frame {g = C.callc _} _ λ _ → val-in (value-red v)) (app≈ m)
+      (sim s) λ w m' → β-sim v m w m'
   where
   β-sim : ∀ {V V' W W'}
     → Value V'
@@ -190,37 +202,53 @@ sim (app≈ r s) =
     → R W W'
     → Ans′ (app V W) (S.β V W) (C.callc V' W')
   β-sim (T.pack T.code (T.tuple vs)) (clos≈ n ms) w m' =
-    to (one (trans (val-in (value-red (T.pack T.code (T.tuple vs)))) (val-in (value-red w))))
+    to
+      (one
+        (trans (val-in (value-red (T.pack T.code (T.tuple vs))))
+          (val-in (value-red w))))
        (Trav.≈-trav tmKR n λ { Z → m' ; (S Z) → tuple≈ ms })
 sim lit≈ = val ε T.lit lit≈
-sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)
+sim (tuple≈ rs) =
+  ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms →
+  val ε (T.tuple vs) (tuple≈ ms)
 sim (get≈ {i = i} r) = ans-in (frame _ λ _ → refl) get≈ (sim r)
-  λ { (T.tuple vs) (tuple≈ ms) → to (one (val-in (value-red (T.tuple vs)))) (PW.lookup ms i) }
-sim (inl≈ r) = ans-in (frame _ λ _ → refl) inl≈ (sim r) λ v m → val ε (T.inl v) (inl≈ m)
-sim (inr≈ r) = ans-in (frame _ λ _ → refl) inr≈ (sim r) λ v m → val ε (T.inr v) (inr≈ m)
+  λ { (T.tuple vs) (tuple≈ ms)
+      → to (one (val-in (value-red (T.tuple vs)))) (PW.lookup ms i) }
+sim (inl≈ r) =
+  ans-in (frame _ λ _ → refl) inl≈ (sim r) λ v m → val ε (T.inl v) (inl≈ m)
+sim (inr≈ r) =
+  ans-in (frame _ λ _ → refl) inr≈ (sim r) λ v m → val ε (T.inr v) (inr≈ m)
 sim (case≈ r s t) = ans-in (frame _ λ _ → refl) (λ m → case≈ m s t) (sim r)
   λ { (T.inl v) (inl≈ m) → to (one (val-in (value-red (T.inl v)))) (≈-[] s m)
     ; (T.inr v) (inr≈ m) → to (one (val-in (value-red (T.inr v)))) (≈-[] t m) }
 sim (prim≈ {p = p} r s) = ans-in (frame _ λ _ → refl) (λ m → prim≈ m s) (sim r)
-  λ { T.lit lit≈ → ans-in (frame {g = C.prim p _} _ λ _ → refl) (prim≈ lit≈) (sim s)
+  λ { T.lit lit≈
+      → ans-in (frame {g = C.prim p _} _ λ _ → refl) (prim≈ lit≈) (sim s)
     λ { T.lit lit≈ → to (one refl) (out≈ p _ _) } }
 sim (let≈ r s) = ans-in (frame _ λ _ → refl) (λ m → let≈ m s) (sim r)
   λ v m → to (one (val-in (value-red v))) (≈-[] s m)
-sim (inject≈ r) = ans-in (frame _ λ _ → refl) inject≈ (sim r) λ v m → val ε (T.inject v) (inject≈ m)
-sim (project≈ {t = t} r) = ans-in (frame _ λ _ → refl) project≈ (sim r) λ { (T.inject v) (inject≈ m) → proj-sim v m }
+sim (inject≈ r) =
+  ans-in (frame _ λ _ → refl) inject≈ (sim r) λ v m →
+  val ε (T.inject v) (inject≈ m)
+sim (project≈ {t = t} r) =
+  ans-in (frame _ λ _ → refl) project≈ (sim r)
+  λ { (T.inject v) (inject≈ m) → proj-sim v m }
   where
   proj-sim : ∀ {G V V'}
     → Value V'
     → R V V'
-    → Ans′ (project t (inject G V)) (S.project? t (inject G V)) (C.project t (C.inject G V'))
+    → Ans′ (project t (inject G V)) (S.project? t (inject G V))
+      (C.project t (C.inject G V'))
   proj-sim {G} {V} {V'} v m = pd (G ≟F flat t) (val-in (value-red (T.inject v)))
-    where pd : ∀ {H} (d : Dec (G ≡ H)) {X Y} → T.red X ≡ T.proj-dec d V' → Ans′ Y (S.proj-dec d V) X
+    where pd : ∀ {H} (d : Dec (G ≡ H)) {X Y} → T.red X ≡ T.proj-dec d V'
+           → Ans′ Y (S.proj-dec d V) X
           pd (yes refl) e = to (one e) m
           pd (no _) e = error ε e
 sims [] = val ε [] []
 sims (r ∷ rs) = ans-∷ T.reds (λ _ _ → refl) value-red rs (sim r) (sims rs)
 
-{- The end theorem ----------------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
-split-correct : ∀ (M : Tm [] Any) → Equivalent (S.sem M) (T.sem (split-program M))
+split-correct : ∀ (M : Tm [] Any)
+  → Equivalent (S.sem M) (T.sem (split-program M))
 split-correct M = red-equivalent value-red R sim (λ m _ _ → obs≈ m) (split≈ M)

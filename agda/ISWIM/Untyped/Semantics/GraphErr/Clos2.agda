@@ -1,7 +1,8 @@
 module ISWIM.Untyped.Semantics.GraphErr.Clos2 where
 {-
 
- The semantics of Clos2 in the graph model with errors: a closure binds its free variables left to right, and is a
+ The semantics of Clos2 in the graph model with errors: a closure binds its free
+ variables left to right, and is a
    function (Λᵐ) of the argument, whose body sees the values of the free
    variables.
 
@@ -23,14 +24,17 @@ open import Data.List using (replicate)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
-{- apply a curried function of n sets to the denotations of the free variables -}
-apply-n : ∀ n {b} → Result (𝒫 Value) (ν-n n b) → Results (𝒫 Value) (replicate n ■)
+{- apply a curried function of n sets to the denotations of the free
+   variables -}
+apply-n : ∀ n {b} → Result (𝒫 Value) (ν-n n b)
+  → Results (𝒫 Value) (replicate n ■)
   → Result (𝒫 Value) b
 apply-n zero F _ = F
 apply-n (suc n) F ⟨ D , Ds ⟩ = apply-n n (F D) Ds
 
 𝕆-Clos2ᵐ : DOpSig (𝒫 Value) sig
-𝕆-Clos2ᵐ (clos-op n) ⟨ F , Ds ⟩ = binds n Ds (λ Xs → Λᵐ ⟨ apply-n n F Xs , ptt ⟩)
+𝕆-Clos2ᵐ (clos-op n) ⟨ F , Ds ⟩ =
+  binds n Ds (λ Xs → Λᵐ ⟨ apply-n n F Xs , ptt ⟩)
 𝕆-Clos2ᵐ app = ⋆ᵐ
 𝕆-Clos2ᵐ (lit B k) = ℬ B k
 𝕆-Clos2ᵐ (tuple n) = 𝒯ᵐ n

@@ -13,7 +13,8 @@ module ISWIM.proof.Semantics.GraphErr.Typed.CFG where
 open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.Env using (•-~)
-open import proof.Framework.GraphModel.TypedOk using (Ok; ok-op; Ok-≃; Ok-η; Ok-skip)
+open import proof.Framework.GraphModel.TypedOk using (Ok; ok-op; Ok-≃; Ok-η;
+  Ok-skip)
 open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (case-good)
 open import ISWIM.proof.Semantics.GraphErr.Typed.Clos5 using (ok)
 open import ISWIM.Semantics.GraphErr.Typed.CFG
@@ -43,10 +44,13 @@ module _ {T : Table} (TC : ∀ k → Con (T k)) where
     → (∀ {Δ'} (l : Bs ∋ Δ') → Ok (B l))
     → Ok (⟦ t ⟧ᵗ T B)
   tail-ok (return s) oB = ok TC M.⌜ ⌞ s ⌟ ⌝
-  tail-ok (seq p s t) {B} oB = Ok-≃ (λ ρ → letᵐ-unfold {𝒮 s T ρ} {λ X → ⟦ t ⟧ᵗ T B (X • drop p ρ)})
+  tail-ok (seq p s t) {B} oB =
+    Ok-≃ (λ ρ → letᵐ-unfold {𝒮 s T ρ} {λ X → ⟦ t ⟧ᵗ T B (X • drop p ρ)})
     (ok-op letᵐ-good ⟨ ok TC M.⌜ ⌞ s ⌟ ⌝ , ⟨ drop-ok p (tail-ok t oB) , ptt ⟩ ⟩)
   tail-ok (goto l) oB = oB l
-  tail-ok (case a p l₁ l₂) oB = ok-op case-good ⟨ ok TC M.⌜ a ⌝ᵃ , ⟨ drop-ok p (oB l₁) , ⟨ drop-ok p (oB l₂) , ptt ⟩ ⟩ ⟩
+  tail-ok (case a p l₁ l₂) oB =
+    ok-op case-good
+    ⟨ ok TC M.⌜ a ⌝ᵃ , ⟨ drop-ok p (oB l₁) , ⟨ drop-ok p (oB l₂) , ptt ⟩ ⟩ ⟩
 
   blocks-ok : ∀ {Σ Bs} (bs : Blocks Σ Bs) {Δ} (l : Bs ∋ Δ) → Ok (blocks bs T l)
   blocks-ok (bs ▷ t) Z = tail-ok t (blocks-ok bs)
@@ -56,4 +60,7 @@ module _ {T : Table} (TC : ∀ k → Con (T k)) where
   run-ok (body bs t) = tail-ok t (blocks-ok bs)
 
   codeᶜ-con : ∀ {Σ n} (b : Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) → Con (codeᶜ T b)
-  codeᶜ-con b = ΛΛᵐ-con λ X X' Y Y' X~ Y~ → proj₂ (proj₂ (run-ok b)) (•-~ (Every _~_) (•-~ (Every _~_) (λ _ → Con-⌈⌉ ω) X~) Y~)
+  codeᶜ-con b =
+    ΛΛᵐ-con λ X X' Y Y' X~ Y~ →
+    proj₂ (proj₂ (run-ok b))
+    (•-~ (Every _~_) (•-~ (Every _~_) (λ _ → Con-⌈⌉ ω) X~) Y~)

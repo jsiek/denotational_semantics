@@ -12,7 +12,8 @@ module ISWIM.proof.Semantics.Graph.Typed.CFG where
 
 open import ISWIM.Semantics.Graph.Typed.CFG public
 open import ISWIM.Semantics.Graph.Typed.Imp using (𝒜s)
-open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; project-good; fun₄)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; project-good;
+  fun₄)
 
 open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
@@ -23,7 +24,8 @@ open import proof.Semantics.Graph.Prim using (primD-mono)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import ISWIM.Language.Typed.Type
 open import ISWIM.Language.Typed.CFG
-open import ISWIM.Language.Typed.Imp using (var; lit; ref; atm; pack; callc; tuple; get; inl; inr; prim; inject; project)
+open import ISWIM.Language.Typed.Imp using (var; lit; ref; atm; pack; callc;
+  tuple; get; inl; inr; prim; inject; project)
 
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Nat using (ℕ; suc)
@@ -32,9 +34,11 @@ open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
 
-module _ {Σ Δ} {T T' : Table Σ} {σ σ'} (h : ∀ {A} (a : Atm Σ Δ A) → 𝒜 a T σ ⊆ 𝒜 a T' σ') where
+module _ {Σ Δ} {T T' : Table Σ} {σ σ'}
+  (h : ∀ {A} (a : Atm Σ Δ A) → 𝒜 a T σ ⊆ 𝒜 a T' σ') where
 
-  𝒜s-⊆ : ∀ {n} (as : Vec (Atm Σ Δ Any) n) → results-rel-pres _⊆_ (replicate n ■) (𝒜s as T σ) (𝒜s as T' σ')
+  𝒜s-⊆ : ∀ {n} (as : Vec (Atm Σ Δ Any) n)
+    → results-rel-pres _⊆_ (replicate n ■) (𝒜s as T σ) (𝒜s as T' σ')
   𝒜s-⊆ [] = ptt
   𝒜s-⊆ (a ∷ as) = ⟨ lift (h a) , 𝒜s-⊆ as ⟩
 
@@ -42,14 +46,19 @@ module _ {Σ Δ} {T T' : Table Σ} {σ σ'} (h : ∀ {A} (a : Atm Σ Δ A) → �
   𝒮-⊆ (atm a) = h a
   𝒮-⊆ (pack a b) = lower (pair-mono _ _ ⟨ lift (h a) , ⟨ lift (h b) , ptt ⟩ ⟩)
   𝒮-⊆ (callc f a) = lower (⋆-mono _ _
-    ⟨ ⋆-mono _ _ ⟨ car-mono _ _ ⟨ lift (h f) , ptt ⟩ , ⟨ cdr-mono _ _ ⟨ lift (h f) , ptt ⟩ , ptt ⟩ ⟩ , ⟨ lift (h a) , ptt ⟩ ⟩)
+    ⟨ ⋆-mono _ _
+        ⟨ car-mono _ _ ⟨ lift (h f) , ptt ⟩
+          , ⟨ cdr-mono _ _ ⟨ lift (h f) , ptt ⟩ , ptt ⟩ ⟩
+            , ⟨ lift (h a) , ptt ⟩ ⟩)
   𝒮-⊆ (tuple as) = lower (𝒯-mono _ _ _ (𝒜s-⊆ as))
   𝒮-⊆ (get i a) = lower (proj-mono i _ _ ⟨ lift (h a) , ptt ⟩)
   𝒮-⊆ (inl a) = lower (inl-mono _ _ ⟨ lift (h a) , ptt ⟩)
   𝒮-⊆ (inr a) = lower (inr-mono _ _ ⟨ lift (h a) , ptt ⟩)
-  𝒮-⊆ (prim p a b) = lower (primD-mono p _ _ ⟨ lift (h a) , ⟨ lift (h b) , ptt ⟩ ⟩)
+  𝒮-⊆ (prim p a b) =
+    lower (primD-mono p _ _ ⟨ lift (h a) , ⟨ lift (h b) , ptt ⟩ ⟩)
   𝒮-⊆ (inject G a) = h a
-  𝒮-⊆ (project t a) = lower (mono (project-good fun₄ t) _ _ ⟨ lift (h a) , ptt ⟩)
+  𝒮-⊆ (project t a) =
+    lower (mono (project-good fun₄ t) _ _ ⟨ lift (h a) , ptt ⟩)
 
 {- in the table -}
 𝒜-T⊆ : ∀ {Σ Δ A} {T T' : Table Σ}
@@ -64,7 +73,9 @@ module _ {Σ Δ} {T T' : Table Σ} {σ σ'} (h : ∀ {A} (a : Atm Σ Δ A) → �
   → (∀ {n} (f : Σ ∋ n) → T f ≃ T' f)
   → ∀ (s : Simple Σ Δ A) σ
   → 𝒮 s T σ ≃ 𝒮 s T' σ
-𝒮-≃ TT s σ = ⟨ 𝒮-⊆ (λ a → 𝒜-T⊆ (λ f → proj₁ (TT f)) a) s , 𝒮-⊆ (λ a → 𝒜-T⊆ (λ f → proj₂ (TT f)) a) s ⟩
+𝒮-≃ TT s σ =
+  ⟨ 𝒮-⊆ (λ a → 𝒜-T⊆ (λ f → proj₁ (TT f)) a) s
+    , 𝒮-⊆ (λ a → 𝒜-T⊆ (λ f → proj₂ (TT f)) a) s ⟩
 
 {- in the frame -}
 𝒜-mono : ∀ {Σ Δ A} {T : Table Σ} {σ σ'}
@@ -95,11 +106,14 @@ module _ {Σ} {T : Table Σ} where
     → ⟦ t ⟧ᵗ T B σ ⊆ ⟦ t ⟧ᵗ T B σ'
   tail-mono (return s) mB σ⊆ = 𝒮-⊆ (𝒜-mono σ⊆) s
   tail-mono (seq p s t) mB σ⊆ = lower (⋆-mono _ _
-    ⟨ Λ-mono _ _ ⟨ (λ X Y X⊆ → lift (tail-mono t mB (•-~ _⊆_ (drop-mono p σ⊆) X⊆))) , ptt ⟩
+    ⟨ Λ-mono _ _
+        ⟨ (λ X Y X⊆ → lift (tail-mono t mB (•-~ _⊆_ (drop-mono p σ⊆) X⊆)))
+          , ptt ⟩
     , ⟨ lift (𝒮-⊆ (𝒜-mono σ⊆) s) , ptt ⟩ ⟩)
   tail-mono (goto l) mB σ⊆ = mB l σ⊆
   tail-mono (case a p l₁ l₂) mB σ⊆ = lower (𝒞-mono _ _
-    ⟨ lift (𝒜-mono σ⊆ a) , ⟨ (λ X Y X⊆ → lift (mB l₁ (•-~ _⊆_ (drop-mono p σ⊆) X⊆)))
+    ⟨ lift (𝒜-mono σ⊆ a)
+        , ⟨ (λ X Y X⊆ → lift (mB l₁ (•-~ _⊆_ (drop-mono p σ⊆) X⊆)))
     , ⟨ (λ X Y X⊆ → lift (mB l₂ (•-~ _⊆_ (drop-mono p σ⊆) X⊆))) , ptt ⟩ ⟩ ⟩)
 
   blocks-mono : ∀ {Bs} (bs : Blocks Σ Bs) → MonoB (blocks bs T)

@@ -30,7 +30,7 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; _,_; Σ-syntax)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym)
 
-{- Values ----------------------------------------------------------------------}
+{- Values ---------------------------------------------------------------------}
 
 data SV : AST → Set
 data SVs : ∀ {n} → Args (replicate n ■) → Set
@@ -131,9 +131,10 @@ svs-sub h (v ∷ vs) = sv-sub h v ∷ svs-sub h vs
 sv-rename : ∀ r {V}
   → SV V
   → SV (rename r V)
-sv-rename r {V} v = subst SV (sym (SS.rename-sub r V)) (sv-sub (λ x → var (r x)) v)
+sv-rename r {V} v =
+  subst SV (sym (SS.rename-sub r V)) (sv-sub (λ x → var (r x)) v)
 
-{- Known values -----------------------------------------------------------------}
+{- Known values ---------------------------------------------------------------}
 
 {- a known integer is a literal -}
 int-of-just : ∀ {K n}
@@ -150,14 +151,16 @@ component-just : ∀ {n m} (i : Fin n) {Ks : Args (replicate m ■)} {K}
 component-just zero [] ()
 component-just (suc i) [] ()
 component-just (suc i) (v ∷ vs) e = component-just i vs e
-component-just {suc n} zero {_ ,, Ks} (v ∷ vs) e with has-length n (args→list Ks)
+component-just {suc n} zero {_ ,, Ks} (v ∷ vs) e
+  with has-length n (args→list Ks)
 component-just {suc n} zero {_ ,, Ks} (v ∷ vs) refl | true = v
 component-just {suc n} zero {_ ,, Ks} (v ∷ vs) () | false
 
 {- what simplify's tests on known values found -}
 comp-inv : ∀ {n} (i : Fin n) k {K}
   → component i k ≡ just K
-  → Σ[ m ∈ ℕ ] Σ[ Ks ∈ Args (replicate m ■) ] k ≡ just (val (tuple m ⦅ Ks ⦆)) × proj i (args→list Ks) ≡ just K
+  → Σ[ m ∈ ℕ ] Σ[ Ks ∈ Args (replicate m ■) ] k
+    ≡ just (val (tuple m ⦅ Ks ⦆)) × proj i (args→list Ks) ≡ just K
 comp-inv i (just (val (tuple m ⦅ Ks ⦆))) e = m , Ks , refl , e
 
 int-inv : ∀ k {n}

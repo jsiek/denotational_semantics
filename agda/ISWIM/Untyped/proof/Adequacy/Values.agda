@@ -27,13 +27,14 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; Con)
   renaming (const to dconst)
-open import proof.Framework.GraphModel.Ops using (ℬ; inl; inr; pair-consis; ℬ-consis; inl-consis; inr-consis)
-  renaming (pair to dpair)
+open import proof.Framework.GraphModel.Ops using (ℬ; inl; inr; pair-consis;
+  ℬ-consis; inl-consis; inr-consis) renaming (pair to dpair)
 open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
 open import ISWIM.Untyped.Semantics.Graph.Frames using (Table)
 open import Semantics.Observation
 open import proof.Framework.ListUtil using (proj; has-length)
-open import ISWIM.Semantics.CEK.Values using (Val; code; pair; const; tup; obs; obs-list; out)
+open import ISWIM.Semantics.CEK.Values using (Val; code; pair; const; tup; obs;
+  obs-list; out)
 import ISWIM.Semantics.CEK.Values as T using (inl; inr)
 open import ISWIM.proof.Adequacy.Common
   using (ShapeOf; ShapeAt; has-length→length; length→has-length; δ?-inv)
@@ -50,15 +51,17 @@ open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong;
+  subst)
 
 length-obs-list : ∀ vs → length (obs-list vs) ≡ length vs
 length-obs-list [] = refl
 length-obs-list (v ∷ vs) = cong suc (length-obs-list vs)
 
-{- Denotations of values (soundness) --------------------------------------------}
+{- Denotations of values (soundness) ------------------------------------------}
 
-module Den (T⁺ : Table) (T⁺-ν : ∀ k → ν ∈ T⁺ k) (T⁺-con : ∀ k → Con (T⁺ k)) where
+module Den (T⁺ : Table) (T⁺-ν : ∀ k → ν ∈ T⁺ k)
+  (T⁺-con : ∀ k → Con (T⁺ k)) where
 
   𝒱 : Val → 𝒫 Value
   𝒱s : List Val → List (𝒫 Value)
@@ -88,7 +91,8 @@ module Den (T⁺ : Table) (T⁺-ν : ∀ k → ν ∈ T⁺ k) (T⁺-con : ∀ k 
   𝒱-nonempty (tup []) = ⟨ ⟨⟩ , tt ⟩
   𝒱-nonempty (tup (v ∷ vs)) with 𝒱-nonempty v
   ... | ⟨ d , d∈ ⟩ =
-    ⟨ tup[_]_ {suc (length vs)} zero d , ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , ⟨ ⟨ d , d∈ ⟩ , 𝒱s-nonempty vs ⟩ ⟩ ⟩
+    ⟨ tup[_]_ {suc (length vs)} zero d
+        , ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , ⟨ ⟨ d , d∈ ⟩ , 𝒱s-nonempty vs ⟩ ⟩ ⟩
   𝒱-nonempty (T.inl v) with 𝒱-nonempty v
   ... | ⟨ d , d∈ ⟩ = ⟨ left d , d∈ ⟩
   𝒱-nonempty (T.inr v) with 𝒱-nonempty v
@@ -101,7 +105,8 @@ module Den (T⁺ : Table) (T⁺-ν : ∀ k → ν ∈ T⁺ k) (T⁺-con : ∀ k 
   𝒱-con : ∀ v → Con (𝒱 v)
   𝒱s-con : ∀ vs → AllCon (𝒱s vs)
   𝒱-con (code k) = T⁺-con k
-  𝒱-con (pair v w) = lower (pair-consis _ _ ⟨ lift (𝒱-con v) , ⟨ lift (𝒱-con w) , ptt ⟩ ⟩)
+  𝒱-con (pair v w) =
+    lower (pair-consis _ _ ⟨ lift (𝒱-con v) , ⟨ lift (𝒱-con w) , ptt ⟩ ⟩)
   𝒱-con (const B k) = lower (ℬ-consis B k ptt ptt ptt)
   𝒱-con (tup vs) = 𝒯L-con (𝒱s vs) (𝒱s-con vs)
   𝒱-con (T.inl v) = lower (inl-consis _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
@@ -117,7 +122,8 @@ module Den (T⁺ : Table) (T⁺-ν : ∀ k → ν ∈ T⁺ k) (T⁺-con : ∀ k 
     → At i (𝒱s vs) d
   proj-𝒱s {suc n} zero (v ∷ vs) eq d d∈ with has-length n vs in h
   proj-𝒱s {suc n} zero (v ∷ vs) refl d d∈ | true =
-    ⟨ subst (λ m → length (𝒱s vs) ≡ m) (has-length→length n vs h) (length-𝒱s vs) , d∈ ⟩
+    ⟨ subst (λ m → length (𝒱s vs) ≡ m) (has-length→length n vs h)
+        (length-𝒱s vs) , d∈ ⟩
   proj-𝒱s {suc n} zero (v ∷ vs) () d d∈ | false
   proj-𝒱s (suc i) (v ∷ vs) eq d d∈ = proj-𝒱s i vs eq d d∈
 
@@ -155,13 +161,15 @@ module Den (T⁺ : Table) (T⁺-ν : ∀ k → ν ∈ T⁺ k) (T⁺-con : ∀ k 
   𝒱-shape (tup (v ∷ vs)) with 𝒱-shape v
   ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ =
     ⟨ tup[_]_ {suc (length vs)} zero d
-    , ⟨ ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , 𝒱s-nonempty (v ∷ vs) ⟩ , ⟨ length-obs-list vs , sh ⟩ ⟩ ⟩
+    ,
+      ⟨ ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , 𝒱s-nonempty (v ∷ vs) ⟩
+        , ⟨ length-obs-list vs , sh ⟩ ⟩ ⟩
   𝒱-shape (T.inl v) with 𝒱-shape v
   ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ left d , ⟨ d∈ , sh ⟩ ⟩
   𝒱-shape (T.inr v) with 𝒱-shape v
   ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ right d , ⟨ d∈ , sh ⟩ ⟩
 
-{- The logical relation (adequacy) ------------------------------------------------}
+{- The logical relation (adequacy) --------------------------------------------}
 
 module Rel (Run : ℕ → Val → Val → (Val → Set) → Set) where
 
@@ -203,12 +211,14 @@ module Rel (Run : ℕ → Val → Val → (Val → Set) → Set) where
     → (∀ d → d ∈ mem V → 𝕍 d v)
     → 𝕍s V v
   all→𝕍s [] all = tt
-  all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
+  all→𝕍s (d ∷ V) all =
+    ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
 
   𝕍At-proj : ∀ {n} (i : Fin n) d vs
     → 𝕍At i d vs
     → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
-  𝕍At-proj {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ rewrite length→has-length n vs len = ⟨ v , ⟨ refl , r ⟩ ⟩
+  𝕍At-proj {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ rewrite length→has-length n vs
+    len = ⟨ v , ⟨ refl , r ⟩ ⟩
   𝕍At-proj (suc i) d (v ∷ vs) r = 𝕍At-proj i d vs r
 
   𝕍-out : ∀ r → 𝕍 (dout r) (out r)
@@ -231,5 +241,6 @@ module Rel (Run : ℕ → Val → Val → (Val → Set) → Set) where
   𝕍-shape (tup[ i ] d) (tup vs) r = 𝕍At-shape i d vs r
   𝕍-shape (left d) (T.inl v) r = 𝕍-shape d v r
   𝕍-shape (right d) (T.inr v) r = 𝕍-shape d v r
-  𝕍At-shape {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ = ⟨ trans (length-obs-list vs) len , 𝕍-shape d v r ⟩
+  𝕍At-shape {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ =
+    ⟨ trans (length-obs-list vs) len , 𝕍-shape d v r ⟩
   𝕍At-shape (suc i) d (v ∷ vs) r = 𝕍At-shape i d vs r

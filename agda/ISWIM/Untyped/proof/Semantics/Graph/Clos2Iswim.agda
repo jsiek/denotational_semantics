@@ -35,9 +35,11 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
   where
   Λ⊆ = lower (Λ-mono ⟨ apply-n n F Ds , ptt ⟩ ⟨ apply-n n F' Ds' , ptt ⟩
                      ⟨ apply-n-mono n F F' Ds Ds' F~ Ds~ , ptt ⟩)
-  G : guard-n n Ds (Λ ⟨ apply-n n F Ds , ptt ⟩) ⊆ guard-n n Ds' (Λ ⟨ apply-n n F' Ds' , ptt ⟩)
+  G : guard-n n Ds (Λ ⟨ apply-n n F Ds , ptt ⟩)
+    ⊆ guard-n n Ds' (Λ ⟨ apply-n n F' Ds' , ptt ⟩)
   G w ⟨ ne , w∈ ⟩ =
-    ⟨ (λ i → ⟨ proj₁ (ne i) , nthD-mono Ds Ds' Ds~ i _ (proj₂ (ne i)) ⟩) , Λ⊆ w w∈ ⟩
+    ⟨ (λ i → ⟨ proj₁ (ne i) , nthD-mono Ds Ds' Ds~ i _ (proj₂ (ne i)) ⟩)
+        , Λ⊆ w w∈ ⟩
 𝕆-Clos2-mono app = ⋆-mono
 𝕆-Clos2-mono (lit B k) = ℬ-mono B k
 𝕆-Clos2-mono (tuple x) = 𝒯-mono x

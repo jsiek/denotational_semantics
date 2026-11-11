@@ -1,7 +1,7 @@
 {-
 
-  The values of the X86 interpreter (ISWIM/Untyped/Semantics/Interp/X86.agda), which
-  the interpreters of the preserved untyped Clos5, Imp and CFG
+  The values of the X86 interpreter (ISWIM/Untyped/Semantics/Interp/X86.agda),
+  which the interpreters of the preserved untyped Clos5, Imp and CFG
   (agda/ISWIM/Untyped/) share: code pointers, pairs (closures), constants,
   tuples and injections, their observations, the primitives on them and
   the projections, and frames of slots.

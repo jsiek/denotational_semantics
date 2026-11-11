@@ -23,7 +23,8 @@ open import Data.Nat using (ℕ; suc)
 open import Data.Unit using (tt)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Data.Vec.Relation.Unary.All using (All; []; _∷_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; cong₂)
 
 {- Values -------------------------------------------------------------------}
 
@@ -54,8 +55,10 @@ values-red (v ∷ vs) rewrite value-red v | values-red vs = refl
 
 module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
   (R : ∀ {k j m} → Sub 𝒦₁ k j → Sub 𝒦₂ j m → Sub 𝒦₃ k m → Set)
-  (R-exts : ∀ {k j m σ₁ σ₂ σ₃} → R {k} {j} {m} σ₁ σ₂ σ₃ → R (exts 𝒦₁ σ₁) (exts 𝒦₂ σ₂) (exts 𝒦₃ σ₃))
-  (R-var : ∀ {k j m σ₁ σ₂ σ₃} → R {k} {j} {m} σ₁ σ₂ σ₃ → ∀ x → trav 𝒦₂ σ₂ (Kit.tm 𝒦₁ (σ₁ x)) ≡ Kit.tm 𝒦₃ (σ₃ x)) where
+  (R-exts : ∀ {k j m σ₁ σ₂ σ₃} → R {k} {j} {m} σ₁ σ₂ σ₃
+      → R (exts 𝒦₁ σ₁) (exts 𝒦₂ σ₂) (exts 𝒦₃ σ₃))
+  (R-var : ∀ {k j m σ₁ σ₂ σ₃} → R {k} {j} {m} σ₁ σ₂ σ₃ → ∀ x
+      → trav 𝒦₂ σ₂ (Kit.tm 𝒦₁ (σ₁ x)) ≡ Kit.tm 𝒦₃ (σ₃ x)) where
 
   fuse : ∀ {k j m σ₁ σ₂ σ₃}
     → R {k} {j} {m} σ₁ σ₂ σ₃
@@ -73,7 +76,8 @@ module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
   fuse r (get i M) = cong (get i) (fuse r M)
   fuse r (inl M) = cong inl (fuse r M)
   fuse r (inr M) = cong inr (fuse r M)
-  fuse r (case L M N) rewrite fuse r L | fuse (R-exts r) M | fuse (R-exts r) N = refl
+  fuse r (case L M N) rewrite fuse r L | fuse (R-exts r) M
+    | fuse (R-exts r) N = refl
   fuse r (prim p L M) = cong₂ (prim p) (fuse r L) (fuse r M)
   fuse r (let′ M N) = cong₂ let′ (fuse r M) (fuse (R-exts r) N)
   fuse r (inject G M) = cong (inject G) (fuse r M)
@@ -87,7 +91,8 @@ ren-trav : ∀ 𝒦 {k j m} {r : Fin k → Fin j} {σ : Sub 𝒦 j m} {τ : Sub 
   → ∀ {A} (M : Tm k A)
   → trav 𝒦 σ (ren r M) ≡ trav 𝒦 τ M
 ren-trav 𝒦 = fuse varK 𝒦 𝒦 (λ r σ τ → ∀ x → σ (r x) ≡ τ x)
-  (λ { h zero → refl ; h (suc x) → cong (Kit.wk 𝒦) (h x) }) (λ h x → cong (Kit.tm 𝒦) (h x))
+  (λ { h zero → refl ; h (suc x) → cong (Kit.wk 𝒦) (h x) })
+    (λ h x → cong (Kit.tm 𝒦) (h x))
 
 {- a substitution, then a renaming -}
 sub-ren : ∀ {k j m} {σ : Fin k → Tm j Any} {r : Fin j → Fin m} {τ}
@@ -97,22 +102,30 @@ sub-ren : ∀ {k j m} {σ : Fin k → Tm j Any} {r : Fin j → Fin m} {τ}
 sub-ren = fuse tmK varK tmK (λ σ r τ → ∀ x → ren r (σ x) ≡ τ x)
   (λ { h zero → refl
      ; {σ₁ = σ} h (suc x) → trans (ren-trav varK (λ _ → refl) (σ x))
-                              (trans (sym (ren-trav varK (λ _ → refl) (σ x))) (cong (ren suc) (h x))) })
+                              (trans (sym (ren-trav varK (λ _ → refl) (σ x)))
+                                  (cong (ren suc) (h x))) })
   (λ h x → h x)
 
 {- what both kits satisfy -}
 record Laws (𝒦 : Kit) : Set where
   field
     tm-vr : ∀ {k} (x : Fin k) → Kit.tm 𝒦 (Kit.vr 𝒦 x) ≡ ` x
-    exts-ren : ∀ {k j A} (τ : Sub 𝒦 k j) (M : Tm k A) → trav 𝒦 (exts 𝒦 τ) (ren suc M) ≡ ren suc (trav 𝒦 τ M)
+    exts-ren : ∀ {k j A} (τ : Sub 𝒦 k j) (M : Tm k A)
+      → trav 𝒦 (exts 𝒦 τ) (ren suc M) ≡ ren suc (trav 𝒦 τ M)
 
 varL : Laws varK
 varL = record { tm-vr = λ _ → refl
-              ; exts-ren = λ τ M → trans (ren-trav varK (λ _ → refl) M) (sym (ren-trav varK (λ _ → refl) M)) }
+              ; exts-ren =
+                λ τ M →
+                trans (ren-trav varK (λ _ → refl) M)
+                (sym (ren-trav varK (λ _ → refl) M)) }
 
 tmL : Laws tmK
 tmL = record { tm-vr = λ _ → refl
-             ; exts-ren = λ τ M → trans (ren-trav tmK (λ _ → refl) M) (sym (sub-ren (λ _ → refl) M)) }
+             ; exts-ren =
+               λ τ M →
+               trans (ren-trav tmK (λ _ → refl) M)
+               (sym (sub-ren (λ _ → refl) M)) }
 
 {- a substitution, then a traversal -}
 trav-sub : ∀ {𝒦}
@@ -122,7 +135,8 @@ trav-sub : ∀ {𝒦}
   → ∀ {A} (M : Tm k A)
   → trav 𝒦 τ (sub σ M) ≡ sub ρ M
 trav-sub {𝒦} L = fuse tmK 𝒦 tmK (λ σ τ ρ → ∀ x → trav 𝒦 τ (σ x) ≡ ρ x)
-  (λ { h zero → Laws.tm-vr L zero ; {σ₁ = σ} {τ} h (suc x) → trans (Laws.exts-ren L τ (σ x)) (cong (ren suc) (h x)) })
+  (λ { h zero → Laws.tm-vr L zero ; {σ₁ = σ} {τ} h (suc x)
+      → trans (Laws.exts-ren L τ (σ x)) (cong (ren suc) (h x)) })
   (λ h x → h x)
 
 sub-id-exts : ∀ {k} {σ : Fin k → Tm k Any}
@@ -149,7 +163,8 @@ sub-id h (tuple Ms) = cong tuple (sub-ids h Ms)
 sub-id h (get i M) = cong (get i) (sub-id h M)
 sub-id h (inl M) = cong inl (sub-id h M)
 sub-id h (inr M) = cong inr (sub-id h M)
-sub-id h (case L M N) rewrite sub-id h L | sub-id (sub-id-exts h) M | sub-id (sub-id-exts h) N = refl
+sub-id h (case L M N) rewrite sub-id h L | sub-id (sub-id-exts h) M
+  | sub-id (sub-id-exts h) N = refl
 sub-id h (prim p L M) = cong₂ (prim p) (sub-id h L) (sub-id h M)
 sub-id h (let′ M N) = cong₂ let′ (sub-id h M) (sub-id (sub-id-exts h) N)
 sub-id h (inject G M) = cong (inject G) (sub-id h M)
@@ -163,7 +178,8 @@ wk-[] : ∀ {A} (V : Tm 0 A) W → ren suc V [ W ] ≡ V
 wk-[] V W = trans (ren-trav tmK {τ = `_} (λ ()) V) (sub-id (λ _ → refl) V)
 
 {- under a binder, then for the bound variable: closed values for the rest -}
-exts-[] : ∀ {k A} (σ : Fin k → Tm 0 Any) W (N : Tm (suc k) A) → sub (exts tmK σ) N [ W ] ≡ sub (W • σ) N
+exts-[] : ∀ {k A} (σ : Fin k → Tm 0 Any) W (N : Tm (suc k) A)
+  → sub (exts tmK σ) N [ W ] ≡ sub (W • σ) N
 exts-[] σ W = trav-sub tmL λ { zero → refl ; (suc x) → wk-[] (σ x) W }
 
 {- a traversal keeps values -}

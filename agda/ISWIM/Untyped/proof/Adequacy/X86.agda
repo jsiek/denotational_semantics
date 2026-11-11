@@ -1,10 +1,11 @@
 {-
 
-  Soundness and adequacy of the graph model (ISWIM/Untyped/Semantics/Graph/X86.agda, ⟦_⟧ₚ) with
-  respect to the X86 machine (ISWIM/Semantics/CEK/X86.agda), for
-  well-formed programs (WF, Adequacy/X86WF.agda), which the compiler
-  produces from closed ISWIM programs (compile-x86-wf,
-  Adequacy/X86CompileWF.agda). As for Clos5 (ISWIM/Untyped/proof/Adequacy/Clos5.agda):
+  Soundness and adequacy of the graph model
+  (ISWIM/Untyped/Semantics/Graph/X86.agda, ⟦_⟧ₚ) with respect to the X86 machine
+  (ISWIM/Semantics/CEK/X86.agda), for well-formed programs (WF,
+  Adequacy/X86WF.agda), which the compiler produces from closed ISWIM programs
+  (compile-x86-wf, Adequacy/X86CompileWF.agda). As for Clos5
+  (ISWIM/Untyped/proof/Adequacy/Clos5.agda):
 
     soundness : if the machine terminates with an answer o, then
       ⟦ P ⟧ₚ has an element of the shape of o (Adequacy/X86Soundness.agda);
@@ -27,13 +28,15 @@ module ISWIM.Untyped.proof.Adequacy.X86 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using () renaming (const to
+  dconst)
 open import ISWIM.Language.X86 using (program; body)
 open import ISWIM.Untyped.Semantics.Graph.X86 using (⟦_⟧ₚ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
 open import ISWIM.Semantics.CEK.X86 using (sem; obs; halt?; halt)
-open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer;
+  shape-const)
 open import ISWIM.Untyped.proof.Adequacy.X86WF using (WF) public
 open import ISWIM.Untyped.proof.Adequacy.X86Soundness using (soundness) public
 import ISWIM.Untyped.proof.Adequacy.X86Common as C
@@ -62,10 +65,12 @@ adequacy : ∀ P
   → ∀ {d}
   → d ∈ ⟦ P ⟧ₚ
   → Σ[ o ∈ Obs ] Terminates (sem P) o × ShapeOf o d
-adequacy (program ds (body n bs b)) ⟨ wfd , ⟨ ok , _ ⟩ ⟩ {d} d∈ with LR.adequate-main ds wfd ok d∈
+adequacy (program ds (body n bs b)) ⟨ wfd , ⟨ ok , _ ⟩ ⟩ {d} d∈
+  with LR.adequate-main ds wfd ok d∈
 ... | ⟨ v , ⟨ r , rv ⟩ ⟩ with r halt
 ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ , e ⟩ ⟩ ⟩ ⟩ ⟩ =
-  ⟨ obs v , ⟨ ⟨ _ , ⟨ C.↠→star ds τ , cong halt? e ⟩ ⟩ , LR.𝕍-shape ds d v rv ⟩ ⟩
+  ⟨ obs v
+      , ⟨ ⟨ _ , ⟨ C.↠→star ds τ , cong halt? e ⟩ ⟩ , LR.𝕍-shape ds d v rv ⟩ ⟩
 
 adequacy-const : ∀ P
   → WF P

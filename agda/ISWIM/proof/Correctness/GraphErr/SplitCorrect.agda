@@ -17,8 +17,10 @@ open import ISWIM.Language.Typed.Clos3 using (Tm)
 open import ISWIM.Compiler.Split using (split-program)
 open import ISWIM.Semantics.GraphErr.Typed.Clos3 using (⟦_⟧)
 open import ISWIM.Semantics.GraphErr.Typed.Clos4 renaming (⟦_⟧ to ⟦_⟧₄)
-open import ISWIM.proof.Correctness.GraphErr.SplitPreserve using (preserve₀; ⊑-val)
-open import ISWIM.proof.Correctness.GraphErr.SplitReflect using (reflect-error; reflect-const; reflect-val)
+open import ISWIM.proof.Correctness.GraphErr.SplitPreserve using (preserve₀;
+  ⊑-val)
+open import ISWIM.proof.Correctness.GraphErr.SplitReflect using (reflect-error;
+  reflect-const; reflect-val)
 
 open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
@@ -38,7 +40,8 @@ split-correct-const : ∀ (M : Tm [] Any) {B} (c : base-rep B)
      → const c ∈ ⟦ split-program M ⟧₄ ρ₀)
   × (  const c ∈ ⟦ split-program M ⟧₄ ρ₀
      → const c ∈ ⟦ M ⟧ ρ₀)
-split-correct-const M c = ⟨ (λ c∈ → lower (preserve₀ M (const c) c∈)) , reflect-const M c ⟩
+split-correct-const M c =
+  ⟨ (λ c∈ → lower (preserve₀ M (const c) c∈)) , reflect-const M c ⟩
 
 split-correct-val : ∀ (M : Tm [] Any)
   → (  val∈ (⟦ M ⟧ ρ₀)
@@ -46,4 +49,7 @@ split-correct-val : ∀ (M : Tm [] Any)
   × (  val∈ (⟦ split-program M ⟧₄ ρ₀)
      → val∈ (⟦ M ⟧ ρ₀))
 split-correct-val M =
-  ⟨ (λ { ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩ → let ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⊑-val v≢ (preserve₀ M v v∈) in ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ }) , reflect-val M ⟩
+  ⟨ (λ { ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩ →
+      let ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ =
+           ⊑-val v≢ (preserve₀ M v v∈) in ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ })
+           , reflect-val M ⟩

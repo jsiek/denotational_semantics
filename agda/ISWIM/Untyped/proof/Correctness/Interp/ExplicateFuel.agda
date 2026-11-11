@@ -30,36 +30,45 @@ open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import proof.Semantics.Interp.Clock
 import ISWIM.Untyped.Semantics.Interp.Imp as I
 import ISWIM.Untyped.Semantics.Interp.CFG as G
-open import ISWIM.Untyped.Semantics.Interp.Imp using (Frame; _[_]≔_; set; eval-simple; value; here)
-open import ISWIM.Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr)
+open import ISWIM.Untyped.Semantics.Interp.Imp using (Frame; _[_]≔_; set;
+  eval-simple; value; here)
+open import ISWIM.Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const;
+  tup; inl; inr)
 import ISWIM.Semantics.Interp.ISWIM as ISWIM
 open import proof.Framework.ListUtil using (‼-pw)
-open import ISWIM.Untyped.proof.Correctness.Interp.LiftLocalsFuel using (compile-imp-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.LiftLocalsFuel using
+  (compile-imp-correct)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length; map)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_;
+  reverse⁺)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _≤_; _≟_)
 open import Data.Nat.Properties using (≤-refl; m≤n⇒m≤1+n; <-irrefl)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Data.Sum using (inj₁; inj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong)
 open import Relation.Nullary using (yes; no)
 
 private variable A B : Set
 
 {- x := the value of r, then h, then g -}
-assoc-set : ∀ (r : Result (Val × Frame)) x (h : Frame → Result A) {g : A → Result B}
-  → ((r >>= λ p → set (proj₂ p) x (proj₁ p) h) >>= g) ≡ (r >>= λ p → set (proj₂ p) x (proj₁ p) λ φ → h φ >>= g)
-assoc-set r x h = trans (bind-assoc r) (bind-cong r λ p → bind-assoc (from-maybe (proj₂ p [ x ]≔ proj₁ p)))
+assoc-set : ∀ (r : Result (Val × Frame)) x (h : Frame → Result A)
+  {g : A → Result B}
+  → ((r >>= λ p → set (proj₂ p) x (proj₁ p) h) >>= g)
+    ≡ (r >>= λ p → set (proj₂ p) x (proj₁ p) λ φ → h φ >>= g)
+assoc-set r x h =
+  trans (bind-assoc r)
+  (bind-cong r λ p → bind-assoc (from-maybe (proj₂ p [ x ]≔ proj₁ p)))
 
 value-here : ∀ {φ} (r : Result Val) → value (here φ r) ≡ r
 value-here timeout = refl
 value-here error = refl
 value-here (ret v) = refl
 
-{- Block lists ---------------------------------------------------------------------}
+{- Block lists ----------------------------------------------------------------}
 
 {- cs is bs with newer blocks -}
 data _⊑_ (bs : List Tail) : List Tail → Set where
@@ -79,18 +88,24 @@ data _⊑_ (bs : List Tail) : List Tail → Set where
 ⊑-length ⊑-refl = ≤-refl
 ⊑-length (⊑-step p) = m≤n⇒m≤1+n (⊑-length p)
 
-{- Clock for clock ------------------------------------------------------------------}
+{- Clock for clock ------------------------------------------------------------}
 
 module _ (ds : List Imp.Body) where
   private ds' = map explicate-body ds
 
   {- at clock ck, where calls agree -}
-  module _ (ck : ℕ) (calls : ∀ f e w → I.call ds ck (I.code? ds f) e w ≡ G.call ds' ck (G.code? ds' f) e w) where
+  module _ (ck : ℕ)
+    (calls : ∀ f e w
+      → I.call ds ck (I.code? ds f) e w ≡ G.call ds' ck (G.code? ds' f) e w)
+      where
 
-    simple≡ : ∀ φ s → eval-simple (λ f → I.call ds ck (I.code? ds f)) φ s ≡ eval-simple (λ f → G.call ds' ck (G.code? ds' f)) φ s
+    simple≡ : ∀ φ s
+      → eval-simple (λ f → I.call ds ck (I.code? ds f)) φ s
+      ≡ eval-simple (λ f → G.call ds' ck (G.code? ds' f)) φ s
     simple≡ φ (Imp.atm a) = refl
     simple≡ φ (Imp.app f e a) =
-      bind-cong (I.atom φ f) λ f → bind-cong (I.atom φ e) λ e → bind-cong (I.atom φ a) λ w → calls f e w
+      bind-cong (I.atom φ f) λ f → bind-cong (I.atom φ e) λ e →
+        bind-cong (I.atom φ a) λ w → calls f e w
     simple≡ φ (Imp.pair a b) = refl
     simple≡ φ (Imp.fst a) = refl
     simple≡ φ (Imp.snd a) = refl
@@ -122,51 +137,76 @@ module _ (ds : List Imp.Body) where
     case-ok : ∀ a y e₁ e₂ cs {l₁ l₂ φ} {g : Val × Frame → Result Val}
       → (∀ φ' → G.jump ds' ck cs φ' l₁ ≡ (I.eval ds ck φ' e₁ >>= g))
       → (∀ φ' → G.jump ds' ck cs φ' l₂ ≡ (I.eval ds ck φ' e₂ >>= g))
-      → G.tail ds' ck cs φ (case a y l₁ l₂) ≡ (I.eval ds ck φ (Imp.case a y e₁ e₂) >>= g)
+      → G.tail ds' ck cs φ (case a y l₁ l₂)
+        ≡ (I.eval ds ck φ (Imp.case a y e₁ e₂) >>= g)
     case-ok a y e₁ e₂ cs {φ = φ} h₁ h₂ =
       trans (bind-cong (I.atom φ a) λ v → bind-cong (I.inj? v) λ
-               { (inj₁ w) → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₁) (sym (bind-assoc (from-maybe (φ [ y ]≔ w))))
-               ; (inj₂ w) → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₂) (sym (bind-assoc (from-maybe (φ [ y ]≔ w)))) })
-            (sym (trans (bind-assoc (I.atom φ a)) (bind-cong (I.atom φ a) λ v → bind-assoc (I.inj? v))))
+               { (inj₁ w)
+                   → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₁)
+                   (sym (bind-assoc (from-maybe (φ [ y ]≔ w))))
+               ; (inj₂ w)
+                   → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₂)
+                     (sym (bind-assoc (from-maybe (φ [ y ]≔ w)))) })
+            (sym
+                (trans (bind-assoc (I.atom φ a))
+                  (bind-cong (I.atom φ a) λ v → bind-assoc (I.inj? v))))
 
     {- the CPS lemma: x := e, then k -}
     assign-ok : ∀ e x k bs {K}
       → Means bs k K
-      → Ok bs (explicate-assign e x k bs) (λ φ → I.eval ds ck φ e >>= λ p → set (proj₂ p) x (proj₁ p) K)
+      → Ok bs (explicate-assign e x k bs)
+        (λ φ → I.eval ds ck φ e >>= λ p → set (proj₂ p) x (proj₁ p) K)
     assign-ok (simple s) x k bs M =
-      ⊑-refl , λ p φ → trans (bind≡ (sym (simple≡ φ s)) λ v → bind-cong (from-maybe (φ [ x ]≔ v)) λ φ' → M p φ')
+      ⊑-refl , λ p φ →
+        trans
+        (bind≡ (sym (simple≡ φ s)) λ v →
+          bind-cong (from-maybe (φ [ x ]≔ v)) λ φ' → M p φ')
                              (sym (bind-assoc (eval-simple _ φ s)))
     assign-ok (assign y e₁ e₂) x k bs M =
-      ⊑-trans (proj₁ Ok₂) (proj₁ Ok₁) , λ p φ → trans (proj₂ Ok₁ p φ) (sym (assoc-set (I.eval ds ck φ e₁) y _))
+      ⊑-trans (proj₁ Ok₂) (proj₁ Ok₁) , λ p φ →
+        trans (proj₂ Ok₁ p φ) (sym (assoc-set (I.eval ds ck φ e₁) y _))
       where
       Ok₂ = assign-ok e₂ x k bs M
-      Ok₁ = assign-ok e₁ y (proj₁ (explicate-assign e₂ x k bs)) (proj₂ (explicate-assign e₂ x k bs)) (proj₂ Ok₂)
+      Ok₁ =
+        assign-ok e₁ y (proj₁ (explicate-assign e₂ x k bs))
+        (proj₂ (explicate-assign e₂ x k bs)) (proj₂ Ok₂)
     assign-ok (Imp.case a y e₁ e₂) x k bs {K} M =
       ⊑-step (⊑-trans (⊑-step (⊑-trans (⊑-step ⊑-refl) p₁)) p₂) ,
-      λ {cs} p φ → case-ok a y e₁ e₂ cs (λ φ' → trans (jump-at (⊑-trans (⊑-step p₂) p)) (M₁ ⊑-refl φ'))
+      λ {cs} p φ →
+        case-ok a y e₁ e₂ cs
+        (λ φ' → trans (jump-at (⊑-trans (⊑-step p₂) p)) (M₁ ⊑-refl φ'))
                       (λ φ' → trans (jump-at p) (M₂ ⊑-refl φ'))
       where
       J : Means (k ∷ bs) (goto (length bs)) K
       J p φ = trans (jump-at p) (M ⊑-refl φ)
       r₁ = explicate-assign e₁ x (goto (length bs)) (k ∷ bs)
       Ok₁ = assign-ok e₁ x (goto (length bs)) (k ∷ bs) J
-      Ok₂ = assign-ok e₂ x (goto (length bs)) (proj₁ r₁ ∷ proj₂ r₁) λ p → J (⊑-trans (⊑-step (proj₁ Ok₁)) p)
+      Ok₂ =
+        assign-ok e₂ x (goto (length bs)) (proj₁ r₁ ∷ proj₂ r₁) λ p →
+        J (⊑-trans (⊑-step (proj₁ Ok₁)) p)
       p₁ = proj₁ Ok₁
       p₂ = proj₁ Ok₂
       M₁ = proj₂ Ok₁
       M₂ = proj₂ Ok₂
 
     {- e in tail position -}
-    tail-ok : ∀ e bs → Ok bs (explicate-tail e bs) (λ φ → value (I.eval ds ck φ e))
-    tail-ok (simple s) bs = ⊑-refl , λ p φ → trans (sym (simple≡ φ s)) (sym (value-here _))
+    tail-ok : ∀ e bs
+      → Ok bs (explicate-tail e bs) (λ φ → value (I.eval ds ck φ e))
+    tail-ok (simple s) bs =
+      ⊑-refl , λ p φ → trans (sym (simple≡ φ s)) (sym (value-here _))
     tail-ok (assign x e₁ e₂) bs =
-      ⊑-trans (proj₁ Ok₂) (proj₁ Ok₁) , λ p φ → trans (proj₂ Ok₁ p φ) (sym (assoc-set (I.eval ds ck φ e₁) x _))
+      ⊑-trans (proj₁ Ok₂) (proj₁ Ok₁) , λ p φ →
+        trans (proj₂ Ok₁ p φ) (sym (assoc-set (I.eval ds ck φ e₁) x _))
       where
       Ok₂ = tail-ok e₂ bs
-      Ok₁ = assign-ok e₁ x (proj₁ (explicate-tail e₂ bs)) (proj₂ (explicate-tail e₂ bs)) (proj₂ Ok₂)
+      Ok₁ =
+        assign-ok e₁ x (proj₁ (explicate-tail e₂ bs))
+        (proj₂ (explicate-tail e₂ bs)) (proj₂ Ok₂)
     tail-ok (Imp.case a x e₁ e₂) bs =
       ⊑-step (⊑-trans (⊑-step p₁) p₂) ,
-      λ {cs} p φ → case-ok a x e₁ e₂ cs (λ φ' → trans (jump-at (⊑-trans (⊑-step p₂) p)) (M₁ ⊑-refl φ'))
+      λ {cs} p φ →
+        case-ok a x e₁ e₂ cs
+        (λ φ' → trans (jump-at (⊑-trans (⊑-step p₂) p)) (M₁ ⊑-refl φ'))
                       (λ φ' → trans (jump-at p) (M₂ ⊑-refl φ'))
       where
       r₁ = explicate-tail e₁ bs
@@ -176,7 +216,8 @@ module _ (ds : List Imp.Body) where
       M₁ = proj₂ (tail-ok e₁ bs)
       M₂ = proj₂ Ok₂
 
-  {- definition k of the CFG program is definition k of the Imp program, explicated -}
+  {- definition k of the CFG program is definition k of the Imp program,
+     explicated -}
   Def : Imp.Body → Body → Set
   Def b b' = b' ≡ explicate-body b
 
@@ -191,7 +232,8 @@ module _ (ds : List Imp.Body) where
   code-pw (inl _) = M.nothing
   code-pw (inr _) = M.nothing
 
-  calls≡ : ∀ ck f e w → I.call ds ck (I.code? ds f) e w ≡ G.call ds' ck (G.code? ds' f) e w
+  calls≡ : ∀ ck f e w
+    → I.call ds ck (I.code? ds f) e w ≡ G.call ds' ck (G.code? ds' f) e w
   call-pw : ∀ ck {mb mb'}
     → M.Pointwise Def mb mb'
     → ∀ e w
@@ -201,17 +243,19 @@ module _ (ds : List Imp.Body) where
 
   call-pw ck M.nothing e w = refl
   call-pw zero (M.just _) e w = refl
-  call-pw (suc ck) (M.just {Imp.body n x} refl) e w = sym (proj₂ (tail-ok ck (calls≡ ck) x []) ⊑-refl _)
+  call-pw (suc ck) (M.just {Imp.body n x} refl) e w =
+    sym (proj₂ (tail-ok ck (calls≡ ck) x []) ⊑-refl _)
 
-{- The end theorem -----------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
 explicate-correct : ∀ P → Equivalent (I.sem P) (G.sem (explicate P))
 explicate-correct (Imp.program ds (Imp.body n e)) = clocked-≡ λ ck →
   sym (proj₂ (tail-ok ds ck (calls≡ ds ck) e []) ⊑-refl _)
 
-{- The whole compiler, into CFG ---------------------------------------------------}
+{- The whole compiler, into CFG -----------------------------------------------}
 
 compile-cfg-correct : ∀ M
   → Closed M
   → Equivalent (ISWIM.sem M) (G.sem (compile-cfg M))
-compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))
+compile-cfg-correct M c =
+  equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))

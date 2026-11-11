@@ -1,7 +1,7 @@
 {-
 
-  Soundness and adequacy of the graph model (Semantics/Graph/Clos5Iswim.agda, ⟦_⟧ₚ)
-  with respect to the Clos5 machine (Semantics/CEK/Clos5.agda), for
+  Soundness and adequacy of the graph model (Semantics/Graph/Clos5Iswim.agda,
+  ⟦_⟧ₚ) with respect to the Clos5 machine (Semantics/CEK/Clos5.agda), for
   well-formed programs (WF, Adequacy/Clos5WF.agda), which the compiler
   produces from closed ISWIM programs (compile-wf, Adequacy/CompileWF.agda).
 
@@ -32,7 +32,8 @@ module ISWIM.Untyped.proof.Adequacy.Clos5 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value) renaming (const to
+  dconst)
 open import ISWIM.Untyped.Language.Clos5 using (program)
 open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
 open import Semantics.Observation
@@ -40,7 +41,8 @@ open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; terminates-det)
 open import ISWIM.Untyped.Semantics.CEK.Clos5
 open import ISWIM.Untyped.proof.Compiler.HoistTable using (⊑-refl)
-open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
+open import ISWIM.proof.Adequacy.Common using (ShapeOf; shape-answer;
+  shape-const)
 open import ISWIM.Untyped.proof.Adequacy.Clos5WF using (WF) public
 open import ISWIM.Untyped.proof.Adequacy.Clos5Soundness using (soundness) public
 open import ISWIM.Untyped.proof.Adequacy.CompileWF using (compile-wf) public
@@ -48,10 +50,11 @@ import ISWIM.Untyped.proof.Adequacy.Clos5Common as C
 import ISWIM.Untyped.proof.Adequacy.Clos5LogRel as LR
 
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  subst)
 open import Relation.Nullary using (¬_)
 
-{- Soundness -------------------------------------------------------------------}
+{- Soundness ------------------------------------------------------------------}
 
 sound-const : ∀ P
   → WF P
@@ -68,7 +71,7 @@ sound-nonempty : ∀ P
 sound-nonempty P wf ⟨ o , ⟨ ans , t ⟩ ⟩ with soundness P wf t ans
 ... | ⟨ d , ⟨ d∈ , _ ⟩ ⟩ = ⟨ d , d∈ ⟩
 
-{- Adequacy --------------------------------------------------------------------}
+{- Adequacy -------------------------------------------------------------------}
 
 adequacy : ∀ P
   → WF P
@@ -96,7 +99,7 @@ adequacy-converges : ∀ P
 adequacy-converges P wf ⟨ d , d∈ ⟩ with adequacy P wf d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
 
-{- Characterizations ------------------------------------------------------------}
+{- Characterizations ----------------------------------------------------------}
 
 const-iff : ∀ P
   → WF P

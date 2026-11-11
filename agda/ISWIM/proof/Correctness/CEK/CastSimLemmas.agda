@@ -2,8 +2,8 @@
 
   Lemmas about lists and primitives for the CEK proof of cast insertion
   (CastSim.agda): copies of lemmas of the adequacy proofs
-  (ISWIM/proof/Adequacy/Common.agda, ISWIM/proof/Adequacy/GraphErr/LogRel.agda), so
-  that the CEK proof does not import adequacy.
+  (ISWIM/proof/Adequacy/Common.agda, ISWIM/proof/Adequacy/GraphErr/LogRel.agda),
+  so that the CEK proof does not import adequacy.
 
 -}
 
@@ -39,7 +39,8 @@ proj-just-length : ∀ {A : Set} {n} (i : Fin n) (vs : List A) {v}
   → proj i vs ≡ just v
   → length vs ≡ n
 proj-just-length {n = suc n} zero (v ∷ vs) eq with has-length n vs in h
-proj-just-length {n = suc n} zero (v ∷ vs) refl | true = cong suc (has-length→length n vs h)
+proj-just-length {n = suc n} zero (v ∷ vs) refl | true =
+  cong suc (has-length→length n vs h)
 proj-just-length {n = suc n} zero (v ∷ vs) () | false
 proj-just-length (suc i) (v ∷ vs) eq = cong suc (proj-just-length i vs eq)
 

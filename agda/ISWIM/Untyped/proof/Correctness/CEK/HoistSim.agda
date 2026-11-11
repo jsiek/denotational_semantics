@@ -40,16 +40,18 @@ import ISWIM.Untyped.Semantics.CEK.Clos5 as T
 
 open import Data.Fin using (Fin)
 open import Data.List using ([]; _∷_; length; replicate)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_;
+  reverse⁺)
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
 open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (zero; suc)
 open import Data.Product using (_,_; proj₁; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
+  cong₂)
 
-{- The simulation relation, for the final table D --------------------------------}
+{- The simulation relation, for the final table D -----------------------------}
 
 module Rel (D : Defs) where
 
@@ -84,7 +86,8 @@ module Rel (D : Defs) where
     pairR : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.pairR v κ₁ ≈k T.pairR w κ₂
     fstK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.fstK κ₁ ≈k T.fstK κ₂
     sndK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.sndK κ₁ ≈k T.sndK κ₂
-    tupK : ∀ {vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws → Pointwise _↝_ Ms Ms'
+    tupK : ∀ {vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
+      → Pointwise _↝_ Ms Ms'
       → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂ → S.tupK vs Ms ρ₁ κ₁ ≈k T.tupK ws Ms' ρ₂ κ₂
     getK : ∀ {n} {i : Fin n} {κ₁ κ₂} → κ₁ ≈k κ₂ → S.getK i κ₁ ≈k T.getK i κ₂
     inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.inlK κ₁ ≈k T.inlK κ₂
@@ -95,7 +98,8 @@ module Rel (D : Defs) where
       → S.letK N ρ₁ κ₁ ≈k T.letK N' ρ₂ κ₂
     primL : ∀ {p M M' ρ₁ ρ₂ κ₁ κ₂} → M ↝ M' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
       → S.primL p M ρ₁ κ₁ ≈k T.primL p M' ρ₂ κ₂
-    primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.primR p v κ₁ ≈k T.primR p w κ₂
+    primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+      → S.primR p v κ₁ ≈k T.primR p w κ₂
 
   data _~_ : S.State → T.State → Set where
     eval~ : ∀ {M M' ρ₁ ρ₂ κ₁ κ₂} → M ↝ M' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
@@ -123,7 +127,8 @@ module Rel (D : Defs) where
     → v₁ ≈ w₁
     → v₂ ≈ w₂
     → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-  prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+  prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s
+    with δ? p (T.obs w₁) (T.obs w₂)
   ... | nothing = M.nothing
   ... | just (int n) = M.just const≈
   ... | just (bool true) = M.just (inl≈ (tup≈ []))
@@ -143,7 +148,7 @@ module Rel (D : Defs) where
   glob-list {suc n} (M ,, args) ds p =
     sub↝ (glob-grows-args args _) p ∷ glob-list args (proj₂ (glob M ds)) p
 
-{- The simulation, for any Clos5 program with table D ---------------------------}
+{- The simulation, for any Clos5 program with table D -------------------------}
 
 module _ (D : Defs) (M₀ : C.AST) where
   open Rel D
@@ -162,12 +167,17 @@ module _ (D : Defs) (M₀ : C.AST) where
   sim : ∀ {s₁ s₂}
     → s₁ ~ s₂
     → Answers L₂ _~_ (S.step s₁) s₂
-  sim (eval~ {M = ` x} (glob↝ p) ρ κ) = next?-answers (‼-pw ρ x) (λ r → ret~ r κ) refl
-  sim (eval~ {M = fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆} (glob↝ p) ρ κ) =
+  sim (eval~ {M = ` x} (glob↝ p) ρ κ) =
+    next?-answers (‼-pw ρ x) (λ r → ret~ r κ) refl
+  sim
+    (eval~ {M = fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆}
+      (glob↝ p) ρ κ) =
     steps₁ refl (ret~ (fun≈ p) κ)
   sim (eval~ {M = app ⦅ L ,, M ,, N ,, Nil ⦆} (glob↝ {ds = ds} p) ρ κ) =
     steps₁ refl
-      (eval~ (sub↝ (⊑-trans (glob-grows M d₁) (glob-grows N (proj₂ (glob M d₁)))) p)
+      (eval~
+          (sub↝
+            (⊑-trans (glob-grows M d₁) (glob-grows N (proj₂ (glob M d₁)))) p)
              ρ (appF (sub↝ (glob-grows N _) p) (glob↝ p) ρ κ))
     where d₁ = proj₂ (glob L ds)
   sim (eval~ {M = lit B k ⦅ Nil ⦆} (glob↝ p) ρ κ) = steps₁ refl (ret~ const≈ κ)
@@ -187,7 +197,9 @@ module _ (D : Defs) (M₀ : C.AST) where
     steps₁ refl (eval~ (glob↝ p) ρ (inrK κ))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} (glob↝ {ds = ds} p) ρ κ) =
     steps₁ refl
-      (eval~ (sub↝ (⊑-trans (glob-grows M d₁) (glob-grows N (proj₂ (glob M d₁)))) p)
+      (eval~
+          (sub↝
+            (⊑-trans (glob-grows M d₁) (glob-grows N (proj₂ (glob M d₁)))) p)
              ρ (caseK (sub↝ (glob-grows N _) p) (glob↝ p) ρ κ))
     where d₁ = proj₂ (glob L ds)
   sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} (glob↝ p) ρ κ) =
@@ -198,7 +210,8 @@ module _ (D : Defs) (M₀ : C.AST) where
   sim (ret~ r (appF gM gN ρ κ)) = steps₁ refl (eval~ gM ρ (appE r gN ρ κ))
   sim (ret~ r (appE f gN ρ κ)) = steps₁ refl (eval~ gN ρ (appA f r κ))
   sim (ret~ {w = w} r (appA {e' = e'} {κ₂ = κ₂} (fun≈ p) e κ)) =
-    steps₁ (cong (λ m → T.call m w e' κ₂) (global-⊑ p)) (eval~ (glob↝ (∷-⊑ p)) (r ∷ e ∷ []) κ)
+    steps₁ (cong (λ m → T.call m w e' κ₂) (global-⊑ p))
+      (eval~ (glob↝ (∷-⊑ p)) (r ∷ e ∷ []) κ)
   sim (ret~ r (appA (pair≈ _ _) e κ)) = stops refl
   sim (ret~ r (appA const≈ e κ)) = stops refl
   sim (ret~ r (appA (tup≈ _) e κ)) = stops refl
@@ -219,7 +232,8 @@ module _ (D : Defs) (M₀ : C.AST) where
   sim (ret~ (inl≈ _) (sndK κ)) = stops refl
   sim (ret~ (inr≈ _) (sndK κ)) = stops refl
   sim (ret~ r (tupK rs gs ρ κ)) = steps₁ refl (tuple-next~ (r ∷ rs) gs ρ κ)
-  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = next?-answers (proj-pw i rs) (λ r → ret~ r κ) refl
+  sim (ret~ (tup≈ rs) (getK {i = i} κ)) =
+    next?-answers (proj-pw i rs) (λ r → ret~ r κ) refl
   sim (ret~ (fun≈ _) (getK κ)) = stops refl
   sim (ret~ (pair≈ _ _) (getK κ)) = stops refl
   sim (ret~ const≈ (getK κ)) = stops refl
@@ -235,9 +249,10 @@ module _ (D : Defs) (M₀ : C.AST) where
   sim (ret~ (tup≈ _) (caseK _ _ _ κ)) = stops refl
   sim (ret~ r (letK gN ρ κ)) = steps₁ refl (eval~ gN (r ∷ ρ) κ)
   sim (ret~ r (primL gM ρ κ)) = steps₁ refl (eval~ gM ρ (primR r κ))
-  sim (ret~ s (primR {p} r κ)) = next?-answers (prim≈ p r s) (λ r → ret~ r κ) refl
+  sim (ret~ s (primR {p} r κ)) =
+    next?-answers (prim≈ p r s) (λ r → ret~ r κ) refl
 
-{- The end theorem -------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
 {- for any program, with no precondition -}
 

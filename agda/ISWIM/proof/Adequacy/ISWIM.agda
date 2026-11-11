@@ -1,7 +1,7 @@
 {-
 
-  Soundness and adequacy of the graph model (ISWIM/Semantics/Graph/ISWIM.agda) with respect
-  to the ISWIM machine (ISWIM/Semantics/CEK/ISWIM.agda), for closed
+  Soundness and adequacy of the graph model (ISWIM/Semantics/Graph/ISWIM.agda)
+  with respect to the ISWIM machine (ISWIM/Semantics/CEK/ISWIM.agda), for closed
   programs M (bound M ≡ 0), started in the environment ρ₀ of a closed
   program on the denotational side and in the empty environment on the
   machine side.
@@ -25,8 +25,8 @@
     set of values, through denotations of machine values, environments
     and continuations, and each step can only shrink it. The β steps
     (application, case) use the continuity of the ISWIM semantics
-    (ISWIM/proof/Semantics/Graph/ISWIMContinuous.agda) and that every value denotes a nonempty
-    set.
+    (ISWIM/proof/Semantics/Graph/ISWIMContinuous.agda) and that every value
+    denotes a nonempty set.
 
   * Adequacy (Adequacy/LogRel.agda): a logical relation between
     denotational values and machine values, by recursion on the
@@ -41,12 +41,13 @@ module ISWIM.proof.Adequacy.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const
+  to dconst)
 open import ISWIM.Language.ISWIM
 open import ISWIM.proof.Semantics.Graph.ISWIM using (⟦_⟧)
 open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep
-  using (Terminates; Diverges; diverges-not-terminates; terminates-det; next; stop)
+open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges;
+  diverges-not-terminates; terminates-det; next; stop)
 open import ISWIM.Semantics.CEK.ISWIM
 open import ISWIM.Compiler.CaptureScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
@@ -58,11 +59,13 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using ([])
 open import Data.Nat using (_<_)
 open import Data.Nat.Properties using (n≮0)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; subst)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  subst)
 open import Relation.Nullary using (¬_)
 
-{- Soundness -------------------------------------------------------------------}
+{- Soundness ------------------------------------------------------------------}
 
 sound-const : ∀ M {B} {k : base-rep B}
   → Terminates (sem M) (o-const B k)
@@ -76,7 +79,7 @@ sound-nonempty : ∀ M
 sound-nonempty M ⟨ o , ⟨ ans , t ⟩ ⟩ with soundness M t ans
 ... | ⟨ d , ⟨ d∈ , _ ⟩ ⟩ = ⟨ d , d∈ ⟩
 
-{- Adequacy --------------------------------------------------------------------}
+{- Adequacy -------------------------------------------------------------------}
 
 closed-𝔾 : ∀ M
   → Closed M
@@ -108,7 +111,7 @@ adequacy-converges : ∀ M
 adequacy-converges M c ⟨ d , d∈ ⟩ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
 
-{- Characterizations ------------------------------------------------------------}
+{- Characterizations ----------------------------------------------------------}
 
 const-iff : ∀ M
   → Closed M
