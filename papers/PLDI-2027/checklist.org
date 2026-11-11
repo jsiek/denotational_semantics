@@ -35,7 +35,7 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 - The end-to-end theorems are top priority to be checked
 - Checking split pass for the denotational models is also high priority because of its novelty
 
-** TODO (Tianyu) Check definition of compiler pass simplify
+** DONE (Tianyu) Check definition of compiler pass simplify
 ** TODO (Darshal) Check definitions of compiler passes from enclose to select instructions
 ** TODO (Tianyu/Darshal) spot check the lemmas corresponding to the empty cells in the table above
 
