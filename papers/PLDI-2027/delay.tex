@@ -317,19 +317,19 @@ its four clauses, with ${\ALR}$ at the recursive occurrences. The case of a vari
 
 \fbox{\emph{Case $M = L\;K$.}} Then
 $\pass{split}(M) = \kw{callc}\,\pass{split}(L)\,\pass{split}(K)$,
-so $V \subseteq (\car(D') \app \cdr(D')) \app E'$ for
+and we write $W$ for the lemma's list $V$, so $W \subseteq (\car(D') \app \cdr(D')) \app E'$ for
 $D' = \den{\pass{split}(L)}\rho'$ and
-$E' = \den{\pass{split}(K)}\rho'$. Each element of $V$ is produced by
+$E' = \den{\pass{split}(K)}\rho'$. Each element of $W$ is produced by
 a code entry from $\car(D')$, finitely many environments from
 $\cdr(D')$, and finitely many arguments from $E'$. We collect the pairs
 of $D'$ that supply these codes and environments into a finite list
-$W \subseteq D'$, and the arguments into a finite list
-$U \subseteq E'$. Then $W$ maps $U$ to $V$. The induction hypotheses
-give $\den{L}\rho \ALR W$ and $\den{K}\rho \ALR U$, and both
+$V \subseteq D'$, and the arguments into a finite list
+$U \subseteq E'$. Then $V$ maps $U$ to $W$. The induction hypotheses
+give $\den{L}\rho \ALR V$ and $\den{K}\rho \ALR U$, and both
 $\den{K}\rho$ and $U$ are consistent. Clause~3 for
-$\den{L}\rho \ALR W$, applied to this self-contained call with
-$E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
-$\den{M}\rho \ALR V$.
+$\den{L}\rho \ALR V$, applied to this self-contained call with
+$E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR W$. That is,
+$\den{M}\rho \ALR W$.
 
 \fbox{\emph{Case $M = \kw{clos}\,(z, y.\,N)\,\vec{K}$.}} Then
 $\pass{split}(M) = \kw{pair}\,(\kw{code}\,(z, y.\,\pass{split}(N)))\,(\kw{tuple}\,\pass{split}(\vec{K}))$,
