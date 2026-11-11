@@ -90,13 +90,21 @@ module _ (A B : DCPO₁) where
   E-pv f g = Π-is-prop fe (λ x → prop-valuedness B (f · x) (g · x))
   E-r : (f : DCPO[ A , B ]) → f ⊑ᴱ f
   E-r f x = reflexivity B (f · x)
-  E-t : (f g h : DCPO[ A , B ]) → f ⊑ᴱ g → g ⊑ᴱ h → f ⊑ᴱ h
+  E-t : (f g h : DCPO[ A , B ])
+    → f ⊑ᴱ g
+    → g ⊑ᴱ h
+    → f ⊑ᴱ h
   E-t f g h u v x = transitivity B (f · x) (g · x) (h · x) (u x) (v x)
-  E-a : (f g : DCPO[ A , B ]) → f ⊑ᴱ g → g ⊑ᴱ f → f ＝ g
+  E-a : (f g : DCPO[ A , B ])
+    → f ⊑ᴱ g
+    → g ⊑ᴱ f
+    → f ＝ g
   E-a f g u v = to-continuous-function-＝ A B (λ x → antisymmetry B (f · x) (g · x) (u x) (v x))
 
- pointwise-directed : {I : 𝓤₀ ̇ } (α : I → DCPO[ A , B ]) → is-directed _⊑ᴱ_ α
-   → (x : ⟨ A ⟩) → is-Directed B (λ i → α i · x)
+ pointwise-directed : {I : 𝓤₀ ̇ } (α : I → DCPO[ A , B ])
+   → is-directed _⊑ᴱ_ α
+   → (x : ⟨ A ⟩)
+   → is-Directed B (λ i → α i · x)
  pointwise-directed α δ x =
   inhabited-if-directed _⊑ᴱ_ α δ ,
   (λ i j → ∥∥-functor (λ (k , u , v) → k , u x , v x) (semidirected-if-directed _⊑ᴱ_ α δ i j))
@@ -104,7 +112,9 @@ module _ (A B : DCPO₁) where
  private
   sup-fun : {I : 𝓤₀ ̇ } (α : I → DCPO[ A , B ]) → is-directed _⊑ᴱ_ α → ⟨ A ⟩ → ⟨ B ⟩
   sup-fun α δ x = ∐ B (pointwise-directed α δ x)
-  sup-c : {I : 𝓤₀ ̇ } (α : I → DCPO[ A , B ]) (δ : is-directed _⊑ᴱ_ α) → is-continuous A B (sup-fun α δ)
+  sup-c : {I : 𝓤₀ ̇ } (α : I → DCPO[ A , B ])
+    → (δ : is-directed _⊑ᴱ_ α)
+    → is-continuous A B (sup-fun α δ)
   sup-c {I} α δ J β φ = ub , lub
    where
     ub : (j : J) → sup-fun α δ (β j) ⊑⟨ B ⟩ sup-fun α δ (∐ A φ)
@@ -112,11 +122,15 @@ module _ (A B : DCPO₁) where
             (λ i → transitivity B _ _ _
                      (monotone-if-continuous A B (α i) (β j) (∐ A φ) (∐-is-upperbound A φ j))
                      (∐-is-upperbound B (pointwise-directed α δ (∐ A φ)) i))
-    lub : (b : ⟨ B ⟩) → ((j : J) → sup-fun α δ (β j) ⊑⟨ B ⟩ b) → sup-fun α δ (∐ A φ) ⊑⟨ B ⟩ b
+    lub : (b : ⟨ B ⟩)
+      → ((j : J) → sup-fun α δ (β j) ⊑⟨ B ⟩ b)
+      → sup-fun α δ (∐ A φ) ⊑⟨ B ⟩ b
     lub b u = ∐-is-lowerbound-of-upperbounds B (pointwise-directed α δ (∐ A φ)) b
                (λ i → sup-is-lowerbound-of-upperbounds (underlying-order B) (pr₂ (α i) J β φ) b
                         (λ j → transitivity B _ _ b (∐-is-upperbound B (pointwise-directed α δ (β j)) i) (u j)))
-  E-dc : (I : 𝓤₀ ̇ ) (α : I → DCPO[ A , B ]) → is-directed _⊑ᴱ_ α → has-sup _⊑ᴱ_ α
+  E-dc : (I : 𝓤₀ ̇ ) (α : I → DCPO[ A , B ])
+    → is-directed _⊑ᴱ_ α
+    → has-sup _⊑ᴱ_ α
   E-dc I α δ = (sup-fun α δ , sup-c α δ) ,
                (λ i x → ∐-is-upperbound B (pointwise-directed α δ x) i) ,
                (λ g u x → ∐-is-lowerbound-of-upperbounds B (pointwise-directed α δ x) (g · x) (λ i → u i x))
@@ -133,25 +147,40 @@ module _ (A B : DCPO₁) where
   X-pv (a , b) (a' , b') = ×-is-prop (prop-valuedness A a a') (prop-valuedness B b b')
   X-r : (p : ⟨ A ⟩ × ⟨ B ⟩) → p ⊑ˣ p
   X-r (a , b) = reflexivity A a , reflexivity B b
-  X-t : (p q r : ⟨ A ⟩ × ⟨ B ⟩) → p ⊑ˣ q → q ⊑ˣ r → p ⊑ˣ r
+  X-t : (p q r : ⟨ A ⟩ × ⟨ B ⟩)
+    → p ⊑ˣ q
+    → q ⊑ˣ r
+    → p ⊑ˣ r
   X-t (a , b) (a' , b') (a'' , b'') (u , v) (u' , v') =
    transitivity A a a' a'' u u' , transitivity B b b' b'' v v'
-  X-a : (p q : ⟨ A ⟩ × ⟨ B ⟩) → p ⊑ˣ q → q ⊑ˣ p → p ＝ q
+  X-a : (p q : ⟨ A ⟩ × ⟨ B ⟩)
+    → p ⊑ˣ q
+    → q ⊑ˣ p
+    → p ＝ q
   X-a (a , b) (a' , b') (u , v) (u' , v') = ap₂' (antisymmetry A a a' u u') (antisymmetry B b b' v v')
    where
-    ap₂' : {a a' : ⟨ A ⟩} {b b' : ⟨ B ⟩} → a ＝ a' → b ＝ b' → (a , b) ＝ (a' , b')
+    ap₂' : {a a' : ⟨ A ⟩} {b b' : ⟨ B ⟩}
+      → a ＝ a'
+      → b ＝ b'
+      → (a , b) ＝ (a' , b')
     ap₂' refl refl = refl
 
- fst-directed : {I : 𝓤₀ ̇ } (α : I → ⟨ A ⟩ × ⟨ B ⟩) → is-directed _⊑ˣ_ α → is-Directed A (λ i → pr₁ (α i))
+ fst-directed : {I : 𝓤₀ ̇ } (α : I → ⟨ A ⟩ × ⟨ B ⟩)
+   → is-directed _⊑ˣ_ α
+   → is-Directed A (λ i → pr₁ (α i))
  fst-directed α δ = inhabited-if-directed _⊑ˣ_ α δ ,
    (λ i j → ∥∥-functor (λ (k , u , v) → k , pr₁ u , pr₁ v) (semidirected-if-directed _⊑ˣ_ α δ i j))
 
- snd-directed : {I : 𝓤₀ ̇ } (α : I → ⟨ A ⟩ × ⟨ B ⟩) → is-directed _⊑ˣ_ α → is-Directed B (λ i → pr₂ (α i))
+ snd-directed : {I : 𝓤₀ ̇ } (α : I → ⟨ A ⟩ × ⟨ B ⟩)
+   → is-directed _⊑ˣ_ α
+   → is-Directed B (λ i → pr₂ (α i))
  snd-directed α δ = inhabited-if-directed _⊑ˣ_ α δ ,
    (λ i j → ∥∥-functor (λ (k , u , v) → k , pr₂ u , pr₂ v) (semidirected-if-directed _⊑ˣ_ α δ i j))
 
  private
-  X-dc : (I : 𝓤₀ ̇ ) (α : I → ⟨ A ⟩ × ⟨ B ⟩) → is-directed _⊑ˣ_ α → has-sup _⊑ˣ_ α
+  X-dc : (I : 𝓤₀ ̇ ) (α : I → ⟨ A ⟩ × ⟨ B ⟩)
+    → is-directed _⊑ˣ_ α
+    → has-sup _⊑ˣ_ α
   X-dc I α δ = (∐ A (fst-directed α δ) , ∐ B (snd-directed α δ)) ,
                (λ i → ∐-is-upperbound A (fst-directed α δ) i , ∐-is-upperbound B (snd-directed α δ) i) ,
                (λ (a , b) u → ∐-is-lowerbound-of-upperbounds A (fst-directed α δ) a (λ i → pr₁ (u i)) ,
@@ -187,7 +216,10 @@ module _ (A B : DCPO₁) where
           (h₂ : (a : ⟨ A ⟩) → is-continuous B C (h a)) where
 
   private
-   mono : (a a' : ⟨ A ⟩) (b b' : ⟨ B ⟩) → a ⊑⟨ A ⟩ a' → b ⊑⟨ B ⟩ b' → h a b ⊑⟨ C ⟩ h a' b'
+   mono : (a a' : ⟨ A ⟩) (b b' : ⟨ B ⟩)
+     → a ⊑⟨ A ⟩ a'
+     → b ⊑⟨ B ⟩ b'
+     → h a b ⊑⟨ C ⟩ h a' b'
    mono a a' b b' u v = transitivity C _ _ _
      (monotone-if-continuous A C ((λ a → h a b) , h₁ b) a a' u)
      (monotone-if-continuous B C (h a' , h₂ a') b b' v)
@@ -199,7 +231,9 @@ module _ (A B : DCPO₁) where
     b∞ = ∐ B (snd-directed A B α δ)
     ub : (i : I) → h (pr₁ (α i)) (pr₂ (α i)) ⊑⟨ C ⟩ h a∞ b∞
     ub i = mono _ _ _ _ (∐-is-upperbound A (fst-directed A B α δ) i) (∐-is-upperbound B (snd-directed A B α δ) i)
-    lub : (c : ⟨ C ⟩) → ((i : I) → h (pr₁ (α i)) (pr₂ (α i)) ⊑⟨ C ⟩ c) → h a∞ b∞ ⊑⟨ C ⟩ c
+    lub : (c : ⟨ C ⟩)
+      → ((i : I) → h (pr₁ (α i)) (pr₂ (α i)) ⊑⟨ C ⟩ c)
+      → h a∞ b∞ ⊑⟨ C ⟩ c
     lub c u = sup-is-lowerbound-of-upperbounds (underlying-order C) (h₁ b∞ I (λ i → pr₁ (α i)) (fst-directed A B α δ)) c
       (λ i → sup-is-lowerbound-of-upperbounds (underlying-order C) (h₂ (pr₁ (α i)) I (λ j → pr₂ (α j)) (snd-directed A B α δ)) c
         (λ j → ∥∥-rec (prop-valuedness C _ c)
@@ -215,7 +249,8 @@ opaque
                  sup-is-lowerbound-of-upperbounds (underlying-order Y) (pr₂ g I α δ) y (λ i → pr₂ (u i)))
 
  to-exp₁-c : (A B C : DCPO₁) (f : ⟨ A ⟩ → DCPO[ B , C ])
-   → ((b : ⟨ B ⟩) → is-continuous A C (λ a → f a · b)) → is-continuous A (B ⟹₁ C) f
+   → ((b : ⟨ B ⟩) → is-continuous A C (λ a → f a · b))
+   → is-continuous A (B ⟹₁ C) f
  to-exp₁-c A B C f c I α δ =
   (λ i b → sup-is-upperbound (underlying-order C) (c b I α δ) i) ,
   (λ g u b → sup-is-lowerbound-of-upperbounds (underlying-order C) (c b I α δ) (g · b) (λ i → u i b))
@@ -277,11 +312,19 @@ module _ where
   𝟙-pv _ _ = 𝟙-is-prop
   𝟙-r : (x : 𝟙) → ⊑𝟙 x x
   𝟙-r _ = ⋆
-  𝟙-t : (x y z : 𝟙) → ⊑𝟙 x y → ⊑𝟙 y z → ⊑𝟙 x z
+  𝟙-t : (x y z : 𝟙)
+    → ⊑𝟙 x y
+    → ⊑𝟙 y z
+    → ⊑𝟙 x z
   𝟙-t _ _ _ _ _ = ⋆
-  𝟙-a : (x y : 𝟙) → ⊑𝟙 x y → ⊑𝟙 y x → x ＝ y
+  𝟙-a : (x y : 𝟙)
+    → ⊑𝟙 x y
+    → ⊑𝟙 y x
+    → x ＝ y
   𝟙-a x y _ _ = 𝟙-is-prop x y
-  𝟙-dc : (I : 𝓤₀ ̇ ) (α : I → 𝟙) → is-directed ⊑𝟙 α → has-sup ⊑𝟙 α
+  𝟙-dc : (I : 𝓤₀ ̇ ) (α : I → 𝟙)
+    → is-directed ⊑𝟙 α
+    → has-sup ⊑𝟙 α
   𝟙-dc I α δ = ⋆ , (λ _ → ⋆) , (λ _ _ → ⋆)
 
  𝟙ᵈ : DCPO₁
@@ -295,8 +338,10 @@ module _ (I : 𝓤₀ ̇ ) (A : DCPO₁) where
   _⊑ᴾ_ : (I → ⟨ A ⟩) → (I → ⟨ A ⟩) → 𝓤₁ ̇
   f ⊑ᴾ g = (i : I) → f i ⊑⟨ A ⟩ g i
 
- component-is-directed : {J : 𝓤₀ ̇ } (α : J → I → ⟨ A ⟩) → is-directed _⊑ᴾ_ α
-   → (i : I) → is-Directed A (λ j → α j i)
+ component-is-directed : {J : 𝓤₀ ̇ } (α : J → I → ⟨ A ⟩)
+   → is-directed _⊑ᴾ_ α
+   → (i : I)
+   → is-Directed A (λ j → α j i)
  component-is-directed α δ i =
   inhabited-if-directed _⊑ᴾ_ α δ ,
   (λ j k → ∥∥-functor (λ (l , u , v) → l , u i , v i)
@@ -309,11 +354,19 @@ module _ (I : 𝓤₀ ̇ ) (A : DCPO₁) where
   P-pv f g = Π-is-prop fe (λ i → prop-valuedness A (f i) (g i))
   P-r : (f : I → ⟨ A ⟩) → f ⊑ᴾ f
   P-r f i = reflexivity A (f i)
-  P-t : (f g h : I → ⟨ A ⟩) → f ⊑ᴾ g → g ⊑ᴾ h → f ⊑ᴾ h
+  P-t : (f g h : I → ⟨ A ⟩)
+    → f ⊑ᴾ g
+    → g ⊑ᴾ h
+    → f ⊑ᴾ h
   P-t f g h u v i = transitivity A (f i) (g i) (h i) (u i) (v i)
-  P-a : (f g : I → ⟨ A ⟩) → f ⊑ᴾ g → g ⊑ᴾ f → f ＝ g
+  P-a : (f g : I → ⟨ A ⟩)
+    → f ⊑ᴾ g
+    → g ⊑ᴾ f
+    → f ＝ g
   P-a f g u v = dfunext fe (λ i → antisymmetry A (f i) (g i) (u i) (v i))
-  P-dc : (J : 𝓤₀ ̇ ) (α : J → I → ⟨ A ⟩) → is-directed _⊑ᴾ_ α → has-sup _⊑ᴾ_ α
+  P-dc : (J : 𝓤₀ ̇ ) (α : J → I → ⟨ A ⟩)
+    → is-directed _⊑ᴾ_ α
+    → has-sup _⊑ᴾ_ α
   P-dc J α δ = (λ i → ∐ A (component-is-directed α δ i))
              , (λ j i → ∐-is-upperbound A (component-is-directed α δ i) j)
              , (λ g u i → ∐-is-lowerbound-of-upperbounds A

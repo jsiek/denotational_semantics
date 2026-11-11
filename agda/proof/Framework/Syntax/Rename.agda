@@ -20,13 +20,24 @@ private
   Pw : (Var → Var) → (Var → Var) → Set
   Pw f g = ∀ x → f x ≡ g x
 
-ext-cong : ∀ {f g} → Pw f g → Pw (ext f) (ext g)
+ext-cong : ∀ {f g}
+  → Pw f g
+  → Pw (ext f) (ext g)
 ext-cong eq zero = refl
 ext-cong eq (suc x) = cong suc (eq x)
 
-rename-cong : ∀ {f g} → Pw f g → ∀ M → rename f M ≡ rename g M
-rename-cong-arg : ∀ {f g b} → Pw f g → (a : Arg b) → rename-arg f a ≡ rename-arg g a
-rename-cong-args : ∀ {f g bs} → Pw f g → (as : Args bs) → rename-args f as ≡ rename-args g as
+rename-cong : ∀ {f g}
+  → Pw f g
+  → ∀ M
+  → rename f M ≡ rename g M
+rename-cong-arg : ∀ {f g b}
+  → Pw f g
+  → (a : Arg b)
+  → rename-arg f a ≡ rename-arg g a
+rename-cong-args : ∀ {f g bs}
+  → Pw f g
+  → (as : Args bs)
+  → rename-args f as ≡ rename-args g as
 rename-cong eq (` x) = cong `_ (eq x)
 rename-cong eq (op ⦅ as ⦆) = cong (op ⦅_⦆) (rename-cong-args eq as)
 rename-cong-arg eq (ast M) = cong ast (rename-cong eq M)
@@ -53,8 +64,14 @@ rename-fuse-args f g nil = refl
 rename-fuse-args f g (cons a as) = cong₂ cons (rename-fuse-arg f g a) (rename-fuse-args f g as)
 
 rename-id : ∀ M → rename (λ x → x) M ≡ M
-rename-id-arg : ∀ {f b} → Pw f (λ x → x) → (a : Arg b) → rename-arg f a ≡ a
-rename-id-args : ∀ {f bs} → Pw f (λ x → x) → (as : Args bs) → rename-args f as ≡ as
+rename-id-arg : ∀ {f b}
+  → Pw f (λ x → x)
+  → (a : Arg b)
+  → rename-arg f a ≡ a
+rename-id-args : ∀ {f bs}
+  → Pw f (λ x → x)
+  → (as : Args bs)
+  → rename-args f as ≡ as
 rename-id (` x) = refl
 rename-id (op ⦅ as ⦆) = cong (op ⦅_⦆) (rename-id-args (λ x → refl) as)
 rename-id-arg eq (ast M) = cong ast (trans (rename-cong eq M) (rename-id M))

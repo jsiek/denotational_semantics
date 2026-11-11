@@ -30,10 +30,14 @@ open Semantics {{...}}
 
 module _ {A : Set} {{S : Semantics {A}}} where
 
-  ⟦⟧-uses : ∀ (M : ABT) {ρ ρ′ : Env A} → (∀ x → Uses x M → ρ x ⊆ ρ′ x) → ⟦ M ⟧ ρ ⊆ ⟦ M ⟧ ρ′
-  ⟦⟧-uses-arg : ∀ {b} (a : Arg b) {ρ ρ′ : Env A} → (∀ x → UsesArg x a → ρ x ⊆ ρ′ x)
+  ⟦⟧-uses : ∀ (M : ABT) {ρ ρ′ : Env A}
+    → (∀ x → Uses x M → ρ x ⊆ ρ′ x)
+    → ⟦ M ⟧ ρ ⊆ ⟦ M ⟧ ρ′
+  ⟦⟧-uses-arg : ∀ {b} (a : Arg b) {ρ ρ′ : Env A}
+    → (∀ x → UsesArg x a → ρ x ⊆ ρ′ x)
     → result-rel-pres _⊆_ b (⟦ a ⟧ₐ ρ) (⟦ a ⟧ₐ ρ′)
-  ⟦⟧-uses-args : ∀ {bs} (as : Args bs) {ρ ρ′ : Env A} → (∀ x → UsesArgs x as → ρ x ⊆ ρ′ x)
+  ⟦⟧-uses-args : ∀ {bs} (as : Args bs) {ρ ρ′ : Env A}
+    → (∀ x → UsesArgs x as → ρ x ⊆ ρ′ x)
     → results-rel-pres _⊆_ bs (⟦ as ⟧₊ ρ) (⟦ as ⟧₊ ρ′)
 
   ⟦⟧-uses (` x) r = r x refl
@@ -42,7 +46,9 @@ module _ {A : Set} {{S : Semantics {A}}} where
   ⟦⟧-uses-arg (ast M) r = lift (⟦⟧-uses M r)
   ⟦⟧-uses-arg (bind a) r X Y X⊆ = ⟦⟧-uses-arg a r′
     where
-    r′ : ∀ x → UsesArg x a → _
+    r′ : ∀ x
+      → UsesArg x a
+      → _
     r′ zero _ = X⊆
     r′ (suc x) u = r x u
   ⟦⟧-uses-arg (clear a) r = ⟦⟧-uses-arg a (λ _ _ d d∈ → d∈)
@@ -52,10 +58,16 @@ module _ {A : Set} {{S : Semantics {A}}} where
     ⟨ ⟦⟧-uses-arg a (λ x u → r x (inj₁ u)) , ⟦⟧-uses-args as (λ x u → r x (inj₂ u)) ⟩
 
   {- a term that uses no variables means the same in every environment -}
-  ⟦⟧-closed : ∀ (M : ABT) → (∀ x → Uses x M → ⊥) → ∀ (ρ ρ′ : Env A) → ⟦ M ⟧ ρ ≃ ⟦ M ⟧ ρ′
+  ⟦⟧-closed : ∀ (M : ABT)
+    → (∀ x → Uses x M → ⊥)
+    → ∀ (ρ ρ′ : Env A)
+    → ⟦ M ⟧ ρ ≃ ⟦ M ⟧ ρ′
   ⟦⟧-closed M none ρ ρ′ = ⟨ ⟦⟧-uses M (λ x u → ⊥-elim (none x u)) , ⟦⟧-uses M (λ x u → ⊥-elim (none x u)) ⟩
 
   {- so does a term with no free variables -}
-  ⟦⟧-closed₀ : ∀ (M : ABT) → bound M ≡ 0 → ∀ (ρ ρ′ : Env A) → ⟦ M ⟧ ρ ≃ ⟦ M ⟧ ρ′
+  ⟦⟧-closed₀ : ∀ (M : ABT)
+    → bound M ≡ 0
+    → ∀ (ρ ρ′ : Env A)
+    → ⟦ M ⟧ ρ ≃ ⟦ M ⟧ ρ′
   ⟦⟧-closed₀ M c = ⟦⟧-closed M (λ x u → n≮0 (subst (x Data.Nat.<_) c (uses-bound x M u)))
     where import Data.Nat

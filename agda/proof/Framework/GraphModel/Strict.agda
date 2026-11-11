@@ -39,7 +39,9 @@ record Strict (n : ℕ) : Set₁ where
 open Strict public
 
 {- the operator with its first operand fixed to D -}
-_▷_ : ∀ {n} → 𝒫 Value → Strict (suc n) → Strict n
+_▷_ : ∀ {n} → 𝒫 Value
+  → Strict (suc n)
+  → Strict n
 D ▷ O = record { op = λ Ds → op O ⟨ D , Ds ⟩
                ; cong = λ eq → cong O ⟨ up ≃-refl , eq ⟩
                ; ne-of = λ Ds w w∈ → proj₂ (ne-of O _ w w∈) }
@@ -65,10 +67,14 @@ cdr-op = record { op = cdr ; cong = mono-≃ cdr-mono ; ne-of = λ { _ v ⟨ u ,
 tuple-op : ∀ n → Strict n
 tuple-op n = record { op = 𝒯 n ; cong = mono-≃ (𝒯-mono n) ; ne-of = S n }
   where
-  all : ∀ n Ds → (∀ j → nonempty (nthD Ds j)) → NEs n Ds
+  all : ∀ n Ds
+    → (∀ j → nonempty (nthD Ds j))
+    → NEs n Ds
   all zero Ds ne = tt
   all (suc n) ⟨ D , Ds ⟩ ne = ⟨ ne zero , all n Ds (λ j → ne (suc j)) ⟩
-  S : ∀ n Ds w → w ∈ 𝒯 n Ds → NEs n Ds
+  S : ∀ n Ds w
+    → w ∈ 𝒯 n Ds
+    → NEs n Ds
   S zero Ds w _ = tt
   S (suc n) Ds (tup[ i ] d) ⟨ refl , ⟨ _ , ne ⟩ ⟩ = all (suc n) Ds ne
 

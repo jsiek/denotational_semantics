@@ -52,22 +52,28 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 {- Components of a tuple of results ----------------------------------------------}
 
 nthD-mono : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
-  → results-rel-pres _⊆_ (replicate n ■) Ds Es → (i : Fin n) → nthD Ds i ⊆ nthD Es i
+  → results-rel-pres _⊆_ (replicate n ■) Ds Es
+  → (i : Fin n)
+  → nthD Ds i ⊆ nthD Es i
 nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D⊆ , _ ⟩ zero = D⊆
 nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD-mono Ds Es Ds⊆ i
 
 nthD-consis : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
   → results-rel-pres (Every _~_) (replicate n ■) Ds Es
-  → (i : Fin n) → Every _~_ (nthD Ds i) (nthD Es i)
+  → (i : Fin n)
+  → Every _~_ (nthD Ds i) (nthD Es i)
 nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D~ , _ ⟩ zero = D~
 nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds~ ⟩ (suc i) = nthD-consis Ds Es Ds~ i
 
-nthD-≃ : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■)) → RRs (replicate n ■) Ds Es
-  → ∀ i → nthD Ds i ≃ nthD Es i
+nthD-≃ : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
+  → RRs (replicate n ■) Ds Es
+  → ∀ i
+  → nthD Ds i ≃ nthD Es i
 nthD-≃ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ D≃ , _ ⟩ zero = lower D≃
 nthD-≃ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds≃ ⟩ (suc i) = nthD-≃ Ds Es Ds≃ i
 
-nthD⇒RRs : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■)) → (∀ i → nthD Ds i ≃ nthD Es i)
+nthD⇒RRs : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
+  → (∀ i → nthD Ds i ≃ nthD Es i)
   → RRs (replicate n ■) Ds Es
 nthD⇒RRs {zero} _ _ _ = ptt
 nthD⇒RRs {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ eq = ⟨ lift (eq zero) , nthD⇒RRs Ds Es (λ i → eq (suc i)) ⟩

@@ -44,8 +44,11 @@ open import proof.Framework.GraphModel.ContinuityBase public
 
 {- Functions, whose body B binds one variable -----------------------------------}
 
-Λ-cont′ : ∀ {B : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ → Mono B
-  → (∀ V → V ≢ [] → Cont B (mem V • ρ)) → Cont (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) ρ
+Λ-cont′ : ∀ {B : VEnv → 𝒫 Value} {ρ}
+  → nonempty-env ρ
+  → Mono B
+  → (∀ V → V ≢ [] → Cont B (mem V • ρ))
+  → Cont (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) ρ
 Λ-cont′ {B} NE m c ν tt = done (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) (approx-init NE) ν tt
 Λ-cont′ {B} NE m c (V ↦ w) ⟨ w∈ , neV ⟩ with c V (proj₁ neV) w w∈
 ... | ⟨ ρ₂ , ⟨ f₂ , ⟨ s₂ , w∈₂ ⟩ ⟩ ⟩ =
@@ -77,11 +80,15 @@ pair-cont ⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩ NE ⟨ ⟨ m₁ , c₁ ⟩ , ⟨ ⟨ m
   done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ⦅ u , v ⦆
     ⟨ m₁ (join-l a b) u u∈′ , m₂ (join-r a b) v v∈′ ⟩
 
-car-cont′ : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) ρ
+car-cont′ : ∀ {E ρ}
+  → Cont E ρ
+  → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) ρ
 car-cont′ {E} c u ⟨ v , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈
 ... | ⟨ ρ′ , ⟨ f , ⟨ s , uv∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , ⟨ v , uv∈′ ⟩ ⟩ ⟩ ⟩
 
-cdr-cont′ : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → cdr ⟨ E ρ , ptt ⟩) ρ
+cdr-cont′ : ∀ {E ρ}
+  → Cont E ρ
+  → Cont (λ ρ → cdr ⟨ E ρ , ptt ⟩) ρ
 cdr-cont′ {E} c v ⟨ u , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈
 ... | ⟨ ρ′ , ⟨ f , ⟨ s , uv∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , ⟨ u , uv∈′ ⟩ ⟩ ⟩ ⟩
 
@@ -114,18 +121,26 @@ inr-cont : Continuous (■ ∷ []) inr
 inr-cont _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ (right d) d∈ = c d d∈
 
 {- Case analysis, whose branches B₁ and B₂ bind one variable -}
-map-left⊆ : ∀ {D : 𝒫 Value} {U} → (∀ d → d ∈ mem U → left d ∈ D) → mem (lmap left U) ⊆ D
+map-left⊆ : ∀ {D : 𝒫 Value} {U}
+  → (∀ d → d ∈ mem U → left d ∈ D)
+  → mem (lmap left U) ⊆ D
 map-left⊆ all d d∈ with ∈-map⁻ left d∈
 ... | ⟨ y , ⟨ y∈ , refl ⟩ ⟩ = all y y∈
 
-map-right⊆ : ∀ {D : 𝒫 Value} {U} → (∀ d → d ∈ mem U → right d ∈ D) → mem (lmap right U) ⊆ D
+map-right⊆ : ∀ {D : 𝒫 Value} {U}
+  → (∀ d → d ∈ mem U → right d ∈ D)
+  → mem (lmap right U) ⊆ D
 map-right⊆ all d d∈ with ∈-map⁻ right d∈
 ... | ⟨ y , ⟨ y∈ , refl ⟩ ⟩ = all y y∈
 
-𝒞-cont′ : ∀ {L B₁ B₂ : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ
-  → Mono L → Cont L ρ
-  → Mono B₁ → (∀ V → V ≢ [] → Cont B₁ (mem V • ρ))
-  → Mono B₂ → (∀ V → V ≢ [] → Cont B₂ (mem V • ρ))
+𝒞-cont′ : ∀ {L B₁ B₂ : VEnv → 𝒫 Value} {ρ}
+  → nonempty-env ρ
+  → Mono L
+  → Cont L ρ
+  → Mono B₁
+  → (∀ V → V ≢ [] → Cont B₁ (mem V • ρ))
+  → Mono B₂
+  → (∀ V → V ≢ [] → Cont B₂ (mem V • ρ))
   → Cont (λ ρ → 𝒞 ⟨ L ρ , ⟨ (λ X → B₁ (X • ρ)) , ⟨ (λ X → B₂ (X • ρ)) , ptt ⟩ ⟩ ⟩) ρ
 𝒞-cont′ {L}{B₁}{B₂} NE mL cL m₁ c₁ m₂ c₂ w (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩)
     with many L NE mL cL (lmap left (u ∷ U)) (map-left⊆ allL) | c₁ (u ∷ U) (λ ()) w w∈

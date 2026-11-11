@@ -32,16 +32,23 @@ _⊆ₑ_ : ∀ {A} → Env A → Env A → Set
 ρ₁ ⊆ₑ ρ₂ = ρ₁ ~ₑ[ _⊆_ ] ρ₂
 
 extend-nonempty-env : ∀{A}{ρ : Env A}{X}
-   → nonempty-env ρ  →  nonempty X  →  nonempty-env (X • ρ)
+  → nonempty-env ρ
+  → nonempty X
+  → nonempty-env (X • ρ)
 extend-nonempty-env {ρ} {X} NE-ρ NE-X zero = NE-X
 extend-nonempty-env {ρ} {X} NE-ρ V≢[] (suc x) = NE-ρ x
 
 •-~ : ∀ {A}{B}{ρ : Env A}{ρ' : Env B}{D : 𝒫 A}{E : 𝒫 B} R
-        → ρ ~ₑ[ R ] ρ' → R D E → (D • ρ) ~ₑ[ R ] (E • ρ')
+  → ρ ~ₑ[ R ] ρ'
+  → R D E
+  → (D • ρ) ~ₑ[ R ] (E • ρ')
 •-~ {A} {B} {ρ} {ρ'} {D} {E} R ρ~ρ' D~E zero = D~E
 •-~ {A} {B} {ρ} {ρ'} {D} {E} R ρ~ρ' D~E (suc x) = ρ~ρ' x
 
-env-ext : ∀{A}{ρ ρ′ : Env A}{X} → ρ ⊆ₑ ρ′ → (x : Var) → (X • ρ) x ⊆ (X • ρ′) x
+env-ext : ∀{A}{ρ ρ′ : Env A}{X}
+  → ρ ⊆ₑ ρ′
+  → (x : Var)
+  → (X • ρ) x ⊆ (X • ρ′) x
 env-ext ρ<ρ′ zero d d∈ = d∈
 env-ext ρ<ρ′ (suc x) = ρ<ρ′ x
 
@@ -56,8 +63,10 @@ infix 6 _⊔ₑ_
 _⊔ₑ_ : ∀ {A} → Env A → Env A → Env A
 (ρ₁ ⊔ₑ ρ₂) x v = ρ₁ x v ⊎ ρ₂ x v
 
-join-finiteNE-env : ∀{A} {ρ₁ ρ₂ : Env A} → finiteNE-env ρ₁  →  finiteNE-env ρ₂
-   → finiteNE-env (ρ₁ ⊔ₑ ρ₂)
+join-finiteNE-env : ∀{A} {ρ₁ ρ₂ : Env A}
+  → finiteNE-env ρ₁
+  → finiteNE-env ρ₂
+  → finiteNE-env (ρ₁ ⊔ₑ ρ₂)
 join-finiteNE-env {A}{ρ₁}{ρ₂} f1 f2 x
     with f1 x
 ... | ⟨ E1 , ⟨ ρ₁=E1 , NE-E1 ⟩ ⟩
@@ -66,11 +75,15 @@ join-finiteNE-env {A}{ρ₁}{ρ₂} f1 f2 x
     ⟨ (E1 ++ E2) , ⟨ ⟨ G , (H {E1} λ d z → z) ⟩ ,
       (λ E12=[] → NE-E1 (++-conicalˡ E1 E2 E12=[])) ⟩ ⟩
     where
-    G : (v : A ) → ρ₁ x v ⊎ ρ₂ x v → mem (E1 ++ E2) v
+    G : (v : A )
+      → ρ₁ x v ⊎ ρ₂ x v
+      → mem (E1 ++ E2) v
     G v (inj₁ ρ1x) = ∈-++⁺ˡ ((proj₁ ρ₁=E1) v ρ1x)
     G v (inj₂ ρ2x) = ∈-++⁺ʳ E1 ((proj₁ ρ₂=E2) v ρ2x)
 
-    H : ∀{E} → mem E ⊆ mem E1 → mem (E ++ E2) ⊆ (λ v → ρ₁ x v ⊎ ρ₂ x v)
+    H : ∀{E}
+      → mem E ⊆ mem E1
+      → mem (E ++ E2) ⊆ (λ v → ρ₁ x v ⊎ ρ₂ x v)
     H {[]} E<E1 v v∈E++E2 = inj₂ ((proj₂ ρ₂=E2) v v∈E++E2)
     H {x ∷ E} E<E1 .x (here refl) = inj₁ ((proj₂ ρ₁=E1) x (E<E1 x (here refl)))
     H {x ∷ E} E<E1 v (there v∈E++E2) =
@@ -106,8 +119,10 @@ single-fin {A}{v}{x}{ρ}{NE-ρ} y
     ⟨ w ∷ [] ,
     ⟨ ⟨ (λ{v₁ refl → here refl}) , (λ{v₁ (here refl) → refl}) ⟩ , (λ ()) ⟩ ⟩
 
-single-⊆ : ∀{A}{ρ x v}{NE-ρ : nonempty-env {A} ρ}
-  →  v ∈ ρ x  →  single-env x ⌈ v ⌉ ρ NE-ρ ⊆ₑ ρ
+single-⊆ : ∀{A}{ρ x v}
+  → {NE-ρ : nonempty-env {A} ρ}
+  → v ∈ ρ x
+  → single-env x ⌈ v ⌉ ρ NE-ρ ⊆ₑ ρ
 single-⊆ {A}{ρ}{x}{v}{NE-ρ} v∈ρx y w sing 
     with x ≟ y
 ... | yes refl rewrite sing = v∈ρx

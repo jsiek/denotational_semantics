@@ -42,7 +42,10 @@ RR = result-rel-pres _≃_
 RRs : ∀ {T} bs → Results (𝒫 T) bs → Results (𝒫 T) bs → Set₁
 RRs = results-rel-pres _≃_
 
-rr-trans : ∀ {T} b (f g h : Result (𝒫 T) b) → RR b f g → RR b g h → RR b f h
+rr-trans : ∀ {T} b (f g h : Result (𝒫 T) b)
+  → RR b f g
+  → RR b g h
+  → RR b f h
 rr-trans ■ f g h p q = lift (≃-trans (lower p) (lower q))
 rr-trans (ν b) f g h p q = λ a₁ a₂ r → rr-trans b (f a₁) (g a₂) (h a₂) (p a₁ a₂ r) (q a₂ a₂ ≃-refl)
 rr-trans (∁ b) f g h p q = rr-trans b f g h p q
@@ -52,17 +55,25 @@ RRs-refl {n = zero} Ds = ptt
 RRs-refl {n = suc n} ⟨ D , Ds ⟩ = ⟨ lift ≃-refl , RRs-refl Ds ⟩
 
 {- first-order operands that are equal are included in each other, both ways -}
-RRs⇒⊆ : ∀ {T n} {Ds Es : Results (𝒫 T) (replicate n ■)} → RRs (replicate n ■) Ds Es
+RRs⇒⊆ : ∀ {T n} {Ds Es : Results (𝒫 T) (replicate n ■)}
+  → RRs (replicate n ■) Ds Es
   → results-rel-pres _⊆_ (replicate n ■) Ds Es × results-rel-pres _⊆_ (replicate n ■) Es Ds
 RRs⇒⊆ {n = zero} _ = ⟨ ptt , ptt ⟩
 RRs⇒⊆ {n = suc n} ⟨ lift D≃ , Ds≃ ⟩ =
   ⟨ ⟨ lift (proj₁ D≃) , proj₁ (RRs⇒⊆ Ds≃) ⟩ , ⟨ lift (proj₂ D≃) , proj₂ (RRs⇒⊆ Ds≃) ⟩ ⟩
 
 {- a monotone operator is a congruence -}
-mono⇒≃ : ∀ {T bs} {f : DOp (𝒫 T) bs} → fun-rel-pres _⊆_ bs ■ f f → ∀ {Ds Es}
-  → results-rel-pres _⊆_ bs Ds Es → results-rel-pres _⊆_ bs Es Ds → f Ds ≃ f Es
+mono⇒≃ : ∀ {T bs} {f : DOp (𝒫 T) bs}
+  → fun-rel-pres _⊆_ bs ■ f f
+  → ∀ {Ds Es}
+  → results-rel-pres _⊆_ bs Ds Es
+  → results-rel-pres _⊆_ bs Es Ds
+  → f Ds ≃ f Es
 mono⇒≃ m D⊆ E⊆ = ⟨ lower (m _ _ D⊆) , lower (m _ _ E⊆) ⟩
 
-mono-≃ : ∀ {T n} {f : DOp (𝒫 T) (replicate n ■)} → fun-rel-pres _⊆_ (replicate n ■) ■ f f
-  → ∀ {Ds Es} → RRs (replicate n ■) Ds Es → f Ds ≃ f Es
+mono-≃ : ∀ {T n} {f : DOp (𝒫 T) (replicate n ■)}
+  → fun-rel-pres _⊆_ (replicate n ■) ■ f f
+  → ∀ {Ds Es}
+  → RRs (replicate n ■) Ds Es
+  → f Ds ≃ f Es
 mono-≃ m eq = mono⇒≃ m (proj₁ (RRs⇒⊆ eq)) (proj₂ (RRs⇒⊆ eq))

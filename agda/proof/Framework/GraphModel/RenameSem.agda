@@ -20,7 +20,8 @@ open import proof.Framework.GraphModel.Semantics Op sig
 open Semantics {{...}}
 
 rename-⊆ : ∀ {A} {{_ : Semantics {A}}} (M : AST) r (ρ ρ' : Env A)
-  → (∀ x → ρ (r x) ⊆ ρ' x) → ⟦ rename r M ⟧ ρ ⊆ ⟦ M ⟧ ρ'
+  → (∀ x → ρ (r x) ⊆ ρ' x)
+  → ⟦ rename r M ⟧ ρ ⊆ ⟦ M ⟧ ρ'
 rename-arg-⊆ : ∀ {A} {{_ : Semantics {A}}} {b} (a : Arg b) r (ρ ρ' : Env A)
   → (∀ x → ρ (r x) ⊆ ρ' x)
   → result-rel-pres _⊆_ b (⟦ rename-arg r a ⟧ₐ ρ) (⟦ a ⟧ₐ ρ')
@@ -35,7 +36,10 @@ rename-⊆ (op ⦅ args ⦆) r ρ ρ' rel =
 rename-arg-⊆ (ast M) r ρ ρ' rel = lift (rename-⊆ M r ρ ρ' rel)
 rename-arg-⊆ (bind a) r ρ ρ' rel = λ X X' X⊆ → rename-arg-⊆ a (ext r) (X • ρ) (X' • ρ') (rel' X⊆)
   where
-  rel' : ∀ {X X'} → X ⊆ X' → ∀ x → (X • ρ) (ext r x) ⊆ (X' • ρ') x
+  rel' : ∀ {X X'}
+    → X ⊆ X'
+    → ∀ x
+    → (X • ρ) (ext r x) ⊆ (X' • ρ') x
   rel' X⊆ zero = X⊆
   rel' X⊆ (suc x) = rel x
 rename-arg-⊆ (clear a) r ρ ρ' rel = ⟦⟧-monotone-arg {ρ = ρ'} {ρ′ = ρ'} (clear a) (λ x d d∈ → d∈)
@@ -44,7 +48,8 @@ rename-args-⊆ nil r ρ ρ' rel = lift tt
 rename-args-⊆ (cons a args) r ρ ρ' rel = ⟨ rename-arg-⊆ a r ρ ρ' rel , rename-args-⊆ args r ρ ρ' rel ⟩
 
 rename-⊇ : ∀ {A} {{_ : Semantics {A}}} (M : AST) r (ρ ρ' : Env A)
-  → (∀ x → ρ' x ⊆ ρ (r x)) → ⟦ M ⟧ ρ' ⊆ ⟦ rename r M ⟧ ρ
+  → (∀ x → ρ' x ⊆ ρ (r x))
+  → ⟦ M ⟧ ρ' ⊆ ⟦ rename r M ⟧ ρ
 rename-arg-⊇ : ∀ {A} {{_ : Semantics {A}}} {b} (a : Arg b) r (ρ ρ' : Env A)
   → (∀ x → ρ' x ⊆ ρ (r x))
   → result-rel-pres _⊆_ b (⟦ a ⟧ₐ ρ') (⟦ rename-arg r a ⟧ₐ ρ)
@@ -59,7 +64,10 @@ rename-⊇ (op ⦅ args ⦆) r ρ ρ' rel =
 rename-arg-⊇ (ast M) r ρ ρ' rel = lift (rename-⊇ M r ρ ρ' rel)
 rename-arg-⊇ (bind a) r ρ ρ' rel = λ X' X X⊆ → rename-arg-⊇ a (ext r) (X • ρ) (X' • ρ') (rel' X⊆)
   where
-  rel' : ∀ {X X'} → X' ⊆ X → ∀ x → (X' • ρ') x ⊆ (X • ρ) (ext r x)
+  rel' : ∀ {X X'}
+    → X' ⊆ X
+    → ∀ x
+    → (X' • ρ') x ⊆ (X • ρ) (ext r x)
   rel' X⊆ zero = X⊆
   rel' X⊆ (suc x) = rel x
 rename-arg-⊇ (clear a) r ρ ρ' rel = ⟦⟧-monotone-arg {ρ = ρ'} {ρ′ = ρ'} (clear a) (λ x d d∈ → d∈)
@@ -68,7 +76,8 @@ rename-args-⊇ nil r ρ ρ' rel = lift tt
 rename-args-⊇ (cons a args) r ρ ρ' rel = ⟨ rename-arg-⊇ a r ρ ρ' rel , rename-args-⊇ args r ρ ρ' rel ⟩
 
 rename-≃ : ∀ {A} {{_ : Semantics {A}}} (M : AST) r (ρ ρ' : Env A)
-  → (∀ x → ρ (r x) ≃ ρ' x) → ⟦ rename r M ⟧ ρ ≃ ⟦ M ⟧ ρ'
+  → (∀ x → ρ (r x) ≃ ρ' x)
+  → ⟦ rename r M ⟧ ρ ≃ ⟦ M ⟧ ρ'
 rename-≃ M r ρ ρ' rel =
   ⟨ rename-⊆ M r ρ ρ' (λ x → proj₁ (rel x)) , rename-⊇ M r ρ ρ' (λ x → proj₂ (rel x)) ⟩
 

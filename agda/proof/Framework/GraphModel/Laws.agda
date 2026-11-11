@@ -32,7 +32,12 @@ Run : 𝒫 Value → (𝒫 Value → 𝒫 Value) → 𝒫 Value
 Run P F u = Σ[ Y ∈ List Value ] Y ≢ [] × (mem Y ⊆ P × u ∈ F (mem Y))
 
 {- finitely many such elements are all in F on one finite part of P -}
-gather : ∀ {P F} → MonoF F → ∀ V → mem V ⊆ Run P F → V ≢ [] → Σ[ Y ∈ List Value ] Y ≢ [] × (mem Y ⊆ P × mem V ⊆ F (mem Y))
+gather : ∀ {P F}
+  → MonoF F
+  → ∀ V
+  → mem V ⊆ Run P F
+  → V ≢ []
+  → Σ[ Y ∈ List Value ] Y ≢ [] × (mem Y ⊆ P × mem V ⊆ F (mem Y))
 gather mF [] h ne = ⊥-elim (ne refl)
 gather mF (v ∷ []) h _ with h v (here refl)
 ... | ⟨ Y , ⟨ neY , ⟨ Y⊆ , v∈ ⟩ ⟩ ⟩ = ⟨ Y , ⟨ neY , ⟨ Y⊆ , (λ { _ (here refl) → v∈ }) ⟩ ⟩ ⟩
@@ -49,7 +54,10 @@ gather {P} mF (v ∷ v' ∷ V) h _ with h v (here refl) | gather mF (v' ∷ V) (
 
 {- ⋆ ⟨ Λ G , - ⟩ of such elements, for a consistent P: they come from F
    on one consistent finite part of P -}
-join : ∀ {P F G w} → Con P → MonoF F → w ∈ ⋆ ⟨ Λ ⟨ G , ptt ⟩ , ⟨ Run P F , ptt ⟩ ⟩
+join : ∀ {P F G w}
+  → Con P
+  → MonoF F
+  → w ∈ ⋆ ⟨ Λ ⟨ G , ptt ⟩ , ⟨ Run P F , ptt ⟩ ⟩
   → Σ[ y ∈ Value ] Σ[ Y ∈ List Value ]
       mem (y ∷ Y) ⊆ P × (w ∈ ⋆ ⟨ Λ ⟨ G , ptt ⟩ , ⟨ F (mem (y ∷ Y)) , ptt ⟩ ⟩ × (y ∷ Y) ≈ (y ∷ Y))
 join {P} cP mF ⟨ V , ⟨ w∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ with gather mF V V⊆ neV
@@ -62,11 +70,15 @@ K⟨_⟩ : Maybe (𝒫 Value → 𝒫 Value) → 𝒫 Value → 𝒫 Value
 K⟨ nothing ⟩ D = D
 K⟨ just G ⟩ D = ⋆ ⟨ Λ ⟨ G , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
-K-≃ : ∀ k {D D'} → D ≃ D' → K⟨ k ⟩ D ≃ K⟨ k ⟩ D'
+K-≃ : ∀ k {D D'}
+  → D ≃ D'
+  → K⟨ k ⟩ D ≃ K⟨ k ⟩ D'
 K-≃ nothing eq = eq
 K-≃ (just G) eq = ⋆-≃ {Λ ⟨ G , ptt ⟩} {Λ ⟨ G , ptt ⟩} ≃-refl eq
 
-let-law : ∀ k {D F} → Con D → MonoF F
+let-law : ∀ k {D F}
+  → Con D
+  → MonoF F
   → K⟨ k ⟩ (⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩) ≃ ⋆ ⟨ Λ ⟨ (λ X → K⟨ k ⟩ (F X)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 let-law nothing cD mF = ≃-refl
 let-law (just G) {D} {F} cD mF = ⟨ L , R ⟩
@@ -74,14 +86,19 @@ let-law (just G) {D} {F} cD mF = ⟨ L , R ⟩
   L : K⟨ just G ⟩ (⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩) ⊆ ⋆ ⟨ Λ ⟨ (λ X → K⟨ just G ⟩ (F X)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
   L w ⟨ V , ⟨ w∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ with join {D} {F} {G} cD mF ⟨ V , ⟨ w∈ , ⟨ (λ u u∈ → run (V⊆ u u∈)) , neV ⟩ ⟩ ⟩
     where
-    run : ∀ {u} → u ∈ ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ → u ∈ Run D F
+    run : ∀ {u}
+      → u ∈ ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
+      → u ∈ Run D F
     run ⟨ Y , ⟨ ⟨ u∈ , ⟨ neY , _ ⟩ ⟩ , ⟨ Y⊆ , _ ⟩ ⟩ ⟩ = ⟨ Y , ⟨ neY , ⟨ Y⊆ , u∈ ⟩ ⟩ ⟩
   ... | ⟨ y , ⟨ Y , ⟨ Y⊆ , ⟨ w∈' , cY ⟩ ⟩ ⟩ ⟩ = ⟨ y ∷ Y , ⟨ ⟨ w∈' , ⟨ (λ ()) , cY ⟩ ⟩ , ⟨ Y⊆ , (λ ()) ⟩ ⟩ ⟩
   R : ⋆ ⟨ Λ ⟨ (λ X → K⟨ just G ⟩ (F X)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⊆ K⟨ just G ⟩ (⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
   R w ⟨ Y , ⟨ ⟨ ⟨ V , ⟨ w∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ neY , cY ⟩ ⟩ , ⟨ Y⊆ , _ ⟩ ⟩ ⟩ =
     ⟨ V , ⟨ w∈ , ⟨ (λ u u∈ → ⟨ Y , ⟨ ⟨ V⊆ u u∈ , ⟨ neY , cY ⟩ ⟩ , ⟨ Y⊆ , neY ⟩ ⟩ ⟩) , neV ⟩ ⟩ ⟩
 
-case-law : ∀ k {A F₁ F₂} → Con A → MonoF F₁ → MonoF F₂
+case-law : ∀ k {A F₁ F₂}
+  → Con A
+  → MonoF F₁
+  → MonoF F₂
   → K⟨ k ⟩ (𝒞 ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩) ≃ 𝒞 ⟨ A , ⟨ (λ X → K⟨ k ⟩ (F₁ X)) , ⟨ (λ X → K⟨ k ⟩ (F₂ X)) , ptt ⟩ ⟩ ⟩
 case-law nothing cA m₁ m₂ = ≃-refl
 case-law (just G) {A} {F₁} {F₂} cA m₁ m₂ = ⟨ L , R ⟩
@@ -112,16 +129,28 @@ case-law (just G) {A} {F₁} {F₂} cA m₁ m₂ = ⟨ L , R ⟩
 {- Strictness ---------------------------------------------------------------------------}
 
 {- strict D X is X when each element of X needs D to be nonempty -}
-strict-≃ : ∀ {D X X'} → X ≃ X' → (∀ w → w ∈ X → nonempty D) → strict D X ≃ X'
+strict-≃ : ∀ {D X X'}
+  → X ≃ X'
+  → (∀ w → w ∈ X → nonempty D)
+  → strict D X ≃ X'
 strict-≃ ⟨ X⊆ , X⊇ ⟩ ne = ⟨ (λ w p → X⊆ w (proj₂ p)) , (λ w p → ⟨ ne w (X⊇ w p) , X⊇ w p ⟩) ⟩
 
-strict-≃₂ : ∀ {D₁ D₂ X X'} → X ≃ X' → (∀ w → w ∈ X → nonempty D₂) → (nonempty D₂ → nonempty D₁)
+strict-≃₂ : ∀ {D₁ D₂ X X'}
+  → X ≃ X'
+  → (∀ w → w ∈ X → nonempty D₂)
+  → (nonempty D₂ → nonempty D₁)
   → strict D₁ (strict D₂ X) ≃ X'
 strict-≃₂ X≃ ne f = strict-≃ (strict-≃ X≃ ne) (λ w w∈ → f (proj₁ w∈))
 
-strict-≃₃ : ∀ {D₁ D₂ D₃ X X'} → X ≃ X' → (∀ w → w ∈ X → nonempty D₃) → (nonempty D₃ → nonempty D₂)
-  → (nonempty D₃ → nonempty D₁) → strict D₁ (strict D₂ (strict D₃ X)) ≃ X'
+strict-≃₃ : ∀ {D₁ D₂ D₃ X X'}
+  → X ≃ X'
+  → (∀ w → w ∈ X → nonempty D₃)
+  → (nonempty D₃ → nonempty D₂)
+  → (nonempty D₃ → nonempty D₁)
+  → strict D₁ (strict D₂ (strict D₃ X)) ≃ X'
 strict-≃₃ X≃ ne f₂ f₁ = strict-≃ (strict-≃₂ X≃ ne f₂) (λ w w∈ → f₁ (proj₁ (proj₂ w∈)))
 
-⋆-ne : ∀ {D E} → nonempty (⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩) → nonempty D × nonempty E
+⋆-ne : ∀ {D E}
+  → nonempty (⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩)
+  → nonempty D × nonempty E
 ⋆-ne ⟨ w , ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ ⟩ = ⟨ ⟨ _ , e∈ ⟩ , ne-mem ne V⊆ ⟩

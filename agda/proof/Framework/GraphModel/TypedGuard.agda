@@ -31,5 +31,7 @@ guardᵖ-good P = mk-good
     let ⟨ a , V⊆ ⟩ = many E NE m c (d ∷ w ∷ []) (λ { _ (here refl) → d∈ ; _ (there (here refl)) → w∈ })
     in done (λ ρ → guardᵖ P (E ρ)) a w ⟨ ⟨ d , ⟨ V⊆ d (here refl) , p ⟩ ⟩ , V⊆ w (there (here refl)) ⟩ })
 
-guardᵖ-≃ : ∀ P {D D'} → D ≃ D' → guardᵖ P D ≃ guardᵖ P D'
+guardᵖ-≃ : ∀ P {D D'}
+  → D ≃ D'
+  → guardᵖ P D ≃ guardᵖ P D'
 guardᵖ-≃ P D≃ = mono-≃ (mono (guardᵖ-good P)) ⟨ lift D≃ , ptt ⟩

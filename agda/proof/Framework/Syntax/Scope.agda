@@ -17,9 +17,18 @@ open import Framework.abt.AbstractBindingTree Op sig
 open import Framework.Syntax.Scope Op sig public
 open import proof.Framework.Syntax.Uses Op sig using (Uses; UsesArg; UsesArgs; bound; bound-arg; bound-args)
 
-ws-uses : ∀ {k x} M → WS k M → Uses x M → x < k
-ws-uses-arg : ∀ {b k x} (a : Arg b) → WS-arg k a → UsesArg x a → x < k
-ws-uses-args : ∀ {bs k x} (args : Args bs) → WS-args k args → UsesArgs x args → x < k
+ws-uses : ∀ {k x} M
+  → WS k M
+  → Uses x M
+  → x < k
+ws-uses-arg : ∀ {b k x} (a : Arg b)
+  → WS-arg k a
+  → UsesArg x a
+  → x < k
+ws-uses-args : ∀ {bs k x} (args : Args bs)
+  → WS-args k args
+  → UsesArgs x args
+  → x < k
 
 ws-uses (` x) w refl = w
 ws-uses (op ⦅ args ⦆) w u = ws-uses-args args w u
@@ -32,9 +41,15 @@ ws-uses-args (cons a args) (w , ws) (inj₁ u) = ws-uses-arg a w u
 ws-uses-args (cons a args) (w , ws) (inj₂ u) = ws-uses-args args ws u
 
 {- a well-scoped term uses no variable beyond its context -}
-ws-bound : ∀ {k} M → WS k M → bound M ≤ k
-ws-bound-arg : ∀ {b k} (a : Arg b) → WS-arg k a → bound-arg a ≤ k
-ws-bound-args : ∀ {bs k} (args : Args bs) → WS-args k args → bound-args args ≤ k
+ws-bound : ∀ {k} M
+  → WS k M
+  → bound M ≤ k
+ws-bound-arg : ∀ {b k} (a : Arg b)
+  → WS-arg k a
+  → bound-arg a ≤ k
+ws-bound-args : ∀ {bs k} (args : Args bs)
+  → WS-args k args
+  → bound-args args ≤ k
 ws-bound (` x) w = w
 ws-bound (op ⦅ args ⦆) w = ws-bound-args args w
 ws-bound-arg (ast M) w = ws-bound M w

@@ -35,16 +35,23 @@ module Closure (_≈_ : AST₁ → AST₂ → Set) (var≈ : ∀ {x} → (`₁ x
     RenP : S₁.Subst → S₂.Subst → Set
     RenP σ σ' = ∀ x → Σ[ y ∈ ℕ ] σ x ≡ `₁ y × σ' x ≡ `₂ y
 
-    ren≈ : ∀ {σ σ'} → RenP σ σ' → ∀ x → σ x ≈ σ' x
+    ren≈ : ∀ {σ σ'}
+      → RenP σ σ'
+      → ∀ x
+      → σ x ≈ σ' x
     ren≈ p x with p x
     ... | y , e , e' rewrite e | e' = var≈
 
-    ren-exts : ∀ {σ σ'} → RenP σ σ' → RenP (S₁.exts σ) (S₂.exts σ')
+    ren-exts : ∀ {σ σ'}
+      → RenP σ σ'
+      → RenP (S₁.exts σ) (S₂.exts σ')
     ren-exts p zero = zero , refl , refl
     ren-exts p (suc x) with p x
     ... | y , e , e' = suc y , cong (R₁.rename suc) e , cong (R₂.rename suc) e'
 
-  ≈-rename : ∀ r {M M'} → M ≈ M' → R₁.rename r M ≈ R₂.rename r M'
+  ≈-rename : ∀ r {M M'}
+    → M ≈ M'
+    → R₁.rename r M ≈ R₂.rename r M'
   ≈-rename r {M} {M'} m =
     subst₂ _≈_ (sym (S₁.rename-sub r M)) (sym (S₂.rename-sub r M'))
       (sub≈ RenP ren≈ ok-var ren-exts
@@ -54,17 +61,30 @@ module Closure (_≈_ : AST₁ → AST₂ → Set) (var≈ : ∀ {x} → (`₁ x
   SubP : S₁.Subst → S₂.Subst → Set
   SubP σ σ' = (∀ x → σ x ≈ σ' x) × Ok σ σ'
 
-  sub-exts : ∀ {σ σ'} → SubP σ σ' → SubP (S₁.exts σ) (S₂.exts σ')
+  sub-exts : ∀ {σ σ'}
+    → SubP σ σ'
+    → SubP (S₁.exts σ) (S₂.exts σ')
   sub-exts (p , ok) = (λ { zero → var≈ ; (suc x) → ≈-rename suc (p x) }) , ok-exts ok
 
-  ≈-subst : ∀ {σ σ' M M'} → SubP σ σ' → M ≈ M' → S₁.sub σ M ≈ S₂.sub σ' M'
+  ≈-subst : ∀ {σ σ' M M'}
+    → SubP σ σ'
+    → M ≈ M'
+    → S₁.sub σ M ≈ S₂.sub σ' M'
   ≈-subst = sub≈ SubP proj₁ proj₂ sub-exts
 
   {- substituting one related term, for variable 0 -}
-  ≈-[] : ∀ {V V' N N'} → Ok (V S₁.• S₁.ids) (V' S₂.• S₂.ids) → V ≈ V' → N ≈ N' → (N S₁.[ V ]) ≈ (N' S₂.[ V' ])
+  ≈-[] : ∀ {V V' N N'}
+    → Ok (V S₁.• S₁.ids) (V' S₂.• S₂.ids)
+    → V ≈ V'
+    → N ≈ N'
+    → (N S₁.[ V ]) ≈ (N' S₂.[ V' ])
   ≈-[] ok r = ≈-subst ((λ { zero → r ; (suc x) → var≈ }) , ok)
 
   {- under a binder, for the variables with a property P -}
-  ≈-exts-on : ∀ {P : ℕ → Set} {σ σ'} → (∀ x → P (suc x) → σ x ≈ σ' x) → ∀ x → P x → S₁.exts σ x ≈ S₂.exts σ' x
+  ≈-exts-on : ∀ {P : ℕ → Set} {σ σ'}
+    → (∀ x → P (suc x) → σ x ≈ σ' x)
+    → ∀ x
+    → P x
+    → S₁.exts σ x ≈ S₂.exts σ' x
   ≈-exts-on h zero _ = var≈
   ≈-exts-on h (suc x) p = ≈-rename suc (h x p)

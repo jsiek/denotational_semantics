@@ -48,10 +48,13 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
   G ν v∈ = tt
 
 {- Λ F ≃ Λ F' when F and F' agree on the finite, nonempty, consistent sets -}
-Λ-≃ : ∀ {F F'} → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V)) → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
+Λ-≃ : ∀ {F F'}
+  → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V))
+  → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
 Λ-≃ {F} {F'} eq = ⟨ G (λ V ne c → proj₁ (eq V ne c)) , G (λ V ne c → proj₂ (eq V ne c)) ⟩
   where
-  G : ∀ {A B : 𝒫 Value → 𝒫 Value} → (∀ V → V ≢ [] → V ≈ V → A (mem V) ⊆ B (mem V))
+  G : ∀ {A B : 𝒫 Value → 𝒫 Value}
+    → (∀ V → V ≢ [] → V ≈ V → A (mem V) ⊆ B (mem V))
     → Λ ⟨ A , ptt ⟩ ⊆ Λ ⟨ B , ptt ⟩
   G A⊆ ν tt = tt
   G A⊆ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ A⊆ V (proj₁ ne) (proj₂ ne) w w∈ , ne ⟩
@@ -183,7 +186,10 @@ inr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩ ) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     = lower (FL~ (mem (v ∷ V)) (mem (v' ∷ V')) V≈V') u w u∈ w∈
     where
-    V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'
+    V≈V' : ∀ d d'
+      → d ∈ mem (v ∷ V)
+      → d' ∈ mem (v' ∷ V')
+      → d ~ d'
     V≈V' d d' d∈ d'∈ = D~ (left d) (left d') (V⊆ d d∈) (V⊆' d' d'∈)
   G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
     ⊥-elim (D~ (left v) (right v') (V⊆ v (here refl)) (V⊆' v' (here refl)))
@@ -192,7 +198,10 @@ inr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     = lower (FR~ (mem (v ∷ V)) (mem (v' ∷ V')) V≈V') u w u∈ w∈
     where
-    V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'
+    V≈V' : ∀ d d'
+      → d ∈ mem (v ∷ V)
+      → d' ∈ mem (v' ∷ V')
+      → d ~ d'
     V≈V' d d' d∈ d'∈ = D~ (right d) (right d') (V⊆ d d∈) (V⊆' d' d'∈)
 
 𝒯-consis : ∀ n → consistent _~_ (replicate n ■) ■ (𝒯 n)
@@ -266,7 +275,10 @@ letD-consis ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F
 
 {- a function of two arguments, consistent in both, is consistent -}
 ΛΛ-con : ∀ {F : 𝒫 Value → 𝒫 Value → 𝒫 Value}
-  → (∀ X X' Y Y' → Every _~_ X X' → Every _~_ Y Y' → Every _~_ (F X Y) (F X' Y'))
+  → (  ∀ X X' Y Y'
+     → Every _~_ X X'
+     → Every _~_ Y Y'
+     → Every _~_ (F X Y) (F X' Y'))
   → Con (ΛΛ ⟨ F , ptt ⟩)
 ΛΛ-con {F} F~ =
   lower (ΛΛ-consis ⟨ F , ptt ⟩ ⟨ F , ptt ⟩ ⟨ (λ X X' X~ Y Y' Y~ → lift (F~ X X' Y Y' X~ Y~)) , ptt ⟩)
@@ -283,23 +295,35 @@ closD-consis n ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ =
 
 {- Congruences ------------------------------------------------------------------}
 
-𝒯-≃ : ∀ n {Ds Es} → (∀ i → nthD Ds i ≃ nthD Es i) → 𝒯 n Ds ≃ 𝒯 n Es
+𝒯-≃ : ∀ n {Ds Es}
+  → (∀ i → nthD Ds i ≃ nthD Es i)
+  → 𝒯 n Ds ≃ 𝒯 n Es
 𝒯-≃ n {Ds} {Es} eq = mono-≃ (𝒯-mono n) (nthD⇒RRs Ds Es eq)
 
-⋆-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ ⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+⋆-≃ : ∀ {D D' E E'}
+  → D ≃ D'
+  → E ≃ E'
+  → ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ ⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
 ⋆-≃ D≃ E≃ = mono-≃ ⋆-mono ⟨ lift D≃ , ⟨ lift E≃ , ptt ⟩ ⟩
 
-proj-≃ : ∀ {n} (i : Fin n) {D E} → D ≃ E → proj i ⟨ D , ptt ⟩ ≃ proj i ⟨ E , ptt ⟩
+proj-≃ : ∀ {n} (i : Fin n) {D E}
+  → D ≃ E
+  → proj i ⟨ D , ptt ⟩ ≃ proj i ⟨ E , ptt ⟩
 proj-≃ i D≃ = mono-≃ (proj-mono i) ⟨ lift D≃ , ptt ⟩
 
-inl-≃ : ∀ {D E} → D ≃ E → inl ⟨ D , ptt ⟩ ≃ inl ⟨ E , ptt ⟩
+inl-≃ : ∀ {D E}
+  → D ≃ E
+  → inl ⟨ D , ptt ⟩ ≃ inl ⟨ E , ptt ⟩
 inl-≃ D≃ = mono-≃ inl-mono ⟨ lift D≃ , ptt ⟩
 
-inr-≃ : ∀ {D E} → D ≃ E → inr ⟨ D , ptt ⟩ ≃ inr ⟨ E , ptt ⟩
+inr-≃ : ∀ {D E}
+  → D ≃ E
+  → inr ⟨ D , ptt ⟩ ≃ inr ⟨ E , ptt ⟩
 inr-≃ D≃ = mono-≃ inr-mono ⟨ lift D≃ , ptt ⟩
 
 {- case analysis, whose branches are compared on nonempty consistent finite sets -}
-𝒞-≃ : ∀ {D D' F F' G G'} → D ≃ D'
+𝒞-≃ : ∀ {D D' F F' G G'}
+  → D ≃ D'
   → (∀ v V → (v ∷ V) ≈ (v ∷ V) → F (mem (v ∷ V)) ≃ F' (mem (v ∷ V)))
   → (∀ v V → (v ∷ V) ≈ (v ∷ V) → G (mem (v ∷ V)) ≃ G' (mem (v ∷ V)))
   → 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
@@ -307,7 +331,9 @@ inr-≃ D≃ = mono-≃ inr-mono ⟨ lift D≃ , ptt ⟩
   ⟨ H {B = F} {F'} {G} {G'} (proj₁ D≃) (λ v V c → proj₁ (F≃ v V c)) (λ v V c → proj₁ (G≃ v V c))
   , H {B = F'} {F} {G'} {G} (proj₂ D≃) (λ v V c → proj₂ (F≃ v V c)) (λ v V c → proj₂ (G≃ v V c)) ⟩
   where
-  H : ∀ {A A' B B' C C'} → A ⊆ A' → (∀ v V → (v ∷ V) ≈ (v ∷ V) → B (mem (v ∷ V)) ⊆ B' (mem (v ∷ V)))
+  H : ∀ {A A' B B' C C'}
+    → A ⊆ A'
+    → (∀ v V → (v ∷ V) ≈ (v ∷ V) → B (mem (v ∷ V)) ⊆ B' (mem (v ∷ V)))
     → (∀ v V → (v ∷ V) ≈ (v ∷ V) → C (mem (v ∷ V)) ⊆ C' (mem (v ∷ V)))
     → 𝒞 ⟨ A , ⟨ B , ⟨ C , ptt ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ A' , ⟨ B' , ⟨ C' , ptt ⟩ ⟩ ⟩
   H A⊆ B⊆ C⊆ w (inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
@@ -315,28 +341,37 @@ inr-≃ D≃ = mono-≃ inr-mono ⟨ lift D≃ , ptt ⟩
   H A⊆ B⊆ C⊆ w (inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
     inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ (right d) (all d d∈)) , ⟨ C⊆ v V c w w∈ , c ⟩ ⟩ ⟩ ⟩
 
-letD-≃ : ∀ {D D' F F'} → D ≃ D' → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V))
+letD-≃ : ∀ {D D' F F'}
+  → D ≃ D'
+  → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V))
   → letD ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ letD ⟨ D' , ⟨ F' , ptt ⟩ ⟩
 letD-≃ {F = F} {F'} D≃ F≃ = ⋆-≃ (Λ-≃ {F} {F'} F≃) D≃
 
-ΛΛ-≃ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value} → (∀ X Y → F X Y ≃ F' X Y)
+ΛΛ-≃ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value}
+  → (∀ X Y → F X Y ≃ F' X Y)
   → ΛΛ ⟨ F , ptt ⟩ ≃ ΛΛ ⟨ F' , ptt ⟩
 ΛΛ-≃ eq = Λ-≃ (λ V _ _ → Λ-≃ (λ U _ _ → eq (mem V) (mem U)))
 
 {- the same, from equal operands (a binder's on equal arguments) -}
-𝒞-RR : ∀ {D F G D' F' G'} → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
+𝒞-RR : ∀ {D F G D' F' G'}
+  → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
   → 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
 𝒞-RR {F = F} {G} {F' = F'} {G'} ⟨ D≃ , ⟨ F≃ , ⟨ G≃ , _ ⟩ ⟩ ⟩ =
   𝒞-≃ {F = F} {F'} {G} {G'} (lower D≃) (λ _ _ _ → lower (F≃ _ _ ≃-refl)) (λ _ _ _ → lower (G≃ _ _ ≃-refl))
 
-letD-RR : ∀ {D F D' F'} → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt ⟩ ⟩ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
+letD-RR : ∀ {D F D' F'}
+  → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt ⟩ ⟩ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
   → letD ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ letD ⟨ D' , ⟨ F' , ptt ⟩ ⟩
 letD-RR {F = F} {F' = F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = letD-≃ {F = F} {F'} (lower D≃) (λ _ _ _ → lower (F≃ _ _ ≃-refl))
 
 {- β laws --------------------------------------------------------------------------}
 
 {- (λx. F x) D means F D, for D consistent -}
-Λ-β : ∀ {F D} → Mono₁ F → Finitary F D → Con D → letD ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ F D
+Λ-β : ∀ {F D}
+  → Mono₁ F
+  → Finitary F D
+  → Con D
+  → letD ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ F D
 Λ-β m fin cD =
   ⟨ (λ { w ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ → m V⊆ w w∈ })
   , (λ w w∈ → let ⟨ V , ⟨ ne , ⟨ V⊆ , w∈′ ⟩ ⟩ ⟩ = fin w w∈
@@ -344,25 +379,37 @@ letD-RR {F = F} {F' = F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = letD-≃ {F = F} {F'
 
 {- a case contains its left branch on the left payloads of the scrutinee D,
    and its right branch on the right ones -}
-𝒞-left : ∀ {D F G} → Finitary F (λ d → left d ∈ D) → Con (λ d → left d ∈ D)
+𝒞-left : ∀ {D F G}
+  → Finitary F (λ d → left d ∈ D)
+  → Con (λ d → left d ∈ D)
   → F (λ d → left d ∈ D) ⊆ 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
 𝒞-left fin c w w∈ with fin w w∈
 ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
 ... | ⟨ v ∷ V , ⟨ _ , ⟨ V⊆ , w∈′ ⟩ ⟩ ⟩ = inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ w∈′ , Con⇒≈ (v ∷ V) c V⊆ ⟩ ⟩ ⟩ ⟩
 
-𝒞-right : ∀ {D F G} → Finitary G (λ d → right d ∈ D) → Con (λ d → right d ∈ D)
+𝒞-right : ∀ {D F G}
+  → Finitary G (λ d → right d ∈ D)
+  → Con (λ d → right d ∈ D)
   → G (λ d → right d ∈ D) ⊆ 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
 𝒞-right fin c w w∈ with fin w w∈
 ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
 ... | ⟨ v ∷ V , ⟨ _ , ⟨ V⊆ , w∈′ ⟩ ⟩ ⟩ = inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ w∈′ , Con⇒≈ (v ∷ V) c V⊆ ⟩ ⟩ ⟩ ⟩
 
-𝒞-inl-β : ∀ {D F G} → Mono₁ F → Finitary F D → Con D → 𝒞 ⟨ inl ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ F D
+𝒞-inl-β : ∀ {D F G}
+  → Mono₁ F
+  → Finitary F D
+  → Con D
+  → 𝒞 ⟨ inl ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ F D
 𝒞-inl-β {D} {F} {G} m fin cD =
   ⟨ (λ { w (inj₁ ⟨ v , ⟨ V , ⟨ ls , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) → m ls w w∈
        ; w (inj₂ ⟨ v , ⟨ V , ⟨ rs , _ ⟩ ⟩ ⟩) → ⊥-elim (rs v (here refl)) })
   , 𝒞-left {inl ⟨ D , ptt ⟩} {F} {G} fin cD ⟩
 
-𝒞-inr-β : ∀ {D F G} → Mono₁ G → Finitary G D → Con D → 𝒞 ⟨ inr ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ G D
+𝒞-inr-β : ∀ {D F G}
+  → Mono₁ G
+  → Finitary G D
+  → Con D
+  → 𝒞 ⟨ inr ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ G D
 𝒞-inr-β {D} {F} {G} m fin cD =
   ⟨ (λ { w (inj₁ ⟨ v , ⟨ V , ⟨ ls , _ ⟩ ⟩ ⟩) → ⊥-elim (ls v (here refl))
        ; w (inj₂ ⟨ v , ⟨ V , ⟨ rs , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) → m rs w w∈ })
@@ -370,9 +417,13 @@ letD-RR {F = F} {F' = F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = letD-≃ {F = F} {F'
 
 {- a function of two arguments, applied to T and E, contains its body on T and
    E, when that body needs only finite, nonempty parts of T and E -}
-ΛΛ-β : ∀ {F T E} → Con T → Con E
-  → (∀ w → w ∈ F T E → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ]
-       V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ E × w ∈ F (mem V) (mem U))
+ΛΛ-β : ∀ {F T E}
+  → Con T
+  → Con E
+  → (  ∀ w
+     → w ∈ F T E
+     → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ]
+         V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ E × w ∈ F (mem V) (mem U))
   → F T E ⊆ ⋆ ⟨ ⋆ ⟨ ΛΛ ⟨ F , ptt ⟩ , ⟨ T , ptt ⟩ ⟩ , ⟨ E , ptt ⟩ ⟩
 ΛΛ-β cT cE fin w w∈ with fin w w∈
 ... | ⟨ V , ⟨ U , ⟨ neV , ⟨ neU , ⟨ V⊆ , ⟨ U⊆ , w∈′ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
@@ -380,7 +431,10 @@ letD-RR {F = F} {F' = F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = letD-≃ {F = F} {F'
       , ⟨ U⊆ , neU ⟩ ⟩ ⟩
 
 {- finitely many elements of a let come from one finite part of its operand -}
-letD-collect : ∀ {D F} → Mono₁ F → ∀ V → mem V ⊆ letD ⟨ D , ⟨ F , ptt ⟩ ⟩
+letD-collect : ∀ {D F}
+  → Mono₁ F
+  → ∀ V
+  → mem V ⊆ letD ⟨ D , ⟨ F , ptt ⟩ ⟩
   → Σ[ U ∈ List Value ] mem U ⊆ D × mem V ⊆ F (mem U)
 letD-collect m [] _ = ⟨ [] , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩
 letD-collect {D} m (w ∷ V) V⊆ with V⊆ w (here refl) | letD-collect m V (λ d d∈ → V⊆ d (there d∈))

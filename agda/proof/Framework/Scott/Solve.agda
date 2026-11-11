@@ -50,7 +50,8 @@ module SolutionIso (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
   E = obj F D∞
 
   fmap-mono : (A B : DCPO₁) (x : ⟨ obj F A ⟩) (f f' : DCPO[ A , B ]) (g g' : DCPO[ B , A ])
-    → f ⊑⟨ A ⟹₁ B ⟩ f' → g ⊑⟨ B ⟹₁ A ⟩ g'
+    → f ⊑⟨ A ⟹₁ B ⟩ f'
+    → g ⊑⟨ B ⟹₁ A ⟩ g'
     → fmap F A B f g x ⊑⟨ obj F B ⟩ fmap F A B f' g' x
   fmap-mono A B x f f' g g' u v =
    monotone-if-continuous (Maps A B) (obj F B) (act-at F A B x) (f , g) (f' , g') (u , v)
@@ -59,7 +60,9 @@ module SolutionIso (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
   e : ℕ → DCPO[ D∞ , D∞ ]
   e n = ∘₁ D∞ (𝓓 n) D∞ (π∞₁ n) (ε∞₁ n)
 
-  e-mono : (m n : ℕ) → m ≤ n → e m ⊑⟨ D∞ ⟹₁ D∞ ⟩ e n
+  e-mono : (m n : ℕ)
+    → m ≤ n
+    → e m ⊑⟨ D∞ ⟹₁ D∞ ⟩ e n
   e-mono m n l σ = ε∞π∞-mono σ m n l
 
   πε-id : (n : ℕ) → ∘₁ (𝓓 n) D∞ (𝓓 n) (ε∞₁ n) (π∞₁ n) ＝ id₁ (𝓓 n)
@@ -75,7 +78,9 @@ module SolutionIso (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
      → fmap F (𝓓 n) D∞ (ε∞₁ n) (π∞₁ n) (fmap F D∞ (𝓓 n) (π∞₁ n) (ε∞₁ n) φ) ＝ fmap F D∞ D∞ (e n) (e n) φ
   επ n φ = (fmap-∘ F D∞ (𝓓 n) D∞ (π∞₁ n) (ε∞₁ n) (ε∞₁ n) (π∞₁ n) φ) ⁻¹
 
-  fold-mono : (φ ψ : ⟨ E ⟩) → φ ⊑⟨ E ⟩ ψ → fold · φ ⊑⟨ D∞ ⟩ fold · ψ
+  fold-mono : (φ ψ : ⟨ E ⟩)
+    → φ ⊑⟨ E ⟩ ψ
+    → fold · φ ⊑⟨ D∞ ⟩ fold · ψ
   fold-mono = monotone-if-continuous E D∞ fold
 
  {- fold (unfold σ) = σ ----------------------------------------------------}
@@ -133,7 +138,8 @@ module SolutionIso (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
  {- unfold (fold φ) = φ ----------------------------------------------------}
 
  private
-  ∐e-is-id : (δ : is-Directed (D∞ ⟹₁ D∞) e) → ∐ (D∞ ⟹₁ D∞) {ℕ} {e} δ ＝ id₁ D∞
+  ∐e-is-id : (δ : is-Directed (D∞ ⟹₁ D∞) e)
+    → ∐ (D∞ ⟹₁ D∞) {ℕ} {e} δ ＝ id₁ D∞
   ∐e-is-id δ = to-continuous-function-＝ D∞ D∞ {∐ (D∞ ⟹₁ D∞) {ℕ} {e} δ} {id₁ D∞}
                (λ σ → antisymmetry D∞ (∐ D∞ (pointwise-directed D∞ D∞ e δ σ)) σ
                         (∐-is-lowerbound-of-upperbounds D∞ (pointwise-directed D∞ D∞ e δ σ) σ

@@ -61,7 +61,9 @@ private
    ub : (i : I) → guarded d (α i) ⊑⟨ 𝔻 ⟩ guarded d (∐ 𝔻 δ)
    ub i = ∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ _ → α i) ρ (guarded d (∐ 𝔻 δ))
             (λ p → transitivity 𝔻 _ _ _ (∐-is-upperbound 𝔻 δ i) (∐ˢˢ-is-upperbound 𝔻⊥ (λ _ → ∐ 𝔻 δ) ρ p))
-   lub : (u : ⟨ 𝔻 ⟩) → ((i : I) → guarded d (α i) ⊑⟨ 𝔻 ⟩ u) → guarded d (∐ 𝔻 δ) ⊑⟨ 𝔻 ⟩ u
+   lub : (u : ⟨ 𝔻 ⟩)
+     → ((i : I) → guarded d (α i) ⊑⟨ 𝔻 ⟩ u)
+     → guarded d (∐ 𝔻 δ) ⊑⟨ 𝔻 ⟩ u
    lub u h = ∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ _ → ∐ 𝔻 δ) ρ u
                (λ p → ∐-is-lowerbound-of-upperbounds 𝔻 δ u
                         (λ i → transitivity 𝔻 _ _ _ (∐ˢˢ-is-upperbound 𝔻⊥ (λ _ → α i) ρ p) (h i)))

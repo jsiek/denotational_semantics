@@ -25,8 +25,10 @@ module _ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set}
   (reds-∷ : ∀ {n} X (Xs : Vec T n) → reds (X ∷ Xs) ≡ red-∷ X Xs (red X) (reds Xs))
   (val-red : ∀ {V} → Val V → red V ≡ val) where
 
-  ans-∷ : ∀ {n M M' r r'} {Ms : Vec S n} {Ms' : Vec T n} → Pointwise R Ms Ms'
-    → Ans red Val R M r M' → Ans reds (All Val) (Pointwise R) Ms r' Ms'
+  ans-∷ : ∀ {n M M' r r'} {Ms : Vec S n} {Ms' : Vec T n}
+    → Pointwise R Ms Ms'
+    → Ans red Val R M r M'
+    → Ans reds (All Val) (Pointwise R) Ms r' Ms'
     → Ans reds (All Val) (Pointwise R) (M ∷ Ms) (red-∷ M Ms r r') (M' ∷ Ms')
   ans-∷ rs a as = ans-in (frame _ (λ X → reds-∷ X _)) (_∷ rs) a
     λ v m → ans-in (frame {g = λ Xs → _ ∷ Xs} _ (λ Xs → trans (reds-∷ _ Xs) (val-in (val-red v)))) (m ∷_) as
@@ -37,5 +39,9 @@ all-lookup : ∀ {A : Set} {P : A → Set} {n} {xs : Vec A n} → All P xs → �
 all-lookup (p ∷ ps) zero = p
 all-lookup (p ∷ ps) (suc i) = all-lookup ps i
 
-cong₃ : ∀ {A B C D : Set} (f : A → B → C → D) {x x' y y' z z'} → x ≡ x' → y ≡ y' → z ≡ z' → f x y z ≡ f x' y' z'
+cong₃ : ∀ {A B C D : Set} (f : A → B → C → D) {x x' y y' z z'}
+  → x ≡ x'
+  → y ≡ y'
+  → z ≡ z'
+  → f x y z ≡ f x' y' z'
 cong₃ f refl refl refl = refl

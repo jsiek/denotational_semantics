@@ -34,18 +34,22 @@ module _ (A : DCPO₁) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓛ᵈ A ⟩) (δ : is
   β (i , p) = pr₁ (pr₂ (α i)) p
 
  {- the sup is defined only if some element is -}
- lift-sup-defined : pr₁ s → ∥ J ∥
+ lift-sup-defined : pr₁ s
+   → ∥ J ∥
  lift-sup-defined p = p
 
  {- the value of the sup is the sup of the values -}
- lift-sup-value : (p : pr₁ s) → is-sup (underlying-order A) (pr₁ (pr₂ s) p) β
+ lift-sup-value : (p : pr₁ s)
+   → is-sup (underlying-order A) (pr₁ (pr₂ s) p) β
  lift-sup-value p = ub , lub
   where
    ub : (j : J) → β j ⊑⟨ A ⟩ pr₁ (pr₂ s) p
    ub (i , pᵢ) = transport (λ - → β (i , pᵢ) ⊑⟨ A ⟩ -)
                    (value-is-constant s (pr₁ (∐-is-upperbound (𝓛ᵈ A) {I} {α} δ i) pᵢ) p)
                    (pr₂ (∐-is-upperbound (𝓛ᵈ A) {I} {α} δ i) pᵢ)
-   lub : (u : ⟨ A ⟩) → ((j : J) → β j ⊑⟨ A ⟩ u) → pr₁ (pr₂ s) p ⊑⟨ A ⟩ u
+   lub : (u : ⟨ A ⟩)
+     → ((j : J) → β j ⊑⟨ A ⟩ u)
+     → pr₁ (pr₂ s) p ⊑⟨ A ⟩ u
    lub u h = pr₂ below p
     where
      u' : ⟨ 𝓛ᵈ A ⟩
@@ -55,14 +59,15 @@ module _ (A : DCPO₁) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓛ᵈ A ⟩) (δ : is
                (λ i → (λ pᵢ → pr₁ (∐-is-upperbound (𝓛ᵈ A) {I} {α} δ i) pᵢ) , (λ pᵢ → h (i , pᵢ)))
 
  {- the values of the defined elements are directed, when one is -}
- lift-values-directed : ∥ J ∥ → is-Directed A β
+ lift-values-directed : ∥ J ∥
+   → is-Directed A β
  lift-values-directed q = q , semi
   where
    semi : is-semidirected (underlying-order A) β
    semi (i , pᵢ) (j , pⱼ) = ∥∥-functor step (semidirected-if-Directed (𝓛ᵈ A) α δ i j)
     where
      step : (Σ k ꞉ I , (α i ⊑⟨ 𝓛ᵈ A ⟩ α k) × (α j ⊑⟨ 𝓛ᵈ A ⟩ α k))
-          → Σ m ꞉ J , (β (i , pᵢ) ⊑⟨ A ⟩ β m) × (β (j , pⱼ) ⊑⟨ A ⟩ β m)
+       → Σ m ꞉ J , (β (i , pᵢ) ⊑⟨ A ⟩ β m) × (β (j , pⱼ) ⊑⟨ A ⟩ β m)
      step (k , (f , g) , (f' , g')) =
       (k , f pᵢ) , g pᵢ ,
       transport (λ - → β (j , pⱼ) ⊑⟨ A ⟩ pr₁ (pr₂ (α k)) -) (being-defined-is-prop (α k) (f' pⱼ) (f pᵢ)) (g' pⱼ)
@@ -70,9 +75,13 @@ module _ (A : DCPO₁) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓛ᵈ A ⟩) (δ : is
  {- so a property closed under directed sups in A holds of the value of
     the sup when it holds of the values of the elements -}
  lift-sup-ind : {𝓦 : Universe} (Q : ⟨ A ⟩ → 𝓦 ̇ )
-   → ({K : 𝓤₀ ̇ } (γ : K → ⟨ A ⟩) (ε : is-Directed A γ) → ((k : K) → Q (γ k)) → Q (∐ A ε))
+   → (  {K : 𝓤₀ ̇ } (γ : K → ⟨ A ⟩)
+      → (ε : is-Directed A γ)
+      → ((k : K) → Q (γ k))
+      → Q (∐ A ε))
    → ((i : I) (p : pr₁ (α i)) → Q (pr₁ (pr₂ (α i)) p))
-   → (p : pr₁ s) → Q (pr₁ (pr₂ s) p)
+   → (p : pr₁ s)
+   → Q (pr₁ (pr₂ s) p)
  lift-sup-ind Q Q-sup h p =
   transport Q (sups-are-unique (underlying-order A) (pr₁ (axioms-of-dcpo A)) β
                  (∐-is-sup A (lift-values-directed p)) (lift-sup-value p))

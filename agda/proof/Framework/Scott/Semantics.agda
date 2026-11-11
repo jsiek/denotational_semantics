@@ -40,7 +40,10 @@ defined-env ρ = (x : ℕ) → defined (ρ x)
 ρ₀-defined : defined-env ρ₀
 ρ₀-defined _ = init-defined
 
-•-defined : (d : ⟨ 𝔻 ⟩) (ρ : ⟨ Env ⟩) → defined d → defined-env ρ → defined-env (d • ρ)
+•-defined : (d : ⟨ 𝔻 ⟩) (ρ : ⟨ Env ⟩)
+  → defined d
+  → defined-env ρ
+  → defined-env (d • ρ)
 •-defined d ρ p h zero = p
 •-defined d ρ p h (succ x) = h x
 
@@ -64,18 +67,24 @@ codeᶜ-β : (N : Den Env) (X Y : ⟨ 𝔻 ⟩) → app · (app · codeᶜ N · 
 codeᶜ-β N = code₂-β (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N)
 
 {- the code of a closure, applied to its environment -}
-code₂-env : (B : DCPO[ 𝔻 ×₁ 𝔻 , 𝔻 ]) (X : ⟨ 𝔻 ⟩) → defined X → app · code₂ B · X ＝ Λ · (curry₁ 𝔻 𝔻 𝔻 B · X)
+code₂-env : (B : DCPO[ 𝔻 ×₁ 𝔻 , 𝔻 ]) (X : ⟨ 𝔻 ⟩)
+  → defined X
+  → app · code₂ B · X ＝ Λ · (curry₁ 𝔻 𝔻 𝔻 B · X)
 code₂-env B X p = app-Λ-defined (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B) Λ) X p
 
 {- a case on an injection -}
-caseᶜ-inl : (L M N : Den Env) (ρ : ⟨ Env ⟩) (d : ⟨ 𝔻 ⟩) → L · ρ ＝ inl · d → defined d
+caseᶜ-inl : (L M N : Den Env) (ρ : ⟨ Env ⟩) (d : ⟨ 𝔻 ⟩)
+  → L · ρ ＝ inl · d
+  → defined d
   → caseᶜ L M N · ρ ＝ M · (d • ρ)
 caseᶜ-inl L M N ρ d e p =
  ap (λ - → cases · - · (strict · (abs M · ρ) , strict · (abs N · ρ))) e
  ∙ cases-inl d p (strict · (abs M · ρ)) (strict · (abs N · ρ))
  ∙ strict-defined (abs M · ρ) d p
 
-caseᶜ-inr : (L M N : Den Env) (ρ : ⟨ Env ⟩) (d : ⟨ 𝔻 ⟩) → L · ρ ＝ inr · d → defined d
+caseᶜ-inr : (L M N : Den Env) (ρ : ⟨ Env ⟩) (d : ⟨ 𝔻 ⟩)
+  → L · ρ ＝ inr · d
+  → defined d
   → caseᶜ L M N · ρ ＝ N · (d • ρ)
 caseᶜ-inr L M N ρ d e p =
  ap (λ - → cases · - · (strict · (abs M · ρ) , strict · (abs N · ρ))) e
@@ -84,16 +93,19 @@ caseᶜ-inr L M N ρ d e p =
 
 {- congruences for the binders: the bodies need agree only on defined
    values -}
-lamᶜ-cong : (N N' : Den Env) (ρ ρ' : ⟨ Env ⟩) → ((d : ⟨ 𝔻 ⟩) → defined d → N · (d • ρ) ＝ N' · (d • ρ'))
+lamᶜ-cong : (N N' : Den Env) (ρ ρ' : ⟨ Env ⟩)
+  → ((d : ⟨ 𝔻 ⟩) → defined d → N · (d • ρ) ＝ N' · (d • ρ'))
   → lamᶜ N · ρ ＝ lamᶜ N' · ρ'
 lamᶜ-cong N N' ρ ρ' h = Λ-cong (abs N · ρ) (abs N' · ρ') h
 
-letᶜ-cong : (M M' N N' : Den Env) (ρ ρ' : ⟨ Env ⟩) → M · ρ ＝ M' · ρ'
+letᶜ-cong : (M M' N N' : Den Env) (ρ ρ' : ⟨ Env ⟩)
+  → M · ρ ＝ M' · ρ'
   → ((d : ⟨ 𝔻 ⟩) → defined d → N · (d • ρ) ＝ N' · (d • ρ'))
   → letᶜ M N · ρ ＝ letᶜ M' N' · ρ'
 letᶜ-cong M M' N N' ρ ρ' eM h = ap₂ (λ a b → app · a · b) (lamᶜ-cong N N' ρ ρ' h) eM
 
-caseᶜ-cong : (L L' M M' N N' : Den Env) (ρ ρ' : ⟨ Env ⟩) → L · ρ ＝ L' · ρ'
+caseᶜ-cong : (L L' M M' N N' : Den Env) (ρ ρ' : ⟨ Env ⟩)
+  → L · ρ ＝ L' · ρ'
   → ((d : ⟨ 𝔻 ⟩) → defined d → M · (d • ρ) ＝ M' · (d • ρ'))
   → ((d : ⟨ 𝔻 ⟩) → defined d → N · (d • ρ) ＝ N' · (d • ρ'))
   → caseᶜ L M N · ρ ＝ caseᶜ L' M' N' · ρ'

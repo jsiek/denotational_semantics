@@ -62,18 +62,22 @@ module _ (A B : DCPO₁) where
    J = Σ i ꞉ I , is-defined (α i)
    β : J → ⟨ A ⟩
    β (i , p) = value (α i) p
-   ε : ∥ J ∥ → is-Directed A β
+   ε : ∥ J ∥
+     → is-Directed A β
    ε = freely-add-⊥.family-in-dcpo-is-directed A α δ
    m-mono = monotone-if-continuous A B m
    ub : (i : I) → 𝓛map m (α i) ⊑⟨ 𝓛ᵈ B ⟩ 𝓛map m (∐ (𝓛ᵈ A) {I} {α} δ)
    ub i = (λ p → ∣ i , p ∣) , (λ p → m-mono (value (α i) p) (∐ A (ε ∣ i , p ∣)) (∐-is-upperbound A (ε ∣ i , p ∣) (i , p)))
-   lub : (l : ⟨ 𝓛ᵈ B ⟩) → ((i : I) → 𝓛map m (α i) ⊑⟨ 𝓛ᵈ B ⟩ l)
-       → 𝓛map m (∐ (𝓛ᵈ A) {I} {α} δ) ⊑⟨ 𝓛ᵈ B ⟩ l
+   lub : (l : ⟨ 𝓛ᵈ B ⟩)
+     → ((i : I) → 𝓛map m (α i) ⊑⟨ 𝓛ᵈ B ⟩ l)
+     → 𝓛map m (∐ (𝓛ᵈ A) {I} {α} δ) ⊑⟨ 𝓛ᵈ B ⟩ l
    lub l u = g , r
     where
-     g : ∥ J ∥ → is-defined l
+     g : ∥ J ∥
+       → is-defined l
      g = ∥∥-rec (being-defined-is-prop l) (λ (i , p) → pr₁ (u i) p)
-     r : (q : ∥ J ∥) → m · ∐ A (ε q) ⊑⟨ B ⟩ value l (g q)
+     r : (q : ∥ J ∥)
+       → m · ∐ A (ε q) ⊑⟨ B ⟩ value l (g q)
      r q = sup-is-lowerbound-of-upperbounds (underlying-order B) (pr₂ m _ β (ε q))
             (value l (g q))
             (λ (i , p) → transitivity B (m · value (α i) p) _ _ (pr₂ (u i) p)
@@ -89,8 +93,9 @@ module _ (A B : DCPO₁) where
    ε p = pointwise-directed A B α δ (φ p)
    ub : (j : I) → 𝓛map (α j) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ 𝓛map (∐ (A ⟹₁ B) {I} {α} δ) (P , φ , i)
    ub j = id , (λ p → ∐-is-upperbound B (ε p) j)
-   lub : (l : ⟨ 𝓛ᵈ B ⟩) → ((j : I) → 𝓛map (α j) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ l)
-       → 𝓛map (∐ (A ⟹₁ B) {I} {α} δ) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ l
+   lub : (l : ⟨ 𝓛ᵈ B ⟩)
+     → ((j : I) → 𝓛map (α j) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ l)
+     → 𝓛map (∐ (A ⟹₁ B) {I} {α} δ) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ l
    lub l u = g , r
     where
      g : P → is-defined l

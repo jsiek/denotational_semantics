@@ -14,12 +14,20 @@ open import Framework.abt.AbstractBindingTree Op sig
   renaming (ABT to AST)
 open import Framework.Syntax.Uses Op sig public
 
-<-∸1 : ∀ {x b} → suc x < b → x < b ∸ 1
+<-∸1 : ∀ {x b}
+  → suc x < b
+  → x < b ∸ 1
 <-∸1 {x} {suc b} sx<sb = ≤-pred sx<sb
 
-uses-bound : ∀ x (M : AST) → Uses x M → x < bound M
-uses-bound-arg : ∀ {b} x (a : Arg b) → UsesArg x a → x < bound-arg a
-uses-bound-args : ∀ {bs} x (args : Args bs) → UsesArgs x args → x < bound-args args
+uses-bound : ∀ x (M : AST)
+  → Uses x M
+  → x < bound M
+uses-bound-arg : ∀ {b} x (a : Arg b)
+  → UsesArg x a
+  → x < bound-arg a
+uses-bound-args : ∀ {bs} x (args : Args bs)
+  → UsesArgs x args
+  → x < bound-args args
 
 uses-bound x (` .x) refl = n<1+n x
 uses-bound x (op ⦅ args ⦆) u = uses-bound-args x args u

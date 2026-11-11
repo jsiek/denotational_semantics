@@ -45,13 +45,19 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; con
 open import proof.Framework.GraphModel.TypedOkBase public
 
 {- a bind into a body -}
-let-ok : ∀ {E N} → Ok E → Ok N → Ok (λ ρ → E ρ ≫= λ X → N (X • ρ))
+let-ok : ∀ {E N}
+  → Ok E
+  → Ok N
+  → Ok (λ ρ → E ρ ≫= λ X → N (X • ρ))
 let-ok {E} {N} ⟨ mE , ⟨ kE , cE ⟩ ⟩ ⟨ mN , ⟨ kN , cN ⟩ ⟩ =
   ⟨ (λ ρ⊆ → ≫=-mono (mE ρ⊆) (λ X⊆ → mN (•-~ _⊆_ ρ⊆ X⊆)))
   , ⟨ (λ NE → ≫=-cont′ mE (kE NE) (λ ρ⊆ X⊆ → mN (•-~ _⊆_ ρ⊆ X⊆)) (body NE))
     , (λ ρ~ → ≫=-consis (cE ρ~) (λ X~ → cN (•-~ (Every _~_) ρ~ X~))) ⟩ ⟩
   where
-  body : ∀ {ρ} → nonempty-env ρ → Conv (E ρ) → Cont (λ ρ → N (⌊ E ρ ⌋ • ρ)) ρ
+  body : ∀ {ρ}
+    → nonempty-env ρ
+    → Conv (E ρ)
+    → Cont (λ ρ → N (⌊ E ρ ⌋ • ρ)) ρ
   body NE cv w w∈ with kN (extend-nonempty-env NE cv) w w∈
   ... | ⟨ ρ′ , ⟨ f , ⟨ s , w∈′ ⟩ ⟩ ⟩
       with many (λ ρ → ⌊ E ρ ⌋) NE (λ ρ⊆ → ⌊⌋-mono (mE ρ⊆)) (⌊⌋-cont (kE NE)) (proj₁ (f 0))
@@ -79,12 +85,18 @@ module _ (H : 𝒫 Value → Set) (H-mono : ∀ {X X'} → X ⊆ X' → H X → 
     (λ { _ _ ⟨ lift X~ , _ ⟩ → lift (con X~) })
     (λ { _ NE ⟨ ⟨ m , c ⟩ , _ ⟩ → cnt NE m c })
     where
-    con : ∀ {X X'} → Every _~_ X X' → Every _~_ (checkedᵠ φ k X (Keep φ k X)) (checkedᵠ φ k X' (Keep φ k X'))
+    con : ∀ {X X'}
+      → Every _~_ X X'
+      → Every _~_ (checkedᵠ φ k X (Keep φ k X)) (checkedᵠ φ k X' (Keep φ k X'))
     con X~ u w (inj₁ ⟨ refl , _ ⟩) (inj₁ ⟨ refl , _ ⟩) = tt
     con X~ u w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) (inj₂ ⟨ w∈ , ⟨ _ , wk ⟩ ⟩) = ⊥-elim (ek (trans (cong φ (~-kind e w (X~ e w e∈ w∈))) wk))
     con X~ u w (inj₂ ⟨ u∈ , ⟨ _ , uk ⟩ ⟩) (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) = ⊥-elim (ek (trans (cong φ (sym (~-kind u e (X~ u e u∈ e∈)))) uk))
     con X~ u w (inj₂ ⟨ u∈ , _ ⟩) (inj₂ ⟨ w∈ , _ ⟩) = X~ u w u∈ w∈
-    cnt : ∀ {X : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ → Mono X → Cont X ρ → Cont (λ ρ → checkedᵠ φ k (X ρ) (Keep φ k (X ρ))) ρ
+    cnt : ∀ {X : VEnv → 𝒫 Value} {ρ}
+      → nonempty-env ρ
+      → Mono X
+      → Cont X ρ
+      → Cont (λ ρ → checkedᵠ φ k (X ρ) (Keep φ k (X ρ))) ρ
     cnt {X} NE m c w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) with one X c e∈
     ... | ⟨ a , e∈′ ⟩ = done (λ ρ → checkedᵠ φ k (X ρ) (Keep φ k (X ρ))) a ω (inj₁ ⟨ refl , ⟨ e , ⟨ e∈′ , ek ⟩ ⟩ ⟩)
     cnt {X} NE m c w (inj₂ ⟨ w∈ , ⟨ h , wk ⟩ ⟩) with one X c w∈ | H-fin NE c h
@@ -94,15 +106,21 @@ module _ (H : 𝒫 Value → Set) (H-mono : ∀ {X X'} → X ⊆ X' → H X → 
 {- Environments reindexed: the head kept, the next position dropped (skip),
    or none (η) -}
 
-Ok-η : ∀ {E} → Ok E → Ok (λ ρ → E (ρ 0 • λ i → ρ (suc i)))
+Ok-η : ∀ {E}
+  → Ok E
+  → Ok (λ ρ → E (ρ 0 • λ i → ρ (suc i)))
 Ok-η {E} o = Ok-≃ (λ ρ → ⟨ proj₁ o (λ { zero _ z → z ; (suc i) _ z → z }) , proj₁ o (λ { zero _ z → z ; (suc i) _ z → z }) ⟩) o
 
-Ok-skip : ∀ {E} → Ok E → Ok (λ ρ → E (ρ 0 • λ i → ρ (suc (suc i))))
+Ok-skip : ∀ {E}
+  → Ok E
+  → Ok (λ ρ → E (ρ 0 • λ i → ρ (suc (suc i))))
 Ok-skip ⟨ m , ⟨ k , c ⟩ ⟩ =
   ⟨ (λ ρ⊆ → m λ { zero → ρ⊆ 0 ; (suc i) → ρ⊆ (suc (suc i)) })
   , ⟨ cnt , (λ ρ~ → c λ { zero → ρ~ 0 ; (suc i) → ρ~ (suc (suc i)) }) ⟩ ⟩
   where
-  cnt : ∀ {ρ} → nonempty-env ρ → Cont (λ ρ → _) ρ
+  cnt : ∀ {ρ}
+    → nonempty-env ρ
+    → Cont (λ ρ → _) ρ
   cnt {ρ} NE w w∈ with k (λ { zero → NE 0 ; (suc i) → NE (suc (suc i)) }) w w∈
   ... | ⟨ ρ′ , ⟨ f , ⟨ s , w∈′ ⟩ ⟩ ⟩ =
     ⟨ ρ″ , ⟨ (λ { zero → f 0 ; (suc zero) → fin1 ; (suc (suc i)) → f (suc i) })

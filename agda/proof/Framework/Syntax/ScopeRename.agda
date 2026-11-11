@@ -20,13 +20,23 @@ open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args) publ
 Fits : ℕ → ℕ → (Var → Var) → Set
 Fits k k' r = ∀ x → x < k → r x < k'
 
-fits-ext : ∀ {k k' r} → Fits k k' r → Fits (suc k) (suc k') (ext r)
+fits-ext : ∀ {k k' r}
+  → Fits k k' r
+  → Fits (suc k) (suc k') (ext r)
 fits-ext h zero _ = s≤s z≤n
 fits-ext h (suc x) (s≤s x<) = s≤s (h x x<)
 
-ws-rename : ∀ {k k'} r M → Fits k k' r → WS k M → WS k' (rename r M)
-ws-rename-arg : ∀ {k k' b} r (a : Arg b) → Fits k k' r → WS-arg k a → WS-arg k' (rename-arg r a)
-ws-rename-args : ∀ {k k' bs} r (args : Args bs) → Fits k k' r → WS-args k args
+ws-rename : ∀ {k k'} r M
+  → Fits k k' r
+  → WS k M
+  → WS k' (rename r M)
+ws-rename-arg : ∀ {k k' b} r (a : Arg b)
+  → Fits k k' r
+  → WS-arg k a
+  → WS-arg k' (rename-arg r a)
+ws-rename-args : ∀ {k k' bs} r (args : Args bs)
+  → Fits k k' r
+  → WS-args k args
   → WS-args k' (rename-args r args)
 
 ws-rename r (` x) h w = h x w
@@ -39,5 +49,7 @@ ws-rename-arg r (clear a) h w = w
 ws-rename-args r nil h w = tt
 ws-rename-args r (cons a args) h (w , ws) = ws-rename-arg r a h w , ws-rename-args r args h ws
 
-ws-shift : ∀ {k} M → WS k M → WS (suc k) (shift M)
+ws-shift : ∀ {k} M
+  → WS k M
+  → WS (suc k) (shift M)
 ws-shift M = ws-rename suc M (λ x x< → s≤s x<)

@@ -23,7 +23,8 @@ module proof.Framework.GraphModel.DomainUtil where
 open import proof.Framework.GraphModel.DomainUtilBase public
 
 {- finitely many elements of L whose cdrs cover the list FV -}
-cdr-witness : ∀ {L} FV → mem FV ⊆ cdr ⟨ L , ptt ⟩
+cdr-witness : ∀ {L} FV
+  → mem FV ⊆ cdr ⟨ L , ptt ⟩
   → Σ[ P ∈ List Value ] mem P ⊆ L × mem FV ⊆ cdr ⟨ mem P , ptt ⟩
 cdr-witness [] _ = ⟨ [] , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩
 cdr-witness (fv ∷ FV) FV⊆ with FV⊆ fv (here refl) | cdr-witness FV (λ d d∈ → FV⊆ d (there d∈))
@@ -37,6 +38,8 @@ cdr-witness (fv ∷ FV) FV⊆ with FV⊆ fv (here refl) | cdr-witness FV (λ d d
   FV⊆′ d (there d∈) = let ⟨ u′ , i ⟩ = FV⊆P d d∈ in ⟨ u′ , there i ⟩
 
 {- the empty tuple has only the observation ⟨⟩, whatever its operands -}
-𝒯0-flat : ∀ {Ds Es} v → v ∈ 𝒯 0 Ds → v ∈ 𝒯 0 Es × Flat v
+𝒯0-flat : ∀ {Ds Es} v
+  → v ∈ 𝒯 0 Ds
+  → v ∈ 𝒯 0 Es × Flat v
 𝒯0-flat ⟨⟩ tt = ⟨ tt , flat-⟨⟩ ⟩
 

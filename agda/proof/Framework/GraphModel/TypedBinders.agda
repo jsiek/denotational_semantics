@@ -40,19 +40,27 @@ open import Level using (lift; lower)
 
 {- n binds ------------------------------------------------------------------------}
 
-⌊⌋-≃ : ∀ {D D'} → D ≃ D' → ⌊ D ⌋ ≃ ⌊ D' ⌋
+⌊⌋-≃ : ∀ {D D'}
+  → D ≃ D'
+  → ⌊ D ⌋ ≃ ⌊ D' ⌋
 ⌊⌋-≃ D≃ = ⟨ ⌊⌋-mono (proj₁ D≃) , ⌊⌋-mono (proj₂ D≃) ⟩
 
 {- of sets of values: the continuation, on sets equal to them -}
-binds-val-≃ : ∀ n {Ds K A} → AllVal n Ds → (∀ {Xs} → (∀ i → nthD Xs i ≃ nthD Ds i) → K Xs ≃ A) → binds n Ds K ≃ A
+binds-val-≃ : ∀ n {Ds K A}
+  → AllVal n Ds
+  → (∀ {Xs} → (∀ i → nthD Xs i ≃ nthD Ds i) → K Xs ≃ A)
+  → binds n Ds K ≃ A
 binds-val-≃ zero _ h = h (λ ())
 binds-val-≃ (suc n) {⟨ D , Ds ⟩} {K} vs h =
   ≃-trans (≫=-val-β {F = λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)} (vs zero))
     (binds-val-≃ n (λ i → vs (suc i)) λ r → h λ { zero → ⟨ ⌊⌋-⊆ , ⌊⌋-clean (proj₁ (vs zero)) ⟩ ; (suc i) → r i })
 
 {- of equal operands, into continuations equal on equal values -}
-binds-≃₂ : ∀ n {Ds Es K K'} → (∀ i → nthD Ds i ≃ nthD Es i)
-  → (∀ {Xs Ys} → (∀ i → nthD Xs i ≃ nthD Ys i × Val (nthD Ys i) × nthD Ys i ⊆ nthD Es i) → K Xs ≃ K' Ys)
+binds-≃₂ : ∀ n {Ds Es K K'}
+  → (∀ i → nthD Ds i ≃ nthD Es i)
+  → (  ∀ {Xs Ys}
+     → (∀ i → nthD Xs i ≃ nthD Ys i × Val (nthD Ys i) × nthD Ys i ⊆ nthD Es i)
+     → K Xs ≃ K' Ys)
   → binds n Ds K ≃ binds n Es K'
 binds-≃₂ zero _ h = h (λ ())
 binds-≃₂ (suc n) {⟨ D , Ds ⟩} {⟨ E , Es ⟩} {K} {K'} eq h =
@@ -61,12 +69,20 @@ binds-≃₂ (suc n) {⟨ D , Ds ⟩} {⟨ E , Es ⟩} {K} {K'} eq h =
 
 {- Code -------------------------------------------------------------------------}
 
-code-ok : ∀ {E} → Ok E → Ok (λ _ → ΛΛᵐ ⟨ (λ X Y → E (Y • X • λ _ → ⌈ ω ⌉)) , ptt ⟩)
+code-ok : ∀ {E}
+  → Ok E
+  → Ok (λ _ → ΛΛᵐ ⟨ (λ X Y → E (Y • X • λ _ → ⌈ ω ⌉)) , ptt ⟩)
 code-ok o = const-ok (ΛΛᵐ-con λ X X' Y Y' X~ Y~ → proj₂ (proj₂ o) (•-~ (Every _~_) (•-~ (Every _~_) (λ _ → Con-⌈⌉ ω) X~) Y~))
 
 {- code applied to its environment T, when the body uses a finite part of T -}
-ΛΛᵐ-⋆ : ∀ {F T} → Con T → Val T → (∀ {X X' Y} → X ⊆ X' → F X Y ⊆ F X' Y)
-  → (∀ U w → U ≢ [] → w ∈ F T (mem U) → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ T × w ∈ F (mem V) (mem U))
+ΛΛᵐ-⋆ : ∀ {F T}
+  → Con T
+  → Val T
+  → (∀ {X X' Y} → X ⊆ X' → F X Y ⊆ F X' Y)
+  → (  ∀ U w
+     → U ≢ []
+     → w ∈ F T (mem U)
+     → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ T × w ∈ F (mem V) (mem U))
   → ⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ T , ptt ⟩ ⟩ ≃ Λᵐ ⟨ F T , ptt ⟩
 ΛΛᵐ-⋆ {F} {T} cT ⟨ clT , ⟨ t , t∈ ⟩ ⟩ m fin = ⟨ H , G ⟩
   where
@@ -82,9 +98,15 @@ code-ok o = const-ok (ΛΛᵐ-con λ X X' Y Y' X~ Y~ → proj₂ (proj₂ o) (�
   H (U ↦ x) ⟨ V , ⟨ ⟨ ⟨ ⟨ x∈ , r ⟩ , _ ⟩ , ⟨ _ , nU ⟩ ⟩ , ⟨ V⊆T , _ ⟩ ⟩ ⟩ = ⟨ ⟨ m V⊆T x x∈ , r ⟩ , nU ⟩
 
 {- code, applied to sets of values T and E, contains its body on them -}
-ΛΛᵐ-call : ∀ {F T E} → Con T → Con E → Clean T → Clean E
-  → (∀ w → w ∈ F T E → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ]
-       V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ E × w ∈ F (mem V) (mem U))
+ΛΛᵐ-call : ∀ {F T E}
+  → Con T
+  → Con E
+  → Clean T
+  → Clean E
+  → (  ∀ w
+     → w ∈ F T E
+     → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ]
+         V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ E × w ∈ F (mem V) (mem U))
   → F T E ⊆ ⋆ ⟨ ⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ T , ptt ⟩ ⟩ , ⟨ E , ptt ⟩ ⟩
 ΛΛᵐ-call {F} cT cE clT clE fin w w∈ with ΛΛ-β {F} cT cE fin w w∈
 ... | ⟨ U , ⟨ ⟨ V , ⟨ e∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =

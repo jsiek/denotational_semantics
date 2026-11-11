@@ -19,7 +19,10 @@ Every : ∀ {A : Set} (R : A → A → Set) → 𝒫 A → 𝒫 A → Set
 Every R A B = ∀ a b → a ∈ A → b ∈ B → R a b
 
 Every-⊆ : ∀ {T R A B U V}
-     → Every {T} R A B → U ⊆ A → V ⊆ B → Every R U V
+  → Every {T} R A B
+  → U ⊆ A
+  → V ⊆ B
+  → Every R U V
 Every-⊆ A~B U⊆A V⊆B a b a∈U b∈V = A~B a b (U⊆A a a∈U) (V⊆B b b∈V)
 
 consistent : ∀ {A : Set} (consistent : A → A → Set) bs b → DFun (𝒫 A) bs b → Set₁

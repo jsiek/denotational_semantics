@@ -63,14 +63,20 @@ unroll-ε∞ k x =
   ub : (n : ℕ) → uf n ⊑⟨ L ⟩ c
   ub n = transport (λ - → uf n ⊑⟨ L ⟩ -) (const-from n)
            (𝔻-solution.unfold-family-is-monotone σ n (n + succ k) (≤+ n (succ k)))
-  lub : (u : ⟨ L ⟩) → ((n : ℕ) → uf n ⊑⟨ L ⟩ u) → c ⊑⟨ L ⟩ u
+  lub : (u : ⟨ L ⟩)
+    → ((n : ℕ) → uf n ⊑⟨ L ⟩ u)
+    → c ⊑⟨ L ⟩ u
   lub u h = transport (λ - → - ⊑⟨ L ⟩ u) (const-from 0) (h (succ k))
 
 {- definedness of embedded stage elements -}
-defined-ε∞ : (k : ℕ) (x : ⟨ 𝓓 (succ k) ⟩) → is-defined x → defined (ε∞ (succ k) · x)
+defined-ε∞ : (k : ℕ) (x : ⟨ 𝓓 (succ k) ⟩)
+  → is-defined x
+  → defined (ε∞ (succ k) · x)
 defined-ε∞ k x p = transport is-defined (unroll-ε∞ k x ⁻¹) p
 
-ε∞-defined : (k : ℕ) (x : ⟨ 𝓓 (succ k) ⟩) → defined (ε∞ (succ k) · x) → is-defined x
+ε∞-defined : (k : ℕ) (x : ⟨ 𝓓 (succ k) ⟩)
+  → defined (ε∞ (succ k) · x)
+  → is-defined x
 ε∞-defined k x p = transport is-defined (unroll-ε∞ k x) p
 
 ε∞-zero : (x : ⟨ 𝓓 0 ⟩) → ε∞ 0 · x ＝ ⊥𝔻
@@ -83,7 +89,9 @@ eᶜ k = ∘₁ 𝔻 (𝓓 k) 𝔻 (π∞ k) (ε∞ k)
 e-⊥ : (k : ℕ) → e k ⊥𝔻 ＝ ⊥𝔻
 e-⊥ k = undefined-⊥ (e k ⊥𝔻) (λ p → ⊥-undefined (defined-mono (e k ⊥𝔻) ⊥𝔻 (e-below k ⊥𝔻) p))
 
-e-defined : (k : ℕ) (d : ⟨ 𝔻 ⟩) → defined d → defined (e (succ k) d)
+e-defined : (k : ℕ) (d : ⟨ 𝔻 ⟩)
+  → defined d
+  → defined (e (succ k) d)
 e-defined k d q = defined-ε∞ k (π∞ (succ k) · d) (defined-π∞ k d q)
 
 e-ε∞ : (k : ℕ) (x : ⟨ 𝓓 k ⟩) → e k (ε∞ k · x) ＝ ε∞ k · x
@@ -98,10 +106,15 @@ e-idem k d = e-ε∞ k (π∞ k · d)
                    (monotone-if-continuous (𝓓 (succ n)) 𝔻 (ε∞ (succ n)) (ε n (π n x)) x (𝔻-solution.επ-deflation n x))
 
 {- seq d e depends only on whether d is defined -}
-seq-iff : (d d' e : ⟨ 𝔻 ⟩) → (defined d → defined d') → (defined d' → defined d) → seq · d · e ＝ seq · d' · e
+seq-iff : (d d' e : ⟨ 𝔻 ⟩)
+  → (defined d → defined d')
+  → (defined d' → defined d)
+  → seq · d · e ＝ seq · d' · e
 seq-iff d d' e f g = antisymmetry 𝔻 (seq · d · e) (seq · d' · e) (below d d' f) (below d' d g)
  where
-  below : (a b : ⟨ 𝔻 ⟩) → (defined a → defined b) → seq · a · e ⊑⟨ 𝔻 ⟩ seq · b · e
+  below : (a b : ⟨ 𝔻 ⟩)
+    → (defined a → defined b)
+    → seq · a · e ⊑⟨ 𝔻 ⟩ seq · b · e
   below a b h = ∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ _ → e) (defined-is-prop a) (seq · b · e)
                   (λ p → ＝-to-⊒ 𝔻 (seq-defined b e (h p)))
 
@@ -191,13 +204,17 @@ opaque
  callᶜ-is m v cd = refl
 
 callₛ-mono : (m : ℕ) (cd cd' : Fin 2 → ⟨ 𝓓 (succ (succ m)) ⟩) (v : ⟨ 𝓓 m ⟩)
-  → ((i : Fin 2) → cd i ⊑⟨ 𝓓 (succ (succ m)) ⟩ cd' i) → callₛ m cd v ⊑⟨ 𝓓 m ⟩ callₛ m cd' v
+  → ((i : Fin 2) → cd i ⊑⟨ 𝓓 (succ (succ m)) ⟩ cd' i)
+  → callₛ m cd v ⊑⟨ 𝓓 m ⟩ callₛ m cd' v
 callₛ-mono m cd cd' v le =
   transport₂ (λ a b → a ⊑⟨ 𝓓 m ⟩ b) (callᶜ-is m v cd) (callᶜ-is m v cd')
     (monotone-if-continuous (Pow (Fin 2) (𝓓 (succ (succ m)))) (𝓓 m) (callᶜ m v) cd cd' le)
 
 {- application is monotone -}
-app-mono : (f f' a a' : ⟨ 𝔻 ⟩) → f ⊑⟨ 𝔻 ⟩ f' → a ⊑⟨ 𝔻 ⟩ a' → app · f · a ⊑⟨ 𝔻 ⟩ app · f' · a'
+app-mono : (f f' a a' : ⟨ 𝔻 ⟩)
+  → f ⊑⟨ 𝔻 ⟩ f'
+  → a ⊑⟨ 𝔻 ⟩ a'
+  → app · f · a ⊑⟨ 𝔻 ⟩ app · f' · a'
 app-mono f f' a a' u w = transitivity 𝔻 _ _ _
   (monotone-if-continuous 𝔻 (𝔻 ⟹₁ 𝔻) app f f' u a)
   (monotone-if-continuous 𝔻 𝔻 (app · f') a a' w)

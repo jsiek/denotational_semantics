@@ -32,14 +32,21 @@ module _ {L₁ L₂ : Machine} (R : State L₁ → State L₂ → Set) where
     R' : State L₁ → State L₂ → Set
     R' s₁ s₂ = R s₁ s₂ ⊎ Σ[ o ∈ Obs ] Final L₁ s₁ o × Final L₂ s₂ o
 
-    fin : ∀ {i o s₂ t} → Star L₂ s₂ t → Final L₂ t o → Answers≺ L₂ (Lag L₁ R') i (stop o) s₂
+    fin : ∀ {i o s₂ t}
+      → Star L₂ s₂ t
+      → Final L₂ t o
+      → Answers≺ L₂ (Lag L₁ R') i (stop o) s₂
     fin ε f = stops f
     fin (st ◅ σ) f = runs (plus st σ) f
 
-  both-fsim : R (start L₁) (start L₂) → (∀ {s₁ s₂} → R s₁ s₂ → Both s₁ s₂) → FSim L₁ L₂
+  both-fsim : R (start L₁) (start L₂)
+    → (∀ {s₁ s₂} → R s₁ s₂ → Both s₁ s₂)
+    → FSim L₁ L₂
   both-fsim m₀ sim = lag-fsim (lag-now (inj₁ m₀)) go
     where
-    go : ∀ {i s₁ s₂} → R' s₁ s₂ → Answers≺ L₂ (Lag L₁ R') i (Machine.step L₁ s₁) s₂
+    go : ∀ {i s₁ s₂}
+      → R' s₁ s₂
+      → Answers≺ L₂ (Lag L₁ R') i (Machine.step L₁ s₁) s₂
     go (inj₂ (_ , f₁ , f₂)) = answers-at f₁ (stops f₂)
     go (inj₁ m) with sim m
     ... | halt f₁ σ f₂ = answers-at f₁ (fin σ f₂)
@@ -47,13 +54,20 @@ module _ {L₁ L₂ : Machine} (R : State L₁ → State L₂ → Set) where
     ... | ends (plus st σ) f₁ π f₂ = answers-at st (steps π (proj₂ (lag-star σ (inj₂ (_ , f₁ , f₂)))))
 
   {- the target runs ahead -}
-  pre₂ : ∀ {s₁ s₂ s₂'} → Step L₂ s₂ s₂' → Both s₁ s₂' → Both s₁ s₂
+  pre₂ : ∀ {s₁ s₂ s₂'}
+    → Step L₂ s₂ s₂'
+    → Both s₁ s₂'
+    → Both s₁ s₂
   pre₂ st (halt f₁ σ f₂) = halt f₁ (st ◅ σ) f₂
   pre₂ st (move π₁ π₂ m) = move π₁ (plus st (plus→star π₂)) m
   pre₂ st (ends π₁ f₁ π₂ f₂) = ends π₁ f₁ (plus st (plus→star π₂)) f₂
 
   {- the source runs ahead, while the target can step -}
-  pre₁ : ∀ {s₁ s₁' s₂ s₂'} → Step L₁ s₁ s₁' → Step L₂ s₂ s₂' → Both s₁' s₂ → Both s₁ s₂
+  pre₁ : ∀ {s₁ s₁' s₂ s₂'}
+    → Step L₁ s₁ s₁'
+    → Step L₂ s₂ s₂'
+    → Both s₁' s₂
+    → Both s₁ s₂
   pre₁ st st₂ (halt f₁ ε f₂) = ⊥-elim (final-nostep {L = L₂} f₂ st₂)
   pre₁ st st₂ (halt f₁ (st' ◅ σ) f₂) = ends (plus st ε) f₁ (plus st' σ) f₂
   pre₁ st st₂ (move π₁ π₂ m) = move (plus st (plus→star π₁)) π₂ m

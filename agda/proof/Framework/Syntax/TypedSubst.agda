@@ -41,7 +41,10 @@ module Traversal (trav : (𝒦 : Kit) → ∀ {Γ Δ A} → Sub 𝒦 Γ Δ → T
   SubId = ∀ {Γ A} {σ : Sub tmK Γ Γ} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → (M : Tm Γ A) → sub σ M ≡ M
 
   {- what the identity needs under a binder -}
-  sub-id-exts : ∀ {Γ C} {σ : Sub tmK Γ Γ} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → ∀ {B} (x : (C ∷ Γ) ∋ B) → exts tmK σ x ≡ ` x
+  sub-id-exts : ∀ {Γ C} {σ : Sub tmK Γ Γ}
+    → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x)
+    → ∀ {B} (x : (C ∷ Γ) ∋ B)
+    → exts tmK σ x ≡ ` x
   sub-id-exts h Z = refl
   sub-id-exts h (S x) = trans (cong (ren S) (h x)) (trav-var varK S x)
 
@@ -56,15 +59,19 @@ module Traversal (trav : (𝒦 : Kit) → ∀ {Γ Δ A} → Sub 𝒦 Γ Δ → T
   module Lemmas (fuse : Fuse) (sub-id : SubId) where
 
     {- a renaming, then a traversal -}
-    ren-trav : ∀ 𝒦 {Γ Δ Θ} {r : ∀ {B} → Γ ∋ B → Δ ∋ B} {σ : Sub 𝒦 Δ Θ} {τ : Sub 𝒦 Γ Θ} → (∀ {B} (x : Γ ∋ B) → σ (r x) ≡ τ x)
-      → ∀ {A} (M : Tm Γ A) → trav 𝒦 σ (ren r M) ≡ trav 𝒦 τ M
+    ren-trav : ∀ 𝒦 {Γ Δ Θ} {r : ∀ {B} → Γ ∋ B → Δ ∋ B} {σ : Sub 𝒦 Δ Θ} {τ : Sub 𝒦 Γ Θ}
+      → (∀ {B} (x : Γ ∋ B) → σ (r x) ≡ τ x)
+      → ∀ {A} (M : Tm Γ A)
+      → trav 𝒦 σ (ren r M) ≡ trav 𝒦 τ M
     ren-trav 𝒦 = fuse varK 𝒦 𝒦 (λ r σ τ → ∀ {B} (x : _ ∋ B) → σ (r x) ≡ τ x)
       (λ { h Z → refl ; h (S x) → cong (Kit.wk 𝒦) (h x) })
       (λ { {σ₁ = r} {σ} h x → trans (trav-var 𝒦 σ (r x)) (cong (Kit.tm 𝒦) (h x)) })
 
     {- a substitution, then a renaming -}
     sub-ren : ∀ {Γ Δ Θ} {σ : Sub tmK Γ Δ} {r : ∀ {B} → Δ ∋ B → Θ ∋ B} {τ : Sub tmK Γ Θ}
-      → (∀ {B} (x : Γ ∋ B) → ren r (σ x) ≡ τ x) → ∀ {A} (M : Tm Γ A) → ren r (sub σ M) ≡ sub τ M
+      → (∀ {B} (x : Γ ∋ B) → ren r (σ x) ≡ τ x)
+      → ∀ {A} (M : Tm Γ A)
+      → ren r (sub σ M) ≡ sub τ M
     sub-ren = fuse tmK varK tmK (λ σ r τ → ∀ {B} (x : _ ∋ B) → ren r (σ x) ≡ τ x)
       (λ { {σ₂ = r} h Z → trav-var varK (exts varK r) Z
          ; {σ₁ = σ} h (S x) → trans (ren-trav varK (λ _ → refl) (σ x))
@@ -80,8 +87,12 @@ module Traversal (trav : (𝒦 : Kit) → ∀ {Γ Δ A} → Sub 𝒦 Γ Δ → T
                  ; exts-ren = λ τ M → trans (ren-trav tmK (λ _ → refl) M) (sym (sub-ren (λ _ → refl) M)) }
 
     {- a substitution, then a traversal -}
-    trav-sub : ∀ {𝒦} → Laws 𝒦 → ∀ {Γ Δ Θ} {σ : Sub tmK Γ Δ} {τ : Sub 𝒦 Δ Θ} {ρ : Sub tmK Γ Θ}
-      → (∀ {B} (x : Γ ∋ B) → trav 𝒦 τ (σ x) ≡ ρ x) → ∀ {A} (M : Tm Γ A) → trav 𝒦 τ (sub σ M) ≡ sub ρ M
+    trav-sub : ∀ {𝒦}
+      → Laws 𝒦
+      → ∀ {Γ Δ Θ} {σ : Sub tmK Γ Δ} {τ : Sub 𝒦 Δ Θ} {ρ : Sub tmK Γ Θ}
+      → (∀ {B} (x : Γ ∋ B) → trav 𝒦 τ (σ x) ≡ ρ x)
+      → ∀ {A} (M : Tm Γ A)
+      → trav 𝒦 τ (sub σ M) ≡ sub ρ M
     trav-sub {𝒦} L = fuse tmK 𝒦 tmK (λ σ τ ρ → ∀ {B} (x : _ ∋ B) → trav 𝒦 τ (σ x) ≡ ρ x)
       (λ { {σ₂ = τ} h Z → trans (trav-var 𝒦 (exts 𝒦 τ) Z) (Laws.tm-vr L Z)
          ; {σ₁ = σ} {τ} h (S x) → trans (Laws.exts-ren L τ (σ x)) (cong (ren S) (h x)) })
@@ -89,7 +100,9 @@ module Traversal (trav : (𝒦 : Kit) → ∀ {Γ Δ A} → Sub 𝒦 Γ Δ → T
 
     {- a substitution, then another -}
     sub-sub : ∀ {Γ Δ Θ} {σ : Sub tmK Γ Δ} {τ : Sub tmK Δ Θ} {ρ : Sub tmK Γ Θ}
-      → (∀ {B} (x : Γ ∋ B) → sub τ (σ x) ≡ ρ x) → ∀ {A} (M : Tm Γ A) → sub τ (sub σ M) ≡ sub ρ M
+      → (∀ {B} (x : Γ ∋ B) → sub τ (σ x) ≡ ρ x)
+      → ∀ {A} (M : Tm Γ A)
+      → sub τ (sub σ M) ≡ sub ρ M
     sub-sub = trav-sub tmL
 
     {- a closed term, weakened and then substituted -}

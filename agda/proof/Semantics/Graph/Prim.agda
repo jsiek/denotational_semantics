@@ -48,6 +48,8 @@ primD-cont p ⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩ NE ⟨ ⟨ m₁ , c₁ ⟩ , ⟨ �
 primD-good : ∀ {P} p → Good P (■ ∷ ■ ∷ []) (primD p)
 primD-good p = mk-good (primD-mono p) (primD-consis p) (primD-cont p)
 
-primD-≃ : ∀ p {D D' E E'} → D ≃ D' → E ≃ E'
+primD-≃ : ∀ p {D D' E E'}
+  → D ≃ D'
+  → E ≃ E'
   → primD p ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩
 primD-≃ p D≃ E≃ = mono-≃ (primD-mono p) ⟨ lift D≃ , ⟨ lift E≃ , ptt ⟩ ⟩

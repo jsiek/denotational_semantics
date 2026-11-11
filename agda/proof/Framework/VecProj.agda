@@ -23,22 +23,30 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; con
 
 module _ {A B : Set} {R : A → B → Set} where
 
-  len-ok : ∀ {n xs} {ws : Vec B n} → Pointwise R xs (toList ws) → has-length n xs ≡ true
+  len-ok : ∀ {n xs} {ws : Vec B n}
+    → Pointwise R xs (toList ws)
+    → has-length n xs ≡ true
   len-ok {ws = []} [] = refl
   len-ok {ws = _ ∷ _} (_ ∷ rs) = len-ok rs
 
-  len-bad : ∀ {m n xs} {ws : Vec B m} → m ≢ n → Pointwise R xs (toList ws) → has-length n xs ≡ false
+  len-bad : ∀ {m n xs} {ws : Vec B m}
+    → m ≢ n
+    → Pointwise R xs (toList ws)
+    → has-length n xs ≡ false
   len-bad {n = zero} {ws = []} ne [] with () ← ne refl
   len-bad {n = suc n} {ws = []} ne [] = refl
   len-bad {n = zero} {ws = _ ∷ _} ne (_ ∷ rs) = refl
   len-bad {n = suc n} {ws = _ ∷ _} ne (_ ∷ rs) = len-bad (λ e → ne (cong suc e)) rs
 
-  proj-pw : ∀ {n} (i : Fin n) {xs} {ws : Vec B n} → Pointwise R xs (toList ws)
+  proj-pw : ∀ {n} (i : Fin n) {xs} {ws : Vec B n}
+    → Pointwise R xs (toList ws)
     → M.Pointwise R (proj i xs) (just (lookup ws i))
   proj-pw zero {ws = _ ∷ _} (r ∷ rs) rewrite len-ok rs = M.just r
   proj-pw (suc i) {ws = _ ∷ _} (r ∷ rs) = proj-pw i rs
 
-  proj-bad : ∀ {m n} (i : Fin n) {xs} {ws : Vec B m} → m ≢ n → Pointwise R xs (toList ws)
+  proj-bad : ∀ {m n} (i : Fin n) {xs} {ws : Vec B m}
+    → m ≢ n
+    → Pointwise R xs (toList ws)
     → proj i xs ≡ nothing
   proj-bad zero {ws = []} ne [] = refl
   proj-bad zero {ws = _ ∷ _} ne (r ∷ rs) rewrite len-bad (λ e → ne (cong suc e)) rs = refl

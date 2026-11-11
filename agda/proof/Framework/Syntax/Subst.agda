@@ -26,13 +26,24 @@ infix 4 _≗_
 _≗_ : Subst → Subst → Set
 σ ≗ τ = ∀ x → σ x ≡ τ x
 
-exts-cong : ∀ {σ τ} → σ ≗ τ → exts σ ≗ exts τ
+exts-cong : ∀ {σ τ}
+  → σ ≗ τ
+  → exts σ ≗ exts τ
 exts-cong eq zero = refl
 exts-cong eq (suc x) = cong (rename suc) (eq x)
 
-sub-cong : ∀ {σ τ} → σ ≗ τ → ∀ M → sub σ M ≡ sub τ M
-sub-cong-arg : ∀ {σ τ b} → σ ≗ τ → (a : Arg b) → sub-arg σ a ≡ sub-arg τ a
-sub-cong-args : ∀ {σ τ bs} → σ ≗ τ → (as : Args bs) → sub-args σ as ≡ sub-args τ as
+sub-cong : ∀ {σ τ}
+  → σ ≗ τ
+  → ∀ M
+  → sub σ M ≡ sub τ M
+sub-cong-arg : ∀ {σ τ b}
+  → σ ≗ τ
+  → (a : Arg b)
+  → sub-arg σ a ≡ sub-arg τ a
+sub-cong-args : ∀ {σ τ bs}
+  → σ ≗ τ
+  → (as : Args bs)
+  → sub-args σ as ≡ sub-args τ as
 sub-cong eq (` x) = eq x
 sub-cong eq (op ⦅ as ⦆) = cong (op ⦅_⦆) (sub-cong-args eq as)
 sub-cong-arg eq (ast M) = cong ast (sub-cong eq M)
@@ -42,8 +53,14 @@ sub-cong-args eq nil = refl
 sub-cong-args eq (cons a as) = cong₂ cons (sub-cong-arg eq a) (sub-cong-args eq as)
 
 sub-id : ∀ M → sub ids M ≡ M
-sub-id-arg : ∀ {σ b} → σ ≗ ids → (a : Arg b) → sub-arg σ a ≡ a
-sub-id-args : ∀ {σ bs} → σ ≗ ids → (as : Args bs) → sub-args σ as ≡ as
+sub-id-arg : ∀ {σ b}
+  → σ ≗ ids
+  → (a : Arg b)
+  → sub-arg σ a ≡ a
+sub-id-args : ∀ {σ bs}
+  → σ ≗ ids
+  → (as : Args bs)
+  → sub-args σ as ≡ as
 sub-id (` x) = refl
 sub-id (op ⦅ as ⦆) = cong (op ⦅_⦆) (sub-id-args (λ x → refl) as)
 sub-id-arg eq (ast M) = cong ast (trans (sub-cong eq M) (sub-id M))
@@ -54,8 +71,13 @@ sub-id-args eq (cons a as) = cong₂ cons (sub-id-arg eq a) (sub-id-args eq as)
 
 {- renaming is substitution by variables -}
 rename-sub : ∀ r M → rename r M ≡ sub (λ x → ` r x) M
-rename-sub-arg : ∀ r {σ b} → σ ≗ (λ x → ` r x) → (a : Arg b) → rename-arg r a ≡ sub-arg σ a
-rename-sub-args : ∀ r {σ bs} → σ ≗ (λ x → ` r x) → (as : Args bs)
+rename-sub-arg : ∀ r {σ b}
+  → σ ≗ (λ x → ` r x)
+  → (a : Arg b)
+  → rename-arg r a ≡ sub-arg σ a
+rename-sub-args : ∀ r {σ bs}
+  → σ ≗ (λ x → ` r x)
+  → (as : Args bs)
   → rename-args r as ≡ sub-args σ as
 rename-sub r (` x) = refl
 rename-sub r (op ⦅ as ⦆) = cong (op ⦅_⦆) (rename-sub-args r (λ x → refl) as)
@@ -144,7 +166,8 @@ extend-skip {suc n} (cons (ast M) Ms) σ x =
 extend-top : ∀ {n} (Ms : Args (replicate n ■)) M σ → extend Ms (M • σ) n ≡ M
 extend-top {n} Ms M σ = subst (λ y → extend Ms (M • σ) y ≡ M) (+-identityʳ n) (extend-skip Ms (M • σ) 0)
 
-extend-sub : ∀ τ {n} (Ms : Args (replicate n ■)) σ σ' k → k < n
+extend-sub : ∀ τ {n} (Ms : Args (replicate n ■)) σ σ' k
+  → k < n
   → extend (sub-args τ Ms) σ' k ≡ sub τ (extend Ms σ k)
 extend-sub τ {suc n} (cons (ast M) Ms) σ σ' k k< with m≤n⇒m<n∨m≡n (≤-pred k<)
 ... | inj₁ k<n = extend-sub τ Ms (M • σ) (sub τ M • σ') k k<n
@@ -161,7 +184,8 @@ sub-args-list σ {suc n} (cons (ast M) as) = cong (sub σ M ∷_) (sub-args-list
 
 {- substituting a component of a tuple -}
 sub-proj : ∀ σ {n m} (i : Fin n) {as : Args (replicate m ■)} {V}
-  → proj i (args→list as) ≡ just V → proj i (args→list (sub-args σ as)) ≡ just (sub σ V)
+  → proj i (args→list as) ≡ just V
+  → proj i (args→list (sub-args σ as)) ≡ just (sub σ V)
 sub-proj σ i {as} e rewrite sub-args-list σ as | proj-map (sub σ) i (args→list as) | e = refl
 
 {- substituting into the body of a binder, after β -}

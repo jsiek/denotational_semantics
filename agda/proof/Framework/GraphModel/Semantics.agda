@@ -77,11 +77,15 @@ open ContinuousSemantics {{...}}
 
 module _ {A} {{_ : Semantics {A}}} (R : 𝒫 A → 𝒫 A → Set)
     (R-op : opsig-rel-pres R sig interp-op interp-op) (R-init : R init init) where
-  ⟦⟧-pres : ∀ {ρ ρ′} (M : ABT) → ρ ~ₑ[ R ] ρ′ → R (⟦ M ⟧ ρ) (⟦ M ⟧ ρ′)
+  ⟦⟧-pres : ∀ {ρ ρ′} (M : ABT)
+    → ρ ~ₑ[ R ] ρ′
+    → R (⟦ M ⟧ ρ) (⟦ M ⟧ ρ′)
   ⟦⟧-pres-arg : ∀ {b}{ρ ρ′} (arg : Arg b)
-    → ρ ~ₑ[ R ] ρ′ → result-rel-pres R b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
+    → ρ ~ₑ[ R ] ρ′
+    → result-rel-pres R b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
   ⟦⟧-pres-args : ∀ {bs}{ρ ρ′} (args : Args bs)
-    → ρ ~ₑ[ R ] ρ′ → results-rel-pres R bs (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′)
+    → ρ ~ₑ[ R ] ρ′
+    → results-rel-pres R bs (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′)
 
   ⟦⟧-pres (` x) ρR = ρR x
   ⟦⟧-pres {ρ}{ρ′} (op ⦅ args ⦆) ρR = lower (R-op op (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′) (⟦⟧-pres-args args ρR))
@@ -94,23 +98,28 @@ module _ {A} {{_ : Semantics {A}}} (R : 𝒫 A → 𝒫 A → Set)
 {- Monotone -------------------------------------------------------------------}
 
 ⟦⟧-monotone : ∀{A} {{_ : Semantics {A}}} {ρ ρ′} (M : ABT)
-  →  ρ ⊆ₑ ρ′ →  ⟦ M ⟧ ρ ⊆ ⟦ M ⟧ ρ′
+  → ρ ⊆ₑ ρ′
+  → ⟦ M ⟧ ρ ⊆ ⟦ M ⟧ ρ′
 ⟦⟧-monotone = ⟦⟧-pres _⊆_ mono-op (λ d z → z)
 
 ⟦⟧-monotone-arg : ∀{A} {{_ : Semantics {A}}} {b}{ρ ρ′} (arg : Arg b)
-  →  ρ ⊆ₑ ρ′ →  result-rel-pres _⊆_ b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
+  → ρ ⊆ₑ ρ′
+  → result-rel-pres _⊆_ b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
 ⟦⟧-monotone-arg = ⟦⟧-pres-arg _⊆_ mono-op (λ d z → z)
 
 {- Continuous -----------------------------------------------------------------}
 
-⟦⟧-continuous : ∀{A} {{_ : ContinuousSemantics{A}}}{ρ}{NE-ρ : nonempty-env ρ}
-    (M : ABT)
-  → continuous-env ⟦ M ⟧ ρ 
-⟦⟧-cont-env-arg : ∀{A}{{_ : ContinuousSemantics{A}}}
-    {ρ}{NE-ρ : nonempty-env ρ} {b}(arg : Arg b)
-  → continuous-arg ρ NE-ρ b arg 
-⟦⟧-cont-env-args : ∀{A}{{_ : ContinuousSemantics{A}}}
-    {ρ}{NE-ρ : nonempty-env ρ}{bs} (args : Args bs)
+⟦⟧-continuous : ∀{A} {{_ : ContinuousSemantics{A}}}{ρ}
+  → {NE-ρ : nonempty-env ρ}
+  → (M : ABT)
+  → continuous-env ⟦ M ⟧ ρ
+⟦⟧-cont-env-arg : ∀{A}{{_ : ContinuousSemantics{A}}} {ρ}
+  → {NE-ρ : nonempty-env ρ}
+  → ∀ {b}(arg : Arg b)
+  → continuous-arg ρ NE-ρ b arg
+⟦⟧-cont-env-args : ∀{A}{{_ : ContinuousSemantics{A}}} {ρ}
+  → {NE-ρ : nonempty-env ρ}
+  → ∀ {bs} (args : Args bs)
   → continuous-args ρ NE-ρ bs args
 
 ⟦⟧-continuous {A}{ρ}{NE-ρ} (` x) v v∈⟦M⟧ρ =
