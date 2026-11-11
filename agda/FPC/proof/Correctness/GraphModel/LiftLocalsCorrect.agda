@@ -112,7 +112,8 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T)
     → Con-env σ
     → Rel ρ σ φ
     → K⟨ k ⟩ (⟦ ⌜ e ⌝ ⟧[ T ] σ) ≃ ⟦ lift e q ρ ik o ⟧ᴷ T' φ K⟨ k ⟩
-  lift-sem {I = I} (M.atm a) q ρ ik o σ φ k C r = K-≃ k (atm-≃ I ρ ik σ φ r a)
+  lift-sem {I = I} (M.atm a) q ρ ik o σ φ k C r =
+    K-≃ k (atm-≃ I ρ ik σ φ r a)
   lift-sem {I = I} (M.pair a b) q ρ ik o σ φ k C r =
     K-≃ k
     (mono-≃ pair-mono
@@ -125,12 +126,16 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T)
     K-≃ k (𝒯-≃ _ (atms-≃ I ρ ik σ φ r as))
   lift-sem {I = I} (M.get i a) q ρ ik o σ φ k C r =
     K-≃ k (proj-≃ (pos i) (atm-≃ I ρ ik σ φ r a))
-  lift-sem {I = I} (M.inl a) q ρ ik o σ φ k C r = K-≃ k (inl-≃ (atm-≃ I ρ ik σ φ r a))
-  lift-sem {I = I} (M.inr a) q ρ ik o σ φ k C r = K-≃ k (inr-≃ (atm-≃ I ρ ik σ φ r a))
+  lift-sem {I = I} (M.inl a) q ρ ik o σ φ k C r =
+    K-≃ k (inl-≃ (atm-≃ I ρ ik σ φ r a))
+  lift-sem {I = I} (M.inr a) q ρ ik o σ φ k C r =
+    K-≃ k (inr-≃ (atm-≃ I ρ ik σ φ r a))
   lift-sem {I = I} (M.prim p a b) q ρ ik o σ φ k C r =
     K-≃ k (primD-≃ p (atm-≃ I ρ ik σ φ r a) (atm-≃ I ρ ik σ φ r b))
-  lift-sem {I = I} (M.fold a) q ρ ik o σ φ k C r = K-≃ k (atm-≃ I ρ ik σ φ r a)
-  lift-sem {I = I} (M.unfold a) q ρ ik o σ φ k C r = K-≃ k (atm-≃ I ρ ik σ φ r a)
+  lift-sem {I = I} (M.fold a) q ρ ik o σ φ k C r =
+    K-≃ k (atm-≃ I ρ ik σ φ r a)
+  lift-sem {I = I} (M.unfold a) q ρ ik o σ φ k C r =
+    K-≃ k (atm-≃ I ρ ik σ φ r a)
   lift-sem {I = I} (M.let′ e₁ e₂) q ρ ik o σ φ k C r =
     ≃-trans (let-law k (con cT ⌜ e₁ ⌝ C) (body-mono (ok cT ⌜ e₂ ⌝) σ))
       (≃-trans
@@ -165,7 +170,8 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T)
     → code′ T ⌜ d ⌝ ≃ I.code′ T' (lift-body d)
   code-lift {s} d =
     lam-≃ λ X _ cX → lam-≃ λ Y _ cY →
-    lift-sem {I = Imp.initial p} d here⊑ (⊑-∋ p) (Imp.fill-∈ (⊑-∋ p)) (Imp.only-initial p)
+    lift-sem {I = Imp.initial p} d here⊑ (⊑-∋ p) (Imp.fill-∈ (⊑-∋ p))
+      (Imp.only-initial p)
       _ (start p X Y) nothing (Con-• cY (Con-• cX (λ _ → Con-⌈⌉ ⟨⟩)))
       (rel-start p)
     where p = binds-⊒ d (Args s)

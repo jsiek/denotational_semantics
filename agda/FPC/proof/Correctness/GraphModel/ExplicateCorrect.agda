@@ -137,8 +137,9 @@ module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ≃ T' f)
       (λ σ →
         ⋆-≃
           (≃-refl
-            {D = Λ ⟨ (λ X → ⟦ k ⟧ᵗ T' (blocks bs T') (σ [ idx x ≔ X ])) , ptt ⟩})
-              (𝒮-≃ TT s σ)) ⟩
+            {D =
+              Λ ⟨ (λ X → ⟦ k ⟧ᵗ T' (blocks bs T') (σ [ idx x ≔ X ])) , ptt ⟩})
+          (𝒮-≃ TT s σ)) ⟩
   cps {I = I} {J} (I.assign y n e₁ e₂) x p k bs
     with explicate-assign e₂ x (⊆-⊕⊕ {I = I} {J} x y p) k bs
        | cps e₂ x (⊆-⊕⊕ {I = I} {J} x y p) k bs

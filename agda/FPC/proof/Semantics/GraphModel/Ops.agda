@@ -38,7 +38,7 @@ tables-con c {_ ∷ ss} (d ∷ ds) f with lvl f ≟ length ss
 ... | yes _ = c (tables-con c ds) d
 ... | no _ = tables-con c ds f
 
-{- Frames -----------------------------------------------------------------------}
+{- Frames ---------------------------------------------------------------------}
 
 ≔-same : ∀ {σ : Env Value} {X} i
   → (σ [ i ≔ X ]) i ≡ X
