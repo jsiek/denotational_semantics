@@ -17,6 +17,7 @@ open import FPC.Language.X86 using (DSig; sig; called; Program; program; body;
   Body; Blocks; _▷_; Seq; _∷_; retq; jmp; case; movq; subq; cmpq; sete; alloc;
   load; loadfst; loadsnd; callq)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Framework.Slots using (Slots; read)
 open import Semantics.Observation using (Obs; o-error; Answer)
 open import Semantics.Interp.Clock
 import FPC.Semantics.ClockedInterpreters.Values as Values
@@ -134,9 +135,10 @@ module _ {Σ : List DSig}
   open Ans (λ Δ A B → Σ ∋ sig Δ A B)
   open X using (Mach; rv; ⟨_,_,_,_⟩)
 
-  run-safe : ∀ {n R Bs ψ} ck (bs : Blocks Σ n R Bs) η (m : Mach Σ η ψ)
-    (k : Seq Σ n R Bs ψ) → Safe (X.run ds ck bs η m k)
-  jump-safe : ∀ {n R Bs Δ} ck (bs : Blocks Σ n R Bs) η (l : Bs ∋ Δ) (φ : Env Δ)
+  run-safe : ∀ {Δ R Bs ψ} ck (bs : Blocks Σ Δ R Bs) η (m : Mach Σ η ψ)
+    (k : Seq Σ Δ R Bs ψ) → Safe (X.run ds ck bs η m k)
+  jump-safe : ∀ {Δ R Bs I} ck (bs : Blocks Σ Δ R Bs) η (l : Bs ∋ I)
+    (φ : Slots Val Δ I)
     → Safe (X.jump ds ck bs η l φ)
   callx-safe : ∀ {η A B} ck (c : Val (code η A B)) (e : Val (tup η)) (w : Val A)
     → Safe (X.call ds ck c e w)
@@ -147,15 +149,15 @@ module _ {Σ : List DSig}
   run-safe ck bs η m (sete d ∷ k) = run-safe ck bs η _ k
   run-safe ck bs η m (alloc o d ∷ k) = run-safe ck bs η _ k
   run-safe ck bs η m (load i a d ∷ k) = run-safe ck bs η _ k
-  run-safe ck bs η m (loadfst x r ∷ k) = run-safe ck bs _ _ k
+  run-safe ck bs η m (loadfst x i r ∷ k) = run-safe ck bs _ _ k
   run-safe ck bs η m (loadsnd r ∷ k) = run-safe ck bs η _ k
   run-safe ck bs η m (callq a e₁ e₂ ∷ k) =
     bind-safe (callx-safe ck (X.arg a m) _ _) λ v →
       run-safe ck bs η ⟨ rv v _ _ , _ , _ , _ ⟩ k
   run-safe ck bs η m (retq e) = ret _
   run-safe ck bs η m (jmp l) = jump-safe ck bs η l _
-  run-safe ck bs η m (case x p _ l₁ l₂) =
-    either-safe (lookup (X.frame m) x) (λ v → jump-safe ck bs η l₁ _)
+  run-safe ck bs η m (case x i y z l₁ l₂) =
+    either-safe (read (X.frame m) x i) (λ v → jump-safe ck bs η l₁ _)
       (λ v → jump-safe ck bs η l₂ _)
 
   jump-safe ck (bs ▷ k) η Z φ = run-safe ck bs η _ k
@@ -166,6 +168,6 @@ module _ {Σ : List DSig}
     run-safe ck (Body.blocks (lookup ds f)) η _ (Body.start (lookup ds f))
 
 x86-no-error : ∀ {A} (P : Program A) → ¬ Terminates (X.sem P) o-error
-x86-no-error {A} (program {Σ} ds (body n bs k)) =
+x86-no-error {A} (program {Σ} ds (body Δ bs k)) =
   no-error (Ans.obs-answer (λ Δ A B → Σ ∋ sig Δ A B)) λ ck →
     run-safe ds ck bs [] _ k
