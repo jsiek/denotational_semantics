@@ -31,7 +31,8 @@ open import Data.Bool using (Bool; true; false; T; not)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using (List; []; _∷_; length)
 open import Data.Nat using (_≤_)
-open import Data.Nat.Properties using (≤-refl; m≤n⇒m≤1+n; n≮n)
+open import Data.Nat.Properties using (≤-refl; m≤n⇒m≤1+n; n≮n; suc-injective)
+open import Relation.Binary.PropositionalEquality using (_≢_)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Data.Unit using (⊤; tt)
 
@@ -118,6 +119,17 @@ initial {Γ} p = fill Γ (⊑-∋ p)
   → y ∈ I
   → y ∈ I ⊕ x
 ∈-⊕ʳ {I = I} x y t = ∈-⊆ {I = I ⊕ x} {I} y t (⊆-⊕ x)
+
+{- an initialized slot and one that is not are at different positions -}
+∈∉-idx : ∀ {Δ A B} {I : Inits Δ} (x : Δ ∋ A) (y : Δ ∋ B)
+  → x ∈ I
+  → y ∉ I
+  → idx x ≢ idx y
+∈∉-idx {I = true ∷ I} Z Z i () e
+∈∉-idx {I = false ∷ I} Z Z () n e
+∈∉-idx {I = b ∷ I} Z (S y) i n ()
+∈∉-idx {I = b ∷ I} (S x) Z i n ()
+∈∉-idx {I = b ∷ I} (S x) (S y) i n e = ∈∉-idx {I = I} x y i n (suc-injective e)
 
 {- Fresh slots ----------------------------------------------------------------}
 

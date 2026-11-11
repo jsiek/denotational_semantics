@@ -91,6 +91,76 @@ atoms ρ ok (a ∷ as) = atom ρ ok a ∷ atoms ρ ok as
 slot : ∀ {Δ D : Ctx} {A} → (A ∷ D) ⊑ Δ → Δ ∋ A
 slot q = ⊑-∋ q Z
 
+{- the slot x of the variable that let e₁ e₂ binds, the part q₁ of the
+   frame for the variables of e₁, and the facts about the initialized
+   slots that lift needs (P places D) -}
+module Let {Σ Γ Δ D A B} {I : Inits Δ} (e₁ : M.Exp Σ Γ A)
+  (e₂ : M.Exp Σ (A ∷ Γ) B) (q : binds (M.let′ e₁ e₂) D ⊑ Δ) where
+
+  P : D ⊑ Δ
+  P = ⊑-trans (binds-⊒ (M.let′ e₁ e₂) D) q
+
+  q₂ : (A ∷ binds e₁ D) ⊑ Δ
+  q₂ = ⊑-trans (binds-⊒ e₂ (A ∷ binds e₁ D)) q
+
+  q₁ : binds e₁ D ⊑ Δ
+  q₁ = ⊑-tail q₂
+
+  x : Δ ∋ A
+  x = slot q₂
+
+  fresh : Only P I → x ∉ I
+  fresh o = only-fresh {I = I} q₂ (only-up {I = I} P (binds-⊒ e₁ D) q₁ o)
+
+  only₁ : Only P I → Only (⊑-trans (binds-⊒ e₁ D) q₁) I
+  only₁ o = only-⊑ {I = I} P _ o
+
+  only₂ : Only P I → Only q₂ (I ⊕ x)
+  only₂ o =
+    only-⊕ {I = I} q₂ Z
+      (only-up {I = I} P (⊑-trans (binds-⊒ e₁ D) (there⊑ here⊑)) q₂ o)
+
+{- the slots x and y of the variables that case a e₁ e₂ binds, the part
+   q₁ of the frame for the variables of e₁, and the facts that lift
+   needs -}
+module Case {Σ Γ Δ D A B C} {I : Inits Δ} (a : M.Atm Σ Γ (A ⊹ B))
+  (e₁ : M.Exp Σ (A ∷ Γ) C) (e₂ : M.Exp Σ (B ∷ Γ) C)
+  (q : binds (M.case a e₁ e₂) D ⊑ Δ) where
+
+  P : D ⊑ Δ
+  P = ⊑-trans (binds-⊒ (M.case a e₁ e₂) D) q
+
+  q₂ : (B ∷ binds e₁ (A ∷ D)) ⊑ Δ
+  q₂ = ⊑-trans (binds-⊒ e₂ (B ∷ binds e₁ (A ∷ D))) q
+
+  q₁ : binds e₁ (A ∷ D) ⊑ Δ
+  q₁ = ⊑-tail q₂
+
+  qA : (A ∷ D) ⊑ Δ
+  qA = ⊑-trans (binds-⊒ e₁ (A ∷ D)) q₁
+
+  g : D ⊑ binds e₁ (A ∷ D)
+  g = ⊑-trans (there⊑ here⊑) (binds-⊒ e₁ (A ∷ D))
+
+  x : Δ ∋ A
+  x = slot qA
+
+  y : Δ ∋ B
+  y = slot q₂
+
+  fresh₁ : Only P I → x ∉ I
+  fresh₁ o = only-fresh {I = I} qA (only-⊑ {I = I} P (⊑-tail qA) o)
+
+  fresh₂ : Only P I → y ∉ I
+  fresh₂ o = only-fresh {I = I} q₂ (only-up {I = I} P g q₁ o)
+
+  only₁ : Only P I → Only qA (I ⊕ x)
+  only₁ o = only-⊕ {I = I} qA Z (only-up {I = I} P (there⊑ here⊑) qA o)
+
+  only₂ : Only P I → Only q₂ (I ⊕ y)
+  only₂ o =
+    only-⊕ {I = I} q₂ Z (only-up {I = I} P (⊑-trans g (there⊑ here⊑)) q₂ o)
+
 lift : ∀ {Σ Γ Δ D A} {I : Inits Δ} (e : M.Exp Σ Γ A)
   → (q : binds e D ⊑ Δ)
   → (ρ : Slots Γ Δ)
@@ -107,29 +177,15 @@ lift (M.inr a) q ρ ok o = simple (inr (atom ρ ok a))
 lift (M.prim p a b) q ρ ok o = simple (prim p (atom ρ ok a) (atom ρ ok b))
 lift (M.fold a) q ρ ok o = simple (fold (atom ρ ok a))
 lift (M.unfold a) q ρ ok o = simple (unfold (atom ρ ok a))
-lift {D = D} {I = I} (M.let′ {A} e₁ e₂) q ρ ok o =
-  assign x (only-fresh {I = I} q₁ (only-up {I = I} P (binds-⊒ e₁ D) (⊑-tail q₁) o))
-    (lift e₁ (⊑-tail q₁) ρ ok (only-⊑ {I = I} P _ o))
-    (lift e₂ q (ext x ρ) (inited-ext {I = I} x ρ ok)
-      (only-⊕ {I = I} q₁ Z (only-up {I = I} P (⊑-trans (binds-⊒ e₁ D) (there⊑ here⊑)) q₁ o)))
-  where
-  P = ⊑-trans (binds-⊒ (M.let′ e₁ e₂) D) q
-  q₁ = ⊑-trans (binds-⊒ e₂ (A ∷ binds e₁ D)) q
-  x = slot q₁
-lift {D = D} {I = I} (M.case {A} {B} a e₁ e₂) q ρ ok o =
-  case (atom ρ ok a) x (only-fresh {I = I} qA (only-⊑ {I = I} P (⊑-tail qA) o))
-    y (only-fresh {I = I} qB (only-up {I = I} P g (⊑-tail qB) o))
-    (lift e₁ (⊑-tail qB) (ext x ρ) (inited-ext {I = I} x ρ ok)
-      (only-⊕ {I = I} qA Z (only-up {I = I} P (there⊑ here⊑) qA o)))
-    (lift e₂ q (ext y ρ) (inited-ext {I = I} y ρ ok)
-      (only-⊕ {I = I} qB Z (only-up {I = I} P (⊑-trans g (there⊑ here⊑)) qB o)))
-  where
-  P = ⊑-trans (binds-⊒ (M.case a e₁ e₂) D) q
-  qB = ⊑-trans (binds-⊒ e₂ (B ∷ binds e₁ (A ∷ D))) q
-  qA = ⊑-trans (binds-⊒ e₁ (A ∷ D)) (⊑-tail qB)
-  g = ⊑-trans (there⊑ here⊑) (binds-⊒ e₁ (A ∷ D))
-  x = slot qA
-  y = slot qB
+lift {I = I} (M.let′ e₁ e₂) q ρ ok o =
+  assign x (fresh o) (lift e₁ q₁ ρ ok (only₁ o))
+    (lift e₂ q (ext x ρ) (inited-ext {I = I} x ρ ok) (only₂ o))
+  where open Let {I = I} e₁ e₂ q
+lift {I = I} (M.case a e₁ e₂) q ρ ok o =
+  case (atom ρ ok a) x (fresh₁ o) y (fresh₂ o)
+    (lift e₁ q₁ (ext x ρ) (inited-ext {I = I} x ρ ok) (only₁ o))
+    (lift e₂ q (ext y ρ) (inited-ext {I = I} y ρ ok) (only₂ o))
+  where open Case {I = I} a e₁ e₂ q
 
 {- a body: its frame has the slots of the variables it binds, in front
    of those of its parameters -}
