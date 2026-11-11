@@ -1,45 +1,44 @@
 {-
 
-  This module defines the logical relations for the correctness of
-  split (EnvClosμ → PairClosμ) in Scott domains, one for each half of
-  the proof, and proves the lemmas that the two halves share.
+  This module defines the logical relations for the correctness of split
+  (EnvClosμ → PairClosμ) in Scott domains, one for each half of the proof,
+  and proves the lemmas that the two halves share.
 
   The pass split changes the representation of closures. In EnvClosμ a
-  closure is a function value, and in PairClosμ it is a pair of code
-  and environment. So the meaning of a program and the meaning of its
+  closure means a function, and in PairClosμ it is a pair of code and
+  environment. So the meaning of a program and the meaning of its
   translation are related rather than equal. In Scott domains with the
   universal domain 𝔻, we cannot define the relations by recursion on
-  types, because the types include μ types, and we cannot define them
-  by recursion on values either. Instead, we define them by recursion
-  on the stages of the bilimit 𝔻 (proof/Framework/Scott/Stages.agda).
-  At stage n, R δ n s w relates an approximation s of depth n of one
-  value (s : 𝓓 n) to the whole other value w. In the forward direction
-  (preserve), the approximated value is the source value, so the
-  relation carries definedness and constants from the source program
-  to the target program. In the backward direction (reflect), the
-  approximated value is the target value, so the relation carries them
-  from the target program to the source program.
+  types, because the types include μ types, and we cannot define them by
+  recursion on the elements of 𝔻 either. Instead, we define them by
+  recursion on the stages of the bilimit 𝔻
+  (proof/Framework/Scott/Stages.agda). At stage n, R δ n s w relates an
+  approximation s of depth n of one element of 𝔻 (s : 𝓓 n) to the whole of
+  another element w. In the forward direction (preserve), the approximated
+  element is the meaning of the source program, so the relation carries
+  definedness and constants from the source program to the target program.
+  In the backward direction (reflect), the approximated element is the
+  meaning of the target program, so the relation carries them from the
+  target program to the source program.
 
-  If the approximated value is defined, then the other value is defined
-  too, and the tags of the two values are related by Same. Same relates
-  each tag to itself, except for closures. A source function value is
-  related to a target pair when calling the pair on an argument related
-  to the function's argument gives a result related to the function's
-  result. In the forward direction the function is the approximated
-  value (M preserve n s-fun), and in the backward direction the pair
-  is. In an approximation of depth m + 2, a call of the pair shows its
-  result only at depth m (callₛ, proof/Framework/Scott/StageCall.agda).
-  For this reason, the clause for pairs at depth m + 2 speaks of depth m
-  (Call).
+  If the approximated element is defined, then the other element is
+  defined too, and the tags of the two elements are related by Same. Same
+  relates each tag to itself, except for closures. A source function is
+  related to a target pair when calling the pair on an argument related to
+  the function's argument gives a result related to the function's result.
+  In the forward direction the function is the approximated element (M
+  preserve n s-fun), and in the backward direction the pair is. In an
+  approximation of depth m + 2, a call of the pair shows its result only
+  at depth m (callₛ, proof/Framework/Scott/StageCall.agda). For this
+  reason, the clause for pairs at depth m + 2 speaks of depth m (Call).
 
-  Both relations are downward closed in the approximated value
-  (R-mono), they are closed under directed sups of it (R-sup), and they
-  are preserved when the approximation moves between stages (R-π, R-ε).
-  Two values a and w are related (Rel δ a w) when every approximation
-  of a is related to w. The operators of EnvClosμ and PairClosμ other
-  than closures and calls preserve both relations (Rel-seq through
-  Rel-prim). SplitPreserve.agda and SplitReflect.agda handle closures
-  and calls.
+  Both relations are downward closed in the approximated element (R-mono),
+  they are closed under directed sups of it (R-sup), and they are
+  preserved when the approximation moves between stages (R-π, R-ε). Two
+  elements a and w of 𝔻 are related (Rel δ a w) when every approximation
+  of a is related to w. The operators of EnvClosμ and PairClosμ other than
+  closures and calls preserve both relations (Rel-seq through Rel-prim).
+  SplitPreserve.agda and SplitReflect.agda handle closures and calls.
 
 -}
 
@@ -84,9 +83,9 @@ open import Semantics.Scott.Prim pt fe pe
 data Dir : 𝓤₀ ̇ where
   preserve reflect : Dir
 
-{- Same δ t t' says that the tags t and t' of two related values match,
-   where t is the tag of the approximated value. Each tag matches itself.
-   In addition, a function matches a pair in the forward direction
+{- Same δ t t' says that the tags t and t' of two related elements match,
+   where t is the tag of the approximated element. Each tag matches
+   itself. In addition, a function matches a pair in the forward direction
    (s-fun), and a pair matches a function in the backward direction
    (s-pr). -}
 data Same : Dir → Tag → Tag → 𝓤₀ ̇ where
@@ -112,8 +111,8 @@ Same-prop s-pr s-pr = refl
 call : (Fin 2 → ⟨ 𝔻 ⟩) → ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩
 call cd a = appᵈ · (appᵈ · cd zero · cd (suc zero)) · a
 
-{- R δ n s w relates an approximation s at stage n to a whole value w.
-   Match relates their views (a tag and a payload each), M relates the
+{- R δ n s w relates an approximation s at stage n to a whole element w of
+   𝔻. Match relates their views (a tag and a payload each), M relates the
    payloads of two views whose tags match, and Call is the clause for an
    approximated target pair in the backward direction. -}
 R : Dir → (n : ℕ) → ⟨ 𝓓 n ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
@@ -189,7 +188,7 @@ Call-prop (succ (succ m)) cd s =
 Match-prop δ n (t , x) (t' , y) =
   Σ-is-prop Same-prop (λ e → M-prop δ n e x y)
 
-{- Downward closed in the approximated value ----------------------------------}
+{- Downward closed in the approximated element -------------------------------}
 
 R-mono : (δ : Dir) (n : ℕ) (s s' : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩)
   → s' ⊑⟨ 𝓓 n ⟩ s
@@ -234,7 +233,7 @@ Call-mono (succ (succ m)) cd cd' s le h v a r =
   R-mono reflect m (callₛ m cd v) (callₛ m cd' v) (strict · s · a)
     (callₛ-mono m cd' cd v le) (h v a r)
 
-{- Closed under directed sups of the approximated value -----------------------}
+{- Closed under directed sups of the approximated element --------------------}
 
 R-sup : (δ : Dir) (n : ℕ) (w : ⟨ 𝔻 ⟩) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓓 n ⟩)
   → (d : is-Directed (𝓓 n) α)
@@ -384,13 +383,13 @@ R-εs : (δ : Dir) (k n : ℕ) (s : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩)
 R-εs δ zero n s w h = h
 R-εs δ (succ k) n s w h = R-ε δ (k + n) (εs k n s) w (R-εs δ k n s w h)
 
-{- The relations between whole values -----------------------------------------}
+{- The relations between whole elements --------------------------------------}
 
-{- Rel is a record rather than the function type of its field. Agda
-   cannot recover a and w from the type R δ n (π∞ n · a) w, because R
-   computes and π∞ n is not injective. A record type, in contrast,
-   determines its parameters, so Agda can infer a and w, and the lemmas
-   below take the related values as implicit arguments. -}
+{- Rel is a record rather than the function type of its field. Agda cannot
+   recover a and w from the type R δ n (π∞ n · a) w, because R computes
+   and π∞ n is not injective. A record type, in contrast, determines its
+   parameters, so Agda can infer a and w, and the lemmas below take the
+   related elements as implicit arguments. -}
 
 record Rel (δ : Dir) (a w : ⟨ 𝔻 ⟩) : 𝓤₁ ̇ where
   constructor rel
@@ -422,16 +421,15 @@ Rel-ε {δ} n {s} {w} h = rel λ m → go m (split m n)
   go m (lower k e) = down m k n e s h
   go m (higher k e) = up k m e
 
-{- Making and taking apart related values -------------------------------------}
+{- Making and taking apart related elements ----------------------------------}
 
 {- approx n t x is the approximation of depth n of a payload x with
    tag t. -}
 approx : (n : ℕ) (t : Tag) → ⟨ obj (Payload t) 𝔻 ⟩ → ⟨ obj (Payload t) (𝓓 n) ⟩
 approx n t x = fmap (Payload t) 𝔻 (𝓓 n) (π∞ n) (ε∞ n) x
 
-{- If e relates the tags t and t', and the payloads x and y are related
-   at every depth, then the values inj t · x and inj t' · y are
-   related. -}
+{- If e relates the tags t and t', and the payloads x and y are related at
+   every depth, then the elements inj t · x and inj t' · y are related. -}
 Rel-inj : ∀ {δ t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
   → (e : Same δ t t')
   → ((n : ℕ) → M δ n e (approx n t x) y)
@@ -452,21 +450,21 @@ Rel-from-defined {a = a} h = rel λ
   { zero → ⋆
   ; (succ n) p → stage (h (π∞-defined n a p)) (succ n) p }
 
-{- The undefined value ⊥𝔻 is related to every value. -}
+{- The undefined element ⊥𝔻 is related to every element. -}
 Rel-⊥ : ∀ {δ w}
   → Rel δ ⊥𝔻 w
 Rel-⊥ = Rel-from-defined (λ q → 𝟘-elim (⊥-undefined q))
 
-{- If two values are related and the approximated value is defined,
-   then the other value is defined too. -}
+{- If two elements are related and the approximated element is defined,
+   then the other element is defined too. -}
 Rel-defined : ∀ {δ a w}
   → Rel δ a w
   → defined a
   → defined w
 Rel-defined {a = a} h q = pr₁ (stage h 1 (defined-π∞ 0 a q))
 
-{- Suppose the approximated value is built from tag t and payload x, and
-   the other value w is defined. Then, at every depth n, the tag and
+{- Suppose the approximated element is built from tag t and payload x, and
+   the other element w is defined. Then, at every depth n, the tag and
    payload of w match t and the approximation of x at depth n. -}
 Rel-view : ∀ {δ t w} (x : ⟨ obj (Payload t) 𝔻 ⟩)
   → Rel δ (inj t · x) w
@@ -482,8 +480,8 @@ Rel-view {δ} {t} {w} x h q n =
 {- The inversion lemma for Rel, the converse of Rel-inj. Suppose a and w
    are related and a is defined. Then both are built from tags and
    payloads, their tags are related by Same, and their payloads are
-   related at every depth. The motive P delivers this conclusion. To
-   prove P a w, it suffices to prove P for values of that form. -}
+   related at every depth. The motive P delivers this conclusion. To prove
+   P a w, it suffices to prove P for elements of that form. -}
 Rel-inv : ∀ {δ a w}
   → Rel δ a w
   → defined a
@@ -516,7 +514,7 @@ Rel-seq {δ} {d} {d'} {e} {e'} hd he =
       (seq-defined d' e' (Rel-defined hd (seq-defined-l d e q)) ⁻¹)
       he
 
-{- Guarding the approximated value a with seq keeps it related to w,
+{- Guarding the approximated element a with seq keeps it related to w,
    because seq · d · a is either ⊥𝔻 or a. -}
 Rel-seq-l : ∀ {δ d a w}
   → Rel δ a w

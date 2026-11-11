@@ -2,20 +2,19 @@
 
   This module proves the forward half of the correctness of split
   (EnvClosμ → PairClosμ) in Scott domains. The relation Pres is the
-  relation of SplitRel.agda that approximates the source value. So if
-  the source program produces a value, then the target program produces
-  a related value.
+  relation of SplitRel.agda that approximates the meaning of the source
+  program. So if the meaning of the source program is defined, then the
+  meaning of the target program is defined and related to it.
 
-  SplitRel.agda handles every construct except the two where the
-  languages differ, and this module handles those two. An EnvClosμ
-  closure is its code applied to the tuple of its free variables, which
-  gives a function value. Its translation is the pair of the translated
-  code and the tuple (Pres-clos). An application of a function value is
-  related to a call of a pair (Pres-call). The approximation of depth n
-  of the application is the sup of the approximations of depth n of
-  the function applied to the approximations e k a of the argument
-  (approx-∐). The relation of the closures at the greater depth k + n
-  relates each of those to the call.
+  SplitRel.agda handles every construct except the two where the languages
+  differ, and this module handles those two. An EnvClosμ closure is its
+  code applied to the tuple of its free variables, which gives a function.
+  Its translation is the pair of the translated code and the tuple
+  (Pres-clos). An application of a function is related to a call of a pair
+  (Pres-call). The approximation of depth n of the application is the sup
+  of the approximations of depth n of the function applied to the
+  approximations e k a of the argument (approx-∐). The relation of the
+  closures at the greater depth k + n relates each of those to the call.
 
 -}
 
@@ -46,15 +45,14 @@ open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
 Pres : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
 Pres = Rel preserve
 
-{- A closure means different things in the two languages. In EnvClosμ,
-   it means its code applied to the tuple t of its free variables,
-   which gives a function value that awaits the argument. In PairClosμ,
-   it means the pair of its code and the tuple t', with no application.
-   Suppose t and t' are related, and the bodies B and B' give related
-   results on related environments X, X' and related arguments Y, Y'
-   (env₂ X Y is the environment that binds both). Then the application
-   of the source code to t is related to the pair of the target code
-   and t'. -}
+{- A closure means different things in the two languages. In EnvClosμ, it
+   means its code applied to the tuple t of its free variables, which
+   gives a function that awaits the argument. In PairClosμ, it means the
+   pair of its code and the tuple t', with no application. Suppose t and
+   t' are related, and the bodies B and B' give related results on related
+   environments X, X' and related arguments Y, Y' (env₂ X Y is the
+   environment that binds both). Then the application of the source code
+   to t is related to the pair of the target code and t'. -}
 Pres-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
   → Pres t t'
   → (∀ {X X' Y Y'} → Pres X X' → Pres Y Y'
@@ -82,8 +80,14 @@ Pres-clos B B' {t} {t'} ht hB =
   G = ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 BE) Λ
   G' = ∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ B')) Λ
 
-{- If l and l' are related and a and a' are related, then applying the
-   function value l to a is related to calling the pair l' on a'. -}
+{- In EnvClosμ, an application applies the meaning l of its operator,
+   which is expected to be a function, to the meaning a of its argument.
+   In PairClosμ, the translated application is a call. The meaning l' of
+   the translated operator is expected to be a pair of code and
+   environment, and the call applies the code car · l' to the environment
+   cdr · l' and then to the argument a'. If l and l' are related and a and
+   a' are related, then the application of l to a is related to the call
+   of l' on a'. -}
 Pres-call : {l l' a a' : ⟨ 𝔻 ⟩}
   → Pres l l'
   → Pres a a'

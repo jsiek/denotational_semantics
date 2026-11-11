@@ -2,21 +2,20 @@
 
   This module proves the backward half of the correctness of split
   (EnvClosμ → PairClosμ) in Scott domains. The relation Refl d d' is the
-  relation of SplitRel.agda that approximates the target value d'. So
-  if the target program produces a value, then the source program
-  produces a related value.
+  relation of SplitRel.agda that approximates the meaning d' of the target
+  program. So if the meaning of the target program is defined, then the
+  meaning of the source program is defined and related to it.
 
-  As in SplitPreserve.agda, this module handles the two constructs
-  where the languages differ. For a closure (Refl-clos), a call of the
-  target pair, seen in an approximation of depth m + 2, shows its
-  result at depth m (callₛ). That result lies below the approximation
-  of depth m of the call of the pair itself (callₛ-below), and the
-  relation is downward closed. For a call (Refl-call), the
-  approximation of depth n of the result is the sup of the
-  approximations of the calls on approximations of the code, the
-  environment, and the argument (Rf-approx). Each of those lies below
-  the approximation of a call at a greater depth, and the clause for
-  pairs relates that call.
+  As in SplitPreserve.agda, this module handles the two constructs where
+  the languages differ. For a closure (Refl-clos), a call of the target
+  pair, seen in an approximation of depth m + 2, shows its result at depth
+  m (callₛ). That result lies below the approximation of depth m of the
+  call of the pair itself (callₛ-below), and the relation is downward
+  closed. For a call (Refl-call), the approximation of depth n of the
+  result is the sup of the approximations of the calls on approximations
+  of the code, the environment, and the argument (Rf-approx). Each of
+  those lies below the approximation of a call at a greater depth, and the
+  clause for pairs relates that call.
 
 -}
 
@@ -120,8 +119,13 @@ private
  ≤+' zero b = ≤-refl b
  ≤+' (succ a) b = ≤-trans b (a + b) (succ (a + b)) (≤+' a b) (≤-succ (a + b))
 
-{- If l and l' are related and a and a' are related, then calling the
-   pair l' on a' is related to applying the function value l to a. -}
+{- As in Pres-call, l is the meaning of the operator of a source
+   application, which is expected to be a function, and l' is the meaning
+   of the translated operator, which is expected to be a pair of code and
+   environment. The call applies the code car · l' to the environment cdr
+   · l' and then to the argument a'. If l and l' are related by Refl and a
+   and a' are related by Refl, then the application of l to a and the call
+   of l' on a' are related by Refl. -}
 Refl-call : {l l' a a' : ⟨ 𝔻 ⟩}
   → Refl l l'
   → Refl a a'
@@ -205,9 +209,9 @@ Refl-call {l} {l'} {a} {a'} hl ha =
       j≤ : j ≤ K
       j≤ = ≤-trans j k' K (≤+' (l + i) j) (≤+ k' n)
 
-  {- If the called target value is not a pair, then its code and its
+  {- If the called target element is not a pair, then its code and its
      environment are ⊥𝔻. So the call is ⊥𝔻, which is related to every
-     source value. -}
+     source element. -}
   ⊥-call : ∀ {w}
     → Rel reflect (appᵈ · (appᵈ · ⊥𝔻 · ⊥𝔻) · a') w
   ⊥-call =
