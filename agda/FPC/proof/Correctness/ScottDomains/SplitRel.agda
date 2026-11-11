@@ -429,14 +429,17 @@ Rel-⊥ : ∀ {δ w}
   → Rel δ ⊥𝔻 w
 Rel-⊥ = Rel-from-defined (λ q → 𝟘-elim (⊥-undefined q))
 
-{- the other value of a defined one is defined -}
+{- If two values are related and the approximated one is defined, then
+   the other one is defined too. -}
 Rel-defined : ∀ {δ a w}
   → Rel δ a w
   → defined a
   → defined w
 Rel-defined {a = a} h q = pr₁ (stage h 1 (defined-π∞ 0 a q))
 
-{- the tags and payloads of the other value of one made with a tag -}
+{- Suppose the approximated value is built from tag t and payload x, and
+   the other value w is defined. Then, at every depth n, the tag and
+   payload of w match t and the approximation of x at depth n. -}
 Rel-view : ∀ {δ t w} (x : ⟨ obj (Payload t) 𝔻 ⟩)
   → Rel δ (inj t · x) w
   → (q : defined w)
@@ -448,8 +451,11 @@ Rel-view {δ} {t} {w} x h q n =
     (pr₂ (transport (λ - → R δ (succ n) - w) (π∞-inj n t x)
             (stage h (succ n)) ⋆))
 
-{- so related values, with a defined approximated one, are made with tags
-   whose payloads are related -}
+{- Case analysis on related values. Suppose a and w are related and a is
+   defined. Then both are built from tags and payloads, their tags are
+   related by Same, and their payloads are related at every depth. So to
+   prove a property P of a and w, it suffices to prove P for values of
+   that form. -}
 Rel-cases : ∀ {δ a w}
   → Rel δ a w
   → defined a
