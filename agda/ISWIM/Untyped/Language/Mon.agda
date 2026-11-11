@@ -30,7 +30,8 @@ data Atom : AST → Set where
 {- n operands, all atoms -}
 data Atoms : ∀ {n} → Args (replicate n ■) → Set where
   [] : Atoms {zero} nil
-  _∷_ : ∀ {n M} {Ms : Args (replicate n ■)} → Atom M → Atoms Ms → Atoms (M ,, Ms)
+  _∷_ : ∀ {n M} {Ms : Args (replicate n ■)} → Atom M → Atoms Ms
+    → Atoms (M ,, Ms)
 
 data Mon : AST → Set where
   atom : ∀ {M} → Atom M → Mon M
@@ -42,7 +43,8 @@ data Mon : AST → Set where
   get : ∀ {n} {i : Fin n} {As} → Atoms {1} As → Mon (get i ⦅ As ⦆)
   inl : ∀ {As} → Atoms {1} As → Mon (inl-op ⦅ As ⦆)
   inr : ∀ {As} → Atoms {1} As → Mon (inr-op ⦅ As ⦆)
-  case : ∀ {A M N} → Atom A → Mon M → Mon N → Mon (case-op ⦅ A ,, ⟩ M ,, ⟩ N ,, Nil ⦆)
+  case : ∀ {A M N} → Atom A → Mon M → Mon N → Mon (case-op ⦅ A ,, ⟩ M ,, ⟩ N
+    ,, Nil ⦆)
   prim : ∀ {p As} → Atoms {2} As → Mon (prim p ⦅ As ⦆)
   let′ : ∀ {M N} → Mon M → Mon N → Mon (let-op ⦅ M ,, ⟩ N ,, Nil ⦆)
 
@@ -51,17 +53,22 @@ MonProgram : Program → Set
 MonProgram (program ds M) = All Mon ds × Mon M
 
 {- renaming variables preserves monadic normal form -}
-atom-rename : ∀ r {M} → Atom M → Atom (rename r M)
+atom-rename : ∀ r {M}
+  → Atom M
+  → Atom (rename r M)
 atom-rename r (var x) = var (r x)
 atom-rename r (lit B k) = lit B k
 atom-rename r (ref k) = ref k
 
-atoms-rename : ∀ r {n} {Ms : Args (replicate n ■)} → Atoms Ms
+atoms-rename : ∀ r {n} {Ms : Args (replicate n ■)}
+  → Atoms Ms
   → Atoms (rename-args r Ms)
 atoms-rename r [] = []
 atoms-rename r (a ∷ as) = atom-rename r a ∷ atoms-rename r as
 
-mon-rename : ∀ r {M} → Mon M → Mon (rename r M)
+mon-rename : ∀ r {M}
+  → Mon M
+  → Mon (rename r M)
 mon-rename r (atom a) = atom (atom-rename r a)
 mon-rename r (app as) = app (atoms-rename r as)
 mon-rename r (pair as) = pair (atoms-rename r as)
@@ -71,6 +78,7 @@ mon-rename r (tuple as) = tuple (atoms-rename r as)
 mon-rename r (get as) = get (atoms-rename r as)
 mon-rename r (inl as) = inl (atoms-rename r as)
 mon-rename r (inr as) = inr (atoms-rename r as)
-mon-rename r (case a m n) = case (atom-rename r a) (mon-rename (ext r) m) (mon-rename (ext r) n)
+mon-rename r (case a m n) =
+  case (atom-rename r a) (mon-rename (ext r) m) (mon-rename (ext r) n)
 mon-rename r (prim as) = prim (atoms-rename r as)
 mon-rename r (let′ m n) = let′ (mon-rename r m) (mon-rename (ext r) n)

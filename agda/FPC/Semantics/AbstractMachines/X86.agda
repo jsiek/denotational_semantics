@@ -1,8 +1,8 @@
 {-
 
   A machine for X86μ (FPC/Language/X86.agda), as the X86ᵀ machine
-  (ISWIM/Semantics/CEK/Typed/X86.agda), with the values of the GlobalFunμ machine
-  (FPC/Semantics/AbstractMachines/GlobalFun.agda). A state
+  (ISWIM/Semantics/CEK/Typed/X86.agda), with the values of the GlobalFunμ
+  machine (FPC/Semantics/AbstractMachines/GlobalFun.agda). A state
     run k bs σ η m
   runs the sequence k, with the blocks bs it may jump to, the call
   stack σ, and the registers, frame, open closure and flag m (Mach),
@@ -31,9 +31,10 @@ open import FPC.Language.X86
 open import Framework.Lookup using (pop)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import FPC.Semantics.AbstractMachines.GlobalFun
-  using (Val; code; pack; const; tup; inl; inr; fold; obs; int; elems; choose; unfoldᵥ; δᵀ) public
-open import FPC.Semantics.AbstractMachines.Imp using (Frame) renaming (atom to value-of) public
+open import FPC.Semantics.AbstractMachines.GlobalFun using (Val; code; pack;
+  const; tup; inl; inr; fold; obs; int; elems; choose; unfoldᵥ; δᵀ) public
+open import FPC.Semantics.AbstractMachines.Imp using (Frame) renaming (atom to
+  value-of) public
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Integer using (_≟_)
@@ -91,7 +92,8 @@ module _ {Σ : List DSig} where
   ρ ⦅ rdi ⦆ = RegVals.di ρ
   ρ ⦅ rsi ⦆ = RegVals.si ρ
 
-  _[_≔_] : ∀ {η Γ τ} → RegVals Σ η Γ → (r : Reg) → MV Σ η τ → RegVals Σ η (Γ [ r ↦ τ ])
+  _[_≔_] : ∀ {η Γ τ} → RegVals Σ η Γ → (r : Reg) → MV Σ η τ
+    → RegVals Σ η (Γ [ r ↦ τ ])
   ρ [ rax ≔ v ] = rv v (RegVals.di ρ) (RegVals.si ρ)
   ρ [ rdi ≔ v ] = rv (RegVals.ax ρ) v (RegVals.si ρ)
   ρ [ rsi ≔ v ] = rv (RegVals.ax ρ) (RegVals.di ρ) v
@@ -107,7 +109,8 @@ module _ {Σ : List DSig} where
 
   wipeᵣ : ∀ {η η' Γ} → RegVals Σ η Γ → RegVals Σ η' (wipe Γ)
   wipeᵣ {Γ = Γ} ρ =
-    rv (wipeᵥ (Regs.ax Γ) (RegVals.ax ρ)) (wipeᵥ (Regs.di Γ) (RegVals.di ρ)) (wipeᵥ (Regs.si Γ) (RegVals.si ρ))
+    rv (wipeᵥ (Regs.ax Γ) (RegVals.ax ρ)) (wipeᵥ (Regs.di Γ) (RegVals.di ρ))
+      (wipeᵥ (Regs.si Γ) (RegVals.si ρ))
 
   arg : ∀ {η ψ τ} → Arg Σ ψ τ → Mach Σ η ψ → RV Σ η τ
   arg (atom a) m = value-of (frame m) a
@@ -146,45 +149,70 @@ module _ {Σ : List DSig} where
 
 data Stack (Σ : List DSig) : Type → Set where
   halt : ∀ {A} → Stack Σ A
-  retK : ∀ {n R Bs Δ B} → Seq Σ n R Bs (returned Δ B) → Blocks Σ n R Bs → Frame Σ Δ → Stack Σ R → Stack Σ B   {- the caller -}
+  {- the caller -}
+  retK : ∀ {n R Bs Δ B} → Seq Σ n R Bs (returned Δ B) → Blocks Σ n R Bs
+    → Frame Σ Δ → Stack Σ R → Stack Σ B
 
 data State (Σ : List DSig) : Set where
-  run : ∀ {n R Bs ψ} → Seq Σ n R Bs ψ → Blocks Σ n R Bs → Stack Σ R → (η : Ctx) → Mach Σ η ψ → State Σ
+  run : ∀ {n R Bs ψ} → Seq Σ n R Bs ψ → Blocks Σ n R Bs → Stack Σ R → (η : Ctx)
+    → Mach Σ η ψ → State Σ
 
 {- the machine for a program with the definitions ds -}
-module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
+module _ {Σ : List DSig}
+  (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
 
   {- run a block, in the frame φ -}
   go : ∀ {n R Δ} → Blk Σ n R Δ → Stack Σ R → ∀ η → Frame Σ Δ → State Σ
   go (blk bs k) σ η φ = run k bs σ η ⟨ rv tt tt tt , φ , tt , tt ⟩
 
   {- call code f with the environment e and the argument w -}
-  enter : ∀ {η A B} → Val Σ (code η A B) → Val Σ (tup η) → Val Σ A → Stack Σ B → Next (State Σ)
-  enter {η} (code f) e w σ = next (run (Body.start (lookup ds f)) (Body.blocks (lookup ds f)) σ η ⟨ rv tt e w , [] , tt , tt ⟩)
+  enter : ∀ {η A B} → Val Σ (code η A B) → Val Σ (tup η) → Val Σ A → Stack Σ B
+    → Next (State Σ)
+  enter {η} (code f) e w σ =
+    next
+    (run (Body.start (lookup ds f)) (Body.blocks (lookup ds f)) σ η
+      ⟨ rv tt e w , [] , tt , tt ⟩)
 
   step : State Σ → Next (State Σ)
   step (run (movq a d ∷ k) bs σ η m) = next (run k bs σ η (put d (arg a m) m))
   step (run (subq a r e ∷ k) bs σ η m) =
-    next (run k bs σ η (put {n = 0} (reg {τ = ℤty} r) (δᵀ sub (int (cast {η = η} e (regs m ⦅ r ⦆))) (int (arg a m))) m))
+    next
+      (run k bs σ η
+        (put {n = 0} (reg {τ = ℤty} r)
+          (δᵀ sub (int (cast {η = η} e (regs m ⦅ r ⦆))) (int (arg a m))) m))
   step (run (cmpq a₂ a₁ ∷ k) bs σ η m) =
-    next (run k bs σ η ⟨ regs m , frame m , envα m , does (int (arg a₁ m) ≟ int (arg a₂ m)) ⟩)
-  step (run (sete d ∷ k) bs σ η m) = next (run k bs σ η (put d (bit (flag m)) m))
+    next
+      (run k bs σ η
+        ⟨ regs m , frame m , envα m , does (int (arg a₁ m) ≟ int (arg a₂ m)) ⟩)
+  step (run (sete d ∷ k) bs σ η m) =
+    next (run k bs σ η (put d (bit (flag m)) m))
   step (run (alloc o d ∷ k) bs σ η m) = next (run k bs σ η (put d (obj o m) m))
-  step (run (load i a d ∷ k) bs σ η m) = next (run k bs σ η (put d (lookup (elems (arg a m)) i) m))
+  step (run (load i a d ∷ k) bs σ η m) =
+    next (run k bs σ η (put d (lookup (elems (arg a m)) i) m))
   step (run (loadfst x r ∷ k) bs σ η m) =
     let v = lookup (frame m) x in
-    next (run k bs σ (size v) ⟨ wipeᵣ (regs m) [ r ≔ code-of v ] , frame m , env-of v , flag m ⟩)
-  step (run (loadsnd r ∷ k) bs σ η m) = next (run k bs σ η ⟨ regs m [ r ≔ envα m ] , frame m , envα m , flag m ⟩)
+    next
+      (run k bs σ (size v)
+        ⟨ wipeᵣ (regs m) [ r ≔ code-of v ] , frame m , env-of v , flag m ⟩)
+  step (run (loadsnd r ∷ k) bs σ η m) =
+    next (run k bs σ η ⟨ regs m [ r ≔ envα m ] , frame m , envα m , flag m ⟩)
   step (run (callq a e₁ e₂ ∷ k) bs σ η m) =
-    enter (arg a m) (cast e₁ (regs m ⦅ rdi ⦆)) (cast e₂ (regs m ⦅ rsi ⦆)) (retK k bs (frame m) σ)
+    enter (arg a m) (cast e₁ (regs m ⦅ rdi ⦆)) (cast e₂ (regs m ⦅ rsi ⦆))
+      (retK k bs (frame m) σ)
   step (run (retq e) bs halt η m) = stop (obs (cast e (regs m ⦅ rax ⦆)))
-  step (run (retq e) bs (retK k bs' φ σ) η m) = next (run k bs' σ η ⟨ rv (cast e (regs m ⦅ rax ⦆)) tt tt , φ , tt , tt ⟩)
+  step (run (retq e) bs (retK k bs' φ σ) η m) =
+    next (run k bs' σ η ⟨ rv (cast e (regs m ⦅ rax ⦆)) tt tt , φ , tt , tt ⟩)
   step (run (jmp l) bs σ η m) = next (go (block bs l) σ η (frame m))
   step (run (case x p _ l₁ l₂) bs σ η m) =
-    next (choose (lookup (frame m) x) (λ u → go (block bs l₁) σ η (u ∷ pop p (frame m)))
-                                      (λ u → go (block bs l₂) σ η (u ∷ pop p (frame m))))
+    next
+      (choose (lookup (frame m) x)
+        (λ u → go (block bs l₁) σ η (u ∷ pop p (frame m)))
+                                      (λ u →
+                                          go (block bs l₂) σ η
+                                            (u ∷ pop p (frame m))))
 
 {- a program starts with the start of main, with no slot, no register
    and no flag -}
 sem : ∀ {A} → Program A → Machine
-sem (program ds (body n bs k)) = machine (State _) (step ds) (run k bs halt [] ⟨ rv tt tt tt , [] , tt , tt ⟩)
+sem (program ds (body n bs k)) =
+  machine (State _) (step ds) (run k bs halt [] ⟨ rv tt tt tt , [] , tt , tt ⟩)

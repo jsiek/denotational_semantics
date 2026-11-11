@@ -24,7 +24,8 @@ open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 ⟦_⟧ : ∀ {k A} → Tm k A → Env Value → 𝒫 Value
-⟦_⟧s : ∀ {k n} → Vec (Tm k Any) n → Env Value → Results (𝒫 Value) (replicate n ■)
+⟦_⟧s : ∀ {k n} → Vec (Tm k Any) n → Env Value
+  → Results (𝒫 Value) (replicate n ■)
 
 ⟦ ` x ⟧ ρ = ρ (toℕ x)
 ⟦ lam N ⟧ ρ = Λ ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩
@@ -34,7 +35,8 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 ⟦ get i M ⟧ ρ = proj i ⟨ ⟦ M ⟧ ρ , ptt ⟩
 ⟦ inl M ⟧ ρ = inlD ⟨ ⟦ M ⟧ ρ , ptt ⟩
 ⟦ inr M ⟧ ρ = inrD ⟨ ⟦ M ⟧ ρ , ptt ⟩
-⟦ case L M N ⟧ ρ = 𝒞 ⟨ ⟦ L ⟧ ρ , ⟨ (λ X → ⟦ M ⟧ (X • ρ)) , ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩ ⟩ ⟩
+⟦ case L M N ⟧ ρ =
+  𝒞 ⟨ ⟦ L ⟧ ρ , ⟨ (λ X → ⟦ M ⟧ (X • ρ)) , ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩ ⟩ ⟩
 ⟦ prim p L M ⟧ ρ = primD p ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ let′ M N ⟧ ρ = ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ inject G M ⟧ ρ = ⟦ M ⟧ ρ

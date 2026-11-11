@@ -29,7 +29,7 @@ module ISWIM.All where
 
 {- ---------------------------------------------------------------------------
    The public theorem statements
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.Theorems.Denotational
 import ISWIM.Theorems.Simulation
@@ -48,7 +48,7 @@ import ISWIM.proof.Assurance.X86Erasure
 
 {- ---------------------------------------------------------------------------
    The untyped pipeline, preserved
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.Untyped.All
 
@@ -56,7 +56,7 @@ import ISWIM.Untyped.All
    ISWIM/proof/: syntactic facts about the passes: simplify, cast insertion on
    closed programs, hoist's references to older definitions, and the
    definitions, labels and frames that select instructions relies on
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.proof.Compiler.CastScope
 import ISWIM.proof.Compiler.HoistOlder
@@ -67,7 +67,7 @@ import ISWIM.proof.Compiler.SimplifyScope
 {- ---------------------------------------------------------------------------
    ISWIM/proof/: the plain graph model: the lemmas about the semantics of each
    language and the correctness of each pass
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.proof.Correctness.Graph.CastCorrect
 import ISWIM.proof.Correctness.Graph.CompilerCorrect
@@ -95,7 +95,7 @@ import ISWIM.proof.Semantics.Graph.Typed.Ops
 
 {- ---------------------------------------------------------------------------
    ISWIM/proof/: the CEK machines + simulations
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.proof.Correctness.CEK.CastSim
 import ISWIM.proof.Correctness.CEK.CastSimLemmas
@@ -115,7 +115,7 @@ import ISWIM.proof.Correctness.CEK.SimplifySim
 
 {- ---------------------------------------------------------------------------
    ISWIM/proof/: the clocked interpreters + value relations
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.proof.Correctness.Interp.CastFuel
 import ISWIM.proof.Correctness.Interp.CompilerFuel
@@ -135,7 +135,7 @@ import ISWIM.proof.Semantics.Interp.Typed.Rel
 {- ---------------------------------------------------------------------------
    ISWIM/proof/: the reduction semantics + simulations (explicate control and
    select instructions are the CEK column's)
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.proof.Correctness.Reduction.CastRed
 import ISWIM.proof.Correctness.Reduction.ConcretizeRed
@@ -155,7 +155,7 @@ import ISWIM.proof.Semantics.Reduction.Typed.ISWIM
 
 {- ---------------------------------------------------------------------------
    ISWIM/proof/: the graph model with errors
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.proof.Correctness.GraphErr.CastCorrect
 import ISWIM.proof.Correctness.GraphErr.CompilerCorrect
@@ -186,7 +186,7 @@ import ISWIM.proof.Adequacy.GraphErr.X86Mono
    ISWIM/proof/: adequacy of the plain graph model (ISWIM, Clos5ᵀ and X86ᵀ
    machines) and of the graph model with errors (ISWIM and X86 machines;
    Clos5ᵀ derived from the CEK column's simulation)
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.proof.Adequacy.Clos5
 import ISWIM.proof.Adequacy.Clos5Common
@@ -216,7 +216,7 @@ import ISWIM.proof.Adequacy.X86Soundness
 
 {- ---------------------------------------------------------------------------
    examples (smoke tests)
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.proof.Compiler.Examples.CastExample
 import ISWIM.proof.Compiler.Examples.PipelineExample

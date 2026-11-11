@@ -2,7 +2,8 @@
 
   A CEK-style abstract machine for ISWIM (call by value, left to right).
   A function value is a closure of the function's body and the whole
-  environment it was created in. See the design note in Semantics/CEK/Smallstep.agda.
+  environment it was created in. See the design note in
+  Semantics/CEK/Smallstep.agda.
 
 -}
 
@@ -13,7 +14,8 @@ open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import ISWIM.Language.ISWIM
 open import Semantics.Observation
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?;
+  machine)
 open import Framework.ListUtil
 
 open import Data.Fin using (Fin)
@@ -22,7 +24,8 @@ open import Data.Bool using (true; false)
 open import Data.Maybe using (Maybe; just; nothing; map)
 
 data Val : Set where
-  clo : AST → List Val → Val           {- body (under one binder), environment -}
+  {- body (under one binder), environment -}
+  clo : AST → List Val → Val
   const : (B : Base) → base-rep B → Val
   tup : List Val → Val
   inl : Val → Val
@@ -33,16 +36,20 @@ Env = List Val
 
 data Cont : Set where
   halt : Cont
-  appL : AST → Env → Cont → Cont       {- evaluating the function; next the argument -}
-  appR : Val → Cont → Cont             {- evaluating the argument of this function -}
-  tupK : List Val → List AST → Env → Cont → Cont   {- values so far (reversed), rest -}
+  {- evaluating the function; next the argument -}
+  appL : AST → Env → Cont → Cont
+  {- evaluating the argument of this function -}
+  appR : Val → Cont → Cont
+  {- values so far (reversed), rest -}
+  tupK : List Val → List AST → Env → Cont → Cont
   getK : ∀ {n} → Fin n → Cont → Cont
   inlK : Cont → Cont
   inrK : Cont → Cont
   caseK : AST → AST → Env → Cont → Cont
   primL : Prim → AST → Env → Cont → Cont   {- evaluating the first operand -}
   primR : Prim → Val → Cont → Cont         {- evaluating the second operand -}
-  letK : AST → Env → Cont → Cont           {- evaluating the bound term; next the body -}
+  {- evaluating the bound term; next the body -}
+  letK : AST → Env → Cont → Cont
 
 data State : Set where
   eval : AST → Env → Cont → State
@@ -86,7 +93,8 @@ step (eval (tuple n ⦅ args ⦆) ρ κ) = next (tuple-next [] (args→list args
 step (eval (get i ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (getK i κ))
 step (eval (inl-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inlK κ))
 step (eval (inr-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inrK κ))
-step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ (caseK M N ρ κ))
+step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) =
+  next (eval L ρ (caseK M N ρ κ))
 step (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval M ρ (letK N ρ κ))
 step (ret v halt) = stop (obs v)
@@ -94,8 +102,8 @@ step (ret v halt) = stop (obs v)
    split, which takes the operator apart first, preserves errors
    (as in Clos2 and Clos3). Clos4 and Clos5 check that the operator is
    code only at the call, after all three operands, like an indirect call
-   instruction: split's fst of the closure has already stopped with an error on a
-   non-closure, so on its output that late check always passes -}
+   instruction: split's fst of the closure has already stopped with an error on
+   a non-closure, so on its output that late check always passes -}
 step (ret v@(clo _ _) (appL M ρ κ)) = next (eval M ρ (appR v κ))
 step (ret _ (appL M ρ κ)) = stop o-error
 step (ret w (appR (clo N ρ) κ)) = next (eval N (w ∷ ρ) κ)

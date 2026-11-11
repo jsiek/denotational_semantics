@@ -26,7 +26,8 @@ module FPC.Semantics.ScottDomains.EnvClos
 
 open import Framework.Scott.Base pt fe using (at)
 open import Framework.Scott.Domain pt fe pe using (𝔻)
-open import Framework.Scott.Ops pt fe pe using (Env; const; proj) renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ)
+open import Framework.Scott.Ops pt fe pe using (Env; const; proj) renaming (app
+  to appᵈ; inl to inlᵈ; inr to inrᵈ)
 open import Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 

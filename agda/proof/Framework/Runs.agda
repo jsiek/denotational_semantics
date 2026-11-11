@@ -21,26 +21,39 @@ module Runs {S : Set} (step : S → Next S) where
     _∷↠_ : ∀ {s s' s''} → step s ≡ next s' → s' ↠ s'' → s ↠ s''
 
   infixr 5 _++↠_
-  _++↠_ : ∀ {s s' s''} → s ↠ s' → s' ↠ s'' → s ↠ s''
+  _++↠_ : ∀ {s s' s''}
+    → s ↠ s'
+    → s' ↠ s''
+    → s ↠ s''
   done ++↠ τ = τ
   (st ∷↠ σ) ++↠ τ = st ∷↠ (σ ++↠ τ)
 
   {- a run in the machine with any start -}
-  ↠→star : ∀ {s₀ s t} → s ↠ t → Star (machine S step s₀) s t
+  ↠→star : ∀ {s₀ s t}
+    → s ↠ t
+    → Star (machine S step s₀) s t
   ↠→star done = ε
   ↠→star (st ∷↠ σ) = st ◅ ↠→star σ
 
-  star→↠ : ∀ {s₀ s t} → Star (machine S step s₀) s t → s ↠ t
+  star→↠ : ∀ {s₀ s t}
+    → Star (machine S step s₀) s t
+    → s ↠ t
   star→↠ ε = done
   star→↠ (st ◅ σ) = st ∷↠ star→↠ σ
 
   private
-    next-inj : ∀ {a b : S} → next a ≡ next b → a ≡ b
+    next-inj : ∀ {a b : S}
+      → next a ≡ next b
+      → a ≡ b
     next-inj refl = refl
 
   {- two runs to final states end in the same state -}
-  ↠-final-det : ∀ {s t₁ t₂ o₁ o₂} → s ↠ t₁ → s ↠ t₂
-    → step t₁ ≡ stop o₁ → step t₂ ≡ stop o₂ → t₁ ≡ t₂
+  ↠-final-det : ∀ {s t₁ t₂ o₁ o₂}
+    → s ↠ t₁
+    → s ↠ t₂
+    → step t₁ ≡ stop o₁
+    → step t₂ ≡ stop o₂
+    → t₁ ≡ t₂
   ↠-final-det done done f₁ f₂ = refl
   ↠-final-det done (st ∷↠ σ) f₁ f₂ with trans (sym f₁) st
   ... | ()

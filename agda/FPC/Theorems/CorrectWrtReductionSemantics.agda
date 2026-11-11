@@ -28,7 +28,8 @@ module FPC.Theorems.CorrectWrtReductionSemantics where
 
 open import Framework.Primitives using (Int)
 open import Semantics.Observation using (o-const; _⇔_)
-open import Semantics.Reduction.Smallstep using (Terminates; Diverges; Equivalent)
+open import Semantics.Reduction.Smallstep using (Terminates; Diverges;
+  Equivalent)
 
 open import FPC.Language.Type using (base)
 import FPC.Language.FPC as FPC
@@ -48,7 +49,8 @@ open import Data.List using ([])
    reduction semantics of FPC on M terminates with n if and only if
    the machine of X86μ on compile M does -}
 compile-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)
-  → Terminates (FPCᵣ.sem M) (o-const Int n) ⇔ Terminates (X86μₘ.sem (compile M)) (o-const Int n)
+  → Terminates (FPCᵣ.sem M) (o-const Int n)
+    ⇔ Terminates (X86μₘ.sem (compile M)) (o-const Int n)
 compile-const = PipelineRed.compile-const
 
 {- and one diverges if and only if the other does -}
@@ -57,5 +59,6 @@ compile-diverges : ∀ (M : FPC.Tm [] (base Int))
 compile-diverges = PipelineRed.compile-diverges
 
 {- more generally, the two are equivalent for every closed term M -}
-compile-correct : ∀ {A} (M : FPC.Tm [] A) → Equivalent (FPCᵣ.sem M) (X86μₘ.sem (compile M))
+compile-correct : ∀ {A} (M : FPC.Tm [] A)
+  → Equivalent (FPCᵣ.sem M) (X86μₘ.sem (compile M))
 compile-correct = PipelineRed.compile-correct

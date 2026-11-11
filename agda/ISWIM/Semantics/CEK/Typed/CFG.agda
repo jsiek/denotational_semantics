@@ -1,10 +1,10 @@
 {-
 
   A machine for CFGᵀ (ISWIM/Language/Typed/CFG.agda), with the values, frames
-  and simple expressions of the Impᵀ machine (ISWIM/Semantics/CEK/Typed/Imp.agda).
-  A state runs a tail in a frame, with the blocks it may jump to (those
-  of its body for the start of a body, and those older than block l for
-  block l):
+  and simple expressions of the Impᵀ machine
+  (ISWIM/Semantics/CEK/Typed/Imp.agda). A state runs a tail in a frame, with the
+  blocks it may jump to (those of its body for the start of a body, and those
+  older than block l for block l):
     exec t φ bs κ
   One step runs a statement:
   * return s: the value of s goes to the continuation (cont);
@@ -28,8 +28,8 @@ open import ISWIM.Language.Typed.CFG
 open import Framework.Lookup using (_!_; pop)
 open import Semantics.Observation using (o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import ISWIM.Semantics.CEK.Typed.Imp
-  using (Val; code; pack; Frame; obs; choose; atom; Res; value; fail; call; run) public
+open import ISWIM.Semantics.CEK.Typed.Imp using (Val; code; pack; Frame; obs;
+  choose; atom; Res; value; fail; call; run) public
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
@@ -37,7 +37,8 @@ open import Data.Nat using (ℕ)
 
 data Cont (Σ : List ℕ) : Set where
   halt : Cont Σ
-  seqK : ∀ {Bs Δ Δ'} → Δ' ⊑ Δ → Frame Σ Δ → Tail Σ Bs (Any ∷ Δ') → Blocks Σ Bs → Cont Σ → Cont Σ
+  seqK : ∀ {Bs Δ Δ'} → Δ' ⊑ Δ → Frame Σ Δ → Tail Σ Bs (Any ∷ Δ') → Blocks Σ Bs
+    → Cont Σ → Cont Σ
   retK : Cont Σ → Cont Σ
 
 data State (Σ : List ℕ) : Set where
@@ -52,7 +53,8 @@ module _ {Σ : List ℕ} (ds : All (λ n → Body Σ (Any ∷ ⟪ tup n ⟫ ∷ 
 
   {- call a closure with the argument w -}
   enter : Val Σ ⟪ fun ⟫ → Val Σ Any → Cont Σ → Next (State Σ)
-  enter (pack (code f) e) w κ = next (exec (Body.start (ds ! f)) (w ∷ e ∷ []) (Body.blocks (ds ! f)) κ)
+  enter (pack (code f) e) w κ =
+    next (exec (Body.start (ds ! f)) (w ∷ e ∷ []) (Body.blocks (ds ! f)) κ)
 
   cont : Val Σ Any → Cont Σ → Next (State Σ)
   cont v halt = stop (obs v)
@@ -66,7 +68,8 @@ module _ {Σ : List ℕ} (ds : All (λ n → Body Σ (Any ∷ ⟪ tup n ⟫ ∷ 
   retn κ (call f w) = enter f w (retK κ)
 
   {- the result of seq p s t -}
-  assign : ∀ {Bs Δ Δ' A} → Δ' ⊑ Δ → Frame Σ Δ → Tail Σ Bs (A ∷ Δ') → Blocks Σ Bs → Cont Σ → Res A
+  assign : ∀ {Bs Δ Δ' A} → Δ' ⊑ Δ → Frame Σ Δ → Tail Σ Bs (A ∷ Δ') → Blocks Σ Bs
+    → Cont Σ → Res A
     → Next (State Σ)
   assign p φ t bs κ (value v) = next (exec t (v ∷ pop p φ) bs κ)
   assign p φ t bs κ fail = stop o-error
@@ -77,7 +80,9 @@ module _ {Σ : List ℕ} (ds : All (λ n → Body Σ (Any ∷ ⟪ tup n ⟫ ∷ 
   step (exec (seq p s t) φ bs κ) = assign p φ t bs κ (run s φ)
   step (exec (goto l) φ bs κ) = next (go (block bs l) φ κ)
   step (exec (case a p l₁ l₂) φ bs κ) =
-    next (choose (atom φ a) (λ v → go (block bs l₁) (v ∷ pop p φ) κ) (λ v → go (block bs l₂) (v ∷ pop p φ) κ))
+    next
+      (choose (atom φ a) (λ v → go (block bs l₁) (v ∷ pop p φ) κ)
+        (λ v → go (block bs l₂) (v ∷ pop p φ) κ))
 
 {- a program starts with the start of main, in the empty frame -}
 sem : Program → Machine

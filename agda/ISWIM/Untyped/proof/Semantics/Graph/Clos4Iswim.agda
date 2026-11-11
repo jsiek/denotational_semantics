@@ -4,7 +4,8 @@ open import proof.Framework.GraphModel.Continuity
 open import proof.Semantics.Graph.Prim
 open import ISWIM.Untyped.Language.Clos4
 open import ISWIM.Untyped.Semantics.Graph.Clos4Iswim public hiding (⟦_⟧; init)
-open import proof.Framework.GraphModel.SemanticsUtil Op sig using (module GoodSemantics)
+open import proof.Framework.GraphModel.SemanticsUtil Op sig using (module
+  GoodSemantics)
 
 open import Data.Unit using (⊤; tt)
 
@@ -40,7 +41,8 @@ open Semantics {{...}} public
 Clos4-Continuous : ContinuousSemantics
 Clos4-Continuous = G.Cont-Sem
 
-open G public using (term-continuous; body-mono; body-continuous; body2-continuous; let-β; clos-β)
+open G public using (term-continuous; body-mono; body-continuous;
+  body2-continuous; let-β; clos-β)
 
 {- a consistent environment gives a consistent denotation -}
 Clos4-con = G.con tt

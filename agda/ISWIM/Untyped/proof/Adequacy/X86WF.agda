@@ -55,7 +55,8 @@ Code L S (i ∷ is) = Reads L S i × Code L S is
 
 {- every block of a body, labels below K and slots below n -}
 BodyOK : ℕ → ℕ → Body → Set
-BodyOK K n (body _ bs b) = All (λ c → Code (_< K) (_< n) (Block.instrs c)) (b ∷ bs)
+BodyOK K n (body _ bs b) =
+  All (λ c → Code (_< K) (_< n) (Block.instrs c)) (b ∷ bs)
 
 {- the definitions, newest first -}
 DefsWF : List Body → Set
@@ -63,4 +64,5 @@ DefsWF [] = ⊤
 DefsWF (b ∷ bs) = BodyOK (length bs) (2 ⊔ Body.locals b) b × DefsWF bs
 
 WF : Program → Set
-WF (program ds b) = DefsWF ds × BodyOK (length ds) (Body.locals b) b × (∀ k → Con (table ds k))
+WF (program ds b) =
+  DefsWF ds × BodyOK (length ds) (Body.locals b) b × (∀ k → Con (table ds k))

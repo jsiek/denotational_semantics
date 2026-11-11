@@ -36,10 +36,12 @@ module _ {Σ : List ℕ} (ds : All (λ n → Body Σ (Any ∷ ⟪ tup n ⟫ ∷ 
   call : ℕ → Val ⟪ fun ⟫ → Val Any → Result (Val Any)
 
   tail ck bs φ (return s) = eval-simple (call ck) φ s
-  tail ck bs φ (seq p s t) = do v ← eval-simple (call ck) φ s; tail ck bs (v ∷ pop p φ) t
+  tail ck bs φ (seq p s t) =
+    do v ← eval-simple (call ck) φ s; tail ck bs (v ∷ pop p φ) t
   tail ck bs φ (goto l) = jump ck bs l φ
   tail ck bs φ (case a p l₁ l₂) =
-    either (atom φ a) (λ v → jump ck bs l₁ (v ∷ pop p φ)) (λ v → jump ck bs l₂ (v ∷ pop p φ))
+    either (atom φ a) (λ v → jump ck bs l₁ (v ∷ pop p φ))
+      (λ v → jump ck bs l₂ (v ∷ pop p φ))
 
   jump ck (bs ▷ t) Z φ = tail ck bs φ t
   jump ck (bs ▷ t) (S l) φ = jump ck bs l φ

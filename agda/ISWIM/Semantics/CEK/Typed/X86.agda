@@ -1,8 +1,8 @@
 {-
 
   A machine for X86ᵀ (ISWIM/Language/Typed/X86.agda): the machine of untyped
-  X86 (ISWIM/Semantics/CEK/X86.agda) on typed states, with the values of the Clos5ᵀ machine (ISWIM/Semantics/CEK/Typed/Clos5.agda).
-  A state
+  X86 (ISWIM/Semantics/CEK/X86.agda) on typed states, with the values of the
+  Clos5ᵀ machine (ISWIM/Semantics/CEK/Typed/Clos5.agda). A state
     run k bs σ η m
   runs the sequence k, with the blocks bs it may jump to, the call
   stack σ, and the registers, frame, open closure and flag m (Mach),
@@ -31,9 +31,10 @@ open import ISWIM.Language.Typed.X86
 open import Framework.Lookup using (_!_; pop)
 open import Semantics.Observation using (o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import ISWIM.Semantics.CEK.Typed.Clos5
-  using (Val; code; pack; const; tup; inl; inr; dyn; obs; int; elems; choose; δᵀ; proj?) public
-open import ISWIM.Semantics.CEK.Typed.Imp using (Frame) renaming (atom to value-of) public
+open import ISWIM.Semantics.CEK.Typed.Clos5 using (Val; code; pack; const; tup;
+  inl; inr; dyn; obs; int; elems; choose; δᵀ; proj?) public
+open import ISWIM.Semantics.CEK.Typed.Imp using (Frame) renaming (atom to
+  value-of) public
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Integer using (_≟_)
@@ -93,7 +94,8 @@ module _ {Σ : List ℕ} where
   ρ ⦅ rdi ⦆ = RegVals.di ρ
   ρ ⦅ rsi ⦆ = RegVals.si ρ
 
-  _[_≔_] : ∀ {η Γ τ} → RegVals Σ η Γ → (r : Reg) → MV Σ η τ → RegVals Σ η (Γ [ r ↦ τ ])
+  _[_≔_] : ∀ {η Γ τ} → RegVals Σ η Γ → (r : Reg) → MV Σ η τ
+    → RegVals Σ η (Γ [ r ↦ τ ])
   ρ [ rax ≔ v ] = rv v (RegVals.di ρ) (RegVals.si ρ)
   ρ [ rdi ≔ v ] = rv (RegVals.ax ρ) v (RegVals.si ρ)
   ρ [ rsi ≔ v ] = rv (RegVals.ax ρ) (RegVals.di ρ) v
@@ -109,7 +111,8 @@ module _ {Σ : List ℕ} where
 
   wipeᵣ : ∀ {η η' Γ} → RegVals Σ η Γ → RegVals Σ η' (wipe Γ)
   wipeᵣ {Γ = Γ} ρ =
-    rv (wipeᵥ (Regs.ax Γ) (RegVals.ax ρ)) (wipeᵥ (Regs.di Γ) (RegVals.di ρ)) (wipeᵥ (Regs.si Γ) (RegVals.si ρ))
+    rv (wipeᵥ (Regs.ax Γ) (RegVals.ax ρ)) (wipeᵥ (Regs.di Γ) (RegVals.di ρ))
+      (wipeᵥ (Regs.si Γ) (RegVals.si ρ))
 
 
   arg : ∀ {η ψ τ} → Arg Σ ψ τ → Mach Σ η ψ → RV Σ η τ
@@ -155,10 +158,13 @@ module _ {Σ : List ℕ} where
 
 data Stack (Σ : List ℕ) : Set where
   halt : Stack Σ
-  retK : ∀ {n Bs Δ} → Seq Σ n Bs (returned Δ) → Blocks Σ n Bs → Frame Σ Δ → Stack Σ → Stack Σ   {- the caller -}
+  {- the caller -}
+  retK : ∀ {n Bs Δ} → Seq Σ n Bs (returned Δ) → Blocks Σ n Bs → Frame Σ Δ
+    → Stack Σ → Stack Σ
 
 data State (Σ : List ℕ) : Set where
-  run : ∀ {n Bs ψ} → Seq Σ n Bs ψ → Blocks Σ n Bs → Stack Σ → (η : ℕ) → Mach Σ η ψ → State Σ
+  run : ∀ {n Bs ψ} → Seq Σ n Bs ψ → Blocks Σ n Bs → Stack Σ → (η : ℕ)
+    → Mach Σ η ψ → State Σ
 
 {- the machine for a program with the definitions ds -}
 module _ {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
@@ -168,11 +174,16 @@ module _ {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
   go (blk bs k) σ η φ = run k bs σ η ⟨ rv tt tt tt , φ , tt , tt ⟩
 
   {- call code f with the environment e and the argument w -}
-  enter : ∀ {η} → Val Σ (code η) → Val Σ ⟪ tup η ⟫ → Val Σ Any → Stack Σ → Next (State Σ)
-  enter {η} (code f) e w σ = next (run (Body.start (ds ! f)) (Body.blocks (ds ! f)) σ η ⟨ rv tt e w , [] , tt , tt ⟩)
+  enter : ∀ {η} → Val Σ (code η) → Val Σ ⟪ tup η ⟫ → Val Σ Any → Stack Σ
+    → Next (State Σ)
+  enter {η} (code f) e w σ =
+    next
+    (run (Body.start (ds ! f)) (Body.blocks (ds ! f)) σ η
+      ⟨ rv tt e w , [] , tt , tt ⟩)
 
   {- the check of chk, then the move -}
-  checked : ∀ {n Bs η A ψ ψ'} → Maybe (Val Σ A) → Dst n ψ (ty A) ψ' → Seq Σ n Bs ψ' → Blocks Σ n Bs → Stack Σ
+  checked : ∀ {n Bs η A ψ ψ'} → Maybe (Val Σ A) → Dst n ψ (ty A) ψ'
+    → Seq Σ n Bs ψ' → Blocks Σ n Bs → Stack Σ
     → Mach Σ η ψ → Next (State Σ)
   checked {η = η} (just v) d k bs σ m = next (run k bs σ η (put d v m))
   checked nothing d k bs σ m = stop o-error
@@ -180,27 +191,49 @@ module _ {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
   step : State Σ → Next (State Σ)
   step (run (movq a d ∷ k) bs σ η m) = next (run k bs σ η (put d (arg a m) m))
   step (run (subq a r e ∷ k) bs σ η m) =
-    next (run k bs σ η (put {n = 0} (reg {τ = ℤty} r) (δᵀ sub (int (cast {η = η} e (regs m ⦅ r ⦆))) (int (arg a m))) m))
+    next
+      (run k bs σ η
+        (put {n = 0} (reg {τ = ℤty} r)
+          (δᵀ sub (int (cast {η = η} e (regs m ⦅ r ⦆))) (int (arg a m))) m))
   step (run (cmpq a₂ a₁ ∷ k) bs σ η m) =
-    next (run k bs σ η ⟨ regs m , frame m , opened m , does (int (arg a₁ m) ≟ int (arg a₂ m)) ⟩)
-  step (run (sete d ∷ k) bs σ η m) = next (run k bs σ η (put d (bit (flag m)) m))
-  step (run (testinl a ∷ k) bs σ η m) = next (run k bs σ η ⟨ regs m , frame m , opened m , is-inl (arg a m) ⟩)
+    next
+      (run k bs σ η
+        ⟨ regs m , frame m , opened m
+          , does (int (arg a₁ m) ≟ int (arg a₂ m)) ⟩)
+  step (run (sete d ∷ k) bs σ η m) =
+    next (run k bs σ η (put d (bit (flag m)) m))
+  step (run (testinl a ∷ k) bs σ η m) =
+    next (run k bs σ η ⟨ regs m , frame m , opened m , is-inl (arg a m) ⟩)
   step (run (alloc o d ∷ k) bs σ η m) = next (run k bs σ η (put d (obj o m) m))
-  step (run (load f a d ∷ k) bs σ η m) = next (run k bs σ η (put d (field′ f (arg a m)) m))
+  step (run (load f a d ∷ k) bs σ η m) =
+    next (run k bs σ η (put d (field′ f (arg a m)) m))
   step (run (loadfst x r ∷ k) bs σ η m) =
     let v = frame m ! x in
-    next (run k bs σ (size v) ⟨ wipeᵣ (regs m) [ r ≔ code-of v ] , frame m , (code-of v , env-of v) , flag m ⟩)
-  step (run (loadsnd r ∷ k) bs σ η m) = next (run k bs σ η ⟨ regs m [ r ≔ proj₂ (opened m) ] , frame m , opened m , flag m ⟩)
+    next
+      (run k bs σ (size v)
+        ⟨ wipeᵣ (regs m) [ r ≔ code-of v ] , frame m
+          , (code-of v , env-of v) , flag m ⟩)
+  step (run (loadsnd r ∷ k) bs σ η m) =
+    next
+    (run k bs σ η
+      ⟨ regs m [ r ≔ proj₂ (opened m) ] , frame m , opened m , flag m ⟩)
   step (run (callq a e₁ e₂ ∷ k) bs σ η m) =
-    enter (arg a m) (cast e₁ (regs m ⦅ rdi ⦆)) (cast e₂ (regs m ⦅ rsi ⦆)) (retK k bs (frame m) σ)
+    enter (arg a m) (cast e₁ (regs m ⦅ rdi ⦆)) (cast e₂ (regs m ⦅ rsi ⦆))
+      (retK k bs (frame m) σ)
   step (run (chk t x d ∷ k) bs σ η m) =
-    checked (proj? t (frame m ! x)) d k bs σ ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩
+    checked (proj? t (frame m ! x)) d k bs σ
+      ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩
   step (run (retq e) bs halt η m) = stop (obs (cast e (regs m ⦅ rax ⦆)))
-  step (run (retq e) bs (retK k bs' φ σ) η m) = next (run k bs' σ η ⟨ rv (cast e (regs m ⦅ rax ⦆)) tt tt , φ , tt , tt ⟩)
+  step (run (retq e) bs (retK k bs' φ σ) η m) =
+    next (run k bs' σ η ⟨ rv (cast e (regs m ⦅ rax ⦆)) tt tt , φ , tt , tt ⟩)
   step (run (jmp l) bs σ η m) = next (go (block bs l) σ η (frame m))
-  step (run (je l₁ l₂) bs σ η m) = next (if flag m then go (block bs l₁) σ η (frame m) else go (block bs l₂) σ η (frame m))
+  step (run (je l₁ l₂) bs σ η m) =
+    next
+    (if flag m then go (block bs l₁) σ η (frame m) else go (block bs l₂) σ
+      η (frame m))
 
 {- a program starts with the start of main, with no slot, no register
    and no flag -}
 sem : Program → Machine
-sem (program ds (body n bs k)) = machine (State _) (step ds) (run k bs halt 0 ⟨ rv tt tt tt , [] , tt , tt ⟩)
+sem (program ds (body n bs k)) =
+  machine (State _) (step ds) (run k bs halt 0 ⟨ rv tt tt tt , [] , tt , tt ⟩)

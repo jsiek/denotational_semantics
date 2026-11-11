@@ -2,8 +2,8 @@ module ISWIM.Untyped.Semantics.GraphErr.X86 where
 {-
 
  The semantics of X86 (ISWIM/Language/X86.agda) in the graph model with errors:
- that of ISWIM/Untyped/Semantics/Graph/X86.agda, with the error-propagating operators
- and the checks of the machine (ISWIM/Semantics/CEK/X86.agda).
+ that of ISWIM/Untyped/Semantics/Graph/X86.agda, with the error-propagating
+ operators and the checks of the machine (ISWIM/Semantics/CEK/X86.agda).
 
  An unset register and the absent flag hold init, {ω}, so that reading
  them errs: %rdi and %rsi in main, %rax at the start of a definition,
@@ -24,9 +24,11 @@ open import Framework.GraphModel.Domain
 open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
 open import ISWIM.Semantics.GraphErr.Prim
-open import ISWIM.Untyped.Semantics.GraphErr.Frames using (Table; Store; init; read; _[_↦_]; frameᵐ; zeros; tables) public
+open import ISWIM.Untyped.Semantics.GraphErr.Frames using (Table; Store; init;
+  read; _[_↦_]; frameᵐ; zeros; tables) public
 open import Language.Prim using (sub; eq)
-open import ISWIM.Language.X86 renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ)
+open import ISWIM.Language.X86 renaming (pair to pairₛ; inl to inlₛ; inr to
+  inrₛ)
 
 open import Data.Integer using (+_)
 open import Data.Nat using (ℕ; _≟_; _⊔_)
@@ -66,18 +68,21 @@ Kont = Store → Regs → 𝒫 Value → 𝒫 Value
 𝒪 T n σ ρ (imm B k) = ℬ B k ptt
 𝒪 T n σ ρ (label k) = T k
 
-𝒪s : Table → ℕ → Store → Regs → (as : List Arg) → Results (𝒫 Value) (replicate (length as) ■)
+𝒪s : Table → ℕ → Store → Regs → (as : List Arg)
+  → Results (𝒫 Value) (replicate (length as) ■)
 𝒪s T n σ ρ [] = ptt
 𝒪s T n σ ρ (a ∷ as) = ⟨ 𝒪 T n σ ρ a , 𝒪s T n σ ρ as ⟩
 
 {- d := D, then κ -}
 put : ℕ → Loc → 𝒫 Value → Kont → Kont
-put n (var x) D κ σ ρ φ = frameᵐ n x D (letᵐ ⟨ D , ⟨ (λ X → κ (σ [ x ↦ X ]) ρ φ) , ptt ⟩ ⟩)
+put n (var x) D κ σ ρ φ =
+  frameᵐ n x D (letᵐ ⟨ D , ⟨ (λ X → κ (σ [ x ↦ X ]) ρ φ) , ptt ⟩ ⟩)
 put n (reg g) D κ σ ρ φ = strictᵐ D (κ σ (ρ [ g ≔ D ]) φ)
 
 {- the object that alloc builds; a wrong number of fields errs -}
 object : Table → ℕ → Store → Regs → Shape → List Arg → 𝒫 Value
-object T n σ ρ pairₛ (a ∷ b ∷ []) = pairᵐ ⟨ 𝒪 T n σ ρ a , ⟨ 𝒪 T n σ ρ b , ptt ⟩ ⟩
+object T n σ ρ pairₛ (a ∷ b ∷ []) =
+  pairᵐ ⟨ 𝒪 T n σ ρ a , ⟨ 𝒪 T n σ ρ b , ptt ⟩ ⟩
 object T n σ ρ tuple as = 𝒯ᵐ (length as) (𝒪s T n σ ρ as)
 object T n σ ρ inlₛ (a ∷ []) = inlᵐ ⟨ 𝒪 T n σ ρ a , ptt ⟩
 object T n σ ρ inrₛ (a ∷ []) = inrᵐ ⟨ 𝒪 T n σ ρ a , ptt ⟩
@@ -99,8 +104,10 @@ call R κ σ = strictᵐ R (κ σ (called R) init)
 
 ⟦_⟧ⁱ : Instr → Table → ℕ → Kont → Kont
 ⟦ movq a d ⟧ⁱ T n κ σ ρ φ = put n d (𝒪 T n σ ρ a) κ σ ρ φ
-⟦ subq a d ⟧ⁱ T n κ σ ρ φ = put n d (primᵐ sub ⟨ 𝒪 T n σ ρ (loc d) , ⟨ 𝒪 T n σ ρ a , ptt ⟩ ⟩) κ σ ρ φ
-⟦ cmpq a₂ a₁ ⟧ⁱ T n κ σ ρ φ = flag (primᵐ eq ⟨ 𝒪 T n σ ρ a₁ , ⟨ 𝒪 T n σ ρ a₂ , ptt ⟩ ⟩) κ σ ρ
+⟦ subq a d ⟧ⁱ T n κ σ ρ φ =
+  put n d (primᵐ sub ⟨ 𝒪 T n σ ρ (loc d) , ⟨ 𝒪 T n σ ρ a , ptt ⟩ ⟩) κ σ ρ φ
+⟦ cmpq a₂ a₁ ⟧ⁱ T n κ σ ρ φ =
+  flag (primᵐ eq ⟨ 𝒪 T n σ ρ a₁ , ⟨ 𝒪 T n σ ρ a₂ , ptt ⟩ ⟩) κ σ ρ
 ⟦ sete d ⟧ⁱ T n κ σ ρ φ = put n d φ κ σ ρ φ
 ⟦ testinl a ⟧ⁱ T n κ σ ρ φ = flag (isinlᵐ (𝒪 T n σ ρ a)) κ σ ρ
 ⟦ alloc s as d ⟧ⁱ T n κ σ ρ φ = put n d (object T n σ ρ s as) κ σ ρ φ
@@ -118,7 +125,8 @@ Blocks = ℕ → Kont
 ⟦_⟧ʲ : Jump → Blocks → Kont
 ⟦ retq ⟧ʲ B σ ρ φ = ρ rax
 ⟦ jmp l ⟧ʲ B = B l
-⟦ je l₁ l₂ ⟧ʲ B σ ρ φ = 𝒞ᵐ ⟨ φ , ⟨ (λ _ → B l₁ σ ρ φ) , ⟨ (λ _ → B l₂ σ ρ φ) , ptt ⟩ ⟩ ⟩
+⟦ je l₁ l₂ ⟧ʲ B σ ρ φ =
+  𝒞ᵐ ⟨ φ , ⟨ (λ _ → B l₁ σ ρ φ) , ⟨ (λ _ → B l₂ σ ρ φ) , ptt ⟩ ⟩ ⟩
 
 ⟦_⟧ᵇ : Block → Table → ℕ → Blocks → Kont
 ⟦ b ⟧ᵇ T n B = ⟦ Block.instrs b ⟧ˢ T n (⟦ Block.jump b ⟧ʲ B)
@@ -134,11 +142,13 @@ run : Table → ℕ → Body → Kont
 run T n (body _ bs b) = ⟦ b ⟧ᵇ T n (blocks T n bs)
 
 code : Table → Body → 𝒫 Value
-code T b = ΛΛᵐ ⟨ (λ X Y → run T (2 ⊔ Body.locals b) b zeros (args X Y) init) , ptt ⟩
+code T b =
+  ΛΛᵐ ⟨ (λ X Y → run T (2 ⊔ Body.locals b) b zeros (args X Y) init) , ptt ⟩
 
 table : List Body → Table
 table = tables code
 
 {- main: %rax holds 0, %rdi and %rsi are unset, and there is no flag -}
 ⟦_⟧ₚ : Program → 𝒫 Value
-⟦ program ds b ⟧ₚ = run (table ds) (Body.locals b) b zeros (called (ℬ Int (+ 0) ptt)) init
+⟦ program ds b ⟧ₚ =
+  run (table ds) (Body.locals b) b zeros (called (ℬ Int (+ 0) ptt)) init

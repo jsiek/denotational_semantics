@@ -4,8 +4,8 @@ module ISWIM.Untyped.Semantics.Graph.CFG where
  The semantics of CFG, the language after the explicate-control pass
  (Language/CFG.agda).
 
- Stores, slots and simple expressions are as in Imp (Semantics/Graph/Imp.agda). A
- tail runs in a frame of n slots, given the meanings B of the blocks it
+ Stores, slots and simple expressions are as in Imp (Semantics/Graph/Imp.agda).
+ A tail runs in a frame of n slots, given the meanings B of the blocks it
  can see, and given the store as it enters it means a set of values: a
  tail produces a value, not a store. A block means a function from
  stores to sets of values.
@@ -18,8 +18,8 @@ module ISWIM.Untyped.Semantics.Graph.CFG where
  as it is.
 
  The blocks of a body are given meaning as the global definitions are
- (tables in Semantics/Graph/Imp.agda): newest first, each with the meanings of the
- blocks older than it, which are all it can jump to, so no fixed point is
+ (tables in Semantics/Graph/Imp.agda): newest first, each with the meanings of
+ the blocks older than it, which are all it can jump to, so no fixed point is
  needed. A jump to a label that is not among the visible blocks means ∅,
  as a reference to a missing global definition does.
 
@@ -53,7 +53,11 @@ Blocks = ℕ → Store → 𝒫 Value
   (⋆ ⟨ Λ ⟨ (λ X → ⟦ t ⟧[ T ] n B (σ [ x ↦ X ])) , ptt ⟩ , ⟨ 𝒮 T n σ s , ptt ⟩ ⟩)
 ⟦ goto l ⟧[ T ] n B σ = B l σ
 ⟦ case a x l₁ l₂ ⟧[ T ] n B σ = checked n x
-  (𝒞 ⟨ 𝒜 T n σ a , ⟨ (λ X → B l₁ (σ [ x ↦ X ])) , ⟨ (λ X → B l₂ (σ [ x ↦ X ])) , ptt ⟩ ⟩ ⟩)
+  (𝒞
+      ⟨ 𝒜 T n σ a
+        ,
+          ⟨ (λ X → B l₁ (σ [ x ↦ X ]))
+            , ⟨ (λ X → B l₂ (σ [ x ↦ X ])) , ptt ⟩ ⟩ ⟩)
 
 {- the blocks bs (newest first), each with the meanings of the older ones -}
 blocks : Table → ℕ → List Tail → Blocks

@@ -23,7 +23,8 @@ open import FPC.Language.Type
 open import FPC.Language.EnvClos
 import FPC.Language.PairClos as C4
 open import FPC.Compiler.Split
-open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂;
+  lookup₂; _<><₂_)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 import FPC.Semantics.AbstractMachines.EnvClos as Src
@@ -32,9 +33,10 @@ import FPC.Semantics.AbstractMachines.PairClos as Tgt
 open import Data.List using ([]; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 
-open import FPC.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B} split
+open import FPC.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷
+  []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B} split
 
-{- The simulation relation -----------------------------------------------------}
+{- The simulation relation ----------------------------------------------------}
 
 infix 4 _≈k_ _~_
 
@@ -43,53 +45,70 @@ EnvRel ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ lookup ρ₂ x
 
 data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   halt : ∀ {A} → Src.halt {A} ≈k Tgt.halt
-  appL : ∀ {Γ A B} {M : Tm Γ A} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ : Src.Cont B} {κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+  appL : ∀ {Γ A B} {M : Tm Γ A} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ}
+    {κ₁ : Src.Cont B} {κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.appL M ρ₁ κ₁ ≈k Tgt.callL (split M) ρ₂ κ₂
-  appR : ∀ {A B v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.appR {A} {B} v κ₁ ≈k Tgt.callR w κ₂
-  tupK : ∀ {Γ Δ' A Δ''} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'} {Ms : All _ Δ''} {ρ₁ : Src.Env Γ}
+  appR : ∀ {A B v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+    → Src.appR {A} {B} v κ₁ ≈k Tgt.callR w κ₂
+  tupK : ∀ {Γ Δ' A Δ''} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'}
+    {Ms : All _ Δ''} {ρ₁ : Src.Env Γ}
       {ρ₂ : Tgt.Env Γ} {κ₁ κ₂}
     → All₂ _≈_ vs ws → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.tupK {A = A} vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (splits Ms) ρ₂ κ₂
-  closK : ∀ {Δ A B N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {Δ} {A} {B} N κ₁ ≈k Tgt.pairR (Tgt.code (split N)) κ₂
+  closK : ∀ {Δ A B N κ₁ κ₂} → κ₁ ≈k κ₂
+    → Src.closK {Δ} {A} {B} N κ₁ ≈k Tgt.pairR (Tgt.code (split N)) κ₂
   getK : ∀ {Δ A i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {Δ} {A} i κ₁ ≈k Tgt.getK i κ₂
   inlK : ∀ {A B κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inlK {A} {B} κ₁ ≈k Tgt.inlK κ₂
   inrK : ∀ {A B κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inrK {A} {B} κ₁ ≈k Tgt.inrK κ₂
-  caseK : ∀ {Γ A B C} {M : Tm (A ∷ Γ) C} {N : Tm (B ∷ Γ) C} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+  caseK : ∀ {Γ A B C} {M : Tm (A ∷ Γ) C} {N : Tm (B ∷ Γ) C} {ρ₁ : Src.Env Γ}
+    {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.caseK M N ρ₁ κ₁ ≈k Tgt.caseK (split M) (split N) ρ₂ κ₂
-  primL : ∀ {Γ} {p M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+  primL : ∀ {Γ} {p M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂}
+    → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.primL p M ρ₁ κ₁ ≈k Tgt.primL p (split M) ρ₂ κ₂
   primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Src.primR p n κ₁ ≈k Tgt.primR p n κ₂
-  letK : ∀ {Γ A B} {N : Tm (A ∷ Γ) B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+  letK : ∀ {Γ A B} {N : Tm (A ∷ Γ) B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂}
+    → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.letK N ρ₁ κ₁ ≈k Tgt.letK (split N) ρ₂ κ₂
   foldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Src.foldK {A} κ₁ ≈k Tgt.foldK κ₂
   unfoldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Src.unfoldK {A} κ₁ ≈k Tgt.unfoldK κ₂
 
 data _~_ : Src.State → Tgt.State → Set where
-  eval~ : ∀ {Γ A} {M : Tm Γ A} {ρ₁} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+  eval~ : ∀ {Γ A} {M : Tm Γ A} {ρ₁} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂}
+    → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.eval M ρ₁ κ₁ ~ Tgt.eval (split M) ρ₂ κ₂
-  ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
+  ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+    → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
-env-ext : ∀ {Γ B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {v : Src.Val B} {w} → v ≈ w → EnvRel ρ₁ ρ₂
+env-ext : ∀ {Γ B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {v : Src.Val B} {w}
+  → v ≈ w
+  → EnvRel ρ₁ ρ₂
   → EnvRel (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext r er Z = r
 env-ext r er (S x) = er x
 
-{- The simulation, for any PairClosμ program P ------------------------------------}
+{- The simulation, for any PairClosμ program P --------------------------------}
 
 module _ {T : Type} (P : C4.Tm [] T) where
 
   L₂ = Tgt.sem P
 
-  tuple-next~ : ∀ {Γ Δ' Δ''} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'} {Ms : All _ Δ''} {ρ₁ : Src.Env Γ}
+  tuple-next~ : ∀ {Γ Δ' Δ''} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'}
+    {Ms : All _ Δ''} {ρ₁ : Src.Env Γ}
       {ρ₂ : Tgt.Env Γ} {κ₁ : Src.Cont (tup (Δ' <>< Δ''))} {κ₂}
-    → All₂ _≈_ vs ws → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → All₂ _≈_ vs ws
+    → EnvRel ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (splits Ms) ρ₂ κ₂
   tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (Src.step s₁) s₂
   sim (eval~ {M = ` x} er k) = steps₁ refl (ret~ (er x) k)
-  sim (eval~ {M = clos N Ms} er k) = steps (plus refl (refl ◅ refl ◅ refl ◅ ε)) (tuple-next~ [] er (closK k))
+  sim (eval~ {M = clos N Ms} er k) =
+    steps (plus refl (refl ◅ refl ◅ refl ◅ ε)) (tuple-next~ [] er (closK k))
   sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))
   sim (eval~ {M = lit B c} er k) = steps₁ refl (ret~ const≈ k)
   sim (eval~ {M = tuple Ms} er k) = steps₁ refl (tuple-next~ [] er k)
@@ -103,7 +122,8 @@ module _ {T : Type} (P : C4.Tm [] T) where
   sim (eval~ {M = unfold M} er k) = steps₁ refl (eval~ er (unfoldK k))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r (appL er k)) = steps₁ refl (eval~ er (appR r k))
-  sim (ret~ r (appR (clos≈ rs) k)) = steps₁ refl (eval~ (λ { Z → r ; (S Z) → tup≈ rs }) k)
+  sim (ret~ r (appR (clos≈ rs) k)) =
+    steps₁ refl (eval~ (λ { Z → r ; (S Z) → tup≈ rs }) k)
   sim (ret~ r (tupK rs er k)) = steps₁ refl (tuple-next~ (r ∷ rs) er k)
   sim (ret~ (tup≈ rs) (closK k)) = steps₁ refl (ret~ (clos≈ rs) k)
   sim (ret~ (tup≈ rs) (getK {i = i} k)) = steps₁ refl (ret~ (lookup₂ rs i) k)
@@ -112,12 +132,15 @@ module _ {T : Type} (P : C4.Tm [] T) where
   sim (ret~ (inl≈ r) (caseK er k)) = steps₁ refl (eval~ (env-ext r er) k)
   sim (ret~ (inr≈ r) (caseK er k)) = steps₁ refl (eval~ (env-ext r er) k)
   sim (ret~ const≈ (primL er k)) = steps₁ refl (eval~ er (primR k))
-  sim (ret~ (const≈ {c = m}) (primR {p} {n} k)) = steps₁ refl (ret~ (δ≈ p n m) k)
+  sim (ret~ (const≈ {c = m}) (primR {p} {n} k)) =
+    steps₁ refl (ret~ (δ≈ p n m) k)
   sim (ret~ r (letK er k)) = steps₁ refl (eval~ (env-ext r er) k)
   sim (ret~ r (foldK k)) = steps₁ refl (ret~ (fold≈ r) k)
   sim (ret~ (fold≈ r) (unfoldK k)) = steps₁ refl (ret~ r k)
 
-{- The end theorem: for every EnvClosμ program -----------------------------------}
+{- The end theorem: for every EnvClosμ program --------------------------------}
 
-split-correct : ∀ {A} (M : Tm [] A) → Equivalent (Src.sem M) (Tgt.sem (split-program M))
-split-correct M = equivalent (plus-simulation _~_ (eval~ (λ ()) halt) (sim (split-program M)))
+split-correct : ∀ {A} (M : Tm [] A)
+  → Equivalent (Src.sem M) (Tgt.sem (split-program M))
+split-correct M =
+  equivalent (plus-simulation _~_ (eval~ (λ ()) halt) (sim (split-program M)))

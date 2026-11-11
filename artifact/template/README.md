@@ -115,7 +115,7 @@ definition, figure and appendix section).
 | Proposition F.2 (Correctness, abstract machines) | `FPC/Theorems/CorrectWrtAbstractMachines.agda` | `FPC/proof/Correctness/AbstractMachines/PipelineSim.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
 | Proposition F.3 (Correctness, reduction semantics) | `FPC/Theorems/CorrectWrtReductionSemantics.agda` | `FPC/proof/Correctness/ReductionSemantics/PipelineRed.agda` | `compile-const`, `compile-diverges`; every type: `compile-correct` |
 | Lemmas G.1–G.5 (the Scott-domain proof of split closure) | | `FPC/proof/Correctness/ScottDomains/{SplitRel,SplitPreserve,SplitReflect,SplitTerms,SplitCorrect}.agda` | G.5: `split-correct-const`, `split-correct-defined` |
-| Table 1 (lines of the five proofs) | | `../loc.py` | `make tables` |
+| Table 1 (lexical tokens of the five proofs) | | `../loc.py` | `make tables` |
 | Table 2 (infrastructure) | | `../loc.py` | `make tables` |
 
 The per-pass results of §4.1 and Appendix D (Lemma 4.3) are in
@@ -125,8 +125,15 @@ in `FPC/Theorems/`.
 
 ## Reproducing Tables 1 and 2
 
-`make tables` runs `python3 loc.py --artifact`. A code line is a line
-that is not blank, not a comment and not part of an import statement. A
+`make tables` runs `python3 loc.py --artifact`. The tables count the
+lexical tokens of the code lines, and give each total in lines too
+(`python3 loc.py --artifact --lines` prints them in lines). A code line is
+a line that is not blank, not a comment and not part of an import
+statement. The lexical tokens of a line are those of Agda's lexer,
+approximately: its whitespace-separated words, split further at Agda's
+delimiters, each of which is a token by itself (a parenthesis or brace,
+`;`, `@`, and a `.` that starts a word). An identifier or operator, such
+as `⟦_⟧₃`, `→` or `＝`, is one token when whitespace separates it. A
 proof's total is its own modules plus the shared modules it reaches
 through imports that not all four of the graph model, machines,
 interpreters and reduction semantics reach; the languages and passes,

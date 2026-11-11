@@ -27,7 +27,8 @@ open import Data.Maybe using (Maybe; map)
 open import Data.Nat using (ℕ; zero; suc)
 
 data Val : Set where
-  fun : AST → Val                       {- code, under the environment and argument -}
+  {- code, under the environment and argument -}
+  fun : AST → Val
   pair : Val → Val → Val
   const : (B : Base) → base-rep B → Val
   tup : List Val → Val
@@ -68,10 +69,12 @@ second (pair v w) = ret w
 second _ = error
 
 eval : ℕ → Env → AST → Result Val
-eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■) → Result (List Val)
+eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■)
+  → Result (List Val)
 {- apply code to the environment M and the argument N -}
 apply : ℕ → Env → AST → AST → Val → Result Val
-{- call code f, stopping with an error (before the clock is consulted) if f is not code -}
+{- call code f, stopping with an error (before the clock is consulted) if f is
+   not code -}
 call : Val → ℕ → Env → Result Val
 branch : ℕ → Env → AST → AST → Val → Result Val
 
@@ -83,7 +86,8 @@ eval ck ρ (pair-op ⦅ L ,, M ,, Nil ⦆) =
   do v ← eval ck ρ L; w ← eval ck ρ M; ret (pair v w)
 eval ck ρ (fst-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= first
 eval ck ρ (snd-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= second
-eval ck ρ (tuple n ⦅ args ⦆) = do vs ← eval-args ck ρ [] args; ret (tup (reverse vs))
+eval ck ρ (tuple n ⦅ args ⦆) =
+  do vs ← eval-args ck ρ [] args; ret (tup (reverse vs))
 eval ck ρ (get i ⦅ M ,, Nil ⦆) = eval ck ρ M >>= project i
 eval ck ρ (inl-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inl v)
 eval ck ρ (inr-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inr v)
@@ -93,7 +97,8 @@ eval ck ρ (prim p ⦅ L ,, M ,, Nil ⦆) =
 eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = do v ← eval ck ρ M; eval ck (v ∷ ρ) N
 
 eval-args {zero} ck ρ vs Nil = ret vs
-eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
+eval-args {suc n} ck ρ vs (M ,, args) =
+  do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
 
 apply ck ρ M N f = do e ← eval ck ρ M; w ← eval ck ρ N; call f ck (w ∷ e ∷ [])
 

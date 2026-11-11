@@ -13,7 +13,8 @@ open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
 open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import ISWIM.Language.Typed.Clos2
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl;
+  o-inr; o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import Framework.VecUtil using (_+ʳ_; _<><_)
 
@@ -41,12 +42,15 @@ data Cont : Ty → Set where
   appL : ∀ {k} → Tm k Any → Env k → Cont Any → Cont ⟪ fun ⟫
   appR : Val ⟪ fun ⟫ → Cont Any → Cont Any
   {- the values so far (newest first) and the components still to evaluate -}
-  tupK : ∀ {k m j} → Vec (Val Any) m → Vec (Tm k Any) j → Env k → Cont ⟪ tup (m +ʳ suc j) ⟫ → Cont Any
+  tupK : ∀ {k m j} → Vec (Val Any) m → Vec (Tm k Any) j → Env k
+    → Cont ⟪ tup (m +ʳ suc j) ⟫ → Cont Any
   closK : ∀ {n} → Tm (suc n) Any → Cont ⟪ fun ⟫ → Cont ⟪ tup n ⟫
   getK : ∀ {n} → Fin n → Cont Any → Cont ⟪ tup n ⟫
   inlK inrK : Cont ⟪ sum ⟫ → Cont Any
-  caseK : ∀ {k} → Tm (suc k) Any → Tm (suc k) Any → Env k → Cont Any → Cont ⟪ sum ⟫
-  primL : ∀ {k} p → Tm k ⟪ base Int ⟫ → Env k → Cont ⟪ out-flat p ⟫ → Cont ⟪ base Int ⟫
+  caseK : ∀ {k} → Tm (suc k) Any → Tm (suc k) Any → Env k → Cont Any
+    → Cont ⟪ sum ⟫
+  primL : ∀ {k} p → Tm k ⟪ base Int ⟫ → Env k → Cont ⟪ out-flat p ⟫
+    → Cont ⟪ base Int ⟫
   primR : ∀ p → ℤ → Cont ⟪ out-flat p ⟫ → Cont ⟪ base Int ⟫
   letK : ∀ {k} → Tm (suc k) Any → Env k → Cont Any → Cont Any
   injK : ∀ G → Cont Any → Cont ⟪ G ⟫
@@ -70,10 +74,13 @@ obs-vec (v ∷ vs) = obs v ∷ obs-vec vs
 {- a primitive on two integers: eq gives inl ⟨⟩ for true -}
 δᵀ : ∀ p → ℤ → ℤ → Val ⟪ out-flat p ⟫
 δᵀ sub n m = const (n - m)
-δᵀ eq n m = if does (n ≟ m) then inl (dyn (tup 0) (tup [])) else inr (dyn (tup 0) (tup []))
+δᵀ eq n m =
+  if does (n ≟ m) then inl (dyn (tup 0) (tup [])) else inr
+  (dyn (tup 0) (tup []))
 
 {- evaluate the rest of a tuple's components, or build it -}
-tuple-next : ∀ {k m j} → Vec (Val Any) m → Vec (Tm k Any) j → Env k → Cont ⟪ tup (m +ʳ j) ⟫ → State
+tuple-next : ∀ {k m j} → Vec (Val Any) m → Vec (Tm k Any) j → Env k
+  → Cont ⟪ tup (m +ʳ j) ⟫ → State
 tuple-next vs [] ρ κ = ret (tup (vs <>< [])) κ
 tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 

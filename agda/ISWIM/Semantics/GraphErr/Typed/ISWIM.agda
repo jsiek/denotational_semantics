@@ -1,10 +1,10 @@
 {-
 
   The semantics of ISWIMᵀ (ISWIM/Language/Typed/ISWIM.agda) in the graph model
-  with errors, with the typed operators (ISWIM/Semantics/GraphErr/Typed/Ops.agda):
-  no operator checks the kind of an operand but project. Defined by
-  recursion on typed terms; variable x is position toℕ x of the
-  environment.
+  with errors, with the typed operators
+  (ISWIM/Semantics/GraphErr/Typed/Ops.agda): no operator checks the kind of an
+  operand but project. Defined by recursion on typed terms; variable x is
+  position toℕ x of the environment.
 
 -}
 
@@ -22,7 +22,8 @@ open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 ⟦_⟧ : ∀ {k A} → Tm k A → Env Value → 𝒫 Value
-⟦_⟧s : ∀ {k n} → Vec (Tm k Any) n → Env Value → Results (𝒫 Value) (replicate n ■)
+⟦_⟧s : ∀ {k n} → Vec (Tm k Any) n → Env Value
+  → Results (𝒫 Value) (replicate n ■)
 
 ⟦ ` x ⟧ ρ = ρ (toℕ x)
 ⟦ lam N ⟧ ρ = Λᵐ ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩

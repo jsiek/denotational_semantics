@@ -43,7 +43,9 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
   eval ck ρ (get i M) = do v ← eval ck ρ M; ret (nth i v)
   eval ck ρ (inl M) = do v ← eval ck ρ M; ret (inl v)
   eval ck ρ (inr M) = do v ← eval ck ρ M; ret (inr v)
-  eval ck ρ (case L M N) = eval ck ρ L >>= λ u → either u (λ v → eval ck (v ∷ ρ) M) (λ v → eval ck (v ∷ ρ) N)
+  eval ck ρ (case L M N) =
+    eval ck ρ L >>= λ u →
+    either u (λ v → eval ck (v ∷ ρ) M) (λ v → eval ck (v ∷ ρ) N)
   eval ck ρ (prim p L M) = do v ← eval ck ρ L; w ← eval ck ρ M; ret (δ p v w)
   eval ck ρ (let′ M N) = do v ← eval ck ρ M; eval ck (v ∷ ρ) N
   eval ck ρ (inject G M) = do v ← eval ck ρ M; ret (dyn G v)

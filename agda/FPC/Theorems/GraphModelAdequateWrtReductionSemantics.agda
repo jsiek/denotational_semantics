@@ -2,13 +2,14 @@
 
   The adequacy of the graph model for the reduction semantics of FPC:
   the analogue, for reduction, of Proposition 5.1 (adequacy) of the paper
-  (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for the clocked interpreters), and the
-  consequence drawn from it with Theorem 4.1, for the pair the reduction
-  column's theorem relates (FPC/Theorems/CorrectWrtReductionSemantics.agda): the
-  reduction semantics of FPC and the machine of X86μ. It is an
-  alternative to FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported separately. The
-  proofs are in FPC/proof/Adequacy/ReductionSemantics/ (and, for X86μ,
-  FPC/proof/Adequacy/AbstractMachines/, as in
+  (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for the clocked
+  interpreters), and the consequence drawn from it with Theorem 4.1, for the
+  pair the reduction column's theorem relates
+  (FPC/Theorems/CorrectWrtReductionSemantics.agda): the reduction semantics of
+  FPC and the machine of X86μ. It is an alternative to
+  FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported
+  separately. The proofs are in FPC/proof/Adequacy/ReductionSemantics/ (and, for
+  X86μ, FPC/proof/Adequacy/AbstractMachines/, as in
   FPC/Theorems/GraphModelAdequateWrtAbstractMachines.agda).
 
   compile is FPC/Compiler/Pipeline.agda's. The reduction semantics
@@ -46,7 +47,7 @@ import FPC.proof.Adequacy.ReductionSemantics.EndToEnd as EndToEnd
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 
-{- Adequacy, reduction semantics ------------------------------------------------}
+{- Adequacy, reduction semantics ----------------------------------------------}
 
 {- for a closed FPC term M (of any type), and every constant c:
    c ∈ ⟦ M ⟧ if and only if M reduces to c -}
@@ -59,14 +60,16 @@ fpc-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
   → R.Diverges (FPCᵣ.sem M) ⇔ (⟦ M ⟧ ρ₀ ≃ ∅)
 fpc-diverges-iff M = ⇔∘ (AdequacyFPC.diverges-iff M) ¬nonempty⇔≃∅
 
-{- With Theorem 4.1: the compiler, observed through reduction and the X86μ machine -}
+{- With Theorem 4.1: the compiler, observed through reduction and the X86μ
+   machine -}
 
 {- for a program of type Int, the theorem the reduction column states
    (Proposition F.3): the reduction semantics of FPC and the machine of
    X86μ terminate with the same integer, or both diverge -}
 
 end-to-end-x86-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)
-  → R.Terminates (FPCᵣ.sem M) (o-const Int n) ⇔ C.Terminates (X86μₘ.sem (compile M)) (o-const Int n)
+  → R.Terminates (FPCᵣ.sem M) (o-const Int n)
+    ⇔ C.Terminates (X86μₘ.sem (compile M)) (o-const Int n)
 end-to-end-x86-const = EndToEnd.end-to-end-x86-const
 
 end-to-end-x86-diverges : ∀ (M : FPC.Tm [] (base Int))

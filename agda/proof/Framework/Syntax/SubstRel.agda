@@ -1,7 +1,8 @@
 open import Data.List using (List)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (Σ-syntax; _×_; _,_; proj₁; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; subst₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
+  subst₂)
 open import Framework.abt.Sig using (Sig)
 
 {-
@@ -13,10 +14,13 @@ open import Framework.abt.Sig using (Sig)
   under every related substitution (≈-subst). The substitutions may be
   restricted by a predicate Ok that holds for renamings.
 -}
-module proof.Framework.Syntax.SubstRel (Op₁ : Set) (sig₁ : Op₁ → List Sig) (Op₂ : Set) (sig₂ : Op₂ → List Sig) where
+module proof.Framework.Syntax.SubstRel (Op₁ : Set) (sig₁ : Op₁ → List Sig)
+  (Op₂ : Set) (sig₂ : Op₂ → List Sig) where
 
-open import Framework.abt.AbstractBindingTree Op₁ sig₁ using () renaming (ABT to AST₁; `_ to `₁_)
-open import Framework.abt.AbstractBindingTree Op₂ sig₂ using () renaming (ABT to AST₂; `_ to `₂_)
+open import Framework.abt.AbstractBindingTree Op₁ sig₁ using () renaming (ABT to
+  AST₁; `_ to `₁_)
+open import Framework.abt.AbstractBindingTree Op₂ sig₂ using () renaming (ABT to
+  AST₂; `_ to `₂_)
 import proof.Framework.Syntax.Subst Op₁ sig₁ as S₁
 import proof.Framework.Syntax.Subst Op₂ sig₂ as S₂
 import Framework.Syntax.Rename Op₁ sig₁ as R₁
@@ -27,7 +31,8 @@ module Closure (_≈_ : AST₁ → AST₂ → Set) (var≈ : ∀ {x} → (`₁ x
   (ok-var : ∀ {σ σ'} → (∀ x → Σ[ y ∈ ℕ ] σ x ≡ `₁ y × σ' x ≡ `₂ y) → Ok σ σ')
   (ok-exts : ∀ {σ σ'} → Ok σ σ' → Ok (S₁.exts σ) (S₂.exts σ'))
   (sub≈ : ∀ (P : S₁.Subst → S₂.Subst → Set)
-          → (∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x) → (∀ {σ σ'} → P σ σ' → Ok σ σ')
+          → (∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x)
+            → (∀ {σ σ'} → P σ σ' → Ok σ σ')
           → (∀ {σ σ'} → P σ σ' → P (S₁.exts σ) (S₂.exts σ'))
           → ∀ {σ σ' M M'} → P σ σ' → M ≈ M' → S₁.sub σ M ≈ S₂.sub σ' M') where
 
@@ -35,16 +40,23 @@ module Closure (_≈_ : AST₁ → AST₂ → Set) (var≈ : ∀ {x} → (`₁ x
     RenP : S₁.Subst → S₂.Subst → Set
     RenP σ σ' = ∀ x → Σ[ y ∈ ℕ ] σ x ≡ `₁ y × σ' x ≡ `₂ y
 
-    ren≈ : ∀ {σ σ'} → RenP σ σ' → ∀ x → σ x ≈ σ' x
+    ren≈ : ∀ {σ σ'}
+      → RenP σ σ'
+      → ∀ x
+      → σ x ≈ σ' x
     ren≈ p x with p x
     ... | y , e , e' rewrite e | e' = var≈
 
-    ren-exts : ∀ {σ σ'} → RenP σ σ' → RenP (S₁.exts σ) (S₂.exts σ')
+    ren-exts : ∀ {σ σ'}
+      → RenP σ σ'
+      → RenP (S₁.exts σ) (S₂.exts σ')
     ren-exts p zero = zero , refl , refl
     ren-exts p (suc x) with p x
     ... | y , e , e' = suc y , cong (R₁.rename suc) e , cong (R₂.rename suc) e'
 
-  ≈-rename : ∀ r {M M'} → M ≈ M' → R₁.rename r M ≈ R₂.rename r M'
+  ≈-rename : ∀ r {M M'}
+    → M ≈ M'
+    → R₁.rename r M ≈ R₂.rename r M'
   ≈-rename r {M} {M'} m =
     subst₂ _≈_ (sym (S₁.rename-sub r M)) (sym (S₂.rename-sub r M'))
       (sub≈ RenP ren≈ ok-var ren-exts
@@ -54,17 +66,31 @@ module Closure (_≈_ : AST₁ → AST₂ → Set) (var≈ : ∀ {x} → (`₁ x
   SubP : S₁.Subst → S₂.Subst → Set
   SubP σ σ' = (∀ x → σ x ≈ σ' x) × Ok σ σ'
 
-  sub-exts : ∀ {σ σ'} → SubP σ σ' → SubP (S₁.exts σ) (S₂.exts σ')
-  sub-exts (p , ok) = (λ { zero → var≈ ; (suc x) → ≈-rename suc (p x) }) , ok-exts ok
+  sub-exts : ∀ {σ σ'}
+    → SubP σ σ'
+    → SubP (S₁.exts σ) (S₂.exts σ')
+  sub-exts (p , ok) =
+    (λ { zero → var≈ ; (suc x) → ≈-rename suc (p x) }) , ok-exts ok
 
-  ≈-subst : ∀ {σ σ' M M'} → SubP σ σ' → M ≈ M' → S₁.sub σ M ≈ S₂.sub σ' M'
+  ≈-subst : ∀ {σ σ' M M'}
+    → SubP σ σ'
+    → M ≈ M'
+    → S₁.sub σ M ≈ S₂.sub σ' M'
   ≈-subst = sub≈ SubP proj₁ proj₂ sub-exts
 
   {- substituting one related term, for variable 0 -}
-  ≈-[] : ∀ {V V' N N'} → Ok (V S₁.• S₁.ids) (V' S₂.• S₂.ids) → V ≈ V' → N ≈ N' → (N S₁.[ V ]) ≈ (N' S₂.[ V' ])
+  ≈-[] : ∀ {V V' N N'}
+    → Ok (V S₁.• S₁.ids) (V' S₂.• S₂.ids)
+    → V ≈ V'
+    → N ≈ N'
+    → (N S₁.[ V ]) ≈ (N' S₂.[ V' ])
   ≈-[] ok r = ≈-subst ((λ { zero → r ; (suc x) → var≈ }) , ok)
 
   {- under a binder, for the variables with a property P -}
-  ≈-exts-on : ∀ {P : ℕ → Set} {σ σ'} → (∀ x → P (suc x) → σ x ≈ σ' x) → ∀ x → P x → S₁.exts σ x ≈ S₂.exts σ' x
+  ≈-exts-on : ∀ {P : ℕ → Set} {σ σ'}
+    → (∀ x → P (suc x) → σ x ≈ σ' x)
+    → ∀ x
+    → P x
+    → S₁.exts σ x ≈ S₂.exts σ' x
   ≈-exts-on h zero _ = var≈
   ≈-exts-on h (suc x) p = ≈-rename suc (h x p)

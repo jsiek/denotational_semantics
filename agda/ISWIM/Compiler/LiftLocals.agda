@@ -17,7 +17,8 @@ import ISWIM.Language.Typed.Mon as M
 open import ISWIM.Language.Typed.Imp
 
 open import Data.List using ([]; _∷_)
-open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to
+  All-map)
 
 lift : ∀ {Σ Δ A} → M.Exp Σ Δ A → Exp Σ Δ A
 lift (M.atm a) = simple (atm a)

@@ -60,24 +60,32 @@ open import FPC.Semantics.ScottDomains.Closed pt fe pe public using (ρ₀)
 {- for a closed FPC term M of type Int, and every constant c:
    ⟦ M ⟧ ρ₀ = c() if and only if ⟦ compile M ⟧ = c() -}
 compile-int-const : ∀ (M : FPC.Tm [] (base Int)) (B : Base) (c : base-rep B)
-  → (⟦ M ⟧ · ρ₀ ＝ const B c → ⟦ compile M ⟧ₜ ＝ const B c)
-  × (⟦ compile M ⟧ₜ ＝ const B c → ⟦ M ⟧ · ρ₀ ＝ const B c)
+  → (  ⟦ M ⟧ · ρ₀ ＝ const B c
+     → ⟦ compile M ⟧ₜ ＝ const B c)
+  × (  ⟦ compile M ⟧ₜ ＝ const B c
+     → ⟦ M ⟧ · ρ₀ ＝ const B c)
 compile-int-const M = pr₁ (Compiler.compile-int M)
 
 {- moreover, ⟦ M ⟧ ρ₀ is defined if and only if ⟦ compile M ⟧ is -}
 compile-int-defined : ∀ (M : FPC.Tm [] (base Int))
-  → (defined (⟦ M ⟧ · ρ₀) → defined ⟦ compile M ⟧ₜ)
-  × (defined ⟦ compile M ⟧ₜ → defined (⟦ M ⟧ · ρ₀))
+  → (  defined (⟦ M ⟧ · ρ₀)
+     → defined ⟦ compile M ⟧ₜ)
+  × (  defined ⟦ compile M ⟧ₜ
+     → defined (⟦ M ⟧ · ρ₀))
 compile-int-defined M = pr₂ (Compiler.compile-int M)
 
 {- more generally, the same holds for every closed term M -}
 
 compile-correct-const : ∀ {A} (M : FPC.Tm [] A) (B : Base) (c : base-rep B)
-  → (⟦ M ⟧ · ρ₀ ＝ const B c → ⟦ compile M ⟧ₜ ＝ const B c)
-  × (⟦ compile M ⟧ₜ ＝ const B c → ⟦ M ⟧ · ρ₀ ＝ const B c)
+  → (  ⟦ M ⟧ · ρ₀ ＝ const B c
+     → ⟦ compile M ⟧ₜ ＝ const B c)
+  × (  ⟦ compile M ⟧ₜ ＝ const B c
+     → ⟦ M ⟧ · ρ₀ ＝ const B c)
 compile-correct-const M = pr₁ (Compiler.compile-same M)
 
 compile-correct-defined : ∀ {A} (M : FPC.Tm [] A)
-  → (defined (⟦ M ⟧ · ρ₀) → defined ⟦ compile M ⟧ₜ)
-  × (defined ⟦ compile M ⟧ₜ → defined (⟦ M ⟧ · ρ₀))
+  → (  defined (⟦ M ⟧ · ρ₀)
+     → defined ⟦ compile M ⟧ₜ)
+  × (  defined ⟦ compile M ⟧ₜ
+     → defined (⟦ M ⟧ · ρ₀))
 compile-correct-defined M = pr₂ (Compiler.compile-same M)

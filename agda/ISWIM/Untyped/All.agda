@@ -49,7 +49,8 @@ import ISWIM.Untyped.proof.Compiler.Examples.SimplifyCaptureExample
 import ISWIM.Untyped.proof.Compiler.HoistTable
 import ISWIM.Untyped.proof.Compiler.PipelineScope
 
-{- proof/: the graph model: the semantics of each language and each pass, and the experiment of a direct semantics of Imp -}
+{- proof/: the graph model: the semantics of each language and each pass, and
+   the experiment of a direct semantics of Imp -}
 import ISWIM.Untyped.proof.Semantics.Graph.Clos2Iswim
 import ISWIM.Untyped.proof.Semantics.Graph.Clos3Iswim
 import ISWIM.Untyped.proof.Semantics.Graph.Clos4Iswim
@@ -80,7 +81,8 @@ import ISWIM.Untyped.proof.Correctness.Graph.RCOCorrect
 import ISWIM.Untyped.proof.Correctness.Graph.SelectCorrect
 import ISWIM.Untyped.proof.Semantics.Graph.X86
 
-{- proof/: the CEK machines + simulations (and the experiment of a direct backward simulation for split) -}
+{- proof/: the CEK machines + simulations (and the experiment of a direct
+   backward simulation for split) -}
 import ISWIM.Untyped.proof.Semantics.CEK.Backward
 import ISWIM.Untyped.proof.Correctness.CEK.CompilerSim
 import ISWIM.Untyped.proof.Correctness.CEK.CompilerX86Sim
@@ -141,7 +143,8 @@ import ISWIM.Untyped.proof.Correctness.GraphErr.PruneCorrect
 import ISWIM.Untyped.proof.Correctness.GraphErr.RCOCorrect
 import ISWIM.Untyped.proof.Correctness.GraphErr.SelectCorrect
 
-{- proof/: adequacy of the graph model and of the graph model with errors for the Clos5 and X86 machines, and the compiler's programs -}
+{- proof/: adequacy of the graph model and of the graph model with errors for
+   the Clos5 and X86 machines, and the compiler's programs -}
 import ISWIM.Untyped.proof.Adequacy.Clos5
 import ISWIM.Untyped.proof.Adequacy.Clos5Common
 import ISWIM.Untyped.proof.Adequacy.Clos5LogRel

@@ -4,10 +4,10 @@
   with errors: that of untyped X86 (ISWIM/Untyped/Semantics/GraphErr/X86.agda)
   with the typed operators of the typed
   languages (ISWIM/Semantics/GraphErr/Typed/Ops.agda), which check nothing.
-  The frame is the environment, as in CFGᵀ (ISWIM/Semantics/GraphErr/Typed/CFG.agda):
-  slot x is position idx x, and writing slot k pops the slots from k
-  on and pushes the new value (drop). A label means its block, under
-  the meanings of the older blocks.
+  The frame is the environment, as in CFGᵀ
+  (ISWIM/Semantics/GraphErr/Typed/CFG.agda): slot x is position idx x, and
+  writing slot k pops the slots from k on and pushes the new value (drop). A
+  label means its block, under the meanings of the older blocks.
 
   The only check is chk's: the project of the typed languages, a closure
   being a pair (projectᵠ kind₄). Only chk and callq can fail or diverge,
@@ -72,7 +72,8 @@ module _ {Σ : List ℕ} (T : Table) where
   𝒪 (reg r _) ρ R = R r
   𝒪 (a ↑) ρ R = 𝒪 a ρ R
 
-  𝒪s : ∀ {ψ m} → Vec (Arg Σ ψ (ty Any)) m → Env Value → RegsD → Results (𝒫 Value) (replicate m ■)
+  𝒪s : ∀ {ψ m} → Vec (Arg Σ ψ (ty Any)) m → Env Value → RegsD
+    → Results (𝒫 Value) (replicate m ■)
   𝒪s [] ρ R = ptt
   𝒪s (a ∷ as) ρ R = ⟨ 𝒪 a ρ R , 𝒪s as ρ R ⟩
 
@@ -107,7 +108,8 @@ module _ {Σ : List ℕ} (T : Table) where
   ⟦ loadsnd {x = x} r ⟧ⁱ κ ρ R F = κ ρ (R [ r ≔ cdr ⟨ ρ (idx x) , ptt ⟩ ]) F
   ⟦ callq a _ _ ⟧ⁱ κ ρ R F = strictᵐ C (κ ρ (called-regs C) init)
     where C = ⋆ ⟨ ⋆ ⟨ 𝒪 a ρ R , ⟨ R rdi , ptt ⟩ ⟩ , ⟨ R rsi , ptt ⟩ ⟩
-  ⟦ chk t x d ⟧ⁱ κ ρ R F = putˢ d (projectᵠ kind₄ t (ρ (idx x))) κ ρ (R [ rax ≔ init ]) init
+  ⟦ chk t x d ⟧ⁱ κ ρ R F =
+    putˢ d (projectᵠ kind₄ t (ρ (idx x))) κ ρ (R [ rax ≔ init ]) init
 
   ⟦_⟧ˢ : ∀ {n Bs ψ} → Seq Σ n Bs ψ → BEnv Bs → Kont
   ⟦ i ∷ k ⟧ˢ B = ⟦ i ⟧ⁱ (⟦ k ⟧ˢ B)
@@ -128,4 +130,5 @@ codeₜ : ∀ {Σ} → Table → ∀ {m} → Body Σ (called m) → 𝒫 Value
 codeₜ T b = ΛΛᵐ ⟨ (λ X Y → run T b (λ _ → init) (args X Y) init) , ptt ⟩
 
 ⟦_⟧ₜ : Program → 𝒫 Value
-⟦ program {Σ} ds b ⟧ₜ = run (tbl (codeₜ {Σ}) ds) b (λ _ → init) (λ _ → init) init
+⟦ program {Σ} ds b ⟧ₜ =
+  run (tbl (codeₜ {Σ}) ds) b (λ _ → init) (λ _ → init) init

@@ -17,13 +17,15 @@
 
 open import FPC.Language.Type using (Ctx; Type)
 
-module FPC.Semantics.ClockedInterpreters.Values (C : Ctx → Type → Type → Set) where
+module FPC.Semantics.ClockedInterpreters.Values
+  (C : Ctx → Type → Type → Set) where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
 open import FPC.Language.Type
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl;
+  o-inr)
 
 open import Data.Bool using (if_then_else_)
 open import Data.Integer using (_-_; _≟_)

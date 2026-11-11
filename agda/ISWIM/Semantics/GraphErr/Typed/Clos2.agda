@@ -28,10 +28,12 @@ fv-env (suc n) ⟨ X , Xs ⟩ zero = X
 fv-env (suc n) ⟨ X , Xs ⟩ (suc i) = fv-env n Xs i
 
 ⟦_⟧ : ∀ {k A} → Tm k A → Env Value → 𝒫 Value
-⟦_⟧s : ∀ {k n} → Vec (Tm k Any) n → Env Value → Results (𝒫 Value) (replicate n ■)
+⟦_⟧s : ∀ {k n} → Vec (Tm k Any) n → Env Value
+  → Results (𝒫 Value) (replicate n ■)
 
 ⟦ ` x ⟧ ρ = ρ (toℕ x)
-⟦ clos {n = n} N Ms ⟧ ρ = binds n (⟦ Ms ⟧s ρ) λ Xs → Λᵐ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env n Xs)) , ptt ⟩
+⟦ clos {n = n} N Ms ⟧ ρ =
+  binds n (⟦ Ms ⟧s ρ) λ Xs → Λᵐ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env n Xs)) , ptt ⟩
 ⟦ app L M ⟧ ρ = appᵗ (⟦ L ⟧ ρ) (⟦ M ⟧ ρ)
 ⟦ lit B c ⟧ ρ = ℬ B c ptt
 ⟦ tuple {n = n} Ms ⟧ ρ = 𝒯ᵐ n (⟦ Ms ⟧s ρ)

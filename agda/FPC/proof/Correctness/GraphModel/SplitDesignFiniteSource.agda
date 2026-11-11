@@ -75,21 +75,26 @@ open S3 using (⟦_⟧)
 open S4 using () renaming (⟦_⟧ to ⟦_⟧')
 open import FPC.Framework.AllUtil using ([])
 open import FPC.Compiler.Split using (split-program)
-open import FPC.proof.Correctness.GraphModel.SplitRel renaming (fold to foldᴬ; unfold to unfoldᴬ)
-open import FPC.proof.Correctness.GraphModel.SplitReflect using (split-reflect; Envs₀)
+open import FPC.proof.Correctness.GraphModel.SplitRel renaming (fold to foldᴬ;
+  unfold to unfoldᴬ)
+open import FPC.proof.Correctness.GraphModel.SplitReflect using (split-reflect;
+  Envs₀)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _≤_)
-open import Data.Nat.Properties using (suc-injective; ≤-trans; m≤m+n; m≤n+m; 1+n≰n; ≤-reflexive; n≤1+n)
+open import Data.Nat.Properties using (suc-injective; ≤-trans; m≤m+n; m≤n+m;
+  1+n≰n; ≤-reflexive; n≤1+n)
 open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.List.Properties using (length-replicate)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩ )
+open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to
+  ⟨_,_⟩ )
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; cong; trans; sym)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; cong;
+  trans; sym)
 open import Relation.Nullary using (¬_)
 
 module FPC.proof.Correctness.GraphModel.SplitDesignFiniteSource where
@@ -116,7 +121,9 @@ E n = mem (e n ∷ [])
 
 {- Lemmas ---------------------------------------------------------------------}
 
-∈-replicate : ∀ {x v : Value} k → x ⋵ replicate k v → x ≡ v
+∈-replicate : ∀ {x v : Value} k
+  → x ⋵ replicate k v
+  → x ≡ v
 ∈-replicate (suc k) (here refl) = refl
 ∈-replicate (suc k) (there x∈) = ∈-replicate k x∈
 
@@ -131,7 +138,9 @@ E n = mem (e n ∷ [])
 Con-single : ∀ v → Con (mem (v ∷ []))
 Con-single v = ≈⇒Con ≈-single
 
-untag-U : ∀ t {w} → tag t w ⋵ U → ⊥
+untag-U : ∀ t {w}
+  → tag t w ⋵ U
+  → ⊥
 untag-U (tupT i) (here ())
 untag-U leftT (here ())
 untag-U rightT (here ())
@@ -145,9 +154,14 @@ E-con n = Con-single (e n)
 E-ne : ∀ n → nonempty (E n)
 E-ne n = ⟨ e n , here refl ⟩
 
-E-disjoint : ∀ {n m v} → v ∈ E n → v ∈ E m → n ≡ m
+E-disjoint : ∀ {n m v}
+  → v ∈ E n
+  → v ∈ E m
+  → n ≡ m
 E-disjoint {n} {m} (here refl) (here eq) =
-  suc-injective (trans (sym (length-replicate (suc n))) (trans (cong inputs eq) (length-replicate (suc m))))
+  suc-injective
+    (trans (sym (length-replicate (suc n)))
+      (trans (cong inputs eq) (length-replicate (suc m))))
   where
   inputs : Value → ℕ
   inputs (X ↦ _) = length X
@@ -155,9 +169,13 @@ E-disjoint {n} {m} (here refl) (here eq) =
 
 {- If U maps U' to W, then every result in W is 1, and 1 is among the
    arguments U'. -}
-calls-U : ∀ {U' W w} → SelfContainedMaps U U' W → w ⋵ W → w ≡ one × one ⋵ U'
+calls-U : ∀ {U' W w}
+  → SelfContainedMaps U U' W
+  → w ⋵ W
+  → w ≡ one × one ⋵ U'
 calls-U cs w∈ with SelfContainedMaps.results cs _ w∈
-... | ⟨ _ , ⟨ usable-entry _ _ (here refl) _ _ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ = ⟨ refl , U₀⊆ one (here refl) ⟩
+... | ⟨ _ , ⟨ usable-entry _ _ (here refl) _ _ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ =
+  ⟨ refl , U₀⊆ one (here refl) ⟩
 ... | ⟨ _ , ⟨ usable-entry _ _ (there ()) _ _ , _ ⟩ ⟩
 
 E-related : ∀ n → ApproxLR (E n) U
@@ -168,17 +186,33 @@ E-related n = foldᴬ record
   ; tag-obs = λ t W W⊆ → ApproxLR-∅ (λ w w∈ → untag-U t (W⊆ w w∈))
   }
   where
-  app-E : ∀ {U' W} → SelfContainedMaps U U' W → ∀ E' → Con E' → Con (mem U') → ApproxLR E' U' → ApproxLR (E n ● E') W
+  app-E : ∀ {U' W}
+    → SelfContainedMaps U U' W
+    → ∀ E'
+    → Con E'
+    → Con (mem U')
+    → ApproxLR E' U'
+    → ApproxLR (E n ● E') W
   app-E cs E' _ _ rE = ApproxLR-data res
     where
-    one∈E' : ∀ {w} → w ⋵ _ → one ∈ E'
+    one∈E' : ∀ {w}
+      → w ⋵ _
+      → one ∈ E'
     one∈E' w∈ = ApproxLRLayer.const-obs (unfoldᴬ rE) 1 (proj₂ (calls-U cs w∈))
-    res : ∀ w → w ⋵ _ → w ∈ (E n ● E') × Data w
+    res : ∀ w
+      → w ⋵ _
+      → w ∈ (E n ● E') × Data w
     res w w∈ with calls-U cs w∈
     ... | ⟨ refl , _ ⟩ =
-      ⟨ ⟨ replicate (suc n) one , ⟨ here refl , ⟨ (λ x x∈ → subst∈ (∈-replicate (suc n) x∈)) , (λ ()) ⟩ ⟩ ⟩ , flat-const ⟩
+      ⟨ ⟨ replicate (suc n) one
+          ,
+            ⟨ here refl
+              , ⟨ (λ x x∈ → subst∈ (∈-replicate (suc n) x∈)) , (λ ()) ⟩ ⟩ ⟩
+              , flat-const ⟩
       where
-      subst∈ : ∀ {x} → x ≡ one → x ∈ E'
+      subst∈ : ∀ {x}
+        → x ≡ one
+        → x ∈ E'
       subst∈ refl = one∈E' w∈
 
 {- Each E n is part of the source denotation of λx.1, and U is a finite
@@ -188,11 +222,16 @@ E-related n = foldᴬ record
 
 E⊆λ1 : ∀ n → E n ⊆ ⟦ λ1 ⟧ ρ₀
 E⊆λ1 n _ (here refl) =
-  ⟨ ⟨⟩ ∷ [] , ⟨ ⟨ ⟨ ⟨ refl , refl ⟩ , ⟨ (λ ()) , ≈-ones (suc n) (suc n) ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
+  ⟨ ⟨⟩ ∷ []
+      ,
+      ⟨ ⟨ ⟨ ⟨ refl , refl ⟩ , ⟨ (λ ()) , ≈-ones (suc n) (suc n) ⟩ ⟩
+        , ⟨ (λ ()) , ≈-single ⟩ ⟩
             , ⟨ (λ { _ (here refl) → tt }) , (λ ()) ⟩ ⟩ ⟩
 
 U⊆λ1' : mem U ⊆ ⟦ split-program λ1 ⟧' ρ₀
-U⊆λ1' _ (here refl) = ⟨ ⟨ ⟨ ⟨ refl , refl ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , tt ⟩
+U⊆λ1' _ (here refl) =
+  ⟨ ⟨ ⟨ ⟨ refl , refl ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
+    , tt ⟩
 
 {- 2. A finite source side fails clause 3 -------------------------------------}
 
@@ -217,16 +256,23 @@ W : List Value
 W = u₁ ∷ []
 
 V⊆idC' : mem V ⊆ ⟦ split-program idC ⟧' ρ₀
-V⊆idC' _ (here refl) = ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , tt ⟩
+V⊆idC' _ (here refl) =
+  ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , tt ⟩
 
 calls : SelfContainedMaps V U W
 calls = record
-  { results = λ { _ (here refl) → ⟨ U , ⟨ ent , ⟨ (λ ()) , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
-  ; args = λ { _ (here refl) → ⟨ U , ⟨ u₁ , ⟨ ent , here refl ⟩ ⟩ ⟩ ; _ (there ()) }
+  { results =
+      λ { _ (here refl)
+        → ⟨ U , ⟨ ent , ⟨ (λ ()) , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
+  ; args =
+    λ { _ (here refl) → ⟨ U , ⟨ u₁ , ⟨ ent , here refl ⟩ ⟩ ⟩ ; _ (there ()) }
   }
   where
   ent : UsableEntry V U u₁
-  ent = usable-entry (⟨⟩ ∷ []) ⟨⟩ (here refl) (λ ()) (λ { _ (here refl) → ⟨ _ , here refl ⟩ ; _ (there ()) })
+  ent =
+    usable-entry (⟨⟩ ∷ [])
+    ⟨⟩ (here refl) (λ ())
+    (λ { _ (here refl) → ⟨ _ , here refl ⟩ ; _ (there ()) })
 
 {- The whole source denotation D satisfies clause 3, by the fundamental
    lemma. -}
@@ -248,19 +294,26 @@ boundBy : (Value → ℕ) → List Value → ℕ
 boundBy size [] = 0
 boundBy size (d ∷ D₀) = widthBy size d + boundBy size D₀
 
-width≤boundBy : ∀ size {d} D₀ → d ⋵ D₀ → widthBy size d ≤ boundBy size D₀
-width≤boundBy size (d ∷ D₀) (here refl) = m≤m+n (widthBy size d) (boundBy size D₀)
+width≤boundBy : ∀ size {d} D₀
+  → d ⋵ D₀
+  → widthBy size d ≤ boundBy size D₀
+width≤boundBy size (d ∷ D₀) (here refl) =
+  m≤m+n (widthBy size d) (boundBy size D₀)
 width≤boundBy size (d ∷ D₀) (there d∈) =
   ≤-trans (width≤boundBy size D₀ d∈) (m≤n+m (boundBy size D₀) (widthBy size d))
 
 {- Suppose the size of s n is at least n for every n, and let b be the
    bound of a finite list D₀. Then applying D₀ to the singleton set of
    s (b + 1) gives the empty set. -}
-finite-emptyBy : ∀ (size : Value → ℕ) (s : ℕ → Value) → (∀ n → n ≤ size (s n))
-  → ∀ D₀ w → ¬ (w ∈ (mem D₀ ● mem (s (suc (boundBy size D₀)) ∷ [])))
+finite-emptyBy : ∀ (size : Value → ℕ) (s : ℕ → Value)
+  → (∀ n → n ≤ size (s n))
+  → ∀ D₀ w
+  → ¬ (w ∈ (mem D₀ ● mem (s (suc (boundBy size D₀)) ∷ [])))
 finite-emptyBy size s big D₀ w ⟨ [] , ⟨ _ , ⟨ _ , neX ⟩ ⟩ ⟩ = neX refl
-finite-emptyBy size s big D₀ w ⟨ x ∷ X , ⟨ X↦w∈ , ⟨ X⊆ , _ ⟩ ⟩ ⟩ with X⊆ x (here refl)
-... | here refl = 1+n≰n (≤-trans (big (suc (boundBy size D₀))) (width≤boundBy size D₀ X↦w∈))
+finite-emptyBy size s big D₀ w ⟨ x ∷ X , ⟨ X↦w∈ , ⟨ X⊆ , _ ⟩ ⟩ ⟩
+  with X⊆ x (here refl)
+... | here refl =
+  1+n≰n (≤-trans (big (suc (boundBy size D₀))) (width≤boundBy size D₀ X↦w∈))
 ... | there ()
 
 inputs : Value → ℕ
@@ -277,13 +330,21 @@ finite-empty : ∀ D₀ w → ¬ (w ∈ (mem D₀ ● E (suc (bound D₀))))
 finite-empty = finite-emptyBy inputs e e-big
 
 finite-source : ∀ (D₀ : List Value) → Σ[ n ∈ ℕ ] ¬ ApproxLR (mem D₀ ● E n) W
-finite-source D₀ = ⟨ suc (bound D₀) , (λ r → let ⟨ w , w∈ ⟩ = ApproxLRLayer.nonempty-obs (unfoldᴬ r) (λ ()) in finite-empty D₀ w w∈) ⟩
+finite-source D₀ =
+  ⟨ suc (bound D₀)
+    ,
+    (λ r →
+      let ⟨ w , w∈ ⟩ =
+           ApproxLRLayer.nonempty-obs (unfoldᴬ r) (λ ()) in
+             finite-empty D₀ w w∈) ⟩
 
 {- Therefore no finite list D₀ satisfies clause 3 for the call in which
    V maps U to W, although the whole source denotation D satisfies it
    (whole-source). -}
-finite-source-clause3 : ∀ (D₀ : List Value) → ¬ (∀ n → ApproxLR (mem D₀ ● E n) W)
-finite-source-clause3 D₀ all = proj₂ (finite-source D₀) (all (proj₁ (finite-source D₀)))
+finite-source-clause3 : ∀ (D₀ : List Value)
+  → ¬ (∀ n → ApproxLR (mem D₀ ● E n) W)
+finite-source-clause3 D₀ all =
+  proj₂ (finite-source D₀) (all (proj₁ (finite-source D₀)))
 
 {- The same failure holds for any relation R between finite source
    lists and finite target lists that relates each [s n] to U and
@@ -291,30 +352,40 @@ finite-source-clause3 D₀ all = proj₂ (finite-source D₀) (all (proj₁ (fin
    clause 3 for R at the finite source list D₀ and a self-contained
    call that maps U to W. It says that for every source list E₀ related
    to U, some finite part S of D₀ ● E₀ is related to W. -}
-FinClause3 : (List Value → List Value → Set₁) → List Value → List Value → List Value → Set₁
-FinClause3 R U W D₀ = ∀ E₀ → R E₀ U → Σ[ S ∈ List Value ] mem S ⊆ (mem D₀ ● mem E₀) × R S W
+FinClause3 : (List Value → List Value → Set₁) → List Value → List Value
+  → List Value → Set₁
+FinClause3 R U W D₀ =
+  ∀ E₀ → R E₀ U → Σ[ S ∈ List Value ] mem S ⊆ (mem D₀ ● mem E₀) × R S W
 
 no-finite-sourceBy : ∀ (R : List Value → List Value → Set₁) {U W}
   → (∀ {S V'} → R S V' → V' ≢ [] → S ≢ [])
   → W ≢ []
-  → ∀ (size : Value → ℕ) (s : ℕ → Value) → (∀ n → n ≤ size (s n))
+  → ∀ (size : Value → ℕ) (s : ℕ → Value)
+  → (∀ n → n ≤ size (s n))
   → (∀ n → R (s n ∷ []) U)
-  → ∀ D₀ → ¬ FinClause3 R U W D₀
-no-finite-sourceBy R ne neW size s big rel D₀ c3 with c3 (s (suc (boundBy size D₀)) ∷ []) (rel _)
+  → ∀ D₀
+  → ¬ FinClause3 R U W D₀
+no-finite-sourceBy R ne neW size s big rel D₀ c3
+  with c3 (s (suc (boundBy size D₀)) ∷ []) (rel _)
 ... | ⟨ [] , ⟨ _ , rS ⟩ ⟩ = ne rS neW refl
 ... | ⟨ x ∷ _ , ⟨ S⊆ , _ ⟩ ⟩ = finite-emptyBy size s big D₀ x (S⊆ x (here refl))
 
-ne-ApproxLR : ∀ {S V'} → ApproxLR (mem S) V' → V' ≢ [] → S ≢ []
+ne-ApproxLR : ∀ {S V'}
+  → ApproxLR (mem S) V'
+  → V' ≢ []
+  → S ≢ []
 ne-ApproxLR r neV refl with ApproxLRLayer.nonempty-obs (unfoldᴬ r) neV
 ... | ⟨ _ , () ⟩
 
 no-finite-source : ∀ (R : List Value → List Value → Set₁)
   → (∀ {S V'} → R S V' → V' ≢ [] → S ≢ [])
   → (∀ n → R (e n ∷ []) U)
-  → ∀ D₀ → ¬ FinClause3 R U W D₀
+  → ∀ D₀
+  → ¬ FinClause3 R U W D₀
 no-finite-source R ne = no-finite-sourceBy R ne (λ ()) inputs e e-big
 
-no-finite-source-ApproxLR : ∀ D₀ → ¬ FinClause3 (λ S V' → ApproxLR (mem S) V') U W D₀
+no-finite-source-ApproxLR : ∀ D₀
+  → ¬ FinClause3 (λ S V' → ApproxLR (mem S) V') U W D₀
 no-finite-source-ApproxLR = no-finite-source _ ne-ApproxLR E-related
 
 {- 3. Without duplicate inputs ------------------------------------------------}
@@ -340,14 +411,21 @@ E′-con n = Con-single (e′ n)
 E′-ne : ∀ n → nonempty (E′ n)
 E′-ne n = ⟨ e′ n , here refl ⟩
 
-E′-disjoint : ∀ {n m v} → v ∈ E′ n → v ∈ E′ m → n ≡ m
+E′-disjoint : ∀ {n m v}
+  → v ∈ E′ n
+  → v ∈ E′ m
+  → n ≡ m
 E′-disjoint (here refl) (here refl) = refl
 
-no-car-g : ∀ {U₀ w} → UsableEntry (g ∷ []) U₀ w → ⊥
+no-car-g : ∀ {U₀ w}
+  → UsableEntry (g ∷ []) U₀ w
+  → ⊥
 no-car-g (usable-entry _ _ (here ()) _ _)
 no-car-g (usable-entry _ _ (there ()) _ _)
 
-untag-g : ∀ t {w} → tag t w ⋵ (g ∷ []) → ⊥
+untag-g : ∀ t {w}
+  → tag t w ⋵ (g ∷ [])
+  → ⊥
 untag-g (tupT i) (here ())
 untag-g leftT (here ())
 untag-g rightT (here ())
@@ -355,11 +433,16 @@ untag-g _ (there ())
 
 {- Every nonempty source set is related to [g], because [g] offers no
    constants, calls, or projections to match. -}
-g-related : ∀ {E₁} → nonempty E₁ → ApproxLR E₁ (g ∷ [])
+g-related : ∀ {E₁}
+  → nonempty E₁
+  → ApproxLR E₁ (g ∷ [])
 g-related neE = foldᴬ record
   { const-obs = λ { c (here ()) ; c (there ()) }
   ; nonempty-obs = λ _ → neE
-  ; app-obs = λ cs _ _ _ _ → ApproxLR-∅ (λ w w∈ → no-car-g (proj₁ (proj₂ (SelfContainedMaps.results cs w w∈))))
+  ; app-obs =
+    λ cs _ _ _ _ →
+    ApproxLR-∅
+    (λ w w∈ → no-car-g (proj₁ (proj₂ (SelfContainedMaps.results cs w w∈))))
   ; tag-obs = λ t W W⊆ → ApproxLR-∅ (λ w w∈ → untag-g t (W⊆ w w∈))
   }
 
@@ -373,7 +456,8 @@ idN = clos {Δ = []} (` Z) []
 
 E′⊆idN : ∀ n → E′ n ⊆ ⟦ idN ⟧ ρ₀
 E′⊆idN n _ (here refl) =
-  ⟨ ⟨⟩ ∷ [] , ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
+  ⟨ ⟨⟩ ∷ []
+      , ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
             , ⟨ (λ { _ (here refl) → tt }) , (λ ()) ⟩ ⟩ ⟩
 
 g∈idN' : g ∈ ⟦ split-program idN ⟧' ρ₀
@@ -394,16 +478,23 @@ W′ : List Value
 W′ = g ∷ []
 
 V′⊆idC' : mem V′ ⊆ ⟦ split-program idC ⟧' ρ₀
-V′⊆idC' _ (here refl) = ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , tt ⟩
+V′⊆idC' _ (here refl) =
+  ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , tt ⟩
 
 calls′ : SelfContainedMaps V′ U′ W′
 calls′ = record
-  { results = λ { _ (here refl) → ⟨ U′ , ⟨ ent , ⟨ (λ ()) , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
-  ; args = λ { _ (here refl) → ⟨ U′ , ⟨ g , ⟨ ent , here refl ⟩ ⟩ ⟩ ; _ (there ()) }
+  { results =
+      λ { _ (here refl)
+        → ⟨ U′ , ⟨ ent , ⟨ (λ ()) , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
+  ; args =
+    λ { _ (here refl) → ⟨ U′ , ⟨ g , ⟨ ent , here refl ⟩ ⟩ ⟩ ; _ (there ()) }
   }
   where
   ent : UsableEntry V′ U′ g
-  ent = usable-entry (⟨⟩ ∷ []) ⟨⟩ (here refl) (λ ()) (λ { _ (here refl) → ⟨ _ , here refl ⟩ ; _ (there ()) })
+  ent =
+    usable-entry (⟨⟩ ∷ [])
+    ⟨⟩ (here refl) (λ ())
+    (λ { _ (here refl) → ⟨ _ , here refl ⟩ ; _ (there ()) })
 
 {- The whole source denotation D satisfies clause 3, by the fundamental
    lemma. -}
@@ -425,10 +516,20 @@ finite-empty′ : ∀ D₀ w → ¬ (w ∈ (mem D₀ ● E′ (suc (boundBy arg 
 finite-empty′ = finite-emptyBy arg e′ e′-big
 
 finite-source′ : ∀ (D₀ : List Value) → Σ[ n ∈ ℕ ] ¬ ApproxLR (mem D₀ ● E′ n) W′
-finite-source′ D₀ = ⟨ suc (boundBy arg D₀) , (λ r → let ⟨ w , w∈ ⟩ = ApproxLRLayer.nonempty-obs (unfoldᴬ r) (λ ()) in finite-empty′ D₀ w w∈) ⟩
+finite-source′ D₀ =
+  ⟨ suc (boundBy arg D₀)
+    ,
+    (λ r →
+      let ⟨ w , w∈ ⟩ =
+           ApproxLRLayer.nonempty-obs (unfoldᴬ r) (λ ()) in
+             finite-empty′ D₀ w w∈) ⟩
 
-finite-source-clause3′ : ∀ (D₀ : List Value) → ¬ (∀ n → ApproxLR (mem D₀ ● E′ n) W′)
-finite-source-clause3′ D₀ all = proj₂ (finite-source′ D₀) (all (proj₁ (finite-source′ D₀)))
+finite-source-clause3′ : ∀ (D₀ : List Value)
+  → ¬ (∀ n → ApproxLR (mem D₀ ● E′ n) W′)
+finite-source-clause3′ D₀ all =
+  proj₂ (finite-source′ D₀) (all (proj₁ (finite-source′ D₀)))
 
-no-finite-source-ApproxLR′ : ∀ D₀ → ¬ FinClause3 (λ S V' → ApproxLR (mem S) V') U′ W′ D₀
-no-finite-source-ApproxLR′ = no-finite-sourceBy _ ne-ApproxLR (λ ()) arg e′ e′-big E′-related
+no-finite-source-ApproxLR′ : ∀ D₀
+  → ¬ FinClause3 (λ S V' → ApproxLR (mem S) V') U′ W′ D₀
+no-finite-source-ApproxLR′ =
+  no-finite-sourceBy _ ne-ApproxLR (λ ()) arg e′ e′-big E′-related

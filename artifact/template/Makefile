@@ -31,7 +31,8 @@ libraries:
 	  elif [ -f "$$APPDIR/libraries" ]; then cat "$$APPDIR/libraries"; fi; \
 	  echo "$(CURDIR)/vendor/TypeTopology/typetopology.agda-lib"; } > _build/libraries
 
-# Tables 1 and 2 of the paper (lines of code; needs only Python 3)
+# Tables 1 and 2 of the paper (lexical tokens of code, with the totals in
+# lines too; needs only Python 3)
 tables:
 	$(PYTHON) loc.py --artifact
 

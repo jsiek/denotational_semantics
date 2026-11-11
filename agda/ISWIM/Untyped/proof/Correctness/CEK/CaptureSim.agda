@@ -40,7 +40,8 @@ import ISWIM.Untyped.Semantics.CEK.Clos2 as T
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; length; map; replicate)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_;
+  reverse⁺)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
@@ -52,9 +53,10 @@ open import Data.Nat.Properties
          +-identityʳ; +-suc; n≤1+n; m≤n⇒m<n∨m≡n)
 open import Data.Product using (_×_; Σ-syntax; _,_)
 open import Data.Sum using (inj₁; inj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst; cong₂)
 
-{- The simulation relation -----------------------------------------------------}
+{- The simulation relation ----------------------------------------------------}
 
 infix 4 _≈_ _≈k_ _~_
 
@@ -73,7 +75,8 @@ Lookup x ρ₁ ρ₂ =
   Σ[ v ∈ S.Val ] Σ[ w ∈ T.Val ] (ρ₁ ‼ x ≡ just v) × (ρ₂ ‼ x ≡ just w) × v ≈ w
 
 data Agree M k ρ₁ ρ₂ where
-  agree : (∀ x → Uses (k + x) M → Lookup x ρ₁ ρ₂) → bound M ≤ k + length ρ₂ → Agree M k ρ₁ ρ₂
+  agree : (∀ x → Uses (k + x) M → Lookup x ρ₁ ρ₂) → bound M ≤ k + length ρ₂
+    → Agree M k ρ₁ ρ₂
 
 data _≈k_ : S.Cont → T.Cont → Set where
   halt : S.halt ≈k T.halt
@@ -91,7 +94,8 @@ data _≈k_ : S.Cont → T.Cont → Set where
   primL : ∀ {p M ρ₁ ρ₂ κ₁ κ₂} → Agree M 0 ρ₁ ρ₂ → κ₁ ≈k κ₂
     → S.primL p M ρ₁ κ₁ ≈k T.primL p (capture M) ρ₂ κ₂
   primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.primR p v κ₁ ≈k T.primR p w κ₂
-  letK : ∀ {N ρ₁ ρ₂ κ₁ κ₂} → Agree N 1 ρ₁ ρ₂ → κ₁ ≈k κ₂ → S.letK N ρ₁ κ₁ ≈k T.letK (capture N) ρ₂ κ₂
+  letK : ∀ {N ρ₁ ρ₂ κ₁ κ₂} → Agree N 1 ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → S.letK N ρ₁ κ₁ ≈k T.letK (capture N) ρ₂ κ₂
 
 data _~_ : S.State → T.State → Set where
   eval~ : ∀ {M ρ₁ ρ₂ κ₁ κ₂} → Agree M 0 ρ₁ ρ₂ → κ₁ ≈k κ₂
@@ -99,8 +103,12 @@ data _~_ : S.State → T.State → Set where
   ret~ : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.ret v κ₁ ~ T.ret w κ₂
 
 {- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
+obs≈ : ∀ {v w}
+  → v ≈ w
+  → S.obs v ≡ T.obs w
+obs≈-list : ∀ {vs ws}
+  → Pointwise _≈_ vs ws
+  → S.obs-list vs ≡ T.obs-list ws
 obs≈ (clo≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -110,29 +118,46 @@ obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+  → v₁ ≈ w₁
+  → v₂ ≈ w₂
+  → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s
+  with δ? p (T.obs w₁) (T.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
 ... | just (bool true) = M.just (inl≈ (tup≈ []))
 ... | just (bool false) = M.just (inr≈ (tup≈ []))
 
-{- Agreement of environments ---------------------------------------------------}
+{- Agreement of environments --------------------------------------------------}
 
-lookup : ∀ {M k ρ₁ ρ₂} → Agree M k ρ₁ ρ₂ → ∀ x → Uses (k + x) M → Lookup x ρ₁ ρ₂
+lookup : ∀ {M k ρ₁ ρ₂}
+  → Agree M k ρ₁ ρ₂
+  → ∀ x
+  → Uses (k + x) M
+  → Lookup x ρ₁ ρ₂
 lookup (agree look _) = look
 
-agree-ext : ∀ {M ρ₁ ρ₂ v w} → v ≈ w → Agree M 1 ρ₁ ρ₂ → Agree M 0 (v ∷ ρ₁) (w ∷ ρ₂)
+agree-ext : ∀ {M ρ₁ ρ₂ v w}
+  → v ≈ w
+  → Agree M 1 ρ₁ ρ₂
+  → Agree M 0 (v ∷ ρ₁) (w ∷ ρ₂)
 agree-ext {M} {ρ₁} {ρ₂} {v} {w} r (agree look b) = agree look' b
   where
-  look' : ∀ x → Uses x M → Lookup x (v ∷ ρ₁) (w ∷ ρ₂)
+  look' : ∀ x
+    → Uses x M
+    → Lookup x (v ∷ ρ₁) (w ∷ ρ₂)
   look' zero _ = v , w , refl , refl , r
   look' (suc x) u = look x u
 
 {- a subterm M' of M, under k binders -}
-agree-sub : ∀ {k M M' ρ₁ ρ₂} → (∀ x → Uses (k + x) M' → Uses x M)
-  → bound M' ≤ k + bound M → Agree M 0 ρ₁ ρ₂ → Agree M' k ρ₁ ρ₂
-agree-sub {k} sub b (agree look b₀) = agree (λ x u → look x (sub x u)) (≤-trans b (+-monoʳ-≤ k b₀))
+agree-sub : ∀ {k M M' ρ₁ ρ₂}
+  → (∀ x → Uses (k + x) M' → Uses x M)
+  → bound M' ≤ k + bound M
+  → Agree M 0 ρ₁ ρ₂
+  → Agree M' k ρ₁ ρ₂
+agree-sub {k} sub b (agree look b₀) =
+  agree (λ x u → look x (sub x u)) (≤-trans b (+-monoʳ-≤ k b₀))
 
 ⊔-left : ∀ {m n} → m ≤ m ⊔ n
 ⊔-left {m} {n} = m≤m⊔n m n
@@ -142,7 +167,8 @@ agree-sub {k} sub b (agree look b₀) = agree (λ x u → look x (sub x u)) (≤
 
 
 agree-args : ∀ {n ρ₁ ρ₂} (args : Args (replicate n ■))
-  → (∀ x → UsesArgs x args → Lookup x ρ₁ ρ₂) → bound-args args ≤ length ρ₂
+  → (∀ x → UsesArgs x args → Lookup x ρ₁ ρ₂)
+  → bound-args args ≤ length ρ₂
   → All (λ M → Agree M 0 ρ₁ ρ₂) (args→list args)
 agree-args {zero} Nil look b = []
 agree-args {suc n} (M ,, args) look b =
@@ -153,25 +179,31 @@ body-bind : ∀ m N → T.body m (bind-n-ast m N) ≡ N
 body-bind zero N = refl
 body-bind (suc m) N = body-bind m N
 
-{- The simulation, for any Clos2 program P -------------------------------------}
+{- The simulation, for any Clos2 program P ------------------------------------}
 
 module _ (P : C.AST) where
 
   L₂ = T.sem P
 
-  lookup-pw : ∀ x ρ₁ ρ₂ → Lookup x ρ₁ ρ₂ → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ x)
+  lookup-pw : ∀ x ρ₁ ρ₂
+    → Lookup x ρ₁ ρ₂
+    → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ x)
   lookup-pw x ρ₁ ρ₂ (v , w , e₁ , e₂ , r) rewrite e₁ | e₂ = M.just r
 
-  tuple-next~ : ∀ {vs ws Ms ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
-    → All (λ M → Agree M 0 ρ₁ ρ₂) Ms → κ₁ ≈k κ₂
+  tuple-next~ : ∀ {vs ws Ms ρ₁ ρ₂ κ₁ κ₂}
+    → Pointwise _≈_ vs ws
+    → All (λ M → Agree M 0 ρ₁ ρ₂) Ms
+    → κ₁ ≈k κ₂
     → S.tuple-next vs Ms ρ₁ κ₁ ~ T.tuple-next ws (map capture Ms) ρ₂ κ₂
   tuple-next~ rs [] κ = ret~ (tup≈ (reverse⁺ rs)) κ
   tuple-next~ rs (ag ∷ ags) κ = eval~ ag (tupK rs ags κ)
 
   {- evaluating the captured variables ` (j - 1) , ... , ` 0 -}
-  capture-fvs : ∀ j {N vs ρ κ} → j ≤ length ρ
+  capture-fvs : ∀ j {N vs ρ κ}
+    → j ≤ length ρ
     → Σ[ vs' ∈ List T.Val ]
-        Star L₂ (T.clos-next N vs (args→list (fv-vars j)) ρ κ) (T.ret (T.clos N vs') κ)
+        Star L₂ (T.clos-next N vs (args→list (fv-vars j)) ρ κ)
+          (T.ret (T.clos N vs') κ)
         × length vs' ≡ j + length vs
         × (∀ x → x < j → vs' ‼ x ≡ ρ ‼ x)
         × (∀ x → vs' ‼ (j + x) ≡ vs ‼ x)
@@ -179,21 +211,30 @@ module _ (P : C.AST) where
   capture-fvs (suc j) {N} {vs} {ρ} {κ} j< with ‼-< ρ j j<
   ... | v , eq with capture-fvs j {N} {v ∷ vs} {ρ} {κ} (≤-trans (n≤1+n j) j<)
   ...   | vs' , σ , len , pre , suf =
-    vs' , cong (λ mv → T.ret? mv (T.closK N vs (args→list (fv-vars j)) ρ κ)) eq ◅ refl ◅ σ , trans len (+-suc j _) , pre' , suf'
+    vs'
+      , cong (λ mv → T.ret? mv (T.closK N vs (args→list (fv-vars j)) ρ κ)) eq
+      ◅ refl ◅ σ , trans len (+-suc j _) , pre' , suf'
     where
 
-    pre' : ∀ x → x < suc j → vs' ‼ x ≡ ρ ‼ x
+    pre' : ∀ x
+      → x < suc j
+      → vs' ‼ x ≡ ρ ‼ x
     pre' x x< with m≤n⇒m<n∨m≡n (≤-pred x<)
     ... | inj₁ x<j = pre x x<j
-    ... | inj₂ refl = trans (subst (λ y → vs' ‼ y ≡ just v) (+-identityʳ x) (suf 0)) (sym eq)
+    ... | inj₂ refl =
+      trans (subst (λ y → vs' ‼ y ≡ just v) (+-identityʳ x) (suf 0)) (sym eq)
 
     suf' : ∀ x → vs' ‼ (suc j + x) ≡ vs ‼ x
     suf' x = trans (cong (vs' ‼_) (sym (+-suc j x))) (suf (suc x))
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
-  sim (eval~ {M = ` x} {ρ₁} {ρ₂} ag κ) = next?-answers (lookup-pw x ρ₁ ρ₂ (lookup ag x refl)) (λ r → ret~ r κ) refl
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (S.step s₁) s₂
+  sim (eval~ {M = ` x} {ρ₁} {ρ₂} ag κ) =
+    next?-answers (lookup-pw x ρ₁ ρ₂ (lookup ag x refl)) (λ r → ret~ r κ) refl
   sim (eval~ {M = lam ⦅ ⟩ N ,, Nil ⦆} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree look b) κ)
-    with capture-fvs (bound N ∸ 1) {T.body m (bind-n-ast m (capture N))} {[]} {ρ₂} {κ₂}
+    with capture-fvs (bound N ∸ 1) {T.body m (bind-n-ast m (capture N))}
+      {[]} {ρ₂} {κ₂}
                  (≤-trans (m≤m⊔n m 0) b)
     where m = bound N ∸ 1
   ... | vs' , σ , len , pre , suf =
@@ -202,7 +243,9 @@ module _ (P : C.AST) where
                  (sym (body-bind (bound N ∸ 1) (capture N)))
                  (ret~ (clo≈ (agree look' b')) κ))
     where
-    look' : ∀ x → Uses (suc x) N → Lookup x ρ₁ vs'
+    look' : ∀ x
+      → Uses (suc x) N
+      → Lookup x ρ₁ vs'
     look' x u with look x (inj₁ u)
     ... | v , w , e₁ , e₂ , r =
       v , w , e₁ , trans (pre x (<-∸1 (uses-bound (suc x) N u))) e₂ , r
@@ -211,11 +254,16 @@ module _ (P : C.AST) where
     b' rewrite len | +-identityʳ (bound N ∸ 1) = m≤n+m∸n (bound N) 1
   sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} ag κ) =
     steps₁ refl (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
-                            (appL (agree-sub (λ x u → inj₂ (inj₁ u)) (⊔-right {bound L}) ag) κ))
+                            (appL
+                                (agree-sub (λ x u → inj₂ (inj₁ u))
+                                  (⊔-right {bound L}) ag) κ))
   sim (eval~ {M = lit B k ⦅ Nil ⦆} ag κ) = steps₁ refl (ret~ const≈ κ)
   sim (eval~ {M = tuple n ⦅ args ⦆} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree look b) κ) =
     steps₁ refl
-          (subst (λ Ns → S.tuple-next [] (args→list args) ρ₁ κ₁ ~ T.tuple-next [] Ns ρ₂ κ₂)
+          (subst
+              (λ Ns →
+                S.tuple-next [] (args→list args) ρ₁ κ₁
+                ~ T.tuple-next [] Ns ρ₂ κ₂)
                  (sym (args→list-hom capture enc-args (λ _ _ → refl) args))
                  (tuple-next~ [] (agree-args args look b) κ))
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} ag κ) =
@@ -228,18 +276,24 @@ module _ (P : C.AST) where
     steps₁ refl
       (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
         (caseK (agree-sub (λ x u → inj₂ (inj₁ u))
-                          (≤-trans (m≤n+m∸n (bound M) 1) (s≤s (⊔-right {bound L}))) ag)
+                          (≤-trans (m≤n+m∸n (bound M) 1)
+                              (s≤s (⊔-right {bound L}))) ag)
                (agree-sub (λ x u → inj₂ (inj₂ (inj₁ u)))
                           (≤-trans (m≤n+m∸n (bound N) 1)
                             (s≤s (≤-trans (m≤m⊔n (bound N ∸ 1) 0)
-                              (≤-trans (m≤n⊔m (bound M ∸ 1) _) (m≤n⊔m (bound L) _))))) ag)
+                              (≤-trans (m≤n⊔m (bound M ∸ 1) _)
+                                  (m≤n⊔m (bound L) _))))) ag)
                κ))
   sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} ag κ) =
     steps₁ refl (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
-                            (primL (agree-sub (λ x u → inj₂ (inj₁ u)) (⊔-right {bound L}) ag) κ))
+                            (primL
+                                (agree-sub (λ x u → inj₂ (inj₁ u))
+                                  (⊔-right {bound L}) ag) κ))
   sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} ag κ) =
     steps₁ refl (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
-      (letK (agree-sub (λ x u → inj₂ (inj₁ u)) (≤-trans (m≤n+m∸n (bound N) 1) (s≤s (⊔-right {bound M}))) ag) κ))
+      (letK
+          (agree-sub (λ x u → inj₂ (inj₁ u))
+            (≤-trans (m≤n+m∸n (bound N) 1) (s≤s (⊔-right {bound M}))) ag) κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r@(clo≈ _) (appL ag κ)) = steps₁ refl (eval~ ag (appR r κ))
   sim (ret~ const≈ (appL ag κ)) = stops refl
@@ -252,32 +306,44 @@ module _ (P : C.AST) where
   sim (ret~ r (appR (inl≈ _) κ)) = stops refl
   sim (ret~ r (appR (inr≈ _) κ)) = stops refl
   sim (ret~ r (tupK rs ags κ)) = steps₁ refl (tuple-next~ (r ∷ rs) ags κ)
-  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = next?-answers (proj-pw i rs) (λ r → ret~ r κ) refl
+  sim (ret~ (tup≈ rs) (getK {i = i} κ)) =
+    next?-answers (proj-pw i rs) (λ r → ret~ r κ) refl
   sim (ret~ (clo≈ _) (getK κ)) = stops refl
   sim (ret~ const≈ (getK κ)) = stops refl
   sim (ret~ (inl≈ _) (getK κ)) = stops refl
   sim (ret~ (inr≈ _) (getK κ)) = stops refl
   sim (ret~ r (inlK κ)) = steps₁ refl (ret~ (inl≈ r) κ)
   sim (ret~ r (inrK κ)) = steps₁ refl (ret~ (inr≈ r) κ)
-  sim (ret~ (inl≈ r) (caseK agM agN κ)) = steps₁ refl (eval~ (agree-ext r agM) κ)
-  sim (ret~ (inr≈ r) (caseK agM agN κ)) = steps₁ refl (eval~ (agree-ext r agN) κ)
+  sim (ret~ (inl≈ r) (caseK agM agN κ)) =
+    steps₁ refl (eval~ (agree-ext r agM) κ)
+  sim (ret~ (inr≈ r) (caseK agM agN κ)) =
+    steps₁ refl (eval~ (agree-ext r agN) κ)
   sim (ret~ (clo≈ _) (caseK _ _ κ)) = stops refl
   sim (ret~ const≈ (caseK _ _ κ)) = stops refl
   sim (ret~ (tup≈ _) (caseK _ _ κ)) = stops refl
   sim (ret~ r (primL ag κ)) = steps₁ refl (eval~ ag (primR r κ))
-  sim (ret~ s (primR {p} r κ)) = next?-answers (prim≈ p r s) (λ r → ret~ r κ) refl
+  sim (ret~ s (primR {p} r κ)) =
+    next?-answers (prim≈ p r s) (λ r → ret~ r κ) refl
   sim (ret~ r (letK ag κ)) = steps₁ refl (eval~ (agree-ext r ag) κ)
 
-{- The end theorem -------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
-agree-closed : ∀ M → Closed M → Agree M 0 [] []
-agree-closed M c = agree (λ x u → ⊥-elim (x<0 (subst (x <_) c (uses-bound x M u)))) (subst (_≤ 0) (sym c) z≤n)
+agree-closed : ∀ M
+  → Closed M
+  → Agree M 0 [] []
+agree-closed M c =
+  agree (λ x u → ⊥-elim (x<0 (subst (x <_) c (uses-bound x M u))))
+  (subst (_≤ 0) (sym c) z≤n)
   where x<0 : ∀ {x} → x < 0 → ⊥
         x<0 ()
 
-capture-fsim : ∀ M → Closed M → FSim (S.sem M) (T.sem (capture M))
+capture-fsim : ∀ M
+  → Closed M
+  → FSim (S.sem M) (T.sem (capture M))
 capture-fsim M c =
   plus-simulation _~_ (eval~ (agree-closed M c) halt) (sim (capture M))
 
-capture-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (capture M))
+capture-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (T.sem (capture M))
 capture-correct M c = equivalent (capture-fsim M c)

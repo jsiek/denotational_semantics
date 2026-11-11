@@ -1,13 +1,13 @@
 {-
 
   A clocked interpreter for CFGμ (FPC/Language/CFG.agda), the output of
-  explicate control, as the one for CFGᵀ (ISWIM/Semantics/Interp/Typed/CFG.agda).
-  A tail runs in a frame typed by its context and returns a value of the
-  body's result type: return s gives the value of s (as in Impμ,
-  FPC/Semantics/ClockedInterpreters/Imp.agda); seq p s t pops the slots after those of
-  Δ' (p : Δ' ⊑ Δ), pushes the value of s as the new slot, and
-  runs t; case a p l₁ l₂ does so with the payload of a and jumps to l₁
-  or l₂. A tail runs with the blocks it may jump to, and block l with
+  explicate control, as the one for CFGᵀ
+  (ISWIM/Semantics/Interp/Typed/CFG.agda). A tail runs in a frame typed by its
+  context and returns a value of the body's result type: return s gives the
+  value of s (as in Impμ, FPC/Semantics/ClockedInterpreters/Imp.agda); seq p s t
+  pops the slots after those of Δ' (p : Δ' ⊑ Δ), pushes the value of s as the
+  new slot, and runs t; case a p l₁ l₂ does so with the payload of a and jumps
+  to l₁ or l₂. A tail runs with the blocks it may jump to, and block l with
   the blocks older than it, so the interpreter is structurally recursive
   on the clock, the blocks and the tail; only calls tick the clock.
 
@@ -35,10 +35,12 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (Args s)) Σ)
   call : ∀ {A B} → ℕ → Val (A ⇒ B) → Val A → Result (Val B)
 
   tail ck bs φ (return s) = eval-simple (call ck) φ s
-  tail ck bs φ (seq p s t) = do v ← eval-simple (call ck) φ s; tail ck bs (v ∷ pop p φ) t
+  tail ck bs φ (seq p s t) =
+    do v ← eval-simple (call ck) φ s; tail ck bs (v ∷ pop p φ) t
   tail ck bs φ (goto l) = jump ck bs l φ
   tail ck bs φ (case a p l₁ l₂) =
-    either (atom φ a) (λ v → jump ck bs l₁ (v ∷ pop p φ)) (λ v → jump ck bs l₂ (v ∷ pop p φ))
+    either (atom φ a) (λ v → jump ck bs l₁ (v ∷ pop p φ))
+      (λ v → jump ck bs l₂ (v ∷ pop p φ))
 
   jump ck (bs ▷ t) Z φ = tail ck bs φ t
   jump ck (bs ▷ t) (S l) φ = jump ck bs l φ

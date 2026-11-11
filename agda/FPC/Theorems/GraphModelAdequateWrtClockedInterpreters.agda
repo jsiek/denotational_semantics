@@ -61,7 +61,8 @@ fpc-diverges-iff M = ⇔∘ (AdequacyFPC.diverges-iff M) ¬nonempty⇔≃∅
 {- the same holds for X86μ and compile M -}
 
 x86-const-iff : ∀ {A} (M : FPC.Tm [] A) {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile M ⟧ₜ) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const B k)
+  → (const k ∈ ⟦ compile M ⟧ₜ)
+    ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const B k)
 x86-const-iff = AdequacyX86.x86-const-iff
 
 x86-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
@@ -75,7 +76,8 @@ x86-diverges-iff M = ⇔∘ (AdequacyX86.x86-diverges-iff M) ¬nonempty⇔≃∅
    same integer, or both diverge -}
 
 end-to-end-x86-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)
-  → Terminates (FPCᵢ.sem M) (o-const Int n) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int n)
+  → Terminates (FPCᵢ.sem M) (o-const Int n)
+    ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int n)
 end-to-end-x86-const = EndToEnd.compile-const
 
 end-to-end-x86-diverges : ∀ (M : FPC.Tm [] (base Int))

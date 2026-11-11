@@ -30,17 +30,21 @@ open import FPC.Compiler.Select
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import proof.Semantics.Interp.Clock
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import FPC.Semantics.ClockedInterpreters.Imp using (eval-simple) renaming (atom to value-of)
+open import FPC.Semantics.ClockedInterpreters.Imp using (eval-simple) renaming
+  (atom to value-of)
 import FPC.Semantics.ClockedInterpreters.CFG as G
 import FPC.Semantics.ClockedInterpreters.X86 as X
 open X using (⟨_,_,_,_⟩; put)
-open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; either-cong)
+open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map;
+  either-cong)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; trans)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
+  trans)
 
-module _ {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s)) Σ) where
+module _ {Σ : List DSig}
+  (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s)) Σ) where
   open Vals Σ
 
   xds = map def-body ds
@@ -48,40 +52,55 @@ module _ {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s)) �
   equal-bit : ∀ v w → δ eq v w ≡ X.bit (X.equal v w)
   equal-bit (const n) (const k) = refl
 
-  args-ok : ∀ {Δ Δs η Γ O F} {m : X.Mach Σ η (st Γ Δ O F)} (as : All (Atm Σ Δ) Δs) → X.args (atms as) m ≡ map (value-of (X.frame m)) as
+  args-ok : ∀ {Δ Δs η Γ O F} {m : X.Mach Σ η (st Γ Δ O F)}
+    (as : All (Atm Σ Δ) Δs) → X.args (atms as) m ≡ map (value-of (X.frame m)) as
   args-ok [] = refl
   args-ok (a ∷ as) = cong (_ ∷_) (args-ok as)
 
   {- calls give the same results at clock ck -}
   Calls : ℕ → Set
-  Calls ck = ∀ {A B} (v : Val (A ⇒ B)) w → G.call ds ck v w ≡ X.call xds ck (X.code-of v) (X.env-of v) w
+  Calls ck =
+    ∀ {A B} (v : Val (A ⇒ B)) w
+    → G.call ds ck v w ≡ X.call xds ck (X.code-of v) (X.env-of v) w
 
   module _ (ck : ℕ) (H : Calls ck) where
 
-    sel-ok : ∀ {n R Bs Δ A Δ''} {bs : Blocks Σ n R Bs} {η Γ O F} {ρ : X.RegVals Σ η Γ} {op : X.Opened Σ η O}
-      {f : X.Flag Σ F} {φ : Env Δ} (o : Out n Δ A Δ'') {k : ∀ {Γ O F} → Seq Σ n R Bs (after o Γ O F)} {K}
-      → (∀ {η Γ O F} (ρ : X.RegVals Σ η Γ) (op : X.Opened Σ η O) (f : X.Flag Σ F) v
-           → K v ≡ X.run xds ck bs η (put (dst o) v ⟨ ρ , φ , op , f ⟩) k)
-      → (s : I.Simple Σ Δ A) → (eval-simple (G.call ds ck) φ s >>= K) ≡ X.run xds ck bs η ⟨ ρ , φ , op , f ⟩ (sel s o k)
+    sel-ok : ∀ {n R Bs Δ A Δ''} {bs : Blocks Σ n R Bs} {η Γ O F}
+      {ρ : X.RegVals Σ η Γ} {op : X.Opened Σ η O}
+        {f : X.Flag Σ F} {φ : Env Δ} (o : Out n Δ A Δ'')
+          {k : ∀ {Γ O F} → Seq Σ n R Bs (after o Γ O F)} {K}
+      →
+        (  ∀ {η Γ O F} (ρ : X.RegVals Σ η Γ) (op : X.Opened Σ η O)
+          (f : X.Flag Σ F) v
+         → K v ≡ X.run xds ck bs η (put (dst o) v ⟨ ρ , φ , op , f ⟩) k)
+      → (s : I.Simple Σ Δ A)
+      → (eval-simple (G.call ds ck) φ s >>= K)
+        ≡ X.run xds ck bs η ⟨ ρ , φ , op , f ⟩ (sel s o k)
     sel-ok o h (I.atm a) = h _ _ _ _
     sel-ok o h (I.pair a b) = h _ _ _ _
-    sel-ok {φ = φ} o h (I.callc (var x) a) = bind≡ (H (lookup φ x) (value-of φ a)) λ v → h _ _ _ v
-    sel-ok {ρ = ρ} {op} {f} {φ} o h (I.tuple as) rewrite args-ok {m = ⟨ ρ , φ , op , f ⟩} as = h _ _ _ _
+    sel-ok {φ = φ} o h (I.callc (var x) a) =
+      bind≡ (H (lookup φ x) (value-of φ a)) λ v → h _ _ _ v
+    sel-ok {ρ = ρ} {op} {f} {φ} o h (I.tuple as) rewrite args-ok
+      {m = ⟨ ρ , φ , op , f ⟩} as = h _ _ _ _
     sel-ok o h (I.get i a) = h _ _ _ _
     sel-ok o h (I.inl a) = h _ _ _ _
     sel-ok o h (I.inr a) = h _ _ _ _
     sel-ok o h (I.prim sub a b) = h _ _ _ _
-    sel-ok {φ = φ} o {K = K} h (I.prim eq a b) = trans (cong K (equal-bit (value-of φ a) (value-of φ b))) (h _ _ _ _)
+    sel-ok {φ = φ} o {K = K} h (I.prim eq a b) =
+      trans (cong K (equal-bit (value-of φ a) (value-of φ b))) (h _ _ _ _)
     sel-ok o h (I.fold a) = h _ _ _ _
     sel-ok o h (I.unfold a) = h _ _ _ _
 
-    tail-ok : ∀ {n R Bs Δ} {bs : C.Blocks Σ R Bs} {η Γ O F} {ρ : X.RegVals Σ η Γ} {op : X.Opened Σ η O}
+    tail-ok : ∀ {n R Bs Δ} {bs : C.Blocks Σ R Bs} {η Γ O F}
+      {ρ : X.RegVals Σ η Γ} {op : X.Opened Σ η O}
       {f : X.Flag Σ F} {φ : Env Δ} (t : Tail Σ R Bs Δ) .{le le'}
-      → G.tail ds ck bs φ t ≡ X.run xds ck (blocks {n = n} bs le') η ⟨ ρ , φ , op , f ⟩ (tail t le)
+      → G.tail ds ck bs φ t
+        ≡ X.run xds ck (blocks {n = n} bs le') η ⟨ ρ , φ , op , f ⟩ (tail t le)
     jump-ok : ∀ {n R Bs Δ} (bs : C.Blocks Σ R Bs) (l : Bs ∋ Δ) .{le} {η φ}
       → G.jump ds ck bs l φ ≡ X.jump xds ck (blocks {n = n} bs le) η l φ
 
-    tail-ok (return s) = trans (sym (bind-ret _)) (sel-ok ret (λ _ _ _ _ → refl) s)
+    tail-ok (return s) =
+      trans (sym (bind-ret _)) (sel-ok ret (λ _ _ _ _ → refl) s)
     tail-ok (seq p s t) = sel-ok (to p _) (λ _ _ _ _ → tail-ok t) s
     tail-ok {bs = bs} (goto l) = jump-ok bs l
     tail-ok {bs = bs} {φ = φ} (case (var x) p l₁ l₂) =
@@ -92,8 +111,11 @@ module _ {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s)) �
 
   call-ok : ∀ ck → Calls ck
   call-ok zero v w = refl
-  call-ok (suc ck) (pack (code f) e) w rewrite def-map def-body ds f with lookup ds f
+  call-ok (suc ck) (pack (code f) e) w rewrite def-map def-body ds f
+    with lookup ds f
   ... | C.body bs t = tail-ok ck (call-ok ck) t
 
-select-correct : ∀ {A} (P : C.Program A) → Equivalent (G.sem P) (X.sem (select P))
-select-correct (C.program ds (C.body bs t)) = clocked-≡ λ ck → tail-ok ds ck (call-ok ds ck) t
+select-correct : ∀ {A} (P : C.Program A)
+  → Equivalent (G.sem P) (X.sem (select P))
+select-correct (C.program ds (C.body bs t)) =
+  clocked-≡ λ ck → tail-ok ds ck (call-ok ds ck) t

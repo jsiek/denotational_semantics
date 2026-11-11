@@ -56,7 +56,7 @@ out-ty : Prim → Type
 out-ty sub = base Int
 out-ty eq = tup [] ⊹ tup []
 
-{- Renaming and substitution of type variables ---------------------------------}
+{- Renaming and substitution of type variables --------------------------------}
 
 private
   ext : ∀ {n m} → (Fin n → Fin m) → Fin (suc n) → Fin (suc m)

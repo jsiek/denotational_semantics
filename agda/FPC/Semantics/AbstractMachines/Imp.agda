@@ -1,9 +1,9 @@
 {-
 
   A machine for Impμ (FPC/Language/Imp.agda), with the values of the
-  GlobalFunμ machine (FPC/Semantics/AbstractMachines/GlobalFun.agda), as the Impᵀ machine
-  (ISWIM/Semantics/CEK/Typed/Imp.agda). An expression runs in a frame of
-  slots typed by its frame context Δ (slot 0 last), so an atom always
+  GlobalFunμ machine (FPC/Semantics/AbstractMachines/GlobalFun.agda), as the
+  Impᵀ machine (ISWIM/Semantics/CEK/Typed/Imp.agda). An expression runs in a
+  frame of slots typed by its frame context Δ (slot 0 last), so an atom always
   has a value (atom).
 
   A simple expression takes one step (run): its operands are atoms, so
@@ -23,8 +23,8 @@ open import FPC.Language.Type
 open import FPC.Language.Imp
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import FPC.Semantics.AbstractMachines.GlobalFun
-  using (Val; code; pack; const; tup; inl; inr; fold; Env; obs; int; elems; choose; unfoldᵥ; δᵀ) public
+open import FPC.Semantics.AbstractMachines.GlobalFun using (Val; code; pack;
+  const; tup; inl; inr; fold; Env; obs; int; elems; choose; unfoldᵥ; δᵀ) public
 
 open import Data.List using (List; []; _∷_)
 
@@ -58,7 +58,8 @@ module _ {Σ : List DSig} where
 
 data Cont (Σ : List DSig) : Type → Set where
   halt : ∀ {A} → Cont Σ A
-  assignK : ∀ {Δ A B} → Exp Σ (A ∷ Δ) B → Frame Σ Δ → Cont Σ B → Cont Σ A   {- x := □; e₂ -}
+  {- x := □; e₂ -}
+  assignK : ∀ {Δ A B} → Exp Σ (A ∷ Δ) B → Frame Σ Δ → Cont Σ B → Cont Σ A
 
 data State (Σ : List DSig) : Set where
   eval : ∀ {Δ A} → Exp Σ Δ A → Frame Σ Δ → Cont Σ A → State Σ

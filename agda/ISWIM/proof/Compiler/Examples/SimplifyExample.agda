@@ -24,11 +24,13 @@ fold : simplify (prim sub ⦅ n 3 ,, n 1 ,, Nil ⦆) ≡ n 2
 fold = refl
 
 {- a case on a known injection: case (1 = 1) of _. 10 | _. 20 is 10 -}
-if-true : simplify (case-op ⦅ prim eq ⦅ n 1 ,, n 1 ,, Nil ⦆ ,, ⟩ n 10 ,, ⟩ n 20 ,, Nil ⦆) ≡ n 10
+if-true : simplify (case-op ⦅ prim eq ⦅ n 1 ,, n 1 ,, Nil ⦆ ,, ⟩ n 10 ,, ⟩ n 20
+    ,, Nil ⦆) ≡ n 10
 if-true = refl
 
 {- β on a small value, then folding: (λ x. x - 1) 3 is 2 -}
-beta : simplify (app ⦅ lam ⦅ ⟩ prim sub ⦅ ` 0 ,, n 1 ,, Nil ⦆ ,, Nil ⦆ ,, n 3 ,, Nil ⦆) ≡ n 2
+beta : simplify (app ⦅ lam ⦅ ⟩ prim sub ⦅ ` 0 ,, n 1 ,, Nil ⦆ ,, Nil ⦆ ,, n 3
+    ,, Nil ⦆) ≡ n 2
 beta = refl
 
 {- a dead binding of a small value: (λ x. 5) 7 is 5 -}
@@ -36,7 +38,8 @@ dead : simplify (app ⦅ lam ⦅ ⟩ n 5 ,, Nil ⦆ ,, n 7 ,, Nil ⦆) ≡ n 5
 dead = refl
 
 {- copy propagation under a binder: λ z. (λ x. x) z is λ z. z -}
-copy : simplify (lam ⦅ ⟩ app ⦅ lam ⦅ ⟩ ` 0 ,, Nil ⦆ ,, ` 0 ,, Nil ⦆ ,, Nil ⦆) ≡ lam ⦅ ⟩ ` 0 ,, Nil ⦆
+copy : simplify (lam ⦅ ⟩ app ⦅ lam ⦅ ⟩ ` 0 ,, Nil ⦆ ,, ` 0 ,, Nil ⦆ ,, Nil ⦆)
+    ≡ lam ⦅ ⟩ ` 0 ,, Nil ⦆
 copy = refl
 
 {- a let of a small value is substituted, like β:  let x = 3 in x - 1  is 2 -}
@@ -54,13 +57,15 @@ id = lam ⦅ ⟩ ` 0 ,, Nil ⦆
 pair : AST
 pair = tuple 2 ⦅ id ,, n 3 ,, Nil ⦆
 
-known-tuple : simplify (app ⦅ lam ⦅ ⟩ get {2} (suc zero) ⦅ ` 0 ,, Nil ⦆ ,, Nil ⦆ ,, pair ,, Nil ⦆)
+known-tuple : simplify (app ⦅ lam ⦅ ⟩ get {2} (suc zero) ⦅ ` 0 ,, Nil ⦆ ,, Nil ⦆
+  ,, pair ,, Nil ⦆)
   ≡ let-in pair (n 3)
 known-tuple = refl
 
 {- an operand that is not a value keeps its binding, and its evaluation,
    as a let:  λ g. (λ x. 5) (g 1)  is  λ g. let x = g 1 in 5 -}
-effect : simplify (lam ⦅ ⟩ app ⦅ lam ⦅ ⟩ n 5 ,, Nil ⦆ ,, app ⦅ ` 0 ,, n 1 ,, Nil ⦆ ,, Nil ⦆ ,, Nil ⦆)
+effect : simplify (lam ⦅ ⟩ app ⦅ lam ⦅ ⟩ n 5 ,, Nil ⦆ ,, app ⦅ ` 0 ,, n 1 ,, Nil
+  ⦆ ,, Nil ⦆ ,, Nil ⦆)
   ≡ lam ⦅ ⟩ let-in (app ⦅ ` 0 ,, n 1 ,, Nil ⦆) (n 5) ,, Nil ⦆
 effect = refl
 
@@ -76,9 +81,11 @@ inline = refl
      let dec = λ x. x - 1 in let twice = λ f. λ x. f (f x) in twice dec 5
    is 3 (the let-bound functions stay) -}
 twice : AST
-twice = lam ⦅ ⟩ lam ⦅ ⟩ app ⦅ ` 1 ,, app ⦅ ` 1 ,, ` 0 ,, Nil ⦆ ,, Nil ⦆ ,, Nil ⦆ ,, Nil ⦆
+twice = lam ⦅ ⟩ lam ⦅ ⟩ app ⦅ ` 1 ,, app ⦅ ` 1 ,, ` 0 ,, Nil ⦆ ,, Nil ⦆
+  ,, Nil ⦆ ,, Nil ⦆
 
-higher-order : simplify (let-in dec (let-in twice (app ⦅ app ⦅ ` 0 ,, ` 1 ,, Nil ⦆ ,, n 5 ,, Nil ⦆)))
+higher-order : simplify
+  (let-in dec (let-in twice (app ⦅ app ⦅ ` 0 ,, ` 1 ,, Nil ⦆ ,, n 5 ,, Nil ⦆)))
   ≡ let-in dec (let-in twice (n 3))
 higher-order = refl
 
@@ -86,8 +93,11 @@ higher-order = refl
    before the inlined body:  λ g. let f = λ x. x - 1 in f (g 3)  is
    λ g. let f = λ x. x - 1 in let x = g 3 in x - 1 -}
 inline-let-src : AST
-inline-let-src = lam ⦅ ⟩ let-in dec (app ⦅ ` 0 ,, app ⦅ ` 1 ,, n 3 ,, Nil ⦆ ,, Nil ⦆) ,, Nil ⦆
+inline-let-src = lam ⦅ ⟩ let-in dec
+  (app ⦅ ` 0 ,, app ⦅ ` 1 ,, n 3 ,, Nil ⦆ ,, Nil ⦆) ,, Nil ⦆
 
 inline-let : simplify inline-let-src
-  ≡ lam ⦅ ⟩ let-in dec (let-in (app ⦅ ` 1 ,, n 3 ,, Nil ⦆) (prim sub ⦅ ` 0 ,, n 1 ,, Nil ⦆)) ,, Nil ⦆
+  ≡ lam ⦅ ⟩ let-in dec
+    (let-in (app ⦅ ` 1 ,, n 3 ,, Nil ⦆) (prim sub ⦅ ` 0 ,, n 1 ,, Nil ⦆)) ,, Nil
+    ⦆
 inline-let = refl

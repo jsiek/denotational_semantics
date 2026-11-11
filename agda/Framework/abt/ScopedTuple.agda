@@ -29,8 +29,11 @@ Tuple : {ℓ : Level} → Sigs → Scet {ℓ} → Set ℓ
 Tuple [] A = ⊤
 Tuple (b ∷ bs) A = A b × Tuple bs A
 
-map : ∀{ℓ : Level}{A : Scet {ℓ}}{B : Scet {ℓ}} → (A ⇨ B) → {bs : Sigs}
-   → Tuple {ℓ} bs A → Tuple {ℓ} bs B
+map : ∀{ℓ : Level}{A : Scet {ℓ}}{B : Scet {ℓ}}
+  → (A ⇨ B)
+  → {bs : Sigs}
+  → Tuple {ℓ} bs A
+  → Tuple {ℓ} bs B
 map f {[]} ⊤ = tt
 map f {b ∷ bs} ⟨ x , xs ⟩ = ⟨ f x , map f xs ⟩
 

@@ -26,8 +26,8 @@ open import ISWIM.Language.Typed.Imp
 open import Framework.Lookup using (_!_)
 open import Semantics.Observation using (o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import ISWIM.Semantics.CEK.Typed.Clos5
-  using (Val; code; pack; const; tup; inl; inr; dyn; Env; obs; int; elems; choose; δᵀ; proj?) public
+open import ISWIM.Semantics.CEK.Typed.Clos5 using (Val; code; pack; const; tup;
+  inl; inr; dyn; Env; obs; int; elems; choose; δᵀ; proj?) public
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
@@ -70,13 +70,15 @@ module _ {Σ : List ℕ} where
 
 data Cont (Σ : List ℕ) : Ty → Set where
   halt : Cont Σ Any
-  assignK : ∀ {Δ A B} → Exp Σ (A ∷ Δ) B → Frame Σ Δ → Cont Σ B → Cont Σ A   {- x := □; e₂ -}
+  {- x := □; e₂ -}
+  assignK : ∀ {Δ A B} → Exp Σ (A ∷ Δ) B → Frame Σ Δ → Cont Σ B → Cont Σ A
 
 data State (Σ : List ℕ) : Set where
   eval : ∀ {Δ A} → Exp Σ Δ A → Frame Σ Δ → Cont Σ A → State Σ
 
 {- the machine for a program with the definitions ds -}
-module _ {Σ : List ℕ} (ds : All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) Σ) where
+module _ {Σ : List ℕ}
+  (ds : All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) Σ) where
 
   cont : ∀ {A} → Val Σ A → Cont Σ A → Next (State Σ)
   cont v halt = stop (obs v)

@@ -63,4 +63,5 @@ explicate-body (Imp.body n e) =
 
 {- the pass, for a whole program -}
 explicate : Imp.Program → Program
-explicate (Imp.program ds b) = program (map explicate-body ds) (explicate-body b)
+explicate (Imp.program ds b) =
+  program (map explicate-body ds) (explicate-body b)

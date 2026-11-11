@@ -17,7 +17,8 @@ data Lock {S₁ S₂ : Set} (R : S₁ → S₂ → Set) : Next S₁ → Next S�
   same-next : ∀ {s₁ s₂} → R s₁ s₂ → Lock R (next s₁) (next s₂)
 
 lock : ∀ {S₁ : Set} {L₂ : Machine} {R : S₁ → State L₂ → Set} {a s₂}
-  → Lock R a (Machine.step L₂ s₂) → Answers L₂ R a s₂
+  → Lock R a (Machine.step L₂ s₂)
+  → Answers L₂ R a s₂
 lock {L₂ = L₂} {s₂ = s₂} l with Machine.step L₂ s₂ in eq
 lock same-stop | stop o = stops eq
 lock (same-next m) | next s = steps₁ eq m

@@ -21,9 +21,9 @@ open import ISWIM.Language.Typed.Type
 open import ISWIM.Language.Typed.ISWIM
 import ISWIM.Language.Typed.Clos2 as T
 open import ISWIM.Semantics.GraphErr.Typed.ISWIM
-open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2
-  using (appᵗ-≃; getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃; binds-val-≃; fv-env-nth; fv-env)
-  renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
+open import ISWIM.proof.Semantics.GraphErr.Typed.Clos2 using (appᵗ-≃; getᵗ-≃;
+  caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃; binds-val-≃; fv-env-nth; fv-env) renaming
+  (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
 open import ISWIM.Compiler.Capture
 
 open import Data.Fin using (Fin; zero; suc; toℕ)
@@ -36,24 +36,37 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 Rel : ∀ k → Env Value → Env Value → Set
 Rel k ρ ρ' = ∀ (x : Fin k) → ρ (toℕ x) ≃ ρ' (toℕ x) × Val (ρ' (toℕ x))
 
-ext : ∀ {k ρ ρ' X X'} → X ≃ X' → Val X' → Rel k ρ ρ' → Rel (suc k) (X • ρ) (X' • ρ')
+ext : ∀ {k ρ ρ' X X'}
+  → X ≃ X'
+  → Val X'
+  → Rel k ρ ρ'
+  → Rel (suc k) (X • ρ) (X' • ρ')
 ext X≃ v r zero = ⟨ X≃ , v ⟩
 ext X≃ v r (suc x) = r x
 
-tab-nth : ∀ {k n} (f : Fin n → T.Tm k Any) ρ i → nthD (⟦ tabulate f ⟧s₂ ρ) i ≡ ⟦ f i ⟧₂ ρ
+tab-nth : ∀ {k n} (f : Fin n → T.Tm k Any) ρ i
+  → nthD (⟦ tabulate f ⟧s₂ ρ) i ≡ ⟦ f i ⟧₂ ρ
 tab-nth f ρ zero = refl
 tab-nth f ρ (suc i) = tab-nth (λ j → f (suc j)) ρ i
 
-enc : ∀ {k A} (M : Tm k A) {ρ ρ'} → Rel k ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ'
-encs-nth : ∀ {k n} (Ms : Vec (Tm k Any) n) {ρ ρ'} → Rel k ρ ρ'
-  → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ encs Ms ⟧s₂ ρ') i
+enc : ∀ {k A} (M : Tm k A) {ρ ρ'}
+  → Rel k ρ ρ'
+  → ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ'
+encs-nth : ∀ {k n} (Ms : Vec (Tm k Any) n) {ρ ρ'}
+  → Rel k ρ ρ'
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ encs Ms ⟧s₂ ρ') i
 
 enc (` x) r = proj₁ (r x)
 enc {k} (lam N) {ρ} {ρ'} r =
-  ≃-sym (binds-val-≃ k (λ i → Val-≃ (≃-reflexive (sym (tab-nth T.`_ ρ' i))) (proj₂ (r i)))
-    λ {Xs} Xs≃ → Λᵐ-≃ λ V ne _ nV → ≃-sym (enc N (ext ≃-refl (noerr-val V ne nV) λ x →
+  ≃-sym
+    (binds-val-≃ k
+      (λ i → Val-≃ (≃-reflexive (sym (tab-nth T.`_ ρ' i))) (proj₂ (r i)))
+    λ {Xs} Xs≃ → Λᵐ-≃ λ V ne _ nV →
+      ≃-sym (enc N (ext ≃-refl (noerr-val V ne nV) λ x →
       let e = ≃-trans (≃-reflexive (sym (tab-nth T.`_ ρ' x)))
-                (≃-trans (≃-sym (Xs≃ x)) (≃-reflexive (sym (fv-env-nth k Xs x)))) in
+                (≃-trans (≃-sym (Xs≃ x))
+                    (≃-reflexive (sym (fv-env-nth k Xs x)))) in
       ⟨ ≃-trans (proj₁ (r x)) e , Val-≃ e (proj₂ (r x)) ⟩)))
 enc (app L M) r = appᵗ-≃ (enc L r) (enc M r)
 enc (lit B c) r = ≃-refl
@@ -62,8 +75,10 @@ enc (get i M) r = getᵗ-≃ i (enc M r)
 enc (inl M) r = inlᵐ-≃ (enc M r)
 enc (inr M) r = inrᵐ-≃ (enc M r)
 enc (case L M N) {ρ} {ρ'} r =
-  caseᵗ-≃ {F = λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ capture M ⟧₂ (X • ρ')} {λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ capture N ⟧₂ (X • ρ')}
-    (enc L r) (λ V ne _ nV → enc M (ext ≃-refl (noerr-val V ne nV) r)) (λ V ne _ nV → enc N (ext ≃-refl (noerr-val V ne nV) r))
+  caseᵗ-≃ {F = λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ capture M ⟧₂ (X • ρ')}
+    {λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ capture N ⟧₂ (X • ρ')}
+    (enc L r) (λ V ne _ nV → enc M (ext ≃-refl (noerr-val V ne nV) r))
+      (λ V ne _ nV → enc N (ext ≃-refl (noerr-val V ne nV) r))
 enc (prim p L M) r = primᵗ-≃ p (enc L r) (enc M r)
 enc (let′ M N) {ρ} {ρ'} r =
   ≫=-≃ {F = λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ capture N ⟧₂ (X • ρ')} (enc M r)
@@ -74,7 +89,7 @@ enc (project G M) r = projectᵗ-≃ (λ k → k) _ (enc M r)
 encs-nth (M ∷ Ms) r zero = enc M r
 encs-nth (M ∷ Ms) r (suc i) = encs-nth Ms r i
 
-{- The end theorem: closed programs ------------------------------------------------}
+{- The end theorem: closed programs -------------------------------------------}
 
 capture-correct : ∀ (M : Tm 0 Any) → ⟦ M ⟧ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
 capture-correct M = enc M (λ ())

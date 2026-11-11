@@ -15,7 +15,8 @@ open import Data.List using (List)
 open import FPC.Language.X86
 open import FPC.Framework.AllUtil using (All)
 
-module FPC.proof.Adequacy.AbstractMachines.X86Common {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
+module FPC.proof.Adequacy.AbstractMachines.X86Common {Σ : List DSig}
+  (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
 
 open import FPC.Language.Type
 open import FPC.Semantics.AbstractMachines.X86
@@ -30,14 +31,19 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open Runs (step ds) public
 
 {- running code c on the environment e and the argument a -}
-start : ∀ {η A B} → Val Σ (code η A B) → Val Σ (tup η) → Val Σ A → Stack Σ B → State Σ
+start : ∀ {η A B} → Val Σ (code η A B) → Val Σ (tup η) → Val Σ A
+  → Stack Σ B → State Σ
 start {η} (code f) e a σ =
-  run (Body.start (lookup ds f)) (Body.blocks (lookup ds f)) σ η ⟨ rv tt e a , [] , tt , tt ⟩
+  run (Body.start (lookup ds f)) (Body.blocks (lookup ds f)) σ η
+    ⟨ rv tt e a , [] , tt , tt ⟩
 
-enter-start : ∀ {η A B} (c : Val Σ (code η A B)) {e a σ} → enter ds c e a σ ≡ next (start c e a σ)
+enter-start : ∀ {η A B} (c : Val Σ (code η A B)) {e a σ}
+  → enter ds c e a σ ≡ next (start c e a σ)
 enter-start (code f) = refl
 
 {- the open closure is that of its slot: η and the environment are its own -}
-data OpR {Δ} (φ : Frame Σ Δ) : (O : Maybe (Open Δ)) (η : Ctx) → Opened Σ η O → Set where
+data OpR {Δ} (φ : Frame Σ Δ) : (O : Maybe (Open Δ)) (η : Ctx)
+  → Opened Σ η O → Set where
   none : ∀ {η} → OpR φ nothing η tt
-  agree : ∀ {A B} {x : Δ ∋ A ⇒ B} → OpR φ (just (opened x)) (size (lookup φ x)) (env-of (lookup φ x))
+  agree : ∀ {A B} {x : Δ ∋ A ⇒ B}
+    → OpR φ (just (opened x)) (size (lookup φ x)) (env-of (lookup φ x))

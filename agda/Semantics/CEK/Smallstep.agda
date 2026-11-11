@@ -8,7 +8,8 @@
   Design note, for the machines of each language and the simulation proof
   of each pass:
 
-  * Each language has a CEK-style machine (ISWIM/Semantics/CEK/*.agda) with states
+  * Each language has a CEK-style machine (ISWIM/Semantics/CEK/*.agda) with
+    states
       eval M ρ κ   evaluate term M in environment ρ, then continue with κ
       ret v κ      return value v to continuation κ
     Environments are lists of values (variable x is the x-th element),

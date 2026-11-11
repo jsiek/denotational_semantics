@@ -22,8 +22,10 @@ open import Language.Prim using (Prim; sub; eq)
 open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
 open import ISWIM.Language.Typed.Clos5
 open import Framework.Lookup using (_!_)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl;
+  o-inr; o-error)
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?;
+  machine)
 open import Framework.VecUtil using (_+ʳ_; _<><_)
 
 open import Data.Bool using (if_then_else_)
@@ -76,7 +78,9 @@ module _ {Σ : List ℕ} where
   {- a primitive on two integers: eq gives inl ⟨⟩ for true -}
   δᵀ : ∀ p → ℤ → ℤ → Val Σ ⟪ out-flat p ⟫
   δᵀ sub n m = const (n - m)
-  δᵀ eq n m = if does (n ≟ m) then inl (dyn (tup 0) (tup [])) else inr (dyn (tup 0) (tup []))
+  δᵀ eq n m =
+    if does (n ≟ m) then inl (dyn (tup 0) (tup [])) else inr
+    (dyn (tup 0) (tup []))
 
   {- the only error: a value of another flat type -}
   proj? : (t : Tag) → Val Σ Any → Maybe (Val Σ ⟪ flat t ⟫)
@@ -88,14 +92,18 @@ data Cont (Σ : List ℕ) : Ty → Set where
   halt : Cont Σ Any
   callL : ∀ {Γ} → Tm Σ Γ Any → Env Σ Γ → Cont Σ Any → Cont Σ ⟪ fun ⟫
   callR : Val Σ ⟪ fun ⟫ → Cont Σ Any → Cont Σ Any
-  packL : ∀ {Γ n} → Tm Σ Γ ⟪ tup n ⟫ → Env Σ Γ → Cont Σ ⟪ fun ⟫ → Cont Σ (code n)
+  packL : ∀ {Γ n} → Tm Σ Γ ⟪ tup n ⟫ → Env Σ Γ → Cont Σ ⟪ fun ⟫
+    → Cont Σ (code n)
   packR : ∀ {n} → Val Σ (code n) → Cont Σ ⟪ fun ⟫ → Cont Σ ⟪ tup n ⟫
   {- the values so far (newest first) and the components still to evaluate -}
-  tupK : ∀ {Γ m j} → Vec (Val Σ Any) m → Vec (Tm Σ Γ Any) j → Env Σ Γ → Cont Σ ⟪ tup (m +ʳ suc j) ⟫ → Cont Σ Any
+  tupK : ∀ {Γ m j} → Vec (Val Σ Any) m → Vec (Tm Σ Γ Any) j → Env Σ Γ
+    → Cont Σ ⟪ tup (m +ʳ suc j) ⟫ → Cont Σ Any
   getK : ∀ {n} → Fin n → Cont Σ Any → Cont Σ ⟪ tup n ⟫
   inlK inrK : Cont Σ ⟪ sum ⟫ → Cont Σ Any
-  caseK : ∀ {Γ} → Tm Σ (Any ∷ Γ) Any → Tm Σ (Any ∷ Γ) Any → Env Σ Γ → Cont Σ Any → Cont Σ ⟪ sum ⟫
-  primL : ∀ {Γ} p → Tm Σ Γ ⟪ base Int ⟫ → Env Σ Γ → Cont Σ ⟪ out-flat p ⟫ → Cont Σ ⟪ base Int ⟫
+  caseK : ∀ {Γ} → Tm Σ (Any ∷ Γ) Any → Tm Σ (Any ∷ Γ) Any → Env Σ Γ → Cont Σ Any
+    → Cont Σ ⟪ sum ⟫
+  primL : ∀ {Γ} p → Tm Σ Γ ⟪ base Int ⟫ → Env Σ Γ → Cont Σ ⟪ out-flat p ⟫
+    → Cont Σ ⟪ base Int ⟫
   primR : ∀ p → ℤ → Cont Σ ⟪ out-flat p ⟫ → Cont Σ ⟪ base Int ⟫
   letK : ∀ {Γ A B} → Tm Σ (A ∷ Γ) B → Env Σ Γ → Cont Σ B → Cont Σ A
   injK : ∀ G → Cont Σ Any → Cont Σ ⟪ G ⟫
@@ -108,7 +116,8 @@ data State (Σ : List ℕ) : Set where
 module _ {Σ : List ℕ} where
 
   {- evaluate the rest of a tuple's components, or build it -}
-  tuple-next : ∀ {Γ m j} → Vec (Val Σ Any) m → Vec (Tm Σ Γ Any) j → Env Σ Γ → Cont Σ ⟪ tup (m +ʳ j) ⟫ → State Σ
+  tuple-next : ∀ {Γ m j} → Vec (Val Σ Any) m → Vec (Tm Σ Γ Any) j → Env Σ Γ
+    → Cont Σ ⟪ tup (m +ʳ j) ⟫ → State Σ
   tuple-next vs [] ρ κ = ret (tup (vs <>< [])) κ
   tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 
@@ -147,7 +156,8 @@ module _ {Σ : List ℕ} where
     step (ret v (getK i κ)) = next (ret (lookup (elems v) i) κ)
     step (ret v (inlK κ)) = next (ret (inl v) κ)
     step (ret v (inrK κ)) = next (ret (inr v) κ)
-    step (ret v (caseK M N ρ κ)) = next (choose v (λ u → eval M (u ∷ ρ) κ) (λ u → eval N (u ∷ ρ) κ))
+    step (ret v (caseK M N ρ κ)) =
+      next (choose v (λ u → eval M (u ∷ ρ) κ) (λ u → eval N (u ∷ ρ) κ))
     step (ret v (primL p M ρ κ)) = next (eval M ρ (primR p (int v) κ))
     step (ret v (primR p n κ)) = next (ret (δᵀ p n (int v)) κ)
     step (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)

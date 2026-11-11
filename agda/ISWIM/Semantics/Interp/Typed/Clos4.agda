@@ -20,7 +20,8 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Vec using (Vec; []; _∷_)
 open import Data.List.Relation.Unary.All using ([]; _∷_)
 
-open import ISWIM.Semantics.Interp.Typed.Values (λ n → Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any) public
+open import ISWIM.Semantics.Interp.Typed.Values (λ n → Tm (Any ∷ ⟪ tup n ⟫ ∷ [])
+  Any) public
 
 eval : ∀ {Γ A} → ℕ → Env Γ → Tm Γ A → Result (Val A)
 evals : ∀ {Γ n} → ℕ → Env Γ → Vec (Tm Γ Any) n → Result (Vec (Val Any) n)
@@ -35,7 +36,9 @@ eval ck ρ (tuple Ms) = do vs ← evals ck ρ Ms; ret (tup vs)
 eval ck ρ (get i M) = do v ← eval ck ρ M; ret (nth i v)
 eval ck ρ (inl M) = do v ← eval ck ρ M; ret (inl v)
 eval ck ρ (inr M) = do v ← eval ck ρ M; ret (inr v)
-eval ck ρ (case L M N) = eval ck ρ L >>= λ u → either u (λ v → eval ck (v ∷ ρ) M) (λ v → eval ck (v ∷ ρ) N)
+eval ck ρ (case L M N) =
+  eval ck ρ L >>= λ u →
+  either u (λ v → eval ck (v ∷ ρ) M) (λ v → eval ck (v ∷ ρ) N)
 eval ck ρ (prim p L M) = do v ← eval ck ρ L; w ← eval ck ρ M; ret (δ p v w)
 eval ck ρ (let′ M N) = do v ← eval ck ρ M; eval ck (v ∷ ρ) N
 eval ck ρ (inject G M) = do v ← eval ck ρ M; ret (dyn G v)

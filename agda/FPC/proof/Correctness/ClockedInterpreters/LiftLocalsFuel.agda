@@ -20,7 +20,8 @@ open import proof.Semantics.Interp.Clock
 import FPC.Semantics.ClockedInterpreters.GlobalFun as C
 import FPC.Semantics.ClockedInterpreters.Imp as I
 open import FPC.Semantics.ClockedInterpreters.Imp using (atom)
-open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; atm-bind; eval-atom; atoms-bind; either-cong)
+open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map;
+  atm-bind; eval-atom; atoms-bind; either-cong)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
@@ -32,8 +33,11 @@ module _ {Σ : List DSig} (ds : All (λ s → Exp Σ (Args s) (DSig.cod s)) Σ) 
     dsC = map ⌜_⌝ ds
     dsI = map lift ds
 
-  module _ (ck : ℕ) (calls : ∀ {A B} (f : Val (A ⇒ B)) w → C.call dsC ck f w ≡ I.call dsI ck f w) where
-    lift-ok : ∀ {Δ A} (e : Exp Σ Δ A) (φ : Env Δ) → C.eval dsC ck φ ⌜ e ⌝ ≡ I.eval dsI ck φ (lift e)
+  module _ (ck : ℕ)
+    (calls : ∀ {A B} (f : Val (A ⇒ B)) w
+      → C.call dsC ck f w ≡ I.call dsI ck f w) where
+    lift-ok : ∀ {Δ A} (e : Exp Σ Δ A) (φ : Env Δ)
+      → C.eval dsC ck φ ⌜ e ⌝ ≡ I.eval dsI ck φ (lift e)
     lift-ok (atm a) φ = eval-atom a
     lift-ok (pair a b) φ = trans (atm-bind a) (atm-bind b)
     lift-ok (callc a b) φ = trans (trans (atm-bind a) (atm-bind b)) (calls _ _)
@@ -42,16 +46,22 @@ module _ {Σ : List DSig} (ds : All (λ s → Exp Σ (Args s) (DSig.cod s)) Σ) 
     lift-ok (inl a) φ = atm-bind a
     lift-ok (inr a) φ = atm-bind a
     lift-ok (case a e₁ e₂) φ =
-      trans (atm-bind a) (either-cong (atom φ a) (λ v → lift-ok e₁ (v ∷ φ)) (λ v → lift-ok e₂ (v ∷ φ)))
+      trans (atm-bind a)
+        (either-cong (atom φ a) (λ v → lift-ok e₁ (v ∷ φ))
+          (λ v → lift-ok e₂ (v ∷ φ)))
     lift-ok (prim p a b) φ = trans (atm-bind a) (atm-bind b)
     lift-ok (let′ e₁ e₂) φ = bind≡ (lift-ok e₁ φ) λ v → lift-ok e₂ (v ∷ φ)
     lift-ok (fold a) φ = atm-bind a
     lift-ok (unfold a) φ = atm-bind a
 
-  calls≡ : ∀ ck {A B} (f : Val (A ⇒ B)) w → C.call dsC ck f w ≡ I.call dsI ck f w
+  calls≡ : ∀ ck {A B} (f : Val (A ⇒ B)) w
+    → C.call dsC ck f w ≡ I.call dsI ck f w
   calls≡ zero f w = refl
-  calls≡ (suc ck) (pack (code f) e) w rewrite def-map lift ds f | def-map ⌜_⌝ ds f =
+  calls≡ (suc ck) (pack (code f) e) w rewrite def-map lift ds f
+    | def-map ⌜_⌝ ds f =
     lift-ok ck (calls≡ ck) (lookup ds f) _
 
-lift-locals-correct : ∀ {A} (P : Program A) → Equivalent (C.sem ⌜ P ⌝ₚ) (I.sem (lift-program P))
-lift-locals-correct (program {Σ} ds e) = clocked-≡ λ ck → lift-ok ds ck (calls≡ ds ck) e []
+lift-locals-correct : ∀ {A} (P : Program A)
+  → Equivalent (C.sem ⌜ P ⌝ₚ) (I.sem (lift-program P))
+lift-locals-correct (program {Σ} ds e) =
+  clocked-≡ λ ck → lift-ok ds ck (calls≡ ds ck) e []

@@ -35,14 +35,16 @@ data Simple (Σ : List ℕ) (Δ : Ctx) : Ty → Set where
   tuple : ∀ {n} → Vec (Atm Σ Δ Any) n → Simple Σ Δ ⟪ tup n ⟫
   get : ∀ {n} → Fin n → Atm Σ Δ ⟪ tup n ⟫ → Simple Σ Δ Any
   inl inr : Atm Σ Δ Any → Simple Σ Δ ⟪ sum ⟫
-  prim : (p : Prim) → Atm Σ Δ ⟪ base Int ⟫ → Atm Σ Δ ⟪ base Int ⟫ → Simple Σ Δ ⟪ out-flat p ⟫
+  prim : (p : Prim) → Atm Σ Δ ⟪ base Int ⟫ → Atm Σ Δ ⟪ base Int ⟫
+    → Simple Σ Δ ⟪ out-flat p ⟫
   inject : (G : Flat) → Atm Σ Δ ⟪ G ⟫ → Simple Σ Δ Any
   project : (t : Tag) → Atm Σ Δ Any → Simple Σ Δ ⟪ flat t ⟫
 
 data Exp (Σ : List ℕ) (Δ : Ctx) : Ty → Set where
   simple : ∀ {A} → Simple Σ Δ A → Exp Σ Δ A
   assign : ∀ {A B} → Exp Σ Δ A → Exp Σ (A ∷ Δ) B → Exp Σ Δ B
-  case : Atm Σ Δ ⟪ sum ⟫ → Exp Σ (Any ∷ Δ) Any → Exp Σ (Any ∷ Δ) Any → Exp Σ Δ Any
+  case : Atm Σ Δ ⟪ sum ⟫ → Exp Σ (Any ∷ Δ) Any → Exp Σ (Any ∷ Δ) Any
+    → Exp Σ Δ Any
 
 {- a definition starts with its environment in slot 0 and its argument
    in slot 1; main with no slot -}

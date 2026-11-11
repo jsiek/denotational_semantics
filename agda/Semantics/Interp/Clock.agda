@@ -31,8 +31,8 @@
     the simulation one, over the same observations (Observation.agda).
 
   * No pass but simplify adds or removes function calls, so a pass is
-    proved correct clock for clock: for every clock, the program and its compilation
-    both time out, both error, or return related values (RelResult).
+    proved correct clock for clock: for every clock, the program and its
+    compilation both time out, both error, or return related values (RelResult).
     That gives both directions of the end theorem at once (clocked),
     with no determinism argument. Simplify removes calls, so the program
     it produces needs no more clock than the original: its proof is

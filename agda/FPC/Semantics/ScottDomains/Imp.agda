@@ -36,8 +36,9 @@ module FPC.Semantics.ScottDomains.Imp
 
 open import Framework.Scott.Base pt fe
 open import Framework.Scott.Domain pt fe pe using (𝔻)
-open import Framework.Scott.Ops pt fe pe using (Env; ext; const; proj; car; cdr; Λ; strict) renaming (pair to pairᵈ)
-  renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ)
+open import Framework.Scott.Ops pt fe pe using (Env; ext; const; proj; car; cdr;
+  Λ; strict) renaming (pair to pairᵈ) renaming (app to appᵈ; inl to inlᵈ; inr to
+  inrᵈ)
 open import Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 open import FPC.Semantics.ScottDomains.Ops pt fe pe
@@ -54,7 +55,8 @@ open import FPC.Semantics.ScottDomains.Ops pt fe pe
 𝒮 : ∀ {Σ Δ A} → Simple Σ Δ A → Table Σ → Den Env
 𝒮 (atm a) T = 𝒜 a T
 𝒮 (pair a b) T = op₂ pairᵈ (𝒜 a T) (𝒜 b T)
-𝒮 (callc f a) T = op₂ appᵈ (op₂ appᵈ (op₁ car (𝒜 f T)) (op₁ cdr (𝒜 f T))) (𝒜 a T)
+𝒮 (callc f a) T =
+  op₂ appᵈ (op₂ appᵈ (op₁ car (𝒜 f T)) (op₁ cdr (𝒜 f T))) (𝒜 a T)
 𝒮 (tuple as) T = tupleᶜ (𝒜s as T)
 𝒮 (get i a) T = op₁ (proj (pos i)) (𝒜 a T)
 𝒮 (inl a) T = op₁ inlᵈ (𝒜 a T)
@@ -63,7 +65,7 @@ open import FPC.Semantics.ScottDomains.Ops pt fe pe
 𝒮 (fold a) T = 𝒜 a T
 𝒮 (unfold a) T = 𝒜 a T
 
-{- Continuations -----------------------------------------------------------------}
+{- Continuations --------------------------------------------------------------}
 
 K : DCPO₁
 K = 𝔻 ⟹₁ 𝔻
@@ -76,7 +78,8 @@ DenK = DCPO[ Env , K ⟹₁ 𝔻 ]
 {- uncurried: (σ , κ) ↦ e σ κ -}
 uncurryK : DenK → DCPO[ Env ×₁ K , 𝔻 ]
 uncurryK e = ∘₁ (Env ×₁ K) ((K ⟹₁ 𝔻) ×₁ K) 𝔻
-               (pair₁ (Env ×₁ K) (K ⟹₁ 𝔻) K (∘₁ (Env ×₁ K) Env (K ⟹₁ 𝔻) (fst₁ Env K) e) (snd₁ Env K))
+               (pair₁ (Env ×₁ K) (K ⟹₁ 𝔻) K
+                   (∘₁ (Env ×₁ K) Env (K ⟹₁ 𝔻) (fst₁ Env K) e) (snd₁ Env K))
                (eval₁ K 𝔻)
 
 {- (σ , κ) ↦ λ X. e (X • σ) κ, a branch under one binder -}
@@ -86,24 +89,30 @@ underK e = curry₁ (Env ×₁ K) 𝔻 𝔻
                 (pair₁ ((Env ×₁ K) ×₁ 𝔻) Env K
                    (∘₁ ((Env ×₁ K) ×₁ 𝔻) (Env ×₁ 𝔻) Env
                       (pair₁ ((Env ×₁ K) ×₁ 𝔻) Env 𝔻
-                         (∘₁ ((Env ×₁ K) ×₁ 𝔻) (Env ×₁ K) Env (fst₁ (Env ×₁ K) 𝔻) (fst₁ Env K))
+                         (∘₁ ((Env ×₁ K) ×₁ 𝔻) (Env ×₁ K) Env
+                             (fst₁ (Env ×₁ K) 𝔻) (fst₁ Env K))
                          (snd₁ (Env ×₁ K) 𝔻))
                       ext)
-                   (∘₁ ((Env ×₁ K) ×₁ 𝔻) (Env ×₁ K) K (fst₁ (Env ×₁ K) 𝔻) (snd₁ Env K)))
+                   (∘₁ ((Env ×₁ K) ×₁ 𝔻) (Env ×₁ K) K (fst₁ (Env ×₁ K) 𝔻)
+                       (snd₁ Env K)))
                 (uncurryK e))
 
 ⟦_⟧ᴷ : ∀ {Σ Δ A} → Exp Σ Δ A → Table Σ → DenK
 ⟦ simple s ⟧ᴷ T =
   curry₁ Env K 𝔻 (∘₁ (Env ×₁ K) (K ×₁ 𝔻) 𝔻
-    (pair₁ (Env ×₁ K) K 𝔻 (snd₁ Env K) (∘₁ (Env ×₁ K) Env 𝔻 (fst₁ Env K) (𝒮 s T)))
+    (pair₁ (Env ×₁ K) K 𝔻 (snd₁ Env K)
+        (∘₁ (Env ×₁ K) Env 𝔻 (fst₁ Env K) (𝒮 s T)))
     (eval₁ 𝔻 𝔻))
 ⟦ assign e₁ e₂ ⟧ᴷ T =
   curry₁ Env K 𝔻 (∘₁ (Env ×₁ K) ((K ⟹₁ 𝔻) ×₁ K) 𝔻
-    (pair₁ (Env ×₁ K) (K ⟹₁ 𝔻) K (∘₁ (Env ×₁ K) Env (K ⟹₁ 𝔻) (fst₁ Env K) (⟦ e₁ ⟧ᴷ T))
-       (∘₁ (Env ×₁ K) (𝔻 ⟹₁ 𝔻) K (underK (⟦ e₂ ⟧ᴷ T)) (∘₁ (𝔻 ⟹₁ 𝔻) 𝔻 (𝔻 ⟹₁ 𝔻) Λ appᵈ)))
+    (pair₁ (Env ×₁ K) (K ⟹₁ 𝔻) K
+        (∘₁ (Env ×₁ K) Env (K ⟹₁ 𝔻) (fst₁ Env K) (⟦ e₁ ⟧ᴷ T))
+       (∘₁ (Env ×₁ K) (𝔻 ⟹₁ 𝔻) K (underK (⟦ e₂ ⟧ᴷ T))
+           (∘₁ (𝔻 ⟹₁ 𝔻) 𝔻 (𝔻 ⟹₁ 𝔻) Λ appᵈ)))
     (eval₁ K 𝔻))
 ⟦ case a e₁ e₂ ⟧ᴷ T =
-  curry₁ Env K 𝔻 (Over.casesᶜ (Env ×₁ K) (∘₁ (Env ×₁ K) Env 𝔻 (fst₁ Env K) (𝒜 a T))
+  curry₁ Env K 𝔻
+    (Over.casesᶜ (Env ×₁ K) (∘₁ (Env ×₁ K) Env 𝔻 (fst₁ Env K) (𝒜 a T))
                     (underK (⟦ e₁ ⟧ᴷ T)) (underK (⟦ e₂ ⟧ᴷ T)))
 
 {- the identity continuation -}

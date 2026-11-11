@@ -3,15 +3,16 @@ module ISWIM.Untyped.Semantics.Graph.Imp where
 
  What the two semantics of Imp, the language after the 'lift locals'
  pass (Language/Imp.agda), have in common: stores, slots, atoms and simple
- expressions. They are also used by the semantics of CFG (Semantics/Graph/CFG.agda).
+ expressions. They are also used by the semantics of CFG
+ (Semantics/Graph/CFG.agda).
 
  The two semantics of expressions are
 
  - continuation-passing (Semantics/Graph/ImpK.agda), used by the main proof: an
    expression is run with a continuation, given its value and the store
    it leaves; and
- - direct (proof/Semantics/Graph/ImpDirect.agda), an alternative: an expression means a
-   set of values and the store it leaves.
+ - direct (proof/Semantics/Graph/ImpDirect.agda), an alternative: an expression
+   means a set of values and the store it leaves.
 
  A store σ gives each slot of the frame a meaning, a set of values. An
  expression runs in a frame of n slots. Reading a slot beyond the frame
@@ -33,8 +34,10 @@ open import Framework.GraphModel.DOpSig using (Results)
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
-open import ISWIM.Untyped.Semantics.Graph.Frames using (Table; init; Store; read; _[_↦_]; checked; zeros) public
-open import ISWIM.Untyped.Language.Imp renaming (pair to pair′; inl to inl′; inr to inr′)
+open import ISWIM.Untyped.Semantics.Graph.Frames using (Table; init; Store;
+  read; _[_↦_]; checked; zeros) public
+open import ISWIM.Untyped.Language.Imp renaming (pair to pair′; inl to inl′; inr
+  to inr′)
 open import Framework.Primitives using (Int)
 
 open import Data.Integer using (+_)
@@ -49,7 +52,8 @@ open import Relation.Nullary using (yes; no)
 𝒜 T n σ (lit B k) = ℬ B k ptt
 𝒜 T n σ (fun-ref k) = T k
 
-𝒜s : Table → ℕ → Store → (as : List Atm) → Results (𝒫 Value) (replicate (length as) ■)
+𝒜s : Table → ℕ → Store → (as : List Atm)
+  → Results (𝒫 Value) (replicate (length as) ■)
 𝒜s T n σ [] = ptt
 𝒜s T n σ (a ∷ as) = ⟨ 𝒜 T n σ a , 𝒜s T n σ as ⟩
 
@@ -57,7 +61,8 @@ open import Relation.Nullary using (yes; no)
    store as it was -}
 𝒮 : Table → ℕ → Store → Simple → 𝒫 Value
 𝒮 T n σ (atm a) = 𝒜 T n σ a
-𝒮 T n σ (app f e a) = ⋆ ⟨ ⋆ ⟨ 𝒜 T n σ f , ⟨ 𝒜 T n σ e , ptt ⟩ ⟩ , ⟨ 𝒜 T n σ a , ptt ⟩ ⟩
+𝒮 T n σ (app f e a) =
+  ⋆ ⟨ ⋆ ⟨ 𝒜 T n σ f , ⟨ 𝒜 T n σ e , ptt ⟩ ⟩ , ⟨ 𝒜 T n σ a , ptt ⟩ ⟩
 𝒮 T n σ (pair′ a b) = pair ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩
 𝒮 T n σ (fst a) = car ⟨ 𝒜 T n σ a , ptt ⟩
 𝒮 T n σ (snd a) = cdr ⟨ 𝒜 T n σ a , ptt ⟩
@@ -73,7 +78,8 @@ frame X Y (suc zero) = Y
 frame X Y (suc (suc y)) = zeros y
 
 {- the table of a list of definitions, newest first, given the code of a
-   definition (code in Semantics/Graph/ImpK.agda and proof/Semantics/Graph/ImpDirect.agda) -}
+   definition (code in Semantics/Graph/ImpK.agda and
+   proof/Semantics/Graph/ImpDirect.agda) -}
 tables : (Table → Body → 𝒫 Value) → List Body → Table
 tables code [] k = ∅
 tables code (b ∷ bs) k with k ≟ length bs

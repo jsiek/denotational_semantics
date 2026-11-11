@@ -4,8 +4,8 @@
   with errors. Code is a closed function of two arguments (ΛΛᵐ); a closure
   is a pair of code and environment. callc binds the closure and the
   argument and applies the closure's code (car) to its environment (cdr)
-  and the argument, with no check. A value of type ⟪ fun ⟫ is a pair, so project sees a pair
-  as a function (kind₄).
+  and the argument, with no check. A value of type ⟪ fun ⟫ is a pair, so project
+  sees a pair as a function (kind₄).
 
 -}
 
@@ -32,7 +32,8 @@ kind₄ fun = error
 kind₄ k = k
 
 ⟦_⟧ : ∀ {Γ A} → Tm Γ A → Env Value → 𝒫 Value
-⟦_⟧s : ∀ {Γ n} → Vec (Tm Γ Any) n → Env Value → Results (𝒫 Value) (replicate n ■)
+⟦_⟧s : ∀ {Γ n} → Vec (Tm Γ Any) n → Env Value
+  → Results (𝒫 Value) (replicate n ■)
 
 ⟦ ` x ⟧ ρ = ρ (idx x)
 ⟦ code N ⟧ ρ = ΛΛᵐ ⟨ (λ X Y → ⟦ N ⟧ (Y • X • λ _ → init)) , ptt ⟩

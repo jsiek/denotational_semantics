@@ -20,8 +20,8 @@ open import ISWIM.Untyped.Language.Clos5
 open import Semantics.Observation
 open import Framework.ListUtil using (_‼_; proj)
 open import Semantics.Interp.Clock
-open import ISWIM.Untyped.Semantics.Interp.Values
-  using (Val; code; pair; const; tup; inl; inr; Env; obs; obs-list; out; prim?; project; first; second) public
+open import ISWIM.Untyped.Semantics.Interp.Values using (Val; code; pair; const;
+  tup; inl; inr; Env; obs; obs-list; out; prim?; project; first; second) public
 
 open import Data.Bool using (true; false)
 open import Data.Fin using (Fin)
@@ -38,7 +38,8 @@ module _ (ds : List AST) where
   code? _ = nothing
 
   eval : ℕ → Env → AST → Result Val
-  eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■) → Result (List Val)
+  eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■)
+    → Result (List Val)
   apply : ℕ → Env → AST → AST → Val → Result Val
   call : ℕ → Maybe AST → Env → Result Val
   branch : ℕ → Env → AST → AST → Val → Result Val
@@ -51,19 +52,23 @@ module _ (ds : List AST) where
     do v ← eval ck ρ L; w ← eval ck ρ M; ret (pair v w)
   eval ck ρ (fst-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= first
   eval ck ρ (snd-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= second
-  eval ck ρ (tuple n ⦅ args ⦆) = do vs ← eval-args ck ρ [] args; ret (tup (reverse vs))
+  eval ck ρ (tuple n ⦅ args ⦆) =
+    do vs ← eval-args ck ρ [] args; ret (tup (reverse vs))
   eval ck ρ (get i ⦅ M ,, Nil ⦆) = eval ck ρ M >>= project i
   eval ck ρ (inl-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inl v)
   eval ck ρ (inr-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inr v)
-  eval ck ρ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = eval ck ρ L >>= branch ck ρ M N
+  eval ck ρ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
+    eval ck ρ L >>= branch ck ρ M N
   eval ck ρ (prim p ⦅ L ,, M ,, Nil ⦆) =
     do v ← eval ck ρ L; w ← eval ck ρ M; from-maybe (prim? p v w)
   eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = do v ← eval ck ρ M; eval ck (v ∷ ρ) N
 
   eval-args {zero} ck ρ vs Nil = ret vs
-  eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
+  eval-args {suc n} ck ρ vs (M ,, args) =
+    do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
 
-  apply ck ρ M N f = do e ← eval ck ρ M; w ← eval ck ρ N; call ck (code? f) (w ∷ e ∷ [])
+  apply ck ρ M N f =
+    do e ← eval ck ρ M; w ← eval ck ρ N; call ck (code? f) (w ∷ e ∷ [])
 
   call ck nothing ρ = error
   call zero (just N) ρ = timeout

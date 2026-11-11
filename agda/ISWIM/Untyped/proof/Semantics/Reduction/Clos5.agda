@@ -28,8 +28,12 @@ data Value : AST → Set where
 Values : ∀ {n} → Args (replicate n ■) → Set
 Values = Each Value
 
-value-red : ∀ {ds V} → Value V → red ds V ≡ val
-values-red : ∀ {ds n} {as : Args (replicate n ■)} → Values as → red-args ds as ≡ val
+value-red : ∀ {ds V}
+  → Value V
+  → red ds V ≡ val
+values-red : ∀ {ds n} {as : Args (replicate n ■)}
+  → Values as
+  → red-args ds as ≡ val
 value-red fun = refl
 value-red {ds} (pair v w) rewrite value-red {ds} v | value-red {ds} w = refl
 value-red lit = refl

@@ -54,15 +54,22 @@ OlderDefs [] = ⊤
 OlderDefs {ns = _ ∷ ns} (d ∷ ds) = Older (length ns) d × OlderDefs ds
 
 {- a level stays below the length of the list as it grows at the front -}
-⊑-lvl< : ∀ {A : Set} {Γ Γ' : List A} {a} (s : Γ ⊑ Γ') (x : Γ ∋ a) → lvl (⊑-∋ s x) < length Γ
+⊑-lvl< : ∀ {A : Set} {Γ Γ' : List A} {a}
+  → (s : Γ ⊑ Γ')
+  → (x : Γ ∋ a)
+  → lvl (⊑-∋ s x) < length Γ
 ⊑-lvl< here⊑ x = lvl-< x
 ⊑-lvl< (there⊑ s) x = ⊑-lvl< s x
 
 {- a weakening whose references are below k -}
-wk-older : ∀ {Σ Σ' Γ A k} (r : ∀ {n} → Σ ∋ n → Σ' ∋ n) → (∀ {n} (f : Σ ∋ n) → lvl (r f) < k)
-  → (M : Tm Σ Γ A) → Older k (wk r M)
-wks-older : ∀ {Σ Σ' Γ n k} (r : ∀ {m} → Σ ∋ m → Σ' ∋ m) → (∀ {m} (f : Σ ∋ m) → lvl (r f) < k)
-  → (Ms : Vec (Tm Σ Γ Any) n) → Olders k (wks r Ms)
+wk-older : ∀ {Σ Σ' Γ A k} (r : ∀ {n} → Σ ∋ n → Σ' ∋ n)
+  → (∀ {n} (f : Σ ∋ n) → lvl (r f) < k)
+  → (M : Tm Σ Γ A)
+  → Older k (wk r M)
+wks-older : ∀ {Σ Σ' Γ n k} (r : ∀ {m} → Σ ∋ m → Σ' ∋ m)
+  → (∀ {m} (f : Σ ∋ m) → lvl (r f) < k)
+  → (Ms : Vec (Tm Σ Γ Any) n)
+  → Olders k (wks r Ms)
 wk-older r h (` x) = tt
 wk-older r h (fun-ref f) = h f
 wk-older r h (pack L M) = wk-older r h L , wk-older r h M
@@ -80,7 +87,9 @@ wk-older r h (project t M) = wk-older r h M
 wks-older r h [] = tt
 wks-older r h (M ∷ Ms) = wk-older r h M , wks-older r h Ms
 
-close-older : ∀ {Σ Σ'} (D : Made Σ') (s : Σ' ⊑ Σ) → OlderDefs (close D s)
+close-older : ∀ {Σ Σ'} (D : Made Σ')
+  → (s : Σ' ⊑ Σ)
+  → OlderDefs (close D s)
 close-older [] s = tt
 close-older (D ▷ N) s =
   wk-older (⊑-∋ s') (⊑-lvl< s') N , close-older D s'

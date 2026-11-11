@@ -34,9 +34,12 @@ open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
 open import ISWIM.Untyped.Language.Clos5 using (program)
 open import ISWIM.Untyped.Language.Mon
-open import ISWIM.Untyped.Compiler.LiftLocals using (lift; height; lift-defs; lift-program)
-open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; ⟦_⟧ₚ)
-open import ISWIM.Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (⟦⟧[]-monotone; Clos5-con; table-con)
+open import ISWIM.Untyped.Compiler.LiftLocals using (lift; height; lift-defs;
+  lift-program)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_];
+  ⟦_⟧₊[_]; table; ⟦_⟧ₚ)
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos5IswimContinuous using
+  (⟦⟧[]-monotone; Clos5-con; table-con)
 open import ISWIM.Untyped.Semantics.Graph.ImpK
   using (_[_↦_]; checked; Kont; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ)
   renaming (table to tableᴷ)
@@ -46,7 +49,8 @@ open import Data.Nat using (zero; suc; _+_; _⊔_; _<_; _≤_; _≟_; _<?_; s≤
 open import Data.Nat.Properties using (≤-refl)
 open import Data.List using (List; []; _∷_; _++_; length)
 open import Data.List.Relation.Unary.Any using (here; there)
-open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻)
+open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ;
+  ∈-++⁻)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
@@ -61,14 +65,16 @@ module ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCorrectK where
 
 open import proof.Framework.GraphModel.Laws
 
-{- Slots ----------------------------------------------------------------------------}
+{- Slots ----------------------------------------------------------------------}
 
-checked-at : ∀ {n x D} → x < n → checked n x D ≃ D
+checked-at : ∀ {n x D}
+  → x < n
+  → checked n x D ≃ D
 checked-at {n} {x} x<n with x <? n
 ... | yes _ = ≃-refl
 ... | no x≮n = ⊥-elim (x≮n x<n)
 
-{- The pass preserves meanings ----------------------------------------------------}
+{- The pass preserves meanings ------------------------------------------------}
 
 module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)) where
 
@@ -79,65 +85,105 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
 
   {- lift at depth d, then a continuation that means K, given a store
      that agrees with ρ -}
-  lift-sem : ∀ {M} (m : Mon M) {n d σ ρ} k {κ : Kont} → d + height m ≤ n → Scope d ρ → Agree d σ ρ → Con-env ρ
+  lift-sem : ∀ {M}
+    → (m : Mon M)
+    → ∀ {n d σ ρ} k {κ : Kont}
+    → d + height m ≤ n
+    → Scope d ρ
+    → Agree d σ ρ
+    → Con-env ρ
     → (∀ D σ' → Agree d σ' ρ → κ D σ' ≃ K⟨ k ⟩ D)
     → ⟦ lift n d m ⟧ᴷ[ T ] n σ κ ≃ K⟨ k ⟩ (⟦ M ⟧[ T' ] ρ)
   lift-sem (atom a) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (atom-≃ a H O A))
   lift-sem (app (a ∷ b ∷ c ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
-    (mono-≃ ⋆₂-mono ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ⟨ up (atom-≃ c H O A) , ptt ⟩ ⟩ ⟩))
+    (mono-≃ ⋆₂-mono
+        ⟨ up (atom-≃ a H O A)
+          , ⟨ up (atom-≃ b H O A) , ⟨ up (atom-≃ c H O A) , ptt ⟩ ⟩ ⟩))
   lift-sem (pair (a ∷ b ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
     (mono-≃ pair-mono ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩))
-  lift-sem (fst (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (mono-≃ car-mono ⟨ up (atom-≃ a H O A) , ptt ⟩))
-  lift-sem (snd (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (mono-≃ cdr-mono ⟨ up (atom-≃ a H O A) , ptt ⟩))
-  lift-sem (tuple {k'} {Ms} as) {ρ = ρ} k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
+  lift-sem (fst (a ∷ [])) k H O A cρ κ≃ =
+    ≃-trans (κ≃ _ _ A) (K-≃ k (mono-≃ car-mono ⟨ up (atom-≃ a H O A) , ptt ⟩))
+  lift-sem (snd (a ∷ [])) k H O A cρ κ≃ =
+    ≃-trans (κ≃ _ _ A) (K-≃ k (mono-≃ cdr-mono ⟨ up (atom-≃ a H O A) , ptt ⟩))
+  lift-sem (tuple {k'} {Ms} as) {ρ = ρ} k H O A cρ κ≃ =
+    ≃-trans (κ≃ _ _ A) (K-≃ k
     (atoms-≃ as H O A (λ m Ds → 𝒯 m Ds ≃ 𝒯 k' (⟦ Ms ⟧₊[ T' ] ρ))
                  (λ {m} eq q → ≃-trans (𝒯-≃ m (nthD-≃ _ _ eq)) q) ≃-refl))
-  lift-sem (get {i = i} (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (proj-≃ i (atom-≃ a H O A)))
-  lift-sem (inl (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (inl-≃ (atom-≃ a H O A)))
-  lift-sem (inr (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (inr-≃ (atom-≃ a H O A)))
+  lift-sem (get {i = i} (a ∷ [])) k H O A cρ κ≃ =
+    ≃-trans (κ≃ _ _ A) (K-≃ k (proj-≃ i (atom-≃ a H O A)))
+  lift-sem (inl (a ∷ [])) k H O A cρ κ≃ =
+    ≃-trans (κ≃ _ _ A) (K-≃ k (inl-≃ (atom-≃ a H O A)))
+  lift-sem (inr (a ∷ [])) k H O A cρ κ≃ =
+    ≃-trans (κ≃ _ _ A) (K-≃ k (inr-≃ (atom-≃ a H O A)))
   lift-sem (prim {p} (a ∷ b ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
-    (mono-≃ (primD-mono p) ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩))
+    (mono-≃ (primD-mono p)
+        ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩))
   lift-sem (case {L} {M₁} {M₂} a m₁ m₂) {n} {d} {σ} {ρ} k {κ} H O A cρ κ≃ =
     ≃-trans (checked-at (fits-< _ (fits {d} _ H)))
-    (≃-trans (𝒞-≃ {F = λ X → ⟦ lift n (suc d) m₁ ⟧ᴷ[ T ] n (σ [ d ↦ X ]) κ} {λ X → K⟨ k ⟩ (⟦ M₁ ⟧[ T' ] (X • ρ))}
-                   {λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ [ d ↦ X ]) κ} {λ X → K⟨ k ⟩ (⟦ M₂ ⟧[ T' ] (X • ρ))}
+    (≃-trans
+        (𝒞-≃ {F = λ X → ⟦ lift n (suc d) m₁ ⟧ᴷ[ T ] n (σ [ d ↦ X ]) κ}
+          {λ X → K⟨ k ⟩ (⟦ M₁ ⟧[ T' ] (X • ρ))}
+                   {λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ [ d ↦ X ]) κ}
+                     {λ X → K⟨ k ⟩ (⟦ M₂ ⟧[ T' ] (X • ρ))}
                    (atom-≃ a H O A)
-                   (λ v V cV → lift-sem m₁ k (⊔ˡ (height m₁) _ H') (scope-ext O) (agree-ext A)
-                                 (Con-• (≈⇒Con cV) cρ) (λ D σ' A' → κ≃ D σ' (weak A')))
-                   (λ v V cV → lift-sem m₂ k (⊔ʳ _ (height m₂) H') (scope-ext O) (agree-ext A)
-                                 (Con-• (≈⇒Con cV) cρ) (λ D σ' A' → κ≃ D σ' (weak A'))))
-             (≃-sym (case-law k {F₁ = λ X → ⟦ M₁ ⟧[ T' ] (X • ρ)} {λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)}
+                   (λ v V cV →
+                       lift-sem m₁ k (⊔ˡ (height m₁) _ H') (scope-ext O)
+                       (agree-ext A)
+                                 (Con-• (≈⇒Con cV) cρ)
+                                   (λ D σ' A' → κ≃ D σ' (weak A')))
+                   (λ v V cV →
+                       lift-sem m₂ k (⊔ʳ _ (height m₂) H') (scope-ext O)
+                       (agree-ext A)
+                                 (Con-• (≈⇒Con cV) cρ)
+                                     (λ D σ' A' → κ≃ D σ' (weak A'))))
+             (≃-sym
+                 (case-law k {F₁ = λ X → ⟦ M₁ ⟧[ T' ] (X • ρ)}
+                   {λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)}
                        (Clos5-con T' TC L cρ) (mono-• M₁) (mono-• M₂))))
     where H' = fits {d} (height m₁ ⊔ height m₂) H
   lift-sem (let′ {M₁} {M₂} m₁ m₂) {n} {d} {σ} {ρ} k {κ} H O A cρ κ≃ =
     ≃-trans (lift-sem m₁ (just G) (⊔ˡ {d} (height m₁) _ H) O A cρ κ₁≃)
-            (≃-sym (let-law k {F = λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)} (Clos5-con T' TC M₁ cρ) (mono-• M₂)))
+            (≃-sym
+                (let-law k {F = λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)}
+                  (Clos5-con T' TC M₁ cρ) (mono-• M₂)))
     where
     H₂ = fits {d} _ (⊔ʳ (height m₁) _ H)
     G = λ X → K⟨ k ⟩ (⟦ M₂ ⟧[ T' ] (X • ρ))
-    κ₁≃ : ∀ D σ' → Agree d σ' ρ
-      → checked n d (⋆ ⟨ Λ ⟨ (λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ' [ d ↦ X ]) κ) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
-        ≃ K⟨ just G ⟩ D
+    κ₁≃ : ∀ D σ'
+      → Agree d σ' ρ
+      → checked n d
+        (⋆
+          ⟨ Λ ⟨ (λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ' [ d ↦ X ]) κ) , ptt ⟩
+            , ⟨ D , ptt ⟩ ⟩)
+          ≃ K⟨ just G ⟩ D
     κ₁≃ D σ' A' = ≃-trans (checked-at (fits-< _ H₂))
-      (⋆-≃ (Λ-≃ {λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ' [ d ↦ X ]) κ} {G} λ V _ cV → lift-sem m₂ k H₂ (scope-ext O) (agree-ext A') (Con-• (≈⇒Con cV) cρ)
+      (⋆-≃
+          (Λ-≃ {λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ' [ d ↦ X ]) κ} {G} λ V _
+            cV
+            → lift-sem m₂ k H₂ (scope-ext O) (agree-ext A')
+            (Con-• (≈⇒Con cV) cρ)
                               (λ D' σ'' A'' → κ≃ D' σ'' (weak A''))) ≃-refl)
 
-{- Programs ---------------------------------------------------------------------}
+{- Programs -------------------------------------------------------------------}
 
 table-lift : ∀ {ds} (ms : All Mon ds) k → tableᴷ (lift-defs ms) k ≃ table ds k
 table-lift [] k = ≃-refl
 table-lift {N ∷ Ns} (m ∷ ms) k with k ≟ length (lift-defs ms) | k ≟ length Ns
 ... | yes _ | yes _ =
-  Λ-≃ λ X _ cX → Λ-≃ λ Y _ cY → lift-sem (table-lift ms) (table-con Ns) m nothing ≤-refl
+  Λ-≃ λ X _ cX → Λ-≃ λ Y _ cY →
+    lift-sem (table-lift ms) (table-con Ns) m nothing ≤-refl
     (scope-frame (mem X) (mem Y)) (agree-frame (mem X) (mem Y))
     (Con-• (≈⇒Con cY) (Con-• (≈⇒Con cX) (λ _ → Con-⌈⌉ ω))) (λ _ _ _ → ≃-refl)
 ... | no _ | no _ = table-lift ms k
 ... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-lift-defs ms)))
 ... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-lift-defs ms))))
 
-lift-program-correct : ∀ P (mp : MonProgram P) → ⟦ lift-program P mp ⟧ᴷₚ ≃ ⟦ P ⟧ₚ
+lift-program-correct : ∀ P
+  → (mp : MonProgram P)
+  → ⟦ lift-program P mp ⟧ᴷₚ ≃ ⟦ P ⟧ₚ
 lift-program-correct (program ds M) ⟨ ms , m ⟩ =
-  lift-sem (table-lift ms) (table-con ds) m nothing ≤-refl (λ x _ → ≃-refl) (agree λ x ())
+  lift-sem (table-lift ms) (table-con ds) m nothing ≤-refl (λ x _ → ≃-refl)
+    (agree λ x ())
     (λ _ → Con-⌈⌉ ω) (λ _ _ _ → ≃-refl)
 
 {- the whole compiler, into Imp -}

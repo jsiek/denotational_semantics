@@ -238,7 +238,8 @@ simp-app : ∀ {Δ Γ A B} → ℕ → Facts Δ Γ → Tm Δ (A ⇒ B) → Info 
 simp-call : ∀ {Γ A B} → ℕ → Info Γ (A ⇒ B) → Info Γ A → Info Γ B
 simp-let : ∀ {Δ Γ A B} → ℕ → Facts Δ Γ → Tm (A ∷ Δ) B → Info Γ A → Info Γ B
 simp-get : ∀ {Γ Δ A} → Δ ∋ A → Info Γ (tup Δ) → Info Γ A
-simp-case : ∀ {Δ Γ A B C} → ℕ → Facts Δ Γ → Info Γ (A ⊹ B) → Tm (A ∷ Δ) C → Tm (B ∷ Δ) C → Info Γ C
+simp-case : ∀ {Δ Γ A B C} → ℕ → Facts Δ Γ → Info Γ (A ⊹ B) → Tm (A ∷ Δ) C
+  → Tm (B ∷ Δ) C → Info Γ C
 simp-prim : ∀ {Γ} p → Info Γ (base Int) → Info Γ (base Int) → Info Γ (out-ty p)
 simp-unfold : ∀ {Γ A} → Info Γ (μ A) → Info Γ (unroll A)
 
@@ -267,7 +268,8 @@ simp-app f E L I with lam? L
 {- a call of a known function λ N, with fuel: its body is simplified at
    the call, with the operand bound (simp-let), and inlined if the result
    is small enough. The operator, known, has no effect, and is dropped -}
-simp-call (suc f) (T ∣ just (fun N E)) I with size (term (simp-let f E N I)) ≤ᵇ inline-size
+simp-call (suc f) (T ∣ just (fun N E)) I
+  with size (term (simp-let f E N I)) ≤ᵇ inline-size
 ... | true = simp-let f E N I
 ... | false = app T (term I) ∣ nothing
 simp-call f J I = app (term J) (term I) ∣ nothing
@@ -290,7 +292,9 @@ simp-get i I with component i (known I) refl
 simp-case f E I M N with branch (known I) refl
 ... | just (inj₁ K) = simp f (self K • E) M
 ... | just (inj₂ K) = simp f (self K • E) N
-... | nothing = case (term I) (term (simp f (under E) M)) (term (simp f (under E) N)) ∣ nothing
+... | nothing =
+  case (term I) (term (simp f (under E) M))
+  (term (simp f (under E) N)) ∣ nothing
 
 {- a primitive on known integers: its result -}
 simp-prim p I J with int-of (known I)

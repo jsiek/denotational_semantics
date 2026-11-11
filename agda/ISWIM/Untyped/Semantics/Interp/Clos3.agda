@@ -58,7 +58,8 @@ project i (tup vs) = from-maybe (proj i vs)
 project i _ = error
 
 eval : ℕ → Env → AST → Result Val
-eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■) → Result (List Val)
+eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■)
+  → Result (List Val)
 apply : ℕ → Env → AST → Val → Result Val
 call : ℕ → AST → Env → Result Val
 branch : ℕ → Env → AST → AST → Val → Result Val
@@ -68,7 +69,8 @@ eval ck ρ (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) =
   do vs ← eval-args ck ρ [] fvs; ret (clos N (tup (reverse vs)))
 eval ck ρ (app ⦅ L ,, M ,, Nil ⦆) = eval ck ρ L >>= apply ck ρ M
 eval ck ρ (lit B k ⦅ Nil ⦆) = ret (const B k)
-eval ck ρ (tuple n ⦅ args ⦆) = do vs ← eval-args ck ρ [] args; ret (tup (reverse vs))
+eval ck ρ (tuple n ⦅ args ⦆) =
+  do vs ← eval-args ck ρ [] args; ret (tup (reverse vs))
 eval ck ρ (get i ⦅ M ,, Nil ⦆) = eval ck ρ M >>= project i
 eval ck ρ (inl-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inl v)
 eval ck ρ (inr-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inr v)
@@ -78,7 +80,8 @@ eval ck ρ (prim p ⦅ L ,, M ,, Nil ⦆) =
 eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = do v ← eval ck ρ M; eval ck (v ∷ ρ) N
 
 eval-args {zero} ck ρ vs Nil = ret vs
-eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
+eval-args {suc n} ck ρ vs (M ,, args) =
+  do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
 
 apply ck ρ M (clos N v) = do w ← eval ck ρ M; call ck N (w ∷ v ∷ [])
 apply ck ρ M _ = error

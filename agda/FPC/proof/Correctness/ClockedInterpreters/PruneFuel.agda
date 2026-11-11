@@ -19,11 +19,12 @@ open import Data.List using ([]; _∷_)
 open import FPC.Language.Type
 open import FPC.Language.Clos
 open import FPC.Compiler.Prune
-open import FPC.Framework.AllUtil
-  using (All; []; _∷_; lookup; Flags; kept; select; Kept; squeeze; ∨-l; ∨-r; All₂; lookup₂; Thin; keep; drop; thin-lookup)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; Flags; kept;
+  select; Kept; squeeze; ∨-l; ∨-r; All₂; lookup₂; Thin; keep; drop; thin-lookup)
 open import proof.Semantics.Interp.Clock
 import FPC.Semantics.ClockedInterpreters.Clos as C
-open import FPC.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → Tm (A ∷ Δ) B}
+open import FPC.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B}
+  {λ Δ A B → Tm (A ∷ Δ) B}
 
 open import Data.Bool using (Bool; true; false; T)
 open import Data.Empty using (⊥)
@@ -32,17 +33,23 @@ open import Data.Product using (Σ-syntax; _×_; _,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
 open import Relation.Nullary.Decidable using (fromWitness)
 
-data Opt : ∀ {Δ Δ' A B} → Tm (A ∷ Δ) B → All C.Val Δ → Tm (A ∷ Δ') B → All C.Val Δ' → Set where
-  opt≈ : ∀ {Δ A B} {N : Tm (A ∷ Δ) B} {vs} (fl : Flags Δ) (cov : ∀ {C} (x : (A ∷ Δ) ∋ C) → T (uses N x) → Kept fl x)
+data Opt : ∀ {Δ Δ' A B} → Tm (A ∷ Δ) B → All C.Val Δ → Tm (A ∷ Δ') B
+  → All C.Val Δ' → Set where
+  opt≈ : ∀ {Δ A B} {N : Tm (A ∷ Δ) B} {vs} (fl : Flags Δ)
+    (cov : ∀ {C} (x : (A ∷ Δ) ∋ C) → T (uses N x) → Kept fl x)
     → Opt N vs (opt N λ x t → squeeze fl x (cov x t)) (select fl vs)
 
 open Rel (λ _ _ → ⊥) Opt
 
-Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → C.Env Γ → C.Env Γ' → Set
+Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → C.Env Γ
+  → C.Env Γ' → Set
 Agree u r ρ₁ ρ₂ = ∀ {C} x (t : T (u {C} x)) → lookup ρ₁ x ≈ lookup ρ₂ (r x t)
 
-ext-agree : ∀ {Γ Γ' A} {u : ∀ {C} → (A ∷ Γ) ∋ C → Bool} {r : Ren (λ x → u (S x)) Γ'} {ρ₁ ρ₂ v w}
-  → v ≈ w → Agree (λ x → u (S x)) r ρ₁ ρ₂ → Agree u (ext {u = u} r) (v ∷ ρ₁) (w ∷ ρ₂)
+ext-agree : ∀ {Γ Γ' A} {u : ∀ {C} → (A ∷ Γ) ∋ C → Bool}
+  {r : Ren (λ x → u (S x)) Γ'} {ρ₁ ρ₂ v w}
+  → v ≈ w
+  → Agree (λ x → u (S x)) r ρ₁ ρ₂
+  → Agree u (ext {u = u} r) (v ∷ ρ₁) (w ∷ ρ₂)
 ext-agree vw ag Z _ = vw
 ext-agree vw ag (S x) t = ag x t
 
@@ -50,23 +57,33 @@ ext-agree vw ag (S x) t = ag x t
 Sel : ∀ {Δ} (fl : Flags Δ) → All C.Val Δ → All C.Val (kept fl) → Set
 Sel fl vs ws = Σ[ vs' ∈ _ ] All₂ _≈_ vs vs' × select fl vs' ≡ ws
 
-pw-thin : ∀ {Δ} (fl : Flags Δ) {vs vs' : All C.Val Δ} → All₂ _≈_ vs vs' → Thin _≈_ fl vs (select fl vs')
+pw-thin : ∀ {Δ} (fl : Flags Δ) {vs vs' : All C.Val Δ}
+  → All₂ _≈_ vs vs'
+  → Thin _≈_ fl vs (select fl vs')
 pw-thin [] [] = []
 pw-thin (true ∷ fl) (r ∷ rs) = keep r (pw-thin fl rs)
 pw-thin (false ∷ fl) (r ∷ rs) = drop (pw-thin fl rs)
 
-run≈ : ∀ ck {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ₁ ρ₂} → Agree (uses M) r ρ₁ ρ₂
+run≈ : ∀ ck {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ₁ ρ₂}
+  → Agree (uses M) r ρ₁ ρ₂
   → RelResult _≈_ (C.eval ck ρ₁ M) (C.eval ck ρ₂ (opt M r))
-runs≈ : ∀ ck {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ₁ ρ₂} → Agree (usesA Ms) r ρ₁ ρ₂
-  → RelResult (All₂ _≈_) (C.evals ck ρ₁ Ms) (C.evals ck ρ₂ (opts Ms r))
-sel≈ : ∀ ck {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ₁ ρ₂}
+runs≈ : ∀ ck {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ₁ ρ₂}
   → Agree (usesA Ms) r ρ₁ ρ₂
-  → RelResult (Sel (flags u Ms)) (C.evals ck ρ₁ Ms) (C.evals ck ρ₂ (select (flags u Ms) (opts Ms r)))
-call≈ : ∀ ck {A B} {f : C.Val (A ⇒ B)} {g v w} → f ≈ g → v ≈ w → RelResult _≈_ (C.call ck f v) (C.call ck g w)
+  → RelResult (All₂ _≈_) (C.evals ck ρ₁ Ms) (C.evals ck ρ₂ (opts Ms r))
+sel≈ : ∀ ck {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ)
+  {r : Ren (usesA Ms) Γ'} {ρ₁ ρ₂}
+  → Agree (usesA Ms) r ρ₁ ρ₂
+  → RelResult (Sel (flags u Ms)) (C.evals ck ρ₁ Ms)
+    (C.evals ck ρ₂ (select (flags u Ms) (opts Ms r)))
+call≈ : ∀ ck {A B} {f : C.Val (A ⇒ B)} {g v w}
+  → f ≈ g
+  → v ≈ w
+  → RelResult _≈_ (C.call ck f v) (C.call ck g w)
 
 run≈ ck (` x) ag = ret (ag x (fromWitness refl))
 run≈ ck (clos N Ms) ag =
-  bind-rel (sel≈ ck (λ x → uses N (S x)) Ms ag) λ { (_ , rs , refl) → ret (pack≈ rs (opt≈ _ (covers N Ms))) }
+  bind-rel (sel≈ ck (λ x → uses N (S x)) Ms ag)
+    λ { (_ , rs , refl) → ret (pack≈ rs (opt≈ _ (covers N Ms))) }
 run≈ ck (app L M) ag =
   bind-rel (run≈ ck L λ x t → ag x (∨-l _ t)) λ f →
   bind-rel (run≈ ck M λ x t → ag x (∨-r (uses L x) t)) λ w → call≈ ck f w
@@ -77,8 +94,14 @@ run≈ ck (inl M) ag = bind-rel (run≈ ck M ag) λ v → ret (inl≈ v)
 run≈ ck (inr M) ag = bind-rel (run≈ ck M ag) λ v → ret (inr≈ v)
 run≈ ck (case L M N) ag =
   bind-rel (run≈ ck L λ x t → ag x (∨-l _ t)) λ u → either≈ u
-    (λ v → run≈ ck M (ext-agree {u = uses M} v λ x t → ag x (∨-r (uses L x) (∨-l (uses N (S x)) t))))
-    (λ v → run≈ ck N (ext-agree {u = uses N} v λ x t → ag x (∨-r (uses L x) (∨-r (uses M (S x)) t))))
+    (λ v →
+        run≈ ck M
+        (ext-agree {u = uses M} v λ x t →
+          ag x (∨-r (uses L x) (∨-l (uses N (S x)) t))))
+    (λ v →
+        run≈ ck N
+        (ext-agree {u = uses N} v λ x t →
+          ag x (∨-r (uses L x) (∨-r (uses M (S x)) t))))
 run≈ ck (prim p L M) ag =
   bind-rel (run≈ ck L λ x t → ag x (∨-l _ t)) λ v →
   bind-rel (run≈ ck M λ x t → ag x (∨-r (uses L x) t)) λ w → ret (δ≈ p v w)
@@ -100,11 +123,15 @@ sel≈ ck u (M ∷ Ms) ag with keep? M (u Z) | fl-ok M (u Z)
   bind-rel (sel≈ ck (λ x → u (S x)) Ms λ x t → ag x (∨-r (uses M x) t)) λ
     { (vs' , rs , refl) → ret (_ ∷ vs' , v ∷ rs , refl) }
 ... | false | var-fv {x} =
-  subst (RelResult _ _) (bind-ret _) (bind-rel (sel≈ ck (λ x → u (S x)) Ms λ y t → ag y (∨-r (uses (` x) y) t)) λ
-    { (vs' , rs , e) → ret (_ ∷ vs' , ag x (∨-l (usesA Ms x) (fromWitness refl)) ∷ rs , e) })
+  subst (RelResult _ _) (bind-ret _)
+    (bind-rel (sel≈ ck (λ x → u (S x)) Ms λ y t → ag y (∨-r (uses (` x) y) t)) λ
+    { (vs' , rs , e)
+        → ret (_ ∷ vs' , ag x (∨-l (usesA Ms x) (fromWitness refl)) ∷ rs , e) })
 
 call≈ zero f w = timeout
-call≈ (suc ck) (pack≈ {c = N} rs (opt≈ fl cov)) w = run≈ ck N λ x t → thin-lookup w (pw-thin fl rs) x (cov x t)
+call≈ (suc ck) (pack≈ {c = N} rs (opt≈ fl cov)) w =
+  run≈ ck N λ x t → thin-lookup w (pw-thin fl rs) x (cov x t)
 
-prune-correct : ∀ {A} (M : Tm [] A) → Equivalent (C.sem M) (C.sem (prune-program M))
+prune-correct : ∀ {A} (M : Tm [] A)
+  → Equivalent (C.sem M) (C.sem (prune-program M))
 prune-correct M = clocked _≈_ obs≈ λ ck → run≈ ck M λ ()

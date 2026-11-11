@@ -19,7 +19,8 @@
 module FPC.Semantics.GraphModel.Imp where
 
 open import Framework.GraphModel.Prelude
-open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to pairD)
+open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD; pair to
+  pairD)
 open import Semantics.Graph.Prim using (primD)
 open import FPC.Semantics.GraphModel.Ops
 open import FPC.Language.Type
@@ -35,14 +36,18 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 𝒜 (lit B c) T σ = ℬ B c ptt
 𝒜 (ref f) T σ = T f
 
-𝒜s : ∀ {Σ Δ Δs} → All (Atm Σ Δ) Δs → Table Σ → Env Value → Results (𝒫 Value) (replicate (length Δs) ■)
+𝒜s : ∀ {Σ Δ Δs} → All (Atm Σ Δ) Δs → Table Σ → Env Value
+  → Results (𝒫 Value) (replicate (length Δs) ■)
 𝒜s [] T σ = ptt
 𝒜s (a ∷ as) T σ = ⟨ 𝒜 a T σ , 𝒜s as T σ ⟩
 
 𝒮 : ∀ {Σ Δ A} → Simple Σ Δ A → Table Σ → Env Value → 𝒫 Value
 𝒮 (atm a) T σ = 𝒜 a T σ
 𝒮 (pair a b) T σ = pairD ⟨ 𝒜 a T σ , ⟨ 𝒜 b T σ , ptt ⟩ ⟩
-𝒮 (callc f a) T σ = ⋆ ⟨ ⋆ ⟨ car ⟨ 𝒜 f T σ , ptt ⟩ , ⟨ cdr ⟨ 𝒜 f T σ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ 𝒜 a T σ , ptt ⟩ ⟩
+𝒮 (callc f a) T σ =
+  ⋆
+  ⟨ ⋆ ⟨ car ⟨ 𝒜 f T σ , ptt ⟩ , ⟨ cdr ⟨ 𝒜 f T σ , ptt ⟩ , ptt ⟩ ⟩
+    , ⟨ 𝒜 a T σ , ptt ⟩ ⟩
 𝒮 (tuple {Δs} as) T σ = 𝒯 (length Δs) (𝒜s as T σ)
 𝒮 (get i a) T σ = proj (pos i) ⟨ 𝒜 a T σ , ptt ⟩
 𝒮 (inl a) T σ = inlD ⟨ 𝒜 a T σ , ptt ⟩
@@ -51,15 +56,22 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 𝒮 (fold a) T σ = 𝒜 a T σ
 𝒮 (unfold a) T σ = 𝒜 a T σ
 
-⟦_⟧ᴷ : ∀ {Σ Δ A} → Exp Σ Δ A → Table Σ → Env Value → (𝒫 Value → 𝒫 Value) → 𝒫 Value
+⟦_⟧ᴷ : ∀ {Σ Δ A} → Exp Σ Δ A → Table Σ → Env Value
+  → (𝒫 Value → 𝒫 Value) → 𝒫 Value
 ⟦ simple s ⟧ᴷ T σ κ = κ (𝒮 s T σ)
-⟦ assign e₁ e₂ ⟧ᴷ T σ κ = ⟦ e₁ ⟧ᴷ T σ λ D → ⋆ ⟨ Λ ⟨ (λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
+⟦ assign e₁ e₂ ⟧ᴷ T σ κ =
+  ⟦ e₁ ⟧ᴷ T σ λ D → ⋆ ⟨ Λ ⟨ (λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 ⟦ case a e₁ e₂ ⟧ᴷ T σ κ =
-  𝒞 ⟨ 𝒜 a T σ , ⟨ (λ X → ⟦ e₁ ⟧ᴷ T (X • σ) κ) , ⟨ (λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ) , ptt ⟩ ⟩ ⟩
+  𝒞
+    ⟨ 𝒜 a T σ
+      ,
+      ⟨ (λ X → ⟦ e₁ ⟧ᴷ T (X • σ) κ) , ⟨ (λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ) , ptt ⟩ ⟩ ⟩
 
 {- the function whose body is e, given the table T -}
 code′ : ∀ {Σ} → Table Σ → ∀ {s} → Exp Σ (Args s) (DSig.cod s) → 𝒫 Value
-code′ T e = Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ e ⟧ᴷ T (Y • X • λ _ → init) (λ D → D)) , ptt ⟩) , ptt ⟩
+code′ T e =
+  Λ
+  ⟨ (λ X → Λ ⟨ (λ Y → ⟦ e ⟧ᴷ T (Y • X • λ _ → init) (λ D → D)) , ptt ⟩) , ptt ⟩
 
 table : ∀ {Σ} → All (λ s → Exp Σ (Args s) (DSig.cod s)) Σ → Table Σ
 table = tables code′

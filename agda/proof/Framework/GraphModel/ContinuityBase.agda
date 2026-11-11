@@ -16,7 +16,8 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
-open import proof.Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env; •-~)
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env;
+  finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env; •-~)
 open import proof.Framework.GraphModel.DenotProperties
 open import Framework.abt.ScopedTuple using (Tuple)
 open import Framework.abt.Sig using (Sig; Result; ∁)
@@ -36,7 +37,8 @@ open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module proof.Framework.GraphModel.ContinuityBase where
 
-open import proof.Framework.GraphModel.Env using () renaming (monotone-env to Mono; continuous-env to Cont) public
+open import proof.Framework.GraphModel.Env using () renaming (monotone-env to
+  Mono; continuous-env to Cont) public
 
 VEnv : Set₁
 VEnv = Env Value
@@ -51,14 +53,24 @@ record Approx (ρ : VEnv) : Set₁ where
     sub : env ⊆ₑ ρ
 open Approx public
 
-approx-init : ∀ {ρ} → nonempty-env ρ → Approx ρ
+approx-init : ∀ {ρ}
+  → nonempty-env ρ
+  → Approx ρ
 approx-init NE = approx (λ x → ⌈ proj₁ (NE x) ⌉)
-  (λ x → ⟨ proj₁ (NE x) ∷ [] , ⟨ ⟨ (λ { _ refl → here refl }) , (λ { _ (here refl) → refl }) ⟩ , (λ ()) ⟩ ⟩)
+  (λ x →
+      ⟨ proj₁ (NE x) ∷ []
+        ,
+          ⟨ ⟨ (λ { _ refl → here refl }) , (λ { _ (here refl) → refl }) ⟩
+            , (λ ()) ⟩ ⟩)
   (λ { x _ refl → proj₂ (NE x) })
 
-approx-join : ∀ {ρ} → Approx ρ → Approx ρ → Approx ρ
+approx-join : ∀ {ρ}
+  → Approx ρ
+  → Approx ρ
+  → Approx ρ
 approx-join (approx ρ₁ f₁ s₁) (approx ρ₂ f₂ s₂) =
-  approx (ρ₁ ⊔ₑ ρ₂) (join-finiteNE-env f₁ f₂) (λ { x v (inj₁ v∈) → s₁ x v v∈ ; x v (inj₂ v∈) → s₂ x v v∈ })
+  approx (ρ₁ ⊔ₑ ρ₂) (join-finiteNE-env f₁ f₂)
+    (λ { x v (inj₁ v∈) → s₁ x v v∈ ; x v (inj₂ v∈) → s₂ x v v∈ })
 
 join-l : ∀ {ρ} (a b : Approx ρ) → env a ⊆ₑ env (approx-join a b)
 join-l (approx ρ₁ f₁ s₁) (approx ρ₂ f₂ s₂) x d d∈ = inj₁ d∈
@@ -67,21 +79,34 @@ join-r : ∀ {ρ} (a b : Approx ρ) → env b ⊆ₑ env (approx-join a b)
 join-r (approx ρ₁ f₁ s₁) (approx ρ₂ f₂ s₂) x d d∈ = inj₂ d∈
 
 {- the approximation of the rest of an extended environment -}
-approx-tail : ∀ {X ρ} → Approx (X • ρ) → Approx ρ
-approx-tail (approx ρ′ f s) = approx (λ x → ρ′ (suc x)) (λ x → f (suc x)) (λ x → s (suc x))
+approx-tail : ∀ {X ρ}
+  → Approx (X • ρ)
+  → Approx ρ
+approx-tail (approx ρ′ f s) =
+  approx (λ x → ρ′ (suc x)) (λ x → f (suc x)) (λ x → s (suc x))
 
-done : ∀ (E : VEnv → 𝒫 Value) {ρ} (a : Approx ρ) v → v ∈ E (env a)
+done : ∀ (E : VEnv → 𝒫 Value) {ρ} (a : Approx ρ) v
+  → v ∈ E (env a)
   → Σ[ ρ′ ∈ VEnv ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ E ρ′
 done E (approx ρ′ f s) v v∈ = ⟨ ρ′ , ⟨ f , ⟨ s , v∈ ⟩ ⟩ ⟩
 
-one : ∀ (E : VEnv → 𝒫 Value) {ρ v} → Cont E ρ → v ∈ E ρ → Σ[ a ∈ Approx ρ ] v ∈ E (env a)
+one : ∀ (E : VEnv → 𝒫 Value) {ρ v}
+  → Cont E ρ
+  → v ∈ E ρ
+  → Σ[ a ∈ Approx ρ ] v ∈ E (env a)
 one E {v = v} c v∈ with c v v∈
 ... | ⟨ ρ′ , ⟨ f , ⟨ s , v∈′ ⟩ ⟩ ⟩ = ⟨ approx ρ′ f s , v∈′ ⟩
 
-many : ∀ (E : VEnv → 𝒫 Value) {ρ} → nonempty-env ρ → Mono E → Cont E ρ
-  → ∀ V → mem V ⊆ E ρ → Σ[ a ∈ Approx ρ ] mem V ⊆ E (env a)
+many : ∀ (E : VEnv → 𝒫 Value) {ρ}
+  → nonempty-env ρ
+  → Mono E
+  → Cont E ρ
+  → ∀ V
+  → mem V ⊆ E ρ
+  → Σ[ a ∈ Approx ρ ] mem V ⊆ E (env a)
 many E NE m c [] _ = ⟨ approx-init NE , (λ _ ()) ⟩
-many E NE m c (v ∷ V) V⊆ with one E c (V⊆ v (here refl)) | many E NE m c V (λ d d∈ → V⊆ d (there d∈))
+many E NE m c (v ∷ V) V⊆
+  with one E c (V⊆ v (here refl)) | many E NE m c V (λ d d∈ → V⊆ d (there d∈))
 ... | ⟨ a , v∈ ⟩ | ⟨ b , V⊆′ ⟩ = ⟨ approx-join a b , G ⟩
   where
   G : mem (v ∷ V) ⊆ _
@@ -115,26 +140,38 @@ OK [] _ _ = ⊤
 OK (b ∷ bs) ⟨ E , Es ⟩ ρ = (Mono E × BodyCont b E ρ) × OK bs Es ρ
 
 Continuous : ∀ bs → DOp (𝒫 Value) bs → Set₁
-Continuous bs f = ∀ Es {ρ} → nonempty-env ρ → OK bs Es ρ → Cont (λ ρ → f (⟪ bs ⟫₊ Es ρ)) ρ
+Continuous bs f =
+  ∀ Es {ρ} → nonempty-env ρ → OK bs Es ρ → Cont (λ ρ → f (⟪ bs ⟫₊ Es ρ)) ρ
 
-⟪⟫-mono : ∀ b {E} → Mono E → ∀ {ρ ρ′ : VEnv} → ρ ⊆ₑ ρ′
+⟪⟫-mono : ∀ b {E}
+  → Mono E
+  → ∀ {ρ ρ′ : VEnv}
+  → ρ ⊆ₑ ρ′
   → result-rel-pres _⊆_ b (⟪ b ⟫ E ρ) (⟪ b ⟫ E ρ′)
 ⟪⟫-mono ■ m ρ⊆ = lift (m ρ⊆)
 ⟪⟫-mono (ν b) m ρ⊆ X Y X⊆ = ⟪⟫-mono b m (•-~ _⊆_ ρ⊆ X⊆)
 ⟪⟫-mono (∁ b) m ρ⊆ = ⟪⟫-mono b m (λ _ _ d∈ → d∈)
 
 {- a monotone operator on monotone bodies is monotone in the environment -}
-mono-env : ∀ bs {f : DOp (𝒫 Value) bs} → monotone bs ■ f → ∀ Es {ρ₁} → OK bs Es ρ₁
+mono-env : ∀ bs {f : DOp (𝒫 Value) bs}
+  → monotone bs ■ f
+  → ∀ Es {ρ₁}
+  → OK bs Es ρ₁
   → Mono (λ ρ → f (⟪ bs ⟫₊ Es ρ))
-mono-env bs {f} m Es ok {ρ} {ρ′} ρ⊆ = lower (m (⟪ bs ⟫₊ Es ρ) (⟪ bs ⟫₊ Es ρ′) (ms bs Es ok))
+mono-env bs {f} m Es ok {ρ} {ρ′} ρ⊆ =
+  lower (m (⟪ bs ⟫₊ Es ρ) (⟪ bs ⟫₊ Es ρ′) (ms bs Es ok))
   where
-  ms : ∀ bs Es {ρ₁} → OK bs Es ρ₁ → results-rel-pres _⊆_ bs (⟪ bs ⟫₊ Es ρ) (⟪ bs ⟫₊ Es ρ′)
+  ms : ∀ bs Es {ρ₁}
+    → OK bs Es ρ₁
+    → results-rel-pres _⊆_ bs (⟪ bs ⟫₊ Es ρ) (⟪ bs ⟫₊ Es ρ′)
   ms [] _ _ = ptt
   ms (b ∷ bs) ⟨ E , Es ⟩ ⟨ ⟨ m , _ ⟩ , ok ⟩ = ⟨ ⟪⟫-mono b m ρ⊆ , ms bs Es ok ⟩
 
 {- Operators that do not depend on the environment ---------------------------}
 
-const-cont : ∀ {D : 𝒫 Value}{ρ} → nonempty-env ρ → Cont (λ _ → D) ρ
+const-cont : ∀ {D : 𝒫 Value}{ρ}
+  → nonempty-env ρ
+  → Cont (λ _ → D) ρ
 const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
 
 ℬ-cont : ∀ B k → Continuous [] (ℬ B k)
@@ -144,26 +181,33 @@ const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
 {- Tuples ---------------------------------------------------------------------}
 
 {- one finite approximation in which each of finitely many sets is nonempty -}
-cover : ∀ {m} (Es : Fin m → VEnv → 𝒫 Value) {ρ} → nonempty-env ρ
-  → (∀ j → Mono (Es j)) → (∀ j → Cont (Es j) ρ) → (∀ j → nonempty (Es j ρ))
+cover : ∀ {m} (Es : Fin m → VEnv → 𝒫 Value) {ρ}
+  → nonempty-env ρ
+  → (∀ j → Mono (Es j))
+  → (∀ j → Cont (Es j) ρ)
+  → (∀ j → nonempty (Es j ρ))
   → Σ[ a ∈ Approx ρ ] (∀ j → nonempty (Es j (env a)))
 cover {zero} Es NE ms cs nes = ⟨ approx-init NE , (λ ()) ⟩
 cover {suc m} Es NE ms cs nes
     with one (Es zero) (cs zero) (proj₂ (nes zero))
-       | cover (λ j → Es (suc j)) NE (λ j → ms (suc j)) (λ j → cs (suc j)) (λ j → nes (suc j))
+       | cover (λ j → Es (suc j)) NE (λ j → ms (suc j)) (λ j → cs (suc j))
+         (λ j → nes (suc j))
 ... | ⟨ a , e∈ ⟩ | ⟨ b , f ⟩ = ⟨ approx-join a b , G ⟩
   where
   G : ∀ j → nonempty (Es j (env (approx-join a b)))
   G zero = ⟨ _ , ms zero (join-l a b) _ e∈ ⟩
   G (suc j) = ⟨ proj₁ (f j) , ms (suc j) (join-r a b) _ (proj₂ (f j)) ⟩
 
-nth-ok : ∀ {n} Es {ρ} → OK (replicate n ■) Es ρ → ∀ i
-  → Mono (λ ρ → nthD (⟪ replicate n ■ ⟫₊ Es ρ) i) × Cont (λ ρ → nthD (⟪ replicate n ■ ⟫₊ Es ρ) i) ρ
+nth-ok : ∀ {n} Es {ρ}
+  → OK (replicate n ■) Es ρ
+  → ∀ i
+  → Mono (λ ρ → nthD (⟪ replicate n ■ ⟫₊ Es ρ) i)
+    × Cont (λ ρ → nthD (⟪ replicate n ■ ⟫₊ Es ρ) i) ρ
 nth-ok {suc n} ⟨ E , Es ⟩ ⟨ ok , _ ⟩ zero = ok
 nth-ok {suc n} ⟨ E , Es ⟩ ⟨ _ , oks ⟩ (suc i) = nth-ok Es oks i
 
 
-{- What a language needs of each of its operators ---------------------------------}
+{- What a language needs of each of its operators -----------------------------}
 
 {- monotone, continuous, and consistent under the language's assumption P
    (on the meanings of the global definitions, for Clos5) -}
@@ -174,8 +218,11 @@ record Good (P : Set) bs (f : DOp (𝒫 Value) bs) : Set₁ where
     cont : Continuous bs f
 open Good public
 
-mk-good : ∀ {P bs} {f : DOp (𝒫 Value) bs} → monotone bs ■ f → consistent _~_ bs ■ f
-  → Continuous bs f → Good P bs f
+mk-good : ∀ {P bs} {f : DOp (𝒫 Value) bs}
+  → monotone bs ■ f
+  → consistent _~_ bs ■ f
+  → Continuous bs f
+  → Good P bs f
 mk-good m c k = record { mono = m ; consis = λ _ → c ; cont = k }
 
 ℬ-good : ∀ {P} B k → Good P [] (ℬ B k)

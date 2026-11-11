@@ -2,13 +2,13 @@ module ISWIM.Untyped.Semantics.GraphErr.Frames where
 {-
 
  Tables of global definitions and stores of frame slots in the graph
- model with errors, which the semantics of X86 (ISWIM/Untyped/Semantics/GraphErr/X86.agda)
- uses, and which the semantics of the preserved untyped Imp and CFG
- (agda/ISWIM/Untyped/) share with it; as in ISWIM/Untyped/Semantics/Graph/Frames.agda, with
- the errors of the machines: reading a slot beyond the frame errors
- (init, {ω}); assigning one errs once the value assigned has been
- computed (frameᵐ: ω if the value is anything, ∅ if it diverges). A
- reference to no definition is code whose call errs (errcode).
+ model with errors, which the semantics of X86
+ (ISWIM/Untyped/Semantics/GraphErr/X86.agda) uses, and which the semantics of
+ the preserved untyped Imp and CFG (agda/ISWIM/Untyped/) share with it; as in
+ ISWIM/Untyped/Semantics/Graph/Frames.agda, with the errors of the machines:
+ reading a slot beyond the frame errors (init, {ω}); assigning one errs once the
+ value assigned has been computed (frameᵐ: ω if the value is anything, ∅ if it
+ diverges). A reference to no definition is code whose call errs (errcode).
 
 -}
 

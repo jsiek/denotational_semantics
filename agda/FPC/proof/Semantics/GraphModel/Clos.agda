@@ -19,6 +19,7 @@ open import Data.List using (length)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-fv-env-pos : ∀ {Δ : Ctx} {C} Xs (i : Δ ∋ C) → fv-env (length Δ) Xs (idx i) ≡ nthD Xs (pos i)
+fv-env-pos : ∀ {Δ : Ctx} {C} Xs (i : Δ ∋ C)
+  → fv-env (length Δ) Xs (idx i) ≡ nthD Xs (pos i)
 fv-env-pos ⟨ X , Xs ⟩ Z = refl
 fv-env-pos ⟨ X , Xs ⟩ (S i) = fv-env-pos Xs i

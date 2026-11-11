@@ -46,15 +46,26 @@ Init = ⌈ ω ⌉
 open proof.Framework.GraphModel.Domain using (ρ₀) public
 open proof.Framework.GraphModel.SetsAsPredicates using (ne-mem) public
 
-●-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ● E) ⊆ (D₂ ● E)
-●-mono-l D⊆ w ⟨ V , ⟨ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩ = ⟨ V , ⟨ D⊆ _ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩
+●-mono-l : ∀ {D₁ D₂ E}
+  → D₁ ⊆ D₂
+  → (D₁ ● E) ⊆ (D₂ ● E)
+●-mono-l D⊆ w ⟨ V , ⟨ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩ =
+  ⟨ V , ⟨ D⊆ _ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩
 
-Cdr-mono : ∀ {D₁ D₂} → D₁ ⊆ D₂ → Cdr D₁ ⊆ Cdr D₂
+Cdr-mono : ∀ {D₁ D₂}
+  → D₁ ⊆ D₂
+  → Cdr D₁ ⊆ Cdr D₂
 Cdr-mono D⊆ v ⟨ u , uv∈ ⟩ = ⟨ u , D⊆ _ uv∈ ⟩
 
-⊙-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
-⊙-mono-l D⊆ w ⟨ U , ⟨ ⟨ FV , ⟨ ⟨ t , f∈ ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
-  ⟨ U , ⟨ ⟨ FV , ⟨ ⟨ t , D⊆ _ f∈ ⟩ , ⟨ (λ d d∈ → Cdr-mono D⊆ d (FV⊆ d d∈)) , neFV ⟩ ⟩ ⟩
+⊙-mono-l : ∀ {D₁ D₂ E}
+  → D₁ ⊆ D₂
+  → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
+⊙-mono-l D⊆ w
+  ⟨ U , ⟨ ⟨ FV , ⟨ ⟨ t , f∈ ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
+  ⟨ U
+      ,
+      ⟨ ⟨ FV
+        , ⟨ ⟨ t , D⊆ _ f∈ ⟩ , ⟨ (λ d d∈ → Cdr-mono D⊆ d (FV⊆ d d∈)) , neFV ⟩ ⟩ ⟩
         , ⟨ U⊆ , neU ⟩ ⟩ ⟩
 
 {- the results of the primitives are first-order data -}

@@ -6,8 +6,8 @@ open import Framework.abt.Sig using (Sig)
 -}
 module Framework.Syntax.ScopeDec (Op : Set) (sig : Op → List Sig) where
 
-open import Framework.abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind; clear; nil; cons)
-  renaming (ABT to AST; Arg to Arg; Args to Args)
+open import Framework.abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind;
+  clear; nil; cons) renaming (ABT to AST; Arg to Arg; Args to Args)
 open import Framework.Syntax.Scope Op sig
 
 open import Data.Nat using (ℕ; suc; _<?_)

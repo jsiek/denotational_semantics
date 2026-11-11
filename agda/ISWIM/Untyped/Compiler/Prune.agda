@@ -43,7 +43,9 @@ module ISWIM.Untyped.Compiler.Prune where
       index : ℕ → ℕ
   open Pruned public
 
-  keep : AST → Pruned → Pruned
+  keep : AST
+    → Pruned
+    → Pruned
   keep M (pruned m fvs idx) = pruned (suc m) (M ,, fvs) idx
 
   {- the positions past the free variables, after keeping or dropping the
@@ -60,12 +62,15 @@ module ISWIM.Untyped.Compiler.Prune where
   opt-args : ∀ {n} → (Var → Var) → Args (replicate n ■) → Args (replicate n ■)
   opt-body : (Var → Var) → ∀ k → Arg (ν-n k (ν ■)) → AST
   {- U j says whether the code uses the free variable at position j -}
-  prune-fvs : ∀ n (r : Var → Var) {U : ℕ → Set} → (∀ j → Dec (U j))
-    → Args (replicate n ■) → (ℕ → ℕ) → Pruned
+  prune-fvs : ∀ n (r : Var → Var) {U : ℕ → Set}
+    → (∀ j → Dec (U j))
+    → Args (replicate n ■) → (ℕ → ℕ)
+    → Pruned
 
   prune r (` x) = ` (r x)
   prune r (clos-op n ⦅ ! clear a ,, fvs ⦆) =
-    clos-op (count P) ⦅ ! clear (bind-n-ast (count P) (opt-body (ext-var (index P)) n a))
+    clos-op (count P) ⦅ ! clear
+      (bind-n-ast (count P) (opt-body (ext-var (index P)) n a))
                       ,, kept P ⦆
     where
     P = prune-fvs n r (λ j → uses? (suc j) (unbind-n n a)) fvs (λ k → k)
@@ -76,9 +81,11 @@ module ISWIM.Untyped.Compiler.Prune where
   prune r (inl-op ⦅ M ,, Nil ⦆) = inl-op ⦅ prune r M ,, Nil ⦆
   prune r (inr-op ⦅ M ,, Nil ⦆) = inr-op ⦅ prune r M ,, Nil ⦆
   prune r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
-    case-op ⦅ prune r L ,, ⟩ prune (ext-var r) M ,, ⟩ prune (ext-var r) N ,, Nil ⦆
+    case-op ⦅ prune r L ,, ⟩ prune (ext-var r) M ,, ⟩ prune
+      (ext-var r) N ,, Nil ⦆
   prune r (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ⦅ prune r L ,, prune r M ,, Nil ⦆
-  prune r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ prune r M ,, ⟩ prune (ext-var r) N ,, Nil ⦆
+  prune r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ prune r M ,, ⟩ prune
+    (ext-var r) N ,, Nil ⦆
 
   opt-args {zero} r Nil = Nil
   opt-args {suc n} r (M ,, args) = prune r M ,, opt-args r args

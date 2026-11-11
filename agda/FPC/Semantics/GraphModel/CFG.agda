@@ -42,12 +42,17 @@ drop (there⊑ p) σ = drop p (λ i → σ (suc i))
 Meanings : List Ctx → Set₁
 Meanings Bs = ∀ {Δ} → Bs ∋ Δ → Env Value → 𝒫 Value
 
-⟦_⟧ᵗ : ∀ {Σ R Bs Δ} → Tail Σ R Bs Δ → Table Σ → Meanings Bs → Env Value → 𝒫 Value
+⟦_⟧ᵗ : ∀ {Σ R Bs Δ} → Tail Σ R Bs Δ → Table Σ → Meanings Bs
+  → Env Value → 𝒫 Value
 ⟦ return s ⟧ᵗ T B σ = 𝒮 s T σ
-⟦ seq p s t ⟧ᵗ T B σ = ⋆ ⟨ Λ ⟨ (λ X → ⟦ t ⟧ᵗ T B (X • drop p σ)) , ptt ⟩ , ⟨ 𝒮 s T σ , ptt ⟩ ⟩
+⟦ seq p s t ⟧ᵗ T B σ =
+  ⋆ ⟨ Λ ⟨ (λ X → ⟦ t ⟧ᵗ T B (X • drop p σ)) , ptt ⟩ , ⟨ 𝒮 s T σ , ptt ⟩ ⟩
 ⟦ goto l ⟧ᵗ T B σ = B l σ
 ⟦ case a p l₁ l₂ ⟧ᵗ T B σ =
-  𝒞 ⟨ 𝒜 a T σ , ⟨ (λ X → B l₁ (X • drop p σ)) , ⟨ (λ X → B l₂ (X • drop p σ)) , ptt ⟩ ⟩ ⟩
+  𝒞
+    ⟨ 𝒜 a T σ
+      ,
+      ⟨ (λ X → B l₁ (X • drop p σ)) , ⟨ (λ X → B l₂ (X • drop p σ)) , ptt ⟩ ⟩ ⟩
 
 blocks : ∀ {Σ R Bs} → Blocks Σ R Bs → Table Σ → Meanings Bs
 blocks (bs ▷ t) T Z = ⟦ t ⟧ᵗ T (blocks bs T)

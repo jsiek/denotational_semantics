@@ -32,7 +32,11 @@ Kont = 𝒫 Value → Store → 𝒫 Value
 ⟦_⟧ᴷ[_] : Exp → Table → ℕ → Store → Kont → 𝒫 Value
 ⟦ simple s ⟧ᴷ[ T ] n σ κ = κ (𝒮 T n σ s) σ
 ⟦ case a x e₁ e₂ ⟧ᴷ[ T ] n σ κ = frameᵐ n x (payloadᵐ (𝒜 T n σ a))
-  (𝒞ᵐ ⟨ 𝒜 T n σ a , ⟨ (λ X → ⟦ e₁ ⟧ᴷ[ T ] n (σ [ x ↦ X ]) κ) , ⟨ (λ X → ⟦ e₂ ⟧ᴷ[ T ] n (σ [ x ↦ X ]) κ) , ptt ⟩ ⟩ ⟩)
+  (𝒞ᵐ
+      ⟨ 𝒜 T n σ a
+        ,
+          ⟨ (λ X → ⟦ e₁ ⟧ᴷ[ T ] n (σ [ x ↦ X ]) κ)
+            , ⟨ (λ X → ⟦ e₂ ⟧ᴷ[ T ] n (σ [ x ↦ X ]) κ) , ptt ⟩ ⟩ ⟩)
 ⟦ assign x e₁ e₂ ⟧ᴷ[ T ] n σ κ = ⟦ e₁ ⟧ᴷ[ T ] n σ (λ D σ' → frameᵐ n x D
   (letᵐ ⟨ D , ⟨ (λ X → ⟦ e₂ ⟧ᴷ[ T ] n (σ' [ x ↦ X ]) κ) , ptt ⟩ ⟩))
 

@@ -22,7 +22,8 @@ module ISWIM.Semantics.Interp.Typed.Values (C : ℕ → Set) where
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq)
 open import ISWIM.Language.Typed.Type renaming (_≟_ to _≟F_)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl;
+  o-inr)
 open import Semantics.Interp.Clock using (Result; ret; error)
 
 open import Data.Bool using (if_then_else_)
@@ -60,7 +61,9 @@ obs-vec (v ∷ vs) = obs v ∷ obs-vec vs
 {- a primitive on two integers: eq gives inl ⟨⟩ for true -}
 δ : ∀ p → Val ⟪ base Int ⟫ → Val ⟪ base Int ⟫ → Val ⟪ out-flat p ⟫
 δ sub (const n) (const m) = const (n - m)
-δ eq (const n) (const m) = if does (n ≟ m) then inl (dyn (tup 0) (tup [])) else inr (dyn (tup 0) (tup []))
+δ eq (const n) (const m) =
+  if does (n ≟ m) then inl (dyn (tup 0) (tup [])) else inr
+  (dyn (tup 0) (tup []))
 
 {- component i of a tuple -}
 nth : ∀ {n} → Fin n → Val ⟪ tup n ⟫ → Val Any

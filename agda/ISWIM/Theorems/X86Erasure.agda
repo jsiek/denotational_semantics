@@ -1,14 +1,14 @@
 {-
 
   An assurance, not part of the compiler or of the comparison (not in
-  the totals): X86ᵀ (ISWIM/Language/Typed/X86.agda) is X86 (ISWIM/Language/X86.agda)
-  with types. Erasing the types (erase, ISWIM/Language/Typed/X86Erase.agda)
-  keeps the meaning of every X86ᵀ program, with no precondition but its
-  typing, in the CEK column's machines (ISWIM/Semantics/CEK/Typed/X86.agda,
-  ISWIM/Semantics/CEK/X86.agda): they are Equivalent (the same observations,
-  o-error included, and divergence together). And the erased program
-  errs only where X86ᵀ runs a chk that fails: none of X86's other
-  trapped errors (a missing slot, label or definition, an unset
+  the totals): X86ᵀ (ISWIM/Language/Typed/X86.agda) is X86
+  (ISWIM/Language/X86.agda) with types. Erasing the types (erase,
+  ISWIM/Language/Typed/X86Erase.agda) keeps the meaning of every X86ᵀ program,
+  with no precondition but its typing, in the CEK column's machines
+  (ISWIM/Semantics/CEK/Typed/X86.agda, ISWIM/Semantics/CEK/X86.agda): they are
+  Equivalent (the same observations, o-error included, and divergence together).
+  And the erased program errs only where X86ᵀ runs a chk that fails: none of
+  X86's other trapped errors (a missing slot, label or definition, an unset
   register or flag, a value of the wrong kind) is reached. The proof is
   ISWIM/proof/Assurance/X86Erasure.agda.
 
@@ -24,7 +24,8 @@
 module ISWIM.Theorems.X86Erasure where
 
 open import Semantics.Observation using (o-error)
-open import Semantics.CEK.Smallstep using (Equivalent; Terminates; Star; State; start)
+open import Semantics.CEK.Smallstep using (Equivalent; Terminates; Star; State;
+  start)
 open import ISWIM.Language.Typed.Type using (Tag; flat; Any; ⟪_⟫; _∋_)
 open import ISWIM.Language.Typed.X86
 open import ISWIM.Language.Typed.X86Erase using (erase)
@@ -52,16 +53,23 @@ erase-correct = Proof.erase-correct
    a value of another kind than t -}
 data FailedChk {Σ : List ℕ} : X86ᵀₘ.State Σ → Set where
   failed : ∀ {n Bs Γ Δ O F ψ'} {t : Tag} {x : Δ ∋ Any}
-    {d : Dst n (st (Γ [ rax ↦ nothing ]) Δ O false) (ty ⟪ flat t ⟫) ψ'} {k : Seq Σ n Bs ψ'} {bs σ η}
+    {d : Dst n (st (Γ [ rax ↦ nothing ]) Δ O false) (ty ⟪ flat t ⟫) ψ'}
+      {k : Seq Σ n Bs ψ'} {bs σ η}
     {m : X86ᵀₘ.Mach Σ η (st Γ Δ O F)}
-    → X86ᵀₘ.proj? t (X86ᵀₘ.frame m ! x) ≡ nothing → FailedChk (X86ᵀₘ.run (chk t x d ∷ k) bs σ η m)
+    → X86ᵀₘ.proj? t (X86ᵀₘ.frame m ! x) ≡ nothing
+      → FailedChk (X86ᵀₘ.run (chk t x d ∷ k) bs σ η m)
 
 {- the erased program errs only when X86ᵀ reaches a chk that fails (and,
    by erase-correct, it errs whenever X86ᵀ does) -}
-erase-errors : ∀ (P : Program) → Terminates (X86ₘ.sem (erase P)) o-error
-  → Σ[ s ∈ State (X86ᵀₘ.sem P) ] Star (X86ᵀₘ.sem P) (start (X86ᵀₘ.sem P)) s × FailedChk s
-erase-errors P h with proj₂ (Equivalent.terminates (Proof.erase-correct P) o-error) h
-... | s , τ , fin = s , τ , Proof.only-chk (Program.defs P) FailedChk failed s fin
+erase-errors : ∀ (P : Program)
+  → Terminates (X86ₘ.sem (erase P)) o-error
+  → Σ[ s
+    ∈ State (X86ᵀₘ.sem P) ] Star (X86ᵀₘ.sem P) (start (X86ᵀₘ.sem P)) s
+    × FailedChk s
+erase-errors P h
+  with proj₂ (Equivalent.terminates (Proof.erase-correct P) o-error) h
+... | s , τ , fin =
+  s , τ , Proof.only-chk (Program.defs P) FailedChk failed s fin
 
 {- select emits the instructions of select into untyped X86 -}
 select-erase : ∀ (P : CFGᵀ.Program) → erase (select P) ≡ SelectX86.select P

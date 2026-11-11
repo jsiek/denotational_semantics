@@ -36,7 +36,8 @@ data Tail (Σ : List ℕ) (Bs : List Ctx) (Δ : Ctx) : Set where
   return : Simple Σ Δ Any → Tail Σ Bs Δ
   seq : ∀ {Δ' A} → Δ' ⊑ Δ → Simple Σ Δ A → Tail Σ Bs (A ∷ Δ') → Tail Σ Bs Δ
   goto : Bs ∋ Δ → Tail Σ Bs Δ
-  case : ∀ {Δ'} → Atm Σ Δ ⟪ sum ⟫ → Δ' ⊑ Δ → Bs ∋ (Any ∷ Δ') → Bs ∋ (Any ∷ Δ') → Tail Σ Bs Δ
+  case : ∀ {Δ'} → Atm Σ Δ ⟪ sum ⟫ → Δ' ⊑ Δ → Bs ∋ (Any ∷ Δ') → Bs ∋ (Any ∷ Δ')
+    → Tail Σ Bs Δ
 
 {- the blocks of a body, newest first, each over the older ones -}
 data Blocks (Σ : List ℕ) : List Ctx → Set where

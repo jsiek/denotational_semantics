@@ -3,7 +3,8 @@
   Correctness of the whole closure-conversion compiler, by clocked
   interpreters:
 
-    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2
+          --concretize--> Clos3
           --split--> Clos4 --hoist--> Clos5
 
   Each pass is proved clock for clock, which gives its end theorem
@@ -32,41 +33,58 @@ open import proof.Semantics.Interp.Clock
 open import ISWIM.Compiler.Simplify using (simplify)
 open import ISWIM.proof.Compiler.SimplifyScope using (simplify-closed)
 open import ISWIM.proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
-open import ISWIM.Untyped.proof.Correctness.Interp.PruneFuel using (capture-prune-correct)
-open import ISWIM.Untyped.proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
-open import ISWIM.Untyped.proof.Correctness.Interp.SplitFuel using (split-correct)
-open import ISWIM.Untyped.proof.Correctness.Interp.HoistFuel using (hoist-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.PruneFuel using
+  (capture-prune-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.ConcretizeFuel using
+  (concretize-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.SplitFuel using
+  (split-correct)
+open import ISWIM.Untyped.proof.Correctness.Interp.HoistFuel using
+  (hoist-correct)
 import ISWIM.Semantics.Interp.ISWIM as S
 import ISWIM.Untyped.Semantics.Interp.Clos5 as T
 
 open import Data.Product using (_,_; proj₁; proj₂)
 
-{- The end theorem -------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
-compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
+compile-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
-  equiv-trans (simplify-correct M c) (equiv-trans (capture-prune-correct (simplify M) (simplify-closed M c))
-    (equiv-trans (concretize-correct M₂) (equiv-trans (split-correct M₃) (hoist-correct M₄))))
+  equiv-trans (simplify-correct M c)
+    (equiv-trans (capture-prune-correct (simplify M) (simplify-closed M c))
+    (equiv-trans (concretize-correct M₂)
+        (equiv-trans (split-correct M₃) (hoist-correct M₄))))
   where M₂ = prune-program (capture (simplify M))
         M₃ = concretize-program M₂
         M₄ = split M₃
 
 {- in particular -}
 
-compile-const : ∀ M → Closed M → ∀ B k
-  → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (compile M)) (o-const B k)
-compile-const M c B k = Equivalent.terminates (compile-correct M c) (o-const B k)
+compile-const : ∀ M
+  → Closed M
+  → ∀ B k
+  → Terminates (S.sem M) (o-const B k)
+    ⇔ Terminates (T.sem (compile M)) (o-const B k)
+compile-const M c B k =
+  Equivalent.terminates (compile-correct M c) (o-const B k)
 
-compile-converges : ∀ M → Closed M
-  → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (compile M)))
+compile-converges : ∀ M
+  → Closed M
+  → Converges (Terminates (S.sem M))
+    ⇔ Converges (Terminates (T.sem (compile M)))
 compile-converges M c =
     (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
   , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
   where E = compile-correct M c
 
-compile-error : ∀ M → Closed M
+compile-error : ∀ M
+  → Closed M
   → Terminates (S.sem M) o-error ⇔ Terminates (T.sem (compile M)) o-error
 compile-error M c = Equivalent.terminates (compile-correct M c) o-error
 
-compile-diverges : ∀ M → Closed M → Diverges (S.sem M) ⇔ Diverges (T.sem (compile M))
+compile-diverges : ∀ M
+  → Closed M
+  → Diverges (S.sem M) ⇔ Diverges (T.sem (compile M))
 compile-diverges M c = Equivalent.diverges (compile-correct M c)

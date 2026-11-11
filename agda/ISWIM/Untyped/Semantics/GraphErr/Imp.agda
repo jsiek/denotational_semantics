@@ -38,7 +38,8 @@ open import Relation.Nullary using (yes; no)
 𝒜 T n σ (lit B k) = ℬ B k ptt
 𝒜 T n σ (fun-ref k) = T k
 
-𝒜s : Table → ℕ → Store → (as : List Atm) → Results (𝒫 Value) (replicate (length as) ■)
+𝒜s : Table → ℕ → Store → (as : List Atm)
+  → Results (𝒫 Value) (replicate (length as) ■)
 𝒜s T n σ [] = ptt
 𝒜s T n σ (a ∷ as) = ⟨ 𝒜 T n σ a , 𝒜s T n σ as ⟩
 

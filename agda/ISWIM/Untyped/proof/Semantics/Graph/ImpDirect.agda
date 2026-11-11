@@ -18,15 +18,16 @@ module ISWIM.Untyped.proof.Semantics.Graph.ImpDirect where
  each slot of the store it leaves. A run of e₂ (or of a branch) leaves
  its store only if it has a value: a run that errors or diverges
  leaves no store behind. So the store, like the value, collects the runs
- of an expression; in Semantics/Graph/ImpK.agda each run passes its own store on.
+ of an expression; in Semantics/Graph/ImpK.agda each run passes its own store
+ on.
 
 -}
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
-open import ISWIM.Untyped.Semantics.Graph.Imp
-  using (Table; init; Store; read; _[_↦_]; 𝒜; 𝒜s; 𝒮; zeros; frame; tables) public
+open import ISWIM.Untyped.Semantics.Graph.Imp using (Table; init; Store; read;
+  _[_↦_]; 𝒜; 𝒜s; 𝒮; zeros; frame; tables) public
 open import ISWIM.Untyped.Language.Imp
 
 open import Data.Nat using (ℕ; _<?_)
@@ -47,7 +48,8 @@ _↓_ : 𝒫 Value × Store → ℕ → 𝒫 Value
 
 {- case on A, the branches E₁ and E₂ given the payload: 𝒞, for the value
    and for each slot of the store -}
-caseₛ : 𝒫 Value → (𝒫 Value → 𝒫 Value × Store) → (𝒫 Value → 𝒫 Value × Store) → 𝒫 Value × Store
+caseₛ : 𝒫 Value → (𝒫 Value → 𝒫 Value × Store) → (𝒫 Value → 𝒫 Value × Store)
+  → 𝒫 Value × Store
 caseₛ A E₁ E₂ =
   ⟨ 𝒞 ⟨ A , ⟨ (λ X → proj₁ (E₁ X)) , ⟨ (λ X → proj₁ (E₂ X)) , ptt ⟩ ⟩ ⟩
   , (λ y → 𝒞 ⟨ A , ⟨ (λ X → E₁ X ↓ y) , ⟨ (λ X → E₂ X ↓ y) , ptt ⟩ ⟩ ⟩) ⟩
@@ -63,15 +65,18 @@ letₛ D E =
 ⟦_⟧[_] : Exp → Table → ℕ → Store → 𝒫 Value × Store
 ⟦ simple s ⟧[ T ] n σ = ⟨ 𝒮 T n σ s , σ ⟩
 ⟦ case a x e₁ e₂ ⟧[ T ] n σ = checked n x σ
-  (caseₛ (𝒜 T n σ a) (λ X → ⟦ e₁ ⟧[ T ] n (σ [ x ↦ X ])) (λ X → ⟦ e₂ ⟧[ T ] n (σ [ x ↦ X ])))
+  (caseₛ (𝒜 T n σ a) (λ X → ⟦ e₁ ⟧[ T ] n (σ [ x ↦ X ]))
+      (λ X → ⟦ e₂ ⟧[ T ] n (σ [ x ↦ X ])))
 ⟦ assign x e₁ e₂ ⟧[ T ] n σ = checked n x σ
-  (letₛ (proj₁ (⟦ e₁ ⟧[ T ] n σ)) (λ X → ⟦ e₂ ⟧[ T ] n (proj₂ (⟦ e₁ ⟧[ T ] n σ) [ x ↦ X ])))
+  (letₛ (proj₁ (⟦ e₁ ⟧[ T ] n σ))
+      (λ X → ⟦ e₂ ⟧[ T ] n (proj₂ (⟦ e₁ ⟧[ T ] n σ) [ x ↦ X ])))
 
 {- the function whose body is b, given the table T of the older
    definitions: it takes the tuple of free variables X and then the
    argument Y -}
 code : Table → Body → 𝒫 Value
-code T (body n e) = Λ ⟨ (λ X → Λ ⟨ (λ Y → proj₁ (⟦ e ⟧[ T ] n (frame X Y))) , ptt ⟩) , ptt ⟩
+code T (body n e) =
+  Λ ⟨ (λ X → Λ ⟨ (λ Y → proj₁ (⟦ e ⟧[ T ] n (frame X Y))) , ptt ⟩) , ptt ⟩
 
 {- the table of a list of definitions, newest first -}
 table : List Body → Table

@@ -41,7 +41,8 @@ open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.DOpSig
 open import Framework.abt.Sig using (∁)
 open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops using (⋆; Λ; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; payloadD)
+open import Framework.GraphModel.Ops using (⋆; Λ; 𝒯; proj; inl; inr; 𝒞; pair;
+  car; cdr; payloadD)
 
 open import Data.List using (List; _∷_; []; replicate)
 open import Data.Nat using (ℕ; zero; suc)
@@ -53,7 +54,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Nullary using (¬_)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_)
 
-{- The monad -------------------------------------------------------------------}
+{- The monad ------------------------------------------------------------------}
 
 {- the elements of D with the property P -}
 infix 6 _⇂_
@@ -77,12 +78,13 @@ _≫=_ : 𝒫 Value → (𝒫 Value → 𝒫 Value) → 𝒫 Value
 (D ≫= F) w = (w ≡ ω × ω ∈ D) ⊎ (Conv D × w ∈ F ⌊ D ⌋)
 
 {- bind n operands, left to right -}
-binds : ∀ n → Results (𝒫 Value) (replicate n ■) → (Results (𝒫 Value) (replicate n ■) → 𝒫 Value)
+binds : ∀ n → Results (𝒫 Value) (replicate n ■)
+  → (Results (𝒫 Value) (replicate n ■) → 𝒫 Value)
   → 𝒫 Value
 binds zero _ K = K ptt
 binds (suc n) ⟨ D , Ds ⟩ K = D ≫= λ X → binds n Ds (λ Xs → K ⟨ X , Xs ⟩)
 
-{- Kinds of values, and the check of a kernel ----------------------------------}
+{- Kinds of values, and the check of a kernel ---------------------------------}
 
 data Kind : Set where
   fun inj prod error : Kind
@@ -108,7 +110,7 @@ Bad k X = Σ[ d ∈ Value ] d ∈ X × kind d ≢ k
 checked : Kind → 𝒫 Value → 𝒫 Value → 𝒫 Value
 checked k X A w = (w ≡ ω × Bad k X) ⊎ w ∈ A
 
-{- The operators -------------------------------------------------------------------}
+{- The operators --------------------------------------------------------------}
 
 {- a finite set without ω: what a binder binds -}
 NoErr : List Value → Set
@@ -129,7 +131,8 @@ ValPayload _ = ⊤
 Λᵐ Fs = Λ Fs ⇂ ValEntry
 
 ⋆ᵐ : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-⋆ᵐ ⟨ D , ⟨ E , _ ⟩ ⟩ = D ≫= λ F → checked fun F (E ≫= λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩)
+⋆ᵐ ⟨ D , ⟨ E , _ ⟩ ⟩ =
+  D ≫= λ F → checked fun F (E ≫= λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩)
 
 𝒯ᵐ : ∀ n → DOp (𝒫 Value) (replicate n ■)
 𝒯ᵐ n Ds = binds n Ds (𝒯 n)
@@ -145,13 +148,14 @@ inrᵐ ⟨ D , _ ⟩ = D ≫= λ X → inr ⟨ X , ptt ⟩
 
 {- a case binds only payloads that are values -}
 𝒞ᵐ : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
-𝒞ᵐ ⟨ D , ⟨ F , ⟨ G , _ ⟩ ⟩ ⟩ = D ≫= λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩)
+𝒞ᵐ ⟨ D , ⟨ F , ⟨ G , _ ⟩ ⟩ ⟩ =
+  D ≫= λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩)
 
 {- let x = D in F x, which means (λx. F x) D -}
 letᵐ : DOp (𝒫 Value) (■ ∷ ν ■ ∷ [])
 letᵐ ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ᵐ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
-{- Closures and pairs (Clos3, Clos4) -----------------------------------------------}
+{- Closures and pairs (Clos3, Clos4) ------------------------------------------}
 
 {- a closed function of two arguments on values: the code of a closure -}
 ValEntry₂ : Value → Set
@@ -177,9 +181,12 @@ cdrᵐ ⟨ D , _ ⟩ = D ≫= λ X → checked prod X (cdr ⟨ X , ptt ⟩)
 {- the call of Clos4 and Clos5: code, environment and argument are bound
    left to right, and only then is the code checked (the late check) -}
 callᵐ : DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
-callᵐ Ds = binds 3 Ds λ { ⟨ F , ⟨ E , ⟨ X , _ ⟩ ⟩ ⟩ → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩) }
+callᵐ Ds =
+  binds 3 Ds
+  λ { ⟨ F , ⟨ E , ⟨ X , _ ⟩ ⟩ ⟩
+    → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩) }
 
-{- Code and machine state (Clos5, Imp, CFG, X86) -----------------------------------}
+{- Code and machine state (Clos5, Imp, CFG, X86) ------------------------------}
 
 {- the code of a reference to no definition: a function whose call errs,
    after its operands, as the machines' late check does -}
@@ -196,7 +203,9 @@ payloadᵐ D = D ≫= λ X → checked inj X (payloadD (X ⇂ ValPayload))
 
 {- the flag that testinl sets, by the tag of an injection -}
 isinlD : 𝒫 Value → 𝒫 Value
-isinlD D w = (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩) ⊎ (Σ[ u ∈ Value ] right u ∈ D × w ≡ right ⟨⟩)
+isinlD D w =
+  (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩)
+  ⊎ (Σ[ u ∈ Value ] right u ∈ D × w ≡ right ⟨⟩)
 
 isinlᵐ : 𝒫 Value → 𝒫 Value
 isinlᵐ D = D ≫= λ X → checked inj X (isinlD X)

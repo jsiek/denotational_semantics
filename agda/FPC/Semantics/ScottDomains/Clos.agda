@@ -28,7 +28,8 @@ module FPC.Semantics.ScottDomains.Clos
 
 open import Framework.Scott.Base pt fe using (at; ∘₁; Pow)
 open import Framework.Scott.Domain pt fe pe using (𝔻)
-open import Framework.Scott.Ops pt fe pe using (Env; const; proj) renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ)
+open import Framework.Scott.Ops pt fe pe using (Env; const; proj) renaming (app
+  to appᵈ; inl to inlᵈ; inr to inrᵈ)
 open import Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 
@@ -36,7 +37,8 @@ open import Semantics.Scott.Prim pt fe pe using (primD)
 ⟦_⟧s : ∀ {Γ Δ} → All (Tm Γ) Δ → Dens (length Δ)
 
 ⟦ ` x ⟧ = at _ 𝔻 (idx x)
-⟦ clos {Δ} N Ms ⟧ = ∘₁ Env (Pow (Fin (length Δ)) 𝔻) 𝔻 ⟦ Ms ⟧s (closureᶜ (length Δ) ⟦ N ⟧)
+⟦ clos {Δ} N Ms ⟧ =
+  ∘₁ Env (Pow (Fin (length Δ)) 𝔻) 𝔻 ⟦ Ms ⟧s (closureᶜ (length Δ) ⟦ N ⟧)
 ⟦ app L M ⟧ = op₂ appᵈ ⟦ L ⟧ ⟦ M ⟧
 ⟦ lit B c ⟧ = litᶜ (const B c)
 ⟦ tuple Ms ⟧ = tupleᶜ ⟦ Ms ⟧s

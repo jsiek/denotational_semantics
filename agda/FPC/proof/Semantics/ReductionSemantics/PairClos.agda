@@ -20,15 +20,20 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 data Value {Γ} : ∀ {A} → Tm Γ A → Set where
   code : ∀ {Δ A B} {N : Tm (A ∷ tup Δ ∷ []) B} → Value (code {Γ} N)
-  pair : ∀ {Δ A B} {L : Tm Γ (code Δ A B)} {M} → Value L → Value M → Value (pair L M)
+  pair : ∀ {Δ A B} {L : Tm Γ (code Δ A B)} {M} → Value L → Value M
+    → Value (pair L M)
   lit : ∀ {B c} → Value (lit B c)
   tuple : ∀ {Δ} {Vs : All (Tm Γ) Δ} → Each Value Vs → Value (tuple Vs)
   inl : ∀ {A B} {V : Tm Γ A} → Value V → Value (inl {B = B} V)
   inr : ∀ {A B} {V : Tm Γ B} → Value V → Value (inr {A = A} V)
   fold : ∀ {A} {V : Tm Γ (unroll A)} → Value V → Value (fold {A = A} V)
 
-value-red : ∀ {A} {V : Tm [] A} → Value V → red V ≡ val
-values-red : ∀ {Δ} {Vs : All (Tm []) Δ} → Each Value Vs → reds Vs ≡ val
+value-red : ∀ {A} {V : Tm [] A}
+  → Value V
+  → red V ≡ val
+values-red : ∀ {Δ} {Vs : All (Tm []) Δ}
+  → Each Value Vs
+  → reds Vs ≡ val
 value-red code = refl
 value-red (pair v w) rewrite value-red v | value-red w = refl
 value-red lit = refl

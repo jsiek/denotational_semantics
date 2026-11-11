@@ -55,7 +55,9 @@ module Over (P : DCPO₁) where
  op₁ f M = ∘₁ P 𝔻 𝔻 M f
 
  op₂ : DCPO[ 𝔻 , 𝔻 ⟹₁ 𝔻 ] → Den P → Den P → Den P
- op₂ f L M = ∘₁ P ((𝔻 ⟹₁ 𝔻) ×₁ 𝔻) 𝔻 (pair₁ P (𝔻 ⟹₁ 𝔻) 𝔻 (∘₁ P 𝔻 (𝔻 ⟹₁ 𝔻) L f) M) (eval₁ 𝔻 𝔻)
+ op₂ f L M =
+   ∘₁ P ((𝔻 ⟹₁ 𝔻) ×₁ 𝔻) 𝔻
+   (pair₁ P (𝔻 ⟹₁ 𝔻) 𝔻 (∘₁ P 𝔻 (𝔻 ⟹₁ 𝔻) L f) M) (eval₁ 𝔻 𝔻)
 
  {- n meanings -}
  Dens : ℕ → 𝓤₁ ̇
@@ -155,11 +157,13 @@ fv-envᶜ n = f n , to-Pow-continuous ℕ 𝔻 (Pow (Fin n) 𝔻 ×₁ 𝔻) (f 
   f n p = fv-env n (pr₁ p) (pr₂ p)
   c : (n : ℕ) (i : ℕ) → is-continuous (Pow (Fin n) 𝔻 ×₁ 𝔻) 𝔻 (λ p → f n p i)
   c n zero = pr₂ (snd₁ (Pow (Fin n) 𝔻) 𝔻)
-  c zero (succ i) = constant-functions-are-continuous (Pow (Fin 0) 𝔻 ×₁ 𝔻) 𝔻 {init}
+  c zero (succ i) =
+    constant-functions-are-continuous (Pow (Fin 0) 𝔻 ×₁ 𝔻) 𝔻 {init}
   c (succ n) (succ i) =
    pr₂ (∘₁ (Pow (Fin (succ n)) 𝔻 ×₁ 𝔻) (Pow (Fin n) 𝔻 ×₁ 𝔻) 𝔻
           (pair₁ (Pow (Fin (succ n)) 𝔻 ×₁ 𝔻) (Pow (Fin n) 𝔻) 𝔻
-             (∘₁ (Pow (Fin (succ n)) 𝔻 ×₁ 𝔻) (Pow (Fin (succ n)) 𝔻) (Pow (Fin n) 𝔻)
+             (∘₁ (Pow (Fin (succ n)) 𝔻 ×₁ 𝔻) (Pow (Fin (succ n)) 𝔻)
+                 (Pow (Fin n) 𝔻)
                 (fst₁ (Pow (Fin (succ n)) 𝔻) 𝔻) (tailᶜ n))
              (∘₁ (Pow (Fin (succ n)) 𝔻 ×₁ 𝔻) (Pow (Fin (succ n)) 𝔻) 𝔻
                 (fst₁ (Pow (Fin (succ n)) 𝔻) 𝔻) (at (Fin (succ n)) 𝔻 zero)))
@@ -168,13 +172,16 @@ fv-envᶜ n = f n , to-Pow-continuous ℕ 𝔻 (Pow (Fin n) 𝔻 ×₁ 𝔻) (f 
 {- the function of a closure with n free variables xs and body N:
    Y ↦ N (fv-env n xs Y) -}
 closure-fun : (n : ℕ) → Den Env → ⟨ Pow (Fin n) 𝔻 ⟩ → DCPO[ 𝔻 , 𝔻 ]
-closure-fun n N xs = curry₁ (Pow (Fin n) 𝔻) 𝔻 𝔻 (∘₁ (Pow (Fin n) 𝔻 ×₁ 𝔻) Env 𝔻 (fv-envᶜ n) N) · xs
+closure-fun n N xs =
+  curry₁ (Pow (Fin n) 𝔻) 𝔻 𝔻 (∘₁ (Pow (Fin n) 𝔻 ×₁ 𝔻) Env 𝔻 (fv-envᶜ n) N) · xs
 
-{- a closure with n free variables xs and body N: guard n xs (Λ Y. N (fv-env n xs Y)) -}
+{- a closure with n free variables xs and body N: guard n xs (Λ Y. N (fv-env n
+   xs Y)) -}
 closureᶜ : (n : ℕ) → Den Env → DCPO[ Pow (Fin n) 𝔻 , 𝔻 ]
 closureᶜ n N =
  ∘₁ (Pow (Fin n) 𝔻) ((𝔻 ⟹₁ 𝔻) ×₁ 𝔻) 𝔻
    (pair₁ (Pow (Fin n) 𝔻) (𝔻 ⟹₁ 𝔻) 𝔻 (guard n)
       (∘₁ (Pow (Fin n) 𝔻) (𝔻 ⟹₁ 𝔻) 𝔻
-         (curry₁ (Pow (Fin n) 𝔻) 𝔻 𝔻 (∘₁ (Pow (Fin n) 𝔻 ×₁ 𝔻) Env 𝔻 (fv-envᶜ n) N)) Λ))
+         (curry₁ (Pow (Fin n) 𝔻) 𝔻 𝔻
+             (∘₁ (Pow (Fin n) 𝔻 ×₁ 𝔻) Env 𝔻 (fv-envᶜ n) N)) Λ))
    (eval₁ 𝔻 𝔻)

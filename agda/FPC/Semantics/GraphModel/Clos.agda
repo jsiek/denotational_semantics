@@ -29,18 +29,21 @@ fv-env (suc n) ⟨ X , Xs ⟩ zero = X
 fv-env (suc n) ⟨ X , Xs ⟩ (suc i) = fv-env n Xs i
 
 ⟦_⟧ : ∀ {Γ A} → Tm Γ A → Env Value → 𝒫 Value
-⟦_⟧s : ∀ {Γ Δ} → All (Tm Γ) Δ → Env Value → Results (𝒫 Value) (replicate (length Δ) ■)
+⟦_⟧s : ∀ {Γ Δ} → All (Tm Γ) Δ → Env Value
+  → Results (𝒫 Value) (replicate (length Δ) ■)
 
 ⟦ ` x ⟧ ρ = ρ (idx x)
 ⟦ clos {Δ} N Ms ⟧ ρ =
-  guard-n (length Δ) (⟦ Ms ⟧s ρ) (Λ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env (length Δ) (⟦ Ms ⟧s ρ))) , ptt ⟩)
+  guard-n (length Δ) (⟦ Ms ⟧s ρ)
+    (Λ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env (length Δ) (⟦ Ms ⟧s ρ))) , ptt ⟩)
 ⟦ app L M ⟧ ρ = ⋆ ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ lit B c ⟧ ρ = ℬ B c ptt
 ⟦ tuple {Δ} Ms ⟧ ρ = 𝒯 (length Δ) (⟦ Ms ⟧s ρ)
 ⟦ get i M ⟧ ρ = proj (pos i) ⟨ ⟦ M ⟧ ρ , ptt ⟩
 ⟦ inl M ⟧ ρ = inlD ⟨ ⟦ M ⟧ ρ , ptt ⟩
 ⟦ inr M ⟧ ρ = inrD ⟨ ⟦ M ⟧ ρ , ptt ⟩
-⟦ case L M N ⟧ ρ = 𝒞 ⟨ ⟦ L ⟧ ρ , ⟨ (λ X → ⟦ M ⟧ (X • ρ)) , ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩ ⟩ ⟩
+⟦ case L M N ⟧ ρ =
+  𝒞 ⟨ ⟦ L ⟧ ρ , ⟨ (λ X → ⟦ M ⟧ (X • ρ)) , ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩ ⟩ ⟩
 ⟦ prim p L M ⟧ ρ = primD p ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ let′ M N ⟧ ρ = ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ fold M ⟧ ρ = ⟦ M ⟧ ρ

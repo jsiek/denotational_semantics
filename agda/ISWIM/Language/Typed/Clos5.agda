@@ -38,7 +38,8 @@ data Tm (Σ : List ℕ) (Γ : Ctx) : Ty → Set where
   get : ∀ {n} → Fin n → Tm Σ Γ ⟪ tup n ⟫ → Tm Σ Γ Any
   inl inr : Tm Σ Γ Any → Tm Σ Γ ⟪ sum ⟫
   case : Tm Σ Γ ⟪ sum ⟫ → Tm Σ (Any ∷ Γ) Any → Tm Σ (Any ∷ Γ) Any → Tm Σ Γ Any
-  prim : (p : Prim) → Tm Σ Γ ⟪ base Int ⟫ → Tm Σ Γ ⟪ base Int ⟫ → Tm Σ Γ ⟪ out-flat p ⟫
+  prim : (p : Prim) → Tm Σ Γ ⟪ base Int ⟫ → Tm Σ Γ ⟪ base Int ⟫
+    → Tm Σ Γ ⟪ out-flat p ⟫
   let′ : ∀ {A B} → Tm Σ Γ A → Tm Σ (A ∷ Γ) B → Tm Σ Γ B
   inject : (G : Flat) → Tm Σ Γ ⟪ G ⟫ → Tm Σ Γ Any
   project : (t : Tag) → Tm Σ Γ Any → Tm Σ Γ ⟪ flat t ⟫
@@ -57,7 +58,8 @@ record Program : Set where
 
 {- a term over a smaller table, over a bigger one -}
 wk : ∀ {Σ Σ' Γ A} → (∀ {n} → Σ ∋ n → Σ' ∋ n) → Tm Σ Γ A → Tm Σ' Γ A
-wks : ∀ {Σ Σ' Γ n} → (∀ {m} → Σ ∋ m → Σ' ∋ m) → Vec (Tm Σ Γ Any) n → Vec (Tm Σ' Γ Any) n
+wks : ∀ {Σ Σ' Γ n} → (∀ {m} → Σ ∋ m → Σ' ∋ m) → Vec (Tm Σ Γ Any) n
+  → Vec (Tm Σ' Γ Any) n
 wk r (` x) = ` x
 wk r (fun-ref f) = fun-ref (r f)
 wk r (pack L M) = pack (wk r L) (wk r M)

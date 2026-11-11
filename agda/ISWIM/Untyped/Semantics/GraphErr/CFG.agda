@@ -33,7 +33,11 @@ Blocks = ℕ → Store → 𝒫 Value
   (letᵐ ⟨ 𝒮 T n σ s , ⟨ (λ X → ⟦ t ⟧[ T ] n B (σ [ x ↦ X ])) , ptt ⟩ ⟩)
 ⟦ goto l ⟧[ T ] n B σ = B l σ
 ⟦ case a x l₁ l₂ ⟧[ T ] n B σ = frameᵐ n x (payloadᵐ (𝒜 T n σ a))
-  (𝒞ᵐ ⟨ 𝒜 T n σ a , ⟨ (λ X → B l₁ (σ [ x ↦ X ])) , ⟨ (λ X → B l₂ (σ [ x ↦ X ])) , ptt ⟩ ⟩ ⟩)
+  (𝒞ᵐ
+      ⟨ 𝒜 T n σ a
+        ,
+          ⟨ (λ X → B l₁ (σ [ x ↦ X ]))
+            , ⟨ (λ X → B l₂ (σ [ x ↦ X ])) , ptt ⟩ ⟩ ⟩)
 
 {- the blocks bs (newest first), each with the meanings of the older ones;
    a missing block errs -}

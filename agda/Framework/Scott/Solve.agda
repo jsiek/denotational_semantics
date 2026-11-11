@@ -51,7 +51,8 @@ module Solution (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
  𝓓 (succ n) = obj F (𝓓 n)
 
  diagram : (n : ℕ) → DCPO[ 𝓓 n , 𝓓 (succ n) ] × DCPO[ 𝓓 (succ n) , 𝓓 n ]
- diagram zero = ((λ _ → pr₁ (F⊥ 𝟙ᵈ)) , constant-functions-are-continuous 𝟙ᵈ (𝓓 1))
+ diagram zero =
+   ((λ _ → pr₁ (F⊥ 𝟙ᵈ)) , constant-functions-are-continuous 𝟙ᵈ (𝓓 1))
               , ((λ _ → ⋆) , constant-functions-are-continuous (𝓓 1) 𝟙ᵈ)
  diagram (succ n) = act F (pr₁ (diagram n)) (pr₂ (diagram n))
                   , act F (pr₂ (diagram n)) (pr₁ (diagram n))
@@ -120,11 +121,15 @@ module Solution (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
   {- the commuting squares, as equations of continuous maps -}
   π∞-step : (n : ℕ) → ∘₁ D∞ (𝓓 (succ n)) (𝓓 n) (π∞₁ (succ n)) (π' n) ＝ π∞₁ n
   π∞-step n = to-continuous-function-＝ D∞ (𝓓 n)
-               (λ σ → π-in-terms-of-π⁺ n (π∞ (succ n) σ) ∙ π∞-commutes-with-πs n (succ n) (≤-succ n) σ)
+               (λ σ →
+                   π-in-terms-of-π⁺ n (π∞ (succ n) σ)
+                   ∙ π∞-commutes-with-πs n (succ n) (≤-succ n) σ)
 
   ε∞-step : (n : ℕ) → ∘₁ (𝓓 n) (𝓓 (succ n)) D∞ (ε' n) (ε∞₁ (succ n)) ＝ ε∞₁ n
   ε∞-step n = to-continuous-function-＝ (𝓓 n) D∞
-               (λ x → ap (ε∞ (succ n)) (ε-in-terms-of-ε⁺ n x) ∙ ε∞-commutes-with-εs n (succ n) (≤-succ n) x)
+               (λ x →
+                   ap (ε∞ (succ n)) (ε-in-terms-of-ε⁺ n x)
+                   ∙ ε∞-commutes-with-εs n (succ n) (≤-succ n) x)
 
   π∞-section : (n : ℕ) (x : ⟨ 𝓓 n ⟩) → π∞₁ n · (ε∞₁ n · x) ＝ x
   π∞-section n = ε∞-section-of-π∞ {n}
@@ -132,23 +137,33 @@ module Solution (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
   ε∞π∞-below : (n : ℕ) (σ : ⟨ D∞ ⟩) → ε∞₁ n · (π∞₁ n · σ) ⊑⟨ D∞ ⟩ σ
   ε∞π∞-below n = ε∞π∞-deflation {n}
 
-  ε∞π∞-mono : (σ : ⟨ D∞ ⟩) (m n : ℕ) → m ≤ n → ε∞₁ m · (π∞₁ m · σ) ⊑⟨ D∞ ⟩ ε∞₁ n · (π∞₁ n · σ)
+  ε∞π∞-mono : (σ : ⟨ D∞ ⟩) (m n : ℕ)
+    → m ≤ n
+    → ε∞₁ m · (π∞₁ m · σ) ⊑⟨ D∞ ⟩ ε∞₁ n · (π∞₁ n · σ)
   ε∞π∞-mono = ε∞-family-is-monotone
 
-  ε∞π∞-sup : (σ : ⟨ D∞ ⟩) → is-sup (underlying-order D∞) σ (λ n → ε∞₁ n · (π∞₁ n · σ))
-  ε∞π∞-sup σ = transport (λ - → is-sup (underlying-order 𝓓∞) - (ε∞-family σ)) ((∐-of-ε∞s σ) ⁻¹)
+  ε∞π∞-sup : (σ : ⟨ D∞ ⟩)
+    → is-sup (underlying-order D∞) σ (λ n → ε∞₁ n · (π∞₁ n · σ))
+  ε∞π∞-sup σ =
+    transport (λ - → is-sup (underlying-order 𝓓∞) - (ε∞-family σ))
+    ((∐-of-ε∞s σ) ⁻¹)
                  (∐-is-sup 𝓓∞ {ℕ} {ε∞-family σ} (ε∞-family-is-directed σ))
 
   π∞-π : (n : ℕ) (σ : ⟨ D∞ ⟩) → π n (π∞₁ (succ n) · σ) ＝ π∞₁ n · σ
-  π∞-π n σ = π-in-terms-of-π⁺ n (π∞ (succ n) σ) ∙ π∞-commutes-with-πs n (succ n) (≤-succ n) σ
+  π∞-π n σ =
+    π-in-terms-of-π⁺ n (π∞ (succ n) σ)
+    ∙ π∞-commutes-with-πs n (succ n) (≤-succ n) σ
 
   {- the order of D∞ is componentwise -}
-  D∞-⊑ : (σ τ : ⟨ D∞ ⟩) → ((n : ℕ) → π∞₁ n · σ ⊑⟨ 𝓓 n ⟩ π∞₁ n · τ) → σ ⊑⟨ D∞ ⟩ τ
+  D∞-⊑ : (σ τ : ⟨ D∞ ⟩)
+    → ((n : ℕ) → π∞₁ n · σ ⊑⟨ 𝓓 n ⟩ π∞₁ n · τ)
+    → σ ⊑⟨ D∞ ⟩ τ
   D∞-⊑ σ τ u = u
 
   {- D∞ is pointed, as each π n is strict -}
   D∞-has-least : has-least (underlying-order D∞)
-  D∞-has-least = ((λ n → bot n) , π⁺-is-strict) , (λ τ n → bot-is-least n (⦅ τ ⦆ n))
+  D∞-has-least =
+    ((λ n → bot n) , π⁺-is-strict) , (λ τ n → bot-is-least n (⦅ τ ⦆ n))
    where
     bot : (n : ℕ) → ⟨ 𝓓 n ⟩
     bot zero = ⋆
@@ -159,12 +174,19 @@ module Solution (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
     π-is-strict : (n : ℕ) → π n (bot (succ n)) ＝ bot n
     π-is-strict zero = refl
     π-is-strict (succ n) = F-strict (𝓓 (succ n)) (𝓓 n) (π' n) (ε' n)
-    π⁺-is-strict-helper : (n m k : ℕ) (p : n +' k ＝ m) → π⁺-helper n m k p (bot m) ＝ bot n
+    π⁺-is-strict-helper : (n m k : ℕ)
+      → (p : n +' k ＝ m)
+      → π⁺-helper n m k p (bot m) ＝ bot n
     π⁺-is-strict-helper n n zero refl = refl
     π⁺-is-strict-helper n m (succ k) refl =
-     ap (π⁺-helper n (n +' k) k refl) (π-is-strict (n +' k)) ∙ π⁺-is-strict-helper n (n +' k) k refl
-    π⁺-is-strict : (n m : ℕ) (l : n ≤ m) → π⁺ {n} {m} l (bot m) ＝ bot n
-    π⁺-is-strict n m l = π⁺-is-strict-helper n m (pr₁ (subtraction' n m l)) (pr₂ (subtraction' n m l))
+     ap (π⁺-helper n (n +' k) k refl) (π-is-strict (n +' k))
+       ∙ π⁺-is-strict-helper n (n +' k) k refl
+    π⁺-is-strict : (n m : ℕ)
+      → (l : n ≤ m)
+      → π⁺ {n} {m} l (bot m) ＝ bot n
+    π⁺-is-strict n m l =
+      π⁺-is-strict-helper n m (pr₁ (subtraction' n m l))
+      (pr₂ (subtraction' n m l))
 
  {- fold : F D∞ → D∞ ------------------------------------------------------}
 
@@ -176,17 +198,22 @@ module Solution (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
  π-exp (succ n) = pr₁ (π-exp-to-succ n)
 
  π-exp-is-continuous : (n : ℕ) → is-continuous (obj F D∞) (𝓓 n) (π-exp n)
- π-exp-is-continuous zero = pr₂ (∘₁ (obj F D∞) (𝓓 1) (𝓓 0) (π-exp-to-succ 0) (π' 0))
+ π-exp-is-continuous zero =
+   pr₂ (∘₁ (obj F D∞) (𝓓 1) (𝓓 0) (π-exp-to-succ 0) (π' 0))
  π-exp-is-continuous (succ n) = pr₂ (π-exp-to-succ n)
 
  π-exp-commutes-with-π : (n : ℕ) → π n ∘ π-exp (succ n) ∼ π-exp n
  π-exp-commutes-with-π zero x = refl
  π-exp-commutes-with-π (succ n) x =
-  (fmap-∘ F D∞ (𝓓 (succ n)) (𝓓 n) (π∞₁ (succ n)) (ε∞₁ (succ n)) (π' n) (ε' n) x) ⁻¹
+  (fmap-∘ F D∞ (𝓓 (succ n)) (𝓓 n) (π∞₁ (succ n)) (ε∞₁ (succ n)) (π' n) (ε' n) x)
+    ⁻¹
   ∙ ap₂ (λ f g → fmap F D∞ (𝓓 n) f g x) (π∞-step n) (ε∞-step n)
 
- π-exp-commutes-with-π⁺ : (n m : ℕ) (l : n ≤ m) → π⁺ {n} {m} l ∘ π-exp m ∼ π-exp n
- π-exp-commutes-with-π⁺ = commute-with-πs-lemma (obj F D∞) π-exp π-exp-commutes-with-π
+ π-exp-commutes-with-π⁺ : (n m : ℕ)
+   → (l : n ≤ m)
+   → π⁺ {n} {m} l ∘ π-exp m ∼ π-exp n
+ π-exp-commutes-with-π⁺ =
+   commute-with-πs-lemma (obj F D∞) π-exp π-exp-commutes-with-π
 
  {- unfold : D∞ → F D∞ ----------------------------------------------------}
 
@@ -198,17 +225,22 @@ module Solution (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
  ε-exp (succ n) = pr₁ (ε-exp-from-succ n)
 
  ε-exp-is-continuous : (n : ℕ) → is-continuous (𝓓 n) (obj F D∞) (ε-exp n)
- ε-exp-is-continuous zero = pr₂ (∘₁ (𝓓 0) (𝓓 1) (obj F D∞) (ε' 0) (ε-exp-from-succ 0))
+ ε-exp-is-continuous zero =
+   pr₂ (∘₁ (𝓓 0) (𝓓 1) (obj F D∞) (ε' 0) (ε-exp-from-succ 0))
  ε-exp-is-continuous (succ n) = pr₂ (ε-exp-from-succ n)
 
  ε-exp-commutes-with-ε : (n : ℕ) → ε-exp (succ n) ∘ ε n ∼ ε-exp n
  ε-exp-commutes-with-ε zero x = refl
  ε-exp-commutes-with-ε (succ n) x =
-  (fmap-∘ F (𝓓 n) (𝓓 (succ n)) D∞ (ε' n) (π' n) (ε∞₁ (succ n)) (π∞₁ (succ n)) x) ⁻¹
+  (fmap-∘ F (𝓓 n) (𝓓 (succ n)) D∞ (ε' n) (π' n) (ε∞₁ (succ n)) (π∞₁ (succ n)) x)
+    ⁻¹
   ∙ ap₂ (λ f g → fmap F (𝓓 n) D∞ f g x) (ε∞-step n) (π∞-step n)
 
- ε-exp-commutes-with-ε⁺ : (n m : ℕ) (l : n ≤ m) → ε-exp m ∘ ε⁺ {n} {m} l ∼ ε-exp n
- ε-exp-commutes-with-ε⁺ = commute-with-εs-lemma (obj F D∞) ε-exp ε-exp-commutes-with-ε
+ ε-exp-commutes-with-ε⁺ : (n m : ℕ)
+   → (l : n ≤ m)
+   → ε-exp m ∘ ε⁺ {n} {m} l ∼ ε-exp n
+ ε-exp-commutes-with-ε⁺ =
+   commute-with-εs-lemma (obj F D∞) ε-exp ε-exp-commutes-with-ε
 
  {- the approximations of unfold σ -}
  unfold-family : ⟨ D∞ ⟩ → ℕ → ⟨ obj F D∞ ⟩
@@ -218,22 +250,33 @@ module Solution (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
   unfolding D∞ π∞₁ ε∞₁
 
   fold : DCPO[ obj F D∞ , D∞ ]
-  fold = DcpoCone.limit-mediating-arrow (obj F D∞) π-exp π-exp-is-continuous π-exp-commutes-with-π⁺
-       , DcpoCone.limit-mediating-arrow-is-continuous (obj F D∞) π-exp π-exp-is-continuous π-exp-commutes-with-π⁺
+  fold =
+    DcpoCone.limit-mediating-arrow (obj F D∞) π-exp π-exp-is-continuous
+    π-exp-commutes-with-π⁺
+       , DcpoCone.limit-mediating-arrow-is-continuous (obj F D∞) π-exp
+         π-exp-is-continuous π-exp-commutes-with-π⁺
 
   π∞-fold : (n : ℕ) (φ : ⟨ obj F D∞ ⟩) → π∞₁ n · (fold · φ) ＝ π-exp n φ
   π∞-fold n φ = refl
 
-  unfold-family-is-monotone : (σ : ⟨ D∞ ⟩) (m n : ℕ) → m ≤ n
+  unfold-family-is-monotone : (σ : ⟨ D∞ ⟩) (m n : ℕ)
+    → m ≤ n
     → unfold-family σ m ⊑⟨ obj F D∞ ⟩ unfold-family σ n
-  unfold-family-is-monotone = DcpoCocone.colimit-family-is-monotone (obj F D∞) ε-exp ε-exp-is-continuous ε-exp-commutes-with-ε⁺
+  unfold-family-is-monotone =
+    DcpoCocone.colimit-family-is-monotone (obj F D∞) ε-exp ε-exp-is-continuous
+    ε-exp-commutes-with-ε⁺
 
-  unfold-family-is-directed : (σ : ⟨ D∞ ⟩) → is-Directed (obj F D∞) (unfold-family σ)
-  unfold-family-is-directed = DcpoCocone.colimit-family-is-directed (obj F D∞) ε-exp ε-exp-is-continuous ε-exp-commutes-with-ε⁺
+  unfold-family-is-directed : (σ : ⟨ D∞ ⟩)
+    → is-Directed (obj F D∞) (unfold-family σ)
+  unfold-family-is-directed =
+    DcpoCocone.colimit-family-is-directed (obj F D∞) ε-exp ε-exp-is-continuous
+    ε-exp-commutes-with-ε⁺
 
   unfold : DCPO[ D∞ , obj F D∞ ]
   unfold = (λ σ → ∐ (obj F D∞) (unfold-family-is-directed σ))
-         , DcpoCocone.colimit-mediating-arrow-is-continuous (obj F D∞) ε-exp ε-exp-is-continuous ε-exp-commutes-with-ε⁺
+         , DcpoCocone.colimit-mediating-arrow-is-continuous (obj F D∞) ε-exp
+           ε-exp-is-continuous ε-exp-commutes-with-ε⁺
 
-  unfold-is-sup : (σ : ⟨ D∞ ⟩) → unfold · σ ＝ ∐ (obj F D∞) (unfold-family-is-directed σ)
+  unfold-is-sup : (σ : ⟨ D∞ ⟩)
+    → unfold · σ ＝ ∐ (obj F D∞) (unfold-family-is-directed σ)
   unfold-is-sup σ = refl

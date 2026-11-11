@@ -32,7 +32,8 @@ open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
 open import ISWIM.Language.Typed.Type
 open import Framework.Membership using (_⊑_; lvl)
-open import ISWIM.Language.Typed.CFG as CFG using (Tail; return; seq; goto; case; Blocks; _▷_)
+open import ISWIM.Language.Typed.CFG as CFG using (Tail; return; seq; goto;
+  case; Blocks; _▷_)
 import ISWIM.Language.Typed.Imp as I
 open I using (var; lit; ref)
 open import ISWIM.Language.X86
@@ -59,27 +60,35 @@ check (ttup n i) a = load (get i) a (reg rax) ∷ []
 {- s, computed into d -}
 select-simple : ∀ {Σ Δ A} → I.Simple Σ Δ A → Loc → List Instr
 select-simple (I.atm a) d = movq (select-atm a) d ∷ []
-select-simple (I.pack c e) d = alloc pair (select-atm c ∷ select-atm e ∷ []) d ∷ []
+select-simple (I.pack c e) d =
+  alloc pair (select-atm c ∷ select-atm e ∷ []) d ∷ []
 select-simple (I.callc f a) d =
-  load fst (select-atm f) (reg rax) ∷ load snd (select-atm f) (reg rdi) ∷ movq (select-atm a) (reg rsi)
+  load fst (select-atm f) (reg rax) ∷ load snd (select-atm f) (reg rdi)
+    ∷ movq (select-atm a) (reg rsi)
   ∷ callq (loc (reg rax)) ∷ movq (loc (reg rax)) d ∷ []
 select-simple (I.tuple as) d = alloc tuple (toList (map select-atm as)) d ∷ []
 select-simple (I.get i a) d = load (get i) (select-atm a) d ∷ []
 select-simple (I.inl a) d = alloc inl (select-atm a ∷ []) d ∷ []
 select-simple (I.inr a) d = alloc inr (select-atm a ∷ []) d ∷ []
 select-simple (I.prim sub a b) d =
-  movq (select-atm a) (reg rax) ∷ subq (select-atm b) (reg rax) ∷ movq (loc (reg rax)) d ∷ []
-select-simple (I.prim eq a b) d = cmpq (select-atm b) (select-atm a) ∷ sete d ∷ []
+  movq (select-atm a) (reg rax) ∷ subq (select-atm b) (reg rax)
+    ∷ movq (loc (reg rax)) d ∷ []
+select-simple (I.prim eq a b) d =
+  cmpq (select-atm b) (select-atm a) ∷ sete d ∷ []
 select-simple (I.inject G a) d = movq (select-atm a) d ∷ []
-select-simple (I.project t a) d = check t (select-atm a) ++ movq (select-atm a) d ∷ []
+select-simple (I.project t a) d =
+  check t (select-atm a) ++ movq (select-atm a) d ∷ []
 
 select-tail : ∀ {Σ Bs Δ} → Tail Σ Bs Δ → Block
 select-tail (return s) = block (select-simple s (reg rax)) retq
 select-tail (seq {Δ'} p s t) =
-  block (select-simple s (var (length Δ')) ++ Block.instrs (select-tail t)) (Block.jump (select-tail t))
+  block (select-simple s (var (length Δ')) ++ Block.instrs (select-tail t))
+    (Block.jump (select-tail t))
 select-tail (goto l) = block [] (jmp (lvl l))
 select-tail (case {Δ'} a p l₁ l₂) =
-  block (testinl (select-atm a) ∷ load payload (select-atm a) (var (length Δ')) ∷ []) (je (lvl l₁) (lvl l₂))
+  block
+    (testinl (select-atm a) ∷ load payload (select-atm a) (var (length Δ')) ∷
+      []) (je (lvl l₁) (lvl l₂))
 
 {- the number of slots a tail uses -}
 depth : ∀ {Σ Bs Δ} → Tail Σ Bs Δ → ℕ
@@ -107,7 +116,8 @@ prologue : List Instr
 prologue = movq (loc (reg rdi)) (var 0) ∷ movq (loc (reg rsi)) (var 1) ∷ []
 
 {- the definitions -}
-select-defs : ∀ {Σ ns} → All (λ n → CFG.Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) ns → List Body
+select-defs : ∀ {Σ ns}
+  → All (λ n → CFG.Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) ns → List Body
 select-defs [] = []
 select-defs (d ∷ ds) = select-body prologue d ∷ select-defs ds
 

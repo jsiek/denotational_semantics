@@ -21,7 +21,8 @@ private
     xs : List X
     a : X
 
-lookup-map : (f : ∀ {x} → P x → Q x) (ps : All P xs) (x : xs ∋ a) → lookup (map f ps) x ≡ f (lookup ps x)
+lookup-map : (f : ∀ {x} → P x → Q x) (ps : All P xs) (x : xs ∋ a)
+  → lookup (map f ps) x ≡ f (lookup ps x)
 lookup-map f (_ ∷ ps) Z = refl
 lookup-map f (_ ∷ ps) (S x) = lookup-map f ps x
 

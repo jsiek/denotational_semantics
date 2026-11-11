@@ -13,7 +13,8 @@ open import Data.List.Relation.Unary.All using (All)
 open import Data.Nat using (ℕ)
 open import ISWIM.Language.Typed.X86
 
-module ISWIM.proof.Adequacy.X86Common {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) where
+module ISWIM.proof.Adequacy.X86Common {Σ : List ℕ}
+  (ds : All (λ m → Body Σ (called m)) Σ) where
 
 open import ISWIM.Language.Typed.Type hiding (_≟_; _∋_)
 open import ISWIM.Semantics.CEK.Typed.X86
@@ -32,9 +33,12 @@ open Runs (step ds) public
 
 {- running code c on the environment e and the argument a -}
 start : ∀ {η} → Val Σ (code η) → Val Σ ⟪ tup η ⟫ → Val Σ Any → Stack Σ → State Σ
-start {η} (code f) e a σ = run (Body.start (ds ! f)) (Body.blocks (ds ! f)) σ η ⟨ rv tt e a , [] , tt , tt ⟩
+start {η} (code f) e a σ =
+  run (Body.start (ds ! f)) (Body.blocks (ds ! f)) σ η
+  ⟨ rv tt e a , [] , tt , tt ⟩
 
-enter-start : ∀ {η} (c : Val Σ (code η)) {e a σ} → enter ds c e a σ ≡ next (start c e a σ)
+enter-start : ∀ {η} (c : Val Σ (code η)) {e a σ}
+  → enter ds c e a σ ≡ next (start c e a σ)
 enter-start (code f) = refl
 
 {- the open closure x has the code and environment that the machine keeps -}

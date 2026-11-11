@@ -24,7 +24,8 @@ module ISWIM.proof.Adequacy.X86 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using () renaming (const to
+  dconst)
 open import ISWIM.proof.Semantics.Graph.Typed.Ops using (ConT; tables)
 open import ISWIM.Language.Typed.Type using (Any)
 open import ISWIM.Language.Typed.X86 using (Program; program)
@@ -39,27 +40,60 @@ open import ISWIM.proof.Adequacy.X86Compiled using (Contains; compiled)
 import ISWIM.proof.Adequacy.X86LogRel as LR
 import ISWIM.proof.Adequacy.X86Soundness as S
 
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (sym; subst)
 
-adequacy : ∀ P {d} → d ∈ ⟦ P ⟧ₜ → Σ[ v ∈ Val (Program.table P) Any ] Terminates (sem P) (obs v) × LR.𝕍 (Program.defs P) d v
+adequacy : ∀ P {d}
+  → d ∈ ⟦ P ⟧ₜ
+  → Σ[ v
+    ∈ Val (Program.table P) Any ] Terminates (sem P) (obs v)
+    × LR.𝕍 (Program.defs P) d v
 adequacy (program ds b) = LR.adequacy ds b
 
-module _ (P : Program) (cT : ConT (tables codeₜ (Program.defs P))) (cl : Contains codeₜ (Program.defs P)) where
+module _ (P : Program) (cT : ConT (tables codeₜ (Program.defs P)))
+  (cl : Contains codeₜ (Program.defs P)) where
 
-  const-iff : ∀ {B} {k : base-rep B} → (dconst k ∈ ⟦ P ⟧ₜ) ⇔ Terminates (sem P) (o-const B k)
-  const-iff = ⟨ (λ k∈ → let ⟨ v , ⟨ t , r ⟩ ⟩ = adequacy P k∈ in subst (Terminates (sem P)) (LR.𝕍-const (Program.defs P) v r) t)
-              , (λ t → let ⟨ v , ⟨ e , v⊆ ⟩ ⟩ = S.soundness (Program.defs P) cT cl (Program.main P) t (λ ()) in
+  const-iff : ∀ {B} {k : base-rep B}
+    → (dconst k ∈ ⟦ P ⟧ₜ) ⇔ Terminates (sem P) (o-const B k)
+  const-iff =
+    ⟨ (λ k∈ →
+      let ⟨ v , ⟨ t , r ⟩ ⟩ =
+           adequacy P k∈ in
+           subst (Terminates (sem P)) (LR.𝕍-const (Program.defs P) v r) t)
+              ,
+                (λ t →
+                  let ⟨ v , ⟨ e , v⊆ ⟩ ⟩ =
+                       S.soundness (Program.defs P) cT cl
+                       (Program.main P) t (λ ()) in
                        v⊆ _ (S.𝒱-const (Program.defs P) cT cl v (sym e))) ⟩
 
   nonempty-iff : nonempty ⟦ P ⟧ₜ ⇔ Converges (Terminates (sem P))
-  nonempty-iff = ⟨ (λ { ⟨ d , d∈ ⟩ → let ⟨ v , ⟨ t , _ ⟩ ⟩ = adequacy P d∈ in ⟨ obs v , ⟨ LR.obs-answer (Program.defs P) v , t ⟩ ⟩ })
-                 , (λ { ⟨ o , ⟨ ans , t ⟩ ⟩ → let ⟨ v , ⟨ _ , v⊆ ⟩ ⟩ = S.soundness (Program.defs P) cT cl (Program.main P) t ans in
-                                         let ⟨ d , d∈ ⟩ = S.𝒱-ne (Program.defs P) cT cl v in ⟨ d , v⊆ d d∈ ⟩ }) ⟩
+  nonempty-iff =
+    ⟨ (λ { ⟨ d , d∈ ⟩ →
+      let ⟨ v , ⟨ t , _ ⟩ ⟩ =
+           adequacy P d∈ in
+             ⟨ obs v , ⟨ LR.obs-answer (Program.defs P) v , t ⟩ ⟩ })
+                 ,
+                   (λ { ⟨ o , ⟨ ans , t ⟩ ⟩ →
+                     let ⟨ v , ⟨ _ , v⊆ ⟩ ⟩ =
+                          S.soundness (Program.defs P) cT cl
+                          (Program.main P) t ans in
+                                         let ⟨ d , d∈ ⟩ =
+                                              S.𝒱-ne (Program.defs P) cT cl v in
+                                                ⟨ d , v⊆ d d∈ ⟩ }) ⟩
 
 {- the programs that the compiler produces -}
-x86-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B} → (dconst k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (sem (compile-x86 M)) (o-const B k)
-x86-const-iff M _ = const-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))
+x86-const-iff : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
+  → (dconst k ∈ ⟦ compile-x86 M ⟧ₜ)
+    ⇔ Terminates (sem (compile-x86 M)) (o-const B k)
+x86-const-iff M _ =
+  const-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))
 
-x86-nonempty-iff : ∀ M → Closed M → nonempty ⟦ compile-x86 M ⟧ₜ ⇔ Converges (Terminates (sem (compile-x86 M)))
-x86-nonempty-iff M _ = nonempty-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))
+x86-nonempty-iff : ∀ M
+  → Closed M
+  → nonempty ⟦ compile-x86 M ⟧ₜ ⇔ Converges (Terminates (sem (compile-x86 M)))
+x86-nonempty-iff M _ =
+  nonempty-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))

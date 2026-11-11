@@ -64,17 +64,22 @@ module ISWIM.Untyped.Compiler.Concretize where
 
   concretize φ (` x) = ref-ast (φ x)
   concretize φ (clos-op n ⦅ ! clear a ,, fvs ⦆) =
-    clos-op n ⦅ ! clear' (bind' (bind' (ast' (conc-body n n a)))) ,, conc-args φ fvs ⦆'
-  concretize φ (app ⦅ L ,, M ,, Nil ⦆) = app ⦅ concretize φ L ,, concretize φ M ,, Nil ⦆'
+    clos-op n ⦅ ! clear' (bind' (bind' (ast' (conc-body n n a))))
+      ,, conc-args φ fvs ⦆'
+  concretize φ (app ⦅ L ,, M ,, Nil ⦆) =
+    app ⦅ concretize φ L ,, concretize φ M ,, Nil ⦆'
   concretize φ (lit B k ⦅ Nil ⦆) = lit B k ⦅ Nil ⦆'
   concretize φ (tuple n ⦅ args ⦆) = tuple n ⦅ conc-args φ args ⦆'
   concretize φ (get i ⦅ M ,, Nil ⦆) = get i ⦅ concretize φ M ,, Nil ⦆'
   concretize φ (inl-op ⦅ M ,, Nil ⦆) = inl-op ⦅ concretize φ M ,, Nil ⦆'
   concretize φ (inr-op ⦅ M ,, Nil ⦆) = inr-op ⦅ concretize φ M ,, Nil ⦆'
   concretize φ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
-    case-op ⦅ concretize φ L ,, ⟩ concretize (ext-ref φ) M ,, ⟩ concretize (ext-ref φ) N ,, Nil ⦆'
-  concretize φ (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ⦅ concretize φ L ,, concretize φ M ,, Nil ⦆'
-  concretize φ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ concretize φ M ,, ⟩ concretize (ext-ref φ) N ,, Nil ⦆'
+    case-op ⦅ concretize φ L ,, ⟩ concretize (ext-ref φ) M ,, ⟩ concretize
+      (ext-ref φ) N ,, Nil ⦆'
+  concretize φ (prim p ⦅ L ,, M ,, Nil ⦆) =
+    prim p ⦅ concretize φ L ,, concretize φ M ,, Nil ⦆'
+  concretize φ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ concretize φ M ,, ⟩
+    concretize (ext-ref φ) N ,, Nil ⦆'
 
   {- conc-body n k a is concretize (fv-ref n) (unbind-n k a) -}
   conc-body n zero (bind (ast N)) = concretize (fv-ref n) N

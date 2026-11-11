@@ -1,7 +1,8 @@
 module ISWIM.Semantics.GraphErr.ISWIM where
 {-
 
- The semantics of ISWIM in the graph model with errors: the graph model's operators (ISWIM/Semantics/Graph/ISWIM.agda) as
+ The semantics of ISWIM in the graph model with errors: the graph model's
+ operators (ISWIM/Semantics/Graph/ISWIM.agda) as
    kernels under the error monad (Framework/GraphModel/ErrorMonad.agda).
    A program that stops with an error denotes a set that holds ω; one
    that diverges, the empty set. Evaluation order is that of the machine

@@ -16,8 +16,10 @@ import Language.Prim as P
 open import FPC.Language.Type hiding (_[_])
 open import FPC.Language.GlobalFun hiding (wk; wks)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
-open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl;
+  o-inr; o-error)
+open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to;
+  step-in; reduction)
 open import FPC.Framework.ReductionAll Obs o-error using (red-∷)
 
 open import Data.Bool using (if_then_else_)
@@ -46,7 +48,8 @@ module _ {Σ : List DSig} where
     trav σ (get i M) = get i (trav σ M)
     trav σ (inl M) = inl (trav σ M)
     trav σ (inr M) = inr (trav σ M)
-    trav σ (case L M N) = case (trav σ L) (trav (exts 𝒦 σ) M) (trav (exts 𝒦 σ) N)
+    trav σ (case L M N) =
+      case (trav σ L) (trav (exts 𝒦 σ) M) (trav (exts 𝒦 σ) N)
     trav σ (prim p L M) = prim p (trav σ L) (trav σ M)
     trav σ (let′ M N) = let′ (trav σ M) (trav (exts 𝒦 σ) N)
     trav σ (fold M) = fold (trav σ M)
@@ -80,11 +83,13 @@ module _ {Σ : List DSig} where
 
   {- the redexes, once the operands are values (the code of a pair is
      split by a second function, at a generic type) -}
-  call-ref : ∀ {C Δ A B} → All (Code Σ) Σ → Tm Σ [] C → C ≡ code Δ A B → Tm Σ [] (tup Δ) → Tm Σ [] A → Red (Tm Σ [] B)
+  call-ref : ∀ {C Δ A B} → All (Code Σ) Σ → Tm Σ [] C → C ≡ code Δ A B
+    → Tm Σ [] (tup Δ) → Tm Σ [] A → Red (Tm Σ [] B)
   call-ref ds (fun-ref f) refl E W = to (sub (W • E • ∅) (lookup ds f))
   call-ref ds _ _ E W = error
 
-  call : ∀ {C A B} → All (Code Σ) Σ → Tm Σ [] C → C ≡ A ⇒ B → Tm Σ [] A → Red (Tm Σ [] B)
+  call : ∀ {C A B} → All (Code Σ) Σ → Tm Σ [] C → C ≡ A ⇒ B → Tm Σ [] A
+    → Red (Tm Σ [] B)
   call ds (pair L E) refl W = call-ref ds L refl E W
   call ds _ _ W = error
 
@@ -92,7 +97,8 @@ module _ {Σ : List DSig} where
   get? i (tuple Vs) refl = to (lookup Vs i)
   get? i _ _ = error
 
-  case? : ∀ {C A B D} → Tm Σ [] C → C ≡ A ⊹ B → Tm Σ (A ∷ []) D → Tm Σ (B ∷ []) D → Red (Tm Σ [] D)
+  case? : ∀ {C A B D} → Tm Σ [] C → C ≡ A ⊹ B → Tm Σ (A ∷ []) D
+    → Tm Σ (B ∷ []) D → Red (Tm Σ [] D)
   case? (inl V) refl M N = to (M [ V ])
   case? (inr V) refl M N = to (N [ V ])
   case? _ _ M N = error
@@ -110,15 +116,21 @@ module _ {Σ : List DSig} where
   reds : All (Code Σ) Σ → ∀ {Δ} → All (Tm Σ []) Δ → Red (All (Tm Σ []) Δ)
   red ds (` ())
   red ds (fun-ref f) = val
-  red ds (pair L M) = step-in (λ L' → pair L' M) (red ds L) (step-in (pair L) (red ds M) val)
-  red ds (callc L M) = step-in (λ L' → callc L' M) (red ds L) (step-in (callc L) (red ds M) (call ds L refl M))
+  red ds (pair L M) =
+    step-in (λ L' → pair L' M) (red ds L) (step-in (pair L) (red ds M) val)
+  red ds (callc L M) =
+    step-in (λ L' → callc L' M) (red ds L)
+    (step-in (callc L) (red ds M) (call ds L refl M))
   red ds (lit B c) = val
   red ds (tuple Ms) = step-in tuple (reds ds Ms) val
   red ds (get i M) = step-in (get i) (red ds M) (get? i M refl)
   red ds (inl M) = step-in inl (red ds M) val
   red ds (inr M) = step-in inr (red ds M) val
-  red ds (case L M N) = step-in (λ L' → case L' M N) (red ds L) (case? L refl M N)
-  red ds (prim p L M) = step-in (λ L' → prim p L' M) (red ds L) (step-in (prim p L) (red ds M) (prim? p L M))
+  red ds (case L M N) =
+    step-in (λ L' → case L' M N) (red ds L) (case? L refl M N)
+  red ds (prim p L M) =
+    step-in (λ L' → prim p L' M) (red ds L)
+    (step-in (prim p L) (red ds M) (prim? p L M))
   red ds (let′ M N) = step-in (λ M' → let′ M' N) (red ds M) (to (N [ M ]))
   red ds (fold M) = step-in fold (red ds M) val
   red ds (unfold M) = step-in unfold (red ds M) (unfold? M refl)

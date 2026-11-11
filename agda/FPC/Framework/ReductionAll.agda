@@ -15,5 +15,6 @@ open import FPC.Framework.AllUtil using (All; _∷_)
 
 open import Data.List using (_∷_)
 
-red-∷ : ∀ {X : Set} {P : X → Set} {A Δ} (M : P A) (Ms : All P Δ) → Red (P A) → Red (All P Δ) → Red (All P (A ∷ Δ))
+red-∷ : ∀ {X : Set} {P : X → Set} {A Δ} (M : P A) (Ms : All P Δ) → Red (P A)
+  → Red (All P Δ) → Red (All P (A ∷ Δ))
 red-∷ M Ms r rs = step-in (_∷ Ms) r (step-in (M ∷_) rs val)

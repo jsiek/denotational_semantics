@@ -2,7 +2,8 @@
 
   Correctness of the whole closure-conversion compiler:
 
-    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2
+          --concretize--> Clos3
           --split--> Clos4 --hoist--> Clos5
 
   For a closed ISWIM program, the compiled Clos5 program produces the same
@@ -24,14 +25,19 @@ open import ISWIM.Untyped.Compiler.Capture using (capture)
 open import ISWIM.Untyped.Compiler.Prune using (prune-program)
 open import ISWIM.Untyped.Compiler.Concretize using (concretize-program)
 open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import ISWIM.proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
+open import ISWIM.proof.Correctness.Graph.SimplifyCorrect using
+  (simplify-correct)
 open import ISWIM.Compiler.Simplify using (simplify)
-open import ISWIM.Untyped.proof.Correctness.Graph.CaptureCorrect using (capture-correct-closed)
-open import ISWIM.Untyped.proof.Correctness.Graph.PruneCorrect using (prune-correct-closed)
-open import ISWIM.Untyped.proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.Graph.CaptureCorrect using
+  (capture-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.Graph.PruneCorrect using
+  (prune-correct-closed)
+open import ISWIM.Untyped.proof.Correctness.Graph.ConcretizeCorrect using
+  (concretize-correct-closed)
 open import ISWIM.Untyped.proof.Correctness.Graph.SplitPreserve
   using (split-correct-const; split-correct-nonempty)
-open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (hoist-correct)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using
+  (hoist-correct)
 
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
@@ -45,22 +51,37 @@ _⇔_ : Set → Set → Set
 A ⇔ B = (A → B) × (B → A)
 
 Same : 𝒫 Value → 𝒫 Value → Set
-Same D D' = (∀ {B} (c : base-rep B) → const c ∈ D ⇔ const c ∈ D') × (nonempty D ⇔ nonempty D')
+Same D D' =
+  (∀ {B} (c : base-rep B) → const c ∈ D ⇔ const c ∈ D')
+  × (nonempty D ⇔ nonempty D')
 
-⇔-trans : ∀ {A B C} → A ⇔ B → B ⇔ C → A ⇔ C
+⇔-trans : ∀ {A B C}
+  → A ⇔ B
+  → B ⇔ C
+  → A ⇔ C
 ⇔-trans ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
-Same-trans : ∀ {D D' D''} → Same D D' → Same D' D'' → Same D D''
-Same-trans ⟨ c₁ , n₁ ⟩ ⟨ c₂ , n₂ ⟩ = ⟨ (λ c → ⇔-trans (c₁ c) (c₂ c)) , ⇔-trans n₁ n₂ ⟩
+Same-trans : ∀ {D D' D''}
+  → Same D D'
+  → Same D' D''
+  → Same D D''
+Same-trans ⟨ c₁ , n₁ ⟩ ⟨ c₂ , n₂ ⟩ =
+  ⟨ (λ c → ⇔-trans (c₁ c) (c₂ c)) , ⇔-trans n₁ n₂ ⟩
 
-≃→Same : ∀ {D D'} → D ≃ D' → Same D D'
+≃→Same : ∀ {D D'}
+  → D ≃ D'
+  → Same D D'
 ≃→Same ⟨ D⊆ , D⊇ ⟩ = ⟨ (λ c → ⟨ D⊆ _ , D⊇ _ ⟩) , ⟨ ne D⊆ , ne D⊇ ⟩ ⟩
-  where ne = λ {A B : 𝒫 Value} (A⊆ : A ⊆ B) (n : nonempty A) → ⟨ proj₁ n , A⊆ _ (proj₂ n) ⟩
+  where ne =
+         λ {A B : 𝒫 Value} (A⊆ : A ⊆ B) (n : nonempty A) →
+         ⟨ proj₁ n , A⊆ _ (proj₂ n) ⟩
 
 compile-same : ∀ (M : AST) → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧ₚ
 compile-same M =
-  Same-trans (≃→Same (≃-trans (simplify-correct M) (≃-trans (capture-correct-closed M₁)
-                     (≃-trans (prune-correct-closed M₂) (concretize-correct-closed M₂')))))
+  Same-trans
+    (≃→Same (≃-trans (simplify-correct M) (≃-trans (capture-correct-closed M₁)
+                     (≃-trans (prune-correct-closed M₂)
+                         (concretize-correct-closed M₂')))))
   (Same-trans ⟨ split-correct-const M₃ , split-correct-nonempty M₃ ⟩
               (≃→Same (hoist-correct (compile₄ M))))
   where
@@ -70,11 +91,15 @@ compile-same M =
   M₃ = concretize-program M₂'
 
 compile-correct-const : ∀ (M : AST) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧ₚ)
-  × (const c ∈ ⟦ compile M ⟧ₚ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile M ⟧ₚ)
+  × (  const c ∈ ⟦ compile M ⟧ₚ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-correct-const M = proj₁ (compile-same M)
 
 compile-correct-nonempty : ∀ (M : AST)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧ₚ)
-  × (nonempty ⟦ compile M ⟧ₚ → nonempty (⟦ M ⟧ ρ₀))
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile M ⟧ₚ)
+  × (  nonempty ⟦ compile M ⟧ₚ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-correct-nonempty M = proj₂ (compile-same M)
