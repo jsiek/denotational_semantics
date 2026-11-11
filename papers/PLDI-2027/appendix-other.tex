@@ -169,10 +169,10 @@ variables that have gone out of scope. For example,
 Appendix~\ref{app:cfg} into
 \[
 \begin{array}{@{}l@{}}
-  \kw{movq}\;5, 0;\;
-  \kw{movq}\;0, \%\kw{rax};\; \kw{subq}\;1, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, 1;\;
-  \kw{movq}\;1, \%\kw{rax};\; \kw{subq}\;1, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, 0;\\
-  \kw{movq}\;0, \%\kw{rax};\; \kw{subq}\;2, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, \%\kw{rax};\; \kw{retq}.
+  \kw{movq}\;\$5, 0;\;
+  \kw{movq}\;0, \%\kw{rax};\; \kw{subq}\;\$1, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, 1;\;
+  \kw{movq}\;1, \%\kw{rax};\; \kw{subq}\;\$1, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, 0;\\
+  \kw{movq}\;0, \%\kw{rax};\; \kw{subq}\;\$2, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, \%\kw{rax};\; \kw{retq}.
 \end{array}
 \]
 The first and fourth instructions push 5 and then 4, and the seventh,

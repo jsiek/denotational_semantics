@@ -353,17 +353,16 @@ bound inside the expression whose value the assignment writes, and these
 variables are out of scope after the assignment. For example, \pass{lift locals}
 translates
 $\kw{let}\;y = (\kw{let}\;z = 5\;\kw{in}\;\kw{let}\;w = z - 1\;\kw{in}\;w - 1)\;\kw{in}\;y - 2$
-into the Imp expression \todo{We should probably disambiguate the syntax for
-  constant integers from frame slot addresses. Maybe use \(\$5\) for constants
-  or \(@0\) for slot addresses. --Darshal}
+into the following Imp expression, in which, as in AT\&T syntax,
+$\$n$ is the integer constant $n$ and a bare number is a slot:
 \[
-  0 \mathrel{:=} (0 \mathrel{:=} 5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;1;\;
-    \kw{prim}_{\kw{sub}}\;1\;1);\; \kw{prim}_{\kw{sub}}\;0\;2
+  0 \mathrel{:=} (0 \mathrel{:=} \$5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;\$1;\;
+    \kw{prim}_{\kw{sub}}\;1\;\$1);\; \kw{prim}_{\kw{sub}}\;0\;\$2
 \]
 and \pass{explicate control} translates that into the tail
 \[
-  0 \mathrel{:=} 5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;1;\;
-  0 \mathrel{:=} \kw{prim}_{\kw{sub}}\;1\;1;\; \kw{return}\;\kw{prim}_{\kw{sub}}\;0\;2.
+  0 \mathrel{:=} \$5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;\$1;\;
+  0 \mathrel{:=} \kw{prim}_{\kw{sub}}\;1\;\$1;\; \kw{return}\;\kw{prim}_{\kw{sub}}\;0\;\$2.
 \]
 The third assignment, with $\Delta'$ empty, pops slots 0 and 1,
 which hold $z$ and $w$, and pushes $y$ as slot 0.
