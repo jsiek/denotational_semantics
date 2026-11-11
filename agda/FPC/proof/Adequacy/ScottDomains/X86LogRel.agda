@@ -1172,7 +1172,8 @@ module _ {Σ : List DSig}
 
  module _ {T : Table Σ} (𝕋T : 𝕋 T) where
 
-  arg-rel : ∀ {η Δ₀} {ψ : St Δ₀} {τ} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ} (a : Arg Σ ψ τ)
+  arg-rel : ∀ {η Δ₀} {ψ : St Δ₀} {τ} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ}
+    (a : Arg Σ ψ τ)
     → RelState 𝔰 m
     → Relᵣ τ (𝒪 T a · 𝔰) (arg a m)
   arg-rel (atom (var x i)) RS = slot-at (fr RS) x i
@@ -1190,7 +1191,8 @@ module _ {Σ : List DSig}
   args-tup [] RS n = ⋆
   args-tup (a ∷ as) RS n = stage (arg-rel a RS) n , args-tup as RS n
 
-  obj-rel : ∀ {η Δ₀} {ψ : St Δ₀} {B} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ} (o : Obj Σ ψ B)
+  obj-rel : ∀ {η Δ₀} {ψ : St Δ₀} {B} {𝔰 : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ}
+    (o : Obj Σ ψ B)
     → RelState 𝔰 m
     → Rel (object T o · 𝔰) (objᵢ o m)
   obj-rel (pair c e) RS = Rel-pair (arg-rel c RS) (arg-rel e RS)
@@ -1263,7 +1265,8 @@ module _ {Σ : List DSig}
     adequate k AB (σ , R [ r ≔ₛ car · σ (idx x) ] , F)
       (rst (fr RS)
           (regs-upd-rel r (regs-wipe-rel (rg RS))
-            (car-rel (read (frame m) x i) (slot-at (fr RS) x i))) (fl RS) (agree i))
+            (car-rel (read (frame m) x i) (slot-at (fr RS) x i)))
+          (fl RS) (agree i))
   adequate (loadsnd {x = opened x} r ∷ k) AB (σ , R , F) RS =
     adequate k AB (σ , R [ r ≔ₛ cdr · σ (idx x) ] , F)
       (rst (fr RS) (regs-upd-rel r (rg RS) (snd-rel (op RS) (fr RS)))

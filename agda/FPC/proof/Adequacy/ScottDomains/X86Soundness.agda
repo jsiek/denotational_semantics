@@ -296,7 +296,8 @@ module _ {Σ : List DSig}
   sound-run ck bs η m (loadfst x i r ∷ k) (σ , R , F) A =
     sound-run ck bs (size v) _ k _
       (agr (fr A)
-        (regs-upd r (regs-wipe (rg A)) (ap (car ·_) (slot-at (fr A) x i) ∙ car-𝒱 v))
+        (regs-upd r (regs-wipe (rg A))
+          (ap (car ·_) (slot-at (fr A) x i) ∙ car-𝒱 v))
         (fl A) (agree i))
    where
     v = read (frame m) x i
@@ -311,7 +312,8 @@ module _ {Σ : List DSig}
       → OpR φ (just (opened x)) η' o
       → FrameAgree σ φ
       → cdr · σ (idx x) ＝ 𝒱 o
-    snd-𝒱 {φ = φ} {x} (agree i) h = ap (cdr ·_) (slot-at h x i) ∙ cdr-𝒱 (read φ x i)
+    snd-𝒱 {φ = φ} {x} (agree i) h =
+      ap (cdr ·_) (slot-at h x i) ∙ cdr-𝒱 (read φ x i)
      where
       cdr-𝒱 : ∀ {A B} (v : Val (A ⇒ B)) → cdr · 𝒱 v ＝ 𝒱 (env-of v)
       cdr-𝒱 (pack c e) = cdr-pair (𝒱 c) (𝒱 e) (𝒱-defined c) (𝒱-defined e)
