@@ -140,7 +140,7 @@ of a closed program $M$ is $k \mapsto \mathit{eval}_k(\emptyset, M)$.
 A machine state $m = \langle R, \sigma, u, b\rangle$ of \instr\ has
 the registers $R$, which map each of $\kw{rax}$, $\kw{rdi}$, and
 $\kw{rsi}$ to a value or unset; the frame $\sigma$, which holds a value
-in each slot assigned so far; the environment $u$ of the open closure,
+in each initialized slot; the environment $u$ of the open closure,
 if any; and the flag $b$, which is a Boolean or unset. We write $m(r)$
 for $R(r)$. $\mathit{arg}(a, m)$ converts an operand $a$ into a
 value, $\mathit{obj}(o, m)$ converts an object $o$ to be allocated
@@ -159,28 +159,14 @@ $d$.
   \mathit{obj}(\kw{inl}(a),\; m) &= \kw{inl}\,(\mathit{arg}(a, m)) \\
   \mathit{obj}(\kw{inr}(a),\; m) &= \kw{inr}\,(\mathit{arg}(a, m)) \\[4pt]
   \mathit{put}(\%r, v,\; \langle R, \sigma, u, b\rangle) &= \langle R[r{:=}v], \sigma, u, b\rangle \\
-  \mathit{put}(x, v,\; \langle R, \sigma, u, b\rangle) &= \langle R, \sigma|_x[x{:=}v], \mathsf{none}, b\rangle
+  \mathit{put}(x, v,\; \langle R, \sigma, u, b\rangle) &= \langle R, \sigma[x{:=}v]|_J, \mathsf{none}, b\rangle
 \end{align*}
-Here $\sigma|_x$ is the frame with the slots from $x$ on popped, which
-keeps the slots before $x$, and $[x{:=}v]$ pushes $v$ as slot $x$. As in the
-semantics of CFG (Appendix~\ref{app:cfg}), the popped slots hold
-variables that have gone out of scope. For example,
-\pass{select instructions} translates the CFG tail of
-Appendix~\ref{app:cfg} into
-\[
-\begin{array}{@{}l@{}}
-  \kw{movq}\;\$5, 0;\;
-  \kw{movq}\;0, \%\kw{rax};\; \kw{subq}\;\$1, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, 1;\;
-  \kw{movq}\;1, \%\kw{rax};\; \kw{subq}\;\$1, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, 0;\\
-  \kw{movq}\;0, \%\kw{rax};\; \kw{subq}\;\$2, \%\kw{rax};\; \kw{movq}\;\%\kw{rax}, \%\kw{rax};\; \kw{retq}.
-\end{array}
-\]
-The first and fourth instructions push 5 and then 4, and the seventh,
-$\kw{movq}\;\%\kw{rax}, 0$, pops both slots and pushes 3, so the frame goes from
-$5, 4$ to $3$. Writing a slot also closes the open closure. The type of an open closure records the slot it
-came from, and a slot write may pop or replace that slot, so the slot rule of
-the typing of destinations (Appendix~\ref{app:instr}) resets the open closure
-to $\cdot$, and $\mathit{put}$ closes it by setting it to $\mathsf{none}$. The
+Here $\sigma[x{:=}v]$ updates slot $x$ in place, and $|_J$ keeps the
+slots $J$ that the rest of the sequence starts with (the slot rule of
+the typing of destinations, Appendix~\ref{app:instr}), which forgets the
+values of variables whose scope has ended. Writing a slot also closes
+the open closure: the slot rule resets the open closure to $\cdot$, and
+$\mathit{put}$ closes it by setting it to $\mathsf{none}$. The
 instructions other than $\kw{callq}$ update the state as $\mathit{instr}$
 specifies.
 \defhead{The effect of an instruction}{\mathit{instr}(i, m) = m'}
@@ -222,9 +208,9 @@ the caller resumes with its own $B$.
     \mathit{run}_k(B, m_v, s) \\
   \mathit{run}_k(B, m, \kw{retq}) &= \mathsf{ret}\; m(\kw{rax}) \\
   \mathit{run}_k(B, \langle R, \sigma, u, b\rangle, \kw{jmp}\;l) &= \mathit{jump}_k(B, l, \sigma) \\
-  \mathit{run}_k(B, \langle R, \sigma, u, b\rangle, \kw{case}\;x\;y\;l_1\;l_2) &= \begin{cases}
-      \mathit{jump}_k(B, l_1, \sigma|_y[y{:=}v]) & \text{if } \sigma(x) = \kw{inl}\,v\\
-      \mathit{jump}_k(B, l_2, \sigma|_y[y{:=}v]) & \text{if } \sigma(x) = \kw{inr}\,v
+  \mathit{run}_k(B, \langle R, \sigma, u, b\rangle, \kw{case}\;x\;y\;z\;l_1\;l_2) &= \begin{cases}
+      \mathit{jump}_k(B, l_1, \sigma[y{:=}v]) & \text{if } \sigma(x) = \kw{inl}\,v\\
+      \mathit{jump}_k(B, l_2, \sigma[z{:=}v]) & \text{if } \sigma(x) = \kw{inr}\,v
     \end{cases} \\[4pt]
   \mathit{jump}_k(B, l, \sigma) &= \mathit{run}_k(B_l, m_\sigma, s_l) \\
   \mathit{call}_0(\kw{code}\,f, u, w) &= \mathsf{timeout} \\
@@ -233,9 +219,9 @@ the caller resumes with its own $B$.
 Here $m_v$ has the frame of $m$, $\kw{rax}$ set to $v$, and nothing else set;
 $m_\sigma$ has the frame
 $\sigma$ and nothing else set; and $m_{u,w}$ has $u$ in $\kw{rdi}$, $w$ in
-$\kw{rsi}$, an empty frame, and nothing else set. The interpreter of a program
+$\kw{rsi}$, a frame with no slot initialized, and nothing else set. The interpreter of a program
 is $k \mapsto \mathit{run}_k(B, m_0, s)$ for the main function body $s$ with
-blocks $B$, where $m_0$ has an empty frame and nothing set.
+blocks $B$, where $m_0$ has no slot initialized and nothing set.
 
 \begin{proposition}[Correctness, clocked interpreters]\label{prop:interp}
 Let $M$ be a closed term of \fpc\ of type $\kw{Int}$. For every integer $n$, the interpreter of \fpc\ on $M$ terminates with $n$ if and only if the interpreter of \instr\ on $\pass{compile}(M)$ does, and one diverges if and only if the other does. More generally, for every closed term $M$, the two interpreters are equivalent.
@@ -338,9 +324,9 @@ In the notation of Appendix~\ref{app:interp}, a state of the machine of \instr, 
   \mathit{run}(\kw{retq}, B, \mathit{retK}(s, B', \sigma') :: \Sigma, m) &\longrightarrow \mathit{run}(s, B', \Sigma, m') \\
  & \quad\text{where $m'$ has the frame $\sigma'$ and only $\kw{rax}$ set, to $m(\kw{rax})$} \\
   \mathit{run}(\kw{jmp}\;l, B, \Sigma, m) &\longrightarrow \mathit{run}(s_l, B_l, \Sigma, m_\sigma) \\
-  \mathit{run}(\kw{case}\;x\;y\;l_1\;l_2, B, \Sigma, m) &\longrightarrow \mathit{run}(s_{l_1}, B_{l_1}, \Sigma, m_{\sigma|_y[y{:=}v]}) \\
+  \mathit{run}(\kw{case}\;x\;y\;z\;l_1\;l_2, B, \Sigma, m) &\longrightarrow \mathit{run}(s_{l_1}, B_{l_1}, \Sigma, m_{\sigma[y{:=}v]}) \\
  & \quad\text{if } \sigma(x) = \kw{inl}\,v \\
- & \text{(and likewise for $\kw{inr}$ and $l_2$)}
+ & \text{(and likewise for $\kw{inr}$, $z$, and $l_2$)}
 \end{align*}
 \defhead{Final observation of the machine of \instr}{\varsigma \longrightarrow \mathsf{stop}(o)}
 \[

@@ -47,7 +47,7 @@
 \text{Base types} & B & ::= & \kw{Nat} \mid \kw{Int} \mid \kw{Bool} \mid \kw{Unit} \mid \kw{Void}\\
 \text{Types} & A, C & ::= & B \mid A \rightarrow C \mid \kw{tup}(A_1, \ldots, A_n)
   \mid A + C \mid \mu X.\, A \mid X \mid \kw{code}(\Delta; A \rightarrow C)\\
- & \Delta & ::= & A_1, \ldots, A_n\\[3pt]
+ & \Delta, \Phi & ::= & A_1, \ldots, A_n\\[3pt]
 \fpc & K, L, M, N & ::= & x \mid \lambda x.\, N \mid L\;M \mid c
   \mid \kw{tuple}\;\vec{M} \mid \kw{get}_i\,M \mid \kw{inl}\;M \mid \kw{inr}\;M
   \mid \kw{case}\;L\;(x.\,M)\;(y.\,N)\\
@@ -68,11 +68,12 @@
   \qquad P ::= (\vec{d};\, M)\\[3pt]
 \text{Imp} & a & ::= & x \mid c \mid f_k
   \qquad \rhs ::= a \mid o\;\vec{a}\\
- & e & ::= & \rhs \mid x \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;x\;e_1\;e_2
-  \qquad P ::= (e_0, \ldots, e_{m-1};\, e)\\[3pt]
+ & e & ::= & \rhs \mid x \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;x\;y\;e_1\;e_2\\
+ & b & ::= & (\Phi;\, e)
+  \qquad P ::= (\vec{b};\, b)\\[3pt]
 \text{CFG} & t & ::= & \kw{return}\;\rhs \mid x \mathrel{:=} \rhs;\; t \mid \kw{goto}\;l
-  \mid \kw{case}\;a\;x\;l_1\;l_2\\
- & b & ::= & (t_0, \ldots, t_{j-1};\, t)
+  \mid \kw{case}\;a\;x\;y\;l_1\;l_2\\
+ & b & ::= & (\Phi;\, t_0, \ldots, t_{j-1};\, t)
   \qquad P ::= (\vec{b};\, b)\\[3pt]
 \instr & a & ::= & x \mid c \mid f_k \mid \%r \mid \kw{fold}\;a \mid \kw{unfold}\;a
   \qquad d ::= \%r \mid x
@@ -81,8 +82,8 @@
  & i & ::= & \kw{movq}\;a, d \mid \kw{subq}\;a, \%r \mid \kw{cmpq}\;a_2, a_1
   \mid \kw{sete}\;d \mid \kw{alloc}\;o, d \mid \kw{load}\;\kw{get}_i\;a, d\\
  & & \mid & \kw{fst}\;x, \%r \mid \kw{snd}\;x, \%r \mid \kw{callq}\;a\\
- & s & ::= & i;\; s \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;y\;l_1\;l_2\\
- & b & ::= & (n;\, s_0, \ldots, s_{j-1};\, s)
+ & s & ::= & i;\; s \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;y\;z\;l_1\;l_2\\
+ & b & ::= & (\Phi;\, s_0, \ldots, s_{j-1};\, s)
   \qquad P ::= (\vec{b};\, b)
 \end{array}
 \]
@@ -198,9 +199,10 @@ The pass \pass{remove complex operands}
 (\pass{RCO}, \S\ref{app:pass-rco}) binds each operand that is not atomic to a variable with
 $\kw{let}$, so the operands of every operation in Mon are atomic.  The
 atomic terms are variables, constants, and function names.  The
-\pass{lift locals} pass (\S\ref{app:pass-lift-locals}) gives each variable a fixed location in the
-function's stack frame, called a \emph{slot}, numbered by how many
-variables are bound before it. The \pass{explicate control} pass (\S\ref{app:pass-explicate}) turns
+\pass{lift locals} pass (\S\ref{app:pass-lift-locals}) gives each variable its own fixed location in the
+function's stack frame, called a \emph{slot}. A function body declares
+its frame $\Phi$, the types of its slots, and the types track which
+slots are initialized, so a program reads a slot only after writing it. The \pass{explicate control} pass (\S\ref{app:pass-explicate}) turns
 the nested $\kw{case}$s of Imp into a control-flow graph. A CFG
 program has a function body for each global definition and for the
 main program. A body consists of numbered blocks and a starting tail,
@@ -212,8 +214,7 @@ translates to \instr, a typed low-level language in the style of TAL
 \citep{Morrisett:1999fk}, with an x86 flavor.  \instr\ has three
 registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$) a stack frame of
 slots, and an abstract heap. Programs have the same structure as in
-CFG, except that a function body declares the number of slots in its
-frame. Instruction operands $a$ are slots, constants, names of
+CFG. Instruction operands $a$ are slots, constants, names of
 definitions, or registers. Instructions write to a destination $d$, a
 register or a slot.
 
