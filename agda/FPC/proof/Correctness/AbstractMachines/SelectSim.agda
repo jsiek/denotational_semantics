@@ -25,7 +25,7 @@ open import Language.Prim using (sub; eq)
 open import FPC.Language.Type
 open import Framework.Membership using (_⊑_; ⊑-∋)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
-open import FPC.Framework.Slots using (read; write; restrict; empty; params)
+open import FPC.Semantics.Slots using (read; write; restrict; empty; params)
 open import FPC.proof.Framework.AllProp using (lookup-map)
 open import FPC.proof.Framework.SlotsProp using (restrict-id)
 import FPC.Language.CFG as C

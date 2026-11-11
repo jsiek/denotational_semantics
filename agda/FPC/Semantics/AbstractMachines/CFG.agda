@@ -27,7 +27,7 @@ module FPC.Semantics.AbstractMachines.CFG where
 open import FPC.Language.Type
 open import FPC.Language.CFG
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
-open import FPC.Framework.Slots using (write; restrict; empty; params)
+open import FPC.Semantics.Slots using (write; restrict; empty; params)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import FPC.Semantics.AbstractMachines.Imp using (Val; code; pack; Frame;
   obs; choose; atom; Res; value; call; run) public

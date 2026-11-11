@@ -4,7 +4,7 @@
   GlobalFunμ machine (FPC/Semantics/AbstractMachines/GlobalFun.agda), as the
   Impᵀ machine (ISWIM/Semantics/CEK/Typed/Imp.agda), in a fixed frame. An
   expression runs in a frame that holds a value for each initialized slot
-  (Frame Σ Δ I, FPC/Framework/Slots.agda), so an atom always has a value
+  (Frame Σ Δ I, FPC/Semantics/Slots.agda), so an atom always has a value
   (atom).
 
   A simple expression takes one step (run): its operands are atoms, so
@@ -24,7 +24,7 @@ module FPC.Semantics.AbstractMachines.Imp where
 open import FPC.Language.Type
 open import FPC.Language.Imp
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
-open import FPC.Framework.Slots using (Slots; read; write; empty; params)
+open import FPC.Semantics.Slots using (Slots; read; write; empty; params)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import FPC.Semantics.AbstractMachines.GlobalFun using (Val; code; pack;
   const; tup; inl; inr; fold; Env; obs; int; elems; choose; unfoldᵥ; δᵀ) public

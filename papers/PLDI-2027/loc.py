@@ -633,6 +633,14 @@ GROUPS = [
      [MU + 'Language/*.agda', MU + 'Compiler/*.agda', MUP + 'Compiler/HoistOlder.agda']),
     ('mu-infra', 'heterogeneous vectors: lookup, collecting, selecting, relating',
      [MU + 'Framework/*.agda', MUP + 'Framework/AllProp.agda']),
+    # the properties of the typed frames (reads after writes, agreement,
+    # restriction), which the machine and interpreter proofs of lift locals,
+    # explicate control and select instructions use; the denotational
+    # columns prove their agreement lemmas in their own proofs
+    ('mu-op+mu-ck+mu-red', 'lemmas shared by the passes', [MUP + 'Framework/SlotsProp.agda']),
+    # the values of the typed frames, which the machines and interpreters of
+    # Impμ, CFGμ and X86μ hold
+    ('mu-op+mu-ck+mu-red', 'semantics of the languages', [MU + 'Semantics/Slots.agda']),
     # simplify's syntactic lemmas are used by its four proofs: counted in the
     # simplify row of each column, as in the main table
     ('mu-den+mu-op+mu-ck+mu-red', 'simplify', [MUP + 'Compiler/SimplifyFacts.agda']),

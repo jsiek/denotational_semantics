@@ -45,7 +45,7 @@ open LL using (lift; lift-body; lift-program; binds; binds-⊒; Inited;
   inited-ext)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to
   All-map)
-open import FPC.Framework.Slots using (read; write; empty; params; _∷_; ∙_)
+open import FPC.Semantics.Slots using (read; write; empty; params; _∷_; ∙_)
 open import FPC.proof.Framework.AllProp using (lookup-map)
 open import FPC.proof.Framework.SlotsProp using (params-arg; params-env)
 open import Semantics.Observation

@@ -40,7 +40,7 @@ open Imp using (simple; assign; case; _∉_; ⊆-refl; ⊆-⊕⊕)
 open import FPC.Language.CFG
 open import FPC.Compiler.Explicate
 open import FPC.Framework.AllUtil using (All; []; _∷_; map)
-open import FPC.Framework.Slots using (write; restrict)
+open import FPC.Semantics.Slots using (write; restrict)
 open import FPC.proof.Framework.SlotsProp using (restrict-id; restrict-fresh)
 open import FPC.proof.Framework.AllProp using (lookup-map)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; Reach)

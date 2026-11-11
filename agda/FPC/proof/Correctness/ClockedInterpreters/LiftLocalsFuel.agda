@@ -22,7 +22,7 @@ open Imp using (Inits; _∈_; _⊕_; Only; fill-∈; only-initial)
 open import Framework.Membership using (_⊑_; here⊑; ⊑-∋; ⊑-trans)
 open import FPC.Compiler.LiftLocals renaming (atom to lift-atom)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
-open import FPC.Framework.Slots using (read; write; empty; params)
+open import FPC.Semantics.Slots using (read; write; empty; params)
 open import FPC.proof.Framework.SlotsProp using (read-write; read-write-other;
   params-arg; params-env)
 open import proof.Semantics.Interp.Clock

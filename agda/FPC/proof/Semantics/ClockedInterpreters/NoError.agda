@@ -17,7 +17,7 @@ open import FPC.Language.X86 using (DSig; sig; called; Program; program; body;
   Body; Blocks; _▷_; Seq; _∷_; retq; jmp; case; movq; subq; cmpq; sete; alloc;
   load; loadfst; loadsnd; callq)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
-open import FPC.Framework.Slots using (Slots; read)
+open import FPC.Semantics.Slots using (Slots; read)
 open import Semantics.Observation using (Obs; o-error; Answer)
 open import Semantics.Interp.Clock
 import FPC.Semantics.ClockedInterpreters.Values as Values
