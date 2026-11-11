@@ -153,8 +153,8 @@ Coq for their domain theory.
 
 \subsection{Analysis}
 
-We identify two tendencies that drive the proof sizes in
-Table~\ref{tab:loc} (RQ3). The size of the denotational proofs tend to
+We identify two tendencies in the proof sizes of
+Table~\ref{tab:loc} (RQ3). The size of a denotational proof tends to
 depend most on whether the pass preserves the meaning of a program
 exactly. When it does, the proof is an induction whose cases are
 congruences and a few laws of the model
@@ -167,7 +167,7 @@ program and the meaning of its translation; only \pass{split closure}
 is the exception. On the operational side, the runs of the source and
 target correspond closely for most passes, including \pass{split
   closure}, but differ more for \pass{simplify} and, to a lesser
-degree, \pass{hoist}. Combining the two factors gives three groups of
+degree, \pass{hoist}. Combining the two tendencies gives three groups of
 passes, which we discuss in turn.
 
 \paragraph{Equal meanings, similar runs: the interpreter proofs tend to be smaller.}
