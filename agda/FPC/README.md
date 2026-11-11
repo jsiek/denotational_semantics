@@ -146,9 +146,9 @@ pipelines.
 | split closure (EnvClos to PairClos) | [`Compiler/Split.agda`](Compiler/Split.agda) | `split-program` (`split`) |
 | hoist (PairClos to GlobalFun) | [`Compiler/Hoist.agda`](Compiler/Hoist.agda) | `hoist` |
 | remove complex operands (GlobalFun to Mon) | [`Compiler/RCO.agda`](Compiler/RCO.agda) | `rco-program` |
-| lift locals (Mon to Imp) | [`Compiler/LiftLocals.agda`](Compiler/LiftLocals.agda) | `lift-program` |
+| lift locals (Mon to Imp) | [`Compiler/LiftLocals.agda`](Compiler/LiftLocals.agda) | `lift-program` (a slot for each bound variable: `binds`; the fixed frame and its initialized slots: [`Language/Frame.agda`](Language/Frame.agda)) |
 | explicate control (Imp to CFG) | [`Compiler/Explicate.agda`](Compiler/Explicate.agda) | `explicate` |
-| select instructions (CFG to Instrμ) | [`Compiler/Select.agda`](Compiler/Select.agda) | `select` (the frame's slots: `depth`) |
+| select instructions (CFG to Instrμ) | [`Compiler/Select.agda`](Compiler/Select.agda) | `select` |
 | the compiler, `compile` | [`Compiler/Pipeline.agda`](Compiler/Pipeline.agda) | `compile` (prefixes: `compile-to-PairClos`, `compile-to-GlobalFun`, `compile-to-Mon`, `compile-to-Imp`, `compile-to-CFG`) |
 
 ### Semantics, in each of the five styles
