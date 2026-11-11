@@ -94,7 +94,14 @@ standard library only) and then greps the checked tree (everything here
 but `old/`, so `ISWIM/Untyped/` too) for `postulate`, `TERMINATING`,
 `NON_TERMINATING`, `NO_TERMINATION_CHECK`, `NO_POSITIVITY_CHECK`,
 `NO_UNIVERSE_CHECK`, `INJECTIVE`, `ETA`, `REWRITE` and `OPTIONS` flags
-other than `--without-K`, failing if it finds any.
+other than `--without-K`, failing if it finds any. It also fails if
+a line of an Agda file of the checked tree is longer than 80 columns,
+counted in Unicode characters (code points), not bytes: every line of
+code and of comments fits in 80 columns.
+
+In the statement of a lemma or theorem, each premise and the
+conclusion start a line of their own with `→`; the binders of terms
+(`∀ {Γ A}`, `(M : Tm Γ A)`) stay on the first line.
 
 ## Layout
 
