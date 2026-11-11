@@ -647,7 +647,8 @@ $E' = E[x{:=}\mathit{self}(x)]$.
 
 The pass carries fuel $\phi$ that limits nested inlining. Every
 equation passes $\phi$ along unchanged except the one for a call,
-which inlines with one less:
+which inlines with one less. We write the fuel as a superscript, as in
+$\pass{simp}^{\phi}_E$, and omit it wherever it does not change.
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \pass{simp}_E(x) & = & E(x)\\

@@ -76,8 +76,7 @@ module _ {Σ : List DSig}
       {ρ : X.RegVals Σ η Γ} {op : X.Opened Σ η O}
         {f : X.Flag Σ F} {φ : Slots Val Δ I} (o : Out I A J)
           {k : ∀ {Γ O F} → Seq Σ Δ R Bs (after o Γ O F)} {K}
-      →
-        (  ∀ {η Γ O F} (ρ : X.RegVals Σ η Γ) (op : X.Opened Σ η O)
+      → (  ∀ {η Γ O F} (ρ : X.RegVals Σ η Γ) (op : X.Opened Σ η O)
           (f : X.Flag Σ F) v
          → K v ≡ X.run xds ck bs η (put (dst o) v ⟨ ρ , φ , op , f ⟩) k)
       → (s : I.Simple Σ Δ I A)

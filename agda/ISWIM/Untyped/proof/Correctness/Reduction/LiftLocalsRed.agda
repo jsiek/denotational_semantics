@@ -363,8 +363,7 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
     → Ops φ Xs as
     → ∀ acc {s}
     → I.step ds₂ s ≡ I.res ds₂ (I.tuple-next acc as) φ κ
-    →
-      (Σ[ vs ∈ List I.Val ] Xs ≈vs vs × S.red-args ds Xs
+    → (Σ[ vs ∈ List I.Val ] Xs ≈vs vs × S.red-args ds Xs
         ≡ val × Plus L₂ s (I.ret (I.tup (reverse acc ++ vs)) φ κ))
         ⊎
           (S.red-args ds Xs ≡ error × Σ[ t

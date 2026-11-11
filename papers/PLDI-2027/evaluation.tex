@@ -75,7 +75,7 @@ program length of \citet{Halstead:1977aa}, does not. The counts include
 the semantics of the languages, the proof of each pass, and the
 composition of the passes. They exclude the code that all five proofs
 use unchanged: the intrinsically typed syntax of the languages and the
-functions that implement the passes (17,931 lexical tokens). We report
+functions that implement the passes (17,929 lexical tokens). We report
 separately the language-independent infrastructure of each style.
 
 \paragraph{AI Use}
@@ -105,7 +105,7 @@ semantics of the languages & 9,602 & \textbf{6,026} & 10,601 & 7,773 & 15,168\\
 lemmas shared by the passes & --- & 3,186 & 2,971 & 2,289 & 2,289\\
 \pass{simplify} & \textbf{7,044} & 9,393 & 11,880 & 11,339 & 14,589\\
 \pass{enclose} & 3,462 & 4,355 & 6,728 & \textbf{3,221} & 11,716\\
-\pass{split closure} & 8,672 & 15,178 & 1,650 & \textbf{773} & 2,534\\
+\pass{split closure} & 8,672 & 15,211 & 1,650 & \textbf{773} & 2,534\\
 \pass{hoist} & \textbf{2,796} & 3,282 & 4,740 & 3,387 & 4,275\\
 \pass{remove complex operands} & 2,580 & 3,608 & 3,244 & \textbf{2,018} & 4,064\\
 \pass{lift locals} & 1,924 & 2,016 & 2,315 & \textbf{1,597} & 7,137\\
@@ -113,8 +113,8 @@ lemmas shared by the passes & --- & 3,186 & 2,971 & 2,289 & 2,289\\
 \pass{select instructions} & 2,153 & 3,428 & 3,067 & \textbf{1,144} & 3,067\\
 composition & 514 & 592 & 351 & 378 & \textbf{320}\\
 \midrule
-total & 40,905 & 54,939 & 50,631 & \textbf{35,860} & 68,243\\
-\emph{total in lines} & \emph{2,964} & \emph{3,859} & \emph{3,246} & \emph{2,351} & \emph{4,623}\\
+total & 40,905 & 54,972 & 50,631 & \textbf{35,860} & 68,243\\
+\emph{total in lines} & \emph{2,964} & \emph{3,859} & \emph{3,246} & \emph{2,350} & \emph{4,623}\\
 \bottomrule
 \end{tabular}
 \caption{Lexical tokens of Agda in the five correctness proofs. The smallest number in each row is in bold.}
@@ -130,7 +130,7 @@ total & 40,905 & 54,939 & 50,631 & \textbf{35,860} & 68,243\\
 our infrastructure & 27,985 & 25,506 & 6,951 & \textbf{6,541} & 20,213\\
 TypeTopology's domain theory & --- & 68,938 & --- & --- & ---\\
 \midrule
-total with Table~\ref{tab:loc} & 68,890 & 149,383 & 57,582 & \textbf{42,401} & 88,456\\
+total with Table~\ref{tab:loc} & 68,890 & 149,416 & 57,582 & \textbf{42,401} & 88,456\\
 \bottomrule
 \end{tabular}
 \caption{Lexical tokens of Agda in the infrastructure that each proof relies on,
@@ -147,13 +147,13 @@ model's place. The proof of \pass{split closure} alone is 8,672, more than a fif
 total, against 773 to 2,534 in the operational styles. Without
 \pass{split closure}, the graph model would be the smallest, at 32,233
 against 35,087 for the interpreters. The second denotational proof,
-with Scott domains, is 54,939, between the abstract machines and
+with Scott domains, is 54,972, between the abstract machines and
 reduction semantics: 1.3 times the graph model, and larger in every
 row but the semantics of the languages. Counting the infrastructure
 (Table~\ref{tab:infra}) changes the order. The interpreters remain the
 smallest at 42,401, followed by the machines at 57,582, the graph
 model at 68,890, reduction semantics at 88,456, and Scott domains at
-149,383. For comparison, \citet{Benton:2010aa} report 4,400 lines of
+149,416. For comparison, \citet{Benton:2010aa} report 4,400 lines of
 Coq for their domain theory, against 6,327 lines for
 TypeTopology's.
 
@@ -226,7 +226,7 @@ code it replaces.
 \pass{Split closure} changes the representation of closures, so its correctness
 is not an equation, yet the run of the target follows the run of the
 source closely. Its denotational proofs take 8,672 lexical tokens in the
-graph model and 15,178 with Scott domains, against 773 to 2,534 in the
+graph model and 15,211 with Scott domains, against 773 to 2,534 in the
 operational styles. For the graph model, most of the difference
 has three sources. First, the denotational proof needs two
 directions, while a simulation proof gets the backward direction for
@@ -250,13 +250,13 @@ next.
 
 The two denotational proofs have the same structure, yet the
 Scott-domain proof is 1.3 times the graph model, larger in every row
-but the semantics: 1.05 to 1.8 times for the equational passes, and 15,178
+but the semantics: 1.05 to 1.8 times for the equational passes, and 15,211
 lexical tokens against 8,672 for \pass{split closure}. Three properties of Scott
 domains explain much of the difference. First, Scott values are
 infinite, so the relation for \pass{split closure} is built by stages
 (Section~\ref{sec:scott-delay}), and showing that each stage is a
 proposition, downward closed, admissible, and preserved by the maps
-between stages takes 3,785 of the 15,178 lexical tokens of its proof. Second,
+between stages takes 3,785 of the 15,211 lexical tokens of its proof. Second,
 relating calls across stages takes 5,890, the largest
 share. Third, the universal domain is a sum of tagged values. The
 primitives and tagged values take 1,387 lexical tokens, and the shared

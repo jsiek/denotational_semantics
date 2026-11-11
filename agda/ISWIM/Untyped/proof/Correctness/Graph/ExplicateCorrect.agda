@@ -334,8 +334,7 @@ cover (suc k) F g d ne
 ... | ⟨ i , ∈ ⟩ | ⟨ j , ne′ ⟩ =
   ⟨ ub d i j , (λ { zero → ⟨ _ , proj₁ (g zero) (ub₁ d i j) _ ∈ ⟩
                                               ; (suc l)
-                                                  →
-                                                    ⟨ _
+                                                  → ⟨ _
                                                       , proj₁ (g (suc l))
                                                         (ub₂ d i j) _
                                                           (proj₂ (ne′ l)) ⟩ }) ⟩

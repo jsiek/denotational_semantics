@@ -70,8 +70,7 @@ module _ {Σ : List ℕ} (ds : All (λ n → C.Body Σ (Any ∷ ⟪ tup n ⟫ �
       {ρ : X.RegVals Σ η Γ} {op : X.Opened Σ η O}
         {f : X.Flag Σ F} {φ : Env Δ} (o : Out n Δ A Δ'')
           {k : ∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)} {K}
-      →
-        (  ∀ {η Γ O F} (ρ : X.RegVals Σ η Γ) (op : X.Opened Σ η O)
+      → (  ∀ {η Γ O F} (ρ : X.RegVals Σ η Γ) (op : X.Opened Σ η O)
           (f : X.Flag Σ F) v
          → K v ≡ X.run xds ck bs η (put (dst o) v ⟨ ρ , φ , op , f ⟩) k)
       → (s : I.Simple Σ Δ A)
