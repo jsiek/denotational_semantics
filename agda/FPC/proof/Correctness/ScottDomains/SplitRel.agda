@@ -318,10 +318,11 @@ R-εs δ (succ k) n s w h = R-ε δ (k + n) (εs k n s) w (R-εs δ k n s w h)
 
 {- The relations between values: every approximation of a is related to w ---------}
 
-{- (A record, not the function type of its field: from R δ n (π∞ n · a) w
-   Agda cannot recover a and w, because R computes and π∞ n is not
-   injective, but a record type determines its parameters, so the lemmas
-   below take the related values implicitly.) -}
+{- Rel is a record rather than the function type of its field. Agda
+   cannot recover a and w from the type R δ n (π∞ n · a) w, because R
+   computes and π∞ n is not injective. A record type, in contrast,
+   determines its parameters, so Agda can infer a and w, and the lemmas
+   below take the related values as implicit arguments. -}
 
 record Rel (δ : Dir) (a w : ⟨ 𝔻 ⟩) : 𝓤₁ ̇ where
   constructor rel
