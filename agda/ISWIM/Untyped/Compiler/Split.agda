@@ -15,10 +15,12 @@ module ISWIM.Untyped.Compiler.Split where
               
 
   split : (M : Source.AST) → Target.AST
-  del-map-args : ∀ {n} → Source.Args (replicate n ■) → Target.Args (replicate n ■)
+  del-map-args : ∀ {n} → Source.Args (replicate n ■)
+    → Target.Args (replicate n ■)
   split (` x) = ABT.` x
   split (clos-op n ⦅ ! (clear (bind (bind (ast N)))) ,, FVs ⦆) = 
-    pair-op ABT.⦅ (fun-op ABT.⦅ ! (clear' (bind' (bind' (ast' (split N))))) ,, Nil ⦆) 
+    pair-op ABT.⦅
+      (fun-op ABT.⦅ ! (clear' (bind' (bind' (ast' (split N))))) ,, Nil ⦆)
                ,, (tuple n ABT.⦅ del-map-args FVs ⦆) ,, Nil ⦆
   {- the closure M is computed once and bound by a let, so that both its
      code (fst) and its environment (snd) come from the same value -}
@@ -32,9 +34,11 @@ module ISWIM.Untyped.Compiler.Split where
   split (get n ⦅ M ,, Nil ⦆) = get n ABT.⦅ split M ,, Nil ⦆
   split (inl-op ⦅ M ,, Nil ⦆) = inl-op ABT.⦅ split M ,, Nil ⦆
   split (inr-op ⦅ M ,, Nil ⦆) = inr-op ABT.⦅ split M ,, Nil ⦆
-  split (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = case-op ABT.⦅ split L ,, ⟩ split M ,, ⟩ split N ,, Nil ⦆
+  split (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = case-op ABT.⦅ split L ,, ⟩ split
+      M ,, ⟩ split N ,, Nil ⦆
   split (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ABT.⦅ split L ,, split M ,, Nil ⦆
-  split (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ABT.⦅ split M ,, ⟩ split N ,, Nil ⦆
+  split (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ABT.⦅ split M ,, ⟩
+    split N ,, Nil ⦆
 
   del-map-args {zero} Nil = Nil
   del-map-args {suc n} (M ,, args) = split M ,, del-map-args args

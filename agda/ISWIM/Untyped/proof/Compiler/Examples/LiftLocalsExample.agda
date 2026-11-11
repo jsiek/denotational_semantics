@@ -8,7 +8,8 @@
 open import Framework.Primitives using (Int)
 open import Language.Prim using (eq)
 open import ISWIM.Untyped.Language.Clos5
-open import ISWIM.Untyped.Language.Imp as Imp using (body; assign; case; simple; atm; var; lit)
+open import ISWIM.Untyped.Language.Imp as Imp using (body; assign; case; simple;
+  atm; var; lit)
 open import ISWIM.Untyped.Compiler.RCO using (rco; rco-mon)
 open import ISWIM.Untyped.Compiler.LiftLocals using (lift-body)
 open import ISWIM.Untyped.proof.Compiler.Examples.RCOExample using (one; test)

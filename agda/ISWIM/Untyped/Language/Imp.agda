@@ -52,7 +52,8 @@ data Simple : Set where
 
 data Exp : Set where
   simple : Simple → Exp
-  case : Atm → ℕ → Exp → Exp → Exp        {- case a: x := the payload; a branch -}
+  {- case a: x := the payload; a branch -}
+  case : Atm → ℕ → Exp → Exp → Exp
   assign : ℕ → Exp → Exp → Exp            {- x := e₁; e₂ -}
 
 {- a function body or main: the number of slots of its frame -}

@@ -24,7 +24,8 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 
 𝕆-Clos4 : DOpSig (𝒫 Value) sig
 𝕆-Clos4 fun-op ⟨ F , _ ⟩ = Λ ⟨ (λ X → Λ ⟨ (λ Y → F X Y) , ptt ⟩) , ptt ⟩
-𝕆-Clos4 app ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ = ⋆ ⟨ ⋆ ⟨ L , ⟨ M , ptt ⟩ ⟩ , ⟨ N , ptt ⟩ ⟩
+𝕆-Clos4 app ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ =
+  ⋆ ⟨ ⋆ ⟨ L , ⟨ M , ptt ⟩ ⟩ , ⟨ N , ptt ⟩ ⟩
 𝕆-Clos4 (lit B k) = ℬ B k
 𝕆-Clos4 pair-op = pair
 𝕆-Clos4 fst-op = car

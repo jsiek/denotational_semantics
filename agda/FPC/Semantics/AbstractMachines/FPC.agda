@@ -5,8 +5,8 @@
   so the machine has no case for a value of the wrong kind or an unbound
   variable, and it never stops with an error. Call by value, left to
   right, as the ISWIMᵀ machine (ISWIM/Semantics/CEK/Typed/ISWIM.agda). The
-  values are those of FPC/Semantics/AbstractMachines/Values.agda: a closure (clo) is
-  the code of a function packed with the tuple of its environment. A
+  values are those of FPC/Semantics/AbstractMachines/Values.agda: a closure
+  (clo) is the code of a function packed with the tuple of its environment. A
   value of a recursive type is a fold of a value of its unfolding;
   unfold takes it apart, and cannot fail.
 
@@ -27,7 +27,8 @@ open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import Data.Integer using (ℤ)
 open import Data.List using ([]; _∷_)
 
-open import FPC.Semantics.AbstractMachines.Values (λ Δ A B → Tm (A ∷ Δ) B) public
+open import FPC.Semantics.AbstractMachines.Values (λ Δ A B → Tm (A ∷ Δ) B)
+  public
 
 {- a closure: the code N with its environment ρ -}
 pattern clo N ρ = pack (code N) (tup ρ)
@@ -37,11 +38,13 @@ data Cont : Type → Set where
   appL : ∀ {Γ A B} → Tm Γ A → Env Γ → Cont B → Cont (A ⇒ B)
   appR : ∀ {A B} → Val (A ⇒ B) → Cont B → Cont A
   {- the values so far (newest first) and the components still to evaluate -}
-  tupK : ∀ {Γ Δ' A Δ} → All Val Δ' → All (Tm Γ) Δ → Env Γ → Cont (tup (Δ' <>< (A ∷ Δ))) → Cont A
+  tupK : ∀ {Γ Δ' A Δ} → All Val Δ' → All (Tm Γ) Δ → Env Γ
+    → Cont (tup (Δ' <>< (A ∷ Δ))) → Cont A
   getK : ∀ {Δ A} → Δ ∋ A → Cont A → Cont (tup Δ)
   inlK : ∀ {A B} → Cont (A ⊹ B) → Cont A
   inrK : ∀ {A B} → Cont (A ⊹ B) → Cont B
-  caseK : ∀ {Γ A B C} → Tm (A ∷ Γ) C → Tm (B ∷ Γ) C → Env Γ → Cont C → Cont (A ⊹ B)
+  caseK : ∀ {Γ A B C} → Tm (A ∷ Γ) C → Tm (B ∷ Γ) C → Env Γ → Cont C
+    → Cont (A ⊹ B)
   primL : ∀ {Γ} p → Tm Γ (base Int) → Env Γ → Cont (out-ty p) → Cont (base Int)
   primR : ∀ p → ℤ → Cont (out-ty p) → Cont (base Int)
   letK : ∀ {Γ A B} → Tm (A ∷ Γ) B → Env Γ → Cont B → Cont A
@@ -53,7 +56,8 @@ data State : Set where
   ret : ∀ {A} → Val A → Cont A → State
 
 {- evaluate the rest of a tuple's components, or build it -}
-tuple-next : ∀ {Γ Δ' Δ} → All Val Δ' → All (Tm Γ) Δ → Env Γ → Cont (tup (Δ' <>< Δ)) → State
+tuple-next : ∀ {Γ Δ' Δ} → All Val Δ' → All (Tm Γ) Δ → Env Γ
+  → Cont (tup (Δ' <>< Δ)) → State
 tuple-next vs [] ρ κ = ret (tup (vs <><ᵃ [])) κ
 tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 

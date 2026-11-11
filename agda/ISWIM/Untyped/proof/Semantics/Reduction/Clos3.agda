@@ -1,7 +1,8 @@
 {-
 
-  The values of the Clos2 reduction semantics (ISWIM.Untyped.Semantics.Reduction.Clos3.agda):
-  they reduce to val, and substitution keeps them values.
+  The values of the Clos2 reduction semantics
+  (ISWIM.Untyped.Semantics.Reduction.Clos3.agda): they reduce to val, and
+  substitution keeps them values.
 
 -}
 
@@ -28,8 +29,12 @@ data Value : AST → Set where
 Values : ∀ {n} → Args (replicate n ■) → Set
 Values = Each Value
 
-value-red : ∀ {V} → Value V → red V ≡ val
-values-red : ∀ {n} {as : Args (replicate n ■)} → Values as → red-args as ≡ val
+value-red : ∀ {V}
+  → Value V
+  → red V ≡ val
+values-red : ∀ {n} {as : Args (replicate n ■)}
+  → Values as
+  → red-args as ≡ val
 value-red (clos vs) rewrite values-red vs = refl
 value-red lit = refl
 value-red (tuple vs) rewrite values-red vs = refl
@@ -38,8 +43,12 @@ value-red (inr v) rewrite value-red v = refl
 values-red [] = refl
 values-red (v ∷ vs) rewrite value-red v | values-red vs = refl
 
-value-sub : ∀ σ {V} → Value V → Value (sub σ V)
-values-sub : ∀ σ {n} {as : Args (replicate n ■)} → Values as → Values (sub-args σ as)
+value-sub : ∀ σ {V}
+  → Value V
+  → Value (sub σ V)
+values-sub : ∀ σ {n} {as : Args (replicate n ■)}
+  → Values as
+  → Values (sub-args σ as)
 value-sub σ (clos vs) = clos (values-sub σ vs)
 value-sub σ lit = lit
 value-sub σ (tuple vs) = tuple (values-sub σ vs)

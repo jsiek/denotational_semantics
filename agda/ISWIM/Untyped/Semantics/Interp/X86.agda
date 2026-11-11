@@ -19,9 +19,9 @@
   result and %rdi, %rsi and the flag unset. main runs in a frame of
   locals zeros, with %rax 0 and the rest unset.
 
-  As in CFGᵀ (ISWIM/Semantics/Interp/Typed/CFG.agda), only calls tick the clock (see the design
-  note in Clock.agda), and a jump to l walks the list of blocks it may
-  jump to (newest first) and runs block l with the blocks older than
+  As in CFGᵀ (ISWIM/Semantics/Interp/Typed/CFG.agda), only calls tick the clock
+  (see the design note in Clock.agda), and a jump to l walks the list of blocks
+  it may jump to (newest first) and runs block l with the blocks older than
   it, so the interpreter is structurally recursive on the clock, the
   list of blocks, and the instructions of a block.
 
@@ -34,8 +34,9 @@ open import Language.Prim using (sub; eq; Out; int; bool)
 open import Semantics.Observation using (δ?)
 open import Framework.ListUtil using (_‼_)
 open import Semantics.Interp.Clock
-open import ISWIM.Untyped.Semantics.Interp.Values
-  using (Val; code; pair; const; tup; inl; inr; obs; out; prim?; project; first; second; Frame; zero-val; _[_]≔_)
+open import ISWIM.Untyped.Semantics.Interp.Values using (Val; code; pair; const;
+  tup; inl; inr; obs; out; prim?; project; first; second; Frame; zero-val;
+  _[_]≔_)
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.List using (List; []; _∷_; reverse; replicate; length)
@@ -68,7 +69,8 @@ arg s (imm B k) = ret (const B k)
 arg s (label k) = ret (code k)
 
 {- the values of the operands, onto vs in reverse, then k -}
-args : ∀ {A : Set} → State → List Val → List Arg → (List Val → Result A) → Result A
+args : ∀ {A : Set} → State → List Val → List Arg
+  → (List Val → Result A) → Result A
 args s vs [] k = k vs
 args s vs (a ∷ as) k = do v ← arg s a; args s (v ∷ vs) as k
 
@@ -112,12 +114,16 @@ load? payload _ = error
 {- an instruction other than callq, then k -}
 step : ∀ {A : Set} → State → Instr → (State → Result A) → Result A
 step s (movq a d) k = do v ← arg s a; write s d v k
-step s (subq a d) k = do w ← arg s a; v ← read s d; u ← from-maybe (prim? sub v w); write s d u k
+step s (subq a d) k =
+  do w ← arg s a; v ← read s d; u ← from-maybe (prim? sub v w); write s d u k
 step s (cmpq a₂ a₁) k =
-  do v ← arg s a₁; w ← arg s a₂; o ← from-maybe (δ? eq (obs v) (obs w)); b ← bool? o; set-flag s b k
-step s (sete d) k = do b ← from-maybe (flag (proj₂ s)); write s d (out (bool b)) k
+  do v ← arg s a₁; w ← arg s a₂; o ← from-maybe (δ? eq (obs v) (obs w))
+      ; b ← bool? o; set-flag s b k
+step s (sete d) k =
+  do b ← from-maybe (flag (proj₂ s)); write s d (out (bool b)) k
 step s (testinl a) k = do v ← arg s a; b ← tag? v; set-flag s b k
-step s (alloc sh as d) k = args s [] as λ vs → do v ← alloc? sh (reverse vs); write s d v k
+step s (alloc sh as d) k =
+  args s [] as λ vs → do v ← alloc? sh (reverse vs); write s d v k
 step s (load f a d) k = do v ← arg s a; w ← load? f v; write s d w k
 step s (callq a) k = error                   {- run handles callq -}
 
@@ -136,12 +142,14 @@ module _ (ds : List Body) where
   call : ℕ → Maybe Body → Val → Val → Result Val
 
   run ck bs (φ , ρ) (callq a ∷ is) j =
-    do f ← arg (φ , ρ) a; e ← from-maybe (%rdi ρ); w ← from-maybe (%rsi ρ); v ← call ck (code? f) e w
+    do f ← arg (φ , ρ) a; e ← from-maybe (%rdi ρ); w ← from-maybe (%rsi ρ)
+        ; v ← call ck (code? f) e w
        run ck bs (φ , regs (just v) nothing nothing nothing) is j
   run ck bs s (i ∷ is) j = step s i λ s' → run ck bs s' is j
   run ck bs (φ , ρ) [] retq = from-maybe (%rax ρ)
   run ck bs s [] (jmp l) = jump ck bs s l
-  run ck bs s [] (je l₁ l₂) = do b ← from-maybe (flag (proj₂ s)); jump ck bs s (if b then l₁ else l₂)
+  run ck bs s [] (je l₁ l₂) =
+    do b ← from-maybe (flag (proj₂ s)); jump ck bs s (if b then l₁ else l₂)
 
   jump ck [] s l = error
   jump ck (block is j ∷ bs) s l with l ≟ length bs
@@ -151,9 +159,15 @@ module _ (ds : List Body) where
   call ck nothing e w = error
   call zero (just b) e w = timeout
   call (suc ck) (just (body n bs (block is j))) e w =
-    run ck bs (zero-val ∷ zero-val ∷ replicate (n ∸ 2) zero-val , regs nothing (just e) (just w) nothing) is j
+    run ck bs
+      (zero-val ∷ zero-val ∷ replicate (n ∸ 2) zero-val
+        , regs nothing (just e) (just w) nothing) is j
 
 {- a program starts with main, in a frame of zeros -}
 sem : Program → Semantics
 sem (program ds (body n bs (block is j))) =
-  semantics Val obs (λ ck → run ds ck bs (replicate n zero-val , regs (just zero-val) nothing nothing nothing) is j)
+  semantics Val obs
+    (λ ck →
+      run ds ck bs
+      (replicate n zero-val , regs (just zero-val) nothing nothing nothing) is
+      j)

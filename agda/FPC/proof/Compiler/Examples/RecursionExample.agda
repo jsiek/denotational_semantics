@@ -35,7 +35,8 @@ run n L = go n (Machine.start L)
 three-fpc : run 200 (FPCₘ.sem three) ≡ just (o-const Int (+ 0))
 three-fpc = refl
 
-three-clos4 : run 400 (PairClosμₘ.sem (compile-to-PairClos three)) ≡ just (o-const Int (+ 0))
+three-clos4 : run 400 (PairClosμₘ.sem (compile-to-PairClos three))
+  ≡ just (o-const Int (+ 0))
 three-clos4 = refl
 
 {- Ω runs on, on both machines -}

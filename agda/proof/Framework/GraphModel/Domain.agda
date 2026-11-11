@@ -20,13 +20,17 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
 ρ₀ : Env Value
 ρ₀ = λ _ → ⌈ ω ⌉
 
-≈⇒Every : ∀ A B → A ≈ B → Every _~_ (mem A) (mem B)
+≈⇒Every : ∀ A B
+  → A ≈ B
+  → Every _~_ (mem A) (mem B)
 ≈⇒Every (x ∷ A) B ⟨ x~B , A~B ⟩ a b (here refl) b∈B = 
   lookup x~B b∈B
 ≈⇒Every (x ∷ A) B ⟨ x~B , A~B ⟩ a b (there a∈A) b∈B = 
   ≈⇒Every A B A~B a b a∈A b∈B
 
-Every⇒≈ : ∀ A B → Every _~_ (mem A) (mem B) → A ≈ B
+Every⇒≈ : ∀ A B
+  → Every _~_ (mem A) (mem B)
+  → A ≈ B
 Every⇒≈ [] B A~B = tt
 Every⇒≈ (x ∷ A) B A~B = 
   ⟨ tabulate (λ {b} b∈B → A~B x b (here refl) b∈B) 
@@ -53,20 +57,31 @@ Con D = Every _~_ D D
 Con-env : (ℕ → 𝒫 Value) → Set
 Con-env ρ = ∀ x → Con (ρ x)
 
-Con-• : ∀ {D ρ} → Con D → Con-env ρ → Con-env (D • ρ)
+Con-• : ∀ {D ρ}
+  → Con D
+  → Con-env ρ
+  → Con-env (D • ρ)
 Con-• c cρ zero = c
 Con-• c cρ (suc x) = cρ x
 
 Con-⌈⌉ : ∀ v → Con ⌈ v ⌉
 Con-⌈⌉ v _ _ refl refl = ~-refl v
 
-≈⇒Con : ∀ {V} → V ≈ V → Con (mem V)
+≈⇒Con : ∀ {V}
+  → V ≈ V
+  → Con (mem V)
 ≈⇒Con {V} = ≈⇒Every V V
 
-Con-⊆ : ∀ {D E} → Con D → E ⊆ D → Con E
+Con-⊆ : ∀ {D E}
+  → Con D
+  → E ⊆ D
+  → Con E
 Con-⊆ c E⊆ = Every-⊆ c E⊆ E⊆
 
-Con⇒≈ : ∀ {D} V → Con D → mem V ⊆ D → V ≈ V
+Con⇒≈ : ∀ {D} V
+  → Con D
+  → mem V ⊆ D
+  → V ≈ V
 Con⇒≈ V c V⊆ = Every⇒≈ V V (Con-⊆ c V⊆)
 
 ≈-single : ∀ {v} → (v ∷ []) ≈ (v ∷ [])

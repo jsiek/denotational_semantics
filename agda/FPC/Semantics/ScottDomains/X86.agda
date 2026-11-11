@@ -4,10 +4,10 @@
   the graph model (FPC/Semantics/GraphModel/X86.agda). What runs next (a
   continuation, Kont) is a continuous map of the machine state: the
   frame, the registers and the flag (𝕊). The frame is the environment,
-  as in CFGμ: slot x is position idx x, and writing slot k forgets the
-  slots after it (drop). A label means its block, under the meanings of
-  the older blocks; a block starts with its frame, the registers unset
-  and no flag.
+  as in CFGμ: slot x is position idx x, and writing slot k pops the
+  slots from k on and pushes the new value (drop). A label means its
+  block, under the meanings of the older blocks; a block starts with
+  its frame, the registers unset and no flag.
 
   * A slot write binds its value as CFGμ's seq does: app (Λ F) D, F X
     running the rest with X in the slot. A register write is a
@@ -45,9 +45,10 @@ module FPC.Semantics.ScottDomains.X86
 
 open import Framework.Scott.Base pt fe
 open import Framework.Scott.Domain pt fe pe using (𝔻)
-open import Framework.Scott.Ops pt fe pe using (Env; ext; proj; car; cdr; seq; Λ)
-  renaming (app to appᵈ; pair to pairᵈ; inl to inlᵈ; inr to inrᵈ)
-open import Framework.Scott.Semantics pt fe pe hiding (litᶜ; op₁; op₂; Dens; nil; cons; tupleᶜ; casesᶜ; _∷ᶠ_)
+open import Framework.Scott.Ops pt fe pe using (Env; ext; proj; car; cdr; seq;
+  Λ) renaming (app to appᵈ; pair to pairᵈ; inl to inlᵈ; inr to inrᵈ)
+open import Framework.Scott.Semantics pt fe pe hiding (litᶜ; op₁; op₂; Dens;
+  nil; cons; tupleᶜ; casesᶜ; _∷ᶠ_)
 open import Semantics.Scott.Prim pt fe pe using (primD)
 open import FPC.Semantics.ScottDomains.Ops pt fe pe
 open import FPC.Semantics.ScottDomains.Imp pt fe pe using (𝒜)
@@ -110,7 +111,9 @@ updᶜ r = f r , to-Pow-continuous Reg 𝔻 (RegsD ×₁ 𝔻) (f r) (c r)
 {- the state with register r set to D, and with the flag set to D -}
 setR : Reg → Den 𝕊 → DCPO[ 𝕊 , 𝕊 ]
 setR r D = pair₁ 𝕊 Env (RegsD ×₁ 𝔻) frameᶜ
-             (pair₁ 𝕊 RegsD 𝔻 (∘₁ 𝕊 (RegsD ×₁ 𝔻) RegsD (pair₁ 𝕊 RegsD 𝔻 regsᶜ D) (updᶜ r)) flagᶜ)
+             (pair₁ 𝕊 RegsD 𝔻
+                 (∘₁ 𝕊 (RegsD ×₁ 𝔻) RegsD (pair₁ 𝕊 RegsD 𝔻 regsᶜ D) (updᶜ r))
+                 flagᶜ)
 
 setF : Den 𝕊 → DCPO[ 𝕊 , 𝕊 ]
 setF D = pair₁ 𝕊 Env (RegsD ×₁ 𝔻) frameᶜ (pair₁ 𝕊 RegsD 𝔻 regsᶜ D)
@@ -167,7 +170,9 @@ module _ {Σ : List DSig} (T : Table Σ) where
   next : ∀ {Δ' Δ : Ctx} → Δ' ⊑ Δ → DCPO[ 𝕊 ×₁ 𝔻 , 𝕊 ]
   next p = pair₁ (𝕊 ×₁ 𝔻) Env (RegsD ×₁ 𝔻)
              (∘₁ (𝕊 ×₁ 𝔻) (Env ×₁ 𝔻) Env
-                (pair₁ (𝕊 ×₁ 𝔻) Env 𝔻 (∘₁ (𝕊 ×₁ 𝔻) Env Env (∘₁ (𝕊 ×₁ 𝔻) 𝕊 Env (fst₁ 𝕊 𝔻) frameᶜ) (drop p))
+                (pair₁ (𝕊 ×₁ 𝔻) Env 𝔻
+                    (∘₁ (𝕊 ×₁ 𝔻) Env Env
+                      (∘₁ (𝕊 ×₁ 𝔻) 𝕊 Env (fst₁ 𝕊 𝔻) frameᶜ) (drop p))
                    (snd₁ 𝕊 𝔻))
                 ext)
              (∘₁ (𝕊 ×₁ 𝔻) 𝕊 (RegsD ×₁ 𝔻) (fst₁ 𝕊 𝔻) (snd₁ Env (RegsD ×₁ 𝔻)))
@@ -175,25 +180,34 @@ module _ {Σ : List DSig} (T : Table Σ) where
   {- d := D, then κ -}
   put : ∀ {n ψ τ ψ'} → Dst n ψ τ ψ' → Den 𝕊 → Kont → Kont
   put (reg r) D κ = ∘₁ 𝕊 𝕊 𝔻 (setR r D) κ
-  put (slot p _) D κ = op₂ appᵈ (∘₁ 𝕊 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝕊 𝔻 𝔻 (∘₁ (𝕊 ×₁ 𝔻) 𝕊 𝔻 (next p) κ)) Λ) D
+  put (slot p _) D κ =
+    op₂ appᵈ (∘₁ 𝕊 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝕊 𝔻 𝔻 (∘₁ (𝕊 ×₁ 𝔻) 𝕊 𝔻 (next p) κ)) Λ) D
 
   ⟦_⟧ⁱ : ∀ {n ψ ψ'} → Instr Σ n ψ ψ' → Kont → Kont
   ⟦ movq a d ⟧ⁱ κ = put d (𝒪 a) κ
-  ⟦ subq a r _ ⟧ⁱ κ = ∘₁ 𝕊 𝕊 𝔻 (setR r (op₂ (primD sub) (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 r)) (𝒪 a))) κ
+  ⟦ subq a r _ ⟧ⁱ κ =
+    ∘₁ 𝕊 𝕊 𝔻
+    (setR r (op₂ (primD sub) (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 r)) (𝒪 a))) κ
   ⟦ cmpq a₂ a₁ ⟧ⁱ κ = ∘₁ 𝕊 𝕊 𝔻 (setF (op₂ (primD eq) (𝒪 a₁) (𝒪 a₂))) κ
   ⟦ sete d ⟧ⁱ κ = put d flagᶜ κ
   ⟦ alloc o d ⟧ⁱ κ = put d (object o) κ
   ⟦ load i a d ⟧ⁱ κ = put d (op₁ (proj (pos i)) (𝒪 a)) κ
-  ⟦ loadfst x r ⟧ⁱ κ = ∘₁ 𝕊 𝕊 𝔻 (setR r (op₁ car (∘₁ 𝕊 Env 𝔻 frameᶜ (at _ 𝔻 (idx x))))) κ
-  ⟦ loadsnd {x = opened x} r ⟧ⁱ κ = ∘₁ 𝕊 𝕊 𝔻 (setR r (op₁ cdr (∘₁ 𝕊 Env 𝔻 frameᶜ (at _ 𝔻 (idx x))))) κ
+  ⟦ loadfst x r ⟧ⁱ κ =
+    ∘₁ 𝕊 𝕊 𝔻 (setR r (op₁ car (∘₁ 𝕊 Env 𝔻 frameᶜ (at _ 𝔻 (idx x))))) κ
+  ⟦ loadsnd {x = opened x} r ⟧ⁱ κ =
+    ∘₁ 𝕊 𝕊 𝔻 (setR r (op₁ cdr (∘₁ 𝕊 Env 𝔻 frameᶜ (at _ 𝔻 (idx x))))) κ
   ⟦ callq a _ _ ⟧ⁱ κ = op₂ seq (callᶜ a) (∘₁ 𝕊 𝕊 𝔻 (afterᶜ (callᶜ a)) κ)
    where
     {- the result of the call -}
     callᶜ : ∀ {ψ A B} → Arg Σ ψ (codeα A B) → Den 𝕊
-    callᶜ a = op₂ appᵈ (op₂ appᵈ (𝒪 a) (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 rdi))) (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 rsi))
+    callᶜ a =
+      op₂ appᵈ (op₂ appᵈ (𝒪 a) (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 rdi)))
+      (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 rsi))
     {- the state after a call that returns C -}
     afterᶜ : Den 𝕊 → DCPO[ 𝕊 , 𝕊 ]
-    afterᶜ C = pair₁ 𝕊 Env (RegsD ×₁ 𝔻) frameᶜ (pair₁ 𝕊 RegsD 𝔻 (∘₁ 𝕊 𝔻 RegsD C called-regsᶜ) (litᶜ init))
+    afterᶜ C =
+      pair₁ 𝕊 Env (RegsD ×₁ 𝔻) frameᶜ
+      (pair₁ 𝕊 RegsD 𝔻 (∘₁ 𝕊 𝔻 RegsD C called-regsᶜ) (litᶜ init))
 
   ⟦_⟧ˢ : ∀ {n R' Bs ψ} → Seq Σ n R' Bs ψ → Meanings Bs → Kont
   ⟦ i ∷ k ⟧ˢ B = ⟦ i ⟧ⁱ (⟦ k ⟧ˢ B)
@@ -221,10 +235,12 @@ module _ {Σ : List DSig} (T : Table Σ) where
    empty frame -}
 codeₜ : ∀ {Σ} → Table Σ → ∀ {s} → Body Σ (DSig.cod s) (called s) → ⟨ 𝔻 ⟩
 codeₜ T b = code₂ (∘₁ (𝔻 ×₁ 𝔻) 𝕊 𝔻
-                     (pair₁ (𝔻 ×₁ 𝔻) Env (RegsD ×₁ 𝔻) (const₁ (𝔻 ×₁ 𝔻) Env (λ _ → init))
+                     (pair₁ (𝔻 ×₁ 𝔻) Env (RegsD ×₁ 𝔻)
+                         (const₁ (𝔻 ×₁ 𝔻) Env (λ _ → init))
                         (pair₁ (𝔻 ×₁ 𝔻) RegsD 𝔻 argsᶜ (const₁ (𝔻 ×₁ 𝔻) 𝔻 init)))
                      (run T b))
 
 {- the meaning of a whole program: the value of main -}
 ⟦_⟧ₜ : ∀ {A} → Program A → ⟨ 𝔻 ⟩
-⟦ program ds b ⟧ₜ = run (tables codeₜ ds) b · ((λ _ → init) , ((λ _ → init) , init))
+⟦ program ds b ⟧ₜ =
+  run (tables codeₜ ds) b · ((λ _ → init) , ((λ _ → init) , init))

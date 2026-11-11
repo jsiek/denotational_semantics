@@ -20,7 +20,8 @@ open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import ISWIM.Untyped.Language.Clos5
 open import Semantics.Observation
-open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction; ret?; red-cons)
+open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to;
+  step-in; reduction; ret?; red-cons)
 open import Framework.Syntax.Subst Op sig using (_[_]; sub; ids)
 open import Framework.ListUtil using (proj; args→list)
 
@@ -91,18 +92,24 @@ red ds (lit B k ⦅ Nil ⦆) = val
 red ds (pair-op ⦅ L ,, M ,, Nil ⦆) =
   step-in (λ L' → pair-op ⦅ L' ,, M ,, Nil ⦆) (red ds L)
     (step-in (λ M' → pair-op ⦅ L ,, M' ,, Nil ⦆) (red ds M) val)
-red ds (fst-op ⦅ M ,, Nil ⦆) = step-in (λ M' → fst-op ⦅ M' ,, Nil ⦆) (red ds M) (fst? M)
-red ds (snd-op ⦅ M ,, Nil ⦆) = step-in (λ M' → snd-op ⦅ M' ,, Nil ⦆) (red ds M) (snd? M)
+red ds (fst-op ⦅ M ,, Nil ⦆) =
+  step-in (λ M' → fst-op ⦅ M' ,, Nil ⦆) (red ds M) (fst? M)
+red ds (snd-op ⦅ M ,, Nil ⦆) =
+  step-in (λ M' → snd-op ⦅ M' ,, Nil ⦆) (red ds M) (snd? M)
 red ds (tuple n ⦅ as ⦆) = step-in (λ as' → tuple n ⦅ as' ⦆) (red-args ds as) val
-red ds (get i ⦅ M ,, Nil ⦆) = step-in (λ M' → get i ⦅ M' ,, Nil ⦆) (red ds M) (get? i M)
-red ds (inl-op ⦅ M ,, Nil ⦆) = step-in (λ M' → inl-op ⦅ M' ,, Nil ⦆) (red ds M) val
-red ds (inr-op ⦅ M ,, Nil ⦆) = step-in (λ M' → inr-op ⦅ M' ,, Nil ⦆) (red ds M) val
+red ds (get i ⦅ M ,, Nil ⦆) =
+  step-in (λ M' → get i ⦅ M' ,, Nil ⦆) (red ds M) (get? i M)
+red ds (inl-op ⦅ M ,, Nil ⦆) =
+  step-in (λ M' → inl-op ⦅ M' ,, Nil ⦆) (red ds M) val
+red ds (inr-op ⦅ M ,, Nil ⦆) =
+  step-in (λ M' → inr-op ⦅ M' ,, Nil ⦆) (red ds M) val
 red ds (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
   step-in (λ L' → case-op ⦅ L' ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (red ds L) (case? L M N)
 red ds (prim p ⦅ L ,, M ,, Nil ⦆) =
   step-in (λ L' → prim p ⦅ L' ,, M ,, Nil ⦆) (red ds L)
     (step-in (λ M' → prim p ⦅ L ,, M' ,, Nil ⦆) (red ds M) (prim? p L M))
-red ds (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = step-in (λ M' → let-op ⦅ M' ,, ⟩ N ,, Nil ⦆) (red ds M) (to (N [ M ]))
+red ds (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) =
+    step-in (λ M' → let-op ⦅ M' ,, ⟩ N ,, Nil ⦆) (red ds M) (to (N [ M ]))
 
 red-args ds {zero} Nil = val
 red-args ds {suc n} (M ,, as) = red-cons M as (red ds M) (red-args ds as)

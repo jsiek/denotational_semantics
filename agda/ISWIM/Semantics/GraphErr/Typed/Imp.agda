@@ -2,8 +2,8 @@
 
   The semantics of Impᵀ (ISWIM/Language/Typed/Imp.agda) in the graph model
   with errors, continuation-passing, as that of Imp
-  (ISWIM/Untyped/Semantics/GraphErr/ImpK.agda). The frame is the environment: slot x
-  is position idx x, as variable x is in Clos5ᵀ, so the frame needs no
+  (ISWIM/Untyped/Semantics/GraphErr/ImpK.agda). The frame is the environment:
+  slot x is position idx x, as variable x is in Clos5ᵀ, so the frame needs no
   checks. A simple expression means what it means as an expression of
   Monᵀ, that is, in Clos5ᵀ (𝒮). x := e₁; e₂ runs e₁ with the
   continuation that binds its value to the next slot (letᵗ, the
@@ -16,7 +16,8 @@ module ISWIM.Semantics.GraphErr.Typed.Imp where
 
 open import Framework.GraphModel.ErrorPrelude
 open import ISWIM.Semantics.GraphErr.Typed.Ops
-open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (Table; ⟦_⟧[_]; tbl) public
+open import ISWIM.Semantics.GraphErr.Typed.Clos5 using (Table; ⟦_⟧[_]; tbl)
+  public
 open import ISWIM.Language.Typed.Type hiding (_≟_)
 import ISWIM.Language.Typed.Mon as M
 open import ISWIM.Language.Typed.Imp
@@ -54,7 +55,8 @@ Kont = 𝒫 Value → 𝒫 Value
 ⟦_⟧ᴷ : ∀ {Σ Δ A} → Exp Σ Δ A → Table → Env Value → Kont → 𝒫 Value
 ⟦ simple s ⟧ᴷ T ρ κ = κ (𝒮 s T ρ)
 ⟦ assign e₁ e₂ ⟧ᴷ T ρ κ = ⟦ e₁ ⟧ᴷ T ρ λ D → letᵗ D λ X → ⟦ e₂ ⟧ᴷ T (X • ρ) κ
-⟦ case a e₁ e₂ ⟧ᴷ T ρ κ = caseᵗ (𝒜 a T ρ) (λ X → ⟦ e₁ ⟧ᴷ T (X • ρ) κ) (λ X → ⟦ e₂ ⟧ᴷ T (X • ρ) κ)
+⟦ case a e₁ e₂ ⟧ᴷ T ρ κ =
+  caseᵗ (𝒜 a T ρ) (λ X → ⟦ e₁ ⟧ᴷ T (X • ρ) κ) (λ X → ⟦ e₂ ⟧ᴷ T (X • ρ) κ)
 
 {- the code of a definition: its body on the environment X and argument Y -}
 codeᵢ : ∀ {Σ} → Table → ∀ {n} → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any → 𝒫 Value

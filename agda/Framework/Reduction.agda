@@ -43,12 +43,16 @@ ret? nothing = error
 
 {- the operands of a tuple, left to right: M, and then the rest as, given
    their reductions. Each language defines its reduction of operands
-   red-args, with red, by red-args (M ,, as) = red-cons M as (red M) (red-args as)
-   (a generic red-args, given red, would hide red's recursive calls from
+   red-args, with red, by red-args (M ,, as) = red-cons M as (red M) (red-args
+   as) (a generic red-args, given red, would hide red's recursive calls from
    the termination checker) -}
-red-cons : ∀ {Op : Set} {sig : Op → List Sig} {n} M (as : Args Op sig (replicate n ■))
-  → Red (ABT Op sig) → Red (Args Op sig (replicate n ■)) → Red (Args Op sig (replicate (suc n) ■))
-red-cons M as r rs = step-in (λ M' → cons (ast M') as) r (step-in (λ as' → cons (ast M) as') rs val)
+red-cons : ∀ {Op : Set} {sig : Op → List Sig} {n} M
+  (as : Args Op sig (replicate n ■))
+  → Red (ABT Op sig) → Red (Args Op sig (replicate n ■))
+    → Red (Args Op sig (replicate (suc n) ■))
+red-cons M as r rs =
+  step-in (λ M' → cons (ast M') as) r
+  (step-in (λ as' → cons (ast M) as') rs val)
 
 toNext : ∀ {A : Set} → Obs → Red A → Next A
 toNext o val = stop o

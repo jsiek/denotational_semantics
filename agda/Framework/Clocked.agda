@@ -40,7 +40,7 @@ from-maybe : Maybe A → Result A
 from-maybe (just v) = ret v
 from-maybe nothing = error
 
-{- The end theorem -------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
 {- a program, run with a clock -}
 record Semantics : Set₁ where

@@ -42,7 +42,9 @@ open import ISWIM.Compiler.Select using (select)
 open import Data.List using ([])
 
 compile₄ : AST → Clos4ᵀ.Tm [] Any
-compile₄ M = split-program (concretize-program (prune-program (capture (cast-closed (simplify M)))))
+compile₄ M =
+  split-program
+  (concretize-program (prune-program (capture (cast-closed (simplify M)))))
 
 compile : AST → Clos5ᵀ.Program
 compile M = hoist (compile₄ M)

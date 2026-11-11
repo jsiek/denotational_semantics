@@ -22,7 +22,9 @@ open import Framework.Syntax.Rename Op sig using (ext)
 Ren : ∀ {A : Set} → (Var → Var) → List A → List A → Set
 Ren r ρ₁ ρ₂ = ∀ x → ρ₂ ‼ r x ≡ ρ₁ ‼ x
 
-ren-ext : ∀ {A : Set} {r} {ρ₁ ρ₂ : List A} v → Ren r ρ₁ ρ₂ → Ren (ext r) (v ∷ ρ₁) (v ∷ ρ₂)
+ren-ext : ∀ {A : Set} {r} {ρ₁ ρ₂ : List A} v
+  → Ren r ρ₁ ρ₂
+  → Ren (ext r) (v ∷ ρ₁) (v ∷ ρ₂)
 ren-ext v rn zero = refl
 ren-ext v rn (suc x) = rn x
 
@@ -31,11 +33,19 @@ module Rel {A B : Set} (_≈_ : A → B → Set) where
   data EnvRel (r : Var → Var) (ρ₁ : List A) (ρ₂ : List B) : Set where
     env : (∀ x → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ r x)) → EnvRel r ρ₁ ρ₂
 
-  look : ∀ {r ρ₁ ρ₂} → EnvRel r ρ₁ ρ₂ → ∀ x → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ r x)
+  look : ∀ {r ρ₁ ρ₂}
+    → EnvRel r ρ₁ ρ₂
+    → ∀ x
+    → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ r x)
   look (env l) = l
 
-  env-ext : ∀ {r ρ₁ ρ₂ v w} → v ≈ w → EnvRel r ρ₁ ρ₂ → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
+  env-ext : ∀ {r ρ₁ ρ₂ v w}
+    → v ≈ w
+    → EnvRel r ρ₁ ρ₂
+    → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
   env-ext r (env l) = env λ { zero → M.just r ; (suc x) → l x }
 
-  env-skip : ∀ {r ρ₁ ρ₂ w} → EnvRel r ρ₁ ρ₂ → EnvRel (λ x → suc (r x)) ρ₁ (w ∷ ρ₂)
+  env-skip : ∀ {r ρ₁ ρ₂ w}
+    → EnvRel r ρ₁ ρ₂
+    → EnvRel (λ x → suc (r x)) ρ₁ (w ∷ ρ₂)
   env-skip (env l) = env l

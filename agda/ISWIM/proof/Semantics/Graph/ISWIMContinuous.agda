@@ -8,4 +8,5 @@
 
 module ISWIM.proof.Semantics.Graph.ISWIMContinuous where
 
-open import ISWIM.proof.Semantics.Graph.ISWIM using (ISWIM-Continuous; body-continuous) public
+open import ISWIM.proof.Semantics.Graph.ISWIM using (ISWIM-Continuous;
+  body-continuous) public

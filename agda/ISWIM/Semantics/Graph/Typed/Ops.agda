@@ -14,7 +14,8 @@
   * A table gives each definition of a program (Σ ∋ n) its meaning. The
     definitions are given meaning newest first, each with the table of
     the older ones (tables, by the level of a reference, as in
-    ISWIM/Untyped/Semantics/Graph/Clos5Iswim.agda); a reference to another means ∅.
+    ISWIM/Untyped/Semantics/Graph/Clos5Iswim.agda); a reference to another means
+    ∅.
 
 -}
 
@@ -59,7 +60,8 @@ Table Σ = ∀ {n} → Σ ∋ n → 𝒫 Value
 
 {- the table of the definitions ds (newest first), given the meaning of
    a definition with the table of the older ones -}
-tables : ∀ {Σ} {D : ℕ → Set} → (Table Σ → ∀ {n} → D n → 𝒫 Value) → ∀ {ns} → All D ns → Table Σ
+tables : ∀ {Σ} {D : ℕ → Set} → (Table Σ → ∀ {n} → D n → 𝒫 Value) → ∀ {ns}
+  → All D ns → Table Σ
 tables cd [] f = ∅
 tables cd {_ ∷ ns} (d ∷ ds) f with lvl f ≟ length ns
 ... | yes _ = cd (tables cd ds) d

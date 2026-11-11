@@ -1,14 +1,15 @@
 {-
 
   A machine for CFGμ (FPC/Language/CFG.agda), with the values, frames
-  and simple expressions of the Impμ machine (FPC/Semantics/AbstractMachines/Imp.agda),
-  as the CFGᵀ machine (ISWIM/Semantics/CEK/Typed/CFG.agda). A state runs a
-  tail in a frame, with the blocks it may jump to:
+  and simple expressions of the Impμ machine
+  (FPC/Semantics/AbstractMachines/Imp.agda), as the CFGᵀ machine
+  (ISWIM/Semantics/CEK/Typed/CFG.agda). A state runs a tail in a frame, with the
+  blocks it may jump to:
     exec t φ bs κ
   One step runs a statement:
   * return s: the value of s goes to the continuation (cont);
   * seq p s t: slot k := the value of s (k the length of Δ', p : Δ' ⊑ Δ,
-    forgetting the newer slots), then t;
+    popping the newer slots), then t;
   * goto l: block l, with the blocks older than it (block);
   * case a p l₁ l₂: slot k := the payload of the injection a, then
     block l₁ or l₂.
@@ -24,21 +25,23 @@ module FPC.Semantics.AbstractMachines.CFG where
 open import FPC.Language.Type
 open import Framework.Membership using (_⊑_)
 open import FPC.Language.CFG
-open import Framework.Lookup using (forget)
+open import Framework.Lookup using (pop)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import FPC.Semantics.AbstractMachines.Imp
-  using (Val; code; pack; Frame; obs; choose; atom; Res; value; call; run) public
+open import FPC.Semantics.AbstractMachines.Imp using (Val; code; pack; Frame;
+  obs; choose; atom; Res; value; call; run) public
 
 open import Data.List using (List; []; _∷_)
 
 data Cont (Σ : List DSig) : Type → Set where
   halt : ∀ {A} → Cont Σ A
-  seqK : ∀ {R Bs Δ Δ' A} → Δ' ⊑ Δ → Frame Σ Δ → Tail Σ R Bs (A ∷ Δ') → Blocks Σ R Bs → Cont Σ R → Cont Σ A
+  seqK : ∀ {R Bs Δ Δ' A} → Δ' ⊑ Δ → Frame Σ Δ → Tail Σ R Bs (A ∷ Δ')
+    → Blocks Σ R Bs → Cont Σ R → Cont Σ A
   retK : ∀ {A} → Cont Σ A → Cont Σ A
 
 data State (Σ : List DSig) : Set where
-  exec : ∀ {R Bs Δ} → Tail Σ R Bs Δ → Frame Σ Δ → Blocks Σ R Bs → Cont Σ R → State Σ
+  exec : ∀ {R Bs Δ} → Tail Σ R Bs Δ → Frame Σ Δ → Blocks Σ R Bs
+    → Cont Σ R → State Σ
 
 {- the machine for a program with the definitions ds -}
 module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (Args s)) Σ) where
@@ -49,11 +52,13 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (Args s)) Σ)
 
   {- call a closure with the argument w -}
   enter : ∀ {A B} → Val Σ (A ⇒ B) → Val Σ A → Cont Σ B → Next (State Σ)
-  enter (pack (code f) e) w κ = next (exec (Body.start (lookup ds f)) (w ∷ e ∷ []) (Body.blocks (lookup ds f)) κ)
+  enter (pack (code f) e) w κ =
+    next
+    (exec (Body.start (lookup ds f)) (w ∷ e ∷ []) (Body.blocks (lookup ds f)) κ)
 
   cont : ∀ {A} → Val Σ A → Cont Σ A → Next (State Σ)
   cont v halt = stop (obs v)
-  cont v (seqK p φ t bs κ) = next (exec t (v ∷ forget p φ) bs κ)
+  cont v (seqK p φ t bs κ) = next (exec t (v ∷ pop p φ) bs κ)
   cont v (retK κ) = cont v κ
 
   {- the result of return s -}
@@ -62,9 +67,10 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (Args s)) Σ)
   retn κ (call f w) = enter f w (retK κ)
 
   {- the result of seq p s t -}
-  assign : ∀ {R Bs Δ Δ' A} → Δ' ⊑ Δ → Frame Σ Δ → Tail Σ R Bs (A ∷ Δ') → Blocks Σ R Bs → Cont Σ R → Res A
+  assign : ∀ {R Bs Δ Δ' A} → Δ' ⊑ Δ → Frame Σ Δ → Tail Σ R Bs (A ∷ Δ')
+    → Blocks Σ R Bs → Cont Σ R → Res A
     → Next (State Σ)
-  assign p φ t bs κ (value v) = next (exec t (v ∷ forget p φ) bs κ)
+  assign p φ t bs κ (value v) = next (exec t (v ∷ pop p φ) bs κ)
   assign p φ t bs κ (call f w) = enter f w (seqK p φ t bs κ)
 
   step : State Σ → Next (State Σ)
@@ -72,7 +78,9 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (Args s)) Σ)
   step (exec (seq p s t) φ bs κ) = assign p φ t bs κ (run s φ)
   step (exec (goto l) φ bs κ) = next (go (block bs l) φ κ)
   step (exec (case a p l₁ l₂) φ bs κ) =
-    next (choose (atom φ a) (λ v → go (block bs l₁) (v ∷ forget p φ) κ) (λ v → go (block bs l₂) (v ∷ forget p φ) κ))
+    next
+      (choose (atom φ a) (λ v → go (block bs l₁) (v ∷ pop p φ) κ)
+        (λ v → go (block bs l₂) (v ∷ pop p φ) κ))
 
 {- a program starts with the start of main, in the empty frame -}
 sem : ∀ {A} → Program A → Machine

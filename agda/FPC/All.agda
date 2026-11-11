@@ -19,8 +19,8 @@
   theorem of FPC/proof/; they and the definitions they use (modules
   outside FPC/proof/) are FPC's audit surface.
 
-  * graph model: FPC/Theorems/CorrectWrtGraphModel.agda (Theorem 4.1 and Lemma 4.6),
-    proved in FPC/proof/Correctness/GraphModel/, with split by the
+  * graph model: FPC/Theorems/CorrectWrtGraphModel.agda (Theorem 4.1 and Lemma
+    4.6), proved in FPC/proof/Correctness/GraphModel/, with split by the
     approximant logical relation (SplitRel.agda);
   * abstract machines + simulation: FPC/Theorems/CorrectWrtAbstractMachines.agda
     (Proposition F.2), FPC/proof/Correctness/AbstractMachines/;
@@ -34,20 +34,22 @@
     FPC/proof/Correctness/ScottDomains/; it needs TypeTopology, so it is
     checked from agda/AllScott.agda (make check-scott), not from here,
     as is the Scott-domain half of Proposition 5.1
-    (FPC/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda, FPC/proof/Adequacy/ScottDomains/);
+    (FPC/Theorems/ScottDomainsAdequateWrtClockedInterpreters.agda,
+    FPC/proof/Adequacy/ScottDomains/);
   * adequacy of the graph model for the clocked interpreters of FPC
-    and X86μ: FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda (Proposition 5.1),
-    FPC/proof/Adequacy/; the same against the
-    abstract machines instead: FPC/Theorems/GraphModelAdequateWrtAbstractMachines.agda,
-    FPC/proof/Adequacy/AbstractMachines/; and another, against FPC's
-    reduction semantics: FPC/Theorems/GraphModelAdequateWrtReductionSemantics.agda,
+    and X86μ: FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda
+    (Proposition 5.1), FPC/proof/Adequacy/; the same against the
+    abstract machines instead:
+    FPC/Theorems/GraphModelAdequateWrtAbstractMachines.agda,
+    FPC/proof/Adequacy/AbstractMachines/; and another, against FPC's reduction
+    semantics: FPC/Theorems/GraphModelAdequateWrtReductionSemantics.agda,
     FPC/proof/Adequacy/ReductionSemantics/;
-  * the two Agda checks of the paper's §4.2 ("Design alternatives: which sides to relate"):
-    a finite source side cannot satisfy the function clause of split's
-    relation (FPC/proof/Correctness/GraphModel/SplitDesignFiniteSource.agda),
-    and split's relation on target sets of bounded depth is the
-    relation on their finite sublists
-    (FPC/proof/Correctness/GraphModel/SplitDesignBoundedSets.agda).
+  * the two Agda checks of the paper's §4.2 ("Design alternatives: which sides
+    to relate"): a finite source side cannot satisfy the function clause of
+    split's relation
+    (FPC/proof/Correctness/GraphModel/SplitDesignFiniteSource.agda), and split's
+    relation on target sets of bounded depth is the relation on their finite
+    sublists (FPC/proof/Correctness/GraphModel/SplitDesignBoundedSets.agda).
 
   The experiment of mixing semantics is not part of the paper; it is
   checked from FPC/Experiments.agda.

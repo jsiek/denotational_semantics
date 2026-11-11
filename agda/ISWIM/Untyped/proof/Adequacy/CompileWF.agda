@@ -18,8 +18,10 @@ import ISWIM.Untyped.Language.Clos5 as C5
 import ISWIM.Untyped.proof.Adequacy.Clos5WF as F
 open import ISWIM.Untyped.proof.Compiler.CaptureScope using (Closed)
 open import ISWIM.Untyped.Compiler.Hoist
-open import ISWIM.Untyped.proof.Compiler.PipelineScope using (Scoped; compile-scoped)
-open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (RB; glob-shape)
+open import ISWIM.Untyped.proof.Compiler.PipelineScope using (Scoped;
+  compile-scoped)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (RB;
+  glob-shape)
 open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile₄)
 
 open import Data.List using (List; []; _∷_; length)
@@ -32,9 +34,15 @@ DefsRB : List C5.AST → Set
 DefsRB [] = ⊤
 DefsRB (N ∷ Ns) = RB (length Ns) N × DefsRB Ns
 
-glob-rb : ∀ M ds → DefsRB ds → DefsRB (proj₂ (glob M ds))
-glob-rb-arg : ∀ {b} (a : Arg b) ds → DefsRB ds → DefsRB (proj₂ (glob-arg a ds))
-glob-rb-args : ∀ {bs} (args : Args bs) ds → DefsRB ds → DefsRB (proj₂ (glob-args args ds))
+glob-rb : ∀ M ds
+  → DefsRB ds
+  → DefsRB (proj₂ (glob M ds))
+glob-rb-arg : ∀ {b} (a : Arg b) ds
+  → DefsRB ds
+  → DefsRB (proj₂ (glob-arg a ds))
+glob-rb-args : ∀ {bs} (args : Args bs) ds
+  → DefsRB ds
+  → DefsRB (proj₂ (glob-args args ds))
 
 glob-rb (` x) ds d = d
 glob-rb (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds d =
@@ -57,15 +65,21 @@ glob-rb-arg (bind a) ds d = glob-rb-arg a ds d
 glob-rb-arg (clear a) ds d = glob-rb-arg a ds d
 
 glob-rb-args nil ds d = d
-glob-rb-args (cons a args) ds d = glob-rb-args args (proj₂ (glob-arg a ds)) (glob-rb-arg a ds d)
+glob-rb-args (cons a args) ds d =
+  glob-rb-args args (proj₂ (glob-arg a ds)) (glob-rb-arg a ds d)
 
-defs-wf : ∀ ds → DefsRB ds → All (F.WS 2) ds → F.DefsWF ds
+defs-wf : ∀ ds
+  → DefsRB ds
+  → All (F.WS 2) ds
+  → F.DefsWF ds
 defs-wf [] _ _ = tt
 defs-wf (N ∷ Ns) (r , rs) (w ∷ ws) = (r , w) , defs-wf Ns rs ws
 
-{- The compiler ----------------------------------------------------------------------}
+{- The compiler ---------------------------------------------------------------}
 
-compile-wf : ∀ M → Closed M → F.WF (compile M)
+compile-wf : ∀ M
+  → Closed M
+  → F.WF (compile M)
 compile-wf M c =
   defs-wf _ (glob-rb M₄ [] tt) (proj₁ S) , proj₂ (glob-shape M₄ []) , proj₂ S
   where

@@ -35,8 +35,10 @@ fold : ((op : Op) → Tuple (sig op) (Result V) → V)
    → V → GSubst V → ABT → V
 fold-arg : ((op : Op) → Tuple (sig op) (Result V) → V)
    → V → GSubst V → {b : Sig} → Arg b → Result V b
-fold-args : ((op : Op) → Tuple (sig op) (Result V) → V)
-   → V → GSubst V → {bs : List Sig} → Args bs → Tuple bs (Result V)
+fold-args : ((op : Op) → Tuple (sig op) (Result V) → V) → V
+  → GSubst V
+  → {bs : List Sig} → Args bs
+  → Tuple bs (Result V)
 
 fold f v₀ σ (` x) = σ x
 fold f v₀ σ (op ⦅ args ⦆) = f op (fold-args f v₀ σ {sig op} args)

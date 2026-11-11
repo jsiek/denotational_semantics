@@ -5,11 +5,11 @@ module ISWIM.Language.X86 where
  (ISWIM/Compiler/Select.agda): x86 with variables, after Essentials of
  Compilation, over abstract values.
 
- A body is a control-flow graph of blocks, as in CFGᵀ (ISWIM/Language/Typed/CFG.agda),
- but a block is a sequence of instructions ending in a jump. The
- locations are the slots of the current frame (the variables) and the
- registers %rax, %rdi and %rsi; an operand is a location, an immediate,
- or the label of a global definition. Besides the locations, the
+ A body is a control-flow graph of blocks, as in CFGᵀ
+ (ISWIM/Language/Typed/CFG.agda), but a block is a sequence of instructions
+ ending in a jump. The locations are the slots of the current frame (the
+ variables) and the registers %rax, %rdi and %rsi; an operand is a location, an
+ immediate, or the label of a global definition. Besides the locations, the
  machine has a flag, set by comparisons and tests and read by sete and
  je.
 

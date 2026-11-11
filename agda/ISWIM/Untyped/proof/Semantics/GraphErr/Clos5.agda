@@ -9,8 +9,10 @@ open import ISWIM.proof.Semantics.GraphErr.Prim
 open import ISWIM.Untyped.Language.Clos5
 open import ISWIM.Untyped.Semantics.GraphErr.Clos5 public
 open import proof.Framework.GraphModel.Env using (_⊆ₑ_; •-~)
-open import proof.Framework.GraphModel.Semantics Op sig using (Semantics; ⟦⟧-monotone)
-open import proof.Framework.GraphModel.SemanticsCore Op sig using (module GoodSemantics)
+open import proof.Framework.GraphModel.Semantics Op sig using (Semantics;
+  ⟦⟧-monotone)
+open import proof.Framework.GraphModel.SemanticsCore Op sig using (module
+  GoodSemantics)
 
 open import Data.Nat using (_≟_)
 open import Relation.Nullary using (yes; no)
@@ -24,7 +26,9 @@ open import Level using (lift)
 private
   good : ∀ T op → Good (∀ k → Con (T k)) (sig op) (𝕆-Clos5ᵐ T op)
   good T (fun-ref k) =
-    record { mono = λ _ _ _ → lift (λ d d∈ → d∈) ; consis = λ TC _ _ _ → lift (TC k) ; cont = λ _ NE _ → const-cont NE }
+    record
+      { mono = λ _ _ _ → lift (λ d d∈ → d∈) ; consis =
+        λ TC _ _ _ → lift (TC k) ; cont = λ _ NE _ → const-cont NE }
   good T app = callᵐ-good
   good T (lit B k) = ℬ-good B k
   good T pair-op = pairᵐ-good
@@ -46,10 +50,13 @@ Clos5ᵐ-Semantics T = G.Sem T
 Clos5ᵐ-Continuous = G.Cont-Sem
 
 module _ (T : Table) where
-  ⟦⟧[]-monotone : ∀ (M : AST) {ρ ρ′} → ρ ⊆ₑ ρ′ → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T ] ρ′
+  ⟦⟧[]-monotone : ∀ (M : AST) {ρ ρ′}
+    → ρ ⊆ₑ ρ′
+    → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T ] ρ′
   ⟦⟧[]-monotone M = ⟦⟧-monotone {{Clos5ᵐ-Semantics T}} M
 
-  open G T public using (term-continuous; body-mono; body-continuous; body2-continuous)
+  open G T public using (term-continuous; body-mono; body-continuous;
+    body2-continuous)
 
 {- with a consistent table and environments, denotations are consistent -}
 Clos5ᵐ-con-env = G.con-env
@@ -60,5 +67,6 @@ table-con : ∀ ds k → Con (table ds k)
 table-con [] k = errcode-con
 table-con (N ∷ Ns) k with k ≟ length Ns
 ... | yes _ = ΛΛᵐ-con (λ X X' Y Y' X~ Y~ →
-                Clos5ᵐ-con-env (table Ns) (table-con Ns) N (•-~ (Every _~_) (•-~ (Every _~_) (λ _ → Con-⌈⌉ ω) X~) Y~))
+                Clos5ᵐ-con-env (table Ns) (table-con Ns) N
+                  (•-~ (Every _~_) (•-~ (Every _~_) (λ _ → Con-⌈⌉ ω) X~) Y~))
 ... | no _ = table-con Ns k

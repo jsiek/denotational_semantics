@@ -23,5 +23,7 @@ data Args where
   nil : Args []
   cons : ∀{b bs} → Arg b → Args bs → Args (b ∷ bs)
 
-var-injective : ∀ {x y} → ` x ≡ ` y → x ≡ y
+var-injective : ∀ {x y}
+  → ` x ≡ ` y
+  → x ≡ y
 var-injective refl = refl

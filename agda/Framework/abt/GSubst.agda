@@ -10,6 +10,8 @@ GSubst : ∀{ℓ} (V : Set ℓ) → Set ℓ
 GSubst V = Var → V
 
 infixr 6 _•_
-_•_ : ∀{ℓ}{V : Set ℓ} → V → GSubst V → GSubst V
+_•_ : ∀{ℓ}{V : Set ℓ} → V
+  → GSubst V
+  → GSubst V
 (v • σ) 0 = v
 (v • σ) (suc x) = σ x

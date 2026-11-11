@@ -31,7 +31,8 @@ Table Σ = ∀ {s} → Σ ∋ s → 𝒫 Value
 
 {- the table of the definitions ds (newest first), given the meaning of
    a definition with the table of the older ones -}
-tables : ∀ {Σ} {D : DSig → Set} → (Table Σ → ∀ {s} → D s → 𝒫 Value) → ∀ {ss} → All D ss → Table Σ
+tables : ∀ {Σ} {D : DSig → Set} → (Table Σ → ∀ {s} → D s → 𝒫 Value) → ∀ {ss}
+  → All D ss → Table Σ
 tables cd [] f = ∅
 tables cd {_ ∷ ss} (d ∷ ds) f with lvl f ≟ length ss
 ... | yes _ = cd (tables cd ds) d

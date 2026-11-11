@@ -19,7 +19,8 @@ open import Relation.Nullary using (¬_)
 {- Denotational Values --------------------------------------------------------}
 
 data Value : Set where
-  const : {B : Base} → (k : base-rep B) → Value  {- A primitive constant of type B. -}
+  {- A primitive constant of type B. -}
+  const : {B : Base} → (k : base-rep B) → Value
   _↦_ : (V : List Value) → (w : Value) → Value
       {- An entry in a function's graph. -}
   ν : Value      {- The empty function -}
@@ -40,8 +41,8 @@ data Value : Set where
 infix 5 _~_
 infix 5 _≈_
 
-_≈_ : List Value → List Value → Set
 _~_ : Value → Value → Set
+_≈_ : List Value → List Value → Set
 const {B} x ~ const {B₁} x₁ = Σ[ B≡ ∈ B ≡ B₁ ] (subst base-rep B≡ x) ≡ x₁
 (V ↦ w) ~ (V' ↦ w') = V ≈ V' → w ~ w'
 (V ↦ w) ~ ν = True
@@ -50,7 +51,9 @@ const {B} x ~ const {B₁} x₁ = Σ[ B≡ ∈ B ≡ B₁ ] (subst base-rep B≡
 ω ~ ω = True {- ω is related to just itself -}
 ⦅ u , v ⦆ ~ ⦅ u' , v' ⦆ = u ~ u' × v ~ v'
 (tup[_]_ {n} i d) ~ (tup[_]_ {n'} i' d')
-    = Σ[ n≡ ∈ n ≡ n' ] ((¬ ((subst Fin n≡ i) ≡ i')) ⊎ ((subst Fin n≡ i) ≡ i' × d ~ d'))
+    =
+      Σ[ n≡ ∈ n
+      ≡ n' ] ((¬ ((subst Fin n≡ i) ≡ i')) ⊎ ((subst Fin n≡ i) ≡ i' × d ~ d'))
 (left x) ~ (left x₁) = x ~ x₁
 (right x) ~ (right x₁) = x ~ x₁
 ⟨⟩ ~ ⟨⟩ = True

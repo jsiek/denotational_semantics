@@ -290,8 +290,10 @@ operation on atoms are GlobalFun terms already.
 
 Imp, the target of \pass{lift locals}, replaces variables by slots of a stack frame. A body runs in a frame of slots, typed by the list
 $\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
-far; slot $x < j$ has type $A_x$. An assignment and a $\kw{case}$ write
-the next slot, $|\Delta|$. Atoms and simple expressions are typed as
+far; slot $x < j$ has type $A_x$. An assignment $x \mathrel{:=} e_1;\; e_2$
+writes the value of $e_1$ to slot $x$, and $\kw{case}\;a\;x\;e_1\;e_2$
+writes the payload of the injection $a$ to slot $x$ and then runs $e_1$
+or $e_2$. In both, $x$ is the next slot, $|\Delta|$. Atoms and simple expressions are typed as
 in Mon, over slots.
 \defhead{Typing of Imp}{\Sigma; \Delta \vdash e : C}
 \[
@@ -303,7 +305,7 @@ in Mon, over slots.
 \[
   \dfrac{\Sigma; \Delta \vdash a : A + B \quad
          \Sigma; \Delta, A \vdash e_1 : C \quad \Sigma; \Delta, B \vdash e_2 : C}
-        {\Sigma; \Delta \vdash \kw{case}\;a\;(|\Delta|.\,e_1)\;(|\Delta|.\,e_2) : C}
+        {\Sigma; \Delta \vdash \kw{case}\;a\;|\Delta|\;e_1\;e_2 : C}
 \]
 \[
   \dfrac{\Sigma; \kw{tup}(\Delta_k), A_k \vdash e_k : C_k \ (k < m)
@@ -322,10 +324,10 @@ it assigns, like a $\kw{let}$.
 \defhead{Semantics of Imp}{\den{e}_T\sigma\kappa = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \den{r}_T\sigma\kappa & = & \kappa(\mathcal{S}\den{r}\sigma)\\
+  \den{\rhs}_T\sigma\kappa & = & \kappa(\mathcal{S}\den{\rhs}\sigma)\\
   \den{x \mathrel{:=} e_1;\; e_2}_T\sigma\kappa & = &
     \den{e_1}_T\sigma\,(\mlam{D} \Lambda(\mlam{X} \den{e_2}_T\sigma[x{:=}X]\kappa) \app D)\\
-  \den{\kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)}_T\sigma\kappa & = &
+  \den{\kw{case}\;a\;x\;e_1\;e_2}_T\sigma\kappa & = &
     \mathcal{C}(\mathcal{A}\den{a}\sigma,\;
       \mlam{X} \den{e_1}_T\sigma[x{:=}X]\kappa,\;
       \mlam{X} \den{e_2}_T\sigma[x{:=}X]\kappa)\\
@@ -336,22 +338,46 @@ it assigns, like a $\kw{let}$.
 \]
 
 \subsection{The CFG Language}
+\label{app:cfg}
 \agda{FPC/Language/CFG.agda, FPC/Semantics/GraphModel/CFG.agda}
 
-CFG, the target of \pass{explicate control}, organizes each function body as a control-flow graph. A function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the type $R$ of the function body's result, the list
-$\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
-blocks it may jump to, and its own frame $\Delta$. A label $l$ is an
-index into $\vec{\Delta}$. Block $t_l$ is typed over the blocks older
-than it, so control flow is acyclic. Here $\Delta' \sqsubseteq \Delta$
-says that $\Delta'$ is a prefix of $\Delta$; an assignment to slot
-$|\Delta'|$ forgets the slots from $|\Delta'|$ on.
+CFG, the target of \pass{explicate control}, organizes each function body as a
+control-flow graph. A function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered
+blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the
+type $R$ of the function body's result, the list
+$\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the blocks it
+may jump to, and its own frame $\Delta$. A label $l$ is an index into
+$\vec{\Delta}$. Block $t_l$ is typed over the blocks older than it, so control
+flow is acyclic. Here $\Delta' \sqsubseteq \Delta$ says that $\Delta'$ is a
+prefix of $\Delta$; an assignment to slot $|\Delta'|$ pops the slots from
+$|\Delta'|$ on and pushes the new value. In the same way,
+$\kw{case}\;a\;x\;l_1\;l_2$ writes the payload of the injection $a$ to
+slot $x$, with $x = |\Delta'|$, and then jumps to block $l_1$ or $l_2$.
+The slots that an assignment pops hold the variables
+bound inside the expression whose value the assignment writes, and these
+variables are out of scope after the assignment. For example, \pass{lift locals}
+translates
+$\kw{let}\;y = (\kw{let}\;z = 5\;\kw{in}\;\kw{let}\;w = z - 1\;\kw{in}\;w - 1)\;\kw{in}\;y - 2$
+into the following Imp expression, in which, as in AT\&T syntax,
+$\$n$ is the integer constant $n$ and a bare number is a slot:
+\[
+  0 \mathrel{:=} (0 \mathrel{:=} \$5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;\$1;\;
+    \kw{prim}_{\kw{sub}}\;1\;\$1);\; \kw{prim}_{\kw{sub}}\;0\;\$2
+\]
+and \pass{explicate control} translates that into the tail
+\[
+  0 \mathrel{:=} \$5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;\$1;\;
+  0 \mathrel{:=} \kw{prim}_{\kw{sub}}\;1\;\$1;\; \kw{return}\;\kw{prim}_{\kw{sub}}\;0\;\$2.
+\]
+The third assignment, with $\Delta'$ empty, pops slots 0 and 1,
+which hold $z$ and $w$, and pushes $y$ as slot 0.
 \defhead{Typing of CFG}{\Sigma; R; \vec{\Delta}; \Delta \vdash t}
 \[
-  \dfrac{\Sigma; \Delta \vdash r : R}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{return}\;r}
+  \dfrac{\Sigma; \Delta \vdash \rhs : R}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{return}\;\rhs}
   \qquad
-  \dfrac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash r : A \quad
+  \dfrac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash \rhs : A \quad
          \Sigma; R; \vec{\Delta}; \Delta', A \vdash t}
-        {\Sigma; R; \vec{\Delta}; \Delta \vdash |\Delta'| \mathrel{:=} r;\; t}
+        {\Sigma; R; \vec{\Delta}; \Delta \vdash |\Delta'| \mathrel{:=} \rhs;\; t}
   \qquad
   \dfrac{\Delta_l = \Delta}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{goto}\;l}
 \]
@@ -359,7 +385,7 @@ $|\Delta'|$ forgets the slots from $|\Delta'|$ on.
   \dfrac{\Sigma; \Delta \vdash a : A + B \quad \Delta' \sqsubseteq \Delta \quad
          \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
         {\Sigma; R; \vec{\Delta}; \Delta \vdash
-         \kw{case}\;a\;(|\Delta'|.\,l_1)\;(|\Delta'|.\,l_2)}
+         \kw{case}\;a\;|\Delta'|\;l_1\;l_2}
 \]
 \[
   \dfrac{\Sigma; R; \Delta_0, \ldots, \Delta_{l-1}; \Delta_l \vdash t_l \ (l < j) \quad
@@ -369,16 +395,16 @@ $|\Delta'|$ forgets the slots from $|\Delta'|$ on.
 A definition's function body starts in the frame $\kw{tup}(\Delta_k), A_k$ with
 result type $C_k$, and the main function body in the empty frame. A tail means a
 set, given its frame $\sigma$ and the meanings $B$ of the blocks it can
-see. Writing slot $x$ cuts the frame to the slots before $x$, written
-$\sigma|_x$, and then assigns $x$.
+see. Writing slot $x$ pops the slots from $x$ on, which leaves the
+frame $\sigma|_x$, and then pushes the new value as slot $x$.
 \defhead{Semantics of CFG}{\den{t}_{T,B}\sigma = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \den{\kw{return}\;r}_{T,B}\sigma & = & \mathcal{S}\den{r}\sigma\\
-  \den{x \mathrel{:=} r;\; t}_{T,B}\sigma & = &
-    \Lambda(\mlam{X} \den{t}_{T,B}\,\sigma|_x[x{:=}X]) \app \mathcal{S}\den{r}\sigma\\
+  \den{\kw{return}\;\rhs}_{T,B}\sigma & = & \mathcal{S}\den{\rhs}\sigma\\
+  \den{x \mathrel{:=} \rhs;\; t}_{T,B}\sigma & = &
+    \Lambda(\mlam{X} \den{t}_{T,B}\,\sigma|_x[x{:=}X]) \app \mathcal{S}\den{\rhs}\sigma\\
   \den{\kw{goto}\;l}_{T,B}\sigma & = & B(l)(\sigma)\\
-  \den{\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)}_{T,B}\sigma & = &
+  \den{\kw{case}\;a\;x\;l_1\;l_2}_{T,B}\sigma & = &
     \mathcal{C}(\mathcal{A}\den{a}\sigma,\;
       \mlam{X} B(l_1)(\sigma|_x[x{:=}X]),\;
       \mlam{X} B(l_2)(\sigma|_x[x{:=}X]))
@@ -391,6 +417,7 @@ programs are given meaning as in Imp, with the function body in place of the
 expression and no continuation.
 
 \subsection{The \instr\ Language}
+\label{app:instr}
 \agda{FPC/Language/X86.agda, FPC/Semantics/GraphModel/X86.agda}
 
 \instr\ is the target language, produced by \pass{select instructions}; Section~\ref{sec:compiler} describes its instructions informally. An instruction is typed by the type of the machine state it starts in
@@ -418,8 +445,8 @@ the frame of the state.
   \dfrac{\Sigma; \psi \vdash a : \mu X.\, A}{\Sigma; \psi \vdash \kw{unfold}\;a : A[\mu X.\, A / X]}
 \]
 A destination is written at a type $\tau$ and leaves a new state,
-$n \vdash d : \psi \Rightarrow_\tau \psi'$. A write to a slot cuts the
-frame and closes the open closure.
+$n \vdash d : \psi \Rightarrow_\tau \psi'$. A write to a slot pops
+slots from the frame, pushes the new value, and closes the open closure.
 \defhead{Typing of destinations}{n \vdash d : \psi \Rightarrow_\tau \psi'}
 \[
   n \vdash \%r : \langle \Theta; \Delta; O; F \rangle \Rightarrow_\tau \langle \Theta[r{:}\tau]; \Delta; O; F \rangle
@@ -431,7 +458,7 @@ An object $\kw{pair}(a_1, a_2)$ has type $A \rightarrow C$ when
 $a_1 : \kw{code}(\Delta; A \rightarrow C)$ and $a_2 : \kw{tup}(\Delta)$;
 tuples and injections of operands are typed as in \fpc. With
 $\psi = \langle \Theta; \Delta; O; F \rangle$ and operands typed in
-$\psi$, the instructions are typed by.
+$\psi$, the instructions are typed as follows.
 \defhead{Typing of instructions}{\Sigma; n \vdash i : \psi \Rightarrow \psi'}
 \[
 \begin{array}{@{}c@{}}
@@ -465,12 +492,31 @@ $\psi$, the instructions are typed by.
         {\Sigma; n \vdash \kw{callq}\; a : \psi \Rightarrow \langle \kw{rax}{:}C; \Delta; \cdot; \kw{unset} \rangle}
 \end{array}
 \]
-Here $\mathit{wipe}(\Theta)$ unsets the registers that hold the code or
-the environment of an earlier open closure, so the registers of types
+The rules for $\kw{fst}$, $\kw{snd}$, and $\kw{callq}$ together ensure
+that a call combines the code and the environment of one closure. The
+instruction $\kw{fst}\;x, \%r$ opens the closure in slot $x$. It
+records $x$ as the open closure and gives $r$ the type
+$\kw{opencode}(A \rightarrow C)$, which hides the frame of the
+closure's environment, as the existential type of PairClos does. The
+instruction $\kw{snd}\;x, \%r$ requires $x$ to be the open closure and
+gives $r$ the type $\kw{openenv}$. The instruction $\kw{callq}$
+requires its code operand to have type $\kw{opencode}(A \rightarrow C)$,
+$\kw{rdi}$ to have type $\kw{openenv}$, and $\kw{rsi}$ to have type
+$A$. These types do not name the closure, so two further rules keep
+the code and the environment together. First, $\mathit{wipe}(\Theta)$
+unsets the registers that hold the code or the environment of an
+earlier open closure, so the registers of types
 $\kw{opencode}(A \rightarrow C)$ and $\kw{openenv}$ always belong to
-the same closure. A sequence $s$ is typed by the result
+the same closure. Second, a write to a slot closes the open closure
+(the slot rule of the typing of destinations), so $\kw{snd}$ runs only
+while slot $x$ still holds the closure that $\kw{fst}$ opened. After
+the call, only $\kw{rax}$ is set, and no closure is open.
+
+A sequence $s$ is typed by the result
 type $R$, the frames $\vec{\Delta}$ of the blocks it may jump to, and
-its starting state.
+its starting state. As in CFG, $\kw{case}\;x\;y\;l_1\;l_2$ writes the
+payload of the injection in slot $x$ to slot $y$, with $y = |\Delta'|$,
+and then jumps to block $l_1$ or $l_2$.
 \defhead{Typing of sequences}{\Sigma; n; R; \vec{\Delta} \vdash s : \psi}
 \[
   \dfrac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; R; \vec{\Delta} \vdash s : \psi'}
@@ -485,7 +531,7 @@ its starting state.
 \[
   \dfrac{x : A + B \in \Delta \quad \Delta' \sqsubseteq \Delta \quad |\Delta'| < n \quad
          \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
-        {\Sigma; n; R; \vec{\Delta} \vdash \kw{case}\;x\;(|\Delta'|.\,l_1)\;(|\Delta'|.\,l_2) : \langle \Theta; \Delta; O; F \rangle}
+        {\Sigma; n; R; \vec{\Delta} \vdash \kw{case}\;x\;|\Delta'|\;l_1\;l_2 : \langle \Theta; \Delta; O; F \rangle}
 \]
 A block starts in the state $\langle \emptyset; \Delta_l; \cdot;
 \kw{unset} \rangle$, and blocks are acyclic as in CFG. A definition
@@ -539,7 +585,7 @@ $\{\langle\rangle\}$; only a call can diverge, so only it is strict.
   \den{i;\; s}_B & = & \den{i}\,\den{s}_B\\
   \den{\kw{retq}}_B\,\sigma R F & = & R(\kw{rax})\\
   \den{\kw{jmp}\;l}_B\,\sigma R F & = & B(l)(\sigma)\\
-  \den{\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)}_B\,\sigma R F & = &
+  \den{\kw{case}\;x\;y\;l_1\;l_2}_B\,\sigma R F & = &
     \mathcal{C}(\sigma(x),\;
       \mlam{X} B(l_1)(\sigma|_y[y{:=}X]),\;
       \mlam{X} B(l_2)(\sigma|_y[y{:=}X]))
@@ -830,25 +876,28 @@ where $o$ ranges over the operations of Mon (Figure~\ref{fig:grammars}).
 \label{app:pass-lift-locals}
 \agda{FPC/Compiler/LiftLocals.agda (lift-program)}
 
-A $\kw{let}$ becomes an assignment to the next slot of the frame, and
-the variable a $\kw{case}$ binds becomes the slot its payload is
-written to. A variable becomes the slot at its level $\ell(x)$, the
-number of variables bound before it; in a definition
-$\kw{code}\;(z, y.\,N)$, $\ell(z) = 0$ and $\ell(y) = 1$. With $\Gamma$
-the variables in scope:
+The translation $\pass{lift}_\Gamma$ takes the list $\Gamma$ of the
+variables in scope, in the order they were bound. A variable becomes
+its position in $\Gamma$, counting from 0 (the position of its last
+occurrence, if it is bound more than once). A $\kw{let}$ becomes an
+assignment to the next slot of the frame, $|\Gamma|$, and the variable
+a $\kw{case}$ binds becomes the slot its payload is written to. A
+definition $\kw{code}\;(z, y.\,N)$ starts with $z$ in slot 0 and $y$ in
+slot 1, and the main expression starts with no variables in scope.
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{lift}(x) & = & \ell(x)\\
-  \pass{lift}(\kw{let}\;x = M\;\kw{in}\;N) & = &
-    |\Gamma| \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)\\
-  \pass{lift}(\kw{case}\;a\;(x.\,M)\;(y.\,N)) & = &
-    \kw{case}\;\pass{lift}(a)\;(|\Gamma|.\,\pass{lift}(M))\;(|\Gamma|.\,\pass{lift}(N))\\
-  \pass{lift}(\kw{code}\;(z, y.\,N)) & = & \pass{lift}(N)\\
+  \pass{lift}_\Gamma(x) & = & \text{the position of $x$ in $\Gamma$}\\
+  \pass{lift}_\Gamma(\kw{let}\;x = M\;\kw{in}\;N) & = &
+    |\Gamma| \mathrel{:=} \pass{lift}_\Gamma(M);\; \pass{lift}_{\Gamma, x}(N)\\
+  \pass{lift}_\Gamma(\kw{case}\;a\;(x.\,M)\;(y.\,N)) & = &
+    \kw{case}\;\pass{lift}_\Gamma(a)\;|\Gamma|\;\pass{lift}_{\Gamma, x}(M)\;\pass{lift}_{\Gamma, y}(N)\\
+  \pass{lift}(\kw{code}\;(z, y.\,N)) & = & \pass{lift}_{z, y}(N)\\
   \pass{lift}((d_0, \ldots, d_{m-1};\; M)) & = &
-    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; \pass{lift}(M))
+    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; \pass{lift}_{\emptyset}(M))
 \end{array}
 \]
-and every other form is a simple expression, unchanged.
+and every other form is a simple expression, with $\pass{lift}_\Gamma$
+applied to its atoms.
 
 \subsection{\pass{explicate control} (Imp to CFG)}
 \label{app:pass-explicate}
@@ -867,27 +916,31 @@ before the assignment of $e_1$, $l$ before $l_1$, and $l_1$ before
 $l_2$.
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{tail}(r) & = & \kw{return}\;r\\
+  \pass{tail}(\rhs) & = & \kw{return}\;\rhs\\
   \pass{tail}(x \mathrel{:=} e_1;\; e_2) & = & \pass{assign}(e_1, x, \pass{tail}(e_2))\\
-  \pass{tail}(\kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)) & = & \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)
+  \pass{tail}(\kw{case}\;a\;x\;e_1\;e_2) & = & \kw{case}\;a\;x\;l_1\;l_2
     \quad \text{where } l_i = \pass{add}(\pass{tail}(e_i))\\[4pt]
-  \pass{assign}(r, x, k) & = & x \mathrel{:=} r;\; k\\
+  \pass{assign}(\rhs, x, k) & = & x \mathrel{:=} \rhs;\; k\\
   \pass{assign}(x' \mathrel{:=} e_1;\; e_2, x, k) & = & \pass{assign}(e_1, x', \pass{assign}(e_2, x, k))\\
-  \pass{assign}(\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2), x, k) & = & \kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)\\
+  \pass{assign}(\kw{case}\;a\;x'\;e_1\;e_2, x, k) & = & \kw{case}\;a\;x'\;l_1\;l_2\\
   & & \quad \text{where } l = \pass{add}(k) \text{ and } l_i = \pass{add}(\pass{assign}(e_i, x, \kw{goto}\;l))\\[4pt]
   \pass{explicate}(e) & = & (\vec{t};\; t)
     \quad \text{where } t = \pass{tail}(e) \text{ and } \vec{t} \text{ are the blocks it adds}
 \end{array}
 \]
 and $\pass{explicate}$ maps over the definitions and main expression of
-a program.
+a program. The pops in CFG (Appendix~\ref{app:cfg}) come from the
+second equation for $\pass{assign}$. Its result assigns $x'$, which is
+slot $x$ or a later slot, before it assigns $x$, so the assignment to
+$x$ pops $x'$ and the slots that $e_2$ assigns. In the example of
+Appendix~\ref{app:cfg}, the assignment to $y$ pops $z$ and $w$.
 
 \subsection{\pass{select instructions} (CFG to \instr)}
 \label{app:pass-select}
 \agda{FPC/Compiler/Select.agda (select)}
 
-The code of a simple expression $r$ is selected in continuation-passing
-style. The code $\pass{sel}(r, \omega, k)$ sends the value of $r$ to
+The code of a simple expression $\rhs$ is selected in continuation-passing
+style. The code $\pass{sel}(\rhs, \omega, k)$ sends the value of $\rhs$ to
 $\omega$, which is either
 $\kw{rax}$ or the next slot $x$,
 \[
@@ -913,18 +966,18 @@ so $\kw{callc}$ and $\kw{case}$ take a slot.
   \pass{sel}(\kw{prim}_{\kw{eq}}\;a_1\;a_2, \omega, k) & = & \kw{cmpq}\; a_2, a_1;\; \kw{sete}\; \bar{\omega};\; k\\
   \pass{sel}(\kw{fold}\;a, \omega, k) & = & \kw{movq}\; \kw{fold}\;a, \bar{\omega};\; k\\
   \pass{sel}(\kw{unfold}\;a, \omega, k) & = & \kw{movq}\; \kw{unfold}\;a, \bar{\omega};\; k\\[4pt]
-  \pass{tail}(\kw{return}\;r) & = & \pass{sel}(r, \kw{ret}, \kw{retq})\\
-  \pass{tail}(x \mathrel{:=} r;\; t) & = & \pass{sel}(r, \kw{to}\;x, \pass{tail}(t))\\
+  \pass{tail}(\kw{return}\;\rhs) & = & \pass{sel}(\rhs, \kw{ret}, \kw{retq})\\
+  \pass{tail}(x \mathrel{:=} \rhs;\; t) & = & \pass{sel}(\rhs, \kw{to}\;x, \pass{tail}(t))\\
   \pass{tail}(\kw{goto}\;l) & = & \kw{jmp}\; l\\
-  \pass{tail}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)) & = & \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)
+  \pass{tail}(\kw{case}\;x\;y\;l_1\;l_2) & = & \kw{case}\;x\;y\;l_1\;l_2
 \end{array}
 \]
 The frame of a function body has as many slots as the largest frame that any of its tails starts in or writes, which $\mathit{slots}$ computes. With $\Delta$ the frame a tail starts in:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \mathit{slots}(\kw{return}\;r) = \mathit{slots}(\kw{goto}\;l) & = & |\Delta|\\
-  \mathit{slots}(x \mathrel{:=} r;\; t) & = & \max(|\Delta|, \mathit{slots}(t))\\
-  \mathit{slots}(\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)) & = & \max(|\Delta|, x + 1)\\[4pt]
+  \mathit{slots}(\kw{return}\;\rhs) = \mathit{slots}(\kw{goto}\;l) & = & |\Delta|\\
+  \mathit{slots}(x \mathrel{:=} \rhs;\; t) & = & \max(|\Delta|, \mathit{slots}(t))\\
+  \mathit{slots}(\kw{case}\;a\;x\;l_1\;l_2) & = & \max(|\Delta|, x + 1)\\[4pt]
   \pass{select}((t_0, \ldots, t_{j-1};\; t)) & = &
     (n;\; \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\; \pass{tail}(t))\\
   \pass{select}^{+}((t_0, \ldots, t_{j-1};\; t)) & = &
@@ -1024,9 +1077,9 @@ continuation, and chains it over several operands.
 The semantics of Imp is in continuation-passing style, so the
 induction hypothesis relates a Mon term $e$ and its translation under
 a continuation $\kappa$: $\kappa(\den{e}_T\,\sigma) =
-\den{\pass{lift}(e)}_{T'}\,\sigma\,\kappa$. A $\kw{let}$ becomes an
-assignment to the next slot $x$. With $\kappa' = \mlam{D}
-\Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app
+\den{\pass{lift}_\Gamma(e)}_{T'}\,\sigma\,\kappa$. A $\kw{let}$ becomes an
+assignment to the next slot $x = |\Gamma|$. With $\kappa' = \mlam{D}
+\Lambda(\mlam{X} \den{\pass{lift}_{\Gamma,x}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app
 D$:
 {\small
 \[
@@ -1034,9 +1087,9 @@ D$:
   \kappa(\den{\kw{let}\;x = M\;\kw{in}\;N}_T\,\sigma)
     & = & \kappa(\Lambda(\mlam{X} \den{N}_T\,\sigma[x{:=}X]) \app \den{M}_T\,\sigma) & \text{(meaning of $\kw{let}$)}\\
     & = & \Lambda(\mlam{X} \kappa(\den{N}_T\,\sigma[x{:=}X])) \app \den{M}_T\,\sigma & \text{(a $\kw{let}$ commutes with $\kappa$)}\\
-    & = & \Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app \den{M}_T\,\sigma & \text{(induction hypothesis for $N$)}\\
-    & = & \den{\pass{lift}(M)}_{T'}\,\sigma\,\kappa' & \text{(induction hypothesis for $M$)}\\
-    & = & \den{x \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)}_{T'}\,\sigma\,\kappa & \text{(meaning of assignment)}
+    & = & \Lambda(\mlam{X} \den{\pass{lift}_{\Gamma,x}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app \den{M}_T\,\sigma & \text{(induction hypothesis for $N$)}\\
+    & = & \den{\pass{lift}_\Gamma(M)}_{T'}\,\sigma\,\kappa' & \text{(induction hypothesis for $M$)}\\
+    & = & \den{x \mathrel{:=} \pass{lift}_\Gamma(M);\; \pass{lift}_{\Gamma,x}(N)}_{T'}\,\sigma\,\kappa & \text{(meaning of assignment)}
 \end{array}
 \]}
 The second step, a commuting conversion, needs $\den{M}_T\,\sigma$ to be
@@ -1056,11 +1109,11 @@ We show the first branch; the second is the same:
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \den{\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2)}_T\,\sigma\,\kappa_{x,k}
+  \den{\kw{case}\;a\;x'\;e_1\;e_2}_T\,\sigma\,\kappa_{x,k}
     & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,k},\; \ldots) & \text{(Imp)}\\
     & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,\kw{goto}\,l},\; \ldots) & \text{(join point $l$)}\\
     & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} B(l_1)(\sigma[x'{:=}X]),\; \ldots) & \text{(ind.\ hyp.)}\\
-    & = & \den{\kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)}_{T',B}\,\sigma & \text{(CFG)}
+    & = & \den{\kw{case}\;a\;x'\;l_1\;l_2}_{T',B}\,\sigma & \text{(CFG)}
 \end{array}
 \]}
 A further lemma says that blocks added later do not change the meaning

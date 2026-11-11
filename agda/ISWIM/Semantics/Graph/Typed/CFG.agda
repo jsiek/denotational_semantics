@@ -1,8 +1,8 @@
 {-
 
   The semantics of CFGᵀ (ISWIM/Language/Typed/CFG.agda) in the graph model, as
-  that of CFG (ISWIM/Untyped/Semantics/Graph/CFG.agda). A tail runs in a frame σ, given
-  the meanings B of the blocks it can see (by their typed labels), and
+  that of CFG (ISWIM/Untyped/Semantics/Graph/CFG.agda). A tail runs in a frame
+  σ, given the meanings B of the blocks it can see (by their typed labels), and
   means a set of values. Atoms and simple expressions are Impᵀ's
   (ISWIM/Semantics/Graph/Typed/Imp.agda).
 
@@ -45,10 +45,14 @@ Meanings Bs = ∀ {Δ} → Bs ∋ Δ → Env Value → 𝒫 Value
 
 ⟦_⟧ᵗ : ∀ {Σ Bs Δ} → Tail Σ Bs Δ → Table Σ → Meanings Bs → Env Value → 𝒫 Value
 ⟦ return s ⟧ᵗ T B σ = 𝒮 s T σ
-⟦ seq p s t ⟧ᵗ T B σ = ⋆ ⟨ Λ ⟨ (λ X → ⟦ t ⟧ᵗ T B (X • drop p σ)) , ptt ⟩ , ⟨ 𝒮 s T σ , ptt ⟩ ⟩
+⟦ seq p s t ⟧ᵗ T B σ =
+  ⋆ ⟨ Λ ⟨ (λ X → ⟦ t ⟧ᵗ T B (X • drop p σ)) , ptt ⟩ , ⟨ 𝒮 s T σ , ptt ⟩ ⟩
 ⟦ goto l ⟧ᵗ T B σ = B l σ
 ⟦ case a p l₁ l₂ ⟧ᵗ T B σ =
-  𝒞 ⟨ 𝒜 a T σ , ⟨ (λ X → B l₁ (X • drop p σ)) , ⟨ (λ X → B l₂ (X • drop p σ)) , ptt ⟩ ⟩ ⟩
+  𝒞
+    ⟨ 𝒜 a T σ
+      ,
+      ⟨ (λ X → B l₁ (X • drop p σ)) , ⟨ (λ X → B l₂ (X • drop p σ)) , ptt ⟩ ⟩ ⟩
 
 blocks : ∀ {Σ Bs} → Blocks Σ Bs → Table Σ → Meanings Bs
 blocks (bs ▷ t) T Z = ⟦ t ⟧ᵗ T (blocks bs T)

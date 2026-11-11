@@ -24,7 +24,9 @@ ConT : ∀ {Σ} → Table Σ → Set
 ConT {Σ} T = ∀ {s} (f : Σ ∋ s) → Con (T f)
 
 tables-con : ∀ {Σ} {D : DSig → Set} {cd : Table Σ → ∀ {s} → D s → 𝒫 Value}
-  → (∀ {T : Table Σ} → ConT T → ∀ {s} (d : D s) → Con (cd T d)) → ∀ {ss} (ds : All D ss) → ConT (tables cd ds)
+  → (∀ {T : Table Σ} → ConT T → ∀ {s} (d : D s) → Con (cd T d))
+  → ∀ {ss} (ds : All D ss)
+  → ConT (tables cd ds)
 tables-con c [] f _ _ ()
 tables-con c {_ ∷ ss} (d ∷ ds) f with lvl f ≟ length ss
 ... | yes _ = c (tables-con c ds) d

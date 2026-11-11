@@ -26,22 +26,28 @@ open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 ⟦_⟧[_] : ∀ {Σ Γ A} → Tm Σ Γ A → Table Σ → Env Value → 𝒫 Value
-⟦_⟧s[_] : ∀ {Σ Γ n} → Vec (Tm Σ Γ Any) n → Table Σ → Env Value → Results (𝒫 Value) (replicate n ■)
+⟦_⟧s[_] : ∀ {Σ Γ n} → Vec (Tm Σ Γ Any) n → Table Σ → Env Value
+  → Results (𝒫 Value) (replicate n ■)
 
 ⟦ ` x ⟧[ T ] ρ = ρ (idx x)
 ⟦ fun-ref f ⟧[ T ] ρ = T f
 ⟦ pack L M ⟧[ T ] ρ = pair ⟨ ⟦ L ⟧[ T ] ρ , ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩ ⟩
 ⟦ callc L M ⟧[ T ] ρ =
-  ⋆ ⟨ ⋆ ⟨ car ⟨ ⟦ L ⟧[ T ] ρ , ptt ⟩ , ⟨ cdr ⟨ ⟦ L ⟧[ T ] ρ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩ ⟩
+  ⋆
+    ⟨ ⋆ ⟨ car ⟨ ⟦ L ⟧[ T ] ρ , ptt ⟩ , ⟨ cdr ⟨ ⟦ L ⟧[ T ] ρ , ptt ⟩ , ptt ⟩ ⟩
+      , ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩ ⟩
 ⟦ lit B c ⟧[ T ] ρ = ℬ B c ptt
 ⟦ tuple {n = n} Ms ⟧[ T ] ρ = 𝒯 n (⟦ Ms ⟧s[ T ] ρ)
 ⟦ get i M ⟧[ T ] ρ = proj i ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩
 ⟦ inl M ⟧[ T ] ρ = inlD ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩
 ⟦ inr M ⟧[ T ] ρ = inrD ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩
 ⟦ case L M N ⟧[ T ] ρ =
-  𝒞 ⟨ ⟦ L ⟧[ T ] ρ , ⟨ (λ X → ⟦ M ⟧[ T ] (X • ρ)) , ⟨ (λ X → ⟦ N ⟧[ T ] (X • ρ)) , ptt ⟩ ⟩ ⟩
+  𝒞
+    ⟨ ⟦ L ⟧[ T ] ρ
+      , ⟨ (λ X → ⟦ M ⟧[ T ] (X • ρ)) , ⟨ (λ X → ⟦ N ⟧[ T ] (X • ρ)) , ptt ⟩ ⟩ ⟩
 ⟦ prim p L M ⟧[ T ] ρ = primD p ⟨ ⟦ L ⟧[ T ] ρ , ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩ ⟩
-⟦ let′ M N ⟧[ T ] ρ = ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧[ T ] (X • ρ)) , ptt ⟩ , ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩ ⟩
+⟦ let′ M N ⟧[ T ] ρ =
+  ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧[ T ] (X • ρ)) , ptt ⟩ , ⟨ ⟦ M ⟧[ T ] ρ , ptt ⟩ ⟩
 ⟦ inject G M ⟧[ T ] ρ = ⟦ M ⟧[ T ] ρ
 ⟦ project t M ⟧[ T ] ρ = projectᵍ fun₄ t (⟦ M ⟧[ T ] ρ)
 
@@ -51,7 +57,8 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 {- the function whose code is N, given the table T: it takes the tuple of
    its free variables X and then the argument Y -}
 code′ : ∀ {Σ} → Table Σ → ∀ {n} → Code Σ n → 𝒫 Value
-code′ T N = Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧[ T ] (Y • X • λ _ → init)) , ptt ⟩) , ptt ⟩
+code′ T N =
+  Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧[ T ] (Y • X • λ _ → init)) , ptt ⟩) , ptt ⟩
 
 table : ∀ {Σ} → All (Code Σ) Σ → Table Σ
 table = tables code′

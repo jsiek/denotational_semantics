@@ -19,7 +19,8 @@ import ISWIM.Untyped.Language.Clos4 as L4
 import ISWIM.Untyped.Language.Clos5 as L5
 open import ISWIM.Untyped.Compiler.Hoist using (hoist)
 open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
-open import ISWIM.Untyped.proof.Correctness.Graph.CaptureExample using (prog; prog-is-7)
+open import ISWIM.Untyped.proof.Correctness.Graph.CaptureExample using (prog;
+  prog-is-7)
 open import ISWIM.Untyped.proof.Correctness.Graph.CompilerCorrect
 
 open import Framework.Syntax.SyntaxUtil

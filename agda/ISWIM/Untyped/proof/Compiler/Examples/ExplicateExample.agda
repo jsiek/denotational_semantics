@@ -6,7 +6,8 @@
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (eq)
-open import ISWIM.Untyped.Language.Imp as Imp using (simple; atm; var; lit; assign)
+open import ISWIM.Untyped.Language.Imp as Imp using (simple; atm; var; lit;
+  assign)
 open import ISWIM.Untyped.Language.CFG
 open import ISWIM.Untyped.Compiler.Explicate using (explicate-body)
 
@@ -23,7 +24,8 @@ main-explicate :
   explicate-body
     (Imp.body 3 (assign 0 (simple (atm (lit Int (+ 1))))
                  (assign 1 (simple (Imp.prim eq (var 0) (lit Int (+ 1))))
-                   (Imp.case (var 1) 2 (simple (atm (var 0))) (simple (atm (var 2)))))))
+                   (Imp.case (var 1) 2 (simple (atm (var 0)))
+                       (simple (atm (var 2)))))))
   ≡ body 3 (return (atm (var 2)) ∷ return (atm (var 0)) ∷ [])
       (seq 0 (atm (lit Int (+ 1)))
         (seq 1 (Imp.prim eq (var 0) (lit Int (+ 1)))

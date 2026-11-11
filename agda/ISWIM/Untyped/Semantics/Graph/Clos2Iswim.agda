@@ -27,8 +27,10 @@ open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 
-{- apply a curried function of n sets to the denotations of the free variables -}
-apply-n : ∀ n {b} → Result (𝒫 Value) (ν-n n b) → Results (𝒫 Value) (replicate n ■)
+{- apply a curried function of n sets to the denotations of the free
+   variables -}
+apply-n : ∀ n {b} → Result (𝒫 Value) (ν-n n b)
+  → Results (𝒫 Value) (replicate n ■)
   → Result (𝒫 Value) b
 apply-n zero F _ = F
 apply-n (suc n) F ⟨ D , Ds ⟩ = apply-n n (F D) Ds

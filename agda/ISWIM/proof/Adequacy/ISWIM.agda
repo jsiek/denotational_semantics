@@ -1,7 +1,7 @@
 {-
 
-  Soundness and adequacy of the graph model (ISWIM/Semantics/Graph/ISWIM.agda) with respect
-  to the ISWIM machine (ISWIM/Semantics/CEK/ISWIM.agda), for closed
+  Soundness and adequacy of the graph model (ISWIM/Semantics/Graph/ISWIM.agda)
+  with respect to the ISWIM machine (ISWIM/Semantics/CEK/ISWIM.agda), for closed
   programs M (bound M ≡ 0), started in the environment ρ₀ of a closed
   program on the denotational side and in the empty environment on the
   machine side.
@@ -25,8 +25,8 @@
     set of values, through denotations of machine values, environments
     and continuations, and each step can only shrink it. The β steps
     (application, case) use the continuity of the ISWIM semantics
-    (ISWIM/proof/Semantics/Graph/ISWIMContinuous.agda) and that every value denotes a nonempty
-    set.
+    (ISWIM/proof/Semantics/Graph/ISWIMContinuous.agda) and that every value
+    denotes a nonempty set.
 
   * Adequacy (Adequacy/LogRel.agda): a logical relation between
     denotational values and machine values, by recursion on the
@@ -41,12 +41,13 @@ module ISWIM.proof.Adequacy.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const
+  to dconst)
 open import ISWIM.Language.ISWIM
 open import ISWIM.proof.Semantics.Graph.ISWIM using (⟦_⟧)
 open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep
-  using (Terminates; Diverges; diverges-not-terminates; terminates-det; next; stop)
+open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges;
+  diverges-not-terminates; terminates-det; next; stop)
 open import ISWIM.Semantics.CEK.ISWIM
 open import ISWIM.Compiler.CaptureScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
@@ -58,55 +59,84 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using ([])
 open import Data.Nat using (_<_)
 open import Data.Nat.Properties using (n≮0)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; subst)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  subst)
 open import Relation.Nullary using (¬_)
 
-{- Soundness -------------------------------------------------------------------}
+{- Soundness ------------------------------------------------------------------}
 
-sound-const : ∀ M {B} {k : base-rep B} → Terminates (sem M) (o-const B k) → dconst k ∈ ⟦ M ⟧ ρ₀
+sound-const : ∀ M {B} {k : base-rep B}
+  → Terminates (sem M) (o-const B k)
+  → dconst k ∈ ⟦ M ⟧ ρ₀
 sound-const M t with soundness M t (λ ())
 ... | ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = d∈
 
-sound-nonempty : ∀ M → Converges (Terminates (sem M)) → nonempty (⟦ M ⟧ ρ₀)
+sound-nonempty : ∀ M
+  → Converges (Terminates (sem M))
+  → nonempty (⟦ M ⟧ ρ₀)
 sound-nonempty M ⟨ o , ⟨ ans , t ⟩ ⟩ with soundness M t ans
 ... | ⟨ d , ⟨ d∈ , _ ⟩ ⟩ = ⟨ d , d∈ ⟩
 
-{- Adequacy --------------------------------------------------------------------}
+{- Adequacy -------------------------------------------------------------------}
 
-closed-𝔾 : ∀ M → Closed M → 𝔾 (UsesP M) ρ₀ []
+closed-𝔾 : ∀ M
+  → Closed M
+  → 𝔾 (UsesP M) ρ₀ []
 closed-𝔾 M c x u = ⊥-elim (n≮0 (subst (x <_) c (uses-bound x M u)))
 
-adequacy : ∀ M → Closed M → ∀ {d} → d ∈ ⟦ M ⟧ ρ₀
+adequacy : ∀ M
+  → Closed M
+  → ∀ {d}
+  → d ∈ ⟦ M ⟧ ρ₀
   → Σ[ o ∈ Obs ] Terminates (sem M) o × ShapeOf o d
 adequacy M c {d} d∈ with adequate M (closed-𝔾 M c) d∈
 ... | ⟨ v , ⟨ e , r ⟩ ⟩ =
   ⟨ obs v , ⟨ ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩
             , 𝕍-shape d v r ⟩ ⟩
 
-adequacy-const : ∀ M → Closed M → ∀ {B} {k : base-rep B}
-  → dconst k ∈ ⟦ M ⟧ ρ₀ → Terminates (sem M) (o-const B k)
+adequacy-const : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
+  → dconst k ∈ ⟦ M ⟧ ρ₀
+  → Terminates (sem M) (o-const B k)
 adequacy-const M c k∈ with adequacy M c k∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = subst (Terminates (sem M)) (shape-const sh) t
 
-adequacy-converges : ∀ M → Closed M → nonempty (⟦ M ⟧ ρ₀) → Converges (Terminates (sem M))
+adequacy-converges : ∀ M
+  → Closed M
+  → nonempty (⟦ M ⟧ ρ₀)
+  → Converges (Terminates (sem M))
 adequacy-converges M c ⟨ d , d∈ ⟩ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
 
-{- Characterizations ------------------------------------------------------------}
+{- Characterizations ----------------------------------------------------------}
 
-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B}
+const-iff : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
   → (dconst k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) (o-const B k)
 const-iff M c = ⟨ adequacy-const M c , sound-const M ⟩
 
-nonempty-iff : ∀ M → Closed M → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (sem M))
+nonempty-iff : ∀ M
+  → Closed M
+  → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (sem M))
 nonempty-iff M c = ⟨ adequacy-converges M c , sound-nonempty M ⟩
 
 {- a program that errors, or diverges, denotes the empty set -}
-error-empty : ∀ M → Closed M → Terminates (sem M) o-error → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
+error-empty : ∀ M
+  → Closed M
+  → Terminates (sem M) o-error
+  → ∀ d
+  → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 error-empty M c w d d∈ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det t w)
 
-diverges-empty : ∀ M → Closed M → Diverges (sem M) → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
+diverges-empty : ∀ M
+  → Closed M
+  → Diverges (sem M)
+  → ∀ d
+  → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 diverges-empty M c div d d∈ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t

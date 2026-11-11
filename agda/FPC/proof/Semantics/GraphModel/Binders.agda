@@ -32,25 +32,43 @@ open import Relation.Binary.PropositionalEquality using (refl)
 Body-≃ : (𝒫 Value → 𝒫 Value) → (𝒫 Value → 𝒫 Value) → Set₁
 Body-≃ F F' = ∀ X → nonempty X → Con X → F X ≃ F' X
 
-lam-≃ : ∀ {F F'} → Body-≃ F F' → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
+lam-≃ : ∀ {F F'}
+  → Body-≃ F F'
+  → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
 lam-≃ eq = Λ-≃ λ V ne c → eq (mem V) (E≢[]⇒nonempty-mem ne) (≈⇒Con c)
 
-let-≃ : ∀ {D D' F F'} → D ≃ D' → Body-≃ F F' → letD ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ letD ⟨ D' , ⟨ F' , ptt ⟩ ⟩
+let-≃ : ∀ {D D' F F'}
+  → D ≃ D'
+  → Body-≃ F F'
+  → letD ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ letD ⟨ D' , ⟨ F' , ptt ⟩ ⟩
 let-≃ D≃ eq = ⋆-≃ (lam-≃ eq) D≃
 
-case-≃ : ∀ {D D' F F' G G'} → D ≃ D' → Body-≃ F F' → Body-≃ G G'
+case-≃ : ∀ {D D' F F' G G'}
+  → D ≃ D'
+  → Body-≃ F F'
+  → Body-≃ G G'
   → 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
 case-≃ {F = F} {F'} {G} {G'} D≃ F≃ G≃ =
-  𝒞-≃ {F = F} {F'} {G} {G'} D≃ (λ v V c → F≃ _ ⟨ v , here refl ⟩ (≈⇒Con c)) (λ v V c → G≃ _ ⟨ v , here refl ⟩ (≈⇒Con c))
+  𝒞-≃ {F = F} {F'} {G} {G'} D≃ (λ v V c → F≃ _ ⟨ v , here refl ⟩ (≈⇒Con c))
+    (λ v V c → G≃ _ ⟨ v , here refl ⟩ (≈⇒Con c))
 
 {- an equation carries nonemptiness -}
-ne-≃ : ∀ {T} {D E : 𝒫 T} → D ≃ E → nonempty D → nonempty E
+ne-≃ : ∀ {T} {D E : 𝒫 T}
+  → D ≃ E
+  → nonempty D
+  → nonempty E
 ne-≃ D≃ ⟨ d , d∈ ⟩ = ⟨ d , proj₁ D≃ d d∈ ⟩
 
 {- a strict closure's guard, once its sets are nonempty -}
-guard-yes : ∀ {n} {Ds : Results (𝒫 Value) (replicate n ■)} {D} → (∀ i → nonempty (nthD Ds i)) → guard-n n Ds D ≃ D
+guard-yes : ∀ {n} {Ds : Results (𝒫 Value) (replicate n ■)} {D}
+  → (∀ i → nonempty (nthD Ds i))
+  → guard-n n Ds D ≃ D
 guard-yes ne = ⟨ (λ w w∈ → proj₂ w∈) , (λ w w∈ → ⟨ ne , w∈ ⟩) ⟩
 
 {- the body of an Ok meaning is monotone in the set its binder binds -}
-body-mono : ∀ {E} → Ok E → ∀ ρ {X X'} → X ⊆ X' → E (X • ρ) ⊆ E (X' • ρ)
+body-mono : ∀ {E}
+  → Ok E
+  → ∀ ρ {X X'}
+  → X ⊆ X'
+  → E (X • ρ) ⊆ E (X' • ρ)
 body-mono o ρ X⊆ = proj₁ o (•-~ _⊆_ (λ _ _ z → z) X⊆)

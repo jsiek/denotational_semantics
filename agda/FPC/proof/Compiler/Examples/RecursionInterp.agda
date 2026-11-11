@@ -30,7 +30,8 @@ run ck P = outcome (Semantics.obs P) (Semantics.run P ck)
 three-fpc : run 10 (FPCᵢ.sem three) ≡ just (o-const Int (+ 0))
 three-fpc = refl
 
-three-clos4 : run 10 (PairClosμᵢ.sem (compile-to-PairClos three)) ≡ just (o-const Int (+ 0))
+three-clos4 : run 10 (PairClosμᵢ.sem (compile-to-PairClos three))
+  ≡ just (o-const Int (+ 0))
 three-clos4 = refl
 
 three-x86 : run 10 (X86μᵢ.sem (compile three)) ≡ just (o-const Int (+ 0))

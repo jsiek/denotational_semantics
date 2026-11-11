@@ -34,7 +34,8 @@ open import Data.List using (List; []; _∷_; length)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; _,_)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong)
 
 {- the runs of the ISWIM machine -}
 open Runs step public
@@ -58,7 +59,9 @@ ShapeAt {suc n} zero (o ∷ os) d = length os ≡ n × ShapeOf o d
 ShapeAt (suc i) (o ∷ os) d = ShapeAt i os d
 ShapeAt _ [] d = ⊥
 
-shape-answer : ∀ {o d} → ShapeOf o d → Answer o
+shape-answer : ∀ {o d}
+  → ShapeOf o d
+  → Answer o
 shape-answer {o-error} {const k} () refl
 shape-answer {o-const B k} s ()
 shape-answer {o-fun} s ()
@@ -75,7 +78,9 @@ shape-answer {o-error} {right d} () refl
 shape-answer {o-error} {⟨⟩} () refl
 
 {- the only observation of the shape of a constant is that constant -}
-shape-const : ∀ {o B} {k : base-rep B} → ShapeOf o (const k) → o ≡ o-const B k
+shape-const : ∀ {o B} {k : base-rep B}
+  → ShapeOf o (const k)
+  → o ≡ o-const B k
 shape-const {o-const B k} refl = refl
 shape-const {o-fun} ()
 shape-const {o-tuple os} ()
@@ -84,19 +89,24 @@ shape-const {o-inr o} ()
 shape-const {o-error} ()
 
 {- a primitive is defined only on two integers -}
-δ?-inv : ∀ p o₁ o₂ {r : Out} → δ? p o₁ o₂ ≡ just r
+δ?-inv : ∀ p o₁ o₂ {r : Out}
+  → δ? p o₁ o₂ ≡ just r
   → Σ[ n ∈ ℤ ] Σ[ m ∈ ℤ ] o₁ ≡ o-const Int n × o₂ ≡ o-const Int m × r ≡ δ p n m
 δ?-inv p (o-const Int n) (o-const Int m) refl = n , m , refl , refl , refl
 
-{- Lengths ----------------------------------------------------------------------}
+{- Lengths --------------------------------------------------------------------}
 
-has-length→length : ∀ {A : Set} n (xs : List A) → has-length n xs ≡ true → length xs ≡ n
+has-length→length : ∀ {A : Set} n (xs : List A)
+  → has-length n xs ≡ true
+  → length xs ≡ n
 has-length→length zero [] _ = refl
 has-length→length (suc n) (x ∷ xs) h = cong suc (has-length→length n xs h)
 has-length→length zero (x ∷ xs) ()
 has-length→length (suc n) [] ()
 
-length→has-length : ∀ {A : Set} n (xs : List A) → length xs ≡ n → has-length n xs ≡ true
+length→has-length : ∀ {A : Set} n (xs : List A)
+  → length xs ≡ n
+  → has-length n xs ≡ true
 length→has-length zero [] refl = refl
 length→has-length (suc n) (x ∷ xs) refl = length→has-length n xs refl
 

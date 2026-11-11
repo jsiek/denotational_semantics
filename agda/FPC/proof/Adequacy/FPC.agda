@@ -2,10 +2,10 @@
 
   Soundness and adequacy of the graph model of FPC
   (FPC/Semantics/GraphModel/FPC.agda) with respect to its clocked
-  interpreter (FPC/Semantics/ClockedInterpreters/FPC.agda), for closed programs of
-  any type, started in ρ₀ on the denotational side and in the empty
-  environment on the interpreter's, as FPC/proof/Adequacy/AbstractMachines/FPC.agda
-  is for the FPC machine:
+  interpreter (FPC/Semantics/ClockedInterpreters/FPC.agda), for closed programs
+  of any type, started in ρ₀ on the denotational side and in the empty
+  environment on the interpreter's, as
+  FPC/proof/Adequacy/AbstractMachines/FPC.agda is for the FPC machine:
 
     soundness (FPC/proof/Adequacy/Soundness.agda): what the interpreter
       returns at some clock denotes a part of ⟦ M ⟧ ρ₀, and it never
@@ -27,14 +27,17 @@ module FPC.proof.Adequacy.FPC where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value) renaming (const to
+  dconst)
 open import FPC.Semantics.GraphModel.Closed using (ρ₀)
-open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome; Terminates; Diverges)
+open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome;
+  Terminates; Diverges)
 open import FPC.Language.FPC using (Tm)
 open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
 open import FPC.Semantics.ClockedInterpreters.FPC using (Val; eval; sem; obs)
 open import Semantics.Observation using (o-const; _⇔_)
-open import FPC.proof.Adequacy.Soundness using (timeout; ret; Sound; sound; 𝒱-const; 𝒱-ne)
+open import FPC.proof.Adequacy.Soundness using (timeout; ret; Sound; sound;
+  𝒱-const; 𝒱-ne)
 open import FPC.proof.Adequacy.LogRel using (𝕍; adequate; 𝕍-const)
 
 open import Data.Empty using (⊥-elim)
@@ -43,31 +46,42 @@ open import FPC.Framework.AllUtil using ([])
 open import Data.Maybe using (just)
 open import Data.Nat.Properties using (≤-refl)
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; trans)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
+  trans)
 open import Relation.Nullary using (¬_)
 
 private
-  just-inj : ∀ {X : Set} {a b : X} → just a ≡ just b → a ≡ b
+  just-inj : ∀ {X : Set} {a b : X}
+    → just a ≡ just b
+    → a ≡ b
   just-inj refl = refl
 
   {- a sound result observed as a constant: the constant is in D -}
-  const-in : ∀ {A} {r : Result (Val A)} {D B} {k : base-rep B} → Sound r D
-    → outcome obs r ≡ just (o-const B k) → dconst k ∈ D
+  const-in : ∀ {A} {r : Result (Val A)} {D B} {k : base-rep B}
+    → Sound r D
+    → outcome obs r ≡ just (o-const B k)
+    → dconst k ∈ D
   const-in (ret {v} v⊆) e = v⊆ _ (𝒱-const v (just-inj e))
 
   {- a sound result in an empty D times out -}
-  empty-timeout : ∀ {A} {r : Result (Val A)} {D} → Sound r D → ¬ nonempty D → r ≡ timeout
+  empty-timeout : ∀ {A} {r : Result (Val A)} {D}
+    → Sound r D
+    → ¬ nonempty D
+    → r ≡ timeout
   empty-timeout timeout ne = refl
   empty-timeout (ret {v} v⊆) ne with 𝒱-ne v
   ... | ⟨ d , d∈ ⟩ = ⊥-elim (ne ⟨ d , v⊆ d d∈ ⟩)
 
 {- adequacy: an element of the denotation is related to the value the
    interpreter returns from some clock on -}
-returns : ∀ {A} (M : Tm [] A) {d} → d ∈ ⟦ M ⟧ ρ₀ → Σ[ v ∈ Val A ] Σ[ ck ∈ _ ] eval ck [] M ≡ ret v × 𝕍 d v
+returns : ∀ {A} (M : Tm [] A) {d}
+  → d ∈ ⟦ M ⟧ ρ₀
+  → Σ[ v ∈ Val A ] Σ[ ck ∈ _ ] eval ck [] M ≡ ret v × 𝕍 d v
 returns M d∈ with adequate M (λ ()) d∈
 ... | ⟨ v , ⟨ ⟨ c , e ⟩ , r ⟩ ⟩ = ⟨ v , ⟨ c , ⟨ e c ≤-refl , r ⟩ ⟩ ⟩
 
-const-iff : ∀ {A} (M : Tm [] A) {B} {k : base-rep B} → (dconst k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) (o-const B k)
+const-iff : ∀ {A} (M : Tm [] A) {B} {k : base-rep B}
+  → (dconst k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) (o-const B k)
 const-iff M =
   ⟨ (λ k∈ → let ⟨ v , ⟨ ck , ⟨ e , r ⟩ ⟩ ⟩ = returns M k∈ in
        ⟨ ck , trans (cong (outcome obs) e) (cong just (𝕍-const v r)) ⟩)
@@ -75,7 +89,9 @@ const-iff M =
 
 diverges-iff : ∀ {A} (M : Tm [] A) → Diverges (sem M) ⇔ (¬ nonempty (⟦ M ⟧ ρ₀))
 diverges-iff M =
-  ⟨ (λ { div ⟨ d , d∈ ⟩ → let ⟨ v , ⟨ ck , ⟨ e , _ ⟩ ⟩ ⟩ = returns M d∈ in ret≢timeout (trans (sym e) (div ck)) })
+  ⟨ (λ { div ⟨ d , d∈ ⟩ →
+      let ⟨ v , ⟨ ck , ⟨ e , _ ⟩ ⟩ ⟩ =
+           returns M d∈ in ret≢timeout (trans (sym e) (div ck)) })
   , (λ ne ck → empty-timeout (sound ck [] M) ne) ⟩
   where
   ret≢timeout : ∀ {X : Set} {v : X} → ¬ (Result.ret v ≡ Result.timeout)

@@ -19,7 +19,8 @@ open import ISWIM.Untyped.proof.Semantics.Graph.Clos3Iswim
 import ISWIM.Untyped.proof.Semantics.Graph.Clos4Iswim as S4
 open import ISWIM.Untyped.Compiler.Split using (split)
 open import ISWIM.Untyped.proof.Correctness.Graph.SplitFiniteCommon using (ρ₀)
-open import ISWIM.Untyped.proof.Correctness.Graph.SplitPreserve using (preserve-const)
+open import ISWIM.Untyped.proof.Correctness.Graph.SplitPreserve using
+  (preserve-const)
 
 open import Data.List using ([]; _∷_)
 open import Data.List.Relation.Unary.Any using (here)
@@ -44,7 +45,9 @@ id-five-is-5 = ⟨ const 5 ∷ [] , ⟨ clos∋ , ⟨ five⊆ , (λ ()) ⟩ ⟩ 
   where
   {- apply the code to the empty tuple ⟨⟩ of free variables, then to 5 -}
   clos∋ : (const 5 ∷ []) ↦ const 5 ∈ ⟦ id-clos ⟧ ρ₀
-  clos∋ = ⟨ ⟨⟩ ∷ [] , ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
+  clos∋ =
+    ⟨ ⟨⟩ ∷ []
+      , ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
                      , ⟨ (λ { _ (here refl) → tt }) , (λ ()) ⟩ ⟩ ⟩
 
   five⊆ : mem (const {Nat} 5 ∷ []) ⊆ ⟦ five ⟧ ρ₀

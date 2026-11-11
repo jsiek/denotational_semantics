@@ -7,7 +7,8 @@
   them, with its type written out, so that it can be read without opening
   proof/.
 
-    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2
+          --concretize--> Clos3
           --split--> Clos4 --hoist--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -33,7 +34,8 @@
 module ISWIM.Untyped.Theorems.Reduction where
 
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
-open import Semantics.Reduction.Smallstep using (Terminates; Diverges; Equivalent)
+open import Semantics.Reduction.Smallstep using (Terminates; Diverges;
+  Equivalent)
 
 import ISWIM.Language.ISWIM as ISWIM
 import ISWIM.Untyped.Language.Clos2 as Clos2
@@ -54,7 +56,8 @@ open import ISWIM.Untyped.Compiler.RCO using (rco-program)
 open import ISWIM.Untyped.Compiler.LiftLocals using (lift-program)
 open import ISWIM.Untyped.Compiler.Explicate using (explicate)
 open import ISWIM.Untyped.Compiler.Select using (select)
-open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import ISWIM.Untyped.Compiler.Pipeline using (compile; compile-mon;
+  compile-imp; compile-cfg; compile-x86)
 
 open import ISWIM.Compiler.CaptureScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
@@ -80,74 +83,90 @@ import ISWIM.Untyped.proof.Correctness.Reduction.RCORed as RCORed
 import ISWIM.Untyped.proof.Correctness.Reduction.LiftLocalsRed as LiftLocalsRed
 import ISWIM.Untyped.proof.Correctness.CEK.ExplicateSim as ExplicateSim
 import ISWIM.Untyped.proof.Correctness.CEK.SelectSim as SelectSim
-import ISWIM.Untyped.proof.Correctness.Reduction.CompilerX86Red as CompilerX86Red
+import ISWIM.Untyped.proof.Correctness.Reduction.CompilerX86Red as
+  CompilerX86Red
 
 {- Each pass ------------------------------------------------------------------}
 
 {- simplify (ISWIM → ISWIM, the first pass), for closed programs -}
-simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+simplify-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (ISWIMᵣ.sem (simplify M))
 simplify-correct = SimplifyRed.simplify-correct
 
 {- capture, for closed programs -}
-capture-correct : ∀ (M : ISWIM.AST) → Closed M
+capture-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Clos2ᵣ.sem (capture M))
 capture-correct = CaptureRed.capture-correct
 
 {- prune, for well-scoped programs (which capture produces) -}
-prune-correct : ∀ (M : Clos2.AST) → WS 0 M
+prune-correct : ∀ (M : Clos2.AST)
+  → WS 0 M
   → Equivalent (Clos2ᵣ.sem M) (Clos2ᵣ.sem (prune-program M))
 prune-correct = PruneRed.prune-correct
 
 {- concretize, for well-scoped programs (which prune produces) -}
-concretize-correct : ∀ (M : Clos2.AST) → WS 0 M
+concretize-correct : ∀ (M : Clos2.AST)
+  → WS 0 M
   → Equivalent (Clos2ᵣ.sem M) (Clos3ᵣ.sem (concretize-program M))
 concretize-correct = ConcretizeRed.concretize-correct
 
-split-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ᵣ.sem M) (Clos4ᵣ.sem (split M))
+split-correct : ∀ (M : Clos3.AST)
+  → Equivalent (Clos3ᵣ.sem M) (Clos4ᵣ.sem (split M))
 split-correct = SplitRed.split-correct
 
-hoist-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ᵣ.sem M) (Clos5ᵣ.sem (hoist M))
+hoist-correct : ∀ (M : Clos4.AST)
+  → Equivalent (Clos4ᵣ.sem M) (Clos5ᵣ.sem (hoist M))
 hoist-correct = HoistRed.hoist-correct
 
 {- remove complex operands, for well-scoped programs (which the compiler
    produces) -}
-rco-correct : ∀ (P : Clos5.Program) → Scoped P
+rco-correct : ∀ (P : Clos5.Program)
+  → Scoped P
   → Equivalent (Clos5ᵣ.sem P) (Clos5ᵣ.sem (rco-program P))
 rco-correct = RCORed.rco-correct
 
 {- lift locals, for programs in monadic normal form (which rco produces) -}
-lift-locals-correct : ∀ (P : Clos5.Program) (mp : MonProgram P)
+lift-locals-correct : ∀ (P : Clos5.Program)
+  → (mp : MonProgram P)
   → Equivalent (Clos5ᵣ.sem P) (Impₘ.sem (lift-program P mp))
 lift-locals-correct = LiftLocalsRed.lift-correct
 
 {- explicate control and select instructions, between the machines of Imp,
    CFG and X86 (the proofs of the CEK machine + simulation development) -}
-explicate-correct : ∀ (P : Imp.Program) → Equivalent (Impₘ.sem P) (CFGₘ.sem (explicate P))
+explicate-correct : ∀ (P : Imp.Program)
+  → Equivalent (Impₘ.sem P) (CFGₘ.sem (explicate P))
 explicate-correct = ExplicateSim.explicate-correct
 
-select-correct : ∀ (P : CFG.Program) → Equivalent (CFGₘ.sem P) (X86ₘ.sem (select P))
+select-correct : ∀ (P : CFG.Program)
+  → Equivalent (CFGₘ.sem P) (X86ₘ.sem (select P))
 select-correct = SelectSim.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
 
-compile-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Clos5ᵣ.sem (compile M))
 compile-correct = CompilerRed.compile-correct
 
-compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-mon-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Clos5ᵣ.sem (compile-mon M))
 compile-mon-correct = RCORed.compile-mon-correct
 
-compile-imp-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-imp-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Impₘ.sem (compile-imp M))
 compile-imp-correct = LiftLocalsRed.compile-imp-correct
 
-compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-cfg-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (CFGₘ.sem (compile-cfg M))
 compile-cfg-correct = CompilerX86Red.compile-cfg-correct
 
-compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-x86-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (X86ₘ.sem (compile-x86 M))
 compile-x86-correct = CompilerX86Red.compile-x86-correct
 
@@ -156,18 +175,26 @@ compile-x86-correct = CompilerX86Red.compile-x86-correct
    does, errors exactly when it does, and diverges exactly when it
    does -}
 
-compile-const : ∀ (M : ISWIM.AST) → Closed M → ∀ B k
-  → Terminates (ISWIMᵣ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵣ.sem (compile M)) (o-const B k)
+compile-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ B k
+  → Terminates (ISWIMᵣ.sem M) (o-const B k)
+    ⇔ Terminates (Clos5ᵣ.sem (compile M)) (o-const B k)
 compile-const = CompilerRed.compile-const
 
-compile-converges : ∀ (M : ISWIM.AST) → Closed M
-  → Converges (Terminates (ISWIMᵣ.sem M)) ⇔ Converges (Terminates (Clos5ᵣ.sem (compile M)))
+compile-converges : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Converges (Terminates (ISWIMᵣ.sem M))
+    ⇔ Converges (Terminates (Clos5ᵣ.sem (compile M)))
 compile-converges = CompilerRed.compile-converges
 
-compile-error : ∀ (M : ISWIM.AST) → Closed M
-  → Terminates (ISWIMᵣ.sem M) o-error ⇔ Terminates (Clos5ᵣ.sem (compile M)) o-error
+compile-error : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Terminates (ISWIMᵣ.sem M) o-error
+    ⇔ Terminates (Clos5ᵣ.sem (compile M)) o-error
 compile-error = CompilerRed.compile-error
 
-compile-diverges : ∀ (M : ISWIM.AST) → Closed M
+compile-diverges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Diverges (ISWIMᵣ.sem M) ⇔ Diverges (Clos5ᵣ.sem (compile M))
 compile-diverges = CompilerRed.compile-diverges

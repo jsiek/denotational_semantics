@@ -29,8 +29,12 @@ data Value : AST → Set where
 Values : ∀ {n} → Args (replicate n ■) → Set
 Values = Each Value
 
-value-red : ∀ {V} → Value V → red V ≡ val
-values-red : ∀ {n} {as : Args (replicate n ■)} → Values as → red-args as ≡ val
+value-red : ∀ {V}
+  → Value V
+  → red V ≡ val
+values-red : ∀ {n} {as : Args (replicate n ■)}
+  → Values as
+  → red-args as ≡ val
 value-red fun = refl
 value-red (pair v w) rewrite value-red v | value-red w = refl
 value-red lit = refl
@@ -40,8 +44,12 @@ value-red (inr v) rewrite value-red v = refl
 values-red [] = refl
 values-red (v ∷ vs) rewrite value-red v | values-red vs = refl
 
-value-sub : ∀ σ {V} → Value V → Value (sub σ V)
-values-sub : ∀ σ {n} {as : Args (replicate n ■)} → Values as → Values (sub-args σ as)
+value-sub : ∀ σ {V}
+  → Value V
+  → Value (sub σ V)
+values-sub : ∀ σ {n} {as : Args (replicate n ■)}
+  → Values as
+  → Values (sub-args σ as)
 value-sub σ (fun {cons (clear a) nil}) = fun
 value-sub σ (pair v w) = pair (value-sub σ v) (value-sub σ w)
 value-sub σ lit = lit

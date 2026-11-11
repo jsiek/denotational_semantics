@@ -14,8 +14,8 @@
   * the type of each register: a type, or nothing (unset);
   * the frame: the types of the slots assigned so far, a context Δ as
     in CFGᵀ (slot x : Δ ∋ A is at level lvl x), in a frame of n slots;
-    writing slot k (k the length of Δ', p : Δ' ⊑ Δ) gives it a type and
-    forgets the slots after it, and needs k < n;
+    writing slot k (k the length of Δ', p : Δ' ⊑ Δ) pops the slots from k
+    on, pushes a slot of the new type, and needs k < n;
   * the open closure, if any (below);
   * whether the flag is set.
   A sequence (Seq) is instructions ending in a jump, typed by the state
@@ -29,7 +29,7 @@
   (∃ n. code n × ⟪ tup n ⟫). load fst x, r opens the closure in slot x:
   r gets the type codeα of its code, α the length of its environment,
   and the state records that x is open; load snd x, r, of the open
-  closure, gives r the type tupα. Opening forgets the registers of type
+  closure, gives r the type tupα. Opening wipes the registers of type
   codeα or tupα of an earlier closure; writing a slot, or a call,
   closes the closure. callq a needs a : codeα, %rdi : tupα and %rsi :
   Any, as code n expects; it leaves %rax : Any and %rdi, %rsi and the
@@ -118,12 +118,12 @@ unset : Regs
 unset = rt nothing nothing nothing
 
 {- a register of an earlier closure's code or environment is unset -}
-forgetα : Maybe RTy → Maybe RTy
-forgetα (just (ty A)) = just (ty A)
-forgetα _ = nothing
+wipeα : Maybe RTy → Maybe RTy
+wipeα (just (ty A)) = just (ty A)
+wipeα _ = nothing
 
 wipe : Regs → Regs
-wipe Γ = rt (forgetα (Regs.ax Γ)) (forgetα (Regs.di Γ)) (forgetα (Regs.si Γ))
+wipe Γ = rt (wipeα (Regs.ax Γ)) (wipeα (Regs.di Γ)) (wipeα (Regs.si Γ))
 
 {- the type of a machine state -}
 record St : Set where
@@ -148,11 +148,13 @@ data Arg (Σ : List ℕ) (ψ : St) : RTy → Set where
 {- destinations, in a frame of n slots -}
 data Dst (n : ℕ) : St → RTy → St → Set where
   reg : ∀ {Γ Δ O F τ} r → Dst n (st Γ Δ O F) τ (st (Γ [ r ↦ just τ ]) Δ O F)
-  slot : ∀ {Γ Δ Δ' O F A} (p : Δ' ⊑ Δ) → .(length Δ' < n) → Dst n (st Γ Δ O F) (ty A) (st Γ (A ∷ Δ') nothing F)
+  slot : ∀ {Γ Δ Δ' O F A} (p : Δ' ⊑ Δ) → .(length Δ' < n)
+    → Dst n (st Γ Δ O F) (ty A) (st Γ (A ∷ Δ') nothing F)
 
 {- what alloc builds -}
 data Obj (Σ : List ℕ) (ψ : St) : Ty → Set where
-  pair : ∀ {m} → Arg Σ ψ (ty (code m)) → Arg Σ ψ (ty ⟪ tup m ⟫) → Obj Σ ψ ⟪ fun ⟫
+  pair : ∀ {m} → Arg Σ ψ (ty (code m)) → Arg Σ ψ (ty ⟪ tup m ⟫)
+    → Obj Σ ψ ⟪ fun ⟫
   tuple : ∀ {m} → Vec (Arg Σ ψ (ty Any)) m → Obj Σ ψ ⟪ tup m ⟫
   inl inr : Arg Σ ψ (ty Any) → Obj Σ ψ ⟪ sum ⟫
 
@@ -165,19 +167,27 @@ data Instr (Σ : List ℕ) (n : ℕ) : St → St → Set where
   movq : ∀ {ψ τ ψ'} → Arg Σ ψ τ → Dst n ψ τ ψ' → Instr Σ n ψ ψ'
   subq : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) ℤty → ∀ r → Γ ‹ r › ≡ just ℤty
     → Instr Σ n (st Γ Δ O F) (st (Γ [ r ↦ just ℤty ]) Δ O F)
-  cmpq : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) ℤty → Arg Σ (st Γ Δ O F) ℤty → Instr Σ n (st Γ Δ O F) (st Γ Δ O true)
-  sete : ∀ {Γ Δ O ψ'} → Dst n (st Γ Δ O true) (ty ⟪ sum ⟫) ψ' → Instr Σ n (st Γ Δ O true) ψ'
-  testinl : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) (ty ⟪ sum ⟫) → Instr Σ n (st Γ Δ O F) (st Γ Δ O true)
+  cmpq : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) ℤty → Arg Σ (st Γ Δ O F) ℤty
+    → Instr Σ n (st Γ Δ O F) (st Γ Δ O true)
+  sete : ∀ {Γ Δ O ψ'} → Dst n (st Γ Δ O true) (ty ⟪ sum ⟫) ψ'
+    → Instr Σ n (st Γ Δ O true) ψ'
+  testinl : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) (ty ⟪ sum ⟫)
+    → Instr Σ n (st Γ Δ O F) (st Γ Δ O true)
   alloc : ∀ {ψ A ψ'} → Obj Σ ψ A → Dst n ψ (ty A) ψ' → Instr Σ n ψ ψ'
-  load : ∀ {ψ A B ψ'} → Field A B → Arg Σ ψ (ty A) → Dst n ψ (ty B) ψ' → Instr Σ n ψ ψ'
+  load : ∀ {ψ A B ψ'} → Field A B → Arg Σ ψ (ty A) → Dst n ψ (ty B) ψ'
+    → Instr Σ n ψ ψ'
   {- load fst x, r: open the closure in slot x -}
-  loadfst : ∀ {Γ Δ O F} (x : Δ ∋ ⟪ fun ⟫) r → Instr Σ n (st Γ Δ O F) (st (wipe Γ [ r ↦ just codeα ]) Δ (just x) F)
+  loadfst : ∀ {Γ Δ O F} (x : Δ ∋ ⟪ fun ⟫) r
+    → Instr Σ n (st Γ Δ O F) (st (wipe Γ [ r ↦ just codeα ]) Δ (just x) F)
   {- load snd x, r, of the open closure x -}
-  loadsnd : ∀ {Γ Δ x F} r → Instr Σ n (st Γ Δ (just x) F) (st (Γ [ r ↦ just tupα ]) Δ (just x) F)
-  callq : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) codeα → Γ ‹ rdi › ≡ just tupα → Γ ‹ rsi › ≡ just (ty Any)
+  loadsnd : ∀ {Γ Δ x F} r
+    → Instr Σ n (st Γ Δ (just x) F) (st (Γ [ r ↦ just tupα ]) Δ (just x) F)
+  callq : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) codeα → Γ ‹ rdi › ≡ just tupα
+    → Γ ‹ rsi › ≡ just (ty Any)
     → Instr Σ n (st Γ Δ O F) (returned Δ)
   {- project's check, and the move -}
-  chk : ∀ {Γ Δ O F ψ'} (t : Tag) → Δ ∋ Any → Dst n (st (Γ [ rax ↦ nothing ]) Δ O false) (ty ⟪ flat t ⟫) ψ'
+  chk : ∀ {Γ Δ O F ψ'} (t : Tag) → Δ ∋ Any
+    → Dst n (st (Γ [ rax ↦ nothing ]) Δ O false) (ty ⟪ flat t ⟫) ψ'
     → Instr Σ n (st Γ Δ O F) ψ'
 
 {- instructions, then a jump, to the blocks Bs -}
@@ -209,7 +219,8 @@ record Body (Σ : List ℕ) (ψ : St) : Set where
 {- a definition of code n starts with its environment in %rdi and its
    argument in %rsi -}
 called : ℕ → St
-called m = st (rt nothing (just (ty ⟪ tup m ⟫)) (just (ty Any))) [] nothing false
+called m =
+  st (rt nothing (just (ty ⟪ tup m ⟫)) (just (ty Any))) [] nothing false
 
 record Program : Set where
   constructor program

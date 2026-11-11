@@ -30,7 +30,8 @@ open import Relation.Nullary using (yes; no)
 
 𝕆-Clos5 : Table → DOpSig (𝒫 Value) sig
 𝕆-Clos5 T (fun-ref k) _ = T k
-𝕆-Clos5 T app ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ = ⋆ ⟨ ⋆ ⟨ L , ⟨ M , ptt ⟩ ⟩ , ⟨ N , ptt ⟩ ⟩
+𝕆-Clos5 T app ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ =
+  ⋆ ⟨ ⋆ ⟨ L , ⟨ M , ptt ⟩ ⟩ , ⟨ N , ptt ⟩ ⟩
 𝕆-Clos5 T (lit B k) = ℬ B k
 𝕆-Clos5 T pair-op = pair
 𝕆-Clos5 T fst-op = car
@@ -56,7 +57,8 @@ open import Relation.Nullary using (yes; no)
    definitions: its code takes the tuple of free variables X and then the
    argument Y -}
 code : Table → AST → 𝒫 Value
-code T N = Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧[ T ] (Y • X • (λ _ → init))) , ptt ⟩) , ptt ⟩
+code T N =
+  Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧[ T ] (Y • X • (λ _ → init))) , ptt ⟩) , ptt ⟩
 
 {- the table of a list of definitions, newest first -}
 table : List AST → Table

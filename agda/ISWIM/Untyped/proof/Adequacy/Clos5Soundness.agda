@@ -29,9 +29,9 @@ module ISWIM.Untyped.proof.Adequacy.Clos5Soundness where
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (int; bool; δ)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
-  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈)
-  renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value; _↦_; ν; ω; ⦅_,_⦆;
+  tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈) renaming (const to
+  dconst)
 open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono)
   renaming (proj to dproj; pair to dpair)
@@ -39,7 +39,8 @@ open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
 open import ISWIM.Untyped.Language.Clos5
 open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; table; init) renaming (code to codeD)
-open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (stab; Agree)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (stab;
+  Agree)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Semantics.Observation
@@ -52,7 +53,8 @@ open import ISWIM.proof.Adequacy.Common using (ShapeOf)
 open import ISWIM.proof.Adequacy.Soundness
   using (At; AllNE; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆)
 open import ISWIM.Untyped.proof.Adequacy.Clos5WF using (WF; DefsWF)
-open import ISWIM.Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (⟦⟧[]-monotone; term-continuous; table-con)
+open import ISWIM.Untyped.proof.Semantics.Graph.Clos5IswimContinuous using
+  (⟦⟧[]-monotone; term-continuous; table-con)
 import ISWIM.Untyped.proof.Adequacy.Clos5Common as Common
 open import ISWIM.Untyped.proof.Adequacy.Values using (module Den)
 
@@ -64,22 +66,31 @@ open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ; zero; suc; _<_; _≟_)
 open import Relation.Nullary using (yes; no)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym;
+  cong; subst)
 
 VEnv : Set₁
 VEnv = proof.Framework.GraphModel.Env.Env Value
 
-≡→⊆ : ∀ {D E : 𝒫 Value} → D ≡ E → D ⊆ E
+≡→⊆ : ∀ {D E : 𝒫 Value}
+  → D ≡ E
+  → D ⊆ E
 ≡→⊆ refl d d∈ = d∈
 
-pair-⊆ : ∀ {D D' E E'} → D ⊆ D' → E ⊆ E' → dpair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ dpair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+pair-⊆ : ∀ {D D' E E'}
+  → D ⊆ D'
+  → E ⊆ E'
+  → dpair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ dpair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
 pair-⊆ {D} {D'} {E} {E'} D⊆ E⊆ =
-  lower (pair-mono ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩)
+  lower
+    (pair-mono ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+      ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩)
 
 module _ (ds : List AST) (wf : DefsWF ds) where
 
@@ -95,7 +106,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   {- Denotations of values, environments, continuations and states ------------}
 
   {- every entry of T⁺ holds ν and is consistent -}
-  table-ν∈ : ∀ Ns k {x} → x ∈ table Ns k → ν ∈ table Ns k
+  table-ν∈ : ∀ Ns k {x}
+    → x ∈ table Ns k
+    → ν ∈ table Ns k
   table-ν∈ (N ∷ Ns) k x∈ with k ≟ length Ns
   ... | yes _ = tt
   ... | no _ = table-ν∈ Ns k x∈
@@ -123,8 +136,10 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   𝒦 : Cont → 𝒫 Value → 𝒫 Value
   𝒦 halt D = D
-  𝒦 (appF M N γ κ) D = 𝒦 κ (⋆ ⟨ ⋆ ⟨ D , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩ , ⟨ ⟦ N ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩)
-  𝒦 (appE f N γ κ) D = 𝒦 κ (⋆ ⟨ ⋆ ⟨ 𝒱 f , ⟨ D , ptt ⟩ ⟩ , ⟨ ⟦ N ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩)
+  𝒦 (appF M N γ κ) D =
+    𝒦 κ (⋆ ⟨ ⋆ ⟨ D , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩ , ⟨ ⟦ N ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩)
+  𝒦 (appE f N γ κ) D =
+    𝒦 κ (⋆ ⟨ ⋆ ⟨ 𝒱 f , ⟨ D , ptt ⟩ ⟩ , ⟨ ⟦ N ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩)
   𝒦 (appA f e κ) D = 𝒦 κ (⋆ ⟨ ⋆ ⟨ 𝒱 f , ⟨ 𝒱 e , ptt ⟩ ⟩ , ⟨ D , ptt ⟩ ⟩)
   𝒦 (pairL M γ κ) D = 𝒦 κ (dpair ⟨ D , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩)
   𝒦 (pairR v κ) D = 𝒦 κ (dpair ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
@@ -135,8 +150,12 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒦 (inlK κ) D = 𝒦 κ (inl ⟨ D , ptt ⟩)
   𝒦 (inrK κ) D = 𝒦 κ (inr ⟨ D , ptt ⟩)
   𝒦 (caseK M N γ κ) D =
-    𝒦 κ (𝒞 ⟨ D , ⟨ (λ X → ⟦ M ⟧⁺ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
-  𝒦 (letK N γ κ) D = 𝒦 κ (⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
+    𝒦 κ
+      (𝒞
+        ⟨ D
+          , ⟨ (λ X → ⟦ M ⟧⁺ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
+  𝒦 (letK N γ κ) D =
+    𝒦 κ (⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
   𝒦 (primL p M γ κ) D = 𝒦 κ (primD p ⟨ D , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩)
   𝒦 (primR p v κ) D = 𝒦 κ (primD p ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
 
@@ -144,19 +163,25 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒮 (eval M γ κ) = 𝒦 κ (⟦ M ⟧⁺ (𝓔 γ))
   𝒮 (ret v κ) = 𝒦 κ (𝒱 v)
 
-  {- Basic properties ----------------------------------------------------------}
+  {- Basic properties ---------------------------------------------------------}
 
-  rev𝒱-mono : ∀ vs Ds Es → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
+  rev𝒱-mono : ∀ vs Ds Es
+    → Ds ⊆L Es
+    → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
   rev𝒱-mono [] Ds Es s = s
-  rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es) ⟨ (λ d z → z) , s ⟩
+  rev𝒱-mono (v ∷ vs) Ds Es s =
+    rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es) ⟨ (λ d z → z) , s ⟩
 
-  𝒦-mono : ∀ κ {D E} → D ⊆ E → 𝒦 κ D ⊆ 𝒦 κ E
+  𝒦-mono : ∀ κ {D E}
+    → D ⊆ E
+    → 𝒦 κ D ⊆ 𝒦 κ E
   𝒦-mono halt D⊆ = D⊆
   𝒦-mono (appF M N γ κ) {D} {E} D⊆ = 𝒦-mono κ G
     where
     G : ⋆ ⟨ ⋆ ⟨ D , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩ , ⟨ ⟦ N ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩
       ⊆ ⋆ ⟨ ⋆ ⟨ E , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩ , ⟨ ⟦ N ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩
-    G w ⟨ V , ⟨ ⟨ U , ⟨ f∈ , restU ⟩ ⟩ , rest ⟩ ⟩ = ⟨ V , ⟨ ⟨ U , ⟨ D⊆ _ f∈ , restU ⟩ ⟩ , rest ⟩ ⟩
+    G w ⟨ V , ⟨ ⟨ U , ⟨ f∈ , restU ⟩ ⟩ , rest ⟩ ⟩ =
+      ⟨ V , ⟨ ⟨ U , ⟨ D⊆ _ f∈ , restU ⟩ ⟩ , rest ⟩ ⟩
   𝒦-mono (appE f N γ κ) {D} {E} D⊆ = 𝒦-mono κ G
     where
     G : ⋆ ⟨ ⋆ ⟨ 𝒱 f , ⟨ D , ptt ⟩ ⟩ , ⟨ ⟦ N ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩
@@ -165,11 +190,14 @@ module _ (ds : List AST) (wf : DefsWF ds) where
       ⟨ V , ⟨ ⟨ U , ⟨ f∈ , ⟨ (λ d d∈ → D⊆ d (U⊆ d d∈)) , neU ⟩ ⟩ ⟩ , rest ⟩ ⟩
   𝒦-mono (appA f e κ) {D} {E} D⊆ = 𝒦-mono κ G
     where
-    G : ⋆ ⟨ ⋆ ⟨ 𝒱 f , ⟨ 𝒱 e , ptt ⟩ ⟩ , ⟨ D , ptt ⟩ ⟩ ⊆ ⋆ ⟨ ⋆ ⟨ 𝒱 f , ⟨ 𝒱 e , ptt ⟩ ⟩ , ⟨ E , ptt ⟩ ⟩
-    G w ⟨ V , ⟨ f∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ⟨ V , ⟨ f∈ , ⟨ (λ d d∈ → D⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩
+    G : ⋆ ⟨ ⋆ ⟨ 𝒱 f , ⟨ 𝒱 e , ptt ⟩ ⟩ , ⟨ D , ptt ⟩ ⟩
+      ⊆ ⋆ ⟨ ⋆ ⟨ 𝒱 f , ⟨ 𝒱 e , ptt ⟩ ⟩ , ⟨ E , ptt ⟩ ⟩
+    G w ⟨ V , ⟨ f∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ =
+      ⟨ V , ⟨ f∈ , ⟨ (λ d d∈ → D⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩
   𝒦-mono (pairL M γ κ) {D} {E} D⊆ = 𝒦-mono κ G
     where
-    G : dpair ⟨ D , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩ ⊆ dpair ⟨ E , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩
+    G : dpair ⟨ D , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩
+      ⊆ dpair ⟨ E , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩
     G = pair-⊆ {D} {E} {⟦ M ⟧⁺ (𝓔 γ)} {⟦ M ⟧⁺ (𝓔 γ)} D⊆ (λ d z → z)
   𝒦-mono (pairR v κ) {D} {E} D⊆ = 𝒦-mono κ G
     where
@@ -185,31 +213,41 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒦-mono (caseK M N γ κ) D⊆ = 𝒦-mono κ G
     where
     G : _ ⊆ _
-    G w (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩) = inj₁ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allL d d∈)) , w∈ ⟩ ⟩ ⟩
-    G w (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩) = inj₂ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allR d d∈)) , w∈ ⟩ ⟩ ⟩
+    G w (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩) =
+      inj₁ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allL d d∈)) , w∈ ⟩ ⟩ ⟩
+    G w (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩) =
+      inj₂ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allR d d∈)) , w∈ ⟩ ⟩ ⟩
   𝒦-mono (letK N γ κ) {D} {E} D⊆ = 𝒦-mono κ G
     where
     G : ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
       ⊆ ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ , ⟨ E , ptt ⟩ ⟩
-    G w ⟨ V , ⟨ f∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ⟨ V , ⟨ f∈ , ⟨ (λ d d∈ → D⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩
+    G w ⟨ V , ⟨ f∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ =
+      ⟨ V , ⟨ f∈ , ⟨ (λ d d∈ → D⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩
   𝒦-mono (primL p M γ κ) D⊆ =
-    𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , rest ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ D⊆ _ n∈ , rest ⟩ ⟩ ⟩ }
+    𝒦-mono κ
+      λ { w ⟨ n , ⟨ m , ⟨ n∈ , rest ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ D⊆ _ n∈ , rest ⟩ ⟩ ⟩ }
   𝒦-mono (primR p v κ) D⊆ =
-    𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ n∈ , ⟨ D⊆ _ m∈ , eq ⟩ ⟩ ⟩ ⟩ }
+    𝒦-mono κ
+      λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩
+        → ⟨ n , ⟨ m , ⟨ n∈ , ⟨ D⊆ _ m∈ , eq ⟩ ⟩ ⟩ ⟩ }
 
   𝓔-nonempty : ∀ γ → proof.Framework.GraphModel.Env.nonempty-env (𝓔 γ)
   𝓔-nonempty [] x = ⟨ ω , refl ⟩
   𝓔-nonempty (v ∷ γ) zero = 𝒱-nonempty v
   𝓔-nonempty (v ∷ γ) (suc x) = 𝓔-nonempty γ x
 
-  𝓔-lookup : ∀ γ x {v} → γ ‼ x ≡ just v → 𝒱 v ⊆ 𝓔 γ x
+  𝓔-lookup : ∀ γ x {v}
+    → γ ‼ x ≡ just v
+    → 𝒱 v ⊆ 𝓔 γ x
   𝓔-lookup (v ∷ γ) zero refl d d∈ = d∈
   𝓔-lookup (v ∷ γ) (suc x) eq = 𝓔-lookup γ x eq
 
   {- β for one parameter (case, let) -}
-  body-in : ∀ N γ v d → d ∈ ⟦ N ⟧⁺ (𝓔 (v ∷ γ))
+  body-in : ∀ N γ v d
+    → d ∈ ⟦ N ⟧⁺ (𝓔 (v ∷ γ))
     → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ 𝒱 v × d ∈ ⟦ N ⟧⁺ (mem V • 𝓔 γ)
-  body-in N γ v d d∈ with term-continuous T⁺ N (𝓔 (v ∷ γ)) (𝓔-nonempty (v ∷ γ)) d d∈
+  body-in N γ v d d∈
+    with term-continuous T⁺ N (𝓔 (v ∷ γ)) (𝓔-nonempty (v ∷ γ)) d d∈
   ... | ⟨ Vs , ⟨ ok , d∈′ ⟩ ⟩ =
     ⟨ Vs 0 , ⟨ proj₁ (ok 0) , ⟨ proj₂ (ok 0) , ⟦⟧[]-monotone T⁺ N G d d∈′ ⟩ ⟩ ⟩
     where
@@ -219,17 +257,21 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   {- β for the two parameters of code: calling code k, found in the table
      as B, on the environment e and the argument w -}
-  call-⊆ : ∀ k {B} w e → global ds k ≡ just B
+  call-⊆ : ∀ k {B} w e
+    → global ds k ≡ just B
     → ⟦ B ⟧⁺ (𝓔 (w ∷ e ∷ [])) ⊆ ⋆ ⟨ ⋆ ⟨ T⁺ k , ⟨ 𝒱 e , ptt ⟩ ⟩ , ⟨ 𝒱 w , ptt ⟩ ⟩
   call-⊆ k {B} w e g d d∈ with global-split k g
   ... | ⟨ Ns , ⟨ p , refl ⟩ ⟩
       with term-continuous (table Ns) B ρ (𝓔-nonempty (w ∷ e ∷ [])) d
-             (proj₁ (stab (length Ns) T⁺ (table Ns) B ρ ρ ag (proj₁ (proj₁ (DefsWF-⊑ p wf)))
+             (proj₁
+                 (stab (length Ns) T⁺ (table Ns) B ρ ρ ag
+                   (proj₁ (proj₁ (DefsWF-⊑ p wf)))
                        (λ x → ≃-refl)) d d∈)
     where
     ρ = 𝓔 (w ∷ e ∷ [])
     ag : Agree (length Ns) T⁺ (table Ns)
-    ag j j< = ⟨ to , (λ x x∈ → inj₁ (≡→⊆ (sym (table-agree (∷-⊑ p) j j<)) x x∈)) ⟩
+    ag j j< =
+      ⟨ to , (λ x x∈ → inj₁ (≡→⊆ (sym (table-agree (∷-⊑ p) j j<)) x x∈)) ⟩
       where
       to : T⁺ j ⊆ table Ns j
       to x (inj₁ x∈) = ≡→⊆ (table-agree (∷-⊑ p) j j<) x x∈
@@ -244,34 +286,43 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     G (suc zero) d d∈ = d∈
     G (suc (suc x)) = proj₂ (ok (suc (suc x)))
     in-code : (Vs 1 ↦ (Vs 0 ↦ d)) ∈ codeD (table Ns) B
-    in-code = ⟨ ⟨ ⟦⟧[]-monotone (table Ns) B G d d∈′ , ⟨ proj₁ (ok 0) , Con⇒≈ (Vs 0) (𝒱-con w) (proj₂ (ok 0)) ⟩ ⟩
+    in-code =
+      ⟨ ⟨ ⟦⟧[]-monotone (table Ns) B G d d∈′
+        , ⟨ proj₁ (ok 0) , Con⇒≈ (Vs 0) (𝒱-con w) (proj₂ (ok 0)) ⟩ ⟩
               , ⟨ proj₁ (ok 1) , Con⇒≈ (Vs 1) (𝒱-con e) (proj₂ (ok 1)) ⟩ ⟩
 
-  {- Tuples --------------------------------------------------------------------}
+  {- Tuples -------------------------------------------------------------------}
 
   𝒱s-reverseAcc : ∀ acc vs → 𝒱s (reverseAcc acc vs) ≡ rev𝒱 vs (𝒱s acc)
   𝒱s-reverseAcc acc [] = refl
   𝒱s-reverseAcc acc (v ∷ vs) = 𝒱s-reverseAcc (v ∷ acc) vs
 
-  tuple-next-𝒮 : ∀ vs Ms γ κ → 𝒮 (tuple-next vs Ms γ κ) ⊆ 𝒦 κ (𝒯L (rev𝒱 vs (⟦ Ms ⟧* (𝓔 γ))))
-  tuple-next-𝒮 vs [] γ κ d d∈ = subst (λ Ds → 𝒦 κ (𝒯L Ds) d) (𝒱s-reverseAcc [] vs) d∈
+  tuple-next-𝒮 : ∀ vs Ms γ κ
+    → 𝒮 (tuple-next vs Ms γ κ) ⊆ 𝒦 κ (𝒯L (rev𝒱 vs (⟦ Ms ⟧* (𝓔 γ))))
+  tuple-next-𝒮 vs [] γ κ d d∈ =
+    subst (λ Ds → 𝒦 κ (𝒯L Ds) d) (𝒱s-reverseAcc [] vs) d∈
   tuple-next-𝒮 vs (M ∷ Ms) γ κ d d∈ = d∈
 
   At-args : ∀ {n} (args : Args (replicate n ■)) ρ (i : Fin n) d
-    → At i (⟦ args→list args ⟧* ρ) d → d ∈ nthD (⟦ args ⟧₊[ T⁺ ] ρ) i
+    → At i (⟦ args→list args ⟧* ρ) d
+    → d ∈ nthD (⟦ args ⟧₊[ T⁺ ] ρ) i
   At-args {suc n} (M ,, args) ρ zero d ⟨ _ , d∈ ⟩ = d∈
   At-args {suc n} (M ,, args) ρ (suc i) d a = At-args args ρ i d a
 
   AllNE-args : ∀ {n} (args : Args (replicate n ■)) ρ
-    → AllNE (⟦ args→list args ⟧* ρ) → ∀ i → nonempty (nthD (⟦ args ⟧₊[ T⁺ ] ρ) i)
+    → AllNE (⟦ args→list args ⟧* ρ)
+    → ∀ i
+    → nonempty (nthD (⟦ args ⟧₊[ T⁺ ] ρ) i)
   AllNE-args {suc n} (M ,, args) ρ ⟨ ne , _ ⟩ zero = ne
   AllNE-args {suc n} (M ,, args) ρ ⟨ _ , nes ⟩ (suc i) = AllNE-args args ρ nes i
 
-  length-args : ∀ {n} (args : Args (replicate n ■)) ρ → length (⟦ args→list args ⟧* ρ) ≡ n
+  length-args : ∀ {n} (args : Args (replicate n ■)) ρ
+    → length (⟦ args→list args ⟧* ρ) ≡ n
   length-args {zero} Nil ρ = refl
   length-args {suc n} (M ,, args) ρ = cong suc (length-args args ρ)
 
-  𝒯L-args : ∀ {n} (args : Args (replicate n ■)) ρ → 𝒯L (⟦ args→list args ⟧* ρ) ⊆ 𝒯 n (⟦ args ⟧₊[ T⁺ ] ρ)
+  𝒯L-args : ∀ {n} (args : Args (replicate n ■)) ρ
+    → 𝒯L (⟦ args→list args ⟧* ρ) ⊆ 𝒯 n (⟦ args ⟧₊[ T⁺ ] ρ)
   𝒯L-args {zero} Nil ρ ⟨⟩ tt = tt
   𝒯L-args {zero} Nil ρ (tup[ zero ] d) ⟨ () , _ ⟩
   𝒯L-args {zero} Nil ρ (tup[ suc i ] d) ⟨ () , _ ⟩
@@ -283,7 +334,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   {- Steps shrink the denotation of the state --------------------------------}
 
-  step-⊆ : ∀ s {s'} → step ds s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
+  step-⊆ : ∀ s {s'}
+    → step ds s ≡ next s'
+    → 𝒮 s' ⊆ 𝒮 s
   step-⊆ (eval (` x) γ κ) eq with γ ‼ x in look
   step-⊆ (eval (` x) γ κ) refl | just v = 𝒦-mono κ (𝓔-lookup γ x look)
   step-⊆ (eval (` x) γ κ) () | nothing
@@ -313,13 +366,15 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   step-⊆ (ret w (appA (T.inr v) e κ)) ()
   step-⊆ (ret v (pairL M γ κ)) refl d d∈ = d∈
   step-⊆ (ret w (pairR v κ)) refl d d∈ = d∈
-  step-⊆ (ret (pair v w) (fstK κ)) refl = 𝒦-mono κ λ d d∈ → ⟨ proj₁ (𝒱-nonempty w) , ⟨ d∈ , proj₂ (𝒱-nonempty w) ⟩ ⟩
+  step-⊆ (ret (pair v w) (fstK κ)) refl =
+    𝒦-mono κ λ d d∈ → ⟨ proj₁ (𝒱-nonempty w) , ⟨ d∈ , proj₂ (𝒱-nonempty w) ⟩ ⟩
   step-⊆ (ret (code k) (fstK κ)) ()
   step-⊆ (ret (const B k) (fstK κ)) ()
   step-⊆ (ret (tup vs) (fstK κ)) ()
   step-⊆ (ret (T.inl v) (fstK κ)) ()
   step-⊆ (ret (T.inr v) (fstK κ)) ()
-  step-⊆ (ret (pair v w) (sndK κ)) refl = 𝒦-mono κ λ d d∈ → ⟨ proj₁ (𝒱-nonempty v) , ⟨ proj₂ (𝒱-nonempty v) , d∈ ⟩ ⟩
+  step-⊆ (ret (pair v w) (sndK κ)) refl =
+    𝒦-mono κ λ d d∈ → ⟨ proj₁ (𝒱-nonempty v) , ⟨ proj₂ (𝒱-nonempty v) , d∈ ⟩ ⟩
   step-⊆ (ret (code k) (sndK κ)) ()
   step-⊆ (ret (const B k) (sndK κ)) ()
   step-⊆ (ret (tup vs) (sndK κ)) ()
@@ -342,13 +397,15 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     β : ⟦ M ⟧⁺ (𝓔 (v ∷ γ)) ⊆ _
     β d d∈ with body-in M γ v d d∈
     ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-    ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
+    ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
+      inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
   step-⊆ (ret (T.inr v) (caseK M N γ κ)) refl = 𝒦-mono κ β
     where
     β : ⟦ N ⟧⁺ (𝓔 (v ∷ γ)) ⊆ _
     β d d∈ with body-in N γ v d d∈
     ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-    ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₂ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
+    ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
+      inj₂ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
   step-⊆ (ret (code k) (caseK M N γ κ)) ()
   step-⊆ (ret (pair v w) (caseK M N γ κ)) ()
   step-⊆ (ret (const B k) (caseK M N γ κ)) ()
@@ -357,25 +414,34 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     where
     β : ⟦ N ⟧⁺ (𝓔 (v ∷ γ)) ⊆ _
     β d d∈ with body-in N γ v d d∈
-    ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con v) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
+    ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
+      ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con v) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
   step-⊆ (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) refl d d∈ = d∈
   step-⊆ (ret v (primL p M γ κ)) refl d d∈ = d∈
   step-⊆ (ret w (primR p v κ)) eq with δ? p (obs v) (obs w) in e
   step-⊆ (ret w (primR p v κ)) refl | just r = 𝒦-mono κ (prim-⊆ p v w r e)
   step-⊆ (ret w (primR p v κ)) () | nothing
 
-  ↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
+  ↠-⊆ : ∀ {s t}
+    → s ↠ t
+    → 𝒮 t ⊆ 𝒮 s
   ↠-⊆ done d d∈ = d∈
   ↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
 
-  {- Final states ----------------------------------------------------------------}
+  {- Final states -------------------------------------------------------------}
 
   private
-    error : ∀ {o} → stop {State} o-error ≡ stop o → Answer o → ⊥
+    error : ∀ {o}
+      → stop {State} o-error ≡ stop o
+      → Answer o
+      → ⊥
     error refl ans = ans refl
 
   {- a state that stops with an answer returns a value to halt -}
-  halts : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ v ∈ Val ] s ≡ ret v halt × o ≡ obs v
+  halts : ∀ s {o}
+    → step ds s ≡ stop o
+    → Answer o
+    → Σ[ v ∈ Val ] s ≡ ret v halt × o ≡ obs v
   halts (eval (` x) γ κ) eq ans with γ ‼ x
   halts (eval (` x) γ κ) () ans | just v
   halts (eval (` x) γ κ) eq ans | nothing = ⊥-elim (error eq ans)
@@ -440,7 +506,10 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   halts (ret w (primR p v κ)) () ans | just r
   halts (ret w (primR p v κ)) eq ans | nothing = ⊥-elim (error eq ans)
 
-  final-shape : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
+  final-shape : ∀ s {o}
+    → step ds s ≡ stop o
+    → Answer o
+    → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
   final-shape s fin ans with halts s fin ans
   ... | ⟨ v , ⟨ refl , refl ⟩ ⟩ = 𝒱-shape v
 
@@ -448,12 +517,19 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
 {- a well-formed program that terminates with an answer o has an element
    of the shape of o in its denotation -}
-soundness : ∀ P → WF P → ∀ {o} → Terminates (sem P) o → Answer o
+soundness : ∀ P
+  → WF P
+  → ∀ {o}
+  → Terminates (sem P) o
+  → Answer o
   → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₚ × ShapeOf o d
 soundness (program ds M) ⟨ wfd , ⟨ rb , _ ⟩ ⟩ (⟨ s , ⟨ σ , fin ⟩ ⟩) ans
     with final-shape ds wfd s fin ans
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ =
-  ⟨ d , ⟨ proj₁ (stab (length ds) (T⁺ ds wfd) (table ds) M ρ ρ ag rb (λ x → ≃-refl)) d
+  ⟨ d
+      ,
+      ⟨ proj₁
+        (stab (length ds) (T⁺ ds wfd) (table ds) M ρ ρ ag rb (λ x → ≃-refl)) d
             (↠-⊆ ds wfd (Common.star→↠ ds σ) d d∈)
         , sh ⟩ ⟩
   where

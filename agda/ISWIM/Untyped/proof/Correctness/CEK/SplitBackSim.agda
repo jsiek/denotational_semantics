@@ -29,7 +29,8 @@
 module ISWIM.Untyped.proof.Correctness.CEK.SplitBackSim where
 
 open import Data.List using (List; []; _∷_; replicate)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_;
+  reverse⁺)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Nat.Properties using (≤-refl)
@@ -46,15 +47,15 @@ open import ISWIM.Untyped.proof.Semantics.CEK.Backward
 open import proof.Framework.ListUtil
 import ISWIM.Untyped.Semantics.CEK.Clos3 as S
 import ISWIM.Untyped.Semantics.CEK.Clos4 as T
-open import ISWIM.Untyped.proof.Correctness.CEK.SplitSim
-  using (_≈_; clos≈; const≈; tup≈; inl≈; inr≈; EnvRel; env; Del; snd0; app-body;
-         _≈k_; halt; appL; appR; tupK; closK; getK; inlK; inrK; caseK;
-         primL; primR; letK; obs≈; prim≈; look; env-ext; env-skip; env-body; del-args)
+open import ISWIM.Untyped.proof.Correctness.CEK.SplitSim using (_≈_; clos≈;
+  const≈; tup≈; inl≈; inr≈; EnvRel; env; Del; snd0; app-body; _≈k_; halt; appL;
+  appR; tupK; closK; getK; inlK; inrK; caseK; primL; primR; letK; obs≈; prim≈;
+  look; env-ext; env-skip; env-body; del-args)
 
 open import proof.Framework.Syntax.Rename C4.Op C4.sig
   using (ext; rename; rename-args; shift; rename-fuse; rename-id)
 
-{- The target states between two source steps ----------------------------------}
+{- The target states between two source steps ---------------------------------}
 
 {- the operand of an application, under the let-bound closure -}
 opd : (ℕ → ℕ) → AST → C4.AST
@@ -70,13 +71,16 @@ opd r M = rename (ext r) (shift (split M))
 
 {- the code and the tuple of free variables of a closure -}
 funT : AST → C4.AST
-funT N = C4.fun-op C4.⦅ C4.cons (C4.clear (C4.bind (C4.bind (C4.ast (split N))))) C4.nil ⦆
+funT N =
+  C4.fun-op C4.⦅ C4.cons
+  (C4.clear (C4.bind (C4.bind (C4.ast (split N))))) C4.nil ⦆
 
 tupT : ∀ {n} → (ℕ → ℕ) → Args (replicate n ■) → C4.AST
 tupT {n} r fvs = C4.tuple n C4.⦅ rename-args r (del-map-args fvs) ⦆
 
 {- The simulation relation, indexed by the target steps left before the
-   source moves ------------------------------------------------------------------}
+   source moves
+   ------------------------------------------------------------------}
 
 data Match : ℕ → S.State → T.State → Set where
   eval~ : ∀ {r M M' ρ₁ ρ₂ κ₁ κ₂} → Del r M M' → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
@@ -85,31 +89,38 @@ data Match : ℕ → S.State → T.State → Set where
 
   {- building a closure: the source waits at S.eval (clos-op …) -}
   clos-fun~ : ∀ {r n N fvs ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Match 2 (S.eval (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) ρ₁ κ₁)
+    → Match 2
+      (S.eval (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) ρ₁ κ₁)
               (T.eval (funT N) ρ₂ (T.pairL (tupT r fvs) ρ₂ κ₂))
   clos-code~ : ∀ {r n N fvs ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Match 1 (S.eval (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) ρ₁ κ₁)
+    → Match 1
+      (S.eval (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) ρ₁ κ₁)
               (T.ret (T.fun (split N)) (T.pairL (tupT r fvs) ρ₂ κ₂))
   clos-env~ : ∀ {r n N fvs ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Match 0 (S.eval (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) ρ₁ κ₁)
+    → Match 0
+      (S.eval (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) ρ₁ κ₁)
               (T.eval (tupT r fvs) ρ₂ (T.pairR (T.fun (split N)) κ₂))
 
   {- calling a closure: the source waits at S.ret v (appL M ρ₁ κ₁) while
      the target runs the let body up to checking that w is a pair -}
   let-body~ : ∀ {r M ρ₁ ρ₂ κ₁ κ₂ v w} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → v ≈ w
-    → Match 8 (S.ret v (S.appL M ρ₁ κ₁)) (T.eval (rename (ext r) (app-body M)) (w ∷ ρ₂) κ₂)
+    → Match 8 (S.ret v (S.appL M ρ₁ κ₁))
+      (T.eval (rename (ext r) (app-body M)) (w ∷ ρ₂) κ₂)
   let-fst~ : ∀ {r M ρ₁ ρ₂ κ₁ κ₂ v w} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → v ≈ w
     → Match 7 (S.ret v (S.appL M ρ₁ κ₁))
-              (T.eval (C4.fst-op C4.⦅ C4.` 0 ,, Nil ⦆) (w ∷ ρ₂) (κF r M w ρ₂ κ₂))
+              (T.eval (C4.fst-op C4.⦅ C4.` 0 ,, Nil ⦆) (w ∷ ρ₂)
+                  (κF r M w ρ₂ κ₂))
   let-var~ : ∀ {r M ρ₁ ρ₂ κ₁ κ₂ v w} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → v ≈ w
-    → Match 6 (S.ret v (S.appL M ρ₁ κ₁)) (T.eval (C4.` 0) (w ∷ ρ₂) (T.fstK (κF r M w ρ₂ κ₂)))
+    → Match 6 (S.ret v (S.appL M ρ₁ κ₁))
+      (T.eval (C4.` 0) (w ∷ ρ₂) (T.fstK (κF r M w ρ₂ κ₂)))
   let-chk~ : ∀ {r M ρ₁ ρ₂ κ₁ κ₂ v w} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → v ≈ w
     → Match 5 (S.ret v (S.appL M ρ₁ κ₁)) (T.ret w (T.fstK (κF r M w ρ₂ κ₂)))
 
   {- and, for a closure, takes it apart -}
   call-code~ : ∀ {r M N ρ₁ ρ₂ κ₁ κ₂ v e} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → v ≈ e
     → Match 4 (S.ret (S.clos N v) (S.appL M ρ₁ κ₁))
-              (T.ret (T.fun (split N)) (κF r M (T.pair (T.fun (split N)) e) ρ₂ κ₂))
+              (T.ret (T.fun (split N))
+                  (κF r M (T.pair (T.fun (split N)) e) ρ₂ κ₂))
   call-snd~ : ∀ {r M N ρ₁ ρ₂ κ₁ κ₂ v e} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → v ≈ e
     → Match 3 (S.ret (S.clos N v) (S.appL M ρ₁ κ₁))
               (T.eval snd0 (T.pair (T.fun (split N)) e ∷ ρ₂)
@@ -117,55 +128,78 @@ data Match : ℕ → S.State → T.State → Set where
   call-var~ : ∀ {r M N ρ₁ ρ₂ κ₁ κ₂ v e} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → v ≈ e
     → Match 2 (S.ret (S.clos N v) (S.appL M ρ₁ κ₁))
               (T.eval (C4.` 0) (T.pair (T.fun (split N)) e ∷ ρ₂)
-                 (T.sndK (κE r M (T.fun (split N)) (T.pair (T.fun (split N)) e) ρ₂ κ₂)))
+                 (T.sndK
+                     (κE r M (T.fun (split N))
+                       (T.pair (T.fun (split N)) e) ρ₂ κ₂)))
   call-chk~ : ∀ {r M N ρ₁ ρ₂ κ₁ κ₂ v e} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → v ≈ e
     → Match 1 (S.ret (S.clos N v) (S.appL M ρ₁ κ₁))
               (T.ret (T.pair (T.fun (split N)) e)
-                 (T.sndK (κE r M (T.fun (split N)) (T.pair (T.fun (split N)) e) ρ₂ κ₂)))
+                 (T.sndK
+                     (κE r M (T.fun (split N))
+                       (T.pair (T.fun (split N)) e) ρ₂ κ₂)))
   call-env~ : ∀ {r M N ρ₁ ρ₂ κ₁ κ₂ v e} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → v ≈ e
     → Match 0 (S.ret (S.clos N v) (S.appL M ρ₁ κ₁))
-              (T.ret e (κE r M (T.fun (split N)) (T.pair (T.fun (split N)) e) ρ₂ κ₂))
+              (T.ret e
+                  (κE r M (T.fun (split N)) (T.pair (T.fun (split N)) e) ρ₂ κ₂))
 
-{- The simulation, for any Clos3 program P -------------------------------------}
+{- The simulation, for any Clos3 program P ------------------------------------}
 
 module _ (P : AST) where
 
   L₁ = S.sem P
 
   {- answering a lookup or a projection -}
-  ret?-reflects : ∀ {i s₁ mv mw κ₁ κ₂} → M.Pointwise _≈_ mv mw → κ₁ ≈k κ₂
-    → S.step s₁ ≡ S.ret? mv κ₁ → Reflects L₁ Match i s₁ (T.ret? mw κ₂)
+  ret?-reflects : ∀ {i s₁ mv mw κ₁ κ₂}
+    → M.Pointwise _≈_ mv mw
+    → κ₁ ≈k κ₂
+    → S.step s₁ ≡ S.ret? mv κ₁
+    → Reflects L₁ Match i s₁ (T.ret? mw κ₂)
   ret?-reflects (M.just r) k eq = steps (step⁺ eq) (ret~ k r)
   ret?-reflects M.nothing k eq = stops ε eq
 
-  tuple-next~ : ∀ {r vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
-    → Pointwise (Del r) Ms Ms' → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+  tuple-next~ : ∀ {r vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂}
+    → Pointwise _≈_ vs ws
+    → Pointwise (Del r) Ms Ms'
+    → EnvRel r ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → Σ[ n ∈ ℕ ] Match n (S.tuple-next vs Ms ρ₁ κ₁) (T.tuple-next ws Ms' ρ₂ κ₂)
   tuple-next~ rs [] ρ k = _ , ret~ k (tup≈ (reverse⁺ rs))
   tuple-next~ rs (d ∷ ds) ρ k = _ , eval~ d ρ (tupK rs ds ρ k)
 
   wait = ≤-refl
 
-  sim : ∀ {i s₁ s₂} → Match i s₁ s₂ → Reflects L₁ Match i s₁ (T.step s₂)
+  sim : ∀ {i s₁ s₂}
+    → Match i s₁ s₂
+    → Reflects L₁ Match i s₁ (T.step s₂)
   sim (eval~ {M = ` x} refl ρ k) = ret?-reflects (look ρ x) k refl
-  sim (eval~ {M = clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆} refl ρ k) =
+  sim
+    (eval~ {M = clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆} refl ρ k)
+    =
     waits wait (clos-fun~ ρ k)
-  sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps (step⁺ refl) (eval~ refl ρ (appL ρ k))
-  sim (eval~ {M = lit B k ⦅ Nil ⦆} refl ρ κ) = steps (step⁺ refl) (ret~ κ const≈)
+  sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} refl ρ k) =
+    steps (step⁺ refl) (eval~ refl ρ (appL ρ k))
+  sim (eval~ {M = lit B k ⦅ Nil ⦆} refl ρ κ) =
+    steps (step⁺ refl) (ret~ κ const≈)
   sim (eval~ {r} {M = tuple n ⦅ as ⦆} refl ρ k) =
     steps (step⁺ refl) (proj₂ (tuple-next~ [] (del-args r as) ρ k))
-  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} refl ρ k) = steps (step⁺ refl) (eval~ refl ρ (getK k))
-  sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} refl ρ k) = steps (step⁺ refl) (eval~ refl ρ (inlK k))
-  sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} refl ρ k) = steps (step⁺ refl) (eval~ refl ρ (inrK k))
+  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} refl ρ k) =
+    steps (step⁺ refl) (eval~ refl ρ (getK k))
+  sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} refl ρ k) =
+    steps (step⁺ refl) (eval~ refl ρ (inlK k))
+  sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} refl ρ k) =
+    steps (step⁺ refl) (eval~ refl ρ (inrK k))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} refl ρ k) =
     steps (step⁺ refl) (eval~ refl ρ (caseK ρ k))
-  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps (step⁺ refl) (eval~ refl ρ (primL ρ k))
-  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} refl ρ k) = steps (step⁺ refl) (eval~ refl ρ (letK ρ k))
+  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} refl ρ k) =
+    steps (step⁺ refl) (eval~ refl ρ (primL ρ k))
+  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} refl ρ k) =
+    steps (step⁺ refl) (eval~ refl ρ (letK ρ k))
   sim (ret~ halt r) = stops ε (cong stop (obs≈ r))
   sim (ret~ (appL ρ k) r) = waits wait (let-body~ ρ k r)
   sim (ret~ (appR {N} r' k) r) =
     steps (step⁺ refl) (eval~ (sym (rename-id (split N))) (env-body r r') k)
-  sim (ret~ (tupK rs ds ρ k) r) = steps (step⁺ refl) (proj₂ (tuple-next~ (r ∷ rs) ds ρ k))
+  sim (ret~ (tupK rs ds ρ k) r) =
+    steps (step⁺ refl) (proj₂ (tuple-next~ (r ∷ rs) ds ρ k))
   sim (ret~ (closK k) r) = steps (step⁺ refl) (ret~ k (clos≈ r))
   sim (ret~ (getK {i = i} k) (tup≈ rs)) = ret?-reflects (proj-pw i rs) k refl
   sim (ret~ (getK k) (clos≈ _)) = stops ε refl
@@ -174,8 +208,10 @@ module _ (P : AST) where
   sim (ret~ (getK k) (inr≈ _)) = stops ε refl
   sim (ret~ (inlK k) r) = steps (step⁺ refl) (ret~ k (inl≈ r))
   sim (ret~ (inrK k) r) = steps (step⁺ refl) (ret~ k (inr≈ r))
-  sim (ret~ (caseK ρ k) (inl≈ r)) = steps (step⁺ refl) (eval~ refl (env-ext r ρ) k)
-  sim (ret~ (caseK ρ k) (inr≈ r)) = steps (step⁺ refl) (eval~ refl (env-ext r ρ) k)
+  sim (ret~ (caseK ρ k) (inl≈ r)) =
+    steps (step⁺ refl) (eval~ refl (env-ext r ρ) k)
+  sim (ret~ (caseK ρ k) (inr≈ r)) =
+    steps (step⁺ refl) (eval~ refl (env-ext r ρ) k)
   sim (ret~ (caseK ρ k) (clos≈ _)) = stops ε refl
   sim (ret~ (caseK ρ k) const≈) = stops ε refl
   sim (ret~ (caseK ρ k) (tup≈ _)) = stops ε refl
@@ -199,9 +235,10 @@ module _ (P : AST) where
   sim (call-var~ ρ k r) = waits wait (call-chk~ ρ k r)
   sim (call-chk~ ρ k r) = waits wait (call-env~ ρ k r)
   sim (call-env~ {r} {M} ρ k r') =
-    steps (step⁺ refl) (eval~ (rename-fuse (ext r) suc (split M)) (env-skip ρ) (appR r' k))
+    steps (step⁺ refl)
+      (eval~ (rename-fuse (ext r) suc (split M)) (env-skip ρ) (appR r' k))
 
-{- The end theorems: for every Clos3 program -----------------------------------}
+{- The end theorems: for every Clos3 program ----------------------------------}
 
 split-bsim : ∀ M → BSim (S.sem M) (T.sem (split M))
 split-bsim M =
@@ -209,8 +246,12 @@ split-bsim M =
     (_ , eval~ (sym (rename-id (split M))) (env (λ x → M.nothing)) halt)
     (sim M)
 
-split-back-terminates : ∀ M {o} → Terminates (T.sem (split M)) o → Terminates (S.sem M) o
+split-back-terminates : ∀ M {o}
+  → Terminates (T.sem (split M)) o
+  → Terminates (S.sem M) o
 split-back-terminates M = backward-terminates (split-bsim M)
 
-split-back-diverges : ∀ M → Diverges∞ (T.sem (split M)) → Diverges∞ (S.sem M)
+split-back-diverges : ∀ M
+  → Diverges∞ (T.sem (split M))
+  → Diverges∞ (S.sem M)
 split-back-diverges M = backward-diverges (split-bsim M)

@@ -46,7 +46,8 @@ open import Data.List using ([])
    interpreter of FPC on M terminates with n if and only if the
    interpreter of X86μ on compile M does -}
 compile-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)
-  → Terminates (FPCᵢ.sem M) (o-const Int n) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int n)
+  → Terminates (FPCᵢ.sem M) (o-const Int n)
+    ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int n)
 compile-const = CompilerFuel.compile-const
 
 {- and one diverges if and only if the other does -}
@@ -56,5 +57,6 @@ compile-diverges = CompilerFuel.compile-diverges
 
 {- more generally, the two interpreters are equivalent for every closed
    term M -}
-compile-correct : ∀ {A} (M : FPC.Tm [] A) → Equivalent (FPCᵢ.sem M) (X86μᵢ.sem (compile M))
+compile-correct : ∀ {A} (M : FPC.Tm [] A)
+  → Equivalent (FPCᵢ.sem M) (X86μᵢ.sem (compile M))
 compile-correct = CompilerFuel.compile-correct

@@ -20,11 +20,14 @@
 module FPC.proof.Adequacy.X86Compiled where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ⟨⟩; Con-⊆; Con-•; Con-⌈⌉; ≈⇒Con; _•_)
+open import proof.Framework.GraphModel.Domain using (Value; ⟨⟩; Con-⊆; Con-•;
+  Con-⌈⌉; ≈⇒Con; _•_)
 open import proof.Framework.GraphModel.Ops using (Λ-≃; ΛΛ-≃; ΛΛ-mono)
 open import proof.Framework.GraphModel.Env using (extend-nonempty-env; •-~)
-open import FPC.proof.Semantics.GraphModel.Ops using (Table; ConT; tables; tables-con; init)
-open import FPC.proof.Semantics.GraphModel.GlobalFun using (ok; code-con; table-con)
+open import FPC.proof.Semantics.GraphModel.Ops using (Table; ConT; tables;
+  tables-con; init)
+open import FPC.proof.Semantics.GraphModel.GlobalFun using (ok; code-con;
+  table-con)
 open import FPC.Semantics.GraphModel.GlobalFun using (code′; table)
 open import FPC.Semantics.GraphModel.Imp using () renaming (code′ to codeᵢ)
 open import FPC.Semantics.GraphModel.X86 using (codeₜ)
@@ -36,38 +39,53 @@ open import FPC.Language.FPC using (Tm)
 open import FPC.Language.Mon using (⌜_⌝)
 open import FPC.Framework.AllUtil using (All; lookup) renaming (map to All-map)
 open import FPC.proof.Framework.AllProp using (lookup-map)
-open import FPC.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-PairClos; compile)
+open import FPC.Compiler.Pipeline using (compile-to-GlobalFun;
+  compile-to-PairClos; compile)
 open import FPC.Compiler.RCO using (rco)
 open import FPC.Compiler.LiftLocals using () renaming (lift to liftₗ)
 open import FPC.Compiler.Explicate using (explicate-body)
 open import FPC.Compiler.Select using (def-body)
 open import FPC.proof.Compiler.HoistOlder using (OlderDefs; hoist-older)
-open import FPC.proof.Adequacy.GlobalFunCommon using (table-at; agree; tbl-mono; olderAt)
-open import FPC.proof.Correctness.GraphModel.RCOCorrect using (code-rco; table-rco)
-open import FPC.proof.Correctness.GraphModel.LiftLocalsCorrect using (code-lift; table-lift)
-open import FPC.proof.Correctness.GraphModel.ExplicateCorrect using (body-≃; table-explicate)
-open import FPC.proof.Correctness.GraphModel.SelectCorrect using (code-≃; table-≃)
+open import FPC.proof.Adequacy.GlobalFunCommon using (table-at; agree; tbl-mono;
+  olderAt)
+open import FPC.proof.Correctness.GraphModel.RCOCorrect using (code-rco;
+  table-rco)
+open import FPC.proof.Correctness.GraphModel.LiftLocalsCorrect using (code-lift;
+  table-lift)
+open import FPC.proof.Correctness.GraphModel.ExplicateCorrect using (body-≃;
+  table-explicate)
+open import FPC.proof.Correctness.GraphModel.SelectCorrect using (code-≃;
+  table-≃)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Maybe using (nothing)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 
 {- the table contains the code of each definition, with the whole table -}
-Contains : ∀ {Σ} {D : DSig → Set} → (Table Σ → ∀ {s} → D s → 𝒫 Value) → All D Σ → Set
-Contains cd ds = ∀ {s} (f : _ ∋ s) → cd (tables cd ds) (lookup ds f) ⊆ tables cd ds f
+Contains : ∀ {Σ} {D : DSig → Set} → (Table Σ → ∀ {s} → D s → 𝒫 Value)
+  → All D Σ → Set
+Contains cd ds =
+  ∀ {s} (f : _ ∋ s) → cd (tables cd ds) (lookup ds f) ⊆ tables cd ds f
 
-clos5-closed : ∀ {Σ} (ds : All (Code Σ) Σ) → OlderDefs ds → Contains code′ ds
+clos5-closed : ∀ {Σ} (ds : All (Code Σ) Σ)
+  → OlderDefs ds
+  → Contains code′ ds
 clos5-closed ds od f d d∈ =
   subst (d ∈_) (sym (table-at code′ ds f))
     (lower (ΛΛ-mono _ _ ⟨ (λ X X' X⊆ Y Y' Y⊆ → lift λ w w∈ →
-      tbl-mono (lookup ds f) (table-con ds) (olderAt od f) (λ g g< x x∈ → subst (x ∈_) (agree code′ ds f g g<) x∈) _ w
-        (proj₁ (ok (table-con ds) (lookup ds f)) (•-~ _⊆_ (•-~ _⊆_ (λ _ _ z → z) X⊆) Y⊆) w w∈)) , ptt ⟩) d d∈)
+      tbl-mono (lookup ds f) (table-con ds) (olderAt od f)
+        (λ g g< x x∈ → subst (x ∈_) (agree code′ ds f g g<) x∈) _ w
+        (proj₁ (ok (table-con ds) (lookup ds f))
+            (•-~ _⊆_ (•-~ _⊆_ (λ _ _ z → z) X⊆) Y⊆) w w∈)) , ptt ⟩) d d∈)
 
 {- the X86μ program that the compiler produces, from its GlobalFunμ one -}
-compiled : ∀ {A} (M : Tm [] A) → let ds = Program.defs (compile M) in ConT (tables codeₜ ds) × Contains codeₜ ds
+compiled : ∀ {A} (M : Tm [] A) →
+  let ds =
+       Program.defs (compile M) in ConT (tables codeₜ ds) × Contains codeₜ ds
 compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , closed ⟩
   where
   ds₅ = GlobalFun.Program.defs (compile-to-GlobalFun M)
@@ -76,18 +94,34 @@ compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , close
   ds꜀ = All-map explicate-body dsᵢ
   cTₘ = tables-con code-con (All-map ⌜_⌝ dsₘ)
   TT : ∀ {s} (f : _ ∋ s) → table ds₅ f ≃ tables codeₜ (All-map def-body ds꜀) f
-  TT f = ≃-trans (table-rco ds₅ f) (≃-trans (table-lift dsₘ f) (≃-trans (table-explicate dsᵢ f) (table-≃ ds꜀ f)))
+  TT f =
+    ≃-trans (table-rco ds₅ f)
+    (≃-trans (table-lift dsₘ f)
+      (≃-trans (table-explicate dsᵢ f) (table-≃ ds꜀ f)))
   closed : Contains codeₜ (All-map def-body ds꜀)
-  closed f d d∈ = proj₁ (TT f) d (clos5-closed ds₅ (hoist-older (compile-to-PairClos M)) f d (proj₂ code≃ d (subst (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
+  closed f d d∈ =
+    proj₁ (TT f) d
+    (clos5-closed ds₅ (hoist-older (compile-to-PairClos M)) f d
+      (proj₂ code≃ d
+        (subst
+          (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
     where
-    eq : lookup (All-map def-body ds꜀) f ≡ def-body (explicate-body (liftₗ (rco (lookup ds₅ f) (λ x → x))))
-    eq = trans (lookup-map def-body ds꜀ f) (cong def-body (trans (lookup-map explicate-body dsᵢ f)
-           (cong explicate-body (trans (lookup-map liftₗ dsₘ f) (cong liftₗ (lookup-map (λ D → rco D (λ x → x)) ds₅ f))))))
+    eq : lookup (All-map def-body ds꜀) f
+      ≡ def-body (explicate-body (liftₗ (rco (lookup ds₅ f) (λ x → x))))
+    eq =
+      trans (lookup-map def-body ds꜀ f)
+      (cong def-body (trans (lookup-map explicate-body dsᵢ f)
+           (cong explicate-body
+               (trans (lookup-map liftₗ dsₘ f)
+                 (cong liftₗ (lookup-map (λ D → rco D (λ x → x)) ds₅ f))))))
     dₘ = rco (lookup ds₅ f) (λ x → x)
     Tₘ = tables code′ (All-map ⌜_⌝ dsₘ)
-    code≃ : code′ (table ds₅) (lookup ds₅ f) ≃ codeₜ (tables codeₜ (All-map def-body ds꜀)) (def-body (explicate-body (liftₗ dₘ)))
+    code≃ : code′ (table ds₅) (lookup ds₅ f)
+      ≃ codeₜ (tables codeₜ (All-map def-body ds꜀))
+      (def-body (explicate-body (liftₗ dₘ)))
     code≃ = ≃-trans rco≃ (≃-trans lift≃
-      (≃-trans (ΛΛ-≃ λ X Y → body-≃ (table-explicate dsᵢ) (liftₗ dₘ) _) (code-≃ (table-≃ ds꜀) (explicate-body (liftₗ dₘ)))))
+      (≃-trans (ΛΛ-≃ λ X Y → body-≃ (table-explicate dsᵢ) (liftₗ dₘ) _)
+          (code-≃ (table-≃ ds꜀) (explicate-body (liftₗ dₘ)))))
       where
       lift≃ : code′ Tₘ ⌜ dₘ ⌝ ≃ codeᵢ (tables codeᵢ dsᵢ) (liftₗ dₘ)
       lift≃ = code-lift cTₘ (table-lift dsₘ) dₘ

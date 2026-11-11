@@ -36,7 +36,8 @@ module ISWIM.Untyped.Compiler.Hoist where
   glob (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds =
     ⟨ fun-ref (length (proj₂ (glob N ds))) ⦅ nil' ⦆'
     , proj₁ (glob N ds) ∷ proj₂ (glob N ds) ⟩
-  glob (app ⦅ args ⦆) ds = ⟨ app ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
+  glob (app ⦅ args ⦆) ds =
+    ⟨ app ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
   glob (lit B k ⦅ args ⦆) ds =
     ⟨ lit B k ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
   glob (pair-op ⦅ args ⦆) ds =
@@ -61,12 +62,15 @@ module ISWIM.Untyped.Compiler.Hoist where
     ⟨ prim p ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
 
   glob-arg (ast M) ds = ⟨ ast' (proj₁ (glob M ds)) , proj₂ (glob M ds) ⟩
-  glob-arg (bind a) ds = ⟨ bind' (proj₁ (glob-arg a ds)) , proj₂ (glob-arg a ds) ⟩
-  glob-arg (clear a) ds = ⟨ clear' (proj₁ (glob-arg a ds)) , proj₂ (glob-arg a ds) ⟩
+  glob-arg (bind a) ds =
+    ⟨ bind' (proj₁ (glob-arg a ds)) , proj₂ (glob-arg a ds) ⟩
+  glob-arg (clear a) ds =
+    ⟨ clear' (proj₁ (glob-arg a ds)) , proj₂ (glob-arg a ds) ⟩
 
   glob-args nil ds = ⟨ nil' , ds ⟩
   glob-args (cons a args) ds =
-    ⟨ cons' (proj₁ (glob-arg a ds)) (proj₁ (glob-args args (proj₂ (glob-arg a ds))))
+    ⟨ cons' (proj₁ (glob-arg a ds))
+        (proj₁ (glob-args args (proj₂ (glob-arg a ds))))
     , proj₂ (glob-args args (proj₂ (glob-arg a ds))) ⟩
 
   {- the pass, for a whole program -}

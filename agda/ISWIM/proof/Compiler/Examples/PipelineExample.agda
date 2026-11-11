@@ -1,8 +1,8 @@
 {-
 
   Smoke tests of the typed compiler (ISWIM/Compiler/Pipeline.agda), from
-  untyped ISWIM to X86ᵀ, run on the X86ᵀ machine (ISWIM/Semantics/CEK/Typed/X86.agda)
-  and on the ISWIM machine, by computation.
+  untyped ISWIM to X86ᵀ, run on the X86ᵀ machine
+  (ISWIM/Semantics/CEK/Typed/X86.agda) and on the ISWIM machine, by computation.
 
 -}
 
@@ -48,7 +48,8 @@ dec5-x86 = refl
 
 {- (λx. λy. x - y) 10 3: a closure that captures x -}
 sub103 : AST
-sub103 = app ⦅ app ⦅ lam ⦅ ⟩ lam ⦅ ⟩ prim sub ⦅ ` 1 ,, ` 0 ,, Nil ⦆ ,, Nil ⦆ ,, Nil ⦆ ,, int 10 ,, Nil ⦆
+sub103 = app ⦅ app ⦅ lam ⦅ ⟩ lam ⦅ ⟩ prim sub ⦅ ` 1 ,, ` 0 ,, Nil ⦆ ,, Nil ⦆
+  ,, Nil ⦆ ,, int 10 ,, Nil ⦆
                ,, int 3 ,, Nil ⦆
 
 sub103-x86 : run 400 (X86ᵀₘ.sem (compile-x86 sub103)) ≡ just (o-const Int (+ 7))
@@ -56,7 +57,8 @@ sub103-x86 = refl
 
 {- (λx. case x = 1 of inl _ ⇒ 5 | inr _ ⇒ 6) 1: eq, case, a join -}
 pick : AST
-pick = app ⦅ lam ⦅ ⟩ case-op ⦅ prim eq ⦅ ` 0 ,, int 1 ,, Nil ⦆ ,, ⟩ int 5 ,, ⟩ int 6 ,, Nil ⦆ ,, Nil ⦆
+pick = app ⦅ lam ⦅ ⟩ case-op ⦅ prim eq ⦅ ` 0 ,, int 1 ,, Nil ⦆ ,, ⟩ int 5 ,, ⟩
+  int 6 ,, Nil ⦆ ,, Nil ⦆
            ,, int 1 ,, Nil ⦆
 
 pick-x86 : run 400 (X86ᵀₘ.sem (compile-x86 pick)) ≡ just (o-const Int (+ 5))
@@ -64,7 +66,9 @@ pick-x86 = refl
 
 {- (get 0 (1, 2)) - 1: a tuple, and a project to a tuple of 2 -}
 fst12 : AST
-fst12 = prim sub ⦅ get {2} zero ⦅ tuple 2 ⦅ int 1 ,, int 2 ,, Nil ⦆ ,, Nil ⦆ ,, int 1 ,, Nil ⦆
+fst12 =
+  prim sub ⦅ get {2} zero ⦅ tuple 2 ⦅ int 1 ,, int 2 ,, Nil ⦆ ,, Nil ⦆
+  ,, int 1 ,, Nil ⦆
   where open import Data.Fin using (zero)
 
 fst12-x86 : run 400 (X86ᵀₘ.sem (compile-x86 fst12)) ≡ just (o-const Int (+ 0))

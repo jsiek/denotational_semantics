@@ -4,7 +4,8 @@ open import proof.Framework.GraphModel.Continuity
 open import proof.Semantics.Graph.Prim
 open import ISWIM.Language.ISWIM
 open import ISWIM.Semantics.Graph.ISWIM public hiding (⟦_⟧; init)
-open import proof.Framework.GraphModel.SemanticsUtil Op sig using (module GoodSemantics)
+open import proof.Framework.GraphModel.SemanticsUtil Op sig using (module
+  GoodSemantics)
 
 open import Data.Unit using (⊤; tt)
 

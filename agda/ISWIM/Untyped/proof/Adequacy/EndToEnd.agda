@@ -48,36 +48,69 @@ import ISWIM.Untyped.proof.Adequacy.Clos5 as A5
 import ISWIM.Semantics.CEK.X86 as X
 import ISWIM.Untyped.proof.Adequacy.X86 as AX
 open import ISWIM.Untyped.proof.Adequacy.X86CompileWF using (compile-x86-wf)
-open import ISWIM.Untyped.proof.Correctness.Graph.SelectCorrect using (compile-x86-correct-const; compile-x86-correct-nonempty)
+open import ISWIM.Untyped.proof.Correctness.Graph.SelectCorrect using
+  (compile-x86-correct-const; compile-x86-correct-nonempty)
 
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
-end-to-end-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
-  → Terminates (I.sem M) (o-const B k) ⇔ Terminates (C5.sem (compile M)) (o-const B k)
+end-to-end-const : ∀ M
+  → Closed M
+  → ∀ {B} (k : base-rep B)
+  → Terminates (I.sem M) (o-const B k)
+    ⇔ Terminates (C5.sem (compile M)) (o-const B k)
 end-to-end-const M c k =
-  ⟨ (λ t → A5.adequacy-const (compile M) wf (proj₁ (AIC.compile-correct-machine-const M c k) t))
-  , (λ t → proj₂ (AIC.compile-correct-machine-const M c k) (A5.sound-const (compile M) wf t)) ⟩
+  ⟨ (λ t →
+      A5.adequacy-const (compile M) wf
+      (proj₁ (AIC.compile-correct-machine-const M c k) t))
+  ,
+    (λ t →
+      proj₂ (AIC.compile-correct-machine-const M c k)
+        (A5.sound-const (compile M) wf t)) ⟩
   where wf = A5.compile-wf M c
 
-end-to-end-converges : ∀ M → Closed M
-  → Converges (Terminates (I.sem M)) ⇔ Converges (Terminates (C5.sem (compile M)))
+end-to-end-converges : ∀ M
+  → Closed M
+  → Converges (Terminates (I.sem M))
+    ⇔ Converges (Terminates (C5.sem (compile M)))
 end-to-end-converges M c =
-  ⟨ (λ t → A5.adequacy-converges (compile M) wf (proj₁ (AIC.compile-correct-machine-converges M c) t))
-  , (λ t → proj₂ (AIC.compile-correct-machine-converges M c) (A5.sound-nonempty (compile M) wf t)) ⟩
+  ⟨ (λ t →
+      A5.adequacy-converges (compile M) wf
+      (proj₁ (AIC.compile-correct-machine-converges M c) t))
+  ,
+    (λ t →
+      proj₂ (AIC.compile-correct-machine-converges M c)
+        (A5.sound-nonempty (compile M) wf t)) ⟩
   where wf = A5.compile-wf M c
 
-{- The whole compiler, into X86 -------------------------------------------------}
+{- The whole compiler, into X86 -----------------------------------------------}
 
-end-to-end-x86-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
-  → Terminates (I.sem M) (o-const B k) ⇔ Terminates (X.sem (compile-x86 M)) (o-const B k)
+end-to-end-x86-const : ∀ M
+  → Closed M
+  → ∀ {B} (k : base-rep B)
+  → Terminates (I.sem M) (o-const B k)
+    ⇔ Terminates (X.sem (compile-x86 M)) (o-const B k)
 end-to-end-x86-const M c k =
-  ⟨ (λ t → AX.adequacy-const (compile-x86 M) wf (proj₁ (compile-x86-correct-const M k) (AI.sound-const M t)))
-  , (λ t → AI.adequacy-const M c (proj₂ (compile-x86-correct-const M k) (AX.sound-const (compile-x86 M) wf t))) ⟩
+  ⟨ (λ t →
+      AX.adequacy-const (compile-x86 M) wf
+      (proj₁ (compile-x86-correct-const M k) (AI.sound-const M t)))
+  ,
+    (λ t →
+      AI.adequacy-const M c
+        (proj₂ (compile-x86-correct-const M k)
+          (AX.sound-const (compile-x86 M) wf t))) ⟩
   where wf = compile-x86-wf M c
 
-end-to-end-x86-converges : ∀ M → Closed M
-  → Converges (Terminates (I.sem M)) ⇔ Converges (Terminates (X.sem (compile-x86 M)))
+end-to-end-x86-converges : ∀ M
+  → Closed M
+  → Converges (Terminates (I.sem M))
+    ⇔ Converges (Terminates (X.sem (compile-x86 M)))
 end-to-end-x86-converges M c =
-  ⟨ (λ t → AX.adequacy-converges (compile-x86 M) wf (proj₁ (compile-x86-correct-nonempty M) (AI.sound-nonempty M t)))
-  , (λ t → AI.adequacy-converges M c (proj₂ (compile-x86-correct-nonempty M) (AX.sound-nonempty (compile-x86 M) wf t))) ⟩
+  ⟨ (λ t →
+      AX.adequacy-converges (compile-x86 M) wf
+      (proj₁ (compile-x86-correct-nonempty M) (AI.sound-nonempty M t)))
+  ,
+    (λ t →
+      AI.adequacy-converges M c
+        (proj₂ (compile-x86-correct-nonempty M)
+          (AX.sound-nonempty (compile-x86 M) wf t))) ⟩
   where wf = compile-x86-wf M c

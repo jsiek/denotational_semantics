@@ -23,7 +23,7 @@ module All where
 {- ---------------------------------------------------------------------------
    The ISWIM compilers: the typed pipeline and the untyped one that
    preceded it
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import ISWIM.All
 
@@ -34,7 +34,7 @@ import ISWIM.All
    statements in FPC/Theorems/ (see
    FPC/All.agda and FPC/README.md), and the experiments on it that are not
    part of the paper (FPC/Experiments.agda)
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import FPC.All
 import FPC.Experiments
@@ -45,7 +45,7 @@ import FPC.Experiments
    substitution), sets and environments, the graph model (values,
    operators, continuity, the error monad, intrinsically typed syntax),
    and the small-step, reduction and clocked frameworks
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import proof.Framework.Both
 import proof.Framework.Clocked
@@ -99,7 +99,7 @@ import proof.Framework.abt.ScopedTuple
    proof/: the lemmas of the shared modules: the meaning of the primitives
    in the graph model, and the instances of the small-step and clocked
    frameworks at the compilers' observations
-   --------------------------------------------------------------------------- -}
+   -------------------------------------------------------------------------- -}
 
 import proof.Semantics.Graph.Prim
 import proof.Semantics.CEK.Simulation

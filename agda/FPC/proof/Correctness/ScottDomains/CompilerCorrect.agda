@@ -35,21 +35,35 @@ open import Framework.Scott.Base pt fe
 open import proof.Framework.Scott.Ops pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe using (ρ₀)
 open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
-open import FPC.Semantics.ScottDomains.PairClos pt fe pe using () renaming (⟦_⟧ to ⟦_⟧₄)
-open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import FPC.Semantics.ScottDomains.Imp pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
-open import FPC.Semantics.ScottDomains.CFG pt fe pe using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import FPC.Semantics.ScottDomains.PairClos pt fe pe using () renaming (⟦_⟧
+  to ⟦_⟧₄)
+open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe using () renaming
+  (⟦_⟧ₚ to ⟦_⟧₅)
+open import FPC.Semantics.ScottDomains.Imp pt fe pe using () renaming (⟦_⟧ₚ to
+  ⟦_⟧ᵢ)
+open import FPC.Semantics.ScottDomains.CFG pt fe pe using () renaming (⟦_⟧ₚ to
+  ⟦_⟧ᶜ)
 open import FPC.Semantics.ScottDomains.X86 pt fe pe using (⟦_⟧ₜ)
-open import FPC.proof.Correctness.ScottDomains.SimplifyCorrect pt fe pe using (simplify-correct)
-open import FPC.proof.Correctness.ScottDomains.CaptureCorrect pt fe pe using (capture-correct)
-open import FPC.proof.Correctness.ScottDomains.PruneCorrect pt fe pe using (prune-correct)
-open import FPC.proof.Correctness.ScottDomains.ConcretizeCorrect pt fe pe using (concretize-correct)
-open import FPC.proof.Correctness.ScottDomains.SplitCorrect pt fe pe using (split-correct-const; split-correct-defined)
-open import FPC.proof.Correctness.ScottDomains.HoistCorrect pt fe pe using (hoist-correct)
-open import FPC.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using (rco-correct)
-open import FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using (lift-locals-correct)
-open import FPC.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using (explicate-correct)
-open import FPC.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using (select-correct)
+open import FPC.proof.Correctness.ScottDomains.SimplifyCorrect pt fe pe using
+  (simplify-correct)
+open import FPC.proof.Correctness.ScottDomains.CaptureCorrect pt fe pe using
+  (capture-correct)
+open import FPC.proof.Correctness.ScottDomains.PruneCorrect pt fe pe using
+  (prune-correct)
+open import FPC.proof.Correctness.ScottDomains.ConcretizeCorrect pt fe pe using
+  (concretize-correct)
+open import FPC.proof.Correctness.ScottDomains.SplitCorrect pt fe pe using
+  (split-correct-const; split-correct-defined)
+open import FPC.proof.Correctness.ScottDomains.HoistCorrect pt fe pe using
+  (hoist-correct)
+open import FPC.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using
+  (rco-correct)
+open import FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using
+  (lift-locals-correct)
+open import FPC.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using
+  (explicate-correct)
+open import FPC.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using
+  (select-correct)
 
 open import Data.List using ([])
 
@@ -58,36 +72,61 @@ A ⇔ B = (A → B) × (B → A)
 
 {- the same constants, and defined together -}
 Same : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
-Same d e = ((B : Base) (c : base-rep B) → (d ＝ const B c) ⇔ (e ＝ const B c)) × (defined d ⇔ defined e)
+Same d e =
+  ((B : Base) (c : base-rep B) → (d ＝ const B c) ⇔ (e ＝ const B c))
+  × (defined d ⇔ defined e)
 
 {- Same d e, and e ＝ e' -}
-then : (d e e' : ⟨ 𝔻 ⟩) → Same d e → e ＝ e' → Same d e'
+then : (d e e' : ⟨ 𝔻 ⟩)
+  → Same d e
+  → e ＝ e'
+  → Same d e'
 then d e .e s refl = s
 
-compile-to-PairClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) (⟦ compile-to-PairClos M ⟧₄ · ρ₀)
+compile-to-PairClos-same : ∀ {A} (M : Tm [] A)
+  → Same (⟦ M ⟧ · ρ₀) (⟦ compile-to-PairClos M ⟧₄ · ρ₀)
 compile-to-PairClos-same M =
-  (λ B c → (λ h → pr₁ (split-correct-const M₃ B c) (eq ⁻¹ ∙ h)) , (λ h → eq ∙ pr₂ (split-correct-const M₃ B c) h)) ,
-  (λ h → pr₁ (split-correct-defined M₃) (transport defined eq h)) , (λ h → transport defined (eq ⁻¹) (pr₂ (split-correct-defined M₃) h))
+  (λ B c →
+      (λ h → pr₁ (split-correct-const M₃ B c) (eq ⁻¹ ∙ h))
+        , (λ h → eq ∙ pr₂ (split-correct-const M₃ B c) h)) ,
+  (λ h → pr₁ (split-correct-defined M₃) (transport defined eq h))
+    , (λ h → transport defined (eq ⁻¹) (pr₂ (split-correct-defined M₃) h))
  where
   M₁ = simplify M
   M₂ = prune-program (capture M₁)
   M₃ = concretize-program M₂
-  eq = simplify-correct M ∙ capture-correct M₁ ∙ prune-correct (capture M₁) ∙ concretize-correct M₂
+  eq =
+    simplify-correct M ∙ capture-correct M₁ ∙ prune-correct (capture M₁)
+    ∙ concretize-correct M₂
 
-compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
-compile-to-GlobalFun-same M = then (⟦ M ⟧ · ρ₀) (⟦ compile-to-PairClos M ⟧₄ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅ (compile-to-PairClos-same M) (hoist-correct (compile-to-PairClos M))
+compile-to-GlobalFun-same : ∀ {A} (M : Tm [] A)
+  → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅
+compile-to-GlobalFun-same M =
+  then (⟦ M ⟧ · ρ₀) (⟦ compile-to-PairClos M ⟧₄ · ρ₀) ⟦ compile-to-GlobalFun M
+  ⟧₅ (compile-to-PairClos-same M) (hoist-correct (compile-to-PairClos M))
 
-compile-to-Mon-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅
-compile-to-Mon-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅ ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅ (compile-to-GlobalFun-same M) (rco-correct (compile-to-GlobalFun M))
+compile-to-Mon-same : ∀ {A} (M : Tm [] A)
+  → Same (⟦ M ⟧ · ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅
+compile-to-Mon-same M =
+  then (⟦ M ⟧ · ρ₀) ⟦ compile-to-GlobalFun M ⟧₅ ⟦ ⌜ compile-to-Mon M ⌝ₚ
+  ⟧₅ (compile-to-GlobalFun-same M) (rco-correct (compile-to-GlobalFun M))
 
-compile-to-Imp-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-Imp M ⟧ᵢ
-compile-to-Imp-same M = then (⟦ M ⟧ · ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅ ⟦ compile-to-Imp M ⟧ᵢ (compile-to-Mon-same M) (lift-locals-correct (compile-to-Mon M))
+compile-to-Imp-same : ∀ {A} (M : Tm [] A)
+  → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-Imp M ⟧ᵢ
+compile-to-Imp-same M =
+  then (⟦ M ⟧ · ρ₀) ⟦ ⌜ compile-to-Mon M ⌝ₚ ⟧₅ ⟦ compile-to-Imp M
+  ⟧ᵢ (compile-to-Mon-same M) (lift-locals-correct (compile-to-Mon M))
 
-compile-to-CFG-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-CFG M ⟧ᶜ
-compile-to-CFG-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile-to-Imp M ⟧ᵢ ⟦ compile-to-CFG M ⟧ᶜ (compile-to-Imp-same M) (explicate-correct (compile-to-Imp M))
+compile-to-CFG-same : ∀ {A} (M : Tm [] A)
+  → Same (⟦ M ⟧ · ρ₀) ⟦ compile-to-CFG M ⟧ᶜ
+compile-to-CFG-same M =
+  then (⟦ M ⟧ · ρ₀) ⟦ compile-to-Imp M ⟧ᵢ ⟦ compile-to-CFG M
+  ⟧ᶜ (compile-to-Imp-same M) (explicate-correct (compile-to-Imp M))
 
 compile-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) ⟦ compile M ⟧ₜ
-compile-same M = then (⟦ M ⟧ · ρ₀) ⟦ compile-to-CFG M ⟧ᶜ ⟦ compile M ⟧ₜ (compile-to-CFG-same M) (select-correct (compile-to-CFG M))
+compile-same M =
+  then (⟦ M ⟧ · ρ₀) ⟦ compile-to-CFG M ⟧ᶜ ⟦ compile M
+  ⟧ₜ (compile-to-CFG-same M) (select-correct (compile-to-CFG M))
 
 {- the end-to-end theorem, for a main program of type Int -}
 compile-int : ∀ (M : Tm [] (base Int)) → Same (⟦ M ⟧ · ρ₀) ⟦ compile M ⟧ₜ

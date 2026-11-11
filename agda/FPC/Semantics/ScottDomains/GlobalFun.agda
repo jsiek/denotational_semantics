@@ -1,8 +1,8 @@
 {-
 
   The semantics of GlobalFunμ (FPC/Language/GlobalFun.agda) in Scott domains, as
-  that of PairClosμ (FPC/Semantics/ScottDomains/PairClos.agda), given a table T of the
-  meanings of the global definitions: fun-ref f means T f. As in the
+  that of PairClosμ (FPC/Semantics/ScottDomains/PairClos.agda), given a table T
+  of the meanings of the global definitions: fun-ref f means T f. As in the
   graph model (FPC/Semantics/GraphModel/GlobalFun.agda), the definitions of a
   program are given meaning newest first, each with the table of the
   older ones (tables, FPC/Semantics/ScottDomains/Ops.agda), and main with the
@@ -28,7 +28,8 @@ module FPC.Semantics.ScottDomains.GlobalFun
 
 open import Framework.Scott.Base pt fe using (at; ⟨_⟩; _·_)
 open import Framework.Scott.Domain pt fe pe using (𝔻)
-open import Framework.Scott.Ops pt fe pe using (Env; const; proj; car; cdr) renaming (pair to pairᵈ; app to appᵈ; inl to inlᵈ; inr to inrᵈ)
+open import Framework.Scott.Ops pt fe pe using (Env; const; proj; car; cdr)
+  renaming (pair to pairᵈ; app to appᵈ; inl to inlᵈ; inr to inrᵈ)
 open import Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 open import FPC.Semantics.ScottDomains.Ops pt fe pe
@@ -39,7 +40,8 @@ open import FPC.Semantics.ScottDomains.Ops pt fe pe
 ⟦ ` x ⟧[ T ] = at _ 𝔻 (idx x)
 ⟦ fun-ref f ⟧[ T ] = litᶜ (T f)
 ⟦ pair L M ⟧[ T ] = op₂ pairᵈ ⟦ L ⟧[ T ] ⟦ M ⟧[ T ]
-⟦ callc L M ⟧[ T ] = op₂ appᵈ (op₂ appᵈ (op₁ car ⟦ L ⟧[ T ]) (op₁ cdr ⟦ L ⟧[ T ])) ⟦ M ⟧[ T ]
+⟦ callc L M ⟧[ T ] =
+  op₂ appᵈ (op₂ appᵈ (op₁ car ⟦ L ⟧[ T ]) (op₁ cdr ⟦ L ⟧[ T ])) ⟦ M ⟧[ T ]
 ⟦ lit B c ⟧[ T ] = litᶜ (const B c)
 ⟦ tuple Ms ⟧[ T ] = tupleᶜ ⟦ Ms ⟧s[ T ]
 ⟦ get i M ⟧[ T ] = op₁ (proj (pos i)) ⟦ M ⟧[ T ]

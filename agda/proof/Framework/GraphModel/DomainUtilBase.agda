@@ -49,7 +49,10 @@ Rights : 𝒫 Value → 𝒫 Value
 Rights = Untag rightT
 
 {- the untagged part of a consistent set is consistent -}
-Untag-con : ∀ s {D} → (∀ {a b} → tag s a ~ tag s b → a ~ b) → Con D → Con (Untag s D)
+Untag-con : ∀ s {D}
+  → (∀ {a b} → tag s a ~ tag s b → a ~ b)
+  → Con D
+  → Con (Untag s D)
 Untag-con s s~ cD a b a∈ b∈ = s~ (cD _ _ a∈ b∈)
 
 {- Depth ----------------------------------------------------------------------}
@@ -68,9 +71,12 @@ depth ⟨⟩ = 0
 depths [] = 0
 depths (v ∷ V) = depth v ⊔ depths V
 
-depth-⋵ : ∀ {v V} → v ⋵ V → depth v ≤ depths V
+depth-⋵ : ∀ {v V}
+  → v ⋵ V
+  → depth v ≤ depths V
 depth-⋵ {v} {.v ∷ V} (here refl) = m≤m⊔n (depth v) (depths V)
-depth-⋵ {v} {u ∷ V} (there v∈) = ≤-trans (depth-⋵ v∈) (m≤n⊔m (depth u) (depths V))
+depth-⋵ {v} {u ∷ V} (there v∈) =
+  ≤-trans (depth-⋵ v∈) (m≤n⊔m (depth u) (depths V))
 
 {- Bnd k V says that every element of V has depth less than k -}
 Bnd : ℕ → List Value → Set
@@ -79,23 +85,34 @@ Bnd k V = ∀ v → v ⋵ V → depth v < k
 Bnd-depths : ∀ V → Bnd (suc (depths V)) V
 Bnd-depths V v v∈ = s≤s (depth-⋵ v∈)
 
-<-shrink : ∀ {a b k} → suc a ≤ b → b < suc k → a < k
+<-shrink : ∀ {a b k}
+  → suc a ≤ b
+  → b < suc k
+  → a < k
 <-shrink sa≤b (s≤s b≤k) = ≤-trans sa≤b b≤k
 
-Bnd-Untag : ∀ {k V W} t → Bnd (suc k) V → mem W ⊆ Untag t (mem V) → Bnd k W
+Bnd-Untag : ∀ {k V W} t
+  → Bnd (suc k) V
+  → mem W ⊆ Untag t (mem V)
+  → Bnd k W
 Bnd-Untag (tupT i) bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
 Bnd-Untag leftT bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
 Bnd-Untag rightT bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
 
-{- Finite sets ------------------------------------------------------------------}
+{- Finite sets ----------------------------------------------------------------}
 
-ne-⊆ : ∀ {V₁ V₂ : List Value} → mem V₁ ⊆ mem V₂ → V₁ ≢ [] → V₂ ≢ []
+ne-⊆ : ∀ {V₁ V₂ : List Value}
+  → mem V₁ ⊆ mem V₂
+  → V₁ ≢ []
+  → V₂ ≢ []
 ne-⊆ {[]} _ ne = ⊥-elim (ne refl)
 ne-⊆ {x ∷ V₁} {[]} s _ with s x (here refl)
 ... | ()
 ne-⊆ {x ∷ V₁} {y ∷ V₂} s _ = λ ()
 
-single⊆ : ∀ {v : Value}{D : 𝒫 Value} → v ∈ D → mem (v ∷ []) ⊆ D
+single⊆ : ∀ {v : Value}{D : 𝒫 Value}
+  → v ∈ D
+  → mem (v ∷ []) ⊆ D
 single⊆ v∈ _ (here refl) = v∈
 
 {- Values that have no observations besides themselves ------------------------}
@@ -111,18 +128,26 @@ Data (left d) = Data d
 Data (right d) = Data d
 Data v = Flat v
 
-flat-data : ∀ {v} → Flat v → Data v
+flat-data : ∀ {v}
+  → Flat v
+  → Data v
 flat-data flat-const = flat-const
 flat-data flat-ω = flat-ω
 flat-data flat-⟨⟩ = flat-⟨⟩
 
-data-untag : ∀ t {d} → Data (tag t d) → Data d
+data-untag : ∀ t {d}
+  → Data (tag t d)
+  → Data d
 data-untag (tupT i) ()
 data-untag leftT dd = dd
 data-untag rightT dd = dd
 
-Init-flat : ∀ {v} → v ∈ ⌈ ω ⌉ → Flat v
+Init-flat : ∀ {v}
+  → v ∈ ⌈ ω ⌉
+  → Flat v
 Init-flat refl = flat-ω
 
-ℬ-flat : ∀ {B} {c : base-rep B} v → v ∈ ℬ B c ptt → Flat v
+ℬ-flat : ∀ {B} {c : base-rep B} v
+  → v ∈ ℬ B c ptt
+  → Flat v
 ℬ-flat (const k) _ = flat-const

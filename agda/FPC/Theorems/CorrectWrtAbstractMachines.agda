@@ -44,7 +44,8 @@ open import Data.List using ([])
    machine of FPC on M terminates with n if and only if the machine of
    X86μ on compile M does -}
 compile-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)
-  → Terminates (FPCₘ.sem M) (o-const Int n) ⇔ Terminates (X86μₘ.sem (compile M)) (o-const Int n)
+  → Terminates (FPCₘ.sem M) (o-const Int n)
+    ⇔ Terminates (X86μₘ.sem (compile M)) (o-const Int n)
 compile-const = PipelineSim.compile-const
 
 {- and one diverges if and only if the other does -}
@@ -54,5 +55,6 @@ compile-diverges = PipelineSim.compile-diverges
 
 {- more generally, the two machines are equivalent for every closed
    term M -}
-compile-correct : ∀ {A} (M : FPC.Tm [] A) → Equivalent (FPCₘ.sem M) (X86μₘ.sem (compile M))
+compile-correct : ∀ {A} (M : FPC.Tm [] A)
+  → Equivalent (FPCₘ.sem M) (X86μₘ.sem (compile M))
 compile-correct = PipelineSim.compile-correct

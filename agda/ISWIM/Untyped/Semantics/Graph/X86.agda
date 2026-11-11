@@ -2,16 +2,16 @@ module ISWIM.Untyped.Semantics.Graph.X86 where
 {-
 
  The semantics of X86, the language after the select-instructions pass
- (ISWIM/Language/X86.agda), in continuation-passing style, as ISWIM/Semantics/Graph/Typed/CFG.agda and
- ISWIM/Semantics/Graph/Typed/Imp.agda.
+ (ISWIM/Language/X86.agda), in continuation-passing style, as
+ ISWIM/Semantics/Graph/Typed/CFG.agda and ISWIM/Semantics/Graph/Typed/Imp.agda.
 
- The state of a body is its frame σ (a store, ISWIM/Untyped/Semantics/Graph/Frames.agda), its
- registers ρ (a set of values for each), and the flag φ, a set of values
- left ⟨⟩ (set) and right ⟨⟩ (not set); ∅ is no flag, so that sete and je
- then error. What runs from a point of a body on (Kont) means, given
- the state, a set of values, the result of the body. An instruction
- transforms the state and passes it on to its continuation; a sequence
- of instructions runs one after the other, and a block is its
+ The state of a body is its frame σ (a store,
+ ISWIM/Untyped/Semantics/Graph/Frames.agda), its registers ρ (a set of values
+ for each), and the flag φ, a set of values left ⟨⟩ (set) and right ⟨⟩ (not
+ set); ∅ is no flag, so that sete and je then error. What runs from a point of a
+ body on (Kont) means, given the state, a set of values, the result of the body.
+ An instruction transforms the state and passes it on to its continuation; a
+ sequence of instructions runs one after the other, and a block is its
  instructions followed by its jump: retq produces %rax, jmp l runs block
  l in the state as it is, and je l₁ l₂ is 𝒞 on the flag.
 
@@ -55,7 +55,8 @@ open import Semantics.Graph.Prim using (primD)
 open import ISWIM.Untyped.Semantics.Graph.Frames
   using (Table; Store; read; _[_↦_]; checked; zeros) public
 open import Language.Prim using (sub; eq)
-open import ISWIM.Language.X86 renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ)
+open import ISWIM.Language.X86 renaming (pair to pairₛ; inl to inlₛ; inr to
+  inrₛ)
 
 open import Data.Nat using (ℕ; _≟_; _⊔_)
 open import Data.List using (List; []; _∷_; length; replicate)
@@ -96,18 +97,22 @@ Kont = Store → Regs → 𝒫 Value → 𝒫 Value
 𝒪 T n σ ρ (imm B k) = ℬ B k ptt
 𝒪 T n σ ρ (label k) = T k
 
-𝒪s : Table → ℕ → Store → Regs → (as : List Arg) → Results (𝒫 Value) (replicate (length as) ■)
+𝒪s : Table → ℕ → Store → Regs → (as : List Arg)
+  → Results (𝒫 Value) (replicate (length as) ■)
 𝒪s T n σ ρ [] = ptt
 𝒪s T n σ ρ (a ∷ as) = ⟨ 𝒪 T n σ ρ a , 𝒪s T n σ ρ as ⟩
 
 {- d := D, then κ -}
 put : ℕ → Loc → 𝒫 Value → Kont → Kont
-put n (var x) D κ σ ρ φ = checked n x (⋆ ⟨ Λ ⟨ (λ X → κ (σ [ x ↦ X ]) ρ φ) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
+put n (var x) D κ σ ρ φ =
+  checked n x (⋆ ⟨ Λ ⟨ (λ X → κ (σ [ x ↦ X ]) ρ φ) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
 put n (reg g) D κ σ ρ φ = strict D (κ σ (ρ [ g ≔ D ]) φ)
 
 {- the flag that testinl sets -}
 isinl : 𝒫 Value → 𝒫 Value
-isinl D w = (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩) ⊎ (Σ[ u ∈ Value ] right u ∈ D × w ≡ right ⟨⟩)
+isinl D w =
+  (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩)
+  ⊎ (Σ[ u ∈ Value ] right u ∈ D × w ≡ right ⟨⟩)
 
 {- the object that alloc builds; a wrong number of fields errors -}
 object : Table → ℕ → Store → Regs → Shape → List Arg → 𝒫 Value
@@ -135,8 +140,10 @@ call R κ σ = strict R (κ σ (called R) ∅)
 {- an instruction in a frame of n slots, then κ -}
 ⟦_⟧ⁱ : Instr → Table → ℕ → Kont → Kont
 ⟦ movq a d ⟧ⁱ T n κ σ ρ φ = put n d (𝒪 T n σ ρ a) κ σ ρ φ
-⟦ subq a d ⟧ⁱ T n κ σ ρ φ = put n d (primD sub ⟨ 𝒪 T n σ ρ (loc d) , ⟨ 𝒪 T n σ ρ a , ptt ⟩ ⟩) κ σ ρ φ
-⟦ cmpq a₂ a₁ ⟧ⁱ T n κ σ ρ φ = flag (primD eq ⟨ 𝒪 T n σ ρ a₁ , ⟨ 𝒪 T n σ ρ a₂ , ptt ⟩ ⟩) κ σ ρ
+⟦ subq a d ⟧ⁱ T n κ σ ρ φ =
+  put n d (primD sub ⟨ 𝒪 T n σ ρ (loc d) , ⟨ 𝒪 T n σ ρ a , ptt ⟩ ⟩) κ σ ρ φ
+⟦ cmpq a₂ a₁ ⟧ⁱ T n κ σ ρ φ =
+  flag (primD eq ⟨ 𝒪 T n σ ρ a₁ , ⟨ 𝒪 T n σ ρ a₂ , ptt ⟩ ⟩) κ σ ρ
 ⟦ sete d ⟧ⁱ T n κ σ ρ φ = put n d φ κ σ ρ φ
 ⟦ testinl a ⟧ⁱ T n κ σ ρ φ = flag (isinl (𝒪 T n σ ρ a)) κ σ ρ
 ⟦ alloc s as d ⟧ⁱ T n κ σ ρ φ = put n d (object T n σ ρ s as) κ σ ρ φ
@@ -155,7 +162,8 @@ Blocks = ℕ → Kont
 ⟦_⟧ʲ : Jump → Blocks → Kont
 ⟦ retq ⟧ʲ B σ ρ φ = ρ rax
 ⟦ jmp l ⟧ʲ B = B l
-⟦ je l₁ l₂ ⟧ʲ B σ ρ φ = 𝒞 ⟨ φ , ⟨ (λ _ → B l₁ σ ρ φ) , ⟨ (λ _ → B l₂ σ ρ φ) , ptt ⟩ ⟩ ⟩
+⟦ je l₁ l₂ ⟧ʲ B σ ρ φ =
+  𝒞 ⟨ φ , ⟨ (λ _ → B l₁ σ ρ φ) , ⟨ (λ _ → B l₂ σ ρ φ) , ptt ⟩ ⟩ ⟩
 
 ⟦_⟧ᵇ : Block → Table → ℕ → Blocks → Kont
 ⟦ b ⟧ᵇ T n B = ⟦ Block.instrs b ⟧ˢ T n (⟦ Block.jump b ⟧ʲ B)
@@ -173,7 +181,10 @@ run T n (body _ bs b) = ⟦ b ⟧ᵇ T n (blocks T n bs)
 
 {- the function whose body is b, given the table T of the older definitions -}
 code : Table → Body → 𝒫 Value
-code T b = Λ ⟨ (λ X → Λ ⟨ (λ Y → run T (2 ⊔ Body.locals b) b zeros (args X Y) ∅) , ptt ⟩) , ptt ⟩
+code T b =
+  Λ
+  ⟨ (λ X → Λ ⟨ (λ Y → run T (2 ⊔ Body.locals b) b zeros (args X Y) ∅) , ptt ⟩)
+    , ptt ⟩
 
 {- the table of a list of definitions, newest first -}
 table : List Body → Table

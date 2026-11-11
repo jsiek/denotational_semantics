@@ -32,5 +32,7 @@ clos₂ N = L2.clos-op 0 L2.⦅ ! L2.clear (L2.bind (L2.ast N)) ,, Nil ⦆
 
 inline-let-captured : capture (simplify inline-let-src)
   ≡ clos₂ (L2.let-op L2.⦅ clos₂ dec₂ ,,
-                          ⟩ L2.let-op L2.⦅ L2.app L2.⦅ L2.` 1 ,, L2.lit Int (+ 3) L2.⦅ Nil ⦆ ,, Nil ⦆ ,, ⟩ dec₂ ,, Nil ⦆ ,, Nil ⦆)
+                          ⟩ L2.let-op L2.⦅ L2.app L2.⦅ L2.` 1
+                              ,, L2.lit Int (+ 3) L2.⦅ Nil ⦆ ,, Nil ⦆ ,, ⟩ dec₂
+                              ,, Nil ⦆ ,, Nil ⦆)
 inline-let-captured = refl

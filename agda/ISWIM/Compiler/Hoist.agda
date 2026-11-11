@@ -40,7 +40,8 @@ record Out (Σ : List ℕ) (P : List ℕ → Set) : Set where
     res : P Σ'
 
 glob : ∀ {Σ Γ A} → S.Tm Γ A → Made Σ → Out Σ (λ Σ' → Tm Σ' Γ A)
-globs : ∀ {Σ Γ n} → Vec (S.Tm Γ Any) n → Made Σ → Out Σ (λ Σ' → Vec (Tm Σ' Γ Any) n)
+globs : ∀ {Σ Γ n} → Vec (S.Tm Γ Any) n → Made Σ
+  → Out Σ (λ Σ' → Vec (Tm Σ' Γ Any) n)
 glob₁ : ∀ {Σ Γ Γ₁ A B} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) → S.Tm Γ₁ A → Made Σ
   → Out Σ (λ Σ' → Tm Σ' Γ B)
 glob₂ : ∀ {Σ Γ Γ₁ Γ₂ A B C} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C)
@@ -61,7 +62,8 @@ glob (S.case L M N) D with glob L D
 ... | out s₁ D₁ L' with glob M D₁
 ...   | out s₂ D₂ M' with glob N D₂
 ...     | out s₃ D₃ N' =
-  out (⊑-trans s₁ (⊑-trans s₂ s₃)) D₃ (case (wk (⊑-∋ (⊑-trans s₂ s₃)) L') (wk (⊑-∋ s₃) M') N')
+  out (⊑-trans s₁ (⊑-trans s₂ s₃)) D₃
+    (case (wk (⊑-∋ (⊑-trans s₂ s₃)) L') (wk (⊑-∋ s₃) M') N')
 glob (S.prim p L M) D = glob₂ (prim p) L M D
 glob (S.let′ M N) D = glob₂ let′ M N D
 glob (S.inject G M) D = glob₁ (inject G) M D

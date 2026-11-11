@@ -25,7 +25,8 @@ open import UF.Base using (ap₂)
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Framework.abt.GSubst using (_•_)
 open import Language.Prim using (sub; eq; bool) renaming (δ to δᴾ)
-open import FPC.Language.Type using (Type; Ctx; _⇒_; tup; out-ty; _∋_; Z; S; idx)
+open import FPC.Language.Type using (Type; Ctx; _⇒_; tup; out-ty; _∋_; Z; S;
+  idx)
 open import FPC.Language.FPC
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import FPC.Semantics.ClockedInterpreters.FPC
@@ -37,7 +38,8 @@ open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Integer using () renaming (_≟_ to _≟ℤ_)
 open import Data.List using (length; [])
-open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to ≡-refl)
+open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to
+  ≡-refl)
 open import Relation.Nullary using (does)
 
 module FPC.proof.Adequacy.ScottDomains.Soundness
@@ -50,11 +52,12 @@ open import Framework.Scott.Base pt fe hiding (_>>=_)
 open import proof.Framework.Scott.Ops pt fe pe
   renaming (Env to Envᵈ; app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Values pt fe pe using (view; view-inj)
-open import proof.Framework.Scott.Semantics pt fe pe using (lamᶜ; abs; _∷ᶠ_; init; lamᶜ-β; letᶜ-β; caseᶜ-inl; caseᶜ-inr)
+open import proof.Framework.Scott.Semantics pt fe pe using (lamᶜ; abs; _∷ᶠ_;
+  init; lamᶜ-β; letᶜ-β; caseᶜ-inl; caseᶜ-inr)
 open import Semantics.Scott.Prim pt fe pe using (primD; out)
 open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧; ⟦_⟧s)
 
-{- Meanings of values and environments ------------------------------------------}
+{- Meanings of values and environments ----------------------------------------}
 
 𝒱 : ∀ {A} → Value A → ⟨ 𝔻 ⟩
 𝒱s : ∀ {Δ} → All Value Δ → Fin (length Δ) → ⟨ 𝔻 ⟩
@@ -92,7 +95,8 @@ open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧; ⟦_⟧s)
 𝓔-lookup (v ∷ γ) Z = refl
 𝓔-lookup (v ∷ γ) (S x) = 𝓔-lookup γ x
 
-𝒱s-lookup : ∀ {Δ A} (vs : All Value Δ) (i : Δ ∋ A) → 𝒱s vs (pos i) ＝ 𝒱 (lookup vs i)
+𝒱s-lookup : ∀ {Δ A} (vs : All Value Δ) (i : Δ ∋ A)
+  → 𝒱s vs (pos i) ＝ 𝒱 (lookup vs i)
 𝒱s-lookup (v ∷ vs) Z = refl
 𝒱s-lookup (v ∷ vs) (S i) = 𝒱s-lookup vs i
 
@@ -103,30 +107,43 @@ open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧; ⟦_⟧s)
  where
   𝒱-unit : 𝒱 {tup []} (tup []) ＝ unit
   𝒱-unit = ap (tupleᵈ 0 ·_) (dfunext fe (λ ()))
-  𝒱-bool : (b : Bool) → 𝒱 {out-ty eq} (if b then inl (tup []) else inr (tup [])) ＝ out (bool b)
+  𝒱-bool : (b : Bool)
+    → 𝒱 {out-ty eq} (if b then inl (tup []) else inr (tup [])) ＝ out (bool b)
   𝒱-bool true = ap (inlᵈ ·_) 𝒱-unit
   𝒱-bool false = ap (inrᵈ ·_) 𝒱-unit
 
-{- Observations of constants ------------------------------------------------------}
+{- Observations of constants --------------------------------------------------}
 
 private
- view-＝ : (a b : ⟨ 𝔻 ⟩) (e : a ＝ b) (q : defined a) → view a q ＝ view b (transport defined e q)
+ view-＝ : (a b : ⟨ 𝔻 ⟩)
+   → (e : a ＝ b)
+   → (q : defined a)
+   → view a q ＝ view b (transport defined e q)
  view-＝ a .a refl q = refl
 
 {- values made with different tags differ -}
-inj-tag : (t t' : Tag) (x : _) (y : _) → inj t · x ＝ inj t' · y → t ＝ t'
+inj-tag : (t t' : Tag) (x : _) (y : _)
+  → inj t · x ＝ inj t' · y
+  → t ＝ t'
 inj-tag t t' x y e =
- ap pr₁ (view-inj t x (defined-inj t x) ⁻¹ ∙ view-＝ _ _ e (defined-inj t x) ∙ view-inj t' y _)
+ ap pr₁
+   (view-inj t x (defined-inj t x) ⁻¹ ∙ view-＝ _ _ e (defined-inj t x)
+     ∙ view-inj t' y _)
 
-con-inj : ∀ {B B' k k'} → con B k ＝ con B' k' → o-const B k ≡ o-const B' k'
+con-inj : ∀ {B B' k k'}
+  → con B k ＝ con B' k'
+  → o-const B k ≡ o-const B' k'
 con-inj refl = ≡-refl
 
-not-con : (t : Tag) (x : _) {B : Base} {k : base-rep B} → ((B' : Base) (k' : base-rep B') → ¬ (t ＝ con B' k'))
+not-con : (t : Tag) (x : _) {B : Base} {k : base-rep B}
+  → ((B' : Base) (k' : base-rep B') → ¬ (t ＝ con B' k'))
   → ¬ (inj t · x ＝ const B k)
 not-con t x {B} {k} h e = h B k (inj-tag t (con B k) x ⋆ e)
 
 {- a value means a constant exactly when it is observed as that constant -}
-𝒱-const : ∀ {A B} {k : base-rep B} (v : Value A) → 𝒱 v ＝ const B k → obs v ≡ o-const B k
+𝒱-const : ∀ {A B} {k : base-rep B} (v : Value A)
+  → 𝒱 v ＝ const B k
+  → obs v ≡ o-const B k
 𝒱-const (cv k') e = con-inj (inj-tag _ _ ⋆ ⋆ e)
 𝒱-const (fold v) e = 𝒱-const v e
 𝒱-const (code N) e = 𝟘-elim (not-con (tup 0) _ (λ _ _ ()) e)
@@ -134,10 +151,16 @@ not-con t x {B} {k} h e = h B k (inj-tag t (con B k) x ⋆ e)
 𝒱-const (tup {Δ} vs) e =
  𝟘-elim (not-con (tup (length Δ)) (𝒱s vs) (λ _ _ ())
            (guard-defined (length Δ) (𝒱s vs) (𝒱s-defined vs) _ ⁻¹ ∙ e))
-𝒱-const (inl v) e = 𝟘-elim (not-con left (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
-𝒱-const (inr v) e = 𝟘-elim (not-con right (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
+𝒱-const (inl v) e =
+  𝟘-elim
+  (not-con left (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
+𝒱-const (inr v) e =
+  𝟘-elim
+  (not-con right (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
 
-const-𝒱 : ∀ {A B} {k : base-rep B} (v : Value A) → obs v ≡ o-const B k → 𝒱 v ＝ const B k
+const-𝒱 : ∀ {A B} {k : base-rep B} (v : Value A)
+  → obs v ≡ o-const B k
+  → 𝒱 v ＝ const B k
 const-𝒱 (cv k) ≡-refl = refl
 const-𝒱 (fold v) e = const-𝒱 v e
 const-𝒱 (code N) ()
@@ -146,30 +169,38 @@ const-𝒱 (tup vs) ()
 const-𝒱 (inl v) ()
 const-𝒱 (inr v) ()
 
-{- Results that hold ---------------------------------------------------------------}
+{- Results that hold ----------------------------------------------------------}
 
 {- a value with P, or a timeout; never an error -}
 data Holds {X : 𝓤₀ ̇ } (P : X → 𝓤₁ ̇ ) : Result X → 𝓤₁ ̇ where
   timeout : Holds P timeout
   ret : ∀ {v} → P v → Holds P (ret v)
 
-bind-holds : {X Y : 𝓤₀ ̇ } {P : X → 𝓤₁ ̇ } {Q : Y → 𝓤₁ ̇ } {r : Result X} {f : X → Result Y}
-  → Holds P r → ((v : X) → P v → Holds Q (f v)) → Holds Q (r >>= f)
+bind-holds : {X Y : 𝓤₀ ̇ } {P : X → 𝓤₁ ̇ } {Q : Y → 𝓤₁ ̇ } {r : Result X}
+  {f : X → Result Y}
+  → Holds P r
+  → ((v : X) → P v → Holds Q (f v))
+  → Holds Q (r >>= f)
 bind-holds timeout k = timeout
 bind-holds (ret {v} h) k = k v h
 
 Sound : ∀ {A} → Result (Value A) → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
 Sound r d = Holds (λ v → 𝒱 v ＝ d) r
 
-sound-＝ : ∀ {A} {r : Result (Value A)} {d d'} → d ＝ d' → Sound r d → Sound r d'
+sound-＝ : ∀ {A} {r : Result (Value A)} {d d'}
+  → d ＝ d'
+  → Sound r d
+  → Sound r d'
 sound-＝ refl s = s
 
-{- Soundness ------------------------------------------------------------------------}
+{- Soundness ------------------------------------------------------------------}
 
 sound : ∀ {Γ A} ck (γ : Envᵢ Γ) (M : Tm Γ A) → Sound (eval ck γ M) (⟦ M ⟧ · 𝓔 γ)
 sounds : ∀ {Γ Δ} ck (γ : Envᵢ Γ) (Ms : All (Tm Γ) Δ)
-  → Holds (λ vs → (i : Fin (length Δ)) → 𝒱s vs i ＝ (⟦ Ms ⟧s · 𝓔 γ) i) (evals ck γ Ms)
-sound-call : ∀ {A B} ck (f : Value (A ⇒ B)) (w : Value A) → Sound (call ck f w) (appᵈ · 𝒱 f · 𝒱 w)
+  → Holds (λ vs → (i : Fin (length Δ)) → 𝒱s vs i ＝ (⟦ Ms ⟧s · 𝓔 γ) i)
+    (evals ck γ Ms)
+sound-call : ∀ {A B} ck (f : Value (A ⇒ B)) (w : Value A)
+  → Sound (call ck f w) (appᵈ · 𝒱 f · 𝒱 w)
 
 sound ck γ (` x) = ret (𝓔-lookup γ x)
 sound ck γ (lam N) = ret refl
@@ -178,20 +209,32 @@ sound ck γ (app L M) =
     sound-＝ (ap₂ (λ a b → appᵈ · a · b) eL eM) (sound-call ck f w)
 sound ck γ (lit B c) = ret refl
 sound ck γ (tuple {Δ} Ms) =
-  bind-holds (sounds ck γ Ms) λ vs e → ret (ap (tupleᵈ (length Δ) ·_) (dfunext fe e))
+  bind-holds (sounds ck γ Ms) λ vs e →
+    ret (ap (tupleᵈ (length Δ) ·_) (dfunext fe e))
 sound ck γ (get {Δ} i M) =
   bind-holds (sound ck γ M) λ { (tup vs) e →
-    ret ((proj-tuple (length Δ) (𝒱s vs) (𝒱s-defined vs) (pos i) ∙ 𝒱s-lookup vs i) ⁻¹ ∙ ap (proj (pos i) ·_) e) }
+    ret
+      ((proj-tuple (length Δ) (𝒱s vs) (𝒱s-defined vs) (pos i) ∙ 𝒱s-lookup vs i)
+        ⁻¹ ∙ ap (proj (pos i) ·_) e) }
 sound ck γ (inl M) = bind-holds (sound ck γ M) λ v e → ret (ap (inlᵈ ·_) e)
 sound ck γ (inr M) = bind-holds (sound ck γ M) λ v e → ret (ap (inrᵈ ·_) e)
 sound ck γ (case L M N) = bind-holds (sound ck γ L) λ
-  { (inl v) e → sound-＝ (caseᶜ-inl ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ (𝓔 γ) (𝒱 v) (e ⁻¹) (𝒱-defined v) ⁻¹) (sound ck (v ∷ γ) M)
-  ; (inr v) e → sound-＝ (caseᶜ-inr ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ (𝓔 γ) (𝒱 v) (e ⁻¹) (𝒱-defined v) ⁻¹) (sound ck (v ∷ γ) N) }
+  { (inl v) e
+      → sound-＝
+      (caseᶜ-inl ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ (𝓔 γ) (𝒱 v) (e ⁻¹) (𝒱-defined v) ⁻¹)
+      (sound ck (v ∷ γ) M)
+  ; (inr v) e
+    → sound-＝ (caseᶜ-inr ⟦ L ⟧ ⟦ M ⟧ ⟦ N ⟧ (𝓔 γ) (𝒱 v) (e ⁻¹) (𝒱-defined v) ⁻¹)
+    (sound ck (v ∷ γ) N) }
 sound ck γ (prim p L M) = bind-holds (sound ck γ L) λ
   { (cv n) eL → bind-holds (sound ck γ M) λ
-    { (cv m) eM → ret (𝒱-δ p n m ∙ primD-const p n m ⁻¹ ∙ ap₂ (λ a b → primD p · a · b) eL eM) } }
+    { (cv m) eM
+        → ret
+          (𝒱-δ p n m ∙ primD-const p n m ⁻¹
+            ∙ ap₂ (λ a b → primD p · a · b) eL eM) } }
 sound ck γ (let′ M N) = bind-holds (sound ck γ M) λ v e →
-  sound-＝ ((letᶜ-β ⟦ M ⟧ ⟦ N ⟧ (𝓔 γ) ∙ ap (λ a → seq · a · (⟦ N ⟧ · (a • 𝓔 γ))) (e ⁻¹)
+  sound-＝
+    ((letᶜ-β ⟦ M ⟧ ⟦ N ⟧ (𝓔 γ) ∙ ap (λ a → seq · a · (⟦ N ⟧ · (a • 𝓔 γ))) (e ⁻¹)
               ∙ seq-defined (𝒱 v) _ (𝒱-defined v)) ⁻¹)
            (sound ck (v ∷ γ) N)
 sound ck γ (fold M) = bind-holds (sound ck γ M) λ v e → ret e
@@ -204,4 +247,5 @@ sounds ck γ (M ∷ Ms) =
 
 sound-call zero f w = timeout
 sound-call (succ ck) (pack (code N) (tup γ)) w =
-  sound-＝ ((lamᶜ-β ⟦ N ⟧ (𝓔 γ) (𝒱 w) ∙ seq-defined (𝒱 w) _ (𝒱-defined w)) ⁻¹) (sound ck (w ∷ γ) N)
+  sound-＝ ((lamᶜ-β ⟦ N ⟧ (𝓔 γ) (𝒱 w) ∙ seq-defined (𝒱 w) _ (𝒱-defined w)) ⁻¹)
+    (sound ck (w ∷ γ) N)

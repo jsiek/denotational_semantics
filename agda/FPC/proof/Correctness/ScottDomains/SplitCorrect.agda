@@ -1,11 +1,13 @@
 {-
 
-  Correctness of split (EnvClosμ → PairClosμ) in Scott domains: a closed
-  program and its translation produce the same constants, and one is
-  defined exactly when the other is, as in the graph model
-  (FPC/proof/Correctness/GraphModel/SplitCorrect.agda). Forward by Pres,
-  backward by Refl (SplitTerms.agda): in either relation a defined value
-  related to a constant is that constant (Rel-const-is).
+  This module proves the correctness of split (EnvClosμ → PairClosμ) in
+  Scott domains. A closed program and its translation produce the same
+  constants, and one of them is defined if and only if the other is, as
+  in the graph model (FPC/proof/Correctness/GraphModel/SplitCorrect.agda).
+  The forward direction follows from split-pres and the backward
+  direction from split-refl (SplitTerms.agda), because in either
+  relation a defined value that is related to a constant is that
+  constant (Rel-const-is).
 
 -}
 
@@ -32,26 +34,43 @@ open import proof.Framework.Scott.Ops pt fe pe
 open import proof.Framework.Scott.Values pt fe pe
 open import proof.Framework.Scott.Semantics pt fe pe using (ρ₀)
 open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
-open import FPC.proof.Correctness.ScottDomains.SplitTerms pt fe pe using (split-pres; split-refl)
+open import FPC.proof.Correctness.ScottDomains.SplitTerms pt fe pe using
+  (split-pres; split-refl)
 open import FPC.Semantics.ScottDomains.EnvClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₃)
 open import FPC.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to ⟦_⟧₄)
 
-{- a defined value related to a constant is that constant -}
-Rel-const-is : ∀ {δ w} (B : Base) (c : base-rep B) → Rel δ (const B c) w → defined w → w ＝ const B c
-Rel-const-is {δ} {w} B c h q = inj-view w q ∙ const-view (view w q) (pr₁ (Rel-view ⋆ h q 0))
+{- If a defined value w is related to a constant, then w is that
+   constant. -}
+Rel-const-is : ∀ {δ w} (B : Base) (c : base-rep B)
+  → Rel δ (const B c) w
+  → defined w
+  → w ＝ const B c
+Rel-const-is {δ} {w} B c h q =
+  inj-view w q ∙ const-view (view w q) (pr₁ (Rel-view ⋆ h q 0))
  where
-  const-view : (u : ⟨ obj Val 𝔻 ⟩) → Same δ (con B c) (pr₁ u) → inj (pr₁ u) · pr₂ u ＝ const B c
+  const-view : (u : ⟨ obj Val 𝔻 ⟩)
+    → Same δ (con B c) (pr₁ u)
+    → inj (pr₁ u) · pr₂ u ＝ const B c
   const-view (.(con B c) , ⋆) s-con = refl
 
 split-correct-defined : ∀ {A} (M : Tm [] A)
-  → (defined (⟦ M ⟧₃ · ρ₀) → defined (⟦ split-program M ⟧₄ · ρ₀))
-  × (defined (⟦ split-program M ⟧₄ · ρ₀) → defined (⟦ M ⟧₃ · ρ₀))
-split-correct-defined M = Rel-defined (split-pres M) , Rel-defined (split-refl M)
+  → (  defined (⟦ M ⟧₃ · ρ₀)
+     → defined (⟦ split-program M ⟧₄ · ρ₀))
+  × (  defined (⟦ split-program M ⟧₄ · ρ₀)
+     → defined (⟦ M ⟧₃ · ρ₀))
+split-correct-defined M =
+  Rel-defined (split-pres M) , Rel-defined (split-refl M)
 
 split-correct-const : ∀ {A} (M : Tm [] A) (B : Base) (c : base-rep B)
-  → (⟦ M ⟧₃ · ρ₀ ＝ const B c → ⟦ split-program M ⟧₄ · ρ₀ ＝ const B c)
-  × (⟦ split-program M ⟧₄ · ρ₀ ＝ const B c → ⟦ M ⟧₃ · ρ₀ ＝ const B c)
+  → (  ⟦ M ⟧₃ · ρ₀ ＝ const B c
+     → ⟦ split-program M ⟧₄ · ρ₀ ＝ const B c)
+  × (  ⟦ split-program M ⟧₄ · ρ₀ ＝ const B c
+     → ⟦ M ⟧₃ · ρ₀ ＝ const B c)
 split-correct-const M B c = same (split-pres M) , same (split-refl M)
  where
-  same : ∀ {δ a w} → Rel δ a w → a ＝ const B c → w ＝ const B c
-  same {δ} {w = w} h refl = Rel-const-is B c h (Rel-defined h (const-defined B c))
+  same : ∀ {δ a w}
+    → Rel δ a w
+    → a ＝ const B c
+    → w ＝ const B c
+  same {δ} {w = w} h refl =
+    Rel-const-is B c h (Rel-defined h (const-defined B c))

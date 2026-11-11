@@ -36,7 +36,8 @@ open import ISWIM.Compiler.CaptureScope using (Closed)
 
 open import ISWIM.Untyped.Theorems.Denotational using (ρ₀)
 open import ISWIM.Semantics.Graph.ISWIM using (⟦_⟧)
-open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using () renaming (⟦_⟧ₚ to
+  ⟦_⟧₅)
 open import ISWIM.Untyped.Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
 import ISWIM.Semantics.CEK.ISWIM as ISWIMₘ
@@ -57,64 +58,98 @@ open import Relation.Nullary using (¬_)
 
 {- ⟦ M ⟧ ρ₀ contains the constant k exactly when the machine terminates
    with it -}
-iswim-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
+iswim-const-iff : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} {k : base-rep B}
   → (const k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (ISWIMₘ.sem M) (o-const B k)
 iswim-const-iff = AdequacyISWIM.const-iff
 
 {- ⟦ M ⟧ ρ₀ is nonempty exactly when the machine terminates with an
    answer -}
-iswim-nonempty-iff : ∀ (M : ISWIM.AST) → Closed M
+iswim-nonempty-iff : ∀ (M : ISWIM.AST)
+  → Closed M
   → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (ISWIMₘ.sem M))
 iswim-nonempty-iff = AdequacyISWIM.nonempty-iff
 
 {- a program that errors, or diverges, denotes the empty set -}
-iswim-error-empty : ∀ (M : ISWIM.AST) → Closed M → Terminates (ISWIMₘ.sem M) o-error
-  → ∀ (d : Value) → ¬ (d ∈ ⟦ M ⟧ ρ₀)
+iswim-error-empty : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Terminates (ISWIMₘ.sem M) o-error
+  → ∀ (d : Value)
+  → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 iswim-error-empty = AdequacyISWIM.error-empty
 
-iswim-diverges-empty : ∀ (M : ISWIM.AST) → Closed M → Diverges (ISWIMₘ.sem M)
-  → ∀ (d : Value) → ¬ (d ∈ ⟦ M ⟧ ρ₀)
+iswim-diverges-empty : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Diverges (ISWIMₘ.sem M)
+  → ∀ (d : Value)
+  → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 iswim-diverges-empty = AdequacyISWIM.diverges-empty
 
 {- the constants of the compiled program are those the ISWIM machine
    computes, and it produces something exactly when the machine
    terminates with an answer -}
-compile-correct-machine-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
+compile-correct-machine-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} (k : base-rep B)
   → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ (const k ∈ ⟦ compile M ⟧₅)
 compile-correct-machine-const = ISWIMCompile.compile-correct-machine-const
 
-compile-correct-machine-converges : ∀ (M : ISWIM.AST) → Closed M
+compile-correct-machine-converges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Converges (Terminates (ISWIMₘ.sem M)) ⇔ nonempty ⟦ compile M ⟧₅
-compile-correct-machine-converges = ISWIMCompile.compile-correct-machine-converges
+compile-correct-machine-converges =
+  ISWIMCompile.compile-correct-machine-converges
 
 {- The Clos5 machine, for the programs compile produces ----------------------}
 
-clos5-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
-clos5-const-iff M c = AdequacyClos5.const-iff (compile M) (AdequacyClos5.compile-wf M c)
+clos5-const-iff : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} {k : base-rep B}
+  → (const k ∈ ⟦ compile M ⟧₅)
+    ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
+clos5-const-iff M c =
+  AdequacyClos5.const-iff (compile M) (AdequacyClos5.compile-wf M c)
 
-clos5-nonempty-iff : ∀ (M : ISWIM.AST) → Closed M
+clos5-nonempty-iff : ∀ (M : ISWIM.AST)
+  → Closed M
   → nonempty ⟦ compile M ⟧₅ ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
-clos5-nonempty-iff M c = AdequacyClos5.nonempty-iff (compile M) (AdequacyClos5.compile-wf M c)
+clos5-nonempty-iff M c =
+  AdequacyClos5.nonempty-iff (compile M) (AdequacyClos5.compile-wf M c)
 
-clos5-error-empty : ∀ (M : ISWIM.AST) → Closed M → Terminates (Clos5ₘ.sem (compile M)) o-error
-  → ∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅)
-clos5-error-empty M c = AdequacyClos5.error-empty (compile M) (AdequacyClos5.compile-wf M c)
+clos5-error-empty : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Terminates (Clos5ₘ.sem (compile M)) o-error
+  → ∀ (d : Value)
+  → ¬ (d ∈ ⟦ compile M ⟧₅)
+clos5-error-empty M c =
+  AdequacyClos5.error-empty (compile M) (AdequacyClos5.compile-wf M c)
 
-clos5-diverges-empty : ∀ (M : ISWIM.AST) → Closed M → Diverges (Clos5ₘ.sem (compile M))
-  → ∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅)
-clos5-diverges-empty M c = AdequacyClos5.diverges-empty (compile M) (AdequacyClos5.compile-wf M c)
+clos5-diverges-empty : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Diverges (Clos5ₘ.sem (compile M))
+  → ∀ (d : Value)
+  → ¬ (d ∈ ⟦ compile M ⟧₅)
+clos5-diverges-empty M c =
+  AdequacyClos5.diverges-empty (compile M) (AdequacyClos5.compile-wf M c)
 
 {- The X86 machine, for the programs compile-x86 produces --------------------}
 
-x86-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
-x86-const-iff M c = AdequacyX86.adequacy-const _ wf , AdequacyX86.sound-const _ wf
+x86-const-iff : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} {k : base-rep B}
+  → (const k ∈ ⟦ compile-x86 M ⟧ₓ)
+    ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
+x86-const-iff M c =
+  AdequacyX86.adequacy-const _ wf , AdequacyX86.sound-const _ wf
   where wf = compile-x86-wf M c
 
-x86-nonempty-iff : ∀ (M : ISWIM.AST) → Closed M
-  → nonempty ⟦ compile-x86 M ⟧ₓ ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
-x86-nonempty-iff M c = AdequacyX86.adequacy-converges _ wf , AdequacyX86.sound-nonempty _ wf
+x86-nonempty-iff : ∀ (M : ISWIM.AST)
+  → Closed M
+  → nonempty ⟦ compile-x86 M ⟧ₓ
+    ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
+x86-nonempty-iff M c =
+  AdequacyX86.adequacy-converges _ wf , AdequacyX86.sound-nonempty _ wf
   where wf = compile-x86-wf M c
 
 {- End to end: the compiler, observed through the machines only -------------}
@@ -125,18 +160,28 @@ x86-nonempty-iff M c = AdequacyX86.adequacy-converges _ wf , AdequacyX86.sound-n
    error and divergence both denote the empty set, so this cannot tell
    them apart; Theorems/Simulation.agda can.) -}
 
-end-to-end-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
+end-to-end-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} (k : base-rep B)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)
 end-to-end-const = EndToEnd.end-to-end-const
 
-end-to-end-converges : ∀ (M : ISWIM.AST) → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
+end-to-end-converges : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
 end-to-end-converges = EndToEnd.end-to-end-converges
 
-end-to-end-x86-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
+end-to-end-x86-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} (k : base-rep B)
+  → Terminates (ISWIMₘ.sem M) (o-const B k)
+    ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
 end-to-end-x86-const = EndToEnd.end-to-end-x86-const
 
-end-to-end-x86-converges : ∀ (M : ISWIM.AST) → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
+end-to-end-x86-converges : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Converges (Terminates (ISWIMₘ.sem M))
+    ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
 end-to-end-x86-converges = EndToEnd.end-to-end-x86-converges

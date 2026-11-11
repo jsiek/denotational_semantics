@@ -4,7 +4,8 @@
   (ISWIM/Untyped/Semantics/GraphErr/X86.agda): the precondition of soundness and
   adequacy for the X86 machine (GraphErr/X86.agda); the compilers produce
   them from closed ISWIM programs (Adequacy/GraphErr/EndToEnd.agda; for the
-  preserved untyped compiler, GraphErr/X86CompileWF.agda in agda/ISWIM/Untyped/).
+  preserved untyped compiler, GraphErr/X86CompileWF.agda in
+  agda/ISWIM/Untyped/).
 
   Each label refers to an older definition (L): the semantics interprets
   each definition with the table of the older ones only, while the
@@ -31,7 +32,8 @@ open import Data.Nat using (ℕ; zero; suc; _<_; _≤_)
 open import Data.Nat.Properties using (<-≤-trans; m≤n+m; n<1+n)
 open import Data.Product using (_×_; _,_; proj₁; proj₂; Σ-syntax)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 open import Relation.Nullary using (yes; no)
 
 OK : (ℕ → Set) → Arg → Set

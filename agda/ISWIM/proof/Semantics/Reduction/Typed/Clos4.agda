@@ -28,8 +28,12 @@ data Value {Γ} : ∀ {A} → Tm Γ A → Set where
   inr : ∀ {V} → Value V → Value (inr V)
   inject : ∀ {G V} → Value V → Value (inject G V)
 
-value-red : ∀ {A} {V : Tm [] A} → Value V → red V ≡ val
-values-red : ∀ {n} {Vs : Vec (Tm [] Any) n} → All Value Vs → reds Vs ≡ val
+value-red : ∀ {A} {V : Tm [] A}
+  → Value V
+  → red V ≡ val
+values-red : ∀ {n} {Vs : Vec (Tm [] Any) n}
+  → All Value Vs
+  → reds Vs ≡ val
 value-red code = refl
 value-red (pack v w) rewrite value-red v | value-red w = refl
 value-red lit = refl

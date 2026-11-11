@@ -8,8 +8,9 @@ AGDA ?= agda
 # postulated or unsafe is used, and then check that nothing in the
 # checked tree (agda/, but not agda/old/, which is not checked)
 # postulates or has a pragma, other than the --without-K of the abt
-# extract. See agda/README.md.
-check: agda pragma-check
+# extract, and that every line of an Agda file there fits in 80 columns
+# (counted in Unicode code points). See agda/README.md.
+check: agda pragma-check width-check
 
 agda:
 	$(AGDA) --safe agda/All.agda
@@ -17,6 +18,15 @@ agda:
 pragma-check:
 	@! grep -rnE --include='*.agda' --exclude-dir=old '\bpostulate\b|\{-#' agda \
 	  | grep -vE ':1:\{-# OPTIONS --without-K #-\}$$'
+
+width-check:
+	@python3 -c 'import glob, sys; \
+	  bad = [f"{f}:{n}: {len(l)} columns" \
+	         for f in sorted(glob.glob("agda/**/*.agda", recursive=True)) \
+	         if not f.startswith("agda/old/") \
+	         for n, l in enumerate(open(f, encoding="utf-8").read().split("\n"), 1) \
+	         if len(l) > 80]; \
+	  print("\n".join(bad)) if bad else None; sys.exit(1 if bad else 0)'
 
 # The denotational: Scott domains column (agda/AllScott.agda) needs, besides
 # the standard library, TypeTopology (for Tom de Jong's domain theory):
@@ -38,4 +48,4 @@ OUT ?= _artifact
 artifact: scott-deps
 	python3 artifact/export.py $(OUT)
 
-.PHONY: check agda pragma-check check-scott scott-deps check-all artifact
+.PHONY: check agda pragma-check width-check check-scott scott-deps check-all artifact

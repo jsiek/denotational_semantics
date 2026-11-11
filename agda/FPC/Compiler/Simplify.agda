@@ -125,8 +125,8 @@ self V = V ∣ just (val V)
 
 {- under one more binder -}
 shift-info : ∀ {Γ A B} → Info Γ A → Info (B ∷ Γ) A
-shift-known : ∀ {Γ A B} → Known Γ A → Known (B ∷ Γ) A
 shift-mk : ∀ {Γ A B} → Maybe (Known Γ A) → Maybe (Known (B ∷ Γ) A)
+shift-known : ∀ {Γ A B} → Known Γ A → Known (B ∷ Γ) A
 shift-info I = ren S (I .term) ∣ shift-mk (I .known)
 shift-mk nothing = nothing
 shift-mk (just K) = just (shift-known K)
@@ -251,7 +251,8 @@ simp-app : ∀ {Δ Γ A B} → ℕ → Facts Δ Γ → Tm Δ (A ⇒ B) → Info 
 simp-call : ∀ {Γ A B} → ℕ → Info Γ (A ⇒ B) → Info Γ A → Info Γ B
 simp-let : ∀ {Δ Γ A B} → ℕ → Facts Δ Γ → Tm (A ∷ Δ) B → Info Γ A → Info Γ B
 simp-get : ∀ {Γ Δ A} → Δ ∋ A → Info Γ (tup Δ) → Info Γ A
-simp-case : ∀ {Δ Γ A B C} → ℕ → Facts Δ Γ → Info Γ (A ⊹ B) → Tm (A ∷ Δ) C → Tm (B ∷ Δ) C → Info Γ C
+simp-case : ∀ {Δ Γ A B C} → ℕ → Facts Δ Γ → Info Γ (A ⊹ B) → Tm (A ∷ Δ) C
+  → Tm (B ∷ Δ) C → Info Γ C
 simp-prim : ∀ {Γ} p → Info Γ (base Int) → Info Γ (base Int) → Info Γ (out-ty p)
 simp-unfold : ∀ {Γ A} → Info Γ (μ A) → Info Γ (unroll A)
 
@@ -280,7 +281,8 @@ simp-app ϕ E L I with lam? L
 {- a call of a known function λ N, with fuel: its body is simplified at
    the call, with the operand bound (simp-let), and inlined if the result
    is small enough. The operator, known, has no effect, and is dropped -}
-simp-call (suc ϕ) (T ∣ just (fun N E)) I with size (simp-let ϕ E N I .term) ≤ᵇ inline-size
+simp-call (suc ϕ) (T ∣ just (fun N E)) I
+  with size (simp-let ϕ E N I .term) ≤ᵇ inline-size
 ... | true = simp-let ϕ E N I
 ... | false = app T (I .term) ∣ nothing
 simp-call ϕ J I = app (J .term) (I .term) ∣ nothing
@@ -306,7 +308,9 @@ simp-get i I with component i (I .known) refl
 simp-case ϕ E I M N with branch (I .known) refl
 ... | just (inj₁ K) = simp ϕ (self K • E) M
 ... | just (inj₂ K) = simp ϕ (self K • E) N
-... | nothing = case (I .term) (simp ϕ (under E) M .term) (simp ϕ (under E) N .term) ∣ nothing
+... | nothing =
+  case (I .term) (simp ϕ (under E) M .term)
+  (simp ϕ (under E) N .term) ∣ nothing
 
 {- a primitive on known integers: its result -}
 simp-prim p I J with int-of (I .known) | int-of (J .known)

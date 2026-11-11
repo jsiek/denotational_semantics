@@ -42,7 +42,8 @@ data Tail : Set where
   return : Simple → Tail
   seq : ℕ → Simple → Tail → Tail           {- x := s; t -}
   goto : ℕ → Tail
-  case : Atm → ℕ → ℕ → ℕ → Tail            {- case a: x := the payload; goto l₁ or l₂ -}
+  {- case a: x := the payload; goto l₁ or l₂ -}
+  case : Atm → ℕ → ℕ → ℕ → Tail
 
 {- a body: the number of slots of its frame, its blocks (newest first),
    and its start -}

@@ -25,9 +25,10 @@ module ISWIM.proof.Adequacy.Clos5Common {Σ : List ℕ} (ds : All (Code Σ) Σ) 
 
 open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
-  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩) renaming (const to dconst)
-open import proof.Framework.GraphModel.Ops using (ℬ; pair; 𝒯; nthD) renaming (inl to inlD; inr to inrD)
+open import proof.Framework.GraphModel.Domain using (Value; _↦_; ν; ω; ⦅_,_⦆;
+  tup[_]_; left; right; ⟨⟩) renaming (const to dconst)
+open import proof.Framework.GraphModel.Ops using (ℬ; pair; 𝒯; nthD) renaming
+  (inl to inlD; inr to inrD)
 open import ISWIM.Semantics.Graph.Typed.Ops using (Table; tables)
 open import ISWIM.Semantics.CEK.Typed.Clos5
 open import Framework.Lookup using (_!_)
@@ -36,19 +37,22 @@ open import proof.Framework.Runs using (module Runs)
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Nat.Properties using (<-irrefl; <-trans; ≤-refl; m<n⇒m<1+n)
-open import Data.Product using (_×_; Σ-syntax; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; ∃-syntax; proj₁; proj₂) renaming
+  (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Data.Vec using (Vec; []; _∷_; replicate)
 open import Framework.VecUtil using (_<><_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 open import Relation.Nullary using (yes; no)
 
 open Runs (step ds) public
-open import ISWIM.proof.Adequacy.Clos5Values using (lvl<; lvl-inj; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv) public
+open import ISWIM.proof.Adequacy.Clos5Values using (lvl<; lvl-inj; ℬ-inv;
+  pair-inv; inl-inv; inr-inv; 𝒯-inv) public
 
-{- The older definitions ---------------------------------------------------------}
+{- The older definitions ------------------------------------------------------}
 
 older : ∀ {ns : List ℕ} {n} → ns ∋ n → List ℕ
 older {_ ∷ ns} Z = ns
@@ -65,8 +69,10 @@ older-lvl (S f) = older-lvl f
 module _ {D : ℕ → Set} (cd : Table Σ → ∀ {n} → D n → 𝒫 Value) where
 
   {- definition g of a part ps of the table, reached through r -}
-  table-at′ : ∀ {ns} (ps : All D ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n) → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
-    → ∀ {n} (g : ns ∋ n) → tables cd ps (r g) ≡ cd (tables cd (drop g ps)) (ps ! g)
+  table-at′ : ∀ {ns} (ps : All D ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n)
+    → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
+    → ∀ {n} (g : ns ∋ n)
+    → tables cd ps (r g) ≡ cd (tables cd (drop g ps)) (ps ! g)
   table-at′ {_ ∷ ns} (p ∷ ps) r rl Z with lvl (r Z) ≟ length ns
   ... | yes _ = refl
   ... | no ne = ⊥-elim (ne (rl Z))
@@ -75,20 +81,24 @@ module _ {D : ℕ → Set} (cd : Table Σ → ∀ {n} → D n → 𝒫 Value) wh
   ... | no _ = table-at′ ps (λ x → r (S x)) (λ x → rl (S x)) g
 
   {- the definitions older than f mean the same without the newer ones -}
-  agree : ∀ {ns n} (ps : All D ns) (f : ns ∋ n) {m} (g : Σ ∋ m) → lvl g < length (older f)
+  agree : ∀ {ns n} (ps : All D ns) (f : ns ∋ n) {m} (g : Σ ∋ m)
+    → lvl g < length (older f)
     → tables cd ps g ≡ tables cd (drop f ps) g
   agree {_ ∷ ns} (p ∷ ps) Z g g< with lvl g ≟ length ns
   ... | yes e = ⊥-elim (<-irrefl e g<)
   ... | no _ = refl
   agree {_ ∷ ns} (p ∷ ps) (S f) g g< with lvl g ≟ length ns
-  ... | yes e = ⊥-elim (<-irrefl e (<-trans g< (subst (_< length ns) (sym (older-lvl f)) (lvl< f))))
+  ... | yes e =
+    ⊥-elim
+    (<-irrefl e
+      (<-trans g< (subst (_< length ns) (sym (older-lvl f)) (lvl< f))))
   ... | no _ = agree ps f g g<
 
 table-at : ∀ {D : ℕ → Set} (cd : Table Σ → ∀ {n} → D n → 𝒫 Value) (ps : All D Σ)
   → ∀ {n} (f : Σ ∋ n) → tables cd ps f ≡ cd (tables cd (drop f ps)) (ps ! f)
 table-at cd ps = table-at′ cd ps (λ x → x) (λ _ → refl)
 
-{- Evaluation ----------------------------------------------------------------------}
+{- Evaluation -----------------------------------------------------------------}
 
 infix 4 _⊢_⇓_
 _⊢_⇓_ : ∀ {Γ A} → Env Σ Γ → Tm Σ Γ A → Val Σ A → Set
@@ -111,28 +121,44 @@ W {code n} v = dyn fun (pack v (unit-tup n))
 probe : ∀ {A} (v : Val Σ A) → ret v (K₀ A) ↠ ret (W v) halt
 probe {Any} v = done
 probe {⟪ G ⟫} v = refl ∷↠ done
-probe {code n} v = refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ done
+probe {code n} v =
+  refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ done
 
-W-inj : ∀ {A} {v₁ v₂ : Val Σ A} → W v₁ ≡ W v₂ → v₁ ≡ v₂
+W-inj : ∀ {A} {v₁ v₂ : Val Σ A}
+  → W v₁ ≡ W v₂
+  → v₁ ≡ v₂
 W-inj {Any} e = e
 W-inj {⟪ G ⟫} refl = refl
 W-inj {code n} refl = refl
 
 private
-  ret-inj : ∀ {a b : Val Σ Any} → ret a halt ≡ ret b halt → a ≡ b
+  ret-inj : ∀ {a b : Val Σ Any}
+    → ret a halt ≡ ret b halt
+    → a ≡ b
   ret-inj refl = refl
 
-⇓-det : ∀ {Γ A} {γ : Env Σ Γ} {M : Tm Σ Γ A} {v₁ v₂} → γ ⊢ M ⇓ v₁ → γ ⊢ M ⇓ v₂ → v₁ ≡ v₂
+⇓-det : ∀ {Γ A} {γ : Env Σ Γ} {M : Tm Σ Γ A} {v₁ v₂}
+  → γ ⊢ M ⇓ v₁
+  → γ ⊢ M ⇓ v₂
+  → v₁ ≡ v₂
 ⇓-det {A = A} {v₁ = v₁} {v₂} e₁ e₂ =
-  W-inj (ret-inj (↠-final-det (e₁ (K₀ A) ++↠ probe v₁) (e₂ (K₀ A) ++↠ probe v₂) refl refl))
+  W-inj
+    (ret-inj
+      (↠-final-det (e₁ (K₀ A) ++↠ probe v₁) (e₂ (K₀ A) ++↠ probe v₂) refl refl))
 
-{- the values of a tuple's components ---------------------------------------------}
+{- the values of a tuple's components -----------------------------------------}
 
-data Evals {Γ} (γ : Env Σ Γ) : ∀ {j} → Vec (Tm Σ Γ Any) j → Vec (Val Σ Any) j → Set where
+data Evals {Γ} (γ : Env Σ Γ) : ∀ {j} → Vec (Tm Σ Γ Any) j
+  → Vec (Val Σ Any) j → Set where
   [] : Evals γ [] []
-  _∷_ : ∀ {j M v} {Ms : Vec _ j} {vs} → γ ⊢ M ⇓ v → Evals γ Ms vs → Evals γ (M ∷ Ms) (v ∷ vs)
+  _∷_ : ∀ {j M v} {Ms : Vec _ j} {vs} → γ ⊢ M ⇓ v → Evals γ Ms vs
+    → Evals γ (M ∷ Ms) (v ∷ vs)
 
-tuple-run : ∀ {Γ m j} {γ : Env Σ Γ} (acc : Vec _ m) (Ms : Vec (Tm Σ Γ Any) j) {vs} → Evals γ Ms vs
-  → ∀ κ → tuple-next acc Ms γ κ ↠ ret (tup (acc <>< vs)) κ
+tuple-run : ∀ {Γ m j} {γ : Env Σ Γ} (acc : Vec _ m)
+  (Ms : Vec (Tm Σ Γ Any) j) {vs}
+  → Evals γ Ms vs
+  → ∀ κ
+  → tuple-next acc Ms γ κ ↠ ret (tup (acc <>< vs)) κ
 tuple-run acc [] [] κ = done
-tuple-run {γ = γ} acc (M ∷ Ms) (ev ∷ evs) κ = ev (tupK acc Ms γ κ) ++↠ refl ∷↠ tuple-run (_ ∷ acc) Ms evs κ
+tuple-run {γ = γ} acc (M ∷ Ms) (ev ∷ evs) κ =
+  ev (tupK acc Ms γ κ) ++↠ refl ∷↠ tuple-run (_ ∷ acc) Ms evs κ

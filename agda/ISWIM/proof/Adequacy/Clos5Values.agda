@@ -24,12 +24,14 @@ module ISWIM.proof.Adequacy.Clos5Values where
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; sub; eq; δ; int; bool)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
-  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _•_; Con) renaming (const to dconst)
-open import proof.Framework.GraphModel.Ops
-  using (ℬ; 𝒯; nthD; Λ; ℬ-consis; pair-consis; inl-consis; inr-consis) renaming (pair to dpair; inl to inlD; inr to inrD)
+open import proof.Framework.GraphModel.Domain using (Value; _↦_; ν; ω; ⦅_,_⦆;
+  tup[_]_; left; right; ⟨⟩; _•_; Con) renaming (const to dconst)
+open import proof.Framework.GraphModel.Ops using (ℬ; 𝒯; nthD; Λ; ℬ-consis;
+  pair-consis; inl-consis; inr-consis) renaming (pair to dpair; inl to inlD; inr
+  to inrD)
 open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
-open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; tables; ConT; accepts; fun₄; init)
+open import ISWIM.proof.Semantics.Graph.Typed.Ops using (Table; tables; ConT;
+  accepts; fun₄; init)
 open import ISWIM.Semantics.CEK.Typed.Clos5
 open import Semantics.Observation using (Obs; o-const; Answer)
 open import Framework.Lookup using (_!_)
@@ -44,33 +46,39 @@ open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Maybe using (just)
 open import Data.Nat.Properties using (<-irrefl; ≤-refl; m<n⇒m<1+n)
-open import Data.Product using (_×_; Σ-syntax; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; ∃-syntax; proj₁; proj₂) renaming
+  (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Data.Vec using (Vec; []; _∷_; toList; lookup)
 open import Data.Vec.Properties using (length-toList)
 open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; subst)
 open import Relation.Nullary using (yes; no; does)
 
-{- Levels ----------------------------------------------------------------------}
+{- Levels ---------------------------------------------------------------------}
 
 lvl< : ∀ {A : Set} {Γ : List A} {a} (x : Γ ∋ a) → lvl x < length Γ
 lvl< Z = ≤-refl
 lvl< (S x) = m<n⇒m<1+n (lvl< x)
 
 {- an index is determined by its level -}
-lvl-inj : ∀ {Γ : List ℕ} {m n} (f : Γ ∋ m) (g : Γ ∋ n) → lvl f ≡ lvl g → _≡_ {A = ∃[ k ] Γ ∋ k} ⟨ m , f ⟩ ⟨ n , g ⟩
+lvl-inj : ∀ {Γ : List ℕ} {m n} (f : Γ ∋ m) (g : Γ ∋ n)
+  → lvl f ≡ lvl g
+  → _≡_ {A = ∃[ k ] Γ ∋ k} ⟨ m , f ⟩ ⟨ n , g ⟩
 lvl-inj Z Z e = refl
 lvl-inj Z (S g) e = ⊥-elim (<-irrefl (sym e) (lvl< g))
 lvl-inj (S f) Z e = ⊥-elim (<-irrefl e (lvl< f))
 lvl-inj (S f) (S g) e with lvl-inj f g e
 ... | refl = refl
 
-{- Inversions ------------------------------------------------------------------------}
+{- Inversions -----------------------------------------------------------------}
 
-ℬ-inv : ∀ {B} {k : base-rep B} d → d ∈ ℬ B k ptt → d ≡ dconst k
+ℬ-inv : ∀ {B} {k : base-rep B} d
+  → d ∈ ℬ B k ptt
+  → d ≡ dconst k
 ℬ-inv (dconst k) ⟨ refl , refl ⟩ = refl
 ℬ-inv (V ↦ w) ()
 ℬ-inv ν ()
@@ -81,7 +89,9 @@ lvl-inj (S f) (S g) e with lvl-inj f g e
 ℬ-inv (right d) ()
 ℬ-inv ⟨⟩ ()
 
-pair-inv : ∀ {D E} d → d ∈ dpair ⟨ D , ⟨ E , ptt ⟩ ⟩ → Σ[ u ∈ Value ] Σ[ u' ∈ Value ] d ≡ ⦅ u , u' ⦆ × u ∈ D × u' ∈ E
+pair-inv : ∀ {D E} d
+  → d ∈ dpair ⟨ D , ⟨ E , ptt ⟩ ⟩
+  → Σ[ u ∈ Value ] Σ[ u' ∈ Value ] d ≡ ⦅ u , u' ⦆ × u ∈ D × u' ∈ E
 pair-inv ⦅ u , u' ⦆ ⟨ u∈ , u'∈ ⟩ = ⟨ u , ⟨ u' , ⟨ refl , ⟨ u∈ , u'∈ ⟩ ⟩ ⟩ ⟩
 pair-inv (dconst k) ()
 pair-inv (V ↦ w) ()
@@ -92,7 +102,9 @@ pair-inv (left d) ()
 pair-inv (right d) ()
 pair-inv ⟨⟩ ()
 
-inl-inv : ∀ {D} d → d ∈ inlD ⟨ D , ptt ⟩ → Σ[ u ∈ Value ] d ≡ left u × u ∈ D
+inl-inv : ∀ {D} d
+  → d ∈ inlD ⟨ D , ptt ⟩
+  → Σ[ u ∈ Value ] d ≡ left u × u ∈ D
 inl-inv (left u) u∈ = ⟨ u , ⟨ refl , u∈ ⟩ ⟩
 inl-inv (dconst k) ()
 inl-inv (V ↦ w) ()
@@ -103,7 +115,9 @@ inl-inv (tup[ i ] d) ()
 inl-inv (right d) ()
 inl-inv ⟨⟩ ()
 
-inr-inv : ∀ {D} d → d ∈ inrD ⟨ D , ptt ⟩ → Σ[ u ∈ Value ] d ≡ right u × u ∈ D
+inr-inv : ∀ {D} d
+  → d ∈ inrD ⟨ D , ptt ⟩
+  → Σ[ u ∈ Value ] d ≡ right u × u ∈ D
 inr-inv (right u) u∈ = ⟨ u , ⟨ refl , u∈ ⟩ ⟩
 inr-inv (dconst k) ()
 inr-inv (V ↦ w) ()
@@ -115,11 +129,15 @@ inr-inv (left d) ()
 inr-inv ⟨⟩ ()
 
 {- an element of a tuple of n components -}
-𝒯-inv : ∀ n {Ds} d → d ∈ 𝒯 n Ds
-  → (n ≡ 0 × d ≡ ⟨⟩) ⊎ Σ[ m ∈ ℕ ] Σ[ i ∈ Fin (suc m) ] Σ[ u ∈ Value ] Σ[ e ∈ n ≡ suc m ]
-       d ≡ tup[ i ] u × u ∈ nthD Ds (subst Fin (sym e) i) × (∀ j → nonempty (nthD Ds j))
+𝒯-inv : ∀ n {Ds} d
+  → d ∈ 𝒯 n Ds
+  → (n ≡ 0 × d ≡ ⟨⟩) ⊎ Σ[ m ∈ ℕ ] Σ[ i ∈ Fin (suc m) ] Σ[ u ∈ Value ] Σ[ e
+    ∈ n ≡ suc m ]
+      d ≡ tup[ i ] u × u
+        ∈ nthD Ds (subst Fin (sym e) i) × (∀ j → nonempty (nthD Ds j))
 𝒯-inv zero ⟨⟩ _ = inj₁ ⟨ refl , refl ⟩
-𝒯-inv (suc n) (tup[ i ] u) ⟨ refl , ⟨ u∈ , ne ⟩ ⟩ = inj₂ ⟨ n , ⟨ i , ⟨ u , ⟨ refl , ⟨ refl , ⟨ u∈ , ne ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+𝒯-inv (suc n) (tup[ i ] u) ⟨ refl , ⟨ u∈ , ne ⟩ ⟩ =
+  inj₂ ⟨ n , ⟨ i , ⟨ u , ⟨ refl , ⟨ refl , ⟨ u∈ , ne ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
 𝒯-inv zero (tup[ i ] u) ()
 𝒯-inv (suc n) ⟨⟩ ()
 𝒯-inv zero (dconst k) ()
@@ -137,7 +155,9 @@ inr-inv ⟨⟩ ()
 𝒯-inv zero (right d) ()
 𝒯-inv (suc n) (right d) ()
 
-𝒯L[]-inv : ∀ d → d ∈ 𝒯L [] → d ≡ ⟨⟩
+𝒯L[]-inv : ∀ d
+  → d ∈ 𝒯L []
+  → d ≡ ⟨⟩
 𝒯L[]-inv ⟨⟩ _ = refl
 𝒯L[]-inv (tup[ zero ] d) ⟨ () , _ ⟩
 𝒯L[]-inv (tup[ suc i ] d) ⟨ () , _ ⟩
@@ -158,9 +178,12 @@ proj?-ok : ∀ {Σ} t (u : Val Σ ⟪ flat t ⟫) → proj? t (dyn (flat t) u) �
 proj?-ok t u rewrite ≟F-refl (flat t) = refl
 
 {- The logical relation, given what running definition f on e and a to a
-   value with P means ---------------------------------------------------------------}
+   value with P means
+   ---------------------------------------------------------------}
 
-module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ → Val Σ Any → (Val Σ Any → Set) → Set) where
+module Rel {Σ : List ℕ}
+  (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ → Val Σ Any → (Val Σ Any → Set) → Set)
+  where
 
   𝕍 : ∀ {A} → Value → Val Σ A → Set
   𝕍s : ∀ {A} → List Value → Val Σ A → Set
@@ -185,24 +208,38 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
   𝕍At (suc i) d (v ∷ vs) = 𝕍At i d vs
   𝕍At _ d [] = ⊥
 
-  𝕍s-∈ : ∀ {A} V {v : Val Σ A} {d} → 𝕍s V v → d ∈ mem V → 𝕍 d v
+  𝕍s-∈ : ∀ {A} V {v : Val Σ A} {d}
+    → 𝕍s V v
+    → d ∈ mem V
+    → 𝕍 d v
   𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ (here refl) = r
   𝕍s-∈ (d ∷ V) ⟨ _ , rs ⟩ (there d∈) = 𝕍s-∈ V rs d∈
 
-  all→𝕍s : ∀ {A} V {v : Val Σ A} → (∀ d → d ∈ mem V → 𝕍 d v) → 𝕍s V v
+  all→𝕍s : ∀ {A} V {v : Val Σ A}
+    → (∀ d → d ∈ mem V → 𝕍 d v)
+    → 𝕍s V v
   all→𝕍s [] all = tt
-  all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
+  all→𝕍s (d ∷ V) all =
+    ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
 
-  𝕍At-lookup : ∀ {n} (i : Fin n) d (ws : Vec (Val Σ Any) n) → 𝕍At i d (toList ws) → 𝕍 d (lookup ws i)
+  𝕍At-lookup : ∀ {n} (i : Fin n) d (ws : Vec (Val Σ Any) n)
+    → 𝕍At i d (toList ws)
+    → 𝕍 d (lookup ws i)
   𝕍At-lookup zero d (w ∷ ws) ⟨ _ , r ⟩ = r
   𝕍At-lookup (suc i) d (w ∷ ws) r = 𝕍At-lookup i d ws r
 
-  𝕍At-len : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → length vs ≡ n
+  𝕍At-len : ∀ {n} (i : Fin n) d vs
+    → 𝕍At i d vs
+    → length vs ≡ n
   𝕍At-len {suc n} zero d (v ∷ vs) ⟨ len , _ ⟩ = cong suc len
   𝕍At-len (suc i) d (v ∷ vs) r = cong suc (𝕍At-len i d vs r)
 
-  {- the tag of a value of type Any, read off a related element that a tag accepts -}
-  tag : ∀ t {H} d (u : Val Σ ⟪ H ⟫) → accepts fun₄ t d → 𝕍 d u → H ≡ flat t
+  {- the tag of a value of type Any, read off a related element that a tag
+     accepts -}
+  tag : ∀ t {H} d (u : Val Σ ⟪ H ⟫)
+    → accepts fun₄ t d
+    → 𝕍 d u
+    → H ≡ flat t
   tag tfun ⦅ _ , _ ⦆ (pack c e) _ _ = refl
   tag tfun ⦅ _ , _ ⦆ (const k) _ ()
   tag tfun ⦅ _ , _ ⦆ (tup ws) _ ()
@@ -231,7 +268,8 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
   tag tint _ (tup ws) ⟨ _ , refl ⟩ ()
   tag tint _ (inl v) ⟨ _ , refl ⟩ ()
   tag tint _ (inr v) ⟨ _ , refl ⟩ ()
-  tag (ttup n i) _ (tup ws) ⟨ x , refl ⟩ r = cong tup (trans (sym (length-toList ws)) (𝕍At-len i x (toList ws) r))
+  tag (ttup n i) _ (tup ws) ⟨ x , refl ⟩ r =
+    cong tup (trans (sym (length-toList ws)) (𝕍At-len i x (toList ws) r))
   tag (ttup n i) _ (pack c e) ⟨ _ , refl ⟩ ()
   tag (ttup n i) _ (const k) ⟨ _ , refl ⟩ ()
   tag (ttup n i) _ (inl v) ⟨ _ , refl ⟩ ()
@@ -245,7 +283,9 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
   ... | false = tt
 
   {- the observation of a value related to a constant is that constant -}
-  𝕍-const : ∀ {A B} {k : base-rep B} (v : Val Σ A) → 𝕍 (dconst k) v → obs v ≡ o-const B k
+  𝕍-const : ∀ {A B} {k : base-rep B} (v : Val Σ A)
+    → 𝕍 (dconst k) v
+    → obs v ≡ o-const B k
   𝕍-const (dyn G v) r = 𝕍-const v r
   𝕍-const (const k) refl = refl
   𝕍-const (code f) ()
@@ -267,19 +307,31 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
   𝔾 : ∀ {Γ} → E.Env Value → Env Σ Γ → Set
   𝔾 {Γ} ρ γ = ∀ {A} (x : Γ ∋ A) d → d ∈ ρ (idx x) → 𝕍 d (γ ! x)
 
-  𝔾-ext : ∀ {Γ A ρ} {γ : Env Σ Γ} V (v : Val Σ A) → 𝔾 ρ γ → 𝕍s V v → 𝔾 (mem V • ρ) (v ∷ γ)
+  𝔾-ext : ∀ {Γ A ρ} {γ : Env Σ Γ} V (v : Val Σ A)
+    → 𝔾 ρ γ
+    → 𝕍s V v
+    → 𝔾 (mem V • ρ) (v ∷ γ)
   𝔾-ext V v G Vv Z d d∈ = 𝕍s-∈ V Vv d∈
   𝔾-ext V v G Vv (S x) = G x
 
-  {- The table ------------------------------------------------------------------------}
+  {- The table ----------------------------------------------------------------}
 
   𝕋 : Table Σ → Set
   𝕋 T = ∀ {n} (f : Σ ∋ n) d → d ∈ T f → 𝕍 d (code f)
 
-  {- code is related to a function of two parameters that runs as definition f does -}
+  {- code is related to a function of two parameters that runs as definition f
+     does -}
   code-𝕍 : ∀ {n} {f : Σ ∋ n} (F : 𝒫 Value → 𝒫 Value → 𝒫 Value)
-    → (∀ X Y w → w ∈ F (mem X) (mem Y) → ∀ e → 𝕍s X e → ∀ a → 𝕍s Y a → Run f e a (𝕍 w))
-    → ∀ d → d ∈ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ → 𝕍 d (code f)
+    → (  ∀ X Y w
+       → w ∈ F (mem X) (mem Y)
+       → ∀ e
+       → 𝕍s X e
+       → ∀ a
+       → 𝕍s Y a
+       → Run f e a (𝕍 w))
+    → ∀ d
+    → d ∈ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩
+    → 𝕍 d (code f)
   code-𝕍 F h ν _ = tt
   code-𝕍 F h (X ↦ ν) _ = tt
   code-𝕍 F h (X ↦ (Y ↦ w)) ⟨ ⟨ w∈ , _ ⟩ , _ ⟩ = h X Y w w∈
@@ -301,25 +353,31 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
   {- the table of definitions ds whose code is related to its code pointer,
      given a related table -}
   module _ {D : ℕ → Set} (cd : Table Σ → ∀ {n} → D n → 𝒫 Value) (ds : All D Σ)
-    (rel : ∀ {T : Table Σ} → 𝕋 T → ∀ {n} (f : Σ ∋ n) d → d ∈ cd T (ds ! f) → 𝕍 d (code f)) where
+    (rel : ∀ {T : Table Σ} → 𝕋 T → ∀ {n} (f : Σ ∋ n) d → d ∈ cd T (ds ! f)
+        → 𝕍 d (code f)) where
 
     {- a part ps of the table, reached through r -}
-    tab′ : ∀ {ns} (ps : All D ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n) → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
-      → (∀ {n} (g : ns ∋ n) → ds ! r g ≡ ps ! g) → 𝕋 (tables cd ps)
+    tab′ : ∀ {ns} (ps : All D ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n)
+      → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
+      → (∀ {n} (g : ns ∋ n) → ds ! r g ≡ ps ! g)
+      → 𝕋 (tables cd ps)
     tab′ [] r rl L f d ()
     tab′ {_ ∷ ns} (N ∷ ps) r rl L f d d∈ with lvl f ≟ length ns
     ... | no _ = tab′ ps (λ x → r (S x)) (λ x → rl (S x)) (λ x → L (S x)) f d d∈
     ... | yes l with lvl-inj f (r Z) (trans l (sym (rl Z)))
-    ...   | refl = rel (tab′ ps (λ x → r (S x)) (λ x → rl (S x)) (λ x → L (S x))) (r Z) d
+    ...   | refl =
+      rel (tab′ ps (λ x → r (S x)) (λ x → rl (S x)) (λ x → L (S x))) (r Z) d
                      (subst (λ N → d ∈ cd _ N) (sym (L Z)) d∈)
 
     tab : 𝕋 (tables cd ds)
     tab = tab′ ds (λ x → x) (λ _ → refl) (λ _ → refl)
 
 {- The denotations of values, in a table T whose entries are consistent
-   functions -----------------------------------------------------------------------}
+   functions
+   -----------------------------------------------------------------------}
 
-module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ ∋ n) → ν ∈ T f) where
+module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T)
+  (T-ν : ∀ {n} (f : Σ ∋ n) → ν ∈ T f) where
 
   𝒱 : ∀ {A} → Val Σ A → 𝒫 Value
   𝒱v : ∀ {n} → Vec (Val Σ Any) n → List (𝒫 Value)
@@ -333,18 +391,20 @@ module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ 
   𝒱v [] = []
   𝒱v (w ∷ ws) = 𝒱 w ∷ 𝒱v ws
 
-  𝒱-ne : ∀ {A} (v : Val Σ A) → nonempty (𝒱 v)
-  𝒱v-ne : ∀ {n} (ws : Vec (Val Σ Any) n) → AllNE (𝒱v ws)
   len𝒱v : ∀ {n} (ws : Vec (Val Σ Any) n) → length (𝒱v ws) ≡ n
   len𝒱v [] = refl
   len𝒱v (w ∷ ws) = cong suc (len𝒱v ws)
+
+  𝒱-ne : ∀ {A} (v : Val Σ A) → nonempty (𝒱 v)
+  𝒱v-ne : ∀ {n} (ws : Vec (Val Σ Any) n) → AllNE (𝒱v ws)
   𝒱-ne (code f) = ⟨ ν , T-ν f ⟩
   𝒱-ne (pack c e) with 𝒱-ne c | 𝒱-ne e
   ... | ⟨ a , a∈ ⟩ | ⟨ b , b∈ ⟩ = ⟨ ⦅ a , b ⦆ , ⟨ a∈ , b∈ ⟩ ⟩
   𝒱-ne (const k) = ⟨ dconst k , ⟨ refl , refl ⟩ ⟩
   𝒱-ne (tup []) = ⟨ ⟨⟩ , tt ⟩
   𝒱-ne (tup (w ∷ ws)) with 𝒱-ne w
-  ... | ⟨ d , d∈ ⟩ = ⟨ tup[ zero ] d , ⟨ ⟨ len𝒱v ws , d∈ ⟩ , ⟨ ⟨ d , d∈ ⟩ , 𝒱v-ne ws ⟩ ⟩ ⟩
+  ... | ⟨ d , d∈ ⟩ =
+    ⟨ tup[ zero ] d , ⟨ ⟨ len𝒱v ws , d∈ ⟩ , ⟨ ⟨ d , d∈ ⟩ , 𝒱v-ne ws ⟩ ⟩ ⟩
   𝒱-ne (inl v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ left d , d∈ ⟩
   𝒱-ne (inr v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ right d , d∈ ⟩
   𝒱-ne (dyn G v) = 𝒱-ne v
@@ -354,7 +414,8 @@ module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ 
   𝒱-con : ∀ {A} (v : Val Σ A) → Con (𝒱 v)
   𝒱v-con : ∀ {n} (ws : Vec (Val Σ Any) n) → AllCon (𝒱v ws)
   𝒱-con (code f) = cT f
-  𝒱-con (pack c e) = lower (pair-consis _ _ ⟨ lift (𝒱-con c) , ⟨ lift (𝒱-con e) , ptt ⟩ ⟩)
+  𝒱-con (pack c e) =
+    lower (pair-consis _ _ ⟨ lift (𝒱-con c) , ⟨ lift (𝒱-con e) , ptt ⟩ ⟩)
   𝒱-con (const {B} k) = lower (ℬ-consis B k ptt ptt ptt)
   𝒱-con (tup ws) = 𝒯L-con (𝒱v ws) (𝒱v-con ws)
   𝒱-con (inl v) = lower (inl-consis _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
@@ -363,7 +424,9 @@ module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ 
   𝒱v-con [] = tt
   𝒱v-con (w ∷ ws) = ⟨ 𝒱-con w , 𝒱v-con ws ⟩
 
-  At-lookup : ∀ {n} (i : Fin n) (ws : Vec (Val Σ Any) n) {d} → d ∈ 𝒱 (lookup ws i) → At i (𝒱v ws) d
+  At-lookup : ∀ {n} (i : Fin n) (ws : Vec (Val Σ Any) n) {d}
+    → d ∈ 𝒱 (lookup ws i)
+    → At i (𝒱v ws) d
   At-lookup zero (w ∷ ws) d∈ = ⟨ len𝒱v ws , d∈ ⟩
   At-lookup (suc i) (w ∷ ws) d∈ = At-lookup i ws d∈
 
@@ -382,10 +445,14 @@ module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ 
   𝓔-lookup (v ∷ γ) (S x) = 𝓔-lookup γ x
 
   {- primitives -}
-  prim-⊆ : ∀ p n m → 𝒱 (δᵀ {Σ} p n m) ⊆ primD p ⟨ ℬ Int n ptt , ⟨ ℬ Int m ptt , ptt ⟩ ⟩
-  prim-⊆ p n m d d∈ = ⟨ n , ⟨ m , ⟨ ⟨ refl , refl ⟩ , ⟨ ⟨ refl , refl ⟩ , out-≡ p d d∈ ⟩ ⟩ ⟩ ⟩
+  prim-⊆ : ∀ p n m
+    → 𝒱 (δᵀ {Σ} p n m) ⊆ primD p ⟨ ℬ Int n ptt , ⟨ ℬ Int m ptt , ptt ⟩ ⟩
+  prim-⊆ p n m d d∈ =
+    ⟨ n , ⟨ m , ⟨ ⟨ refl , refl ⟩ , ⟨ ⟨ refl , refl ⟩ , out-≡ p d d∈ ⟩ ⟩ ⟩ ⟩
     where
-    out-≡ : ∀ p d → d ∈ 𝒱 (δᵀ {Σ} p n m) → d ≡ dout (δ p n m)
+    out-≡ : ∀ p d
+      → d ∈ 𝒱 (δᵀ {Σ} p n m)
+      → d ≡ dout (δ p n m)
     out-≡ sub d d∈ = ℬ-inv d d∈
     out-≡ eq d d∈ with does (n ≟ℤ m)
     ... | true with inl-inv d d∈
@@ -397,14 +464,20 @@ module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ 
   acc-𝒱 : ∀ t (u : Val Σ ⟪ flat t ⟫) → Σ[ d ∈ Value ] d ∈ 𝒱 u × accepts fun₄ t d
   acc-𝒱 tfun (pack c e) with 𝒱-ne c | 𝒱-ne e
   ... | ⟨ a , a∈ ⟩ | ⟨ b , b∈ ⟩ = ⟨ ⦅ a , b ⦆ , ⟨ ⟨ a∈ , b∈ ⟩ , tt ⟩ ⟩
-  acc-𝒱 tsum (inl v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ left d , ⟨ d∈ , inj₁ ⟨ d , refl ⟩ ⟩ ⟩
-  acc-𝒱 tsum (inr v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ right d , ⟨ d∈ , inj₂ ⟨ d , refl ⟩ ⟩ ⟩
+  acc-𝒱 tsum (inl v) =
+    let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ left d , ⟨ d∈ , inj₁ ⟨ d , refl ⟩ ⟩ ⟩
+  acc-𝒱 tsum (inr v) =
+    let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ right d , ⟨ d∈ , inj₂ ⟨ d , refl ⟩ ⟩ ⟩
   acc-𝒱 tint (const k) = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , ⟨ k , refl ⟩ ⟩ ⟩
   acc-𝒱 (ttup n i) (tup ws) =
-    let ⟨ d , d∈ ⟩ = 𝒱-ne (lookup ws i) in ⟨ tup[ i ] d , ⟨ ⟨ At-lookup i ws d∈ , 𝒱v-ne ws ⟩ , ⟨ d , refl ⟩ ⟩ ⟩
+    let ⟨ d , d∈ ⟩ =
+         𝒱-ne (lookup ws i) in
+         ⟨ tup[ i ] d , ⟨ ⟨ At-lookup i ws d∈ , 𝒱v-ne ws ⟩ , ⟨ d , refl ⟩ ⟩ ⟩
 
   {- the denotation of a value observed as a constant holds it -}
-  𝒱-const : ∀ {A B} {k : base-rep B} (v : Val Σ A) → obs v ≡ o-const B k → dconst k ∈ 𝒱 v
+  𝒱-const : ∀ {A B} {k : base-rep B} (v : Val Σ A)
+    → obs v ≡ o-const B k
+    → dconst k ∈ 𝒱 v
   𝒱-const (dyn G v) e = 𝒱-const v e
   𝒱-const (const k) refl = ⟨ refl , refl ⟩
   𝒱-const (code f) ()

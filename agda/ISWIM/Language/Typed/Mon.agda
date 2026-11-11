@@ -22,7 +22,8 @@ import ISWIM.Language.Typed.Clos5 as C
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_)
-open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to
+  All-map)
 open import Data.Nat using (ℕ)
 open import Data.Vec using (Vec; []; _∷_)
 
@@ -38,8 +39,10 @@ data Exp (Σ : List ℕ) (Γ : Ctx) : Ty → Set where
   tuple : ∀ {n} → Vec (Atm Σ Γ Any) n → Exp Σ Γ ⟪ tup n ⟫
   get : ∀ {n} → Fin n → Atm Σ Γ ⟪ tup n ⟫ → Exp Σ Γ Any
   inl inr : Atm Σ Γ Any → Exp Σ Γ ⟪ sum ⟫
-  case : Atm Σ Γ ⟪ sum ⟫ → Exp Σ (Any ∷ Γ) Any → Exp Σ (Any ∷ Γ) Any → Exp Σ Γ Any
-  prim : (p : Prim) → Atm Σ Γ ⟪ base Int ⟫ → Atm Σ Γ ⟪ base Int ⟫ → Exp Σ Γ ⟪ out-flat p ⟫
+  case : Atm Σ Γ ⟪ sum ⟫ → Exp Σ (Any ∷ Γ) Any → Exp Σ (Any ∷ Γ) Any
+    → Exp Σ Γ Any
+  prim : (p : Prim) → Atm Σ Γ ⟪ base Int ⟫ → Atm Σ Γ ⟪ base Int ⟫
+    → Exp Σ Γ ⟪ out-flat p ⟫
   let′ : ∀ {A B} → Exp Σ Γ A → Exp Σ (A ∷ Γ) B → Exp Σ Γ B
   inject : (G : Flat) → Atm Σ Γ ⟪ G ⟫ → Exp Σ Γ Any
   project : (t : Tag) → Atm Σ Γ Any → Exp Σ Γ ⟪ flat t ⟫

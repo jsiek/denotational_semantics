@@ -2,7 +2,8 @@
 
   The whole closure-conversion compiler:
 
-    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --capture--> Clos2 --prune--> Clos2
+          --concretize--> Clos3
           --split--> Clos4 --hoist--> Clos5
 
   All three correctness proofs (CompilerCorrect, CompilerSim,

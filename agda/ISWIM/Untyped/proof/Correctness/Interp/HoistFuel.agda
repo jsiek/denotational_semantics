@@ -36,14 +36,15 @@ import ISWIM.Untyped.Semantics.Interp.Clos4 as S
 import ISWIM.Untyped.Semantics.Interp.Clos5 as T
 
 open import Data.List using (List; []; _∷_; length; replicate)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_;
+  reverse⁺)
 open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (zero; suc)
 open import Data.Product using (proj₁; proj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong₂)
 
-{- The relation, for the final table D --------------------------------------------}
+{- The relation, for the final table D ----------------------------------------}
 
 module Rel (D : Defs) where
 
@@ -62,8 +63,12 @@ module Rel (D : Defs) where
   _≈ρ_ = Pointwise _≈_
 
   {- Related values are observed alike -}
-  obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-  obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
+  obs≈ : ∀ {v w}
+    → v ≈ w
+    → S.obs v ≡ T.obs w
+  obs≈-list : ∀ {vs ws}
+    → Pointwise _≈_ vs ws
+    → S.obs-list vs ≡ T.obs-list ws
   obs≈ (fun≈ _) = refl
   obs≈ (pair≈ _ _) = refl
   obs≈ const≈ = refl
@@ -74,15 +79,21 @@ module Rel (D : Defs) where
   obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
   {- related operands give related results of a primitive -}
-  prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-  prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+  prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+    → v₁ ≈ w₁
+    → v₂ ≈ w₂
+    → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+  prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s
+    with δ? p (T.obs w₁) (T.obs w₂)
   ... | nothing = M.nothing
   ... | just (int n) = M.just const≈
   ... | just (bool true) = M.just (inl≈ (tup≈ []))
   ... | just (bool false) = M.just (inr≈ (tup≈ []))
 
   {- the destructors, on related values -}
-  first≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.first v) (T.first w)
+  first≈ : ∀ {v w}
+    → v ≈ w
+    → RelResult _≈_ (S.first v) (T.first w)
   first≈ (pair≈ r _) = ret r
   first≈ (fun≈ _) = error
   first≈ const≈ = error
@@ -90,7 +101,9 @@ module Rel (D : Defs) where
   first≈ (inl≈ _) = error
   first≈ (inr≈ _) = error
 
-  second≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.second v) (T.second w)
+  second≈ : ∀ {v w}
+    → v ≈ w
+    → RelResult _≈_ (S.second v) (T.second w)
   second≈ (pair≈ _ r) = ret r
   second≈ (fun≈ _) = error
   second≈ const≈ = error
@@ -98,28 +111,44 @@ module Rel (D : Defs) where
   second≈ (inl≈ _) = error
   second≈ (inr≈ _) = error
 
-  {- Clock for clock -------------------------------------------------------------}
+  {- Clock for clock ----------------------------------------------------------}
 
   {- M, hoisted after the table ds, with the table it makes part of D -}
-  run≈ : ∀ ck {ρ₁ ρ₂} M ds → proj₂ (glob M ds) ⊑ D → ρ₁ ≈ρ ρ₂
+  run≈ : ∀ ck {ρ₁ ρ₂} M ds
+    → proj₂ (glob M ds) ⊑ D
+    → ρ₁ ≈ρ ρ₂
     → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval D ck ρ₂ (proj₁ (glob M ds)))
   args≈ : ∀ ck {n ρ₁ ρ₂ vs ws} (args : Args (replicate n ■)) ds
-    → proj₂ (glob-args args ds) ⊑ D → ρ₁ ≈ρ ρ₂ → Pointwise _≈_ vs ws
+    → proj₂ (glob-args args ds) ⊑ D
+    → ρ₁ ≈ρ ρ₂
+    → Pointwise _≈_ vs ws
     → RelResult (Pointwise _≈_) (S.eval-args ck ρ₁ vs args)
-                                (T.eval-args D ck ρ₂ ws (proj₁ (glob-args args ds)))
-  apply≈ : ∀ ck {ρ₁ ρ₂ f g} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
-    → f ≈ g → RelResult _≈_ (S.apply ck ρ₁ M N f)
-                (T.apply D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) g)
-  call≈ : ∀ ck {ρ₁ ρ₂ f g} → f ≈ g → ρ₁ ≈ρ ρ₂
+        (T.eval-args D ck ρ₂ ws (proj₁ (glob-args args ds)))
+  apply≈ : ∀ ck {ρ₁ ρ₂ f g} M N ds
+    → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D
+    → ρ₁ ≈ρ ρ₂
+    → f ≈ g
+    → RelResult _≈_ (S.apply ck ρ₁ M N f)
+        (T.apply D ck ρ₂ (proj₁ (glob M ds))
+            (proj₁ (glob N (proj₂ (glob M ds)))) g)
+  call≈ : ∀ ck {ρ₁ ρ₂ f g}
+    → f ≈ g
+    → ρ₁ ≈ρ ρ₂
     → RelResult _≈_ (S.call f ck ρ₁) (T.call D ck (T.code? D g) ρ₂)
-  branch≈ : ∀ ck {ρ₁ ρ₂ v w} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
-    → v ≈ w → RelResult _≈_ (S.branch ck ρ₁ M N v)
-                (T.branch D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) w)
+  branch≈ : ∀ ck {ρ₁ ρ₂ v w} M N ds
+    → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D
+    → ρ₁ ≈ρ ρ₂
+    → v ≈ w
+    → RelResult _≈_ (S.branch ck ρ₁ M N v)
+        (T.branch D ck ρ₂ (proj₁ (glob M ds))
+            (proj₁ (glob N (proj₂ (glob M ds)))) w)
 
   run≈ ck (` x) ds p ρ = from-maybe-rel (‼-pw ρ x)
-  run≈ ck (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds p ρ = ret (fun≈ p)
+  run≈ ck (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds p ρ =
+    ret (fun≈ p)
   run≈ ck (app ⦅ L ,, M ,, N ,, Nil ⦆) ds p ρ =
-    bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) (⊑-trans (glob-grows N _) p)) ρ)
+    bind-rel
+      (run≈ ck L ds (⊑-trans (glob-grows M _) (⊑-trans (glob-grows N _) p)) ρ)
              (apply≈ ck M N _ p ρ)
   run≈ ck (lit B k ⦅ Nil ⦆) ds p ρ = ret const≈
   run≈ ck (pair-op ⦅ L ,, M ,, Nil ⦆) ds p ρ =
@@ -127,26 +156,33 @@ module Rel (D : Defs) where
     bind-rel (run≈ ck M _ p ρ) λ r' → ret (pair≈ r r')
   run≈ ck (fst-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) first≈
   run≈ ck (snd-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) second≈
-  run≈ ck (tuple n ⦅ args ⦆) ds p ρ = bind-rel (args≈ ck args ds p ρ []) (λ rs → ret (tup≈ (reverse⁺ rs)))
+  run≈ ck (tuple n ⦅ args ⦆) ds p ρ =
+    bind-rel (args≈ ck args ds p ρ []) (λ rs → ret (tup≈ (reverse⁺ rs)))
   run≈ ck (get i ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) get≈
     where
-    get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
+    get≈ : ∀ {v w}
+      → v ≈ w
+      → RelResult _≈_ (S.project i v) (T.project i w)
     get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
     get≈ (fun≈ _) = error
     get≈ (pair≈ _ _) = error
     get≈ const≈ = error
     get≈ (inl≈ _) = error
     get≈ (inr≈ _) = error
-  run≈ ck (inl-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) (λ r → ret (inl≈ r))
-  run≈ ck (inr-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) (λ r → ret (inr≈ r))
+  run≈ ck (inl-op ⦅ M ,, Nil ⦆) ds p ρ =
+    bind-rel (run≈ ck M ds p ρ) (λ r → ret (inl≈ r))
+  run≈ ck (inr-op ⦅ M ,, Nil ⦆) ds p ρ =
+    bind-rel (run≈ ck M ds p ρ) (λ r → ret (inr≈ r))
   run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ds p ρ =
-    bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) (⊑-trans (glob-grows N _) p)) ρ)
+    bind-rel
+      (run≈ ck L ds (⊑-trans (glob-grows M _) (⊑-trans (glob-grows N _) p)) ρ)
              (branch≈ ck M N _ p ρ)
   run≈ ck (prim q ⦅ L ,, M ,, Nil ⦆) ds p ρ =
     bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) p) ρ) λ r →
     bind-rel (run≈ ck M _ p ρ) λ r' → from-maybe-rel (prim≈ q r r')
   run≈ ck (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ds p ρ =
-    bind-rel (run≈ ck M ds (⊑-trans (glob-grows N _) p) ρ) λ r → run≈ ck N _ p (r ∷ ρ)
+    bind-rel (run≈ ck M ds (⊑-trans (glob-grows N _) p) ρ) λ r →
+      run≈ ck N _ p (r ∷ ρ)
 
   args≈ ck {zero} Nil ds p ρ rs = ret rs
   args≈ ck {suc n} (M ,, args) ds p ρ rs =
@@ -166,14 +202,15 @@ module Rel (D : Defs) where
   call≈ ck (inl≈ _) ρ = error
   call≈ ck (inr≈ _) ρ = error
 
-  branch≈ ck M N ds p ρ (inl≈ r) = run≈ ck M ds (⊑-trans (glob-grows N _) p) (r ∷ ρ)
+  branch≈ ck M N ds p ρ (inl≈ r) =
+    run≈ ck M ds (⊑-trans (glob-grows N _) p) (r ∷ ρ)
   branch≈ ck M N ds p ρ (inr≈ r) = run≈ ck N _ p (r ∷ ρ)
   branch≈ ck M N ds p ρ (fun≈ _) = error
   branch≈ ck M N ds p ρ (pair≈ _ _) = error
   branch≈ ck M N ds p ρ const≈ = error
   branch≈ ck M N ds p ρ (tup≈ _) = error
 
-{- The end theorem, for any program, with no precondition ----------------------------}
+{- The end theorem, for any program, with no precondition ---------------------}
 
 hoist-correct : ∀ M → Equivalent (S.sem M) (T.sem (hoist M))
 hoist-correct M = clocked _≈_ obs≈ (λ ck → run≈ ck M [] ⊑-refl [])

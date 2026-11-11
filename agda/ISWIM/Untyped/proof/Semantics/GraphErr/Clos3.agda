@@ -5,7 +5,8 @@ open import proof.Framework.GraphModel.ErrorMonad
 open import ISWIM.proof.Semantics.GraphErr.Prim
 open import ISWIM.Untyped.Language.Clos3
 open import ISWIM.Untyped.Semantics.GraphErr.Clos3 public hiding (⟦_⟧; init)
-open import proof.Framework.GraphModel.SemanticsCore Op sig using (module GoodSemantics)
+open import proof.Framework.GraphModel.SemanticsCore Op sig using (module
+  GoodSemantics)
 
 open import Data.Unit using (⊤; tt)
 
@@ -35,7 +36,8 @@ instance
   Clos3ᵐ-Semantics = G.Sem
 open Semantics {{...}} public
 
-open G public using (term-continuous; body-mono; body-continuous; body2-continuous)
+open G public using (term-continuous; body-mono; body-continuous;
+  body2-continuous)
 
 Clos3ᵐ-con-env = G.con-env tt
 Clos3ᵐ-con = G.con tt

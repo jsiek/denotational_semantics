@@ -6,9 +6,9 @@
   model, as the semantics of CFGᵀ (ISWIM/Semantics/Graph/Typed/CFG.agda) is.
   What runs next (Kont) is given the frame, the registers and the flag.
   The frame is the environment, as in CFGᵀ: slot x is position idx x,
-  and writing slot k forgets the slots after it (drop). A label means
-  its block, under the meanings of the older blocks; a block starts with
-  its frame, the registers unset and no flag.
+  and writing slot k pops the slots from k on and pushes the new value
+  (drop). A label means its block, under the meanings of the older
+  blocks; a block starts with its frame, the registers unset and no flag.
 
   * A slot write binds its value as CFGᵀ's seq does: ⋆ ⟨ Λ F , D ⟩, F X
     running the rest with X in the slot. A register write is a
@@ -33,7 +33,8 @@ module ISWIM.Semantics.Graph.Typed.X86 where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.DOpSig using (Results)
-open import Framework.GraphModel.Ops renaming (pair to pairD; inl to inlD; inr to inrD)
+open import Framework.GraphModel.Ops renaming (pair to pairD; inl to inlD; inr
+  to inrD)
 open import Semantics.Graph.Prim using (primD)
 open import ISWIM.Semantics.Graph.Typed.Ops
 open import ISWIM.Semantics.Graph.Typed.Imp using (𝒜)
@@ -72,7 +73,9 @@ args X Y rsi = Y
 
 {- the flag that testinl sets: the tag of an injection -}
 isinl : 𝒫 Value → 𝒫 Value
-isinl D w = (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩) ⊎ (Σ[ u ∈ Value ] right u ∈ D × w ≡ right ⟨⟩)
+isinl D w =
+  (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩)
+  ⊎ (Σ[ u ∈ Value ] right u ∈ D × w ≡ right ⟨⟩)
 
 {- what runs next, from a frame, registers and a flag -}
 Kont : Set₁
@@ -85,7 +88,8 @@ module _ {Σ : List ℕ} (T : Table Σ) where
   𝒪 (reg r _) ρ R = R r
   𝒪 (a ↑) ρ R = 𝒪 a ρ R
 
-  𝒪s : ∀ {ψ m} → Vec (Arg Σ ψ (ty Any)) m → Env Value → RegsD → Results (𝒫 Value) (replicate m ■)
+  𝒪s : ∀ {ψ m} → Vec (Arg Σ ψ (ty Any)) m → Env Value → RegsD
+    → Results (𝒫 Value) (replicate m ■)
   𝒪s [] ρ R = ptt
   𝒪s (a ∷ as) ρ R = ⟨ 𝒪 a ρ R , 𝒪s as ρ R ⟩
 
@@ -102,11 +106,13 @@ module _ {Σ : List ℕ} (T : Table Σ) where
   {- d := D, then κ -}
   put : ∀ {n ψ τ ψ'} → Dst n ψ τ ψ' → 𝒫 Value → Kont → Kont
   put (reg r) D κ ρ R F = κ ρ (R [ r ≔ D ]) F
-  put (slot p _) D κ ρ R F = ⋆ ⟨ Λ ⟨ (λ X → κ (X • drop p ρ) R F) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
+  put (slot p _) D κ ρ R F =
+    ⋆ ⟨ Λ ⟨ (λ X → κ (X • drop p ρ) R F) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
   ⟦_⟧ⁱ : ∀ {n ψ ψ'} → Instr Σ n ψ ψ' → Kont → Kont
   ⟦ movq a d ⟧ⁱ κ ρ R F = put d (𝒪 a ρ R) κ ρ R F
-  ⟦ subq a r _ ⟧ⁱ κ ρ R F = κ ρ (R [ r ≔ primD sub ⟨ R r , ⟨ 𝒪 a ρ R , ptt ⟩ ⟩ ]) F
+  ⟦ subq a r _ ⟧ⁱ κ ρ R F =
+    κ ρ (R [ r ≔ primD sub ⟨ R r , ⟨ 𝒪 a ρ R , ptt ⟩ ⟩ ]) F
   ⟦ cmpq a₂ a₁ ⟧ⁱ κ ρ R F = κ ρ R (primD eq ⟨ 𝒪 a₁ ρ R , ⟨ 𝒪 a₂ ρ R , ptt ⟩ ⟩)
   ⟦ sete d ⟧ⁱ κ ρ R F = put d F κ ρ R F
   ⟦ testinl a ⟧ⁱ κ ρ R F = κ ρ R (isinl (𝒪 a ρ R))
@@ -123,7 +129,8 @@ module _ {Σ : List ℕ} (T : Table Σ) where
   ⟦ i ∷ k ⟧ˢ B = ⟦ i ⟧ⁱ (⟦ k ⟧ˢ B)
   ⟦ retq _ ⟧ˢ B ρ R F = R rax
   ⟦ jmp l ⟧ˢ B ρ R F = B l ρ
-  ⟦ je l₁ l₂ ⟧ˢ B ρ R F = 𝒞 ⟨ F , ⟨ (λ _ → B l₁ ρ) , ⟨ (λ _ → B l₂ ρ) , ptt ⟩ ⟩ ⟩
+  ⟦ je l₁ l₂ ⟧ˢ B ρ R F =
+    𝒞 ⟨ F , ⟨ (λ _ → B l₁ ρ) , ⟨ (λ _ → B l₂ ρ) , ptt ⟩ ⟩ ⟩
 
   {- each block, from its frame, with the meanings of the older ones -}
   blocks : ∀ {n Bs} → Blocks Σ n Bs → Meanings Bs
@@ -135,7 +142,8 @@ module _ {Σ : List ℕ} (T : Table Σ) where
 
 {- the code of a definition: its body with %rdi and %rsi set -}
 codeₜ : ∀ {Σ} → Table Σ → ∀ {m} → Body Σ (called m) → 𝒫 Value
-codeₜ T b = Λ ⟨ (λ X → Λ ⟨ (λ Y → run T b (λ _ → init) (args X Y) init) , ptt ⟩) , ptt ⟩
+codeₜ T b =
+  Λ ⟨ (λ X → Λ ⟨ (λ Y → run T b (λ _ → init) (args X Y) init) , ptt ⟩) , ptt ⟩
 
 {- the meaning of a whole program: the value of main -}
 ⟦_⟧ₜ : Program → 𝒫 Value

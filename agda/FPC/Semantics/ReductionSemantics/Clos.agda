@@ -17,8 +17,10 @@ import Language.Prim as P
 open import FPC.Language.Type hiding (_[_])
 open import FPC.Language.Clos
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
-open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl;
+  o-inr; o-error)
+open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to;
+  step-in; reduction)
 open import FPC.Framework.ReductionAll Obs o-error using (red-∷)
 
 open import Data.Bool using (if_then_else_)
@@ -83,7 +85,8 @@ get? : ∀ {C Δ A} → Δ ∋ A → Tm [] C → C ≡ tup Δ → Red (Tm [] A)
 get? i (tuple Vs) refl = to (lookup Vs i)
 get? i _ _ = error
 
-case? : ∀ {C A B D} → Tm [] C → C ≡ A ⊹ B → Tm (A ∷ []) D → Tm (B ∷ []) D → Red (Tm [] D)
+case? : ∀ {C A B D} → Tm [] C → C ≡ A ⊹ B → Tm (A ∷ []) D → Tm (B ∷ []) D
+  → Red (Tm [] D)
 case? (inl V) refl M N = to (M [ V ])
 case? (inr V) refl M N = to (N [ V ])
 case? _ _ M N = error
@@ -100,14 +103,17 @@ red : ∀ {A} → Tm [] A → Red (Tm [] A)
 reds : ∀ {Δ} → All (Tm []) Δ → Red (All (Tm []) Δ)
 red (` ())
 red (clos N Ms) = step-in (clos N) (reds Ms) val
-red (app L M) = step-in (λ L' → app L' M) (red L) (step-in (app L) (red M) (β L refl M))
+red (app L M) =
+  step-in (λ L' → app L' M) (red L) (step-in (app L) (red M) (β L refl M))
 red (lit B c) = val
 red (tuple Ms) = step-in tuple (reds Ms) val
 red (get i M) = step-in (get i) (red M) (get? i M refl)
 red (inl M) = step-in inl (red M) val
 red (inr M) = step-in inr (red M) val
 red (case L M N) = step-in (λ L' → case L' M N) (red L) (case? L refl M N)
-red (prim p L M) = step-in (λ L' → prim p L' M) (red L) (step-in (prim p L) (red M) (prim? p L M))
+red (prim p L M) =
+  step-in (λ L' → prim p L' M) (red L)
+  (step-in (prim p L) (red M) (prim? p L M))
 red (let′ M N) = step-in (λ M' → let′ M' N) (red M) (to (N [ M ]))
 red (fold M) = step-in fold (red M) val
 red (unfold M) = step-in unfold (red M) (unfold? M refl)

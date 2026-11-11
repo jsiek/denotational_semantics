@@ -35,6 +35,9 @@ data _⊑_ {A : Set} : List A → List A → Set where
 ⊑-∋ here⊑ x = x
 ⊑-∋ (there⊑ s) x = S (⊑-∋ s x)
 
-⊑-trans : ∀ {A : Set} {Γ Γ' Γ'' : List A} → Γ ⊑ Γ' → Γ' ⊑ Γ'' → Γ ⊑ Γ''
+⊑-trans : ∀ {A : Set} {Γ Γ' Γ'' : List A}
+  → Γ ⊑ Γ'
+  → Γ' ⊑ Γ''
+  → Γ ⊑ Γ''
 ⊑-trans s here⊑ = s
 ⊑-trans s (there⊑ t) = there⊑ (⊑-trans s t)

@@ -47,7 +47,8 @@ prog = app ⦅ app ⦅ app ⦅ fun ,, lit-nat 7 ,, Nil ⦆ ,, lit-nat 3 ,, Nil �
 captured : capture fun
   ≡ L2.clos-op 0 L2.⦅ ! L2.clear (L2.bind (L2.ast
       (L2.clos-op 1 L2.⦅ ! L2.clear (L2.bind (L2.bind (L2.ast
-          (L2.clos-op 2 L2.⦅ ! L2.clear (L2.bind (L2.bind (L2.bind (L2.ast (L2.` 2)))))
+          (L2.clos-op 2 L2.⦅ ! L2.clear
+              (L2.bind (L2.bind (L2.bind (L2.ast (L2.` 2)))))
                            ,, ((L2.` 1) ,, ((L2.` 0) ,, Nil)) ⦆))))
                        ,, ((L2.` 0) ,, Nil) ⦆))) ,, Nil ⦆
 captured = refl
@@ -66,7 +67,9 @@ prog-is-7 =
   ⟨ const 1 ∷ []
   , ⟨ ⟨ const 3 ∷ []
       , ⟨ ⟨ const 7 ∷ []
-          , ⟨ ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
+          ,
+            ⟨ ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩
+              , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
             , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
         , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
     , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩

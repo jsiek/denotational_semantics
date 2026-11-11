@@ -29,11 +29,12 @@ open import Data.Nat using (ℕ; _<_; _≤_)
 open import Data.Nat.Properties using (<-≤-trans; m≤n+m; n<1+n)
 open import Data.List using (List; []; _∷_; _++_; length)
 open import Data.List.Properties using (length-++; ++-assoc)
-open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to
+  ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
 
-{- References to older definitions ----------------------------------------------}
+{- References to older definitions --------------------------------------------}
 
 RB : ℕ → L5.AST → Set
 RB-arg : ∀ {b} → ℕ → L5.Arg b → Set
@@ -50,9 +51,18 @@ RB-arg n (L5.clear a) = RB-arg n a
 RB-args n L5.nil = ⊤
 RB-args n (L5.cons a args) = RB-arg n a × RB-args n args
 
-RB-mono : ∀ {n m} (M : L5.AST) → n ≤ m → RB n M → RB m M
-RB-arg-mono : ∀ {n m b} (a : L5.Arg b) → n ≤ m → RB-arg n a → RB-arg m a
-RB-args-mono : ∀ {n m bs} (args : L5.Args bs) → n ≤ m → RB-args n args → RB-args m args
+RB-mono : ∀ {n m} (M : L5.AST)
+  → n ≤ m
+  → RB n M
+  → RB m M
+RB-arg-mono : ∀ {n m b} (a : L5.Arg b)
+  → n ≤ m
+  → RB-arg n a
+  → RB-arg m a
+RB-args-mono : ∀ {n m bs} (args : L5.Args bs)
+  → n ≤ m
+  → RB-args n args
+  → RB-args m args
 
 RB-mono (L5.` x) n≤m tt = tt
 RB-mono (L5.fun-ref k L5.⦅ args ⦆) n≤m k<n = <-≤-trans k<n n≤m
@@ -74,7 +84,8 @@ RB-arg-mono (L5.bind a) n≤m r = RB-arg-mono a n≤m r
 RB-arg-mono (L5.clear a) n≤m r = RB-arg-mono a n≤m r
 
 RB-args-mono L5.nil n≤m tt = tt
-RB-args-mono (L5.cons a args) n≤m ⟨ ra , rs ⟩ = ⟨ RB-arg-mono a n≤m ra , RB-args-mono args n≤m rs ⟩
+RB-args-mono (L5.cons a args) n≤m ⟨ ra , rs ⟩ =
+  ⟨ RB-arg-mono a n≤m ra , RB-args-mono args n≤m rs ⟩
 
 {- the definitions, newest first, refer only to older ones -}
 DefsWF : List L5.AST → Set
@@ -89,18 +100,26 @@ WF (L5.program ds M) = DefsWF ds × RB (length ds) M
 Extends : Defs → Defs → Set
 Extends ds ds' = Σ[ more ∈ Defs ] ds' ≡ more ++ ds
 
-ext-trans : ∀ {ds₁ ds₂ ds₃} → Extends ds₁ ds₂ → Extends ds₂ ds₃ → Extends ds₁ ds₃
-ext-trans {ds₁} ⟨ m₁ , refl ⟩ ⟨ m₂ , refl ⟩ = ⟨ m₂ ++ m₁ , sym (++-assoc m₂ m₁ ds₁) ⟩
+ext-trans : ∀ {ds₁ ds₂ ds₃}
+  → Extends ds₁ ds₂
+  → Extends ds₂ ds₃
+  → Extends ds₁ ds₃
+ext-trans {ds₁} ⟨ m₁ , refl ⟩ ⟨ m₂ , refl ⟩ =
+  ⟨ m₂ ++ m₁ , sym (++-assoc m₂ m₁ ds₁) ⟩
 
-ext-length : ∀ {ds ds'} → Extends ds ds' → length ds ≤ length ds'
-ext-length {ds} ⟨ more , refl ⟩ = subst (length ds ≤_) (sym (length-++ more)) (m≤n+m (length ds) (length more))
+ext-length : ∀ {ds ds'}
+  → Extends ds ds'
+  → length ds ≤ length ds'
+ext-length {ds} ⟨ more , refl ⟩ =
+  subst (length ds ≤_) (sym (length-++ more)) (m≤n+m (length ds) (length more))
 
 Shape : Defs → L5.AST × Defs → Set
 Shape ds r = Extends ds (proj₂ r) × RB (length (proj₂ r)) (proj₁ r)
 
 glob-shape : ∀ (M : AST) ds → Shape ds (glob M ds)
 glob-shape-arg : ∀ {b} (a : Arg b) ds
-  → Extends ds (proj₂ (glob-arg a ds)) × RB-arg (length (proj₂ (glob-arg a ds))) (proj₁ (glob-arg a ds))
+  → Extends ds (proj₂ (glob-arg a ds))
+    × RB-arg (length (proj₂ (glob-arg a ds))) (proj₁ (glob-arg a ds))
 glob-shape-args : ∀ {bs} (args : Args bs) ds
   → Extends ds (proj₂ (glob-args args ds))
     × RB-args (length (proj₂ (glob-args args ds))) (proj₁ (glob-args args ds))
@@ -129,15 +148,23 @@ glob-shape-arg (clear a) ds = glob-shape-arg a ds
 glob-shape-args nil ds = ⟨ ⟨ [] , refl ⟩ , tt ⟩
 glob-shape-args (cons a args) ds =
   ⟨ ext-trans (proj₁ sa) (proj₁ ss)
-  , ⟨ RB-arg-mono (proj₁ (glob-arg a ds)) (ext-length (proj₁ ss)) (proj₂ sa) , proj₂ ss ⟩ ⟩
+  ,
+    ⟨ RB-arg-mono (proj₁ (glob-arg a ds)) (ext-length (proj₁ ss)) (proj₂ sa)
+      , proj₂ ss ⟩ ⟩
   where
   sa = glob-shape-arg a ds
   ss = glob-shape-args args (proj₂ (glob-arg a ds))
 
 {- hoist adds definitions that refer only to older ones -}
-glob-wf : ∀ M ds → DefsWF ds → DefsWF (proj₂ (glob M ds))
-glob-wf-arg : ∀ {b} (a : Arg b) ds → DefsWF ds → DefsWF (proj₂ (glob-arg a ds))
-glob-wf-args : ∀ {bs} (args : Args bs) ds → DefsWF ds → DefsWF (proj₂ (glob-args args ds))
+glob-wf : ∀ M ds
+  → DefsWF ds
+  → DefsWF (proj₂ (glob M ds))
+glob-wf-arg : ∀ {b} (a : Arg b) ds
+  → DefsWF ds
+  → DefsWF (proj₂ (glob-arg a ds))
+glob-wf-args : ∀ {bs} (args : Args bs) ds
+  → DefsWF ds
+  → DefsWF (proj₂ (glob-args args ds))
 
 glob-wf (` x) ds d = d
 glob-wf (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds d =
@@ -160,9 +187,10 @@ glob-wf-arg (bind a) ds d = glob-wf-arg a ds d
 glob-wf-arg (clear a) ds d = glob-wf-arg a ds d
 
 glob-wf-args nil ds d = d
-glob-wf-args (cons a args) ds d = glob-wf-args args (proj₂ (glob-arg a ds)) (glob-wf-arg a ds d)
+glob-wf-args (cons a args) ds d =
+  glob-wf-args args (proj₂ (glob-arg a ds)) (glob-wf-arg a ds d)
 
-{- The compiler ------------------------------------------------------------------}
+{- The compiler ---------------------------------------------------------------}
 
 hoist-wf : ∀ M → WF (hoist M)
 hoist-wf M = ⟨ glob-wf M [] tt , proj₂ (glob-shape M []) ⟩

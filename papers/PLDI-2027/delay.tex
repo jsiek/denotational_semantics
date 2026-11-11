@@ -104,32 +104,31 @@ the graph of the function curried over the values of its free
 variables and the tuple of those values. Lemma~\ref{lem:delay}
 therefore states only that a closed program and its translation
 produce the same constants and that one produces something exactly
-when the other does. The forward half,
-preservation, requires only a relation between a \emph{single} source
-element and the \emph{set} of target elements, defined by recursion on
-the source element (Figure~\ref{fig:preserve}), because a source
-function has no code and environment to separate. We read $v \sqsubseteq D'$ as ``$v$ is included in the behavior of $D'$''. The source element is finite, so the
-recursion is structural, and preservation is a routine induction on
-$M$.
+when the other does. The forward half, preservation, requires only a
+relation between a \emph{single} source element and the \emph{set} of
+target elements, defined by recursion on the source element
+(Figure~\ref{fig:preserve}). We read $v \sqsubseteq D'$ as ``$v$ is
+included in the behavior of $D'$''. The source element is finite, so
+the recursion is structural, and preservation is a routine induction
+on $M$.
 
 The backward half, reflection, must show that the source accounts for
 every element that the target produces. Here the representation of
-closures gets in the way. To see how, consider the function
-$\lambda y.\, x + y$ in an environment where $x$ is $9$. In EnvClos,
-its meaning is a set of entries such as $[1] \mapsto 10$ and
-$[6] \mapsto 15$. After \pass{split closure}, its code takes the environment as an
-extra parameter. The meaning of the code is a table with entries
-for \emph{every} environment, such as the following two:
+closures gets in the way. Consider the function $\lambda y.\, x + y$
+in an environment where $x$ is $9$. In EnvClos, its meaning 
+includes entries $[1] \mapsto 10$ and $[6] \mapsto 15$. After
+\pass{split closure}, its code takes the environment as an extra
+parameter. The meaning of the code is a table with entries for
+\emph{every} environment, such as the following two:
 \[
   [9] \mapsto ([1] \mapsto 10) \qquad
   [2] \mapsto ([1] \mapsto 3)  \qquad \ldots
 \]
-The program pairs this code only with the environment $[9]$, so the
-entry for $[2]$ is junk, an entry that corresponds to no source
-function. Worse, a
-call takes the code from $\car$ and the environment from $\cdr$
-\emph{separately}, so a result may combine the code of one pair
-with the environment of another. 
+The program pairs this table only with environment $[9]$, so the entry
+for $[2]$ does not correspond to a source function. Worse, the
+denotation of a call takes the table from $\car$ and the environment
+from $\cdr$ \emph{separately}, so it may combine the table of one pair
+with the environment of another.
 
 \paragraph{Design alternatives: which sides to relate}
 
@@ -318,19 +317,19 @@ its four clauses, with ${\ALR}$ at the recursive occurrences. The case of a vari
 
 \fbox{\emph{Case $M = L\;K$.}} Then
 $\pass{split}(M) = \kw{callc}\,\pass{split}(L)\,\pass{split}(K)$,
-so $V \subseteq (\car(D') \app \cdr(D')) \app E'$ for
+and we write $W$ for the lemma's list $V$, so $W \subseteq (\car(D') \app \cdr(D')) \app E'$ for
 $D' = \den{\pass{split}(L)}\rho'$ and
-$E' = \den{\pass{split}(K)}\rho'$. Each element of $V$ is produced by
+$E' = \den{\pass{split}(K)}\rho'$. Each element of $W$ is produced by
 a code entry from $\car(D')$, finitely many environments from
 $\cdr(D')$, and finitely many arguments from $E'$. We collect the pairs
 of $D'$ that supply these codes and environments into a finite list
-$W \subseteq D'$, and the arguments into a finite list
-$U \subseteq E'$. Then $W$ maps $U$ to $V$. The induction hypotheses
-give $\den{L}\rho \ALR W$ and $\den{K}\rho \ALR U$, and both
+$V \subseteq D'$, and the arguments into a finite list
+$U \subseteq E'$. Then $V$ maps $U$ to $W$. The induction hypotheses
+give $\den{L}\rho \ALR V$ and $\den{K}\rho \ALR U$, and both
 $\den{K}\rho$ and $U$ are consistent. Clause~3 for
-$\den{L}\rho \ALR W$, applied to this self-contained call with
-$E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
-$\den{M}\rho \ALR V$.
+$\den{L}\rho \ALR V$, applied to this self-contained call with
+$E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR W$. That is,
+$\den{M}\rho \ALR W$.
 
 \fbox{\emph{Case $M = \kw{clos}\,(z, y.\,N)\,\vec{K}$.}} Then
 $\pass{split}(M) = \kw{pair}\,(\kw{code}\,(z, y.\,\pass{split}(N)))\,(\kw{tuple}\,\pass{split}(\vec{K}))$,
@@ -381,8 +380,10 @@ the lemma applied to the one-element list $[c]$ gives
 $\den{M} \ALR [c]$, and clause~1 gives $c \in \den{M}$. If
 $\den{\pass{split}(M)}$ contains an element $v$, the lemma applied
 to $[v]$ and clause~2 show that $\den{M}$ is nonempty. Preservation
-follows from the relation $\sqsubseteq$ of
-Figure~\ref{fig:preserve}. For a constant, $c \sqsubseteq D'$ means
+follows in the same way from the routine induction on $M$ mentioned
+above, which shows that if $v \in \den{M}\rho$ then
+$v \sqsubseteq \den{\pass{split}(M)}\rho'$, for environments related
+pointwise by ${\sqsubseteq}$. For a constant, $c \sqsubseteq D'$ means
 $c \in D'$, and $v \sqsubseteq D'$ implies $D' \neq \emptyset$.
 
 \subsection{Proof of Compiler Correctness with Scott Domains}
@@ -427,7 +428,6 @@ twice and shows its result only at stage $m$
 into the target domain but only one into the source, the method of
 \citet{Pitts:1996aa} does not apply directly. The result,
 Lemma~\ref{lem:scott-delay}, is the counterpart of
-Lemma~\ref{lem:delay} and the key step of the proof of
-Theorem~\ref{thm:scott}. It is a second denotational proof that
-closure conversion preserves and reflects divergence.
+Lemma~\ref{lem:delay} and the key step in proving
+Theorem~\ref{thm:scott}.
 

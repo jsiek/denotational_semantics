@@ -22,8 +22,8 @@
   %rdi and %rsi as they are, %rax unset and no flag. retq reads %rax:
   to the empty stack it stops with the observation of %rax; otherwise it
   pops the caller, which continues with %rax as it is and %rdi, %rsi
-  and the flag unset (clobbered by the call). jmp l and je l₁ l₂ run block l of bs,
-  with the blocks older than it; a missing block, or je with no flag,
+  and the flag unset (clobbered by the call). jmp l and je l₁ l₂ run block l of
+  bs, with the blocks older than it; a missing block, or je with no flag,
   errors. main runs in a frame of locals zeros, with %rax holding 0,
   %rdi and %rsi unset and no flag.
 
@@ -61,10 +61,12 @@ _[_↦_] : Regs → Reg → Maybe Val → Regs
 
 data Stack : Set where
   halt : Stack
-  retK : List Instr → Jump → List Block → Frame → Stack → Stack   {- the caller -}
+  {- the caller -}
+  retK : List Instr → Jump → List Block → Frame → Stack → Stack
 
 data State : Set where
-  run : List Instr → Jump → List Block → Stack → Maybe Bool → Frame → Regs → State
+  run : List Instr → Jump → List Block → Stack → Maybe Bool → Frame
+    → Regs → State
 
 read : Frame → Regs → Loc → Maybe Val
 read φ ρ (var x) = φ ‼ x
@@ -133,8 +135,10 @@ test nothing k = stop o-error
 global : List Body → ℕ → Maybe Body
 global ds k = reverse ds ‼ k
 
-goto : Maybe (Block × List Block) → Stack → Maybe Bool → Frame → Regs → Next State
-goto (just (b , bs)) σ f φ ρ = next (run (Block.instrs b) (Block.jump b) bs σ f φ ρ)
+goto : Maybe (Block × List Block) → Stack → Maybe Bool → Frame → Regs
+  → Next State
+goto (just (b , bs)) σ f φ ρ =
+  next (run (Block.instrs b) (Block.jump b) bs σ f φ ρ)
 goto nothing σ f φ ρ = stop o-error
 
 {- the registers %rax, %rdi and %rsi -}
@@ -147,7 +151,9 @@ regs a d s rsi = s
    with %rdi and %rsi set -}
 call : Maybe Body → Stack → Maybe Val → Maybe Val → Next State
 call (just (body n bs b)) σ (just e) (just w) =
-  next (run (Block.instrs b) (Block.jump b) bs σ nothing (zeros (2 + (n ∸ 2))) (regs nothing (just e) (just w)))
+  next
+    (run (Block.instrs b) (Block.jump b) bs σ nothing (zeros (2 + (n ∸ 2)))
+      (regs nothing (just e) (just w)))
 call _ σ _ _ = stop o-error
 
 callq? : List Body → Maybe Val → Stack → Regs → Next State
@@ -156,7 +162,8 @@ callq? ds _ σ ρ = stop o-error
 
 {- return %rax to the caller -}
 back : Maybe Val → List Instr → Jump → List Block → Frame → Stack → Next State
-back (just v) is j bs φ σ = next (run is j bs σ nothing φ (regs (just v) nothing nothing))
+back (just v) is j bs φ σ =
+  next (run is j bs σ nothing φ (regs (just v) nothing nothing))
 back nothing is j bs φ σ = stop o-error
 
 halt? : Maybe Val → Next State
@@ -165,26 +172,38 @@ halt? nothing = stop o-error
 
 {- the machine for a program with global definitions ds -}
 step : List Body → State → Next State
-step ds (run (movq a d ∷ is) j bs σ f φ ρ) = put d (arg φ ρ a) φ ρ (run is j bs σ f)
+step ds (run (movq a d ∷ is) j bs σ f φ ρ) =
+  put d (arg φ ρ a) φ ρ (run is j bs σ f)
 step ds (run (subq a d ∷ is) j bs σ f φ ρ) =
-  put d (arg φ ρ a >>= λ w → read φ ρ d >>= λ v → prim? sub v w) φ ρ (run is j bs σ f)
+  put d (arg φ ρ a >>= λ w → read φ ρ d >>= λ v → prim? sub v w) φ ρ
+    (run is j bs σ f)
 step ds (run (cmpq a₂ a₁ ∷ is) j bs σ f φ ρ) =
-  test (arg φ ρ a₁ >>= λ v → arg φ ρ a₂ >>= λ w → cmp v w) λ f' → run is j bs σ f' φ ρ
-step ds (run (sete d ∷ is) j bs σ (just b) φ ρ) = put d (just (bit b)) φ ρ (run is j bs σ (just b))
+  test (arg φ ρ a₁ >>= λ v → arg φ ρ a₂ >>= λ w → cmp v w) λ f' →
+    run is j bs σ f' φ ρ
+step ds (run (sete d ∷ is) j bs σ (just b) φ ρ) =
+  put d (just (bit b)) φ ρ (run is j bs σ (just b))
 step ds (run (sete d ∷ is) j bs σ nothing φ ρ) = stop o-error
-step ds (run (testinl a ∷ is) j bs σ f φ ρ) = test (arg φ ρ a >>= is-inl) λ f' → run is j bs σ f' φ ρ
-step ds (run (alloc s as d ∷ is) j bs σ f φ ρ) = put d (args φ ρ [] as (build s)) φ ρ (run is j bs σ f)
-step ds (run (load fl a d ∷ is) j bs σ f φ ρ) = put d (arg φ ρ a >>= get-field fl) φ ρ (run is j bs σ f)
-step ds (run (callq a ∷ is) j bs σ f φ ρ) = callq? ds (arg φ ρ a) (retK is j bs φ σ) ρ
+step ds (run (testinl a ∷ is) j bs σ f φ ρ) =
+  test (arg φ ρ a >>= is-inl) λ f' → run is j bs σ f' φ ρ
+step ds (run (alloc s as d ∷ is) j bs σ f φ ρ) =
+  put d (args φ ρ [] as (build s)) φ ρ (run is j bs σ f)
+step ds (run (load fl a d ∷ is) j bs σ f φ ρ) =
+  put d (arg φ ρ a >>= get-field fl) φ ρ (run is j bs σ f)
+step ds (run (callq a ∷ is) j bs σ f φ ρ) =
+  callq? ds (arg φ ρ a) (retK is j bs φ σ) ρ
 step ds (run [] retq bs halt f φ ρ) = halt? (ρ rax)
 step ds (run [] retq bs (retK is j bs' φ' σ) f φ ρ) = back (ρ rax) is j bs' φ' σ
 step ds (run [] (jmp l) bs σ f φ ρ) = goto (block-at bs l) σ f φ ρ
-step ds (run [] (je l₁ l₂) bs σ (just true) φ ρ) = goto (block-at bs l₁) σ (just true) φ ρ
-step ds (run [] (je l₁ l₂) bs σ (just false) φ ρ) = goto (block-at bs l₂) σ (just false) φ ρ
+step ds (run [] (je l₁ l₂) bs σ (just true) φ ρ) =
+  goto (block-at bs l₁) σ (just true) φ ρ
+step ds (run [] (je l₁ l₂) bs σ (just false) φ ρ) =
+  goto (block-at bs l₂) σ (just false) φ ρ
 step ds (run [] (je l₁ l₂) bs σ nothing φ ρ) = stop o-error
 
 
 {- a program starts with the start of its main body -}
 sem : Program → Machine
 sem (program ds (body n bs b)) =
-  machine State (step ds) (run (Block.instrs b) (Block.jump b) bs halt nothing (zeros n) (regs (just (const Int 0ℤ)) nothing nothing))
+  machine State (step ds)
+    (run (Block.instrs b) (Block.jump b) bs halt nothing (zeros n)
+      (regs (just (const Int 0ℤ)) nothing nothing))

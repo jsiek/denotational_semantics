@@ -41,42 +41,60 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 data Answers≺ {S₁ : Set} (L₂ : Machine) (R : ℕ → S₁ → State L₂ → Set) (i : ℕ)
   : Next S₁ → State L₂ → Set where
   stops : ∀ {o s₂} → Final L₂ s₂ o → Answers≺ L₂ R i (stop o) s₂
-  steps : ∀ {j s₁' s₂ s₂'} → Plus L₂ s₂ s₂' → R j s₁' s₂' → Answers≺ L₂ R i (next s₁') s₂
+  steps : ∀ {j s₁' s₂ s₂'} → Plus L₂ s₂ s₂' → R j s₁' s₂'
+    → Answers≺ L₂ R i (next s₁') s₂
   stutters : ∀ {j s₁' s₂} → j < i → R j s₁' s₂ → Answers≺ L₂ R i (next s₁') s₂
   runs : ∀ {o s₂ t} → Plus L₂ s₂ t → Final L₂ t o → Answers≺ L₂ R i (stop o) s₂
 
 module _ {S₁ : Set} {L₂ : Machine} {R : ℕ → S₁ → State L₂ → Set} where
 
   {- an answer with the match at index j -}
-  answers≺ : ∀ {i j a s₂} → Answers L₂ (R j) a s₂ → Answers≺ L₂ R i a s₂
+  answers≺ : ∀ {i j a s₂}
+    → Answers L₂ (R j) a s₂
+    → Answers≺ L₂ R i a s₂
   answers≺ (stops fin) = stops fin
   answers≺ (steps π m) = steps π m
 
-  steps₁≺ : ∀ {i j s₁ s₂ s₂'} → Step L₂ s₂ s₂' → R j s₁ s₂' → Answers≺ L₂ R i (next s₁) s₂
+  steps₁≺ : ∀ {i j s₁ s₂ s₂'}
+    → Step L₂ s₂ s₂'
+    → R j s₁ s₂'
+    → Answers≺ L₂ R i (next s₁) s₂
   steps₁≺ st m = steps (step⁺ st) m
 
-  after≺ : ∀ {i j s₁ s₂ s₂'} → Step L₂ s₂ s₂' → Reach L₂ (R j) s₁ s₂' → Answers≺ L₂ R i (next s₁) s₂
+  after≺ : ∀ {i j s₁ s₂ s₂'}
+    → Step L₂ s₂ s₂'
+    → Reach L₂ (R j) s₁ s₂'
+    → Answers≺ L₂ R i (next s₁) s₂
   after≺ st r = answers≺ (after st r)
 
   {- an answer to a ≡ a' -}
-  answers-at : ∀ {i a a' s₂} → a ≡ a' → Answers≺ L₂ R i a' s₂ → Answers≺ L₂ R i a s₂
+  answers-at : ∀ {i a a' s₂}
+    → a ≡ a'
+    → Answers≺ L₂ R i a' s₂
+    → Answers≺ L₂ R i a s₂
   answers-at refl x = x
 
 record FSim (L₁ L₂ : Machine) : Set₁ where
   field
     match : ℕ → State L₁ → State L₂ → Set
     init : Σ[ i ∈ ℕ ] match i (start L₁) (start L₂)
-    sim : ∀ {i s₁ s₂} → match i s₁ s₂ → Answers≺ L₂ match i (Machine.step L₁ s₁) s₂
+    sim : ∀ {i s₁ s₂} → match i s₁ s₂
+      → Answers≺ L₂ match i (Machine.step L₁ s₁) s₂
 
 {- simulations in which every step is matched by a target plus -}
-plus-simulation : ∀ {L₁ L₂ : Machine} (R : State L₁ → State L₂ → Set) → R (start L₁) (start L₂)
-  → (∀ {s₁ s₂} → R s₁ s₂ → Answers L₂ R (Machine.step L₁ s₁) s₂) → FSim L₁ L₂
-plus-simulation R m₀ sim = record { match = λ _ → R ; init = 0 , m₀ ; sim = λ m → answers≺ {j = 0} (sim m) }
+plus-simulation : ∀ {L₁ L₂ : Machine} (R : State L₁ → State L₂ → Set)
+  → R (start L₁) (start L₂)
+  → (∀ {s₁ s₂} → R s₁ s₂ → Answers L₂ R (Machine.step L₁ s₁) s₂)
+  → FSim L₁ L₂
+plus-simulation R m₀ sim =
+  record
+  { match = λ _ → R ; init = 0 , m₀ ; sim = λ m → answers≺ {j = 0} (sim m) }
 
 {- simulations whose source lags i steps behind a state related (R) to the
    target's: the source's steps until then are matched by none (stutter),
    and a related state's are answered by sim -}
-record Lag (L₁ : Machine) {S₂ : Set} (R : State L₁ → S₂ → Set) (i : ℕ) (s₁ : State L₁) (s₂ : S₂) : Set where
+record Lag (L₁ : Machine) {S₂ : Set} (R : State L₁ → S₂ → Set) (i : ℕ)
+  (s₁ : State L₁) (s₂ : S₂) : Set where
   constructor lag
   field
     {t} : State L₁
@@ -85,25 +103,39 @@ record Lag (L₁ : Machine) {S₂ : Set} (R : State L₁ → S₂ → Set) (i : 
 
 module _ {L₁ : Machine} {S₂ : Set} {R : State L₁ → S₂ → Set} where
 
-  lag₀ : ∀ {s₁ s₂} → R s₁ s₂ → Lag L₁ R 0 s₁ s₂
+  lag₀ : ∀ {s₁ s₂}
+    → R s₁ s₂
+    → Lag L₁ R 0 s₁ s₂
   lag₀ = lag zero
 
-  lag-now : ∀ {s₁ s₂} → R s₁ s₂ → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
+  lag-now : ∀ {s₁ s₂}
+    → R s₁ s₂
+    → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
   lag-now m = 0 , lag₀ m
 
   {- a source run to a related state, or one source step before a lag -}
-  lag-star : ∀ {s₁ t s₂} → Star L₁ s₁ t → R t s₂ → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
+  lag-star : ∀ {s₁ t s₂}
+    → Star L₁ s₁ t
+    → R t s₂
+    → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
   lag-star σ m with star→steps σ
   ... | n , τ = n , lag τ m
 
-  lag-step : ∀ {s₁ s₁' s₂} → Step L₁ s₁ s₁' → Σ[ i ∈ ℕ ] Lag L₁ R i s₁' s₂ → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
+  lag-step : ∀ {s₁ s₁' s₂}
+    → Step L₁ s₁ s₁'
+    → Σ[ i ∈ ℕ ] Lag L₁ R i s₁' s₂ → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
   lag-step st (i , lag τ m) = suc i , lag (suc st τ) m
 
-lag-fsim : ∀ {L₁ L₂ : Machine} {R : State L₁ → State L₂ → Set} → Σ[ i ∈ ℕ ] Lag L₁ R i (start L₁) (start L₂)
-  → (∀ {i s₁ s₂} → R s₁ s₂ → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ s₁) s₂) → FSim L₁ L₂
-lag-fsim {L₁} {L₂} {R} m₀ sim = record { match = Lag L₁ R ; init = m₀ ; sim = go }
+lag-fsim : ∀ {L₁ L₂ : Machine} {R : State L₁ → State L₂ → Set}
+  → Σ[ i ∈ ℕ ] Lag L₁ R i (start L₁) (start L₂)
+  → (∀ {i s₁ s₂} → R s₁ s₂ → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ s₁) s₂)
+    → FSim L₁ L₂
+lag-fsim {L₁} {L₂} {R} m₀ sim =
+  record { match = Lag L₁ R ; init = m₀ ; sim = go }
   where
-  go : ∀ {i s₁ s₂} → Lag L₁ R i s₁ s₂ → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ s₁) s₂
+  go : ∀ {i s₁ s₂}
+    → Lag L₁ R i s₁ s₂
+    → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ s₁) s₂
   go (lag zero m) = sim m
   go (lag (suc st τ) m) = answers-at st (stutters ≤-refl (lag τ m))
 
@@ -115,19 +147,29 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
 
   {- one source step is matched by a target plus, or by none and a smaller
      index -}
-  sim-step : ∀ {i s₁ s₁' s₂} → match i s₁ s₂ → step s₁ ≡ next s₁'
-    → Σ[ j ∈ ℕ ] ((Σ[ s₂' ∈ State L₂ ] Plus L₂ s₂ s₂' × match j s₁' s₂') ⊎ (j < i × match j s₁' s₂))
+  sim-step : ∀ {i s₁ s₁' s₂}
+    → match i s₁ s₂
+    → step s₁ ≡ next s₁'
+    → Σ[ j
+      ∈ ℕ
+      ]
+      ((Σ[ s₂' ∈ State L₂ ] Plus L₂ s₂ s₂' × match j s₁' s₂')
+        ⊎ (j < i × match j s₁' s₂))
   sim-step {s₁ = s₁} m st with step s₁ | sim m
   sim-step m refl | next _ | steps π m' = _ , inj₁ (_ , π , m')
   sim-step m refl | next _ | stutters lt m' = _ , inj₂ (lt , m')
 
-  sim-final : ∀ {i s₁ s₂ o} → match i s₁ s₂ → step s₁ ≡ stop o
+  sim-final : ∀ {i s₁ s₂ o}
+    → match i s₁ s₂
+    → step s₁ ≡ stop o
     → Σ[ t ∈ State L₂ ] Star L₂ s₂ t × Final L₂ t o
   sim-final {s₁ = s₁} m eq with step s₁ | sim m
   sim-final m refl | stop o | stops fin = _ , ε , fin
   sim-final m refl | stop o | runs π fin = _ , plus→star π , fin
 
-  sim-star : ∀ {i s₁ s₂ s₁'} → match i s₁ s₂ → Star L₁ s₁ s₁'
+  sim-star : ∀ {i s₁ s₂ s₁'}
+    → match i s₁ s₂
+    → Star L₁ s₁ s₁'
     → Σ[ j ∈ ℕ ] Σ[ s₂' ∈ State L₂ ] Star L₂ s₂ s₂' × match j s₁' s₂'
   sim-star m ε = _ , _ , ε , m
   sim-star m (st ◅ σ) with sim-step m st
@@ -135,7 +177,9 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
   ... | _ , inj₁ (_ , π , m') with sim-star m' σ
   ...   | j , s₂' , τ , m'' = j , s₂' , plus→star π ◅◅ τ , m''
 
-  forward-terminates : ∀ {o} → Terminates L₁ o → Terminates L₂ o
+  forward-terminates : ∀ {o}
+    → Terminates L₁ o
+    → Terminates L₂ o
   forward-terminates (s , σ , fin) with sim-star (proj₂ init) σ
   ... | _ , t , τ , m with sim-final m fin
   ...   | t' , τ' , fin' = t' , τ ◅◅ τ' , fin'
@@ -146,12 +190,19 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
     _⋖_ : ℕ × ℕ → ℕ × ℕ → Set
     _⋖_ = ×-Lex _≡_ _<_ _<_
 
-    lt-skip : ∀ {n' k n} → n' + suc k ≡ n → n' < n
+    lt-skip : ∀ {n' k n}
+      → n' + suc k ≡ n
+      → n' < n
     lt-skip {n'} refl = m<m+n n' (s≤s z≤n)
 
-  back : ∀ {t o} → Final L₂ t o
-    → ∀ n i → Acc _⋖_ (n , i) → ∀ {s₁ s₂} → match i s₁ s₂
-    → Steps L₂ n s₂ t → Σ[ s ∈ State L₁ ] Star L₁ s₁ s × Final L₁ s o
+  back : ∀ {t o}
+    → Final L₂ t o
+    → ∀ n i
+    → Acc _⋖_ (n , i)
+    → ∀ {s₁ s₂}
+    → match i s₁ s₂
+    → Steps L₂ n s₂ t
+    → Σ[ s ∈ State L₁ ] Star L₁ s₁ s × Final L₁ s o
   back fin n i (acc rec) {s₁} m τ with step s₁ in eq
   back fin _ i (acc rec) {s₁} m τ | stop o' with sim-final m eq
   ... | _ , σ' , fin' with final-unique σ' fin' τ fin
@@ -164,9 +215,12 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
   ... | n' , e , τ' with back fin n' j (rec (inj₁ (lt-skip e))) m' τ'
   ...   | s , σ , fin₁ = s , eq ◅ σ , fin₁
 
-  backward-terminates : ∀ {o} → Terminates L₂ o → Terminates L₁ o
+  backward-terminates : ∀ {o}
+    → Terminates L₂ o
+    → Terminates L₁ o
   backward-terminates (t , τ , fin) with star→steps τ
-  ... | n , τn = back fin n (proj₁ init) (×-wellFounded <-wellFounded <-wellFounded _)
+  ... | n , τn =
+    back fin n (proj₁ init) (×-wellFounded <-wellFounded <-wellFounded _)
                    (proj₂ init) τn
 
   {- the end theorem: a forward simulation between machines (deterministic
@@ -176,13 +230,18 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
   equivalent = record
     { terminates = λ o → forward-terminates , backward-terminates
     ; diverges = (λ d → never-final-diverges λ τ fin →
-                          diverges-not-terminates d (backward-terminates (_ , τ , fin)))
+                          diverges-not-terminates d
+                            (backward-terminates (_ , τ , fin)))
                , (λ d → never-final-diverges λ σ fin →
-                          diverges-not-terminates d (forward-terminates (_ , σ , fin)))
+                          diverges-not-terminates d
+                            (forward-terminates (_ , σ , fin)))
     }
 
 {- equivalence composes -}
-equiv-trans : ∀ {L₁ L₂ L₃} → Equivalent L₁ L₂ → Equivalent L₂ L₃ → Equivalent L₁ L₃
+equiv-trans : ∀ {L₁ L₂ L₃}
+  → Equivalent L₁ L₂
+  → Equivalent L₂ L₃
+  → Equivalent L₁ L₃
 equiv-trans E F = record
   { terminates = λ o → (λ t → proj₁ (F.terminates o) (proj₁ (E.terminates o) t))
                      , (λ t → proj₂ (E.terminates o) (proj₂ (F.terminates o) t))
@@ -192,7 +251,9 @@ equiv-trans E F = record
         module F = Equivalent F
 
 {- equivalence is symmetric -}
-equiv-sym : ∀ {L₁ L₂} → Equivalent L₁ L₂ → Equivalent L₂ L₁
+equiv-sym : ∀ {L₁ L₂}
+  → Equivalent L₁ L₂
+  → Equivalent L₂ L₁
 equiv-sym E = record
   { terminates = λ o → proj₂ (E.terminates o) , proj₁ (E.terminates o)
   ; diverges = proj₂ E.diverges , proj₁ E.diverges }

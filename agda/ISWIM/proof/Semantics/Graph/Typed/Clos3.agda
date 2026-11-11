@@ -27,7 +27,8 @@ ok : ∀ {Γ A} (M : Tm Γ A) → Ok ⟦ M ⟧
 oks : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) → Oks (replicate n ■) (split n ⟦ Ms ⟧s)
 
 ok (` x) = var-ok (idx x)
-ok (clos N Ms) = ok-op ⋆-good ⟨ ΛΛ-ok (ok N) , ⟨ ok-vec (𝒯-good _) (oks Ms) , ptt ⟩ ⟩
+ok (clos N Ms) =
+  ok-op ⋆-good ⟨ ΛΛ-ok (ok N) , ⟨ ok-vec (𝒯-good _) (oks Ms) , ptt ⟩ ⟩
 ok (app L M) = ok-op ⋆-good ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
 ok (lit B c) = ok-op (ℬ-good B c) ptt
 ok (tuple Ms) = ok-vec (𝒯-good _) (oks Ms)
@@ -43,5 +44,7 @@ ok (project t M) = ok-op (project-good _ t) ⟨ ok M , ptt ⟩
 oks [] = ptt
 oks (M ∷ Ms) = ⟨ ok M , oks Ms ⟩
 
-con : ∀ {Γ A} (M : Tm Γ A) {ρ} → Con-env ρ → Con (⟦ M ⟧ ρ)
+con : ∀ {Γ A} (M : Tm Γ A) {ρ}
+  → Con-env ρ
+  → Con (⟦ M ⟧ ρ)
 con M c = proj₂ (proj₂ (ok M)) c

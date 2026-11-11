@@ -20,7 +20,7 @@
   open closure, gives r the type tupα of its environment. As in X86ᵀ,
   where α stands for the hidden length of an environment, the witness
   is never named in a type: codeα and tupα refer to the closure opened
-  last, opening forgets the registers of type codeα or tupα of an
+  last, opening wipes the registers of type codeα or tupα of an
   earlier closure, and so a register of type codeα A B and one of type
   tupα always belong to the same closure. Only the argument and result
   types, which the type of the closure shows, are in codeα A B. callq a
@@ -102,12 +102,12 @@ unset : Regs
 unset = rt nothing nothing nothing
 
 {- a register of an earlier closure's code or environment is unset -}
-forgetα : Maybe RTy → Maybe RTy
-forgetα (just (ty A)) = just (ty A)
-forgetα _ = nothing
+wipeα : Maybe RTy → Maybe RTy
+wipeα (just (ty A)) = just (ty A)
+wipeα _ = nothing
 
 wipe : Regs → Regs
-wipe Γ = rt (forgetα (Regs.ax Γ)) (forgetα (Regs.di Γ)) (forgetα (Regs.si Γ))
+wipe Γ = rt (wipeα (Regs.ax Γ)) (wipeα (Regs.di Γ)) (wipeα (Regs.si Γ))
 
 {- the slot of the open closure -}
 record Open (Δ : Ctx) : Set where
@@ -140,11 +140,13 @@ data Arg (Σ : List DSig) (ψ : St) : RTy → Set where
 {- destinations, in a frame of n slots -}
 data Dst (n : ℕ) : St → RTy → St → Set where
   reg : ∀ {Γ Δ O F τ} r → Dst n (st Γ Δ O F) τ (st (Γ [ r ↦ just τ ]) Δ O F)
-  slot : ∀ {Γ Δ Δ' O F A} (p : Δ' ⊑ Δ) → .(length Δ' < n) → Dst n (st Γ Δ O F) (ty A) (st Γ (A ∷ Δ') nothing F)
+  slot : ∀ {Γ Δ Δ' O F A} (p : Δ' ⊑ Δ) → .(length Δ' < n)
+    → Dst n (st Γ Δ O F) (ty A) (st Γ (A ∷ Δ') nothing F)
 
 {- what alloc builds -}
 data Obj (Σ : List DSig) (ψ : St) : Type → Set where
-  pair : ∀ {Δ A B} → Arg Σ ψ (ty (code Δ A B)) → Arg Σ ψ (ty (tup Δ)) → Obj Σ ψ (A ⇒ B)
+  pair : ∀ {Δ A B} → Arg Σ ψ (ty (code Δ A B)) → Arg Σ ψ (ty (tup Δ))
+    → Obj Σ ψ (A ⇒ B)
   tuple : ∀ {Δ} → All (λ A → Arg Σ ψ (ty A)) Δ → Obj Σ ψ (tup Δ)
   inl : ∀ {A B} → Arg Σ ψ (ty A) → Obj Σ ψ (A ⊹ B)
   inr : ∀ {A B} → Arg Σ ψ (ty B) → Obj Σ ψ (A ⊹ B)
@@ -153,16 +155,22 @@ data Instr (Σ : List DSig) (n : ℕ) : St → St → Set where
   movq : ∀ {ψ τ ψ'} → Arg Σ ψ τ → Dst n ψ τ ψ' → Instr Σ n ψ ψ'
   subq : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) ℤty → ∀ r → Γ ‹ r › ≡ just ℤty
     → Instr Σ n (st Γ Δ O F) (st (Γ [ r ↦ just ℤty ]) Δ O F)
-  cmpq : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) ℤty → Arg Σ (st Γ Δ O F) ℤty → Instr Σ n (st Γ Δ O F) (st Γ Δ O true)
-  sete : ∀ {Γ Δ O ψ'} → Dst n (st Γ Δ O true) (ty (tup [] ⊹ tup [])) ψ' → Instr Σ n (st Γ Δ O true) ψ'
+  cmpq : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) ℤty → Arg Σ (st Γ Δ O F) ℤty
+    → Instr Σ n (st Γ Δ O F) (st Γ Δ O true)
+  sete : ∀ {Γ Δ O ψ'} → Dst n (st Γ Δ O true) (ty (tup [] ⊹ tup [])) ψ'
+    → Instr Σ n (st Γ Δ O true) ψ'
   alloc : ∀ {ψ A ψ'} → Obj Σ ψ A → Dst n ψ (ty A) ψ' → Instr Σ n ψ ψ'
-  load : ∀ {ψ Δ A ψ'} → Δ ∋ A → Arg Σ ψ (ty (tup Δ)) → Dst n ψ (ty A) ψ' → Instr Σ n ψ ψ'
+  load : ∀ {ψ Δ A ψ'} → Δ ∋ A → Arg Σ ψ (ty (tup Δ)) → Dst n ψ (ty A) ψ'
+    → Instr Σ n ψ ψ'
   {- load fst x, r: open the closure in slot x -}
   loadfst : ∀ {Γ Δ O F A B} (x : Δ ∋ A ⇒ B) r
-    → Instr Σ n (st Γ Δ O F) (st (wipe Γ [ r ↦ just (codeα A B) ]) Δ (just (opened x)) F)
+    → Instr Σ n (st Γ Δ O F)
+      (st (wipe Γ [ r ↦ just (codeα A B) ]) Δ (just (opened x)) F)
   {- load snd x, r, of the open closure x -}
-  loadsnd : ∀ {Γ Δ x F} r → Instr Σ n (st Γ Δ (just x) F) (st (Γ [ r ↦ just tupα ]) Δ (just x) F)
-  callq : ∀ {Γ Δ O F A B} → Arg Σ (st Γ Δ O F) (codeα A B) → Γ ‹ rdi › ≡ just tupα → Γ ‹ rsi › ≡ just (ty A)
+  loadsnd : ∀ {Γ Δ x F} r
+    → Instr Σ n (st Γ Δ (just x) F) (st (Γ [ r ↦ just tupα ]) Δ (just x) F)
+  callq : ∀ {Γ Δ O F A B} → Arg Σ (st Γ Δ O F) (codeα A B)
+    → Γ ‹ rdi › ≡ just tupα → Γ ‹ rsi › ≡ just (ty A)
     → Instr Σ n (st Γ Δ O F) (returned Δ B)
 
 {- instructions, then a jump, to the blocks Bs, in a body of result R -}
@@ -181,7 +189,8 @@ entry Δ = st unset Δ nothing false
 {- the blocks of a body, newest first, each over the older ones -}
 data Blocks (Σ : List DSig) (n : ℕ) (R : Type) : List Ctx → Set where
   [] : Blocks Σ n R []
-  _▷_ : ∀ {Bs Δ} → Blocks Σ n R Bs → Seq Σ n R Bs (entry Δ) → Blocks Σ n R (Δ ∷ Bs)
+  _▷_ : ∀ {Bs Δ} → Blocks Σ n R Bs → Seq Σ n R Bs (entry Δ)
+    → Blocks Σ n R (Δ ∷ Bs)
 
 {- a body: the number of slots of its frame, its blocks and its start -}
 record Body (Σ : List DSig) (R : Type) (ψ : St) : Set where
@@ -195,7 +204,9 @@ record Body (Σ : List DSig) (R : Type) (ψ : St) : Set where
 {- a definition of signature s starts with its environment in %rdi and
    its argument in %rsi -}
 called : DSig → St
-called s = st (rt nothing (just (ty (tup (DSig.env s)))) (just (ty (DSig.dom s)))) [] nothing false
+called s =
+  st (rt nothing (just (ty (tup (DSig.env s)))) (just (ty (DSig.dom s))))
+  [] nothing false
 
 record Program (A : Type) : Set where
   constructor program

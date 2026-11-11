@@ -24,20 +24,23 @@ open import Framework.Primitives using (Int)
 
 data Simple (Σ : List DSig) (Δ : Ctx) : Type → Set where
   atm : ∀ {A} → Atm Σ Δ A → Simple Σ Δ A
-  pair : ∀ {Δ' A B} → Atm Σ Δ (code Δ' A B) → Atm Σ Δ (tup Δ') → Simple Σ Δ (A ⇒ B)
+  pair : ∀ {Δ' A B} → Atm Σ Δ (code Δ' A B) → Atm Σ Δ (tup Δ')
+    → Simple Σ Δ (A ⇒ B)
   callc : ∀ {A B} → Atm Σ Δ (A ⇒ B) → Atm Σ Δ A → Simple Σ Δ B
   tuple : ∀ {Δ'} → All (Atm Σ Δ) Δ' → Simple Σ Δ (tup Δ')
   get : ∀ {Δ' A} → Δ' ∋ A → Atm Σ Δ (tup Δ') → Simple Σ Δ A
   inl : ∀ {A B} → Atm Σ Δ A → Simple Σ Δ (A ⊹ B)
   inr : ∀ {A B} → Atm Σ Δ B → Simple Σ Δ (A ⊹ B)
-  prim : (p : Prim) → Atm Σ Δ (base Int) → Atm Σ Δ (base Int) → Simple Σ Δ (out-ty p)
+  prim : (p : Prim) → Atm Σ Δ (base Int) → Atm Σ Δ (base Int)
+    → Simple Σ Δ (out-ty p)
   fold : ∀ {A} → Atm Σ Δ (unroll A) → Simple Σ Δ (μ A)
   unfold : ∀ {A} → Atm Σ Δ (μ A) → Simple Σ Δ (unroll A)
 
 data Exp (Σ : List DSig) (Δ : Ctx) : Type → Set where
   simple : ∀ {A} → Simple Σ Δ A → Exp Σ Δ A
   assign : ∀ {A B} → Exp Σ Δ A → Exp Σ (A ∷ Δ) B → Exp Σ Δ B
-  case : ∀ {A B C} → Atm Σ Δ (A ⊹ B) → Exp Σ (A ∷ Δ) C → Exp Σ (B ∷ Δ) C → Exp Σ Δ C
+  case : ∀ {A B C} → Atm Σ Δ (A ⊹ B) → Exp Σ (A ∷ Δ) C
+    → Exp Σ (B ∷ Δ) C → Exp Σ Δ C
 
 {- a definition starts with its environment in slot 0 and its argument
    in slot 1; main with no slot -}

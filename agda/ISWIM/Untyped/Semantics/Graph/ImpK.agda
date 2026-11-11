@@ -2,8 +2,8 @@ module ISWIM.Untyped.Semantics.Graph.ImpK where
 {-
 
  The continuation-passing semantics of Imp (Language/Imp.agda), the one the
- main proof uses; proof/Semantics/Graph/ImpDirect.agda is a direct alternative. Stores,
- slots, atoms and simple expressions are in Semantics/Graph/Imp.agda.
+ main proof uses; proof/Semantics/Graph/ImpDirect.agda is a direct alternative.
+ Stores, slots, atoms and simple expressions are in Semantics/Graph/Imp.agda.
 
  An expression runs in a frame of n slots, given the store σ as it
  enters and a continuation κ, the meaning of what runs after it: κ D σ'
@@ -29,7 +29,8 @@ module ISWIM.Untyped.Semantics.Graph.ImpK where
 open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
-open import ISWIM.Untyped.Semantics.Graph.Imp using (Table; Store; _[_↦_]; checked; 𝒜; 𝒮; zeros; frame; tables) public
+open import ISWIM.Untyped.Semantics.Graph.Imp using (Table; Store; _[_↦_];
+  checked; 𝒜; 𝒮; zeros; frame; tables) public
 open import ISWIM.Untyped.Language.Imp
 
 open import Data.Nat using (ℕ)
@@ -45,7 +46,11 @@ Kont = 𝒫 Value → Store → 𝒫 Value
 ⟦_⟧ᴷ[_] : Exp → Table → ℕ → Store → Kont → 𝒫 Value
 ⟦ simple s ⟧ᴷ[ T ] n σ κ = κ (𝒮 T n σ s) σ
 ⟦ case a x e₁ e₂ ⟧ᴷ[ T ] n σ κ = checked n x
-  (𝒞 ⟨ 𝒜 T n σ a , ⟨ (λ X → ⟦ e₁ ⟧ᴷ[ T ] n (σ [ x ↦ X ]) κ) , ⟨ (λ X → ⟦ e₂ ⟧ᴷ[ T ] n (σ [ x ↦ X ]) κ) , ptt ⟩ ⟩ ⟩)
+  (𝒞
+      ⟨ 𝒜 T n σ a
+        ,
+          ⟨ (λ X → ⟦ e₁ ⟧ᴷ[ T ] n (σ [ x ↦ X ]) κ)
+            , ⟨ (λ X → ⟦ e₂ ⟧ᴷ[ T ] n (σ [ x ↦ X ]) κ) , ptt ⟩ ⟩ ⟩)
 ⟦ assign x e₁ e₂ ⟧ᴷ[ T ] n σ κ = ⟦ e₁ ⟧ᴷ[ T ] n σ (λ D σ' → checked n x
   (⋆ ⟨ Λ ⟨ (λ X → ⟦ e₂ ⟧ᴷ[ T ] n (σ' [ x ↦ X ]) κ) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩))
 
@@ -57,7 +62,8 @@ halt D σ = D
    definitions: it takes the tuple of free variables X and then the
    argument Y -}
 code : Table → Body → 𝒫 Value
-code T (body n e) = Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ e ⟧ᴷ[ T ] n (frame X Y) halt) , ptt ⟩) , ptt ⟩
+code T (body n e) =
+  Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ e ⟧ᴷ[ T ] n (frame X Y) halt) , ptt ⟩) , ptt ⟩
 
 {- the table of a list of definitions, newest first -}
 table : List Body → Table

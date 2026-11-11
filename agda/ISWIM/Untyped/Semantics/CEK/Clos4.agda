@@ -8,8 +8,8 @@
   the environment y, x: the argument is variable 0 and the environment
   variable 1. Only then does it check that L's value is code, like an
   indirect call instruction (the source languages check the operator
-  before the operand; see ISWIM/Semantics/CEK/ISWIM.agda). See the design note in
-  Smallstep.agda.
+  before the operand; see ISWIM/Semantics/CEK/ISWIM.agda). See the design note
+  in Smallstep.agda.
 
   Observations: Obs has no pairs, and Clos4 uses a pair only to represent
   a closure (split makes one only from a Clos3 closure), so a pair, like
@@ -24,7 +24,8 @@ open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import ISWIM.Untyped.Language.Clos4
 open import Semantics.Observation
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?;
+  machine)
 open import Framework.ListUtil
 
 open import Data.Fin using (Fin)
@@ -33,7 +34,8 @@ open import Data.Bool using (true; false)
 open import Data.Maybe using (Maybe; just; nothing; map)
 
 data Val : Set where
-  fun : AST → Val                       {- code, under the environment and argument -}
+  {- code, under the environment and argument -}
+  fun : AST → Val
   pair : Val → Val → Val
   const : (B : Base) → base-rep B → Val
   tup : List Val → Val
@@ -95,7 +97,8 @@ ret? mv κ = next? o-error (λ v → ret v κ) mv
 
 step : State → Next State
 step (eval (` x) ρ κ) = ret? (ρ ‼ x) κ
-step (eval (fun-op ⦅ cons (clear (bind (bind (ast N)))) Nil ⦆) ρ κ) = next (ret (fun N) κ)
+step (eval (fun-op ⦅ cons (clear (bind (bind (ast N)))) Nil ⦆) ρ κ) =
+  next (ret (fun N) κ)
 step (eval (app ⦅ L ,, M ,, N ,, Nil ⦆) ρ κ) = next (eval L ρ (appF M N ρ κ))
 step (eval (lit B k ⦅ Nil ⦆) ρ κ) = next (ret (const B k) κ)
 step (eval (pair-op ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (pairL M ρ κ))
@@ -105,7 +108,8 @@ step (eval (tuple n ⦅ args ⦆) ρ κ) = next (tuple-next [] (args→list args
 step (eval (get i ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (getK i κ))
 step (eval (inl-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inlK κ))
 step (eval (inr-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inrK κ))
-step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ (caseK M N ρ κ))
+step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) =
+  next (eval L ρ (caseK M N ρ κ))
 step (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval M ρ (letK N ρ κ))
 step (ret v halt) = stop (obs v)

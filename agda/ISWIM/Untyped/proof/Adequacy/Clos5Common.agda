@@ -17,8 +17,10 @@ module ISWIM.Untyped.proof.Adequacy.Clos5Common (ds : List AST) where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (ν)
-open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (table) renaming (code to codeD)
-open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (table-ext; table-top)
+open import ISWIM.Untyped.Semantics.Graph.Clos5Iswim using (table) renaming
+  (code to codeD)
+open import ISWIM.Untyped.proof.Correctness.Graph.HoistCorrect using (table-ext;
+  table-top)
 open import proof.Framework.ListUtil using (reverse-‼-split)
 open import ISWIM.Untyped.Semantics.CEK.Clos5
 open import ISWIM.Untyped.proof.Compiler.HoistTable using (_⊑_)
@@ -37,36 +39,51 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans)
 open import Relation.Nullary using (yes; no)
 open import Data.Empty using (⊥-elim)
 
-{- Runs of the machine -----------------------------------------------------------}
+{- Runs of the machine --------------------------------------------------------}
 
 open Runs (step ds) public
 
-{- The table of global definitions ------------------------------------------------}
+{- The table of global definitions --------------------------------------------}
 
 {- the definition that the machine finds at k sits on top of the k
    definitions older than it -}
-global-split : ∀ k {B} → global ds k ≡ just B → Σ[ Ns ∈ List AST ] (B ∷ Ns ⊑ ds) × length Ns ≡ k
+global-split : ∀ k {B}
+  → global ds k ≡ just B
+  → Σ[ Ns ∈ List AST ] (B ∷ Ns ⊑ ds) × length Ns ≡ k
 global-split k eq with reverse-‼-split ds k eq
 ... | xs , Ns , e , len = Ns , (xs , e) , len
 
-DefsWF-⊑ : ∀ {Ns} → Ns ⊑ ds → DefsWF ds → DefsWF Ns
+DefsWF-⊑ : ∀ {Ns}
+  → Ns ⊑ ds
+  → DefsWF ds
+  → DefsWF Ns
 DefsWF-⊑ (xs , refl) = go xs
   where
-  go : ∀ xs {Ns} → DefsWF (xs ++ Ns) → DefsWF Ns
+  go : ∀ xs {Ns}
+    → DefsWF (xs ++ Ns)
+    → DefsWF Ns
   go [] w = w
   go (x ∷ xs) w = go xs (proj₂ w)
 
 {- the meaning of a definition, with the table of the older ones -}
-table-at : ∀ {B Ns} → B ∷ Ns ⊑ ds → table ds (length Ns) ≡ codeD (table Ns) B
+table-at : ∀ {B Ns}
+  → B ∷ Ns ⊑ ds
+  → table ds (length Ns) ≡ codeD (table Ns) B
 table-at {B} {Ns} (xs , refl) =
   trans (table-ext xs (B ∷ Ns) (length Ns) (n<1+n (length Ns))) (table-top B Ns)
 
 {- the older definitions mean the same in the whole table -}
-table-agree : ∀ {Ns} → Ns ⊑ ds → ∀ j → j < length Ns → table ds j ≡ table Ns j
+table-agree : ∀ {Ns}
+  → Ns ⊑ ds
+  → ∀ j
+  → j < length Ns
+  → table ds j ≡ table Ns j
 table-agree {Ns} (xs , refl) j j< = table-ext xs Ns j j<
 
 {- every existing definition is a function -}
-ν-table : ∀ (Ns : List AST) k → k < length Ns → ν ∈ table Ns k
+ν-table : ∀ (Ns : List AST) k
+  → k < length Ns
+  → ν ∈ table Ns k
 ν-table (N ∷ Ns) k k< with k ≟ length Ns
 ... | yes _ = tt
 ... | no k≢ with m≤n⇒m<n∨m≡n (≤-pred k<)
