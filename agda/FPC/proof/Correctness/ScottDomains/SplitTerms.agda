@@ -159,10 +159,20 @@ module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
    source and target arguments of Rel-case and of its premises in
    swapped order. -}
 
-open Terms Pres Pres-clos Pres-call Rel-const Rel-tuple Rel-proj Rel-inl Rel-inr
-  Rel-case Rel-prim Rel-seq using () renaming (split-ok to split-pres) public
-open Terms Refl Refl-clos Refl-call Rel-const (λ k h → Rel-tuple k h) (λ i h →
-  Rel-proj i h) (λ h → Rel-inl h) (λ h → Rel-inr h) (λ f g f' g' h hf hg →
-  Rel-case f' g' f g h (λ {a} {a'} r → hf {a'} {a} r) (λ {a} {a'} r → hg {a'}
-  {a} r)) (λ p h h' → Rel-prim p h h') (λ h h' → Rel-seq h h') using () renaming
-  (split-ok to split-refl) public
+open Terms Pres Pres-clos Pres-call
+  Rel-const Rel-tuple Rel-proj Rel-inl Rel-inr Rel-case Rel-prim Rel-seq
+  using () renaming (split-ok to split-pres) public
+
+open Terms Refl Refl-clos Refl-call
+  Rel-const
+  (λ k h → Rel-tuple k h)
+  (λ i h → Rel-proj i h)
+  (λ h → Rel-inl h)
+  (λ h → Rel-inr h)
+  (λ f g f' g' h hf hg →
+     Rel-case f' g' f g h
+       (λ {a} {a'} r → hf {a'} {a} r)
+       (λ {a} {a'} r → hg {a'} {a} r))
+  (λ p h h' → Rel-prim p h h')
+  (λ h h' → Rel-seq h h')
+  using () renaming (split-ok to split-refl) public
