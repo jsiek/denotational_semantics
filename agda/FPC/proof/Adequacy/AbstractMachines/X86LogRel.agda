@@ -11,8 +11,12 @@
   fundamental lemma (adequate) is by induction on the sequence, given that the
   blocks it may jump to are adequate (AdeqB): the frame, the registers and the
   flag of the semantics are related to those of the machine (𝕄), and the open
-  closure is that of its slot (OpR). A call returns the same value for every
-  element of its denotation, since runs are deterministic (Ret-det).
+  closure is that of its slot (OpR). The frames are related on the
+  initialized slots: the meaning at position idx x of the semantic frame
+  is related to the value of slot x (𝔽). A write to slot x updates the
+  semantic frame at idx x (𝔽-write), and the slots that the rest does not
+  start with are forgotten (𝔽-restrict). A call returns the same value for
+  every element of its denotation, since runs are deterministic (Ret-det).
 
   The machine runs a definition to its return independently of the
   stack it returns to (Retq), so that what runs after a call is related

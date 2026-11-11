@@ -23,6 +23,12 @@
   case binds the payload of the injection in its slot, as a slot write
   does, and takes the branch of 𝒞 for its side.
 
+  The frame is fixed: slot x is location loc x, and it denotes the
+  meaning of its value when it is initialized and nothing otherwise
+  (𝓔ˢ). A write to slot x clears its location in the approximation
+  before the write, keeps the others (und-AL), and updates the semantic
+  frame at idx x (und-fr).
+
   load snd reads the environment of the open closure, which the machine
   keeps apart from its slot: in the states that the machine reaches,
   it is the closure's (Inv, OpR, which back also shows a step keeps).
@@ -159,7 +165,8 @@ module _ {ρ ρ' : Env Value} {R R' : RegsD} (s : ρ ⊆ₑ ρ') (h : R ⊆ᵣ R
   𝒪s-mono [] = ptt
   𝒪s-mono (a ∷ as) = ⟨ lift (𝒪-mono a) , 𝒪s-mono as ⟩
 
-  object-mono : ∀ {Δ} {ψ : St Δ} {A} (o : Obj Σ ψ A) → object T o ρ R ⊆ object T o ρ' R'
+  object-mono : ∀ {Δ} {ψ : St Δ} {A} (o : Obj Σ ψ A)
+    → object T o ρ R ⊆ object T o ρ' R'
   object-mono (pair c e) =
     lower (pair-mono _ _ ⟨ lift (𝒪-mono c) , ⟨ lift (𝒪-mono e) , ptt ⟩ ⟩)
   object-mono (tuple as) = lower (𝒯-mono _ _ _ (𝒪s-mono as))
@@ -784,7 +791,8 @@ put-⊆ (slot x p) {k} {bs} {σ} {m = m} {v} D g z ⟨ A' , ⟨ al' , z∈ ⟩ �
         , ⟨ ⟨ K-mono k bs (und-fr x E (λ d d∈ → ∈-++⁺ˡ d∈))
                 (λ { rax → λ d d∈ → E 0 d (clear-≢ {A'} {loc x} {0} (λ ()) d d∈)
                    ; rdi → λ d d∈ → E 1 d (clear-≢ {A'} {loc x} {1} (λ ()) d d∈)
-                   ; rsi → λ d d∈ → E 2 d (clear-≢ {A'} {loc x} {2} (λ ()) d d∈) }) ⊆r u u∈
+                   ; rsi → λ d d∈ → E 2 d (clear-≢ {A'} {loc x} {2} (λ ()) d d∈)
+                   }) ⊆r u u∈
             , ⟨ ext-ne _ (𝒱-ne v)
               , Con⇒≈ _ (𝒱-con v)
                   (ext-⊆ (A' (loc x)) (𝒱-ne v) (slot-⊆ x p al')) ⟩ ⟩
@@ -792,7 +800,8 @@ put-⊆ (slot x p) {k} {bs} {σ} {m = m} {v} D g z ⟨ A' , ⟨ al' , z∈ ⟩ �
 
 {- the flag := b -}
 flag-⊆ : ∀ {Δ Rt Bs Γ} {I : Inits Δ} {O F}
-  {k : Seq Σ Δ Rt Bs (st Γ I O true)} {bs σ η} {m : Mach Σ η (st Γ I O F)} b (G : Apx → 𝒫 Value)
+  {k : Seq Σ Δ Rt Bs (st Γ I O true)} {bs σ η} {m : Mach Σ η (st Γ I O F)} b
+  (G : Apx → 𝒫 Value)
   → Grow m (λ A → 𝒱 (bit b) ⊆ G A)
   → 𝒮 (run k bs σ η ⟨ regs m , frame m , envα m , b ⟩) ⊆ λ z →
     Σ[ A ∈ Apx ] AL A m × z ∈ 𝒦 σ (K k bs (σ̂ A) (ρ̂ A) (G A))
@@ -847,7 +856,9 @@ call-⊆ {Δ} {A = A₁} {B₁} {k = k} {bs} {σ} {η} {m} a e₁ e₂ =
     entries x x∈ with ∈-map⁻ ent x∈
     ... | ⟨ w' , ⟨ w'∈ , refl ⟩ ⟩ = closed f (ent w')
       ⟨ ⟨ K-mono (Body.start (lookup ds f)) (Body.blocks (lookup ds f))
-          (λ i d d∈ → empty-⊆ {Body.frame (lookup ds f)} {init} i d (al' (suc (suc (suc i))) d d∈))
+          (λ i d d∈ →
+            empty-⊆ {Body.frame (lookup ds f)} {init} i d
+              (al' (suc (suc (suc i))) d d∈))
             (λ { rax → ∅⊆ (al' 0) ; rdi → λ d d∈ → ∈-++⁺ˡ d∈ ; rsi → λ d d∈ →
                 ∈-++⁺ˡ d∈ }) (λ _ ()) w' (W⊆ w' w'∈)
         ,
@@ -1081,5 +1092,6 @@ soundness (body Δ bs k) ⟨ s , ⟨ τ , fin ⟩ ⟩ ans =
   start⊆ : 𝒮 (run k bs halt [] ⟨ rv tt tt tt , empty Δ , tt , tt ⟩)
     ⊆ ⟦ program ds (body Δ bs k) ⟧ₜ
   start⊆ z ⟨ A , ⟨ al , z∈ ⟩ ⟩ =
-    K-mono k bs (λ i d d∈ → empty-⊆ {Δ} {init} i d (al (suc (suc (suc i))) d d∈))
+    K-mono k bs
+      (λ i d d∈ → empty-⊆ {Δ} {init} i d (al (suc (suc (suc i))) d d∈))
       (λ { rax → ∅⊆ (al 0) ; rdi → ∅⊆ (al 1) ; rsi → ∅⊆ (al 2) }) (λ _ ()) z z∈

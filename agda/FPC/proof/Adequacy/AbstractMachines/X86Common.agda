@@ -7,7 +7,13 @@
   in (start), on any stack of its result type, and how the open
   closure is related to its slot (OpR): the machine keeps the types η
   of its environment and the environment, which are those of the
-  closure in the slot.
+  closure in the slot, and that slot is initialized.
+
+  The frame is fixed (FPC/Semantics/Slots.agda), and a write may
+  overwrite an initialized slot. Two slots are the same or at different
+  positions (slot-eq?); a read of a slot other than the one written
+  finds the old value (read-write-at), and a read after a restriction
+  finds the value before it (read-restrict).
 
 -}
 
@@ -40,14 +46,15 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; con
 
 open Runs (step ds) public
 
-{- Frames ----------------------------------------------------------------------}
+{- Frames ---------------------------------------------------------------------}
 
 {- y is the slot x -}
 data Same {Δ : Ctx} {A : Type} (x : Δ ∋ A) : ∀ {B} → Δ ∋ B → Set where
   same : Same x x
 
 {- two slots are the same, or at different positions -}
-slot-eq? : ∀ {Δ : Ctx} {A B : Type} (x : Δ ∋ A) (y : Δ ∋ B) → Same x y ⊎ idx x ≢ idx y
+slot-eq? : ∀ {Δ : Ctx} {A B : Type} (x : Δ ∋ A) (y : Δ ∋ B)
+  → Same x y ⊎ idx x ≢ idx y
 slot-eq? Z Z = inj₁ same
 slot-eq? Z (S y) = inj₂ (λ ())
 slot-eq? (S x) Z = inj₂ (λ ())
