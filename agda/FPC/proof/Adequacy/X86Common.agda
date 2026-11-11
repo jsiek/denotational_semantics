@@ -16,7 +16,7 @@ open import FPC.Language.Type
 open import FPC.Language.X86 using (DSig; Open; opened; Inits; _∈_)
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.X86 using (Opened; size; env-of)
-open import FPC.Framework.Slots using (Slots; read)
+open import FPC.Semantics.Slots using (Slots; read)
 
 open import Data.List using (List)
 open import Data.Maybe using (Maybe; just; nothing)

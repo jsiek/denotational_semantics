@@ -56,7 +56,7 @@ open import FPC.Semantics.ClockedInterpreters.X86
 open import proof.Semantics.Interp.Clock using (Result; ret; Stable; st-now;
   st-bind; stable-unique)
 open import FPC.Framework.AllUtil using ([]; _∷_; lookup; pos)
-open import FPC.Framework.Slots using (Slots; read; write; restrict; empty)
+open import FPC.Semantics.Slots using (Slots; read; write; restrict; empty)
 open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
 open import FPC.proof.Adequacy.X86Slots using (Fr; fr-put; fr-write)
 open import FPC.proof.Adequacy.GlobalFunValues using (module Rel; ℬ-inv;

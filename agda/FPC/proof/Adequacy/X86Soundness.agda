@@ -77,7 +77,7 @@ open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.X86
 open import proof.Semantics.Interp.Clock using (Result)
 open import FPC.Framework.AllUtil using ([]; _∷_; pos)
-open import FPC.Framework.Slots using (Slots; read; write; restrict; empty)
+open import FPC.Semantics.Slots using (Slots; read; write; restrict; empty)
 open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
 import FPC.proof.Adequacy.X86Slots as XS
 open XS using (≔-⊆)

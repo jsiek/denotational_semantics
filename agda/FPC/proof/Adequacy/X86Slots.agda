@@ -1,6 +1,6 @@
 {-
 
-  The values of a fixed frame (FPC/Framework/Slots.agda) against the
+  The values of a fixed frame (FPC/Semantics/Slots.agda) against the
   frames of the graph model (Env Value, FPC/Semantics/GraphModel/Ops.agda),
   for the adequacy and soundness proofs of the X86μ interpreter
   (X86LogRel.agda, X86Soundness.agda).
@@ -33,7 +33,7 @@ open import FPC.Semantics.GraphModel.Ops using (_[_≔_])
 open import FPC.Language.Type
 open import FPC.Language.Frame
 open import FPC.Framework.AllUtil using ([]; _∷_)
-open import FPC.Framework.Slots
+open import FPC.Semantics.Slots
 open import FPC.proof.Semantics.GraphModel.CFG using (∈-⊕⁻)
 
 open import Data.Bool using (true; false)
