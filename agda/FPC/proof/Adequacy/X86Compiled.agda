@@ -35,6 +35,7 @@ open import FPC.Language.Type
 open import FPC.Language.GlobalFun using (DSig; Code; program)
 import FPC.Language.GlobalFun as GlobalFun
 open import FPC.Language.X86 using (Program)
+open import FPC.Language.Imp using (Body)
 open import FPC.Language.FPC using (Tm)
 open import FPC.Language.Mon using (⌜_⌝)
 open import FPC.Framework.AllUtil using (All; lookup) renaming (map to All-map)
@@ -42,7 +43,7 @@ open import FPC.proof.Framework.AllProp using (lookup-map)
 open import FPC.Compiler.Pipeline using (compile-to-GlobalFun;
   compile-to-PairClos; compile)
 open import FPC.Compiler.RCO using (rco)
-open import FPC.Compiler.LiftLocals using () renaming (lift to liftₗ)
+open import FPC.Compiler.LiftLocals using () renaming (lift-body to liftₗ)
 open import FPC.Compiler.Explicate using (explicate-body)
 open import FPC.Compiler.Select using (def-body)
 open import FPC.proof.Compiler.HoistOlder using (OlderDefs; hoist-older)
@@ -120,7 +121,8 @@ compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , close
       ≃ codeₜ (tables codeₜ (All-map def-body ds꜀))
       (def-body (explicate-body (liftₗ dₘ)))
     code≃ = ≃-trans rco≃ (≃-trans lift≃
-      (≃-trans (ΛΛ-≃ λ X Y → body-≃ (table-explicate dsᵢ) (liftₗ dₘ) _)
+      (≃-trans (ΛΛ-≃ λ X Y → body-≃ (table-explicate dsᵢ)
+        (Body.exp (liftₗ dₘ)) _)
           (code-≃ (table-≃ ds꜀) (explicate-body (liftₗ dₘ)))))
       where
       lift≃ : code′ Tₘ ⌜ dₘ ⌝ ≃ codeᵢ (tables codeᵢ dsᵢ) (liftₗ dₘ)
