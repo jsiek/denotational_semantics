@@ -14,6 +14,7 @@
     continuation of a case can go into its branches;
   * the code of a closure is determined by its body on defined
     arguments (code₂-cong, codeᶜ-cong, codeᶠ-cong, codeᶜ-codeᶠ);
+  * writes to two frames that agree keep them agreeing (write-cong);
   * the argument and the environment of a definition are at different
     positions of its frame (params-≢), and frame₂ holds them there
     (frame₂-arg, frame₂-env);
@@ -35,12 +36,13 @@ open import Relation.Binary.PropositionalEquality using (_≢_)
 open import FPC.Language.GlobalFun using (DSig)
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
-open import Data.Nat using (_≟_)
+open import Data.Nat using (ℕ; _≟_)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Fin using (zero; suc)
 import FPC.Language.Imp as I
 open import FPC.Framework.AllUtil using (pos)
 import Relation.Binary.PropositionalEquality as Eq
+import Data.Empty
 
 module FPC.proof.Semantics.ScottDomains.BackEndLemmas
         (pt : propositional-truncations-exist)
@@ -212,6 +214,19 @@ frame₂-env : (e a : ℕ) (X Y : ⟨ 𝔻 ⟩)
 frame₂-env e a X Y ne =
   write-other a e (write e (λ _ → init) X) Y (λ q → ne (Eq.sym q))
   ∙ write-same e (λ _ → init) X
+
+private
+ choose-same : ∀ {P : Set} (q : Dec P) (d a b : ⟨ 𝔻 ⟩)
+   → ((P → Data.Empty.⊥) → a ＝ b)
+   → choose q d a ＝ choose q d b
+ choose-same (yes _) d a b h = refl
+ choose-same (no ne) d a b h = h ne
+
+{- writing the same value to two frames that agree at j off position i -}
+write-cong : (i j : ℕ) (σ σ' : ⟨ Env ⟩) (D : ⟨ 𝔻 ⟩)
+  → (i ≢ j → σ j ＝ σ' j)
+  → write i σ D j ＝ write i σ' D j
+write-cong i j σ σ' D = choose-same (i ≟ j) D (σ j) (σ' j)
 
 {- tables ---------------------------------------------------------------------}
 

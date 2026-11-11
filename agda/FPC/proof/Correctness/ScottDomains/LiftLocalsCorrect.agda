@@ -111,7 +111,8 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
     → κ · (⟦ ⌜ e ⌝ ⟧[ T ] · γ) ＝ ⟦ lift e q ρ ok o ⟧ᴷ T' · σ · κ
   lift-sem {I = I} (M.atm a) q ρ ok o κ ag s = ap (κ ·_) (atm-＝ {I = I} ok a ag)
   lift-sem {I = I} (M.pair a b) q ρ ok o κ ag s =
-    ap₂ (λ x y → κ · (pair · x · y)) (atm-＝ {I = I} ok a ag) (atm-＝ {I = I} ok b ag)
+    ap₂ (λ x y → κ · (pair · x · y)) (atm-＝ {I = I} ok a ag)
+      (atm-＝ {I = I} ok b ag)
   lift-sem {I = I} (M.callc a b) q ρ ok o κ ag s =
     ap₂ (λ x y → κ · (appᵈ · (appᵈ · (car · x) · (cdr · x)) · y))
       (atm-＝ {I = I} ok a ag) (atm-＝ {I = I} ok b ag)
@@ -124,9 +125,12 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
   lift-sem {I = I} (M.inr a) q ρ ok o κ ag s =
     ap (λ x → κ · (inrᵈ · x)) (atm-＝ {I = I} ok a ag)
   lift-sem {I = I} (M.prim p a b) q ρ ok o κ ag s =
-    ap₂ (λ x y → κ · (primD p · x · y)) (atm-＝ {I = I} ok a ag) (atm-＝ {I = I} ok b ag)
-  lift-sem {I = I} (M.fold a) q ρ ok o κ ag s = ap (κ ·_) (atm-＝ {I = I} ok a ag)
-  lift-sem {I = I} (M.unfold a) q ρ ok o κ ag s = ap (κ ·_) (atm-＝ {I = I} ok a ag)
+    ap₂ (λ x y → κ · (primD p · x · y)) (atm-＝ {I = I} ok a ag)
+      (atm-＝ {I = I} ok b ag)
+  lift-sem {I = I} (M.fold a) q ρ ok o κ ag s =
+    ap (κ ·_) (atm-＝ {I = I} ok a ag)
+  lift-sem {I = I} (M.unfold a) q ρ ok o κ ag s =
+    ap (κ ·_) (atm-＝ {I = I} ok a ag)
   lift-sem {I = I} (M.let′ e₁ e₂) q ρ ok o {γ} {σ} κ ag s =
     ap (κ ·_) (letᶜ-β Mᵈ Nᵈ γ)
     ∙ seq-strict κ s D (Nᵈ · (D • γ))
