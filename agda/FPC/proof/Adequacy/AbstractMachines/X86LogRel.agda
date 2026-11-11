@@ -284,7 +284,7 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
     ⟨ _ , ⟨ _ , ⟨ _ , ⟨ 𝕞 G (ℝ-upd r Rg h) Fl Op , w∈ ⟩ ⟩ ⟩ ⟩
   put-𝕄 (slot p _) {v = v} (𝕞 G Rg Fl Op) h ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
     =
-    ⟨ _ , ⟨ _ , ⟨ _ , ⟨ 𝕞 G' Rg Fl none , w∈ ⟩ ⟩ ⟩ ⟩
+    ⟨ _ , ⟨ _ , ⟨ _ , ⟨ 𝕞 G' Rg Fl unopened , w∈ ⟩ ⟩ ⟩ ⟩
     where
     G' : 𝔾 (mem V • drop p _) (v ∷ pop p _)
     G' Z d d∈ = h d (V⊆ d d∈)
@@ -386,7 +386,7 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
                                          subst (𝕍 d)
                                            (Ret-det r ⟨ Rc , ⟨ τc , refl ⟩ ⟩)
                                            rv'
-                             ; rdi _ _ → tt ; rsi _ _ → tt }) tt none) w∈
+                             ; rdi _ _ → tt ; rsi _ _ → tt }) tt unopened) w∈
   ... | ⟨ v' , ⟨ ⟨ Rk , ⟨ τk , ek ⟩ ⟩ , rv' ⟩ ⟩ =
     ⟨ v'
         ,
@@ -435,7 +435,7 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   blocks-adeq : ∀ {n R Bs} (bs : Blocks Σ n R Bs) → AdeqB bs
   blocks-adeq (bs ▷ k) Z G w∈ =
     adequate k (blocks-adeq bs)
-    (𝕞 G (λ { rax _ _ → tt ; rdi _ _ → tt ; rsi _ _ → tt }) tt none) w∈
+    (𝕞 G (λ { rax _ _ → tt ; rdi _ _ → tt ; rsi _ _ → tt }) tt unopened) w∈
   blocks-adeq (bs ▷ k) (S l) = blocks-adeq bs l
 
 {- The table of the program ---------------------------------------------------}
@@ -446,7 +446,7 @@ tab-ds = tab codeₜ ds λ {T} 𝕋T {Δ} {A} {B} f → code-𝕍 _ λ X Y w w�
     (blocks-adeq 𝕋T (Body.blocks (lookup ds f)))
     (𝕞 (λ ())
         (λ { rax _ _ → tt ; rdi d d∈ → 𝕍s-∈ X Xe d∈ ; rsi d d∈ → 𝕍s-∈ Y Ya d∈ })
-          tt none) w∈
+          tt unopened) w∈
 
 {- Adequacy -------------------------------------------------------------------}
 
@@ -455,6 +455,6 @@ adequacy : ∀ {A} (b : Body Σ A (entry [])) {w}
   → Σ[ v ∈ Val Σ A ] Terminates (sem (program ds b)) (obs v) × 𝕍 w v
 adequacy (body n bs k) w∈
   with adequate tab-ds k (blocks-adeq tab-ds bs)
-  (𝕞 (λ ()) (λ { rax _ _ → tt ; rdi _ _ → tt ; rsi _ _ → tt }) tt none) w∈
+  (𝕞 (λ ()) (λ { rax _ _ → tt ; rdi _ _ → tt ; rsi _ _ → tt }) tt unopened) w∈
 ... | ⟨ v , ⟨ ⟨ R , ⟨ τ , refl ⟩ ⟩ , r ⟩ ⟩ =
   ⟨ val R , ⟨ ⟨ at R halt , ⟨ ↠→star (τ halt) , refl ⟩ ⟩ , r ⟩ ⟩

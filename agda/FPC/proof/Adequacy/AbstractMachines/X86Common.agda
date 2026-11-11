@@ -22,7 +22,8 @@ open import FPC.Language.Type
 open import FPC.Semantics.AbstractMachines.X86
 open import proof.Semantics.CEK.Smallstep using (next)
 open import proof.Framework.Runs using (module Runs)
-open import FPC.Framework.AllUtil using (lookup; [])
+open import FPC.Framework.AllUtil using (lookup)
+open import FPC.Framework.Slots using (read; empty)
 
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Unit using (⊤; tt)
@@ -35,15 +36,17 @@ start : ∀ {η A B} → Val Σ (code η A B) → Val Σ (tup η) → Val Σ A
   → Stack Σ B → State Σ
 start {η} (code f) e a σ =
   run (Body.start (lookup ds f)) (Body.blocks (lookup ds f)) σ η
-    ⟨ rv tt e a , [] , tt , tt ⟩
+    ⟨ rv tt e a , empty (Body.frame (lookup ds f)) , tt , tt ⟩
 
 enter-start : ∀ {η A B} (c : Val Σ (code η A B)) {e a σ}
   → enter ds c e a σ ≡ next (start c e a σ)
 enter-start (code f) = refl
 
-{- the open closure is that of its slot: η and the environment are its own -}
-data OpR {Δ} (φ : Frame Σ Δ) : (O : Maybe (Open Δ)) (η : Ctx)
+{- the open closure is that of its slot, which is initialized: η and the
+   environment are its own -}
+data OpR {Δ I} (φ : Frame Σ Δ I) : (O : Maybe (Open Δ)) (η : Ctx)
   → Opened Σ η O → Set where
-  none : ∀ {η} → OpR φ nothing η tt
+  unopened : ∀ {η} → OpR φ nothing η tt
   agree : ∀ {A B} {x : Δ ∋ A ⇒ B}
-    → OpR φ (just (opened x)) (size (lookup φ x)) (env-of (lookup φ x))
+    → .(i : x ∈ I)
+    → OpR φ (just (opened x)) (size (read φ x i)) (env-of (read φ x i))
