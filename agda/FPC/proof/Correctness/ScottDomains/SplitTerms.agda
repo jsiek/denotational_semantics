@@ -1,11 +1,20 @@
 {-
 
-  This module proves the fundamental lemma of each half of the
-  correctness of split (EnvClosμ → PairClosμ) in Scott domains, by
-  induction on terms. The two halves share one induction (module Terms),
-  which works for any relation _∼_ between source and target values
-  that the operators preserve. We instantiate it with Pres
-  (SplitPreserve.agda) and with Refl (SplitReflect.agda).
+  This module proves the fundamental lemma for the split closure pass
+  (EnvClosμ to PairClosμ) in Scott domains. The lemma says that if the
+  source and target environments are related, then the meaning of a
+  term and the meaning of its translation are related. The proof is by
+  induction on the term.
+
+  The correctness proof of split has two halves, and each half needs
+  the fundamental lemma for its own relation. The forward half
+  (preservation) uses the relation Pres of SplitPreserve.agda, and the
+  backward half (reflection) uses the relation Refl of
+  SplitReflect.agda. The two inductions are the same except for the
+  relation. So the module Terms below does the induction once, for an
+  arbitrary relation, and the end of this file instantiates it twice.
+  The two instances give split-pres and split-refl, which
+  SplitCorrect.agda uses to prove that split is correct.
 
 -}
 
@@ -41,6 +50,26 @@ open import FPC.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to �
 open import FPC.proof.Correctness.ScottDomains.SplitRel pt fe pe
 open import FPC.proof.Correctness.ScottDomains.SplitPreserve pt fe pe using (Pres; Pres-clos; Pres-call)
 open import FPC.proof.Correctness.ScottDomains.SplitReflect pt fe pe using (Refl; Refl-clos; Refl-call)
+
+{- The module Terms takes the relation _∼_ and one hypothesis for each
+   construct of EnvClosμ other than variables, fold, and unfold. Each
+   hypothesis says that the source operator and the target operator of
+   its construct take related arguments to related results. The case
+   of a variable uses the hypothesis that the environments are related,
+   and fold and unfold mean the identity in both languages, so these
+   three constructs need no hypothesis.
+
+   Only two hypotheses, S-clos and S-call, are about constructs that
+   split changes. The other eight are about constructs whose source and
+   target operators are the same: constants, tuples, projections, the
+   two injections, case, primitives, and seq, which let uses. For both
+   relations, these eight hypotheses come from the lemmas Rel-const,
+   ..., Rel-seq of SplitRel.agda. They are parameters, instead of uses
+   of those lemmas inside the module, because the two relations order
+   their arguments differently. Pres s t is Rel preserve s t, with the
+   source value first, but Refl s t is Rel reflect t s, with the target
+   value first. So the backward instance at the end of this file adapts
+   each lemma to the flipped order. -}
 
 module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
   (S-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩} → t ∼ t' → (∀ {X X' Y Y'} → X ∼ X' → Y ∼ Y' → B · env₂ X Y ∼ B' · env₂ X' Y')
