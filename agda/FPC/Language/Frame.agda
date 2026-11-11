@@ -179,6 +179,14 @@ only-initial {Γ} p = go Γ (λ x → x)
   go [] g = only-none p
   go (A ∷ Γ') g = only-⊕ p (g Z) (go Γ' (λ x → g (S x)))
 
+{- at the start of a body with two parameters, the slot of the second
+   parameter (the environment) is written first, and that of the first
+   (the argument) is not yet initialized -}
+params-fresh : ∀ {Δ A B} (p : (A ∷ B ∷ []) ⊑ Δ)
+  → ⊑-∋ p Z ∉ none Δ ⊕ ⊑-∋ p (S Z)
+params-fresh here⊑ = tt
+params-fresh (there⊑ p) = params-fresh p
+
 {- a suffix is shorter -}
 ⊑-≤ : ∀ {D Δ : Ctx} → D ⊑ Δ → length D ≤ length Δ
 ⊑-≤ here⊑ = ≤-refl

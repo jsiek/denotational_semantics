@@ -23,6 +23,8 @@ open import FPC.Language.Type
 open import FPC.Language.Frame
 open import FPC.Framework.AllUtil using ([]; _∷_)
 open import FPC.Framework.Slots
+open import Framework.Membership using (_⊑_; ⊑-∋)
+open import Data.List using ([]; _∷_)
 
 open import Data.Bool using (Bool; true; false; T; not)
 open import Data.Empty.Irrelevant using (⊥-elim)
@@ -151,6 +153,22 @@ module _ {V : Type → Set} where
         {⊕-mono x (⊆-⊕ {I = I} y)} p
         (agree-write φ (write φ y u) (⊆-refl {I = I}) (⊆-⊕ y) x v
           (agree-fresh φ y u yn))))
+
+  {- the start of a body holds its argument and environment -}
+  params-arg : ∀ {Δ A B} (p : (A ∷ B ∷ []) ⊑ Δ) (e : V B) (w : V A)
+    → .(i : ⊑-∋ p Z ∈ initial p)
+    → read (params p e w) (⊑-∋ p Z) i ≡ w
+  params-arg {Δ} p e w i =
+    read-write (write (empty Δ) (⊑-∋ p (S Z)) e) (⊑-∋ p Z) w i
+
+  params-env : ∀ {Δ A B} (p : (A ∷ B ∷ []) ⊑ Δ) (e : V B) (w : V A)
+    → .(i : ⊑-∋ p (S Z) ∈ initial p)
+    → read (params p e w) (⊑-∋ p (S Z)) i ≡ e
+  params-env {Δ} p e w i =
+    trans
+      (read-write-other (write (empty Δ) (⊑-∋ p (S Z)) e) (⊑-∋ p Z) w
+        (⊑-∋ p (S Z)) (∈-⊕ {I = none Δ} (⊑-∋ p (S Z))) (params-fresh p) i)
+      (read-write (empty Δ) (⊑-∋ p (S Z)) e _)
 
   restrict-id : ∀ {Δ I} (φ : Slots V Δ I) .(p : I ⊆ I) → restrict p φ ≡ φ
   restrict-id [] p = refl

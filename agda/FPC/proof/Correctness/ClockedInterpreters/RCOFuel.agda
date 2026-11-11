@@ -25,8 +25,8 @@ open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import proof.Semantics.Interp.Clock
 import FPC.Semantics.ClockedInterpreters.GlobalFun as C
 open C using (eval; evals; call)
-open import FPC.Semantics.ClockedInterpreters.Imp using (atom)
-open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map;
+
+open import FPC.proof.Semantics.ClockedInterpreters.GlobalFun using (def-map; atom;
   atm-bind; atoms-bind; either-cong)
 
 open import Data.List using (List; []; _∷_)
