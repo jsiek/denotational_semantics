@@ -4,24 +4,25 @@
   the graph model (FPC/Semantics/GraphModel/X86.agda). What runs next (a
   continuation, Kont) is a continuous map of the machine state: the
   frame, the registers and the flag (𝕊). The frame is the environment,
-  as in CFGμ: slot x is position idx x, and writing slot k pops the
-  slots from k on and pushes the new value (drop). A label means its
-  block, under the meanings of the older blocks; a block starts with
-  its frame, the registers unset and no flag.
+  as in CFGμ: slot x is position idx x, and a write to slot x updates
+  that position in place (write, FPC/Semantics/ScottDomains/Ops.agda).
+  A label means its block, under the meanings of the older blocks; a
+  block starts with its frame, the registers unset and no flag.
 
   * A slot write binds its value as CFGμ's seq does: app (Λ F) D, F X
-    running the rest with X in the slot. A register write is a
+    running the rest with X written to the slot. A register write is a
     substitution, and so is the flag's (cmpq).
   * Only callq can diverge (⊥), so only it writes its result strictly
     (seq C E, E provided that C is defined): it applies the code to
     %rdi and %rsi (as CFGμ's call) and puts the result in %rax.
   * An unset register, and an unset flag, hold init: typed code never
     reads them. After a call %rdi, %rsi and the flag are unset.
-  * fold and unfold (↑, ↓) are the identity; case is a case on the
-    slot, as CFGμ's case.
+  * fold and unfold (↑, ↓) are the identity; case x y z l₁ l₂ is a case
+    on slot x, as CFGμ's case, whose branches write the payload to slot
+    y or z.
   * The code of a definition is Λ X. Λ Y. its body, with X in %rdi and Y
-    in %rsi, in an empty frame; definitions are given meaning as in
-    GlobalFunμ (tables).
+    in %rsi, in the frame that holds init everywhere; definitions are
+    given meaning as in GlobalFunμ (tables).
 
 -}
 
@@ -35,7 +36,6 @@ open import FPC.Language.Type
 open import FPC.Language.X86
 open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import Data.List using (List; length)
-open import Framework.Membership using (_⊑_)
 
 module FPC.Semantics.ScottDomains.X86
         (pt : propositional-truncations-exist)
@@ -45,14 +45,14 @@ module FPC.Semantics.ScottDomains.X86
 
 open import Framework.Scott.Base pt fe
 open import Framework.Scott.Domain pt fe pe using (𝔻)
-open import Framework.Scott.Ops pt fe pe using (Env; ext; proj; car; cdr; seq;
+open import Framework.Scott.Ops pt fe pe using (Env; proj; car; cdr; seq;
   Λ) renaming (app to appᵈ; pair to pairᵈ; inl to inlᵈ; inr to inrᵈ)
 open import Framework.Scott.Semantics pt fe pe hiding (litᶜ; op₁; op₂; Dens;
   nil; cons; tupleᶜ; casesᶜ; _∷ᶠ_)
 open import Semantics.Scott.Prim pt fe pe using (primD)
 open import FPC.Semantics.ScottDomains.Ops pt fe pe
 open import FPC.Semantics.ScottDomains.Imp pt fe pe using (𝒜)
-open import FPC.Semantics.ScottDomains.CFG pt fe pe using (Meanings; drop)
+open import FPC.Semantics.ScottDomains.CFG pt fe pe using (Meanings)
 
 {- the registers, and the machine state: frame, registers and flag -}
 RegsD : DCPO₁
@@ -150,40 +150,40 @@ argsᶜ = f , to-Pow-continuous Reg 𝔻 (𝔻 ×₁ 𝔻) f c
 
 module _ {Σ : List DSig} (T : Table Σ) where
 
-  𝒪 : ∀ {ψ τ} → Arg Σ ψ τ → Den 𝕊
+  𝒪 : ∀ {Δ} {ψ : St Δ} {τ} → Arg Σ ψ τ → Den 𝕊
   𝒪 (atom a) = ∘₁ 𝕊 Env 𝔻 frameᶜ (𝒜 a T)
   𝒪 (reg r _) = ∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 r)
   𝒪 (a ↑) = 𝒪 a
   𝒪 (a ↓) = 𝒪 a
 
-  𝒪s : ∀ {ψ Δ} → All (λ A → Arg Σ ψ (ty A)) Δ → Dens (length Δ)
+  𝒪s : ∀ {Δ} {ψ : St Δ} {As} → All (λ A → Arg Σ ψ (ty A)) As
+    → Dens (length As)
   𝒪s [] = nil
   𝒪s (a ∷ as) = cons (𝒪 a) (𝒪s as)
 
-  object : ∀ {ψ A} → Obj Σ ψ A → Den 𝕊
+  object : ∀ {Δ} {ψ : St Δ} {A} → Obj Σ ψ A → Den 𝕊
   object (pair c e) = op₂ pairᵈ (𝒪 c) (𝒪 e)
   object (tuple as) = tupleᶜ (𝒪s as)
   object (inl a) = op₁ inlᵈ (𝒪 a)
   object (inr a) = op₁ inrᵈ (𝒪 a)
 
-  {- ((σ , R , F) , X) ↦ (X • drop p σ , R , F) -}
-  next : ∀ {Δ' Δ : Ctx} → Δ' ⊑ Δ → DCPO[ 𝕊 ×₁ 𝔻 , 𝕊 ]
-  next p = pair₁ (𝕊 ×₁ 𝔻) Env (RegsD ×₁ 𝔻)
+  {- ((σ , R , F) , X) ↦ (write (idx x) σ X , R , F) -}
+  next : ∀ {Δ : Ctx} {A} → Δ ∋ A → DCPO[ 𝕊 ×₁ 𝔻 , 𝕊 ]
+  next x = pair₁ (𝕊 ×₁ 𝔻) Env (RegsD ×₁ 𝔻)
              (∘₁ (𝕊 ×₁ 𝔻) (Env ×₁ 𝔻) Env
                 (pair₁ (𝕊 ×₁ 𝔻) Env 𝔻
-                    (∘₁ (𝕊 ×₁ 𝔻) Env Env
-                      (∘₁ (𝕊 ×₁ 𝔻) 𝕊 Env (fst₁ 𝕊 𝔻) frameᶜ) (drop p))
+                    (∘₁ (𝕊 ×₁ 𝔻) 𝕊 Env (fst₁ 𝕊 𝔻) frameᶜ)
                    (snd₁ 𝕊 𝔻))
-                ext)
+                (writeᶜ (idx x)))
              (∘₁ (𝕊 ×₁ 𝔻) 𝕊 (RegsD ×₁ 𝔻) (fst₁ 𝕊 𝔻) (snd₁ Env (RegsD ×₁ 𝔻)))
 
   {- d := D, then κ -}
-  put : ∀ {n ψ τ ψ'} → Dst n ψ τ ψ' → Den 𝕊 → Kont → Kont
+  put : ∀ {Δ} {ψ : St Δ} {τ ψ'} → Dst ψ τ ψ' → Den 𝕊 → Kont → Kont
   put (reg r) D κ = ∘₁ 𝕊 𝕊 𝔻 (setR r D) κ
-  put (slot p _) D κ =
-    op₂ appᵈ (∘₁ 𝕊 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝕊 𝔻 𝔻 (∘₁ (𝕊 ×₁ 𝔻) 𝕊 𝔻 (next p) κ)) Λ) D
+  put (slot x _) D κ =
+    op₂ appᵈ (∘₁ 𝕊 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝕊 𝔻 𝔻 (∘₁ (𝕊 ×₁ 𝔻) 𝕊 𝔻 (next x) κ)) Λ) D
 
-  ⟦_⟧ⁱ : ∀ {n ψ ψ'} → Instr Σ n ψ ψ' → Kont → Kont
+  ⟦_⟧ⁱ : ∀ {Δ} {ψ ψ' : St Δ} → Instr Σ ψ ψ' → Kont → Kont
   ⟦ movq a d ⟧ⁱ κ = put d (𝒪 a) κ
   ⟦ subq a r _ ⟧ⁱ κ =
     ∘₁ 𝕊 𝕊 𝔻
@@ -192,14 +192,14 @@ module _ {Σ : List DSig} (T : Table Σ) where
   ⟦ sete d ⟧ⁱ κ = put d flagᶜ κ
   ⟦ alloc o d ⟧ⁱ κ = put d (object o) κ
   ⟦ load i a d ⟧ⁱ κ = put d (op₁ (proj (pos i)) (𝒪 a)) κ
-  ⟦ loadfst x r ⟧ⁱ κ =
+  ⟦ loadfst x _ r ⟧ⁱ κ =
     ∘₁ 𝕊 𝕊 𝔻 (setR r (op₁ car (∘₁ 𝕊 Env 𝔻 frameᶜ (at _ 𝔻 (idx x))))) κ
   ⟦ loadsnd {x = opened x} r ⟧ⁱ κ =
     ∘₁ 𝕊 𝕊 𝔻 (setR r (op₁ cdr (∘₁ 𝕊 Env 𝔻 frameᶜ (at _ 𝔻 (idx x))))) κ
   ⟦ callq a _ _ ⟧ⁱ κ = op₂ seq (callᶜ a) (∘₁ 𝕊 𝕊 𝔻 (afterᶜ (callᶜ a)) κ)
    where
     {- the result of the call -}
-    callᶜ : ∀ {ψ A B} → Arg Σ ψ (codeα A B) → Den 𝕊
+    callᶜ : ∀ {Δ} {ψ : St Δ} {A B} → Arg Σ ψ (codeα A B) → Den 𝕊
     callᶜ a =
       op₂ appᵈ (op₂ appᵈ (𝒪 a) (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 rdi)))
       (∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 rsi))
@@ -209,14 +209,14 @@ module _ {Σ : List DSig} (T : Table Σ) where
       pair₁ 𝕊 Env (RegsD ×₁ 𝔻) frameᶜ
       (pair₁ 𝕊 RegsD 𝔻 (∘₁ 𝕊 𝔻 RegsD C called-regsᶜ) (litᶜ init))
 
-  ⟦_⟧ˢ : ∀ {n R' Bs ψ} → Seq Σ n R' Bs ψ → Meanings Bs → Kont
+  ⟦_⟧ˢ : ∀ {Δ R' Bs ψ} → Seq Σ Δ R' Bs ψ → Meanings Bs → Kont
   ⟦ i ∷ k ⟧ˢ B = ⟦ i ⟧ⁱ (⟦ k ⟧ˢ B)
   ⟦ retq _ ⟧ˢ B = ∘₁ 𝕊 RegsD 𝔻 regsᶜ (at Reg 𝔻 rax)
   ⟦ jmp l ⟧ˢ B = ∘₁ 𝕊 Env 𝔻 frameᶜ (B l)
-  ⟦ case x p _ l₁ l₂ ⟧ˢ B =
+  ⟦ case x _ y z l₁ l₂ ⟧ˢ B =
     casesᶜ (∘₁ 𝕊 Env 𝔻 frameᶜ (at _ 𝔻 (idx x)))
-      (∘₁ 𝕊 Env (𝔻 ⟹₁ 𝔻) frameᶜ (∘₁ Env Env (𝔻 ⟹₁ 𝔻) (drop p) (abs (B l₁))))
-      (∘₁ 𝕊 Env (𝔻 ⟹₁ 𝔻) frameᶜ (∘₁ Env Env (𝔻 ⟹₁ 𝔻) (drop p) (abs (B l₂))))
+      (∘₁ 𝕊 Env (𝔻 ⟹₁ 𝔻) frameᶜ (absAt (idx y) (B l₁)))
+      (∘₁ 𝕊 Env (𝔻 ⟹₁ 𝔻) frameᶜ (absAt (idx z) (B l₂)))
 
   {- a block starts with its frame, the registers unset and no flag -}
   startᶜ : DCPO[ Env , 𝕊 ]
@@ -224,15 +224,15 @@ module _ {Σ : List DSig} (T : Table Σ) where
              (const₁ Env (RegsD ×₁ 𝔻) ((λ _ → init) , init))
 
   {- each block, from its frame, with the meanings of the older ones -}
-  blocks : ∀ {n R' Bs} → Blocks Σ n R' Bs → Meanings Bs
+  blocks : ∀ {Δ R' Bs} → Blocks Σ Δ R' Bs → Meanings Bs
   blocks (bs ▷ k) Z = ∘₁ Env 𝕊 𝔻 startᶜ (⟦ k ⟧ˢ (blocks bs))
   blocks (bs ▷ k) (S l) = blocks bs l
 
   run : ∀ {R' ψ} → Body Σ R' ψ → Kont
-  run (body n bs k) = ⟦ k ⟧ˢ (blocks bs)
+  run (body Δ bs k) = ⟦ k ⟧ˢ (blocks bs)
 
-{- the code of a definition: its body with %rdi and %rsi set, in an
-   empty frame -}
+{- the code of a definition: its body with %rdi and %rsi set, in the
+   frame that holds init everywhere -}
 codeₜ : ∀ {Σ} → Table Σ → ∀ {s} → Body Σ (DSig.cod s) (called s) → ⟨ 𝔻 ⟩
 codeₜ T b = code₂ (∘₁ (𝔻 ×₁ 𝔻) 𝕊 𝔻
                      (pair₁ (𝔻 ×₁ 𝔻) Env (RegsD ×₁ 𝔻)

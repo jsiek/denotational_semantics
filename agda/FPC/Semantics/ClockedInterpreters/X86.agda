@@ -6,17 +6,18 @@
   (ISWIM/Semantics/Interp/Typed/X86.agda): the registers, frame, open closure
   and flag (Mach) have the types of the start of the sequence that runs
   in them; η is α, the types of the open closure's environment, so a
-  register of type codeα A B holds code of η, A and B. The frame holds
-  the slots assigned so far, as in CFGμ
+  register of type codeα A B holds code of η, A and B. The frame holds a
+  value for each initialized slot, as in CFGμ
   (FPC/Semantics/ClockedInterpreters/CFG.agda); an unset register, an unset flag
   and the open closure (when there is none) hold nothing (⊤); the open closure
   holds its environment.
 
   The instructions of a sequence run in order, each passing its state
   to the rest, then its jump: retq returns %rax, jmp l runs block l with
-  the blocks older than it, and case x p l₁ l₂ assigns the payload of x
-  and runs l₁ or l₂. callq runs the start of the definition of its code
-  with %rdi and %rsi, and the caller continues with the result in %rax.
+  the blocks older than it, and case x y z l₁ l₂ writes the payload of x
+  to slot y or z and runs l₁ or l₂. callq runs the start of the
+  definition of its code with %rdi and %rsi, and the caller continues
+  with the result in %rax.
   Only calls tick the clock, so the interpreter is structurally
   recursive on the clock, the list of blocks and the sequence. Nothing
   errs: a fold (↑) and an unfold (↓) are moves.
@@ -29,11 +30,11 @@ open import Framework.Primitives using (Int)
 open import Language.Prim using (sub)
 open import FPC.Language.Type
 open import FPC.Language.X86
-open import Framework.Lookup using (pop)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
+open import FPC.Semantics.Slots using (Slots; read; write; restrict; empty)
 open import Semantics.Interp.Clock
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
-open import FPC.Semantics.ClockedInterpreters.Imp using () renaming (atom to
+open import FPC.Semantics.ClockedInterpreters.Imp using (Fr) renaming (atom to
   value-of)
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
@@ -75,11 +76,11 @@ module _ (Σ : List DSig) where
   Flag false = ⊤
 
   {- the registers, frame, open closure and flag of a state of type ψ -}
-  record Mach (η : Ctx) (ψ : St) : Set where
+  record Mach (η : Ctx) {Δ : Ctx} (ψ : St Δ) : Set where
     constructor ⟨_,_,_,_⟩
     field
       regs : RegVals η (St.rs ψ)
-      frame : Env (St.fr ψ)
+      frame : Slots Val Δ (St.ini ψ)
       clo : Opened η (St.op ψ)
       flag : Flag (St.fl ψ)
 
@@ -113,22 +114,25 @@ module _ {Σ : List DSig} where
     rv (wipeᵥ (Regs.ax Γ) (RegVals.ax ρ)) (wipeᵥ (Regs.di Γ) (RegVals.di ρ))
       (wipeᵥ (Regs.si Γ) (RegVals.si ρ))
 
-  arg : ∀ {η ψ τ} → Arg Σ ψ τ → Mach Σ η ψ → RV Σ η τ
+  arg : ∀ {η Δ} {ψ : St Δ} {τ} → Arg Σ ψ τ → Mach Σ η ψ → RV Σ η τ
   arg (atom a) m = value-of (frame m) a
   arg (reg r e) m = cast e (regs m ⦅ r ⦆)
   arg (a ↑) m = fold (arg a m)
   arg (a ↓) m = unfold-v (arg a m)
 
-  args : ∀ {η ψ Δ} → All (λ A → Arg Σ ψ (ty A)) Δ → Mach Σ η ψ → All Val Δ
+  args : ∀ {η Δ Δ'} {ψ : St Δ} → All (λ A → Arg Σ ψ (ty A)) Δ' → Mach Σ η ψ
+    → All Val Δ'
   args [] m = []
   args (a ∷ as) m = arg a m ∷ args as m
 
   {- d := v -}
-  put : ∀ {n η ψ τ ψ'} → Dst n ψ τ ψ' → RV Σ η τ → Mach Σ η ψ → Mach Σ η ψ'
+  put : ∀ {η Δ} {ψ ψ' : St Δ} {τ} → Dst ψ τ ψ' → RV Σ η τ → Mach Σ η ψ
+    → Mach Σ η ψ'
   put (reg r) v m = ⟨ regs m [ r ≔ v ] , frame m , clo m , flag m ⟩
-  put (slot p _) v m = ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
+  put (slot x p) v m =
+    ⟨ regs m , restrict p (write (frame m) x v) , tt , flag m ⟩
 
-  obj : ∀ {η ψ A} → Obj Σ ψ A → Mach Σ η ψ → Val A
+  obj : ∀ {η Δ} {ψ : St Δ} {A} → Obj Σ ψ A → Mach Σ η ψ → Val A
   obj (pair c e) m = pack (arg c m) (arg e m)
   obj (tuple as) m = tup (args as m)
   obj (inl a) m = inl (arg a m)
@@ -156,24 +160,25 @@ module _ {Σ : List DSig}
   (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
   open Vals Σ
 
-  run : ∀ {n R Bs ψ} → ℕ → Blocks Σ n R Bs → ∀ η → Mach Σ η ψ → Seq Σ n R Bs ψ
+  run : ∀ {Δ R Bs ψ} → ℕ → Blocks Σ Δ R Bs → ∀ η → Mach Σ η ψ
+    → Seq Σ Δ R Bs ψ
     → Result (Val R)
-  jump : ∀ {n R Bs Δ} → ℕ → Blocks Σ n R Bs → Ctx → Bs ∋ Δ → Env Δ
+  jump : ∀ {Δ R Bs I} → ℕ → Blocks Σ Δ R Bs → Ctx → Bs ∋ I → Fr Δ I
     → Result (Val R)
   call : ∀ {η A B} → ℕ → Val (code η A B) → Val (tup η) → Val A → Result (Val B)
 
   run ck bs η m (movq a d ∷ k) = run ck bs η (put d (arg a m) m) k
   run ck bs η m (subq a r e ∷ k) =
     run ck bs η
-      (put {n = 0} (reg {τ = ℤty} r)
+      (put (reg {τ = ℤty} r)
         (δ sub (cast {η = η} e (regs m ⦅ r ⦆)) (arg a m)) m) k
   run ck bs η m (cmpq a₂ a₁ ∷ k) =
     run ck bs η ⟨ regs m , frame m , clo m , equal (arg a₁ m) (arg a₂ m) ⟩ k
   run ck bs η m (sete d ∷ k) = run ck bs η (put d (bit (flag m)) m) k
   run ck bs η m (alloc o d ∷ k) = run ck bs η (put d (obj o m) m) k
   run ck bs η m (load i a d ∷ k) = run ck bs η (put d (nth i (arg a m)) m) k
-  run ck bs η m (loadfst x r ∷ k) =
-    let v = lookup (frame m) x in
+  run ck bs η m (loadfst x i r ∷ k) =
+    let v = read (frame m) x i in
     run ck bs (size v)
       ⟨ wipeᵣ (regs m) [ r ≔ code-of v ] , frame m , env-of v , flag m ⟩ k
   run ck bs η m (loadsnd r ∷ k) =
@@ -184,21 +189,22 @@ module _ {Σ : List DSig}
     run ck bs η ⟨ rv v tt tt , frame m , tt , tt ⟩ k
   run ck bs η m (retq e) = ret (cast e (regs m ⦅ rax ⦆))
   run ck bs η m (jmp l) = jump ck bs η l (frame m)
-  run ck bs η m (case x p _ l₁ l₂) =
-    either (lookup (frame m) x) (λ v → jump ck bs η l₁ (v ∷ pop p (frame m)))
-      (λ v → jump ck bs η l₂ (v ∷ pop p (frame m)))
+  run ck bs η m (case x i y z l₁ l₂) =
+    either (read (frame m) x i) (λ v → jump ck bs η l₁ (write (frame m) y v))
+      (λ v → jump ck bs η l₂ (write (frame m) z v))
 
   jump ck (bs ▷ k) η Z φ = run ck bs η ⟨ rv tt tt tt , φ , tt , tt ⟩ k
   jump ck (bs ▷ k) η (S l) φ = jump ck bs η l φ
 
   call zero c e w = timeout
   call {η} (suc ck) (code f) e w =
-    run ck (Body.blocks (lookup ds f)) η ⟨ rv tt e w , [] , tt , tt ⟩
-    (Body.start (lookup ds f))
+    run ck (Body.blocks (lookup ds f)) η
+      ⟨ rv tt e w , empty (Body.frame (lookup ds f)) , tt , tt ⟩
+      (Body.start (lookup ds f))
 
 {- a program runs the start of main, with no slot, no register and no flag -}
 sem : ∀ {A} → Program A → Semantics
-sem {A} (program {Σ} ds (body n bs k)) =
+sem {A} (program {Σ} ds (body Δ bs k)) =
   semantics (Val A) obs
-  (λ ck → run ds ck bs [] ⟨ rv tt tt tt , [] , tt , tt ⟩ k)
+  (λ ck → run ds ck bs [] ⟨ rv tt tt tt , empty Δ , tt , tt ⟩ k)
   where open Vals Σ

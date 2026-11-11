@@ -28,12 +28,13 @@ open import UF.Subsingletons
 
 open import Framework.Primitives using (Base; base-rep)
 open import FPC.Language.Type using (Type; _∋_)
-open import FPC.Language.X86 using (DSig; Body; called; entry; Program; program;
+open import FPC.Language.X86 using (DSig; Body; called; begin; Program; program;
   body)
 open import FPC.Language.FPC using (Tm)
 open import FPC.Compiler.Pipeline using (compile)
 open import FPC.Framework.AllUtil using (All; []; lookup)
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
+open import FPC.Semantics.Slots using (empty)
 open import FPC.Semantics.ClockedInterpreters.X86 using (rv; run; sem) renaming
   (⟨_,_,_,_⟩ to mach)
 open import Semantics.Interp.Clock using (Result; timeout; error; ret; outcome;
@@ -83,9 +84,11 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
 
   private
    {- main, run with clock ck -}
-   main : ∀ {A} → Body Σ A (entry []) → ℕ → Result (Val A)
+   main : ∀ {A} → Body Σ A begin → ℕ → Result (Val A)
    main b ck =
-     run ds ck (Body.blocks b) [] (mach (rv tt tt tt) [] tt tt) (Body.start b)
+     run ds ck (Body.blocks b) []
+       (mach (rv tt tt tt) (empty (Body.frame b)) tt tt)
+       (Body.start b)
 
    returns? : ∀ {A} (r : Result (Val A))
      → is-decidable (Σ w ꞉ Val A , r ≡ ret w)
@@ -94,7 +97,7 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
    returns? (ret w) = inl (w , ≡-refl)
 
    {- a program whose meaning is defined returns at some clock -}
-   terminates : ∀ {A} (b : Body Σ A (entry []))
+   terminates : ∀ {A} (b : Body Σ A begin)
      → defined ⟦ program ds b ⟧ₜ
      → Σ ck ꞉ ℕ , Σ w ꞉ Val A , main b ck ≡ ret w
    terminates b q =
@@ -106,11 +109,11 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
              , P.proj₂ (LR.run⇓ e) (P.proj₁ (LR.run⇓ e)) ≤-refl)
           (pr₁ (pr₂ (LR.adequacy ds b q))))
 
-   sound-at : ∀ {A} (b : Body Σ A (entry [])) ck
+   sound-at : ∀ {A} (b : Body Σ A begin) ck
      → Holds (λ v → S.𝒱 ds v ＝ ⟦ program ds b ⟧ₜ) (main b ck)
    sound-at b ck = S.soundness ds closed b ck
 
-  const-iff : ∀ {A} (b : Body Σ A (entry [])) (B : Base) (k : base-rep B)
+  const-iff : ∀ {A} (b : Body Σ A begin) (B : Base) (k : base-rep B)
     → (  ⟦ program ds b ⟧ₜ ＝ const B k
        → Terminates (sem (program ds b)) (o-const B k))
     × (  Terminates (sem (program ds b)) (o-const B k)
@@ -147,7 +150,7 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
       go error () e
       go (ret w) (ret s) e = s ⁻¹ ∙ S.const-𝒱 ds closed w (just-inj e)
 
-  diverges-iff : ∀ {A} (b : Body Σ A (entry []))
+  diverges-iff : ∀ {A} (b : Body Σ A begin)
     → (  Diverges (sem (program ds b))
        → ⟦ program ds b ⟧ₜ ＝ ⊥𝔻)
     × (  ⟦ program ds b ⟧ₜ ＝ ⊥𝔻

@@ -39,7 +39,7 @@ open import FPC.proof.Framework.AllProp using (lookup-map)
 open import FPC.Compiler.Pipeline using (compile-to-GlobalFun;
   compile-to-PairClos; compile)
 open import FPC.Compiler.RCO using (rco)
-open import FPC.Compiler.LiftLocals using () renaming (lift to liftₗ)
+open import FPC.Compiler.LiftLocals using () renaming (lift-body to liftₗ)
 open import FPC.Compiler.Explicate using (explicate-body)
 open import FPC.Compiler.Select using (def-body)
 open import FPC.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs;
@@ -81,7 +81,7 @@ open import FPC.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using
 open import FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using
   (code-lift; table-lift)
 open import FPC.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using
-  (body-＝; table-explicate)
+  (code-explicate; table-explicate)
 open import FPC.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using (db;
   code-＝; table-＝; map-db)
 
@@ -233,11 +233,7 @@ compiled M f =
   code-chain =
     code-rco (table-rco ds₅) (lookup ds₅ f)
     ∙ code-lift (table-lift dsₘ) dₘ
-    ∙ codeᶜ-cong
-      (∘₁ Envᵈ (I.K ⟹₁ 𝔻) 𝔻 (I.⟦ liftₗ dₘ ⟧ᴷ (tables I.code′ dsᵢ))
-        (at-point₁ I.K 𝔻 I.idK))
-        (C.run (explicate-body (liftₗ dₘ)) T꜀)
-        (λ X Y _ _ → body-＝ (table-explicate dsᵢ) (liftₗ dₘ) (env₂ X Y))
+    ∙ code-explicate (table-explicate dsᵢ) (liftₗ dₘ)
     ∙ ap (C.code′ T꜀) (≡→＝ eq꜀) ⁻¹
     ∙ code-＝ TT₄ (lookup ds꜀ f)
     ∙ ap (codeₜ Tₓ) (≡→＝ eqₓ)

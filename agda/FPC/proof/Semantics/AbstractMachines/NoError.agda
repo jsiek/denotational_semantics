@@ -105,14 +105,14 @@ module _ {Σ : List DSig}
   x86-stops (run (sete d ∷ k) bs σ η m) ()
   x86-stops (run (alloc o d ∷ k) bs σ η m) ()
   x86-stops (run (load i a d ∷ k) bs σ η m) ()
-  x86-stops (run (loadfst x r ∷ k) bs σ η m) ()
+  x86-stops (run (loadfst x i r ∷ k) bs σ η m) ()
   x86-stops (run (loadsnd r ∷ k) bs σ η m) ()
   x86-stops (run (callq a e₁ e₂ ∷ k) bs σ η m) = enter-next _ _ _ _
   x86-stops (run (retq e) bs halt η m) refl =
     clos5-answer (cast e (regs m ⦅ rax ⦆))
   x86-stops (run (retq e) bs (retK k bs' φ σ) η m) ()
   x86-stops (run (jmp l) bs σ η m) ()
-  x86-stops (run (case x p _ l₁ l₂) bs σ η m) ()
+  x86-stops (run (case x i y z l₁ l₂) bs σ η m) ()
 
 x86-no-error : ∀ {A} (P : Program A) → ¬ Terminates (sem P) o-error
-x86-no-error (program ds (body n bs k)) = no-error (x86-stops ds)
+x86-no-error (program ds (body Δ bs k)) = no-error (x86-stops ds)

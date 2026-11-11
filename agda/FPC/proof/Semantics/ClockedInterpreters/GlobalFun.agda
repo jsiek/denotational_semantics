@@ -4,8 +4,8 @@
   (FPC/Semantics/ClockedInterpreters/GlobalFun.agda) on the embedding of Monμ
   (FPC/Language/Mon.agda), shared by the proofs of rco and lift locals, as
   ISWIM/proof/Semantics/Interp/Typed/Clos5.agda: an embedded atom evaluates,
-  without calling anything, to its value as Impμ reads it
-  (FPC/Semantics/ClockedInterpreters/Imp.agda), and a definition of a mapped
+  without calling anything, to its value (atom),
+  and a definition of a mapped
   table is the mapped definition.
 
 -}
@@ -19,7 +19,7 @@ open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import proof.Semantics.Interp.Clock
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals;
   eval; evals)
-open import FPC.Semantics.ClockedInterpreters.Imp using (atom)
+
 
 open import Data.List using (List)
 open import Data.Nat using (ℕ)
@@ -29,6 +29,15 @@ def-map : ∀ {X : Set} {P Q : X → Set} {Σ s} (g : ∀ {s} → P s → Q s)
   (ds : All P Σ) (x : Σ ∋ s) → lookup (map g ds) x ≡ g (lookup ds x)
 def-map g (d ∷ ds) Z = refl
 def-map g (d ∷ ds) (S x) = def-map g ds x
+
+{- the value of a Monμ atom in an environment -}
+module _ {Σ : List DSig} where
+  open Vals Σ
+
+  atom : ∀ {Γ A} → Env Γ → Atm Σ Γ A → Val A
+  atom φ (var x) = lookup φ x
+  atom φ (lit B c) = const c
+  atom φ (ref f) = code f
 
 module _ {Σ : List DSig} {ds : All (C.Code Σ) Σ} {ck : ℕ} where
   open Vals Σ
