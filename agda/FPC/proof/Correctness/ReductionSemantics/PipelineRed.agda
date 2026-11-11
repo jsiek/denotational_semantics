@@ -73,11 +73,13 @@ compile-to-Imp-correct M =
 compile-to-CFG-correct : ∀ {A} (M : Tm [] A)
   → Equivalent (S.sem M) (CFGμₘ.sem (compile-to-CFG M))
 compile-to-CFG-correct M =
-  equiv-trans (compile-to-Imp-correct M) (explicate-correct _)
+  equiv-trans (compile-to-Imp-correct M)
+    (explicate-correct (compile-to-Imp M))
 
 compile-correct : ∀ {A} (M : Tm [] A)
   → Equivalent (S.sem M) (X86μₘ.sem (compile M))
-compile-correct M = equiv-trans (compile-to-CFG-correct M) (select-correct _)
+compile-correct M =
+  equiv-trans (compile-to-CFG-correct M) (select-correct (compile-to-CFG M))
 
 {- in particular, for a main of type Int -}
 

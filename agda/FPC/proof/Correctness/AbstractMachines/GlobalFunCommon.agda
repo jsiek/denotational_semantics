@@ -4,10 +4,10 @@
   (FPC/Semantics/AbstractMachines/GlobalFun.agda) on the embedding of Monμ atoms
   (FPC/Language/Mon.agda), shared by the simulation proofs of remove complex
   operands and lift locals, as ISWIM/proof/Correctness/CEK/Clos5Common.agda: an
-  atom evaluates to its value (atom, FPC/Semantics/AbstractMachines/Imp.agda) in
-  one step, and the rest of a tuple of atoms to the values so far followed by
-  theirs. Since the machine collects a tuple's values newest first in front of
-  the types still to come (_<><_), this needs no equation about lengths.
+  atom evaluates to its value in an environment (atom) in one step, and the
+  rest of a tuple of atoms to the values so far followed by theirs. Since the
+  machine collects a tuple's values newest first in front of the types still
+  to come (_<><_), this needs no equation about lengths.
 
 -}
 
@@ -16,13 +16,19 @@ module FPC.proof.Correctness.AbstractMachines.GlobalFunCommon where
 open import FPC.Language.Type
 open import FPC.Language.GlobalFun using (DSig; Program; program; Code; Tm)
 open import FPC.Language.Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
-open import FPC.Framework.AllUtil using (All; []; _∷_; map; _<><_; _<><ᵃ_)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map; _<><_;
+  _<><ᵃ_)
 open import FPC.Semantics.AbstractMachines.GlobalFun
-open import FPC.Semantics.AbstractMachines.Imp using (atom)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_)
 
 open import Data.List using (List; []; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+
+{- the value of a Monμ atom in an environment -}
+atom : ∀ {Σ Γ A} → Env Σ Γ → Atm Σ Γ A → Val Σ A
+atom φ (var x) = lookup φ x
+atom φ (lit B c) = const c
+atom φ (ref f) = code f
 
 module _ {Σ : List DSig} (ds : All (Code Σ) Σ) {T} (M₀ : Tm Σ [] T) where
 

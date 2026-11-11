@@ -42,9 +42,8 @@ open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)
 open import proof.Framework.Both Obs using (Both; halt; move; both-fsim; pre₁;
   pre₂)
 open import FPC.proof.Correctness.AbstractMachines.GlobalFunCommon using
-  (atm-step; tuple-atoms)
+  (atom; atm-step; tuple-atoms)
 open import FPC.Semantics.AbstractMachines.GlobalFun
-open import FPC.Semantics.AbstractMachines.Imp using (atom)
 
 open import Data.List using (List; []; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
