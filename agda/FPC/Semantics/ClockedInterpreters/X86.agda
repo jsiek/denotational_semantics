@@ -15,8 +15,9 @@
   The instructions of a sequence run in order, each passing its state
   to the rest, then its jump: retq returns %rax, jmp l runs block l with
   the blocks older than it, and case x y z l₁ l₂ writes the payload of x
-  to slot y or z and runs l₁ or l₂. callq runs the start of the definition of its code
-  with %rdi and %rsi, and the caller continues with the result in %rax.
+  to slot y or z and runs l₁ or l₂. callq runs the start of the
+  definition of its code with %rdi and %rsi, and the caller continues
+  with the result in %rax.
   Only calls tick the clock, so the interpreter is structurally
   recursive on the clock, the list of blocks and the sequence. Nothing
   errs: a fold (↑) and an unfold (↓) are moves.

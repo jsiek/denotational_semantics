@@ -125,7 +125,9 @@ module _ {Σ : List DSig}
       (cong (λ ψ → X.run xds ck (blocks bs) _ ⟨ _ , ψ , _ , _ ⟩ (tail t))
         (sym
           (trans
-            (cong (λ ψ → restrict (I.⊆-refl {I = I.initial p}) (write ψ (⊑-∋ p Z) w))
+            (cong
+              (λ ψ →
+                restrict (I.⊆-refl {I = I.initial p}) (write ψ (⊑-∋ p Z) w))
               (restrict-id (write (empty Δ) (⊑-∋ p (S Z)) e) _))
             (restrict-id (params p e w) _))))
 

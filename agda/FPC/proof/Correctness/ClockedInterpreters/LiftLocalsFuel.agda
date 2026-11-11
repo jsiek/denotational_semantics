@@ -47,21 +47,21 @@ module _ {Σ : List DSig} {Γ Δ : Ctx} where
     constructor holds
     field at : ∀ {B} (x : Γ ∋ B) → read φ (ρ x) (ok x) ≡ lookup γ x
 
-  atom-ok : ∀ {I : Inits Δ} {A} {ρ : Slots Γ Δ} {ok : Inited ρ I} {γ φ}
+  atom-ok : ∀ {I : Inits Δ} {A} {γ φ} (ρ : Slots Γ Δ) (ok : Inited ρ I)
     (a : Atm Σ Γ A)
     → Holds ρ ok γ φ
     → atom γ a ≡ Ip.atom φ (lift-atom {I = I} ρ ok a)
-  atom-ok (var x) h = sym (Holds.at h x)
-  atom-ok (lit B c) h = refl
-  atom-ok (ref f) h = refl
+  atom-ok ρ ok (var x) h = sym (Holds.at h x)
+  atom-ok ρ ok (lit B c) h = refl
+  atom-ok ρ ok (ref f) h = refl
 
-  atoms-ok : ∀ {I : Inits Δ} {Δs} {ρ : Slots Γ Δ} {ok : Inited ρ I} {γ φ}
+  atoms-ok : ∀ {I : Inits Δ} {Δs} {γ φ} (ρ : Slots Γ Δ) (ok : Inited ρ I)
     (as : All (Atm Σ Γ) Δs)
     → Holds ρ ok γ φ
     → map (atom γ) as ≡ map (Ip.atom φ) (atoms {I = I} ρ ok as)
-  atoms-ok [] h = refl
-  atoms-ok {ρ = ρ} {ok} (a ∷ as) h =
-    cong₂ _∷_ (atom-ok {ρ = ρ} {ok} a h) (atoms-ok {ρ = ρ} {ok} as h)
+  atoms-ok ρ ok [] h = refl
+  atoms-ok ρ ok (a ∷ as) h =
+    cong₂ _∷_ (atom-ok ρ ok a h) (atoms-ok ρ ok as h)
 
 {- a write to a fresh slot x, holding the value of the new variable -}
 holds-ext : ∀ {Σ Γ Δ A} {I : Inits Δ} {ρ : Slots Γ Δ} {ok : Inited ρ I}
@@ -91,28 +91,33 @@ module _ {Σ : List DSig}
       (o : Only (⊑-trans (binds-⊒ e D) q) I) (γ : Env Γ) (φ : Fr Δ I)
       → Holds ρ ok γ φ
       → C.eval dsC ck γ ⌜ e ⌝ ≡ Ip.eval dsI ck φ (lift e q ρ ok o)
-    lift-ok (atm a) q ρ ok o γ φ h = trans (eval-atom a) (cong ret (atom-ok {ρ = ρ} {ok} a h))
+    lift-ok (atm a) q ρ ok o γ φ h =
+      trans (eval-atom a) (cong ret (atom-ok ρ ok a h))
     lift-ok (pair a b) q ρ ok o γ φ h =
       trans (trans (atm-bind a) (atm-bind b))
-        (cong ret (cong₂ pack (atom-ok {ρ = ρ} {ok} a h) (atom-ok {ρ = ρ} {ok} b h)))
+        (cong ret (cong₂ pack (atom-ok ρ ok a h) (atom-ok ρ ok b h)))
     lift-ok (callc a b) q ρ ok o γ φ h =
       trans (trans (atm-bind a) (atm-bind b))
-        (trans (calls _ _) (cong₂ (Ip.call dsI ck) (atom-ok {ρ = ρ} {ok} a h) (atom-ok {ρ = ρ} {ok} b h)))
+        (trans (calls _ _)
+          (cong₂ (Ip.call dsI ck) (atom-ok ρ ok a h) (atom-ok ρ ok b h)))
     lift-ok (tuple as) q ρ ok o γ φ h =
-      trans (atoms-bind as) (cong (λ vs → ret (tup vs)) (atoms-ok {ρ = ρ} {ok} as h))
+      trans (atoms-bind as)
+        (cong (λ vs → ret (tup vs)) (atoms-ok ρ ok as h))
     lift-ok (get i a) q ρ ok o γ φ h =
-      trans (atm-bind a) (cong (λ v → ret (nth i v)) (atom-ok {ρ = ρ} {ok} a h))
+      trans (atm-bind a) (cong (λ v → ret (nth i v)) (atom-ok ρ ok a h))
     lift-ok (inl a) q ρ ok o γ φ h =
-      trans (atm-bind a) (cong (λ v → ret (inl v)) (atom-ok {ρ = ρ} {ok} a h))
+      trans (atm-bind a) (cong (λ v → ret (inl v)) (atom-ok ρ ok a h))
     lift-ok (inr a) q ρ ok o γ φ h =
-      trans (atm-bind a) (cong (λ v → ret (inr v)) (atom-ok {ρ = ρ} {ok} a h))
+      trans (atm-bind a) (cong (λ v → ret (inr v)) (atom-ok ρ ok a h))
     lift-ok (prim p a b) q ρ ok o γ φ h =
       trans (trans (atm-bind a) (atm-bind b))
-        (cong₂ (λ u v → ret (δ p u v)) (atom-ok {ρ = ρ} {ok} a h) (atom-ok {ρ = ρ} {ok} b h))
+        (cong₂ (λ u v → ret (δ p u v)) (atom-ok ρ ok a h)
+          (atom-ok ρ ok b h))
     lift-ok (fold a) q ρ ok o γ φ h =
-      trans (atm-bind a) (cong (λ v → ret (fold v)) (atom-ok {ρ = ρ} {ok} a h))
+      trans (atm-bind a) (cong (λ v → ret (fold v)) (atom-ok ρ ok a h))
     lift-ok (unfold a) q ρ ok o γ φ h =
-      trans (atm-bind a) (cong (λ v → ret (unfold-v v)) (atom-ok {ρ = ρ} {ok} a h))
+      trans (atm-bind a)
+        (cong (λ v → ret (unfold-v v)) (atom-ok ρ ok a h))
     lift-ok {I = I} (let′ e₁ e₂) q ρ ok o γ φ h =
       bind≡ (lift-ok e₁ q₁ ρ ok (only₁ o) γ φ h) λ v →
         lift-ok e₂ q (ext x ρ) (inited-ext {I = I} x ρ ok) (only₂ o) (v ∷ γ)
@@ -126,7 +131,7 @@ module _ {Σ : List DSig}
               (only₁ o) (v ∷ γ) (write φ x v) (holds-ext x v (fresh₁ o) h))
             (λ v → lift-ok e₂ q (ext y ρ) (inited-ext {I = I} y ρ ok)
               (only₂ o) (v ∷ γ) (write φ y v) (holds-ext y v (fresh₂ o) h)))
-          (cong (λ u → either u _ _) (atom-ok {ρ = ρ} {ok} a h)))
+          (cong (λ u → either u _ _) (atom-ok ρ ok a h)))
       where open Case {I = I} a e₁ e₂ q
 
   calls≡ : ∀ ck {A B} (f : Val (A ⇒ B)) w
