@@ -67,10 +67,10 @@
   \mid \kw{let}\;x = M\;\kw{in}\;N
   \qquad P ::= (\vec{d};\, M)\\[3pt]
 \text{Imp} & a & ::= & x \mid c \mid f_k
-  \qquad r ::= a \mid o\;\vec{a}\\
- & e & ::= & r \mid x \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)
+  \qquad \rhs ::= a \mid o\;\vec{a}\\
+ & e & ::= & \rhs \mid x \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)
   \qquad P ::= (e_0, \ldots, e_{m-1};\, e)\\[3pt]
-\text{CFG} & t & ::= & \kw{return}\;r \mid x \mathrel{:=} r;\; t \mid \kw{goto}\;l
+\text{CFG} & t & ::= & \kw{return}\;\rhs \mid x \mathrel{:=} \rhs;\; t \mid \kw{goto}\;l
   \mid \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)\\
  & b & ::= & (t_0, \ldots, t_{j-1};\, t)
   \qquad P ::= (\vec{b};\, b)\\[3pt]
@@ -89,9 +89,6 @@
 \caption{The grammars of the compiler's languages.}
 \label{fig:grammars}
 \end{figure}
-\todo{In the above grammar rules, the non-terminal \(r\) in Imp denotes RHS of
-  an assignment while the same letter \(r\) denotes registers. Maybe we should
-  disambiguate these \(r\)s? --Darshal}
 
 Our compiler translates \fpc, the call-by-value $\lambda$-calculus
 with sums, products, and iso-recursive types of \citet{Plotkin:1985aa}

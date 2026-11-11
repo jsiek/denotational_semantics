@@ -322,7 +322,7 @@ it assigns, like a $\kw{let}$.
 \defhead{Semantics of Imp}{\den{e}_T\sigma\kappa = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \den{r}_T\sigma\kappa & = & \kappa(\mathcal{S}\den{r}\sigma)\\
+  \den{\rhs}_T\sigma\kappa & = & \kappa(\mathcal{S}\den{\rhs}\sigma)\\
   \den{x \mathrel{:=} e_1;\; e_2}_T\sigma\kappa & = &
     \den{e_1}_T\sigma\,(\mlam{D} \Lambda(\mlam{X} \den{e_2}_T\sigma[x{:=}X]\kappa) \app D)\\
   \den{\kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)}_T\sigma\kappa & = &
@@ -369,11 +369,11 @@ The third assignment, with $\Delta'$ empty, pops slots 0 and 1,
 which hold $z$ and $w$, and pushes $y$ as slot 0.
 \defhead{Typing of CFG}{\Sigma; R; \vec{\Delta}; \Delta \vdash t}
 \[
-  \dfrac{\Sigma; \Delta \vdash r : R}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{return}\;r}
+  \dfrac{\Sigma; \Delta \vdash \rhs : R}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{return}\;\rhs}
   \qquad
-  \dfrac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash r : A \quad
+  \dfrac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash \rhs : A \quad
          \Sigma; R; \vec{\Delta}; \Delta', A \vdash t}
-        {\Sigma; R; \vec{\Delta}; \Delta \vdash |\Delta'| \mathrel{:=} r;\; t}
+        {\Sigma; R; \vec{\Delta}; \Delta \vdash |\Delta'| \mathrel{:=} \rhs;\; t}
   \qquad
   \dfrac{\Delta_l = \Delta}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{goto}\;l}
 \]
@@ -396,9 +396,9 @@ frame $\sigma|_x$, and then pushes the new value as slot $x$.
 \defhead{Semantics of CFG}{\den{t}_{T,B}\sigma = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \den{\kw{return}\;r}_{T,B}\sigma & = & \mathcal{S}\den{r}\sigma\\
-  \den{x \mathrel{:=} r;\; t}_{T,B}\sigma & = &
-    \Lambda(\mlam{X} \den{t}_{T,B}\,\sigma|_x[x{:=}X]) \app \mathcal{S}\den{r}\sigma\\
+  \den{\kw{return}\;\rhs}_{T,B}\sigma & = & \mathcal{S}\den{\rhs}\sigma\\
+  \den{x \mathrel{:=} \rhs;\; t}_{T,B}\sigma & = &
+    \Lambda(\mlam{X} \den{t}_{T,B}\,\sigma|_x[x{:=}X]) \app \mathcal{S}\den{\rhs}\sigma\\
   \den{\kw{goto}\;l}_{T,B}\sigma & = & B(l)(\sigma)\\
   \den{\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)}_{T,B}\sigma & = &
     \mathcal{C}(\mathcal{A}\den{a}\sigma,\;
@@ -893,11 +893,11 @@ before the assignment of $e_1$, $l$ before $l_1$, and $l_1$ before
 $l_2$.
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{tail}(r) & = & \kw{return}\;r\\
+  \pass{tail}(\rhs) & = & \kw{return}\;\rhs\\
   \pass{tail}(x \mathrel{:=} e_1;\; e_2) & = & \pass{assign}(e_1, x, \pass{tail}(e_2))\\
   \pass{tail}(\kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)) & = & \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)
     \quad \text{where } l_i = \pass{add}(\pass{tail}(e_i))\\[4pt]
-  \pass{assign}(r, x, k) & = & x \mathrel{:=} r;\; k\\
+  \pass{assign}(\rhs, x, k) & = & x \mathrel{:=} \rhs;\; k\\
   \pass{assign}(x' \mathrel{:=} e_1;\; e_2, x, k) & = & \pass{assign}(e_1, x', \pass{assign}(e_2, x, k))\\
   \pass{assign}(\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2), x, k) & = & \kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)\\
   & & \quad \text{where } l = \pass{add}(k) \text{ and } l_i = \pass{add}(\pass{assign}(e_i, x, \kw{goto}\;l))\\[4pt]
@@ -916,8 +916,8 @@ Appendix~\ref{app:cfg}, the assignment to $y$ pops $z$ and $w$.
 \label{app:pass-select}
 \agda{FPC/Compiler/Select.agda (select)}
 
-The code of a simple expression $r$ is selected in continuation-passing
-style. The code $\pass{sel}(r, \omega, k)$ sends the value of $r$ to
+The code of a simple expression $\rhs$ is selected in continuation-passing
+style. The code $\pass{sel}(\rhs, \omega, k)$ sends the value of $\rhs$ to
 $\omega$, which is either
 $\kw{rax}$ or the next slot $x$,
 \[
@@ -943,8 +943,8 @@ so $\kw{callc}$ and $\kw{case}$ take a slot.
   \pass{sel}(\kw{prim}_{\kw{eq}}\;a_1\;a_2, \omega, k) & = & \kw{cmpq}\; a_2, a_1;\; \kw{sete}\; \bar{\omega};\; k\\
   \pass{sel}(\kw{fold}\;a, \omega, k) & = & \kw{movq}\; \kw{fold}\;a, \bar{\omega};\; k\\
   \pass{sel}(\kw{unfold}\;a, \omega, k) & = & \kw{movq}\; \kw{unfold}\;a, \bar{\omega};\; k\\[4pt]
-  \pass{tail}(\kw{return}\;r) & = & \pass{sel}(r, \kw{ret}, \kw{retq})\\
-  \pass{tail}(x \mathrel{:=} r;\; t) & = & \pass{sel}(r, \kw{to}\;x, \pass{tail}(t))\\
+  \pass{tail}(\kw{return}\;\rhs) & = & \pass{sel}(\rhs, \kw{ret}, \kw{retq})\\
+  \pass{tail}(x \mathrel{:=} \rhs;\; t) & = & \pass{sel}(\rhs, \kw{to}\;x, \pass{tail}(t))\\
   \pass{tail}(\kw{goto}\;l) & = & \kw{jmp}\; l\\
   \pass{tail}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)) & = & \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)
 \end{array}
@@ -952,8 +952,8 @@ so $\kw{callc}$ and $\kw{case}$ take a slot.
 The frame of a function body has as many slots as the largest frame that any of its tails starts in or writes, which $\mathit{slots}$ computes. With $\Delta$ the frame a tail starts in:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \mathit{slots}(\kw{return}\;r) = \mathit{slots}(\kw{goto}\;l) & = & |\Delta|\\
-  \mathit{slots}(x \mathrel{:=} r;\; t) & = & \max(|\Delta|, \mathit{slots}(t))\\
+  \mathit{slots}(\kw{return}\;\rhs) = \mathit{slots}(\kw{goto}\;l) & = & |\Delta|\\
+  \mathit{slots}(x \mathrel{:=} \rhs;\; t) & = & \max(|\Delta|, \mathit{slots}(t))\\
   \mathit{slots}(\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)) & = & \max(|\Delta|, x + 1)\\[4pt]
   \pass{select}((t_0, \ldots, t_{j-1};\; t)) & = &
     (n;\; \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\; \pass{tail}(t))\\
