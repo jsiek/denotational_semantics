@@ -454,7 +454,6 @@ $a_1 : \kw{code}(\Delta; A \rightarrow C)$ and $a_2 : \kw{tup}(\Delta)$;
 tuples and injections of operands are typed as in \fpc. With
 $\psi = \langle \Theta; \Delta; O; F \rangle$ and operands typed in
 $\psi$, the instructions are typed as follows.
-\todo{I need to explain the interaction between the rules for fst, snd and callq --Darshal}
 \defhead{Typing of instructions}{\Sigma; n \vdash i : \psi \Rightarrow \psi'}
 \[
 \begin{array}{@{}c@{}}
@@ -488,10 +487,27 @@ $\psi$, the instructions are typed as follows.
         {\Sigma; n \vdash \kw{callq}\; a : \psi \Rightarrow \langle \kw{rax}{:}C; \Delta; \cdot; \kw{unset} \rangle}
 \end{array}
 \]
-Here $\mathit{wipe}(\Theta)$ unsets the registers that hold the code or
-the environment of an earlier open closure, so the registers of types
+The rules for $\kw{fst}$, $\kw{snd}$, and $\kw{callq}$ together ensure
+that a call combines the code and the environment of one closure. The
+instruction $\kw{fst}\;x, \%r$ opens the closure in slot $x$. It
+records $x$ as the open closure and gives $r$ the type
+$\kw{opencode}(A \rightarrow C)$, which hides the frame of the
+closure's environment, as the existential type of PairClos does. The
+instruction $\kw{snd}\;x, \%r$ requires $x$ to be the open closure and
+gives $r$ the type $\kw{openenv}$. The instruction $\kw{callq}$
+requires its code operand to have type $\kw{opencode}(A \rightarrow C)$,
+$\kw{rdi}$ to have type $\kw{openenv}$, and $\kw{rsi}$ to have type
+$A$. These types do not name the closure, so two further rules keep
+the code and the environment together. First, $\mathit{wipe}(\Theta)$
+unsets the registers that hold the code or the environment of an
+earlier open closure, so the registers of types
 $\kw{opencode}(A \rightarrow C)$ and $\kw{openenv}$ always belong to
-the same closure. A sequence $s$ is typed by the result
+the same closure. Second, a write to a slot closes the open closure
+(the slot rule of the typing of destinations), so $\kw{snd}$ runs only
+while slot $x$ still holds the closure that $\kw{fst}$ opened. After
+the call, only $\kw{rax}$ is set, and no closure is open.
+
+A sequence $s$ is typed by the result
 type $R$, the frames $\vec{\Delta}$ of the blocks it may jump to, and
 its starting state.
 \defhead{Typing of sequences}{\Sigma; n; R; \vec{\Delta} \vdash s : \psi}
