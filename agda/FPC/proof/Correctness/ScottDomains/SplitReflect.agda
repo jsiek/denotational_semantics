@@ -177,21 +177,12 @@ Reflect-call {l} {l'} {a} {a'} hl ha =
         (monotone-if-continuous 𝔻 (𝓓 n) (π∞ n) _ _
            (app-mono _ _ _ _
               (app-mono _ _ _ _
-                  (e-mono c l (succ (succ K))
-                    (≤-trans l K (succ (succ K)) l≤
-                      (≤-trans K (succ K) (succ (succ K)) (≤-succ K)
-                        (≤-succ (succ K)))))
-                                (e-mono env i (succ K)
-                                    (≤-trans i K (succ K) i≤ (≤-succ K))))
+                 (e-mono c l (succ (succ K)) l≤′)
+                 (e-mono env i (succ K) i≤′))
               (e-mono a' j K j≤)))
         (transport (λ - → R reflect n - (strict · s · a)) (πs-π∞ k' n G)
            (R-πs reflect k' n (π∞ K · G) (strict · s · a)
-              (transport
-                  (λ - →
-                    R reflect K
-                    (π∞ K ·
-                      (appᵈ · (appᵈ · e (succ (succ K)) c · (ε∞ (succ K) · -)) ·
-                        e K a')) (strict · s · a))
+              (transport (λ - → R reflect K (π∞ K · call-at -) (strict · s · a))
                  (π-π∞ (succ K) env)
                  (m (succ (succ K)) (π∞ K · a') a (stage ha K)))))
      where
@@ -199,15 +190,23 @@ Reflect-call {l} {l'} {a} {a'} hl ha =
       K = k' + n
       G = appᵈ · (appᵈ · e (succ (succ K)) c · e (succ K) env) · e K a'
       l≤ : l ≤ K
-      l≤ =
-        ≤-trans l (l + i) K (≤+ l i)
-        (≤-trans (l + i) k' K (≤+ (l + i) j) (≤+ k' n))
+      l≤ = ≤-trans l (l + i) K (≤+ l i)
+             (≤-trans (l + i) k' K (≤+ (l + i) j) (≤+ k' n))
       i≤ : i ≤ K
-      i≤ =
-        ≤-trans i (l + i) K (≤+' l i)
-        (≤-trans (l + i) k' K (≤+ (l + i) j) (≤+ k' n))
+      i≤ = ≤-trans i (l + i) K (≤+' l i)
+             (≤-trans (l + i) k' K (≤+ (l + i) j) (≤+ k' n))
       j≤ : j ≤ K
       j≤ = ≤-trans j k' K (≤+' (l + i) j) (≤+ k' n)
+      l≤′ : l ≤ succ (succ K)
+      l≤′ = ≤-trans l K (succ (succ K)) l≤
+              (≤-trans K (succ K) (succ (succ K)) (≤-succ K) (≤-succ (succ K)))
+      i≤′ : i ≤ succ K
+      i≤′ = ≤-trans i K (succ K) i≤ (≤-succ K)
+      {- The call with the code at depth K + 2 and the argument at depth
+         K, as a function of the environment. -}
+      call-at : ⟨ 𝓓 (succ K) ⟩ → ⟨ 𝔻 ⟩
+      call-at x =
+        appᵈ · (appᵈ · e (succ (succ K)) c · (ε∞ (succ K) · x)) · e K a'
 
   {- If the called target element is not a pair, then its code and its
      environment are ⊥𝔻. So the call is ⊥𝔻, which is related to every
