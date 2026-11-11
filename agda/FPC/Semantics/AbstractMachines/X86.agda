@@ -10,7 +10,7 @@
   closure's environment (the witness that the type of a closure hides),
   so a register of type codeα A B holds a value of type code η A B, and
   one of type tupα a tuple of type tup η. The frame is fixed: it holds
-  a value for each initialized slot (FPC/Framework/Slots.agda), and a
+  a value for each initialized slot (FPC/Semantics/Slots.agda), and a
   write to a slot initializes it and keeps the slots that the rest
   starts with (restrict); an unset register, an unset flag and the open
   closure (when there is none) hold nothing (⊤).
@@ -32,7 +32,7 @@ open import Language.Prim using (sub)
 open import FPC.Language.Type
 open import FPC.Language.X86
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
-open import FPC.Framework.Slots using (read; write; restrict; empty)
+open import FPC.Semantics.Slots using (read; write; restrict; empty)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import FPC.Semantics.AbstractMachines.GlobalFun using (Val; code; pack;
   const; tup; inl; inr; fold; obs; int; elems; choose; unfoldᵥ; δᵀ) public

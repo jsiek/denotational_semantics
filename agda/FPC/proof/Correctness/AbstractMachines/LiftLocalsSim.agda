@@ -35,7 +35,7 @@ open import FPC.Language.Imp using (Inits; _∈_; _∉_; _⊕_)
 import FPC.Compiler.LiftLocals as LL
 open LL using (lift; lift-body; lift-program; binds; Inited; ext)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; map)
-open import FPC.Framework.Slots using (read; write; params; empty)
+open import FPC.Semantics.Slots using (read; write; params; empty)
 open import FPC.proof.Framework.AllProp using (lookup-map)
 open import FPC.proof.Framework.SlotsProp using (read-write; read-write-other;
   params-arg; params-env)

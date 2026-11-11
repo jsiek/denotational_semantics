@@ -1,6 +1,6 @@
 {-
 
-  Properties of the values of a fixed frame (FPC/Framework/Slots.agda).
+  Properties of the values of a fixed frame (FPC/Semantics/Slots.agda).
 
   * A read after a write to the same slot finds the value written
     (read-write), and a read of another initialized slot finds the old
@@ -22,7 +22,7 @@ module FPC.proof.Framework.SlotsProp where
 open import FPC.Language.Type
 open import FPC.Language.Frame
 open import FPC.Framework.AllUtil using ([]; _∷_)
-open import FPC.Framework.Slots
+open import FPC.Semantics.Slots
 open import Framework.Membership using (_⊑_; ⊑-∋)
 open import Data.List using ([]; _∷_)
 

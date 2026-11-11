@@ -20,7 +20,7 @@ module FPC.Semantics.ClockedInterpreters.CFG where
 open import FPC.Language.Type
 open import FPC.Language.CFG
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
-open import FPC.Framework.Slots using (write; restrict; empty; params)
+open import FPC.Semantics.Slots using (write; restrict; empty; params)
 open import Semantics.Interp.Clock
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.Imp using (Fr; atom; eval-simple)

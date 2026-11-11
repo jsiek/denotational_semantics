@@ -31,7 +31,7 @@ open import Language.Prim using (sub)
 open import FPC.Language.Type
 open import FPC.Language.X86
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
-open import FPC.Framework.Slots using (Slots; read; write; restrict; empty)
+open import FPC.Semantics.Slots using (Slots; read; write; restrict; empty)
 open import Semantics.Interp.Clock
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.Imp using (Fr) renaming (atom to
