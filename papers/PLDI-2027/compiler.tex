@@ -201,8 +201,9 @@ $\kw{let}$, so the operands of every operation in Mon are atomic.  The
 atomic terms are variables, constants, and function names.  The
 \pass{lift locals} pass (\S\ref{app:pass-lift-locals}) gives each variable its own fixed location in the
 function's stack frame, called a \emph{slot}. A function body declares
-its frame $\Phi$, the types of its slots, and the types track which
-slots are initialized, so a program reads a slot only after writing it. The \pass{explicate control} pass (\S\ref{app:pass-explicate}) turns
+its frame $\Phi$, which lists the types of its slots. The type system
+tracks which slots are initialized, so a program reads a slot only
+after it writes the slot. The \pass{explicate control} pass (\S\ref{app:pass-explicate}) turns
 the nested $\kw{case}$s of Imp into a control-flow graph. A CFG
 program has a function body for each global definition and for the
 main program. A body consists of numbered blocks and a starting tail,
@@ -212,7 +213,7 @@ flow is acyclic.
 Finally, \pass{select instructions} (\S\ref{app:pass-select})
 translates to \instr, a typed low-level language in the style of TAL
 \citep{Morrisett:1999fk}, with an x86 flavor.  \instr\ has three
-registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$) a stack frame of
+registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$), a stack frame of
 slots, and an abstract heap. Programs have the same structure as in
 CFG. Instruction operands $a$ are slots, constants, names of
 definitions, or registers. Instructions write to a destination $d$, a

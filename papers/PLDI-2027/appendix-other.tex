@@ -165,7 +165,7 @@ Here $\sigma[x{:=}v]$ updates slot $x$ in place, and $|_J$ keeps the
 slots $J$ that the rest of the sequence starts with (the slot rule of
 the typing of destinations, Appendix~\ref{app:instr}), which forgets the
 values of variables whose scope has ended. Writing a slot also closes
-the open closure: the slot rule resets the open closure to $\cdot$, and
+the open closure. The slot rule resets the open closure to $\cdot$, and
 $\mathit{put}$ closes it by setting it to $\mathsf{none}$. The
 instructions other than $\kw{callq}$ update the state as $\mathit{instr}$
 specifies.

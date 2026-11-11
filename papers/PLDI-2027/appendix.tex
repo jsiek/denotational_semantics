@@ -358,8 +358,8 @@ result, the list $\vec{I} = I_0, \ldots, I_{j-1}$ of the sets of slots
 that are initialized where the blocks it may jump to start, and the set
 $I$ of the slots that are initialized where it starts. A label $l$ is
 an index into $\vec{I}$. Block $t_l$ is typed over the blocks older
-than it, so control flow is acyclic. Unlike Imp, CFG tracks the
-initialized slots along the flow of control. An assignment
+than it, so control flow is acyclic. Imp tracks the initialized slots by scope, and CFG tracks them along
+the flow of control. An assignment
 $x \mathrel{:=} \rhs;\; t$ initializes slot $x$, and its tail $t$ may
 start with fewer initialized slots ($J \subseteq I \cup \{x\}$), which
 forgets the slots of variables whose scope has ended. The statement
@@ -1129,7 +1129,8 @@ in which the assignment starts, while the tail writes slot $x$ of the
 frame in which $e$ ends, which may also hold the slots that $e$ writes.
 The tail $k$ does not read those slots, because they are not
 initialized where the assignment starts, so $k$ means the same in both
-frames: the meaning of a tail depends only on the slots it starts with.
+frames, because the meaning of a tail depends only on the slots it
+starts with.
 We show the first branch; the second is the same:
 {\small
 \[
