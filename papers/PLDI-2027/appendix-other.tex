@@ -367,12 +367,12 @@ follows.
 The Agda development defines the reduction semantics as a function
 (instead of a relation).
 The function $\mathit{red}$ maps a closed term $M$ to a \emph{result}, ranged
-over by $r$, which says whether $M$ is a value ($\mathsf{val}$), reduces to a
+over by $\mathit{res}$, which says whether $M$ is a value ($\mathsf{val}$), reduces to a
 term $M'$ ($\mathsf{to}\,M'$), or is stuck ($\mathsf{error}$). The stuck case is
 there only to make $\mathit{red}$ total. A closed well-typed term does not get
 stuck, because \fpc\ is type safe.
 \[
-  r ::= \mathsf{val} \mid \mathsf{to}\,M' \mid \mathsf{error}
+  \mathit{res} ::= \mathsf{val} \mid \mathsf{to}\,M' \mid \mathsf{error}
 \]
 
 The definition of $\mathit{red}$ below is the core of the reduction semantics.
@@ -380,7 +380,7 @@ The function $\mathit{red}$ is deterministic and total by construction. In each
 case, the subterms are reduced left to right. A subterm that reduces makes the
 whole term reduce in the same position, and once the subterms are values the
 term takes its own step.
-\defhead{Reduction of a closed term}{\mathit{red}(M) = r}
+\defhead{Reduction of a closed term}{\mathit{red}(M) = \mathit{res}}
 \begin{align*}
   \mathit{red}(V) &= \mathsf{val} \\
   \mathit{red}(L\;M) &= \mathsf{to}\,(L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
@@ -408,7 +408,7 @@ read as a term. The observation $\mathit{obs}(V)$ of a value is as in
 Appendix~\ref{app:observations}, with $\mathit{fun}$ for $\lambda x.\,N$.
 
 In the Agda development, the cases that reduce a subterm are written with one
-combinator, $\mathit{step\text{-}in}(f, r, k)$. If the subterm reduces, by $r$,
+combinator, $\mathit{step\text{-}in}(f, \mathit{res}, k)$. If the subterm reduces, by $\mathit{res}$,
 then so does the whole term, in the evaluation context $f$; if the subterm is a
 value, the reduction continues with $k$; and if the subterm is stuck, so is the
 whole term. The equations above are the Agda definition with the combinator
