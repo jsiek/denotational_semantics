@@ -14,6 +14,7 @@ module FPC.Framework.Slots where
 
 open import FPC.Language.Type
 open import FPC.Language.Frame
+open import Framework.Membership using (_⊑_; ⊑-∋)
 open import FPC.Framework.AllUtil using ([]; _∷_)
 
 open import Data.Bool using (Bool; true; false)
@@ -55,3 +56,9 @@ module _ {V : Type → Set} where
   restrict {J = true ∷ J} p (∙ φ) = ⊥-elim (proj₁ p tt)
   restrict {J = false ∷ J} p (v ∷ φ) = ∙ restrict (proj₂ p) φ
   restrict {J = false ∷ J} p (∙ φ) = ∙ restrict (proj₂ p) φ
+
+  {- the frame at the start of a body with parameters A ∷ B ∷ [] (an
+     argument and an environment), the environment written first -}
+  params : ∀ {Δ A B} (p : (A ∷ B ∷ []) ⊑ Δ) → V B → V A
+    → Slots V Δ (initial p)
+  params {Δ} p e w = write (write (empty Δ) (⊑-∋ p (S Z)) e) (⊑-∋ p Z) w
