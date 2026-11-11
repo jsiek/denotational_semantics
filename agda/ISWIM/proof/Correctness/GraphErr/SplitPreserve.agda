@@ -20,14 +20,14 @@ open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
 open import ISWIM.proof.Semantics.GraphErr.Prim using (primD; out)
 open import ISWIM.Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ; hit; keep)
-open import ISWIM.Language.Typed.Type using (Any; ⟪_⟫; tup; _∋_; Z; S; idx; flat; ttup; tfun; tsum; tint)
+open import ISWIM.Language.Typed.Type using (Ctx; Any; ⟪_⟫; tup; _∋_; Z; S; idx; flat; ttup; tfun; tsum; tint)
 open import ISWIM.Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit; tuple; get; case; prim; let′; inject; project)
 import ISWIM.Language.Typed.Clos4 as T
 import ISWIM.proof.Semantics.GraphErr.Typed.Clos3 as S3
 open S3 using (⟦_⟧; ⟦_⟧s)
 import ISWIM.proof.Semantics.GraphErr.Typed.Clos4 as S4
 open S4 using (fin₁; fin₂; ΛΛᵐ-call; kind₄) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
-open import ISWIM.Compiler.Split using (Ren; ext; split; splits; split-program)
+open import ISWIM.Compiler.Split using (split; splits; split-program)
 open import ISWIM.proof.Correctness.GraphErr.SplitRel using (_●_; out-data)
 
 open import Data.Nat using (ℕ; zero; suc)
@@ -161,37 +161,37 @@ data-⊑ ⟨⟩ _ v∈ = lift v∈
 
 {- The fundamental lemma ------------------------------------------------------}
 
-record Envs {Γ Δ} (r : Ren Γ Δ) (ρ ρ' : Env Value) : Set₁ where
+record Envs (Γ : Ctx) (ρ ρ' : Env Value) : Set₁ where
   constructor envs
   field
     NE' : nonempty-env ρ'
     ρ'~ : Con-env ρ'
-    ρ⊑ : ∀ {A} (x : Γ ∋ A) → Lifted _⊑_ (ρ (idx x)) (ρ' (idx (r x)))
+    ρ⊑ : ∀ {A} (x : Γ ∋ A) → Lifted _⊑_ (ρ (idx x)) (ρ' (idx x))
 
-ext-envs : ∀ {Γ Δ} {r : Ren Γ Δ} {ρ ρ' X X'} → Envs r ρ ρ' → nonempty X' → Con X' → Lifted _⊑_ X X'
-  → Envs (ext {B = Any} r) (X • ρ) (X' • ρ')
+ext-envs : ∀ {Γ} {ρ ρ' X X'} → Envs Γ ρ ρ' → nonempty X' → Con X' → Lifted _⊑_ X X'
+  → Envs (Any ∷ Γ) (X • ρ) (X' • ρ')
 ext-envs (envs NE' ρ'~ ρ⊑) ne c h = envs (extend-nonempty-env NE' ne) (Con-• c ρ'~) (λ { Z → h ; (S x) → ρ⊑ x })
 
-args-con' : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ} → Con-env ρ → ∀ i → Con (nthD (⟦ splits r Ms ⟧s' ρ) i)
-args-con' (M ∷ Ms) c zero = S4.con (split _ M) c
+args-con' : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ} → Con-env ρ → ∀ i → Con (nthD (⟦ splits Ms ⟧s' ρ) i)
+args-con' (M ∷ Ms) c zero = S4.con (split M) c
 args-con' (M ∷ Ms) c (suc i) = args-con' Ms c i
 
 clean⌊⌋ : ∀ {D} → Clean ⌊ D ⌋
 clean⌊⌋ d d∈ = proj₂ d∈
 
-preserve : ∀ {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ' → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split r M ⟧' ρ')
-preserve-nth : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → ∀ i → Lifted _⊑_ (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits r Ms ⟧s' ρ') i)
-preserve-𝒯 : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → Lifted _⊑_ (𝒯ᵐ n (⟦ Ms ⟧s ρ)) (𝒯ᵐ n (⟦ splits r Ms ⟧s' ρ'))
+preserve : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'} → Envs Γ ρ ρ' → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split M ⟧' ρ')
+preserve-nth : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ ρ'} → Envs Γ ρ ρ'
+  → ∀ i → Lifted _⊑_ (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits Ms ⟧s' ρ') i)
+preserve-𝒯 : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ ρ'} → Envs Γ ρ ρ'
+  → Lifted _⊑_ (𝒯ᵐ n (⟦ Ms ⟧s ρ)) (𝒯ᵐ n (⟦ splits Ms ⟧s' ρ'))
 
 preserve (` x) E = Envs.ρ⊑ E x
 
 preserve (lit B k) E (const k') v∈ = lift v∈
 
-preserve (prim p L M) {r} {ρ} {ρ'} E =
-  ≫=-lift {F = λ X → ⟦ M ⟧ ρ ≫= K X} {F' = λ X → ⟦ split r M ⟧' ρ' ≫= K X} ⊑-lift (S4.con (split r L) ρ'~) (preserve L E)
-    λ _ _ hX → ≫=-lift {F = K ⌊ ⟦ L ⟧ ρ ⌋} {F' = K ⌊ ⟦ split r L ⟧' ρ' ⌋} ⊑-lift (S4.con (split r M) ρ'~) (preserve M E)
+preserve (prim p L M) {ρ} {ρ'} E =
+  ≫=-lift {F = λ X → ⟦ M ⟧ ρ ≫= K X} {F' = λ X → ⟦ split M ⟧' ρ' ≫= K X} ⊑-lift (S4.con (split L) ρ'~) (preserve L E)
+    λ _ _ hX → ≫=-lift {F = K ⌊ ⟦ L ⟧ ρ ⌋} {F' = K ⌊ ⟦ split L ⟧' ρ' ⌋} ⊑-lift (S4.con (split M) ρ'~) (preserve M E)
     λ _ _ hY → kernel hX hY
   where
   open Envs E
@@ -202,86 +202,86 @@ preserve (prim p L M) {r} {ρ} {ρ'} E =
 
 preserve (tuple Ms) = preserve-𝒯 Ms
 
-preserve (get i M) {r} E =
-  ≫=-lift {F = λ X → proj i ⟨ X , ptt ⟩} {F' = λ X → proj i ⟨ X , ptt ⟩} ⊑-lift (S4.con (split r M) (Envs.ρ'~ E)) (preserve M E)
+preserve (get i M) E =
+  ≫=-lift {F = λ X → proj i ⟨ X , ptt ⟩} {F' = λ X → proj i ⟨ X , ptt ⟩} ⊑-lift (S4.con (split M) (Envs.ρ'~ E)) (preserve M E)
     λ _ _ hX v t∈ → hX _ t∈
 
-preserve (L3.inl M) {r} E =
-  ≫=-lift {F = λ X → inl ⟨ X , ptt ⟩} {F' = λ X → inl ⟨ X , ptt ⟩} ⊑-lift (S4.con (split r M) (Envs.ρ'~ E)) (preserve M E)
+preserve (L3.inl M) E =
+  ≫=-lift {F = λ X → inl ⟨ X , ptt ⟩} {F' = λ X → inl ⟨ X , ptt ⟩} ⊑-lift (S4.con (split M) (Envs.ρ'~ E)) (preserve M E)
     λ { _ _ hX (left v) v∈ → hX v v∈ }
 
-preserve (L3.inr M) {r} E =
-  ≫=-lift {F = λ X → inr ⟨ X , ptt ⟩} {F' = λ X → inr ⟨ X , ptt ⟩} ⊑-lift (S4.con (split r M) (Envs.ρ'~ E)) (preserve M E)
+preserve (L3.inr M) E =
+  ≫=-lift {F = λ X → inr ⟨ X , ptt ⟩} {F' = λ X → inr ⟨ X , ptt ⟩} ⊑-lift (S4.con (split M) (Envs.ρ'~ E)) (preserve M E)
     λ { _ _ hX (right v) v∈ → hX v v∈ }
 
-preserve {Γ} (case L M N) {r} {ρ} {ρ'} E =
+preserve {Γ} (case L M N) {ρ} {ρ'} E =
   ≫=-lift {F = λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩} {F' = λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁' , ⟨ F₂' , ptt ⟩ ⟩ ⟩}
-    ⊑-lift (S4.con (split r L) ρ'~) (preserve L E) λ _ _ hX → kernel hX
+    ⊑-lift (S4.con (split L) ρ'~) (preserve L E) λ _ _ hX → kernel hX
   where
   open Envs E
   F₁ = λ Y → ⟦ M ⟧ (Y • ρ)
   F₂ = λ Y → ⟦ N ⟧ (Y • ρ)
-  F₁' = λ Y → ⟦ split (ext r) M ⟧' (Y • ρ')
-  F₂' = λ Y → ⟦ split (ext r) N ⟧' (Y • ρ')
-  X' = ⌊ ⟦ split r L ⟧' ρ' ⌋ ⇂ ValPayload
+  F₁' = λ Y → ⟦ split M ⟧' (Y • ρ')
+  F₂' = λ Y → ⟦ split N ⟧' (Y • ρ')
+  X' = ⌊ ⟦ split L ⟧' ρ' ⌋ ⇂ ValPayload
   cX' : Con X'
-  cX' = Con-⊆ (S4.con (split r L) ρ'~) (λ d d∈ → proj₁ (proj₁ d∈))
+  cX' = Con-⊆ (S4.con (split L) ρ'~) (λ d d∈ → proj₁ (proj₁ d∈))
   {- the branch B on the side s of the scrutinee -}
   branch : ∀ (s : Tag) (B : Tm (Any ∷ Γ) Any) {Cs} → (∀ {a b} → tag s a ~ tag s b → a ~ b)
     → (∀ {y} → y ≢ ω → ValPayload (tag s y))
-    → (nonempty (Untag s X') → Con (Untag s X') → ⟦ split (ext r) B ⟧' (Untag s X' • ρ') ⊆ Cs)
-    → ∀ u U → (∀ d → d ∈ mem (u ∷ U) → d ⊑ Untag s ⌊ ⟦ split r L ⟧' ρ' ⌋) → NoErr (u ∷ U)
+    → (nonempty (Untag s X') → Con (Untag s X') → ⟦ split B ⟧' (Untag s X' • ρ') ⊆ Cs)
+    → ∀ u U → (∀ d → d ∈ mem (u ∷ U) → d ⊑ Untag s ⌊ ⟦ split L ⟧' ρ' ⌋) → NoErr (u ∷ U)
     → ∀ v → v ∈ ⟦ B ⟧ (mem (u ∷ U) • ρ) → v ⊑ Cs
   branch s B {Cs} s~ vp B⊆ u U u⊑ nU v v∈ = ⊑-mono v (B⊆ ne cS) (preserve B (ext-envs E ne cS u⊑') v v∈)
     where
     cS = Untag-con s s~ cX'
-    clU : Clean (Untag s ⌊ ⟦ split r L ⟧' ρ' ⌋)
-    clU = con-clean (Untag-con s s~ (Con-⊆ (S4.con (split r L) ρ'~) ⌊⌋-⊆))
+    clU : Clean (Untag s ⌊ ⟦ split L ⟧' ρ' ⌋)
+    clU = con-clean (Untag-con s s~ (Con-⊆ (S4.con (split L) ρ'~) ⌊⌋-⊆))
                     (⊑-val {u} (λ { refl → nU (here refl) }) (u⊑ u (here refl)))
     u⊑' : Lifted _⊑_ (mem (u ∷ U)) (Untag s X')
     u⊑' d d∈ = ⊑-mono d (λ y y∈ → ⟨ y∈ , vp (clU y y∈) ⟩) (u⊑ d d∈)
     ne : nonempty (Untag s X')
     ne = let ⟨ y , y∈ ⟩ = ⊑-val {u} {Untag s X'} (λ { refl → nU (here refl) }) (u⊑' u (here refl)) in ⟨ y , proj₁ y∈ ⟩
-  kernel : Lifted _⊑_ ⌊ ⟦ L ⟧ ρ ⌋ ⌊ ⟦ split r L ⟧' ρ' ⌋
+  kernel : Lifted _⊑_ ⌊ ⟦ L ⟧ ρ ⌋ ⌊ ⟦ split L ⟧' ρ' ⌋
     → Lifted _⊑_ (𝒞 ⟨ ⌊ ⟦ L ⟧ ρ ⌋ ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩) (𝒞 ⟨ X' , ⟨ F₁' , ⟨ F₂' , ptt ⟩ ⟩ ⟩)
   kernel hX v (inj₁ ⟨ u , ⟨ U , ⟨ all , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
-    branch leftT M (λ c → c) (λ y≢ → y≢) (λ ne c → 𝒞-left {X'} {F₁'} {F₂'} (fin₁ (S4.ok (split (ext r) M)) NE' ne) c)
+    branch leftT M (λ c → c) (λ y≢ → y≢) (λ ne c → 𝒞-left {X'} {F₁'} {F₂'} (fin₁ (S4.ok (split M)) NE' ne) c)
       u U (λ d d∈ → hX (left d) (proj₁ (all d d∈))) (λ ω∈ → proj₂ (all ω ω∈) refl) v v∈
   kernel hX v (inj₂ ⟨ u , ⟨ U , ⟨ all , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
-    branch rightT N (λ c → c) (λ y≢ → y≢) (λ ne c → 𝒞-right {X'} {F₁'} {F₂'} (fin₁ (S4.ok (split (ext r) N)) NE' ne) c)
+    branch rightT N (λ c → c) (λ y≢ → y≢) (λ ne c → 𝒞-right {X'} {F₁'} {F₂'} (fin₁ (S4.ok (split N)) NE' ne) c)
       u U (λ d d∈ → hX (right d) (proj₁ (all d d∈))) (λ ω∈ → proj₂ (all ω ω∈) refl) v v∈
 
-preserve (let′ M N) {r} {ρ} {ρ'} E =
-  ≫=-lift {F = λ X → ⟦ N ⟧ (X • ρ)} {F' = λ X → ⟦ split (ext r) N ⟧' (X • ρ')} ⊑-lift (S4.con (split r M) ρ'~) (preserve M E)
-    λ _ c' hX → preserve N (ext-envs E c' (Con-⊆ (S4.con (split r M) ρ'~) ⌊⌋-⊆) hX)
+preserve (let′ M N) {ρ} {ρ'} E =
+  ≫=-lift {F = λ X → ⟦ N ⟧ (X • ρ)} {F' = λ X → ⟦ split N ⟧' (X • ρ')} ⊑-lift (S4.con (split M) ρ'~) (preserve M E)
+    λ _ c' hX → preserve N (ext-envs E c' (Con-⊆ (S4.con (split M) ρ'~) ⌊⌋-⊆) hX)
   where open Envs E
 
 preserve (inject G M) E = preserve M E
 
-preserve (project t M) {r} E =
+preserve (project t M) E =
   ≫=-lift {F = λ X → checked G X (keep (λ k → k) t X)} {F' = λ X → checkedᵠ kind₄ G X (keep kind₄ t X)}
-    ⊑-lift (S4.con (split r M) (Envs.ρ'~ E)) (preserve M E) λ _ _ hX → ⊑-proj t clean⌊⌋ hX
+    ⊑-lift (S4.con (split M) (Envs.ρ'~ E)) (preserve M E) λ _ _ hX → ⊑-proj t clean⌊⌋ hX
   where G = kindᶠ (flat t)
 
-preserve (app L M) {r} {ρ} {ρ'} E =
-  ≫=-lift {F = λ F → F ● ⟦ M ⟧ ρ} {F' = λ P → Arg ≫= (P ⊙_)} ⊑-lift (S4.con (split r L) ρ'~) (preserve L E) λ _ _ hX →
-  ≫=-lift {F = λ X → ⋆ ⟨ ⌊ ⟦ L ⟧ ρ ⌋ , ⟨ X , ptt ⟩ ⟩} {F' = ⌊ ⟦ split r L ⟧' ρ' ⌋ ⊙_} ⊑-lift (S4.con (split r M) ρ'~) (preserve M E)
-    λ { _ _ hY w ⟨ U , ⟨ e∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ → proj₂ (hX (U ↦ w) e∈) _ (Con-⊆ (S4.con (split r M) ρ'~) ⌊⌋-⊆) (⊑*-intro U U⊆ hY) }
+preserve (app L M) {ρ} {ρ'} E =
+  ≫=-lift {F = λ F → F ● ⟦ M ⟧ ρ} {F' = λ P → Arg ≫= (P ⊙_)} ⊑-lift (S4.con (split L) ρ'~) (preserve L E) λ _ _ hX →
+  ≫=-lift {F = λ X → ⋆ ⟨ ⌊ ⟦ L ⟧ ρ ⌋ , ⟨ X , ptt ⟩ ⟩} {F' = ⌊ ⟦ split L ⟧' ρ' ⌋ ⊙_} ⊑-lift (S4.con (split M) ρ'~) (preserve M E)
+    λ { _ _ hY w ⟨ U , ⟨ e∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ → proj₂ (hX (U ↦ w) e∈) _ (Con-⊆ (S4.con (split M) ρ'~) ⌊⌋-⊆) (⊑*-intro U U⊆ hY) }
   where
   open Envs E
-  Arg = ⟦ split r M ⟧' ρ'
+  Arg = ⟦ split M ⟧' ρ'
 
-preserve (clos {n = n} N Ms) {r} {ρ} {ρ'} E v v∈ =
+preserve (clos {n = n} N Ms) {ρ} {ρ'} E v v∈ =
   ⊑-mono v (proj₂ (≫=-val-β {F = λ C → T' ≫= λ Y → pair ⟨ C , ⟨ Y , ptt ⟩ ⟩} ΛΛᵐ-val))
     (≫=-lift {F = λ Y → ⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ Y , ptt ⟩ ⟩} {F' = λ Y → pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ Y , ptt ⟩ ⟩}
        ⊑-lift cT' (preserve-𝒯 Ms E) kernel v v∈)
   where
   open Envs E
   F = λ X Y → ⟦ N ⟧ (Y • X • (λ _ → ⌈ ω ⌉))
-  F' = λ X Y → ⟦ split (λ x → x) N ⟧' (Y • X • (λ _ → ⌈ ω ⌉))
+  F' = λ X Y → ⟦ split N ⟧' (Y • X • (λ _ → ⌈ ω ⌉))
   T = 𝒯ᵐ n (⟦ Ms ⟧s ρ)
-  T' = 𝒯ᵐ n (⟦ splits r Ms ⟧s' ρ')
-  cT' = S4.con (T.tuple (splits r Ms)) ρ'~
+  T' = 𝒯ᵐ n (⟦ splits Ms ⟧s' ρ')
+  cT' = S4.con (T.tuple (splits Ms)) ρ'~
   kernel : Conv T → Conv T' → Lifted _⊑_ ⌊ T ⌋ ⌊ T' ⌋
     → Lifted _⊑_ (⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ T ⌋ , ptt ⟩ ⟩) (pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩)
   kernel _ ⟨ t' , t'∈ ⟩ hT = G
@@ -303,13 +303,13 @@ preserve (clos {n = n} N Ms) {r} {ρ} {ρ'} E v v∈ =
         u₀ = proj₁ (ne-mem neU (λ d d∈ → d∈))
         u₀∈ = proj₂ (ne-mem neU (λ d d∈ → d∈))
         vE' = con-val cE' (⊑-val (λ eq → nU (subst (λ x → x ∈ mem U) eq u₀∈)) (⊑*-elim U⊑ u₀ u₀∈))
-        Eb : Envs (λ x → x) (mem U • mem FV • λ _ → ⌈ ω ⌉) (E' • ⌊ T' ⌋ • λ _ → ⌈ ω ⌉)
+        Eb : Envs _ (mem U • mem FV • λ _ → ⌈ ω ⌉) (E' • ⌊ T' ⌋ • λ _ → ⌈ ω ⌉)
         Eb = envs (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) ⟨ t' , t'∈ ⟩) (proj₂ vE'))
                   (Con-• cE' (Con-• (Con-⊆ cT' ⌊⌋-⊆) (λ _ → Con-⌈⌉ ω)))
                   (λ { Z → ⊑*-elim U⊑ ; (S Z) d d∈ → hT d (FV⊆ d d∈) })
         β : F' ⌊ T' ⌋ E' ⊆ Pp ⊙ E'
         β x x∈ = ⋆⋆-mono C⊆ T⊆ (λ d z → z) x
-          (ΛΛᵐ-call {F'} (Con-⊆ cT' ⌊⌋-⊆) cE' clean⌊⌋ (proj₁ vE') (fin₂ (S4.ok (split (λ x → x) N)) ⟨ t' , t'∈ ⟩ (proj₂ vE')) x x∈)
+          (ΛΛᵐ-call {F'} (Con-⊆ cT' ⌊⌋-⊆) cE' clean⌊⌋ (proj₁ vE') (fin₂ (S4.ok (split N)) ⟨ t' , t'∈ ⟩ (proj₂ vE')) x x∈)
 
 preserve-nth (M ∷ Ms) E zero = preserve M E
 preserve-nth (M ∷ Ms) E (suc i) = preserve-nth Ms E i
@@ -327,8 +327,8 @@ preserve-𝒯 {n = n} Ms E =
 
 {- The end theorem (forward half) ------------------------------------------------}
 
-Envs₀ : ∀ (r : Ren [] []) → Envs r ρ₀ ρ₀
-Envs₀ r = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ ())
+Envs₀ : Envs [] ρ₀ ρ₀
+Envs₀ = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ ())
 
 preserve₀ : ∀ (M : Tm [] Any) → Lifted _⊑_ (⟦ M ⟧ ρ₀) (⟦ split-program M ⟧' ρ₀)
-preserve₀ M = preserve M (Envs₀ _)
+preserve₀ M = preserve M Envs₀

@@ -17,7 +17,7 @@ open import proof.Framework.GraphModel.Ops using (⋆; Λ; 𝒯; nthD; pair; car
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
 open import proof.Semantics.Graph.Prim using (out)
-open import ISWIM.Language.Typed.Type using (Any; ⟪_⟫; tup; _∋_; Z; S; idx; tfun; tsum; tint; ttup)
+open import ISWIM.Language.Typed.Type using (Ctx; Any; ⟪_⟫; tup; _∋_; Z; S; idx; tfun; tsum; tint; ttup)
 open import ISWIM.Language.Typed.Clos3
 import ISWIM.Language.Typed.Clos4 as T
 import ISWIM.proof.Semantics.Graph.Typed.Clos3 as S3
@@ -25,7 +25,7 @@ import ISWIM.proof.Semantics.Graph.Typed.Clos4 as S4
 open S3 using (⟦_⟧; ⟦_⟧s)
 open S4 using () renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
 open import ISWIM.proof.Semantics.Graph.Typed.Ops using (fin₁; fin₂; accepts; fun₂; fun₄)
-open import ISWIM.Compiler.Split using (Ren; ext; split; splits; split-program)
+open import ISWIM.Compiler.Split using (split; splits; split-program)
 open import ISWIM.proof.Correctness.Graph.SplitRel using (_●_; _⊙_; out-data)
 open import ISWIM.proof.Correctness.Graph.SplitReflect using (mono₁)
 open import Language.Prim using (δ)
@@ -119,74 +119,74 @@ acc-preserve (ttup n i) _ ⟨ u , refl ⟩ u⊑ = let ⟨ x , x∈ ⟩ = ⊑-ne 
 
 {- The fundamental lemma ------------------------------------------------------}
 
-record Envs {Γ Δ} (r : Ren Γ Δ) (ρ ρ' : Env Value) : Set₁ where
+record Envs (Γ : Ctx) (ρ ρ' : Env Value) : Set₁ where
   constructor envs
   field
     NE' : nonempty-env ρ'
     ρ'~ : Con-env ρ'
-    ρ⊑ : ∀ {A} (x : Γ ∋ A) v → v ∈ ρ (idx x) → v ⊑ ρ' (idx (r x))
+    ρ⊑ : ∀ {A} (x : Γ ∋ A) v → v ∈ ρ (idx x) → v ⊑ ρ' (idx x)
 
-ext-envs : ∀ {Γ Δ} {r : Ren Γ Δ} {ρ ρ' X X'} → Envs r ρ ρ' → nonempty X' → Con X' → (∀ v → v ∈ X → v ⊑ X')
-  → Envs (ext {B = Any} r) (X • ρ) (X' • ρ')
+ext-envs : ∀ {Γ} {ρ ρ' X X'} → Envs Γ ρ ρ' → nonempty X' → Con X' → (∀ v → v ∈ X → v ⊑ X')
+  → Envs (Any ∷ Γ) (X • ρ) (X' • ρ')
 ext-envs (envs NE' ρ'~ ρ⊑) ne c h = envs (extend-nonempty-env NE' ne) (Con-• c ρ'~) (λ { Z → h ; (S x) → ρ⊑ x })
 
-preserve : ∀ {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ' → ∀ v → v ∈ ⟦ M ⟧ ρ → v ⊑ ⟦ split r M ⟧' ρ'
-preserve-nth : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → ∀ i v → v ∈ nthD (⟦ Ms ⟧s ρ) i → v ⊑ nthD (⟦ splits r Ms ⟧s' ρ') i
-preserve-𝒯 : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → ∀ v → v ∈ 𝒯 n (⟦ Ms ⟧s ρ) → v ⊑ 𝒯 n (⟦ splits r Ms ⟧s' ρ')
+preserve : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'} → Envs Γ ρ ρ' → ∀ v → v ∈ ⟦ M ⟧ ρ → v ⊑ ⟦ split M ⟧' ρ'
+preserve-nth : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ ρ'} → Envs Γ ρ ρ'
+  → ∀ i v → v ∈ nthD (⟦ Ms ⟧s ρ) i → v ⊑ nthD (⟦ splits Ms ⟧s' ρ') i
+preserve-𝒯 : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ ρ'} → Envs Γ ρ ρ'
+  → ∀ v → v ∈ 𝒯 n (⟦ Ms ⟧s ρ) → v ⊑ 𝒯 n (⟦ splits Ms ⟧s' ρ')
 
 preserve (` x) E = Envs.ρ⊑ E x
-preserve (app L N) {r} E v ⟨ U , ⟨ U↦v∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ =
-  proj₂ (preserve L E (U ↦ v) U↦v∈) _ (S4.con (split r N) (Envs.ρ'~ E)) (⊑*-intro U U⊆ (preserve N E))
+preserve (app L N) E v ⟨ U , ⟨ U↦v∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ =
+  proj₂ (preserve L E (U ↦ v) U↦v∈) _ (S4.con (split N) (Envs.ρ'~ E)) (⊑*-intro U U⊆ (preserve N E))
 preserve (lit B k) E v v∈ = data-⊑ v (flat-data (ℬ-flat v v∈)) v∈
-preserve (prim p L M) {r} {ρ' = ρ'} E _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
-  data-⊑ (out (δ p n m)) {⟦ split r (prim p L M) ⟧' ρ'} (out-data (δ p n m))
+preserve (prim p L M) {ρ' = ρ'} E _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
+  data-⊑ (out (δ p n m)) {⟦ split (prim p L M) ⟧' ρ'} (out-data (δ p n m))
     ⟨ n , ⟨ m , ⟨ lower (preserve L E _ n∈) , ⟨ lower (preserve M E _ m∈) , refl ⟩ ⟩ ⟩ ⟩
 preserve (tuple Ms) = preserve-𝒯 Ms
 preserve (get i M) E v v∈ = preserve M E (tup[ i ] v) v∈
 preserve (inl M) E (left v) v∈ = preserve M E v v∈
 preserve (inr M) E (right v) v∈ = preserve M E v v∈
-preserve (case L M N) {r} {ρ} {ρ'} E v (inj₁ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
-  ⊑-mono v (𝒞-left {⟦ split r L ⟧' ρ'} {λ X → ⟦ split (ext r) M ⟧' (X • ρ')} {λ X → ⟦ split (ext r) N ⟧' (X • ρ')}
-              (fin₁ (S4.ok (split (ext r) M)) NE' ne) cS)
+preserve (case L M N) {ρ} {ρ'} E v (inj₁ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
+  ⊑-mono v (𝒞-left {⟦ split L ⟧' ρ'} {λ X → ⟦ split M ⟧' (X • ρ')} {λ X → ⟦ split N ⟧' (X • ρ')}
+              (fin₁ (S4.ok (split M)) NE' ne) cS)
     (preserve M (ext-envs E ne cS u⊑) v v∈)
   where
   open Envs E
-  cS = Untag-con leftT (λ c → c) (S4.con (split r L) ρ'~)
-  u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Lefts (⟦ split r L ⟧' ρ')
+  cS = Untag-con leftT (λ c → c) (S4.con (split L) ρ'~)
+  u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Lefts (⟦ split L ⟧' ρ')
   u⊑ d d∈ = preserve L E (left d) (U⊆ d d∈)
   ne = ⊑-ne u (u⊑ u (here refl))
-preserve (case L M N) {r} {ρ} {ρ'} E v (inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
-  ⊑-mono v (𝒞-right {⟦ split r L ⟧' ρ'} {λ X → ⟦ split (ext r) M ⟧' (X • ρ')} {λ X → ⟦ split (ext r) N ⟧' (X • ρ')}
-              (fin₁ (S4.ok (split (ext r) N)) NE' ne) cS)
+preserve (case L M N) {ρ} {ρ'} E v (inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
+  ⊑-mono v (𝒞-right {⟦ split L ⟧' ρ'} {λ X → ⟦ split M ⟧' (X • ρ')} {λ X → ⟦ split N ⟧' (X • ρ')}
+              (fin₁ (S4.ok (split N)) NE' ne) cS)
     (preserve N (ext-envs E ne cS u⊑) v v∈)
   where
   open Envs E
-  cS = Untag-con rightT (λ c → c) (S4.con (split r L) ρ'~)
-  u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Rights (⟦ split r L ⟧' ρ')
+  cS = Untag-con rightT (λ c → c) (S4.con (split L) ρ'~)
+  u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Rights (⟦ split L ⟧' ρ')
   u⊑ d d∈ = preserve L E (right d) (U⊆ d d∈)
   ne = ⊑-ne u (u⊑ u (here refl))
-preserve (let′ M N) {r} {ρ} {ρ'} E v ⟨ U , ⟨ ⟨ v∈ , _ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
-  ⊑-mono v (proj₂ (Λ-β (mono₁ (S4.ok (split (ext r) N)) ρ') (fin₁ (S4.ok (split (ext r) N)) NE' ne) cM))
+preserve (let′ M N) {ρ} {ρ'} E v ⟨ U , ⟨ ⟨ v∈ , _ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
+  ⊑-mono v (proj₂ (Λ-β (mono₁ (S4.ok (split N)) ρ') (fin₁ (S4.ok (split N)) NE' ne) cM))
     (preserve N (ext-envs E ne cM u⊑) v v∈)
   where
   open Envs E
-  cM = S4.con (split r M) ρ'~
-  u⊑ : ∀ d → d ∈ mem U → d ⊑ ⟦ split r M ⟧' ρ'
+  cM = S4.con (split M) ρ'~
+  u⊑ : ∀ d → d ∈ mem U → d ⊑ ⟦ split M ⟧' ρ'
   u⊑ d d∈ = preserve M E d (U⊆ d d∈)
   ne = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (u⊑ u u∈)
 preserve (inject G M) E = preserve M E
 preserve (project t M) E v ⟨ ⟨ d , ⟨ d∈ , acc ⟩ ⟩ , v∈ ⟩ =
   let ⟨ d' , ⟨ d'∈ , acc' ⟩ ⟩ = acc-preserve t d acc (preserve M E d d∈)
   in ⊑-mono v (λ x x∈ → ⟨ ⟨ d' , ⟨ d'∈ , acc' ⟩ ⟩ , x∈ ⟩) (preserve M E v v∈)
-preserve (clos {n = n} N Ms) {r} {ρ} {ρ'} E v ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ = G v v∈
+preserve (clos {n = n} N Ms) {ρ} {ρ'} E v ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ = G v v∈
   where
   open Envs E
-  F' = λ X Y → ⟦ split (λ x → x) N ⟧' (Y • X • λ _ → ⌈ ω ⌉)
-  T' = 𝒯 n (⟦ splits r Ms ⟧s' ρ')
-  cT' = S4.con (T.tuple (splits r Ms)) ρ'~
-  P' = ⟦ split r (clos N Ms) ⟧' ρ'
+  F' = λ X Y → ⟦ split N ⟧' (Y • X • λ _ → ⌈ ω ⌉)
+  T' = 𝒯 n (⟦ splits Ms ⟧s' ρ')
+  cT' = S4.con (T.tuple (splits Ms)) ρ'~
+  P' = ⟦ split (clos N Ms) ⟧' ρ'
   fv⊑ : ∀ fv → fv ∈ mem FV → fv ⊑ T'
   fv⊑ fv fv∈ = preserve-𝒯 Ms E fv (FV⊆ fv fv∈)
   NE-T' = let ⟨ fv , fv∈ ⟩ = ne-mem neFV (λ d d∈ → d∈) in ⊑-ne fv (fv⊑ fv fv∈)
@@ -197,16 +197,16 @@ preserve (clos {n = n} N Ms) {r} {ρ} {ρ'} E v ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , 
   G (U ↦ w) ⟨ w∈ , ⟨ neU , _ ⟩ ⟩ = ⟨ lift PV , call ⟩
     where
     call : ∀ E' → Con E' → U ⊑* E' → w ⊑ P' ⊙ E'
-    call E' cE' U⊑ = ⊑-mono w β (preserve N {r = λ x → x} Eb w w∈)
+    call E' cE' U⊑ = ⊑-mono w β (preserve N Eb w w∈)
       where
       NE-E' = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (⊑*-elim U⊑ u u∈)
-      Eb : Envs (λ x → x) (mem U • mem FV • λ _ → ⌈ ω ⌉) (E' • T' • λ _ → ⌈ ω ⌉)
+      Eb : Envs _ (mem U • mem FV • λ _ → ⌈ ω ⌉) (E' • T' • λ _ → ⌈ ω ⌉)
       Eb = envs (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) NE-T') NE-E')
                 (Con-• cE' (Con-• cT' (λ _ → Con-⌈⌉ ω)))
                 (λ { Z → ⊑*-elim U⊑ ; (S Z) → fv⊑ })
       β : F' T' E' ⊆ P' ⊙ E'
       β x x∈ = ⋆⋆-mono {Λ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩} {car ⟨ P' , ptt ⟩} {T'} {cdr ⟨ P' , ptt ⟩} (λ c c∈ → ⟨ proj₁ NE-T' , ⟨ c∈ , proj₂ NE-T' ⟩ ⟩) (λ y y∈ → ⟨ ν , ⟨ tt , y∈ ⟩ ⟩) (λ d z → z) x
-        (ΛΛ-β {F = F'} cT' cE' (fin₂ (S4.ok (split (λ x → x) N)) NE-T' NE-E') x x∈)
+        (ΛΛ-β {F = F'} cT' cE' (fin₂ (S4.ok (split N)) NE-T' NE-E') x x∈)
 
 preserve-nth (M ∷ Ms) E zero = preserve M E
 preserve-nth (M ∷ Ms) E (suc i) = preserve-nth Ms E i
@@ -219,11 +219,11 @@ preserve-𝒯 {n = suc n} Ms E (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =
 
 {- The end theorem (forward half) ------------------------------------------------}
 
-Envs₀ : ∀ (r : Ren [] []) → Envs r ρ₀ ρ₀
-Envs₀ r = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ ())
+Envs₀ : Envs [] ρ₀ ρ₀
+Envs₀ = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ ())
 
 preserve-const : ∀ (M : Tm [] Any) {B} (c : base-rep B) → const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ split-program M ⟧' ρ₀
-preserve-const M c c∈ = lower (preserve M (Envs₀ _) (const c) c∈)
+preserve-const M c c∈ = lower (preserve M Envs₀ (const c) c∈)
 
 preserve-nonempty : ∀ (M : Tm [] Any) → nonempty (⟦ M ⟧ ρ₀) → nonempty (⟦ split-program M ⟧' ρ₀)
-preserve-nonempty M ⟨ v , v∈ ⟩ = ⊑-ne v (preserve M (Envs₀ _) v v∈)
+preserve-nonempty M ⟨ v , v∈ ⟩ = ⊑-ne v (preserve M Envs₀ v v∈)

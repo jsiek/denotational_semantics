@@ -10,8 +10,8 @@
 
   Values are related (_≈_, proof/Semantics/AbstractMachines/Rel.agda) when they
   agree, except that a EnvClosμ closure of N and vs is related to the pack
-  of code (split N) and a tuple of values related to vs. Environments are related through the renaming r
-  that split carries (EnvRel): variable x of ρ₁ and variable r x of ρ₂
+  of code (split N) and a tuple of values related to vs. Environments are
+  related pointwise (EnvRel): variable x of ρ₁ and variable x of ρ₂
   hold related values. Continuations are related frame by frame: appL
   to callL, appR to callR, and closK to pairR.
 
@@ -32,45 +32,45 @@ import FPC.Semantics.AbstractMachines.PairClos as Tgt
 open import Data.List using ([]; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 
-open import FPC.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B} (split (λ x → x))
+open import FPC.proof.Semantics.AbstractMachines.Rel {λ Δ A B → Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → C4.Tm (A ∷ tup Δ ∷ []) B} split
 
 {- The simulation relation -----------------------------------------------------}
 
 infix 4 _≈k_ _~_
 
-EnvRel : ∀ {Γ Δ} → Ren Γ Δ → Src.Env Γ → Tgt.Env Δ → Set
-EnvRel r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ lookup ρ₂ (r x)
+EnvRel : ∀ {Γ} → Src.Env Γ → Tgt.Env Γ → Set
+EnvRel ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ lookup ρ₂ x
 
 data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   halt : ∀ {A} → Src.halt {A} ≈k Tgt.halt
-  appL : ∀ {Γ Δ A B} {r : Ren Γ Δ} {M : Tm Γ A} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ : Src.Cont B} {κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.appL M ρ₁ κ₁ ≈k Tgt.callL (split r M) ρ₂ κ₂
+  appL : ∀ {Γ A B} {M : Tm Γ A} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ : Src.Cont B} {κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.appL M ρ₁ κ₁ ≈k Tgt.callL (split M) ρ₂ κ₂
   appR : ∀ {A B v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.appR {A} {B} v κ₁ ≈k Tgt.callR w κ₂
-  tupK : ∀ {Γ Δ Δ' A Δ''} {r : Ren Γ Δ} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'} {Ms : All _ Δ''} {ρ₁ : Src.Env Γ}
-      {ρ₂ : Tgt.Env Δ} {κ₁ κ₂}
-    → All₂ _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.tupK {A = A} vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (splits r Ms) ρ₂ κ₂
-  closK : ∀ {Δ A B N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {Δ} {A} {B} N κ₁ ≈k Tgt.pairR (Tgt.code (split (λ x → x) N)) κ₂
+  tupK : ∀ {Γ Δ' A Δ''} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'} {Ms : All _ Δ''} {ρ₁ : Src.Env Γ}
+      {ρ₂ : Tgt.Env Γ} {κ₁ κ₂}
+    → All₂ _≈_ vs ws → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tupK {A = A} vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (splits Ms) ρ₂ κ₂
+  closK : ∀ {Δ A B N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {Δ} {A} {B} N κ₁ ≈k Tgt.pairR (Tgt.code (split N)) κ₂
   getK : ∀ {Δ A i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {Δ} {A} i κ₁ ≈k Tgt.getK i κ₂
   inlK : ∀ {A B κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inlK {A} {B} κ₁ ≈k Tgt.inlK κ₂
   inrK : ∀ {A B κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inrK {A} {B} κ₁ ≈k Tgt.inrK κ₂
-  caseK : ∀ {Γ Δ A B C} {r : Ren Γ Δ} {M : Tm (A ∷ Γ) C} {N : Tm (B ∷ Γ) C} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.caseK M N ρ₁ κ₁ ≈k Tgt.caseK (split (ext r) M) (split (ext r) N) ρ₂ κ₂
-  primL : ∀ {Γ Δ} {r : Ren Γ Δ} {p M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.primL p M ρ₁ κ₁ ≈k Tgt.primL p (split r M) ρ₂ κ₂
+  caseK : ∀ {Γ A B C} {M : Tm (A ∷ Γ) C} {N : Tm (B ∷ Γ) C} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.caseK M N ρ₁ κ₁ ≈k Tgt.caseK (split M) (split N) ρ₂ κ₂
+  primL : ∀ {Γ} {p M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.primL p M ρ₁ κ₁ ≈k Tgt.primL p (split M) ρ₂ κ₂
   primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Src.primR p n κ₁ ≈k Tgt.primR p n κ₂
-  letK : ∀ {Γ Δ A B} {r : Ren Γ Δ} {N : Tm (A ∷ Γ) B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.letK N ρ₁ κ₁ ≈k Tgt.letK (split (ext r) N) ρ₂ κ₂
+  letK : ∀ {Γ A B} {N : Tm (A ∷ Γ) B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.letK N ρ₁ κ₁ ≈k Tgt.letK (split N) ρ₂ κ₂
   foldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Src.foldK {A} κ₁ ≈k Tgt.foldK κ₂
   unfoldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Src.unfoldK {A} κ₁ ≈k Tgt.unfoldK κ₂
 
 data _~_ : Src.State → Tgt.State → Set where
-  eval~ : ∀ {Γ Δ A} {r : Ren Γ Δ} {M : Tm Γ A} {ρ₁} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.eval M ρ₁ κ₁ ~ Tgt.eval (split r M) ρ₂ κ₂
+  eval~ : ∀ {Γ A} {M : Tm Γ A} {ρ₁} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.eval M ρ₁ κ₁ ~ Tgt.eval (split M) ρ₂ κ₂
   ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
-env-ext : ∀ {Γ Δ B} {r : Ren Γ Δ} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {v : Src.Val B} {w} → v ≈ w → EnvRel r ρ₁ ρ₂
-  → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext : ∀ {Γ B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {v : Src.Val B} {w} → v ≈ w → EnvRel ρ₁ ρ₂
+  → EnvRel (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext r er Z = r
 env-ext r er (S x) = er x
 
@@ -80,10 +80,10 @@ module _ {T : Type} (P : C4.Tm [] T) where
 
   L₂ = Tgt.sem P
 
-  tuple-next~ : ∀ {Γ Δ Δ' Δ''} {r : Ren Γ Δ} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'} {Ms : All _ Δ''} {ρ₁ : Src.Env Γ}
-      {ρ₂ : Tgt.Env Δ} {κ₁ : Src.Cont (tup (Δ' <>< Δ''))} {κ₂}
-    → All₂ _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (splits r Ms) ρ₂ κ₂
+  tuple-next~ : ∀ {Γ Δ' Δ''} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'} {Ms : All _ Δ''} {ρ₁ : Src.Env Γ}
+      {ρ₂ : Tgt.Env Γ} {κ₁ : Src.Cont (tup (Δ' <>< Δ''))} {κ₂}
+    → All₂ _≈_ vs ws → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (splits Ms) ρ₂ κ₂
   tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 

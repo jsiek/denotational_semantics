@@ -56,43 +56,43 @@ module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
   (S-seq : ∀ {d d' e e'} → d ∼ d' → e ∼ e' → seq · d · e ∼ seq · d' · e')
   where
 
-  {- the environments are related through the renaming -}
-  SEnv : ∀ {Γ Δ} → Ren Γ Δ → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇
-  SEnv {Γ} r ρ ρ' = ∀ {C} (x : Γ ∋ C) → (ρ (idx x)) ∼ (ρ' (idx (r x)))
+  {- the environments are related pointwise -}
+  SEnv : ∀ {Γ : Ctx} → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇
+  SEnv {Γ} ρ ρ' = ∀ {C} (x : Γ ∋ C) → (ρ (idx x)) ∼ (ρ' (idx x))
 
-  ext-env : ∀ {Γ Δ B} (r : Ren Γ Δ) {ρ ρ' : ⟨ Env ⟩} {a a' : ⟨ 𝔻 ⟩} → a ∼ a' → SEnv r ρ ρ' → SEnv (ext {B = B} r) (a • ρ) (a' • ρ')
-  ext-env r ha h Z = ha
-  ext-env r ha h (S x) = h x
+  ext-env : ∀ {Γ B} {ρ ρ' : ⟨ Env ⟩} {a a' : ⟨ 𝔻 ⟩} → a ∼ a' → SEnv {Γ} ρ ρ' → SEnv {B ∷ Γ} (a • ρ) (a' • ρ')
+  ext-env ha h Z = ha
+  ext-env ha h (S x) = h x
 
-  ok : ∀ {Γ Δ A} (M : Tm Γ A) (r : Ren Γ Δ) {ρ ρ' : ⟨ Env ⟩} → SEnv r ρ ρ' → ⟦ M ⟧₃ · ρ ∼ ⟦ split r M ⟧₄ · ρ'
-  oks : ∀ {Γ Δ Δ'} (Ms : All (Tm Γ) Δ') (r : Ren Γ Δ) {ρ ρ' : ⟨ Env ⟩} → SEnv r ρ ρ'
-    → (i : Fin (length Δ')) → ((⟦ Ms ⟧s₃ · ρ) i) ∼ ((⟦ splits r Ms ⟧s₄ · ρ') i)
+  ok : ∀ {Γ A} (M : Tm Γ A) {ρ ρ' : ⟨ Env ⟩} → SEnv {Γ} ρ ρ' → ⟦ M ⟧₃ · ρ ∼ ⟦ split M ⟧₄ · ρ'
+  oks : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ' : ⟨ Env ⟩} → SEnv {Γ} ρ ρ'
+    → (i : Fin (length Δ)) → ((⟦ Ms ⟧s₃ · ρ) i) ∼ ((⟦ splits Ms ⟧s₄ · ρ') i)
 
-  ok (` x) r h = h x
-  ok (clos {Δ} N Ms) r h =
-    S-clos ⟦ N ⟧₃ ⟦ split (λ x → x) N ⟧₄ (S-tuple (length Δ) (oks Ms r h)) λ hX hY → ok N (λ x → x) λ { Z → hY ; (S Z) → hX }
-  ok (app L M) r h = S-call (ok L r h) (ok M r h)
-  ok (lit B c) r h = S-const B c
-  ok (tuple {Δ} Ms) r h = S-tuple (length Δ) (oks Ms r h)
-  ok (get i M) r h = S-proj (pos i) (ok M r h)
-  ok (inl M) r h = S-inl (ok M r h)
-  ok (inr M) r h = S-inr (ok M r h)
-  ok (case L M N) r {ρ} {ρ'} h =
-    S-case (abs ⟦ M ⟧₃ · ρ) (abs ⟦ N ⟧₃ · ρ) (abs ⟦ split (ext r) M ⟧₄ · ρ') (abs ⟦ split (ext r) N ⟧₄ · ρ')
-      (ok L r h) (λ ha → ok M (ext r) (ext-env r ha h)) (λ ha → ok N (ext r) (ext-env r ha h))
-  ok (prim p L M) r h = S-prim p (ok L r h) (ok M r h)
-  ok (let′ M N) r {ρ} {ρ'} h =
-    transport₂ _∼_ (letᶜ-β ⟦ M ⟧₃ ⟦ N ⟧₃ ρ ⁻¹) (letᶜ-β ⟦ split r M ⟧₄ ⟦ split (ext r) N ⟧₄ ρ' ⁻¹)
-      (S-seq (ok M r h) (ok N (ext r) (ext-env r (ok M r h) h)))
-  ok (fold M) r h = ok M r h
-  ok (unfold M) r h = ok M r h
+  ok (` x) h = h x
+  ok (clos {Δ} N Ms) h =
+    S-clos ⟦ N ⟧₃ ⟦ split N ⟧₄ (S-tuple (length Δ) (oks Ms h)) λ hX hY → ok N λ { Z → hY ; (S Z) → hX }
+  ok (app L M) h = S-call (ok L h) (ok M h)
+  ok (lit B c) h = S-const B c
+  ok (tuple {Δ} Ms) h = S-tuple (length Δ) (oks Ms h)
+  ok (get i M) h = S-proj (pos i) (ok M h)
+  ok (inl M) h = S-inl (ok M h)
+  ok (inr M) h = S-inr (ok M h)
+  ok (case L M N) {ρ} {ρ'} h =
+    S-case (abs ⟦ M ⟧₃ · ρ) (abs ⟦ N ⟧₃ · ρ) (abs ⟦ split M ⟧₄ · ρ') (abs ⟦ split N ⟧₄ · ρ')
+      (ok L h) (λ ha → ok M (ext-env ha h)) (λ ha → ok N (ext-env ha h))
+  ok (prim p L M) h = S-prim p (ok L h) (ok M h)
+  ok (let′ M N) {ρ} {ρ'} h =
+    transport₂ _∼_ (letᶜ-β ⟦ M ⟧₃ ⟦ N ⟧₃ ρ ⁻¹) (letᶜ-β ⟦ split M ⟧₄ ⟦ split N ⟧₄ ρ' ⁻¹)
+      (S-seq (ok M h) (ok N (ext-env (ok M h) h)))
+  ok (fold M) h = ok M h
+  ok (unfold M) h = ok M h
 
-  oks (M ∷ Ms) r h zero = ok M r h
-  oks (M ∷ Ms) r h (suc i) = oks Ms r h i
+  oks (M ∷ Ms) h zero = ok M h
+  oks (M ∷ Ms) h (suc i) = oks Ms h i
 
   {- the meaning of a program and of its translation are related -}
   split-ok : ∀ {A} (M : Tm [] A) → ⟦ M ⟧₃ · ρ₀ ∼ ⟦ split-program M ⟧₄ · ρ₀
-  split-ok M = ok M (λ ()) (λ ())
+  split-ok M = ok M (λ ())
 
 open Terms Pres Pres-clos Pres-call Rel-const Rel-tuple Rel-proj Rel-inl Rel-inr Rel-case Rel-prim Rel-seq
   using () renaming (split-ok to split-pres) public
