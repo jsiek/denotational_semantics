@@ -176,10 +176,14 @@ Appendix~\ref{app:cfg} into
 \end{array}
 \]
 The first and fourth instructions push 5 and then 4, and the seventh,
-$\kw{movq}\;\%\kw{rax}, 0$, pops both slots and pushes 3, so the frame
-goes from $5, 4$ to $3$. Writing a slot also closes the open closure,
-as in the graph-model semantics, and $\mathsf{none}$ marks that no
-closure is open. The instructions other than $\kw{callq}$ update the state.
+$\kw{movq}\;\%\kw{rax}, 0$, pops both slots and pushes 3, so the frame goes from
+$5, 4$ to $3$. Writing a slot also closes the open closure, so $\mathsf{none}$
+marks that no closure is open. The type of an open closure records the slot it
+came from. A slot write may erase or replace that slot, so the type resets the
+closure to $\cdot$ (see the slot rule of the typing of destinations in
+Appendix~\ref{app:instr}), and \(\mathit{put}\) sets it to $\mathsf{none}$ to
+match. The instructions other than $\kw{callq}$ update the state according to
+\(\mathit{instr}\) defined below.
 \defhead{The effect of an instruction}{\mathit{instr}(i, m) = m'}
 \begin{align*}
   \mathit{instr}(\kw{movq}\; a, d,\; m) &= \mathit{put}(d, \mathit{arg}(a, m), m) \\
