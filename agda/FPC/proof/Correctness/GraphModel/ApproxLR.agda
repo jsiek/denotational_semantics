@@ -1,24 +1,27 @@
 {-
 
-  The approximant logical relation of the paper (Section 4.2, Figure 5)
-  and Lemma 4.4 (depth irrelevance and unfolding), for the reflection
-  half of split (EnvClosμ → PairClosμ) in the graph model.
+  This module defines the approximant logical relation of the paper
+  (Section 4.2, Figure 5) and proves Lemma 4.4 (depth irrelevance and
+  unfolding), for the reflection half of split (EnvClosμ → PairClosμ)
+  in the graph model.
 
-  ApproxLR D V relates a set D of source (EnvClosμ) elements to a finite
-  list V of target (PairClosμ) elements, by recursion on the depth of V,
-  since a target closure is a set of pairs whose calls combine the codes
-  and environments of several pairs (SelfContainedMaps). ApproxLRLayer is the four
-  clauses, with the recursive occurrence left open (Q); ApproxLR≤ k is
-  the paper's ⊵ₖ, and ApproxLR its ⊵. The index is only a termination
-  device: any index that bounds the depth of V gives the same relation
-  (ApproxLR-depth-irrelevant, Lemma 4.4 (1)), so ApproxLR is its four
-  clauses with ApproxLR at the recursive occurrences (unfold and fold,
-  Lemma 4.4 (2)). The relation is monotone in D (ApproxLR-mono) and
-  antitone in V (ApproxLR-⊆).
+  ApproxLR D V relates a set D of source (EnvClosμ) elements to a
+  finite list V of target (PairClosμ) elements. A call of a target
+  closure can combine the code of one pair with the environments of
+  other pairs (SelfContainedMaps), so the target side is a finite list
+  of pairs rather than a single one. The relation is defined by
+  recursion on the depth of V. ApproxLRLayer consists of the four
+  clauses, with the recursive occurrence left as a parameter Q.
+  ApproxLR≤ k is the paper's ⊵ₖ, and ApproxLR is its ⊵. The index k
+  serves only for termination. Any index that bounds the depth of V
+  gives the same relation (ApproxLR-depth-irrelevant, Lemma 4.4 (1)),
+  so ApproxLR is equivalent to its four clauses with ApproxLR at the
+  recursive occurrences (unfold and fold, Lemma 4.4 (2)). The relation
+  is monotone in D (ApproxLR-mono) and antitone in V (ApproxLR-⊆).
 
-  This module is a proof module: the theorem statements do not use it.
-  FPC/proof/Correctness/GraphModel/SplitRel.agda builds the form of the
-  fundamental lemma on it (Approx).
+  This module belongs to the proof, and the theorem statements stay
+  independent of it. FPC/proof/Correctness/GraphModel/SplitRel.agda
+  builds Approx, the form of the fundamental lemma, on this module.
 
 -}
 
@@ -45,21 +48,22 @@ open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module FPC.proof.Correctness.GraphModel.ApproxLR where
 
-{- application, D • E (Figure 3) -}
+{- D ● E is the application of D to E in the graph model (Figure 3). -}
 _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩
 
 ●-mono : ∀ {D₁ D₂ E₁ E₂} → D₁ ⊆ D₂ → E₁ ⊆ E₂ → (D₁ ● E₁) ⊆ (D₂ ● E₂)
 ●-mono D⊆ E⊆ w ⟨ V , ⟨ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩ = ⟨ V , ⟨ D⊆ _ V↦w∈ , ⟨ (λ v v∈ → E⊆ v (V⊆E v v∈)) , neV ⟩ ⟩ ⟩
 
-{- Usable entries and self-contained calls --------------------------------------}
+{- Usable entries and self-contained calls ------------------------------------}
 
+{- Cdrs V' is the set of the environments (cdr) of the pairs in V'. -}
 Cdrs : List Value → 𝒫 Value
 Cdrs V' = cdr ⟨ mem V' , ptt ⟩
 
-{- Figure 5: usable entries. UsableEntry V' U₀ w is an entry
-   FV ↦ (U₀ ↦ w) of car(V'), with FV nonempty, whose environments FV are
-   among cdr(V') -}
+{- Usable entries (Figure 5). UsableEntry V' U₀ w says that V' contains
+   a pair ⦅ FV ↦ (U₀ ↦ w) , env ⦆ whose list FV of environments is
+   nonempty and contained in cdr(V'). -}
 record UsableEntry (V' U₀ : List Value) (w : Value) : Set where
   constructor usable-entry
   field
@@ -79,11 +83,12 @@ Bnd-UsableEntry {U₀ = U₀}{w} bV (usable-entry FV t e∈ _ _) =
   , <-shrink (s≤s (≤-trans (m≤n⊔m (depths U₀) _) up)) (bV _ e∈) ⟩
   where up = ≤-trans (n≤1+n _) (≤-trans (m≤n⊔m (depths FV) _) (≤-trans (n≤1+n _) (m≤m⊔n _ (depth t))))
 
-{- Figure 5: arguments of usable entries, args(V), and self-contained calls.
-   SelfContainedMaps V U W, read "V maps U to W", is a self-contained call: V supplies
-   both the code entries and the environments. Each w in W is the result
-   of a usable entry U₀ ↦ w of V with U₀ nonempty and U₀ ⊆ U (results),
-   and each u in U is an argument of a usable entry, U ⊆ args(V) (args) -}
+{- Self-contained calls (Figure 5). SelfContainedMaps V U W, read "V
+   maps U to W", says that V supplies both the code entries and the
+   environments of a call. Each w in W is the result of a usable entry
+   of V whose argument list U₀ is nonempty and contained in U (results).
+   Each u in U is an argument of a usable entry of V, so U ⊆ args(V)
+   (args). -}
 record SelfContainedMaps (V U W : List Value) : Set where
   field
     results : ∀ w → w ⋵ W → Σ[ U₀ ∈ List Value ] UsableEntry V U₀ w × U₀ ≢ [] × mem U₀ ⊆ mem U
@@ -105,8 +110,8 @@ Bnd-SelfContainedMaps-args bV cs u u∈ =
 Bnd-SelfContainedMaps-apps : ∀ {k V U W} → Bnd (suc k) V → SelfContainedMaps V U W → Bnd k W
 Bnd-SelfContainedMaps-apps bV cs w w∈ = proj₂ (Bnd-UsableEntry bV (proj₁ (proj₂ (SelfContainedMaps.results cs w w∈))))
 
-{- Figure 5: the four clauses of the relation, ApproxLRLayer Q D V, with Q
-   at the recursive occurrences -}
+{- The four clauses of the relation (Figure 5). ApproxLRLayer Q D V
+   uses Q at the recursive occurrences. -}
 record ApproxLRLayer (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value) (V : List Value) : Set₁ where
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
@@ -127,17 +132,19 @@ ApproxLRLayer-map bk bj to from o = record
   }
   where open ApproxLRLayer o
 
-{- Figure 5: D ⊵ₖ V -}
+{- ApproxLR≤ k D V is D ⊵ₖ V of Figure 5. -}
 ApproxLR≤ : ℕ → 𝒫 Value → List Value → Set₁
 ApproxLR≤ zero D V = pTrue
 ApproxLR≤ (suc k) D V = ApproxLRLayer (ApproxLR≤ k) D V
 
-{- Figure 5: D ⊵ V, at an index one more than the depth of V -}
+{- ApproxLR D V is D ⊵ V of Figure 5. It uses the index one more than
+   the depth of V. -}
 ApproxLR : 𝒫 Value → List Value → Set₁
 ApproxLR D V = ApproxLR≤ (suc (depths V)) D V
 
 private
-  {- a list of first-order data in D, the empty list among them -}
+  {- If every element of V is a first-order datum in D, then D ⊵ₖ V for
+     every k. In particular, D ⊵ₖ [] holds. -}
   ApproxLR≤-data : ∀ k {D V} → (∀ v → v ⋵ V → v ∈ D × Data v) → ApproxLR≤ k D V
   ApproxLR≤-data zero _ = ptt
   ApproxLR≤-data (suc k) dV = record
@@ -159,16 +166,17 @@ private
     }
     where open ApproxLRLayer r
 
-{- Lemma 4.4 (1): if every element of V has depth less than k and less
-   than j, then D ⊵ₖ V implies D ⊵ⱼ V (and so, swapping k and j, the
-   converse) -}
+{- Lemma 4.4 (1). Suppose every element of V has depth less than k and
+   less than j. If D ⊵ₖ V, then D ⊵ⱼ V. Swapping k and j gives the
+   converse. -}
 ApproxLR-depth-irrelevant : ∀ {k j D V} → Bnd k V → Bnd j V → ApproxLR≤ k D V → ApproxLR≤ j D V
 ApproxLR-depth-irrelevant {j = zero} _ _ _ = ptt
 ApproxLR-depth-irrelevant {zero} {suc j} bk _ _ = ApproxLR≤-data (suc j) (λ v v∈ → ⊥-elim (n≮0 (bk v v∈)))
 ApproxLR-depth-irrelevant {suc k} {suc j} bk bj = ApproxLRLayer-map bk bj ApproxLR-depth-irrelevant ApproxLR-depth-irrelevant
 
-{- Lemma 4.4 (2): D ⊵ V if and only if its four clauses hold with ⊵ at the
-   recursive occurrences -}
+{- Lemma 4.4 (2). D ⊵ V holds if and only if its four clauses hold with
+   ⊵ at the recursive occurrences. The function unfold proves one
+   direction, and fold proves the other. -}
 unfold : ∀ {D V} → ApproxLR D V → ApproxLRLayer ApproxLR D V
 unfold {V = V} = ApproxLRLayer-map bV bV (λ b _ → ApproxLR-depth-irrelevant b (Bnd-depths _)) (λ _ → ApproxLR-depth-irrelevant (Bnd-depths _))
   where bV = Bnd-depths V
@@ -177,15 +185,16 @@ fold : ∀ {D V} → ApproxLRLayer ApproxLR D V → ApproxLR D V
 fold {V = V} = ApproxLRLayer-map bV bV (λ _ → ApproxLR-depth-irrelevant (Bnd-depths _)) (λ b _ → ApproxLR-depth-irrelevant b (Bnd-depths _))
   where bV = Bnd-depths V
 
-{- the relation on lists of first-order data, and on lists without
-   elements -}
+{- ApproxLR-data relates D to every list of first-order data in D, and
+   ApproxLR-∅ relates D to every list without elements. -}
 ApproxLR-data : ∀ {D V} → (∀ v → v ⋵ V → v ∈ D × Data v) → ApproxLR D V
 ApproxLR-data = ApproxLR≤-data _
 
 ApproxLR-∅ : ∀ {D V} → mem V ⊆ ∅ → ApproxLR D V
 ApproxLR-∅ V⊆∅ = ApproxLR-data (λ v v∈ → ⊥-elim (V⊆∅ v v∈))
 
-{- monotone in D, antitone in V -}
+{- The relation is monotone in D (ApproxLR-mono) and antitone in V
+   (ApproxLR-⊆). -}
 ApproxLR-mono : ∀ {D₁ D₂ V} → D₁ ⊆ D₂ → ApproxLR D₁ V → ApproxLR D₂ V
 ApproxLR-mono = ApproxLR≤-mono _
 

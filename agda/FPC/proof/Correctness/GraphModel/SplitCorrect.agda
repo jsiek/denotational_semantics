@@ -1,10 +1,13 @@
 {-
 
-  Correctness of split (EnvClosμ → PairClosμ) in the graph model, as for
-  typed split (ISWIM/proof/Correctness/Graph/SplitCorrect.agda): split changes
-  how a closure is represented, so it is not an equation; it preserves
-  (SplitPreserve) and reflects (SplitReflect) the constants a closed
-  program produces, and whether it produces anything.
+  This module states the correctness of split (EnvClosμ → PairClosμ) in
+  the graph model, as for typed split
+  (ISWIM/proof/Correctness/Graph/SplitCorrect.agda). Because split
+  changes the representation of closures, the meaning of a program and
+  the meaning of its translation differ. Instead of an equation, the
+  correctness of split says that it preserves (SplitPreserve.agda) and
+  reflects (SplitReflect.agda) the constants that a closed program
+  produces, and whether the program produces anything at all.
 
 -}
 
