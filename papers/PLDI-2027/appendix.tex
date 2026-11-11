@@ -868,28 +868,28 @@ where $o$ ranges over the operations of Mon (Figure~\ref{fig:grammars}).
 \label{app:pass-lift-locals}
 \agda{FPC/Compiler/LiftLocals.agda (lift-program)}
 
-A $\kw{let}$ becomes an assignment to the next slot of the frame, and the
-variable a $\kw{case}$ binds becomes the slot its payload is written to. A
-variable becomes the slot at its level $\ell(x)$, the number of variables bound
-before it; in a definition $\kw{code}\;(z, y.\,N)$, $\ell(z) = 0$ and
-$\ell(y) = 1$. With $\Gamma$ the variables in scope: \todo{I need to redefine
-  lift by defining \(\ell\) as a list of variables in scope. Then we can replace
-  \(|\Gamma|\) with \(|\ell|\) and the variable case looks up the variable's
-  position in \(\ell\). \(\ell\) is not used in the Agda code because it already
-  uses Debruijn indices. --Darshal}
+The translation $\pass{lift}_\Gamma$ takes the list $\Gamma$ of the
+variables in scope, in the order they were bound. A variable becomes
+its position in $\Gamma$, counting from 0 (the position of its last
+occurrence, if it is bound more than once). A $\kw{let}$ becomes an
+assignment to the next slot of the frame, $|\Gamma|$, and the variable
+a $\kw{case}$ binds becomes the slot its payload is written to. A
+definition $\kw{code}\;(z, y.\,N)$ starts with $z$ in slot 0 and $y$ in
+slot 1, and the main expression starts with no variables in scope.
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{lift}(x) & = & \ell(x)\\
-  \pass{lift}(\kw{let}\;x = M\;\kw{in}\;N) & = &
-    |\Gamma| \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)\\
-  \pass{lift}(\kw{case}\;a\;(x.\,M)\;(y.\,N)) & = &
-    \kw{case}\;\pass{lift}(a)\;(|\Gamma|.\,\pass{lift}(M))\;(|\Gamma|.\,\pass{lift}(N))\\
-  \pass{lift}(\kw{code}\;(z, y.\,N)) & = & \pass{lift}(N)\\
+  \pass{lift}_\Gamma(x) & = & \text{the position of $x$ in $\Gamma$}\\
+  \pass{lift}_\Gamma(\kw{let}\;x = M\;\kw{in}\;N) & = &
+    |\Gamma| \mathrel{:=} \pass{lift}_\Gamma(M);\; \pass{lift}_{\Gamma, x}(N)\\
+  \pass{lift}_\Gamma(\kw{case}\;a\;(x.\,M)\;(y.\,N)) & = &
+    \kw{case}\;\pass{lift}_\Gamma(a)\;(|\Gamma|.\,\pass{lift}_{\Gamma, x}(M))\;(|\Gamma|.\,\pass{lift}_{\Gamma, y}(N))\\
+  \pass{lift}(\kw{code}\;(z, y.\,N)) & = & \pass{lift}_{z, y}(N)\\
   \pass{lift}((d_0, \ldots, d_{m-1};\; M)) & = &
-    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; \pass{lift}(M))
+    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; \pass{lift}_{\emptyset}(M))
 \end{array}
 \]
-and every other form is a simple expression, unchanged.
+and every other form is a simple expression, with $\pass{lift}_\Gamma$
+applied to its atoms.
 
 \subsection{\pass{explicate control} (Imp to CFG)}
 \label{app:pass-explicate}
@@ -1069,9 +1069,9 @@ continuation, and chains it over several operands.
 The semantics of Imp is in continuation-passing style, so the
 induction hypothesis relates a Mon term $e$ and its translation under
 a continuation $\kappa$: $\kappa(\den{e}_T\,\sigma) =
-\den{\pass{lift}(e)}_{T'}\,\sigma\,\kappa$. A $\kw{let}$ becomes an
-assignment to the next slot $x$. With $\kappa' = \mlam{D}
-\Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app
+\den{\pass{lift}_\Gamma(e)}_{T'}\,\sigma\,\kappa$. A $\kw{let}$ becomes an
+assignment to the next slot $x = |\Gamma|$. With $\kappa' = \mlam{D}
+\Lambda(\mlam{X} \den{\pass{lift}_{\Gamma,x}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app
 D$:
 {\small
 \[
@@ -1079,9 +1079,9 @@ D$:
   \kappa(\den{\kw{let}\;x = M\;\kw{in}\;N}_T\,\sigma)
     & = & \kappa(\Lambda(\mlam{X} \den{N}_T\,\sigma[x{:=}X]) \app \den{M}_T\,\sigma) & \text{(meaning of $\kw{let}$)}\\
     & = & \Lambda(\mlam{X} \kappa(\den{N}_T\,\sigma[x{:=}X])) \app \den{M}_T\,\sigma & \text{(a $\kw{let}$ commutes with $\kappa$)}\\
-    & = & \Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app \den{M}_T\,\sigma & \text{(induction hypothesis for $N$)}\\
-    & = & \den{\pass{lift}(M)}_{T'}\,\sigma\,\kappa' & \text{(induction hypothesis for $M$)}\\
-    & = & \den{x \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)}_{T'}\,\sigma\,\kappa & \text{(meaning of assignment)}
+    & = & \Lambda(\mlam{X} \den{\pass{lift}_{\Gamma,x}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app \den{M}_T\,\sigma & \text{(induction hypothesis for $N$)}\\
+    & = & \den{\pass{lift}_\Gamma(M)}_{T'}\,\sigma\,\kappa' & \text{(induction hypothesis for $M$)}\\
+    & = & \den{x \mathrel{:=} \pass{lift}_\Gamma(M);\; \pass{lift}_{\Gamma,x}(N)}_{T'}\,\sigma\,\kappa & \text{(meaning of assignment)}
 \end{array}
 \]}
 The second step, a commuting conversion, needs $\den{M}_T\,\sigma$ to be
