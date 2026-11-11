@@ -55,7 +55,9 @@ open import FPC.proof.Adequacy.ScottDomains.LogRel pt fe pe using (adequate; run
 open exit-truncations pt using (exit-truncation)
 
 private
- just-inj : ∀ {X : 𝓤₀ ̇ } {a b : X} → just a ≡ just b → a ≡ b
+ just-inj : ∀ {X : 𝓤₀ ̇ } {a b : X}
+   → just a ≡ just b
+   → a ≡ b
  just-inj ≡-refl = ≡-refl
 
  {- the interpreter returns at clock ck -}
@@ -68,16 +70,23 @@ private
  returns? (ret w) = inl (w , ≡-refl)
 
 {- a closed program whose meaning is defined returns at some clock -}
-terminates : ∀ {A} (M : Tm [] A) → defined (⟦ M ⟧ · ρ₀) → Σ ck ꞉ ℕ , Returns M ck
+terminates : ∀ {A} (M : Tm [] A)
+  → defined (⟦ M ⟧ · ρ₀)
+  → Σ ck ꞉ ℕ , Returns M ck
 terminates M q =
   exit-truncation (Returns M) (λ ck → returns? (eval ck [] M))
     (∥∥-functor (λ e → P.proj₁ (run e) , _ , P.proj₂ (run e) (P.proj₁ (run e)) ≤-refl) (pr₂ (adequate M q)))
 
 {- what the interpreter returns means ⟦ M ⟧ ρ₀ -}
-sound-ret : ∀ {A} (M : Tm [] A) {ck} {w : Value A} → eval ck [] M ≡ ret w → 𝒱 w ＝ ⟦ M ⟧ · ρ₀
+sound-ret : ∀ {A} (M : Tm [] A) {ck} {w : Value A}
+  → eval ck [] M ≡ ret w
+  → 𝒱 w ＝ ⟦ M ⟧ · ρ₀
 sound-ret M {ck} e = go (eval ck [] M) (sound ck [] M) e
  where
-  go : ∀ {A} {w : Value A} {d} (r : Result (Value A)) → Holds (λ v → 𝒱 v ＝ d) r → r ≡ ret w → 𝒱 w ＝ d
+  go : ∀ {A} {w : Value A} {d} (r : Result (Value A))
+    → Holds (λ v → 𝒱 v ＝ d) r
+    → r ≡ ret w
+    → 𝒱 w ＝ d
   go timeout timeout ()
   go error () e
   go (ret _) (ret s) ≡-refl = s
@@ -87,40 +96,53 @@ sound-ret M {ck} e = go (eval ck [] M) (sound ck [] M) e
 {- for a closed FPC term M (of any type), and every constant c:
    ⟦ M ⟧ ρ₀ = c() if and only if the interpreter terminates with c -}
 const-iff : ∀ {A} (M : Tm [] A) (B : Base) (k : base-rep B)
-  → (⟦ M ⟧ · ρ₀ ＝ const B k → Terminates (sem M) (o-const B k))
-  × (Terminates (sem M) (o-const B k) → ⟦ M ⟧ · ρ₀ ＝ const B k)
+  → (  ⟦ M ⟧ · ρ₀ ＝ const B k
+     → Terminates (sem M) (o-const B k))
+  × (  Terminates (sem M) (o-const B k)
+     → ⟦ M ⟧ · ρ₀ ＝ const B k)
 const-iff M B k = to , from
  where
-  to : ⟦ M ⟧ · ρ₀ ＝ const B k → Terminates (sem M) (o-const B k)
+  to : ⟦ M ⟧ · ρ₀ ＝ const B k
+    → Terminates (sem M) (o-const B k)
   to e = ck P., ≡-trans (≡-cong (outcome obs) ev) (≡-cong just (𝒱-const w (sound-ret M ev ∙ e)))
    where
     T = terminates M (transport defined (e ⁻¹) (const-defined B k))
     ck = pr₁ T
     w = pr₁ (pr₂ T)
     ev = pr₂ (pr₂ T)
-  from : Terminates (sem M) (o-const B k) → ⟦ M ⟧ · ρ₀ ＝ const B k
+  from : Terminates (sem M) (o-const B k)
+    → ⟦ M ⟧ · ρ₀ ＝ const B k
   from t = go (eval (P.proj₁ t) [] M) (sound (P.proj₁ t) [] M) (P.proj₂ t)
    where
-    go : (r : Result (Value _)) → Holds (λ v → 𝒱 v ＝ ⟦ M ⟧ · ρ₀) r → outcome obs r ≡ just (o-const B k)
-       → ⟦ M ⟧ · ρ₀ ＝ const B k
+    go : (r : Result (Value _))
+      → Holds (λ v → 𝒱 v ＝ ⟦ M ⟧ · ρ₀) r
+      → outcome obs r ≡ just (o-const B k)
+      → ⟦ M ⟧ · ρ₀ ＝ const B k
     go timeout timeout ()
     go error () e
     go (ret w) (ret s) e = s ⁻¹ ∙ const-𝒱 w (just-inj e)
 
 {- and ⟦ M ⟧ ρ₀ is ⊥ if and only if the interpreter diverges on M -}
 diverges-iff : ∀ {A} (M : Tm [] A)
-  → (Diverges (sem M) → ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻) × (⟦ M ⟧ · ρ₀ ＝ ⊥𝔻 → Diverges (sem M))
+  → (  Diverges (sem M)
+     → ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻)
+  × (  ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻
+     → Diverges (sem M))
 diverges-iff M = to , from
  where
   ret≢timeout : ∀ {A} {w : Value A} → ¬ (_≡_ {A = Result (Value A)} (ret w) timeout)
   ret≢timeout ()
-  to : Diverges (sem M) → ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻
+  to : Diverges (sem M)
+    → ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻
   to div = undefined-⊥ (⟦ M ⟧ · ρ₀) (λ q →
     let T = terminates M q in ret≢timeout (≡-trans (≡-sym (pr₂ (pr₂ T))) (div (pr₁ T))))
-  from : ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻 → Diverges (sem M)
+  from : ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻
+    → Diverges (sem M)
   from e ck = go (eval ck [] M) (sound ck [] M)
    where
-    go : (r : Result (Value _)) → Holds (λ v → 𝒱 v ＝ ⟦ M ⟧ · ρ₀) r → r ≡ timeout
+    go : (r : Result (Value _))
+      → Holds (λ v → 𝒱 v ＝ ⟦ M ⟧ · ρ₀) r
+      → r ≡ timeout
     go timeout timeout = ≡-refl
     go error ()
     go (ret w) (ret s) = 𝟘-elim (⊥-undefined (transport defined (s ∙ e) (𝒱-defined w)))

@@ -72,10 +72,15 @@ data _⊢_⇝_ {Σ} (I : Interp Σ) {Γ} : ∀ {A} → S.Tm Γ A → Tm Σ Γ A 
 
 {- weakening a term -}
 ⊢-wk : ∀ {Σ₁ Σ₂} {I : Interp Σ₁} {J : Interp Σ₂} {σ : ∀ {s} → Σ₁ ∋ s → Σ₂ ∋ s}
-  → (∀ {s} {g : Σ₁ ∋ s} {N} → I g N → J (σ g) N) → ∀ {Γ A} {M : S.Tm Γ A} {M'} → I ⊢ M ⇝ M' → J ⊢ M ⇝ wk σ M'
+  → (∀ {s} {g : Σ₁ ∋ s} {N} → I g N → J (σ g) N)
+  → ∀ {Γ A} {M : S.Tm Γ A} {M'}
+  → I ⊢ M ⇝ M'
+  → J ⊢ M ⇝ wk σ M'
 ⊢-wks : ∀ {Σ₁ Σ₂} {I : Interp Σ₁} {J : Interp Σ₂} {σ : ∀ {s} → Σ₁ ∋ s → Σ₂ ∋ s}
-  → (∀ {s} {g : Σ₁ ∋ s} {N} → I g N → J (σ g) N) → ∀ {Γ Δ} {Ms : All (S.Tm Γ) Δ} {Ms'}
-  → All₂ (I ⊢_⇝_) Ms Ms' → All₂ (J ⊢_⇝_) Ms (wks σ Ms')
+  → (∀ {s} {g : Σ₁ ∋ s} {N} → I g N → J (σ g) N)
+  → ∀ {Γ Δ} {Ms : All (S.Tm Γ) Δ} {Ms'}
+  → All₂ (I ⊢_⇝_) Ms Ms'
+  → All₂ (J ⊢_⇝_) Ms (wks σ Ms')
 ⊢-wk h var = var
 ⊢-wk h (code r) = code (h r)
 ⊢-wk h (pair r r') = pair (⊢-wk h r) (⊢-wk h r')
@@ -98,7 +103,13 @@ data MExt : ∀ {Σ₁ Σ₂} → Σ₁ ⊑ Σ₂ → Made Σ₁ → Made Σ₂ 
   here : ∀ {Σ} {D : Made Σ} → MExt here⊑ D D
   there : ∀ {Σ₁ Σ₂ s g} {D : Made Σ₁} {D' : Made Σ₂} {N : Code Σ₂ s} → MExt g D D' → MExt (there⊑ g) D (D' ▷ N)
 
-mext-trans : ∀ {Σ₁ Σ₂ Σ₃} {g : Σ₁ ⊑ Σ₂} {g' : Σ₂ ⊑ Σ₃} {D₁ D₂ D₃} → MExt g D₁ D₂ → MExt g' D₂ D₃ → MExt (⊑-trans g g') D₁ D₃
+mext-trans : ∀ {Σ₁ Σ₂ Σ₃}
+  → {g : Σ₁ ⊑ Σ₂}
+  → {g' : Σ₂ ⊑ Σ₃}
+  → ∀ {D₁ D₂ D₃}
+  → MExt g D₁ D₂
+  → MExt g' D₂ D₃
+  → MExt (⊑-trans g g') D₁ D₃
 mext-trans x here = x
 mext-trans x (there y) = there (mext-trans x y)
 
@@ -130,7 +141,9 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     top : (λ {m} → Top {m}) ⊢ N ⇝ lookup defs g → Top g N
 
   {- the references of a smaller table, at their positions in Σ -}
-  I[_] : ∀ {Σ₀} → Σ₀ ⊑ Σ → Interp Σ₀
+  I[_] : ∀ {Σ₀}
+    → Σ₀ ⊑ Σ
+    → Interp Σ₀
   I[ s ] g N = Top (⊑-∋ s g) N
 
   {- the definitions made, each related to the definition at its position -}
@@ -138,22 +151,35 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
   Faithful [] s = ⊤
   Faithful (D ▷ N') s = (∀ N → I[ ⊑-trans (there⊑ here⊑) s ] ⊢ N ⇝ N' → Top (⊑-∋ s Z) N) × Faithful D (⊑-trans (there⊑ here⊑) s)
 
-  faithful-ext : ∀ {Σ₁ Σ₂} {t : Σ₁ ⊑ Σ₂} {s : Σ₂ ⊑ Σ} {D₁ D₂} → MExt t D₁ D₂ → Faithful D₂ s → Faithful D₁ (⊑-trans t s)
+  faithful-ext : ∀ {Σ₁ Σ₂}
+    → {t : Σ₁ ⊑ Σ₂}
+    → {s : Σ₂ ⊑ Σ}
+    → ∀ {D₁ D₂}
+    → MExt t D₁ D₂
+    → Faithful D₂ s
+    → Faithful D₁ (⊑-trans t s)
   faithful-ext {s = s} {D₁ = D₁} here F = subst (Faithful D₁) (⊑-irr _ _) F
   faithful-ext {t = there⊑ t} {s} {D₁ = D₁} (there x) (_ , F) = subst (Faithful D₁) (⊑-irr _ _) (faithful-ext x F)
 
   {- weakening a term made earlier -}
-  lift : ∀ {Σ₁ Σ₂} {t : Σ₁ ⊑ Σ₂} {s : Σ₂ ⊑ Σ} {Γ A} {M : S.Tm Γ A} {M'}
-    → I[ ⊑-trans t s ] ⊢ M ⇝ M' → I[ s ] ⊢ M ⇝ wk (⊑-∋ t) M'
+  lift : ∀ {Σ₁ Σ₂}
+    → {t : Σ₁ ⊑ Σ₂}
+    → {s : Σ₂ ⊑ Σ}
+    → ∀ {Γ A} {M : S.Tm Γ A} {M'}
+    → I[ ⊑-trans t s ] ⊢ M ⇝ M'
+    → I[ s ] ⊢ M ⇝ wk (⊑-∋ t) M'
   lift {t = t} {s} = ⊢-wk λ {_} {g} r → subst (λ h → Top h _) (⊑-∋-trans t s g) r
 
-  glob-⇝ : ∀ {Σ₀ Γ A} (M : S.Tm Γ A) (D : Made Σ₀) {s} → Faithful (Out.made (glob M D)) s → I[ s ] ⊢ M ⇝ Out.res (glob M D)
-  globs-⇝ : ∀ {Σ₀ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ₀) {s} → Faithful (Out.made (globs Ms D)) s
+  glob-⇝ : ∀ {Σ₀ Γ A} (M : S.Tm Γ A) (D : Made Σ₀) {s}
+    → Faithful (Out.made (glob M D)) s
+    → I[ s ] ⊢ M ⇝ Out.res (glob M D)
+  globs-⇝ : ∀ {Σ₀ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ₀) {s}
+    → Faithful (Out.made (globs Ms D)) s
     → All₂ (I[ s ] ⊢_⇝_) Ms (Out.res (globs Ms D))
   two : ∀ {Σ₀ Γ₁ Γ₂ A B} (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B) (D : Made Σ₀) {s}
     → Faithful (Out.made (glob M (Out.made (glob L D)))) s
     → I[ s ] ⊢ L ⇝ wk (⊑-∋ (Out.grows (glob M (Out.made (glob L D))))) (Out.res (glob L D))
-      × I[ s ] ⊢ M ⇝ Out.res (glob M (Out.made (glob L D)))
+        × I[ s ] ⊢ M ⇝ Out.res (glob M (Out.made (glob L D)))
 
   glob-⇝ (S.` x) D F = var
   glob-⇝ (S.code N) D (h , F) = code (h N (glob-⇝ N D F))
@@ -176,12 +202,23 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
   two L M D F = lift (glob-⇝ L D (faithful-ext (glob-grows M _) F)) , glob-⇝ M _ F
 
   {- close puts the definitions made before at their positions -}
-  suffix : ∀ {Σ₀ Σ₁} {s : Σ₀ ⊑ Σ₁} {D : Made Σ₀} {D₁ : Made Σ₁} → MExt s D D₁ → ∀ (q : Σ₁ ⊑ Σ) {t} (x : Σ₀ ∋ t)
+  suffix : ∀ {Σ₀ Σ₁}
+    → {s : Σ₀ ⊑ Σ₁}
+    → {D : Made Σ₀} {D₁ : Made Σ₁}
+    → MExt s D D₁
+    → (q : Σ₁ ⊑ Σ)
+    → ∀ {t} (x : Σ₀ ∋ t)
     → lookup (close D₁ q) (⊑-∋ s x) ≡ lookup (close D (⊑-trans s q)) x
   suffix {D = D} here q x = cong (λ r → lookup (close D r) x) (⊑-irr _ _)
   suffix {D = D} (there e) q x = trans (suffix e (⊑-trans (there⊑ here⊑) q) x) (cong (λ r → lookup (close D r) x) (⊑-irr _ _))
 
-  close-faithful : ∀ {D_f : Made Σ} → defs ≡ close D_f here⊑ → ∀ {Σ₀} {s : Σ₀ ⊑ Σ} {D : Made Σ₀} → MExt s D D_f → Faithful D s
+  close-faithful : ∀ {D_f : Made Σ}
+    → defs ≡ close D_f here⊑
+    → ∀ {Σ₀}
+    → {s : Σ₀ ⊑ Σ}
+    → {D : Made Σ₀}
+    → MExt s D D_f
+    → Faithful D s
   close-faithful e {D = []} x = tt
   close-faithful e {s = s} {D = D ▷ N'} x =
     (λ N r → top (subst ((λ {m} → Top {m}) ⊢ N ⇝_) (sym (trans (cong (λ ds → lookup ds (⊑-∋ s Z)) e) (suffix x here⊑ Z)))
@@ -235,8 +272,12 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
       → Sₘ.eval M ρ₁ κ₁ ~ Tₘ.eval M' ρ₂ κ₂
     ret~ : ∀ {A} {v : Sₘ.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.ret v κ₁ ~ Tₘ.ret w κ₂
 
-  obs≈ : ∀ {A} {v : Sₘ.Val A} {w} → v ≈ w → Sₘ.obs v ≡ Tₘ.obs w
-  obs≈* : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Sₘ.obs-all vs ≡ Tₘ.obs-all ws
+  obs≈ : ∀ {A} {v : Sₘ.Val A} {w}
+    → v ≈ w
+    → Sₘ.obs v ≡ Tₘ.obs w
+  obs≈* : ∀ {Δ} {vs : All _ Δ} {ws}
+    → All₂ _≈_ vs ws
+    → Sₘ.obs-all vs ≡ Tₘ.obs-all ws
   obs≈ (code≈ _) = refl
   obs≈ (pack≈ _ _) = refl
   obs≈ const≈ = refl
@@ -258,12 +299,17 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     L₂ = Tₘ.sem (program defs M₀)
 
     tuple-next~ : ∀ {Γ Δ' Δ} {vs : All _ Δ'} {ws} {Ms : All (S.Tm Γ) Δ} {Ms'} {ρ₁ ρ₂} {κ₁ : Sₘ.Cont (tup (Δ' <>< Δ))} {κ₂}
-      → All₂ _≈_ vs ws → All₂ _⇝_ Ms Ms' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+      → All₂ _≈_ vs ws
+      → All₂ _⇝_ Ms Ms'
+      → EnvRel ρ₁ ρ₂
+      → κ₁ ≈k κ₂
       → Sₘ.tuple-next vs Ms ρ₁ κ₁ ~ Tₘ.tuple-next ws Ms' ρ₂ κ₂
     tuple-next~ rs [] er k = ret~ (tup≈ (rs <><₂ [])) k
     tuple-next~ rs (m ∷ ms) er k = eval~ m er (tupK rs ms er k)
 
-    sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Sₘ.step s₁) s₂
+    sim : ∀ {s₁ s₂}
+      → s₁ ~ s₂
+      → Answers L₂ _~_ (Sₘ.step s₁) s₂
     sim (eval~ (var {x = x}) er k) = steps₁ refl (ret~ (lookup₂ er x) k)
     sim (eval~ (code h) er k) = steps₁ refl (ret~ (code≈ h) k)
     sim (eval~ (pair m m') er k) = steps₁ refl (eval~ m er (pairL m' er k))

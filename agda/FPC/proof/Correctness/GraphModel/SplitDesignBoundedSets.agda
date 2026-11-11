@@ -67,10 +67,15 @@ module FPC.proof.Correctness.GraphModel.SplitDesignBoundedSets where
 Bnd𝒫 : ℕ → 𝒫 Value → Set
 Bnd𝒫 k T = ∀ v → v ∈ T → depth v < k
 
-Bnd𝒫-mem : ∀ {k V T} → Bnd𝒫 k T → mem V ⊆ T → Bnd k V
+Bnd𝒫-mem : ∀ {k V T}
+  → Bnd𝒫 k T
+  → mem V ⊆ T
+  → Bnd k V
 Bnd𝒫-mem bT V⊆ v v∈ = bT v (V⊆ v v∈)
 
-Bnd𝒫-Untag : ∀ {k T} t → Bnd𝒫 (suc k) T → Bnd𝒫 k (Untag t T)
+Bnd𝒫-Untag : ∀ {k T} t
+  → Bnd𝒫 (suc k) T
+  → Bnd𝒫 k (Untag t T)
 Bnd𝒫-Untag (tupT i) bT d d∈ = <-shrink ≤-refl (bT _ d∈)
 Bnd𝒫-Untag leftT bT d d∈ = <-shrink ≤-refl (bT _ d∈)
 Bnd𝒫-Untag rightT bT d d∈ = <-shrink ≤-refl (bT _ d∈)
@@ -101,7 +106,10 @@ UsableEntry→S : ∀ {V T U₀ w} → mem V ⊆ T → UsableEntry V U₀ w → 
 UsableEntry→S V⊆ (usable-entry FV t e∈ neFV FV⊆) =
   usable-entryS FV t (V⊆ _ e∈) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , V⊆ _ i ⟩)
 
-SelfContainedMaps→S : ∀ {V T U W} → mem V ⊆ T → SelfContainedMaps V U W → SelfContainedMapsS T (mem U) (mem W)
+SelfContainedMaps→S : ∀ {V T U W}
+  → mem V ⊆ T
+  → SelfContainedMaps V U W
+  → SelfContainedMapsS T (mem U) (mem W)
 SelfContainedMaps→S V⊆ cs = record
   { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = SelfContainedMaps.results cs w w∈ in ⟨ U₀ , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩
   ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = SelfContainedMaps.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩ ⟩
@@ -117,14 +125,23 @@ S→UsableEntry {T} {U₀} {w} (usable-entryS FV t e∈ neFV FV⊆) with cdr-wit
   , usable-entry FV t (here refl) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆P d d∈ in ⟨ u , there i ⟩) ⟩ ⟩
   where e = ⦅ FV ↦ (U₀ ↦ w) , t ⦆
 
-Bnd-UsableEntryS : ∀ {k T U₀ w} → Bnd𝒫 (suc k) T → UsableEntryS T U₀ w → Bnd k U₀ × depth w < k
+Bnd-UsableEntryS : ∀ {k T U₀ w}
+  → Bnd𝒫 (suc k) T
+  → UsableEntryS T U₀ w
+  → Bnd k U₀ × depth w < k
 Bnd-UsableEntryS bT e = let ⟨ V , ⟨ V⊆ , e' ⟩ ⟩ = S→UsableEntry e in Bnd-UsableEntry (Bnd𝒫-mem bT V⊆) e'
 
-Bnd-SelfContainedMapsS-args : ∀ {k T U W} → Bnd𝒫 (suc k) T → SelfContainedMapsS T U W → Bnd𝒫 k U
+Bnd-SelfContainedMapsS-args : ∀ {k T U W}
+  → Bnd𝒫 (suc k) T
+  → SelfContainedMapsS T U W
+  → Bnd𝒫 k U
 Bnd-SelfContainedMapsS-args bT cs u u∈ =
   let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = SelfContainedMapsS.args cs u u∈ in proj₁ (Bnd-UsableEntryS bT e) u u∈U₀
 
-Bnd-SelfContainedMapsS-apps : ∀ {k T U W} → Bnd𝒫 (suc k) T → SelfContainedMapsS T U W → Bnd𝒫 k W
+Bnd-SelfContainedMapsS-apps : ∀ {k T U W}
+  → Bnd𝒫 (suc k) T
+  → SelfContainedMapsS T U W
+  → Bnd𝒫 k W
 Bnd-SelfContainedMapsS-apps bT cs w w∈ = proj₂ (Bnd-UsableEntryS bT (proj₁ (proj₂ (SelfContainedMapsS.results cs w w∈))))
 
 {- If T maps U to W and W₀ is a finite part of W, then some finite
@@ -143,7 +160,10 @@ collectS cs (w ∷ W₀) W₀⊆
                         ; args = λ u u∈ → ⟨ U₀ , ⟨ w , ⟨ ent , u∈ ⟩ ⟩ ⟩ }))
              (SelfContainedMaps-⊆ (λ d d∈ → ∈-++⁺ʳ P d∈) cs') ⟩ ⟩ ⟩ ⟩
   where
-  ++⊆ : ∀ {A B : List Value} {D} → mem A ⊆ D → mem B ⊆ D → mem (A ++ B) ⊆ D
+  ++⊆ : ∀ {A B : List Value} {D}
+    → mem A ⊆ D
+    → mem B ⊆ D
+    → mem (A ++ B) ⊆ D
   ++⊆ {A} A⊆ B⊆ d d∈ = [ A⊆ d , B⊆ d ]′ (∈-++⁻ A d∈)
 
 {- The relation on bounded target sets ----------------------------------------}
@@ -161,8 +181,14 @@ ApproxLRSet≤ (suc k) D T = ApproxLRSetLayer (ApproxLRSet≤ k) D T
 
 {- Agreement of the set relation with the list relation ----------------------}
 
-ApproxLRSet⇒ : ∀ k {D T} → Bnd𝒫 k T → ApproxLRSet≤ k D T → Approx D T
-ApproxLRSet⇐ : ∀ k {D T} → Bnd𝒫 k T → Approx D T → ApproxLRSet≤ k D T
+ApproxLRSet⇒ : ∀ k {D T}
+  → Bnd𝒫 k T
+  → ApproxLRSet≤ k D T
+  → Approx D T
+ApproxLRSet⇐ : ∀ k {D T}
+  → Bnd𝒫 k T
+  → Approx D T
+  → ApproxLRSet≤ k D T
 
 ApproxLRSet⇒ zero bT _ V V⊆ = ApproxLR-∅ (λ v v∈ → ⊥-elim (n≮0 (bT v (V⊆ v v∈))))
 ApproxLRSet⇒ (suc k) {D} {T} bT r V V⊆ = fold record
@@ -179,7 +205,9 @@ ApproxLRSet⇒ (suc k) {D} {T} bT r V V⊆ = fold record
   where
   open ApproxLRSetLayer r
   bV = Bnd𝒫-mem bT V⊆
-  Bnd𝒫-mem-inv : ∀ {j} {X : List Value} → Bnd j X → Bnd𝒫 j (mem X)
+  Bnd𝒫-mem-inv : ∀ {j} {X : List Value}
+    → Bnd j X
+    → Bnd𝒫 j (mem X)
   Bnd𝒫-mem-inv b = b
 
 ApproxLRSet⇐ zero _ _ = ptt
@@ -194,5 +222,10 @@ ApproxLRSet⇐ (suc k) {D} {T} bT r = record
   ; tag-obs = λ t → ApproxLRSet⇐ k (Bnd𝒫-Untag t bT) (Approx-untag t r)
   }
 
-ApproxLRSet⇔ : ∀ k {D T} → Bnd𝒫 k T → (ApproxLRSet≤ k D T → Approx D T) × (Approx D T → ApproxLRSet≤ k D T)
+ApproxLRSet⇔ : ∀ k {D T}
+  → Bnd𝒫 k T
+  → (  ApproxLRSet≤ k D T
+     → Approx D T)
+  × (  Approx D T
+     → ApproxLRSet≤ k D T)
 ApproxLRSet⇔ k bT = ⟨ ApproxLRSet⇒ k bT , ApproxLRSet⇐ k bT ⟩

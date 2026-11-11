@@ -54,27 +54,35 @@ open import Data.Product using (_×_; proj₁; proj₂)
 {- for a closed FPC term M of type Int, and every constant c:
    c ∈ ⟦ M ⟧ if and only if c ∈ ⟦ compile M ⟧ -}
 compile-int-const : ∀ (M : FPC.Tm [] (base Int)) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧ₜ)
-  × (const c ∈ ⟦ compile M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile M ⟧ₜ)
+  × (  const c ∈ ⟦ compile M ⟧ₜ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-int-const M = proj₁ (Compiler.compile-int M)
 
 {- moreover, ⟦ M ⟧ ≠ ∅ if and only if ⟦ compile M ⟧ ≠ ∅ -}
 compile-int-nonempty : ∀ (M : FPC.Tm [] (base Int))
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧ₜ)
-  × (nonempty ⟦ compile M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile M ⟧ₜ)
+  × (  nonempty ⟦ compile M ⟧ₜ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-int-nonempty M = proj₂ (Compiler.compile-int M)
 
 {- Theorem 4.1, for closed terms of every type (the paper: "The same
    statement holds for closed terms of every type") -}
 
 compile-correct-const : ∀ {A} (M : FPC.Tm [] A) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧ₜ)
-  × (const c ∈ ⟦ compile M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile M ⟧ₜ)
+  × (  const c ∈ ⟦ compile M ⟧ₜ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-correct-const M = proj₁ (Compiler.compile-same M)
 
 compile-correct-nonempty : ∀ {A} (M : FPC.Tm [] A)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧ₜ)
-  × (nonempty ⟦ compile M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile M ⟧ₜ)
+  × (  nonempty ⟦ compile M ⟧ₜ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-correct-nonempty M = proj₂ (Compiler.compile-same M)
 
 {- Lemma 4.6 (Correctness of split closure) ---------------------------------}
@@ -82,12 +90,16 @@ compile-correct-nonempty M = proj₂ (Compiler.compile-same M)
 {- for a closed EnvClosμ term M, and every constant c:
    c ∈ ⟦ M ⟧ if and only if c ∈ ⟦ split M ⟧ -}
 split-correct-const : ∀ {A} (M : EnvClosμ.Tm [] A) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ᵉ ρ₀ → const c ∈ ⟦ split-program M ⟧ᶠ ρ₀)
-  × (const c ∈ ⟦ split-program M ⟧ᶠ ρ₀ → const c ∈ ⟦ M ⟧ᵉ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ᵉ ρ₀
+     → const c ∈ ⟦ split-program M ⟧ᶠ ρ₀)
+  × (  const c ∈ ⟦ split-program M ⟧ᶠ ρ₀
+     → const c ∈ ⟦ M ⟧ᵉ ρ₀)
 split-correct-const = Split.split-correct-const
 
 {- moreover, ⟦ M ⟧ ≠ ∅ if and only if ⟦ split M ⟧ ≠ ∅ -}
 split-correct-nonempty : ∀ {A} (M : EnvClosμ.Tm [] A)
-  → (nonempty (⟦ M ⟧ᵉ ρ₀) → nonempty (⟦ split-program M ⟧ᶠ ρ₀))
-  × (nonempty (⟦ split-program M ⟧ᶠ ρ₀) → nonempty (⟦ M ⟧ᵉ ρ₀))
+  → (  nonempty (⟦ M ⟧ᵉ ρ₀)
+     → nonempty (⟦ split-program M ⟧ᶠ ρ₀))
+  × (  nonempty (⟦ split-program M ⟧ᶠ ρ₀)
+     → nonempty (⟦ M ⟧ᵉ ρ₀))
 split-correct-nonempty = Split.split-correct-nonempty

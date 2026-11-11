@@ -34,15 +34,23 @@ open Rel Code (Same Code)
 Env≈ : ∀ {Γ} → S.Env Γ → T.Env Γ → Set
 Env≈ ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ lookup ρ₂ x
 
-env-ext : ∀ {Γ B} {ρ₁ : S.Env Γ} {ρ₂} {v : S.Val B} {w} → v ≈ w → Env≈ ρ₁ ρ₂ → Env≈ (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext : ∀ {Γ B} {ρ₁ : S.Env Γ} {ρ₂} {v : S.Val B} {w}
+  → v ≈ w
+  → Env≈ ρ₁ ρ₂
+  → Env≈ (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext v E Z = v
 env-ext v E (S x) = E x
 
-run≈ : ∀ ck {Γ A} (M : Tm Γ A) {ρ₁ ρ₂} → Env≈ ρ₁ ρ₂
+run≈ : ∀ ck {Γ A} (M : Tm Γ A) {ρ₁ ρ₂}
+  → Env≈ ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (split M))
-runs≈ : ∀ ck {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ₁ ρ₂} → Env≈ ρ₁ ρ₂
+runs≈ : ∀ ck {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ₁ ρ₂}
+  → Env≈ ρ₁ ρ₂
   → RelResult (All₂ _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (splits Ms))
-call≈ : ∀ ck {A B} {f : S.Val (A ⇒ B)} {g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S.call ck f v) (T.call ck g w)
+call≈ : ∀ ck {A B} {f : S.Val (A ⇒ B)} {g v w}
+  → f ≈ g
+  → v ≈ w
+  → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
 run≈ ck (` x) E = ret (E x)
 run≈ ck (clos N Ms) {ρ₂ = ρ₂} E = subst (RelResult _≈_ _) (sym (bind-assoc (T.evals ck ρ₂ (splits Ms))))

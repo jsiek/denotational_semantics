@@ -47,18 +47,22 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; tran
 
 {- Jumps: label l of the selected blocks is the selected block l --------------}
 
-blk-le : ∀ {Σ R Bs Δ n} (bs : C.Blocks Σ R Bs) (l : Bs ∋ Δ) → blocks-depth bs ≤ n → depth (C.Blk.tail (C.block bs l)) ≤ n
+blk-le : ∀ {Σ R Bs Δ n} (bs : C.Blocks Σ R Bs) (l : Bs ∋ Δ)
+  → blocks-depth bs ≤ n
+  → depth (C.Blk.tail (C.block bs l)) ≤ n
 blk-le (bs ▷ t) Z le = ≤-trans (m≤m⊔n _ _) le
 blk-le (bs ▷ t) (S l) le = blk-le bs l (≤-trans (m≤n⊔m _ _) le)
 
-blk-le' : ∀ {Σ R Bs Δ n} (bs : C.Blocks Σ R Bs) (l : Bs ∋ Δ) → blocks-depth bs ≤ n
+blk-le' : ∀ {Σ R Bs Δ n} (bs : C.Blocks Σ R Bs) (l : Bs ∋ Δ)
+  → blocks-depth bs ≤ n
   → blocks-depth (C.Blk.blocks (C.block bs l)) ≤ n
 blk-le' (bs ▷ t) Z le = ≤-trans (m≤n⊔m _ _) le
 blk-le' (bs ▷ t) (S l) le = blk-le' bs l (≤-trans (m≤n⊔m _ _) le)
 
-block-sel : ∀ {Σ R Bs Δ n} (bs : C.Blocks Σ R Bs) (l : Bs ∋ Δ) .(le : blocks-depth bs ≤ n)
+block-sel : ∀ {Σ R Bs Δ n} (bs : C.Blocks Σ R Bs) (l : Bs ∋ Δ)
+  → .(le : blocks-depth bs ≤ n)
   → block (blocks bs le) l
-    ≡ blk (blocks (C.Blk.blocks (C.block bs l)) (blk-le' bs l le)) (tail (C.Blk.tail (C.block bs l)) (blk-le bs l le))
+      ≡ blk (blocks (C.Blk.blocks (C.block bs l)) (blk-le' bs l le)) (tail (C.Blk.tail (C.block bs l)) (blk-le bs l le))
 block-sel (bs ▷ t) Z le = refl
 block-sel (bs ▷ t) (S l) le = block-sel bs l (≤-trans (m≤n⊔m _ _) le)
 
@@ -107,7 +111,8 @@ module Sim {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s))
 
     {- callc: open the closure in slot x, then call its code -}
     call~ : ∀ {A B} {φ : G.Frame Σ Δ} (o : Out n Δ B Δ'') {k : ∀ {Γ O F} → Seq Σ n R Bs (after o Γ O F)}
-      (x : Δ ∋ A ⇒ B) (a : Atm Σ Δ A) (v : G.Val Σ (A ⇒ B)) → lookup φ x ≡ v
+        (x : Δ ∋ A ⇒ B) (a : Atm Σ Δ A) (v : G.Val Σ (A ⇒ B))
+      → lookup φ x ≡ v
       → XOut bs σ φ o k (call v (G.atom φ a)) (X.run (sel (I.callc (var x) a) o k) bs σ η ⟨ ρ , φ , op , f ⟩)
     call~ {φ = φ} o {k} x a (pack (code g) e) h =
       xcall (plus refl (refl ◅ refl ◅ trans (cong (λ v → X.enter xds (X.code-of v) (X.env-of v) w κ) h)
@@ -137,38 +142,54 @@ module Sim {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s))
 
   {- %rax returns to the stack, as the CFGμ value to the continuation -}
   back : ∀ {A} {κ : G.Cont Σ A} {σ n Bs Δ η Γ O F} {bs₂ : Blocks Σ n A Bs} {ρ : X.RegVals Σ η Γ} {φ : G.Frame Σ Δ}
-    {op : X.Opened Σ η O} {f : X.Flag Σ F} {v}
-    → κ ~ σ → G.step ds s₁ ≡ G.cont ds v κ → Star L₂ s₂ (X.run (retq refl) bs₂ σ η ⟨ ρ X.[ rax ≔ v ] , φ , op , f ⟩) → 𝔅 s₁ s₂
+      {op : X.Opened Σ η O} {f : X.Flag Σ F} {v}
+    → κ ~ σ
+    → G.step ds s₁ ≡ G.cont ds v κ
+    → Star L₂ s₂ (X.run (retq refl) bs₂ σ η ⟨ ρ X.[ rax ≔ v ] , φ , op , f ⟩)
+    → 𝔅 s₁ s₂
   back halt e₀ τ = halt e₀ τ refl
   back (seqK k) e₀ τ = move (step⁺ e₀) (star-plus τ (plus refl (refl ◅ ε))) (exec~ k)
   back {v = v} (retK k) e₀ τ = back {Γ = rt (just (ty _)) nothing nothing} {ρ = X.rv v tt tt} k e₀ (τ ◅◅ (refl ◅ refl ◅ ε))
 
   {- return s -}
-  retn~ : ∀ {R} {κ : G.Cont Σ R} {σ n Bs Δ} {bs : Blocks Σ n R Bs} {φ : G.Frame Σ Δ} {r} → G.step ds s₁ ≡ G.retn ds κ r → κ ~ σ
-    → XOut bs σ φ ret (retq refl) r s₂ → 𝔅 s₁ s₂
+  retn~ : ∀ {R} {κ : G.Cont Σ R} {σ n Bs Δ} {bs : Blocks Σ n R Bs} {φ : G.Frame Σ Δ} {r}
+    → G.step ds s₁ ≡ G.retn ds κ r
+    → κ ~ σ
+    → XOut bs σ φ ret (retq refl) r s₂
+    → 𝔅 s₁ s₂
   retn~ e₀ k (xval {ρ = ρ} π) = back {ρ = ρ} k e₀ (plus→star π)
   retn~ e₀ k (xcall π) = move (step⁺ e₀) (plus-star π (refl ◅ refl ◅ ε)) (exec~ (retK k))
 
   {- seq p s t -}
-  assign~ : ∀ {R Bs Δ Δ' A n} {p : Δ' ⊑ Δ} {φ : G.Frame Σ Δ} {t : Tail Σ R Bs (A ∷ Δ')} {bs κ σ r} .{lt le le'}
-    → G.step ds s₁ ≡ G.assign ds p φ t bs κ r → κ ~ σ
-    → XOut {n = n} (blocks bs le') σ φ (to p lt) (tail t le) r s₂ → 𝔅 s₁ s₂
+  assign~ : ∀ {R Bs Δ Δ' A n}
+    → {p : Δ' ⊑ Δ}
+    → ∀ {φ : G.Frame Σ Δ} {t : Tail Σ R Bs (A ∷ Δ')} {bs κ σ r} .{lt le le'}
+    → G.step ds s₁ ≡ G.assign ds p φ t bs κ r
+    → κ ~ σ
+    → XOut {n = n} (blocks bs le') σ φ (to p lt) (tail t le) r s₂
+    → 𝔅 s₁ s₂
   assign~ e₀ k (xval π) = move (step⁺ e₀) π (exec~ k)
   assign~ e₀ k (xcall π) = move (step⁺ e₀) (plus-star π (refl ◅ refl ◅ ε)) (exec~ (seqK k))
 
   {- case x p l₁ l₂: the payload, then the branch -}
-  case~ : ∀ {R Bs Δ Δ' A B n η} {p : Δ' ⊑ Δ} {l₁ : Bs ∋ (A ∷ Δ')} {l₂ : Bs ∋ (B ∷ Δ')} {φ : G.Frame Σ Δ} {bs : C.Blocks Σ R Bs}
-    {κ σ} .{le : blocks-depth bs ≤ n} (v : G.Val Σ (A ⊹ B))
+  case~ : ∀ {R Bs Δ Δ' A B n η}
+    → {p : Δ' ⊑ Δ}
+    → ∀ {l₁ : Bs ∋ (A ∷ Δ')} {l₂ : Bs ∋ (B ∷ Δ')} {φ : G.Frame Σ Δ} {bs : C.Blocks Σ R Bs} {κ σ}
+    → .{le : blocks-depth bs ≤ n}
+    → (v : G.Val Σ (A ⊹ B))
     → G.step ds s₁ ≡ next (choose v (λ u → G.go ds (C.block bs l₁) (u ∷ pop p φ) κ) (λ u → G.go ds (C.block bs l₂) (u ∷ pop p φ) κ))
     → X.step xds s₂ ≡ next (choose v (λ u → X.go xds (block (blocks bs le) l₁) σ η (u ∷ pop p φ))
-                                     (λ u → X.go xds (block (blocks bs le) l₂) σ η (u ∷ pop p φ)))
-    → κ ~ σ → 𝔅 s₁ s₂
+        (λ u → X.go xds (block (blocks bs le) l₂) σ η (u ∷ pop p φ)))
+    → κ ~ σ
+    → 𝔅 s₁ s₂
   case~ {η = η} {l₁ = l₁} {bs = bs} {σ = σ} {le = le} (inl u) e₀ e₁ k =
     move (step⁺ e₀) (step⁺ (trans e₁ (cong (λ b → next (X.go xds b σ η _)) (block-sel bs l₁ le)))) (exec~ k)
   case~ {η = η} {l₂ = l₂} {bs = bs} {σ = σ} {le = le} (inr u) e₀ e₁ k =
     move (step⁺ e₀) (step⁺ (trans e₁ (cong (λ b → next (X.go xds b σ η _)) (block-sel bs l₂ le)))) (exec~ k)
 
-  sim : ∀ {s₁ s₂} → Match s₁ s₂ → 𝔅 s₁ s₂
+  sim : ∀ {s₁ s₂}
+    → Match s₁ s₂
+    → 𝔅 s₁ s₂
   sim (exec~ {t = return s} k) = retn~ refl k (sel~ ret s)
   sim (exec~ {t = seq p s t} k) = assign~ refl k (sel~ (to p _) s)
   sim (exec~ {η = η} {t = goto l} {bs = bs} {σ = σ} {le' = le'} k) =

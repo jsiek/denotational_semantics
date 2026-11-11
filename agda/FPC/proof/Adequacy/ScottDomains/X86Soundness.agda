@@ -157,15 +157,23 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     op : OpR (frame m) (St.op ψ) η (clo m)
   open Agree
 
-  frame-drop : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} → FrameAgree σ φ → FrameAgree (drop p · σ) (pop p φ)
+  frame-drop : ∀ {Δ' Δ}
+    → (p : Δ' ⊑ Δ)
+    → {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ}
+    → FrameAgree σ φ
+    → FrameAgree (drop p · σ) (pop p φ)
   frame-drop here⊑ h x = h x
   frame-drop (there⊑ p) {σ} {v ∷ φ} h x = frame-drop p {σ = λ i → σ (succ i)} (λ y → h (S y)) x
 
-  frame-ext : ∀ {Δ A} {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} (v : Val A) → FrameAgree σ φ → FrameAgree (𝒱 v • σ) (v ∷ φ)
+  frame-ext : ∀ {Δ A} {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} (v : Val A)
+    → FrameAgree σ φ
+    → FrameAgree (𝒱 v • σ) (v ∷ φ)
   frame-ext v h Z = refl
   frame-ext v h (S x) = h x
 
-  regs-upd : ∀ r {η Γ τ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ} {D} {v : RV Σ η τ} → RegsAgree R ρ → D ＝ 𝒱ᵣ τ v
+  regs-upd : ∀ r {η Γ τ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ} {D} {v : RV Σ η τ}
+    → RegsAgree R ρ
+    → D ＝ 𝒱ᵣ τ v
     → RegsAgree (R [ r ≔ₛ D ]) (_[_≔_] {τ = just τ} ρ r v)
   regs-upd rax h hD rax ≡-refl = hD
   regs-upd rax h hD rdi e = h rdi e
@@ -179,14 +187,18 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
 
   {- an unset register agrees with anything, and wiping unsets registers -}
   private
-   wipe-agree : ∀ {η η' τ} m {x : MV Σ η m} {D} (e : wipeα m ≡ just τ)
-     → (∀ {τ'} (e' : m ≡ just τ') → D ＝ 𝒱ᵣ τ' (cast e' x)) → D ＝ 𝒱ᵣ {η'} τ (cast e (wipeᵥ m x))
+   wipe-agree : ∀ {η η' τ} m {x : MV Σ η m} {D}
+     → (e : wipeα m ≡ just τ)
+     → (∀ {τ'} (e' : m ≡ just τ') → D ＝ 𝒱ᵣ τ' (cast e' x))
+     → D ＝ 𝒱ᵣ {η'} τ (cast e (wipeᵥ m x))
    wipe-agree (just (ty A)) ≡-refl h = h ≡-refl
    wipe-agree (just (codeα A B)) () h
    wipe-agree (just tupα) () h
    wipe-agree nothing () h
 
-  regs-wipe : ∀ {η η' Γ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ} → RegsAgree R ρ → RegsAgree R (wipeᵣ {η' = η'} ρ)
+  regs-wipe : ∀ {η η' Γ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ}
+    → RegsAgree R ρ
+    → RegsAgree R (wipeᵣ {η' = η'} ρ)
   regs-wipe {Γ = rt a b c} h rax e = wipe-agree a e (h rax)
   regs-wipe {Γ = rt a b c} h rdi e = wipe-agree b e (h rdi)
   regs-wipe {Γ = rt a b c} h rsi e = wipe-agree c e (h rsi)
@@ -215,7 +227,9 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
 
   {- a write to d -}
   put-agree : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {η} {m : Mach Σ η ψ} {v : RV Σ η τ} (S : ⟨ 𝕊 ⟩) (D : Den 𝕊) (κ : Kont)
-    → Agree S m → D · S ＝ 𝒱ᵣ τ v → Σ S' ꞉ ⟨ 𝕊 ⟩ , Agree S' (put d v m) × (putₛ T d D κ · S ＝ κ · S')
+    → Agree S m
+    → D · S ＝ 𝒱ᵣ τ v
+    → Σ S' ꞉ ⟨ 𝕊 ⟩ , Agree S' (put d v m) × (putₛ T d D κ · S ＝ κ · S')
   put-agree (reg r) 𝔰 D κ (agr fa ra fla oa) hD = _ , agr fa (regs-upd r ra hD) fla oa , refl
   put-agree {τ = τ} (slot p _) {η} {v = v} (σ , RF) D κ (agr fa ra fla oa) hD =
     ((D · (σ , RF)) • (drop p · σ) , RF) , agr fr' ra fla none ,
@@ -231,18 +245,25 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
   Sound : ∀ {A} → Result (Val A) → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
   Sound r d = Holds (λ v → 𝒱 v ＝ d) r
 
-  sound-＝ : ∀ {A} {r : Result (Val A)} {d d'} → d ＝ d' → Sound r d → Sound r d'
+  sound-＝ : ∀ {A} {r : Result (Val A)} {d d'}
+    → d ＝ d'
+    → Sound r d
+    → Sound r d'
   sound-＝ refl s = s
 
   sound-run : ∀ ck {n R Bs ψ} (bs : Blocks Σ n R Bs) η (m : Mach Σ η ψ) (k : Seq Σ n R Bs ψ) (S : ⟨ 𝕊 ⟩)
-    → Agree S m → Sound (run ds ck bs η m k) (⟦_⟧ˢ T k (blocksₛ T bs) · S)
+    → Agree S m
+    → Sound (run ds ck bs η m k) (⟦_⟧ˢ T k (blocksₛ T bs) · S)
   sound-jump : ∀ ck {n R Bs Δ} (bs : Blocks Σ n R Bs) η (l : Bs ∋ Δ) (φ : Frame Δ) (σ : ⟨ Envᵈ ⟩)
-    → FrameAgree σ φ → Sound (jump ds ck bs η l φ) (blocksₛ T bs l · σ)
+    → FrameAgree σ φ
+    → Sound (jump ds ck bs η l φ) (blocksₛ T bs l · σ)
   sound-call : ∀ ck {η A B} (c : Val (code η A B)) (e : Val (tup η)) (w : Val A)
     → Sound (call ds ck c e w) (appᵈ · (appᵈ · 𝒱 c · 𝒱 e) · 𝒱 w)
   {- a write, then k -}
   sound-put : ∀ ck {n R Bs ψ τ ψ'} (bs : Blocks Σ n R Bs) η (d : Dst n ψ τ ψ') (k : Seq Σ n R Bs ψ')
-    {m : Mach Σ η ψ} {v : RV Σ η τ} (S : ⟨ 𝕊 ⟩) (D : Den 𝕊) → Agree S m → D · S ＝ 𝒱ᵣ τ v
+      {m : Mach Σ η ψ} {v : RV Σ η τ} (S : ⟨ 𝕊 ⟩) (D : Den 𝕊)
+    → Agree S m
+    → D · S ＝ 𝒱ᵣ τ v
     → Sound (run ds ck bs η (put d v m) k) (putₛ T d D (⟦_⟧ˢ T k (blocksₛ T bs)) · S)
 
   sound-run ck bs η m (movq a d ∷ k) 𝔰 A = sound-put ck bs η d k 𝔰 (𝒪 T a) A (arg-agree A a)
@@ -269,8 +290,10 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
   sound-run ck bs η m (loadsnd {x = opened x} r ∷ k) (σ , R , F) A =
     sound-run ck bs η _ k _ (agr (fr A) (regs-upd r (rg A) (snd-𝒱 (op A) (fr A x))) (fl A) (op A))
    where
-    snd-𝒱 : ∀ {Δ A B} {φ : Frame Δ} {x : Δ ∋ A ⇒ B} {η'} {o : Val (tup η')} → OpR φ (just (opened x)) η' o
-      → σ (idx x) ＝ 𝒱 (lookup φ x) → cdr · σ (idx x) ＝ 𝒱 o
+    snd-𝒱 : ∀ {Δ A B} {φ : Frame Δ} {x : Δ ∋ A ⇒ B} {η'} {o : Val (tup η')}
+      → OpR φ (just (opened x)) η' o
+      → σ (idx x) ＝ 𝒱 (lookup φ x)
+      → cdr · σ (idx x) ＝ 𝒱 o
     snd-𝒱 {φ = φ} {x} agree h = ap (cdr ·_) h ∙ cdr-𝒱 (lookup φ x)
      where
       cdr-𝒱 : ∀ {A B} (v : Val (A ⇒ B)) → cdr · 𝒱 v ＝ 𝒱 (env-of v)
@@ -292,9 +315,10 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
    where
     br : ⟨ Br ⟩
     br = (strict · (abs (blocksₛ T bs l₁) · (drop p · σ)) , strict · (abs (blocksₛ T bs l₂) · (drop p · σ)))
-    sel : (v : Val (_ ⊹ _)) → σ (idx x) ＝ 𝒱 v
+    sel : (v : Val (_ ⊹ _))
+      → σ (idx x) ＝ 𝒱 v
       → Sound (either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m))))
-              (cases · σ (idx x) · br)
+          (cases · σ (idx x) · br)
     sel (inl u) h =
       sound-＝ ((ap (λ - → cases · - · br) h ∙ cases-inl (𝒱 u) (𝒱-defined u) _ _
                  ∙ strict-defined (abs (blocksₛ T bs l₁) · (drop p · σ)) (𝒱 u) (𝒱-defined u)) ⁻¹)
@@ -336,7 +360,9 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
   {- Observations of constants ---------------------------------------------------------}
 
   {- a value means a constant exactly when it is observed as that constant -}
-  𝒱-const : ∀ {A B} {k : base-rep B} (v : Val A) → 𝒱 v ＝ const B k → obs v ≡ o-const B k
+  𝒱-const : ∀ {A B} {k : base-rep B} (v : Val A)
+    → 𝒱 v ＝ const B k
+    → obs v ≡ o-const B k
   𝒱-const (cv k') e = con-inj (inj-tag _ _ ⋆ ⋆ e)
   𝒱-const (fold v) e = 𝒱-const v e
   𝒱-const (code f) e = 𝟘-elim (not-con fun _ (λ _ _ ()) (closed f ⁻¹ ∙ e))
@@ -349,7 +375,9 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
   𝒱-const (inl v) e = 𝟘-elim (not-con left (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
   𝒱-const (inr v) e = 𝟘-elim (not-con right (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
 
-  const-𝒱 : ∀ {A B} {k : base-rep B} (v : Val A) → obs v ≡ o-const B k → 𝒱 v ＝ const B k
+  const-𝒱 : ∀ {A B} {k : base-rep B} (v : Val A)
+    → obs v ≡ o-const B k
+    → 𝒱 v ＝ const B k
   const-𝒱 (cv k) ≡-refl = refl
   const-𝒱 (fold v) e = const-𝒱 v e
   const-𝒱 (code f) ()

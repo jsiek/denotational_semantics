@@ -45,7 +45,9 @@ module _ {Σ} {T : Table Σ} (cT : ConT T) where
   oks [] = ptt
   oks (M ∷ Ms) = ⟨ ok M , oks Ms ⟩
 
-  con : ∀ {Γ A} (M : Tm Σ Γ A) {ρ} → Con-env ρ → Con (⟦ M ⟧[ T ] ρ)
+  con : ∀ {Γ A} (M : Tm Σ Γ A) {ρ}
+    → Con-env ρ
+    → Con (⟦ M ⟧[ T ] ρ)
   con M c = proj₂ (proj₂ (ok M)) c
 
   code-con : ∀ {s} (N : Code Σ s) → Con (code′ T N)

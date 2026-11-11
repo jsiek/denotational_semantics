@@ -59,7 +59,10 @@ NE Γ ρ = ∀ {C} (x : Γ ∋ C) → defined (ρ (idx x))
 Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇
 Agree u r ρ ρ' = ∀ {C} x (t : T (u {C} x)) → ρ (idx x) ＝ ρ' (idx (r x t))
 
-ext-ne : ∀ {Γ A ρ d} → defined d → NE Γ ρ → NE (A ∷ Γ) (d • ρ)
+ext-ne : ∀ {Γ A ρ d}
+  → defined d
+  → NE Γ ρ
+  → NE (A ∷ Γ) (d • ρ)
 ext-ne p V Z = p
 ext-ne p V (S x) = V x
 
@@ -72,19 +75,29 @@ Th [] ds es = 𝟙
 Th (true ∷ fl) ds es = (ds zero ＝ es zero) × Th fl (λ i → ds (suc i)) (λ i → es (suc i))
 Th (false ∷ fl) ds es = defined (ds zero) × Th fl (λ i → ds (suc i)) es
 
-th-ne→ : ∀ {Δ : Ctx} (fl : Flags Δ) {ds es} → Th fl ds es → All-defined _ ds → All-defined (length (kept fl)) es
+th-ne→ : ∀ {Δ : Ctx} (fl : Flags Δ) {ds es}
+  → Th fl ds es
+  → All-defined _ ds
+  → All-defined (length (kept fl)) es
 th-ne→ (true ∷ fl) (e , th) ne zero = transport defined e (ne zero)
 th-ne→ (true ∷ fl) (e , th) ne (suc j) = th-ne→ fl th (λ i → ne (suc i)) j
 th-ne→ (false ∷ fl) (_ , th) ne j = th-ne→ fl th (λ i → ne (suc i)) j
 
-th-ne← : ∀ {Δ : Ctx} (fl : Flags Δ) {ds es} → Th fl ds es → All-defined (length (kept fl)) es → All-defined _ ds
+th-ne← : ∀ {Δ : Ctx} (fl : Flags Δ) {ds es}
+  → Th fl ds es
+  → All-defined (length (kept fl)) es
+  → All-defined _ ds
 th-ne← (true ∷ fl) (e , th) ne zero = transport defined (e ⁻¹) (ne zero)
 th-ne← (true ∷ fl) (e , th) ne (suc i) = th-ne← fl th (λ j → ne (suc j)) i
 th-ne← (false ∷ fl) (p , th) ne zero = p
 th-ne← (false ∷ fl) (p , th) ne (suc i) = th-ne← fl th ne i
 
 {- a kept free variable is the same in the two -}
-th-pos : ∀ {Δ : Ctx} {C} (fl : Flags Δ) {ds es} → Th fl ds es → (i : Δ ∋ C) (k : T (lookup fl i)) → ds (pos i) ＝ es (pos (sq fl i k))
+th-pos : ∀ {Δ : Ctx} {C} (fl : Flags Δ) {ds es}
+  → Th fl ds es
+  → (i : Δ ∋ C)
+  → (k : T (lookup fl i))
+  → ds (pos i) ＝ es (pos (sq fl i k))
 th-pos (true ∷ fl) (e , th) Z k = e
 th-pos (true ∷ fl) (e , th) (S i) k = th-pos fl th i k
 th-pos (false ∷ fl) (_ , th) (S i) k = th-pos fl th i k
@@ -94,26 +107,43 @@ fv-pos : ∀ {Δ : Ctx} {C} (ds : Fs (length Δ)) (Y : ⟨ 𝔻 ⟩) (i : Δ ∋
 fv-pos ds Y Z = refl
 fv-pos ds Y (S i) = fv-pos (λ j → ds (suc j)) (ds zero) i
 
-fv-ne : ∀ {Δ : Ctx} {A} (ds : Fs (length Δ)) {Y} → defined Y → All-defined _ ds → NE (A ∷ Δ) (fv-env (length Δ) ds Y)
+fv-ne : ∀ {Δ : Ctx} {A} (ds : Fs (length Δ)) {Y}
+  → defined Y
+  → All-defined _ ds
+  → NE (A ∷ Δ) (fv-env (length Δ) ds Y)
 fv-ne ds p ne Z = p
 fv-ne ds {Y} p ne (S i) = transport defined (fv-pos ds Y i ⁻¹) (ne (pos i))
 
 {- the free variables and the kept ones (a non-recursive step) -}
-th-cons : ∀ {Γ Γ' Δ C} (M : Tm Γ C) (Ms : All (Tm Γ) Δ) (b : Bool) → Fl b M → (fl : Flags Δ)
-  {r₁ : Ren (uses M) Γ'} {r₂ : Ren (usesA Ms) Γ'} {ρ ρ' : ⟨ Env ⟩} → NE Γ ρ
-  → ⟦ M ⟧ · ρ ＝ ⟦ opt M r₁ ⟧ · ρ' → Th fl (⟦ Ms ⟧s · ρ) (⟦ select fl (opts Ms r₂) ⟧s · ρ')
+th-cons : ∀ {Γ Γ' Δ C} (M : Tm Γ C) (Ms : All (Tm Γ) Δ) (b : Bool)
+  → Fl b M
+  → (fl : Flags Δ) {r₁ : Ren (uses M) Γ'} {r₂ : Ren (usesA Ms) Γ'} {ρ ρ' : ⟨ Env ⟩}
+  → NE Γ ρ
+  → ⟦ M ⟧ · ρ ＝ ⟦ opt M r₁ ⟧ · ρ'
+  → Th fl (⟦ Ms ⟧s · ρ) (⟦ select fl (opts Ms r₂) ⟧s · ρ')
   → Th (b ∷ fl) (⟦ M ∷ Ms ⟧s · ρ) (⟦ select (b ∷ fl) (opt M r₁ ∷ opts Ms r₂) ⟧s · ρ')
 th-cons M Ms true kept-fv fl V e th = e , th
 th-cons (` x) Ms false var-fv fl V e th = V x , th
 
-opt-ok : ∀ {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ ρ'} → NE Γ ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ · ρ ＝ ⟦ opt M r ⟧ · ρ'
-opts-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'} → NE Γ ρ → Agree (usesA Ms) r ρ ρ'
+opt-ok : ∀ {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ ρ'}
+  → NE Γ ρ
+  → Agree (uses M) r ρ ρ'
+  → ⟦ M ⟧ · ρ ＝ ⟦ opt M r ⟧ · ρ'
+opts-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'}
+  → NE Γ ρ
+  → Agree (usesA Ms) r ρ ρ'
   → ⟦ Ms ⟧s · ρ ＝ ⟦ opts Ms r ⟧s · ρ'
 {- a body under a binder, for the variables its binder's term uses -}
-under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) {r : Ren (λ x → uses N (S x)) Γ'} {ρ ρ'} → NE Γ ρ → Agree (λ x → uses N (S x)) r ρ ρ'
-  → (d : ⟨ 𝔻 ⟩) → defined d → ⟦ N ⟧ · (d • ρ) ＝ ⟦ opt N (ext-ren {u = uses N} r) ⟧ · (d • ρ')
+under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) {r : Ren (λ x → uses N (S x)) Γ'} {ρ ρ'}
+  → NE Γ ρ
+  → Agree (λ x → uses N (S x)) r ρ ρ'
+  → (d : ⟨ 𝔻 ⟩)
+  → defined d
+  → ⟦ N ⟧ · (d • ρ) ＝ ⟦ opt N (ext-ren {u = uses N} r) ⟧ · (d • ρ')
 th-ok : ∀ {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'}
-  → NE Γ ρ → Agree (usesA Ms) r ρ ρ' → Th (flags u Ms) (⟦ Ms ⟧s · ρ) (⟦ select (flags u Ms) (opts Ms r) ⟧s · ρ')
+  → NE Γ ρ
+  → Agree (usesA Ms) r ρ ρ'
+  → Th (flags u Ms) (⟦ Ms ⟧s · ρ) (⟦ select (flags u Ms) (opts Ms r) ⟧s · ρ')
 
 opt-ok (` x) V ag = ag x (fromWitness Eq.refl)
 opt-ok (clos {Δ} N Ms) {ρ = ρ} {ρ'} V ag =

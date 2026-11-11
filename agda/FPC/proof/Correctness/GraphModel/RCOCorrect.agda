@@ -58,7 +58,10 @@ id-op : Strict 1
 id-op = record { op = proj₁ ; cong = λ eq → lower (proj₁ eq) ; ne-of = λ _ w w∈ → ⟨ ⟨ w , w∈ ⟩ , tt ⟩ }
 
 {- the operator O with its operands after the first fixed to Es -}
-first : ∀ {n} → Strict (suc n) → Results (𝒫 Value) (Data.List.replicate n ■) → Strict 1
+first : ∀ {n}
+  → Strict (suc n)
+  → Results (𝒫 Value) (Data.List.replicate n ■)
+  → Strict 1
 first O Es = record { op = λ Ds → op O ⟨ proj₁ Ds , Es ⟩ ; cong = λ eq → cong O ⟨ proj₁ eq , RRs-refl Es ⟩
   ; ne-of = λ Ds w w∈ → ⟨ proj₁ (ne-of O _ w w∈) , tt ⟩ }
 
@@ -68,7 +71,9 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {s} (f : Σ ∋ s) → 
   Ag : ∀ {Γ Δ} → Ren Γ Δ → Env Value → Env Value → Set
   Ag ρ γ σ = ∀ {A} x → γ (idx x) ≃ σ (idx (ρ {A} x))
 
-  ren-atm : ∀ {Δ Δ' A σ σ'} (r : Ren Δ Δ') (a : Atm Σ Δ A) → Ag r σ σ' → ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ ≃ ⟦ ⌜ ren r a ⌝ᵃ ⟧[ T' ] σ'
+  ren-atm : ∀ {Δ Δ' A σ σ'} (r : Ren Δ Δ') (a : Atm Σ Δ A)
+    → Ag r σ σ'
+    → ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ ≃ ⟦ ⌜ ren r a ⌝ᵃ ⟧[ T' ] σ'
   ren-atm r (var x) ag = ag x
   ren-atm r (lit B c) ag = ≃-refl
   ren-atm r (ref f) ag = ≃-refl
@@ -82,30 +87,56 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {s} (f : Σ ∋ s) → 
   open Ext
 
   {- the identity, the composition, and under a binder -}
-  id-ext : ∀ {Δ Δ'} {r : Ren Δ Δ'} {σ σ'} → Ext r σ σ' → Ext {Δ'} (λ y → y) σ' σ'
+  id-ext : ∀ {Δ Δ'} {r : Ren Δ Δ'} {σ σ'}
+    → Ext r σ σ'
+    → Ext {Δ'} (λ y → y) σ' σ'
   id-ext e = ext′ (ne e) (cn e) λ _ → ≃-refl
 
-  _⨾_ : ∀ {Γ Δ Δ'} {ρ : Ren Γ Δ} {r : Ren Δ Δ'} {γ σ σ'} → Ext ρ γ σ → Ext r σ σ' → Ext (λ x → r (ρ x)) γ σ'
+  _⨾_ : ∀ {Γ Δ Δ'} {ρ : Ren Γ Δ} {r : Ren Δ Δ'} {γ σ σ'}
+    → Ext ρ γ σ
+    → Ext r σ σ'
+    → Ext (λ x → r (ρ x)) γ σ'
   _⨾_ {ρ = ρ} e e' = ext′ (ne e') (cn e') λ x → ≃-trans (agr e x) (agr e' (ρ x))
 
-  ext-ext : ∀ {Γ Δ B} {ρ : Ren Γ Δ} {γ σ X} → Ext ρ γ σ → nonempty X → Con X → Ext (ext {B = B} ρ) (X • γ) (X • σ)
+  ext-ext : ∀ {Γ Δ B} {ρ : Ren Γ Δ} {γ σ X}
+    → Ext ρ γ σ
+    → nonempty X
+    → Con X
+    → Ext (ext {B = B} ρ) (X • γ) (X • σ)
   ext-ext e neX cX = ext′ (extend-nonempty-env (ne e) neX) (Con-• cX (cn e)) λ { Z → ≃-refl ; (S x) → agr e x }
 
-  rco-sem : ∀ {Γ Δ A} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} {γ σ} → Ext ρ γ σ → ⟦ N ⟧[ T ] γ ≃ ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] σ
-  atomize-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ} → Ext ρ γ σ → (O : Strict 1)
-    → (∀ {Δ'} (r : Ren Δ Δ') σ' a → Ext r σ σ' → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
+  rco-sem : ∀ {Γ Δ A} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} {γ σ}
+    → Ext ρ γ σ
+    → ⟦ N ⟧[ T ] γ ≃ ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] σ
+  atomize-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ}
+    → Ext ρ γ σ
+    → (O : Strict 1)
+    → (  ∀ {Δ'} (r : Ren Δ Δ') σ' a
+       → Ext r σ σ'
+       → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
     → op O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ≃ ⟦ ⌜ atomize N ρ k ⌝ ⟧[ T' ] σ
   {- a complex operand, bound by a let -}
-  let-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ} → Ext ρ γ σ → (O : Strict 1)
-    → (∀ {Δ'} (r : Ren Δ Δ') σ' a → Ext r σ σ' → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
+  let-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ}
+    → Ext ρ γ σ
+    → (O : Strict 1)
+    → (  ∀ {Δ'} (r : Ren Δ Δ') σ' a
+       → Ext r σ σ'
+       → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
     → op O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ≃ ⟦ ⌜ M.let′ (rco N ρ) (k S (var Z)) ⌝ ⟧[ T' ] σ
   atomizes-sem : ∀ {Γ Δ Δs B} (Ns : All (Tm Σ Γ) Δs) {ρ : Ren Γ Δ}
-    (k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → Exp Σ Δ' B) {γ σ} → Ext ρ γ σ → (O : Strict (length Δs))
-    → (∀ {Δ'} (r : Ren Δ Δ') σ' as → Ext r σ σ' → op O (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] σ') ≃ ⟦ ⌜ k r as ⌝ ⟧[ T' ] σ')
+      (k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → Exp Σ Δ' B) {γ σ}
+    → Ext ρ γ σ
+    → (O : Strict (length Δs))
+    → (  ∀ {Δ'} (r : Ren Δ Δ') σ' as
+       → Ext r σ σ'
+       → op O (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] σ') ≃ ⟦ ⌜ k r as ⌝ ⟧[ T' ] σ')
     → op O (⟦ Ns ⟧s[ T ] γ) ≃ ⟦ ⌜ atomizes Ns ρ k ⌝ ⟧[ T' ] σ
   atomize₂-sem : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) {ρ : Ren Γ Δ}
-    (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) {γ σ} → Ext ρ γ σ → (O : Strict 2)
-    → (∀ {Δ'} σ' (a : Atm Σ Δ' A₁) b → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ⟨ ⟦ ⌜ b ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ⟩ ≃ ⟦ ⌜ k a b ⌝ ⟧[ T' ] σ')
+      (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) {γ σ}
+    → Ext ρ γ σ
+    → (O : Strict 2)
+    → (  ∀ {Δ'} σ' (a : Atm Σ Δ' A₁) b
+       → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ⟨ ⟦ ⌜ b ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ⟩ ≃ ⟦ ⌜ k a b ⌝ ⟧[ T' ] σ')
     → op O ⟨ ⟦ L ⟧[ T ] γ , ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ⟩ ≃ ⟦ ⌜ atomize₂ L N ρ k ⌝ ⟧[ T' ] σ
 
   rco-sem (` x) e = agr e x

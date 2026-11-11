@@ -86,16 +86,21 @@ module Trav {𝒦₁ 𝒦₂}
   (rel-wk : ∀ {Γ A B} {a : S.Kit.K 𝒦₁ Γ A} {b} → S.Kit.tm 𝒦₁ a ≈ T.Kit.tm 𝒦₂ b
     → S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ {B = B} a) ≈ T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ b)) where
 
-  ok-ext : ∀ {Γ Γ₂ B} {σ : S.Sub 𝒦₁ Γ Γ₂} {τ : T.Sub 𝒦₂ Γ Γ₂} → OK 𝒦₁ 𝒦₂ σ τ
+  ok-ext : ∀ {Γ Γ₂ B} {σ : S.Sub 𝒦₁ Γ Γ₂} {τ : T.Sub 𝒦₂ Γ Γ₂}
+    → OK 𝒦₁ 𝒦₂ σ τ
     → OK 𝒦₁ 𝒦₂ (S.exts 𝒦₁ {B = B} σ) (T.exts 𝒦₂ τ)
   ok-ext ok Z = rel-vr
   ok-ext ok (S x) = rel-wk (ok x)
 
   ≈-trav : ∀ {Γ Γ₂ A} {σ : S.Sub 𝒦₁ Γ Γ₂} {τ : T.Sub 𝒦₂ Γ Γ₂} {M : Tm Γ A} {M'}
-    → M ≈ M' → OK 𝒦₁ 𝒦₂ σ τ → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
+    → M ≈ M'
+    → OK 𝒦₁ 𝒦₂ σ τ
+    → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
   ≈-travs : ∀ {Γ Γ₂ Θ} {σ : S.Sub 𝒦₁ Γ Γ₂} {τ : T.Sub 𝒦₂ Γ Γ₂}
-    {Ms : All (Tm Γ) Θ} {Ms' : All (C.Tm Γ) Θ}
-    → All₂ _≈_ Ms Ms' → OK 𝒦₁ 𝒦₂ σ τ → All₂ _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
+      {Ms : All (Tm Γ) Θ} {Ms' : All (C.Tm Γ) Θ}
+    → All₂ _≈_ Ms Ms'
+    → OK 𝒦₁ 𝒦₂ σ τ
+    → All₂ _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
   ≈-trav var≈ ok = ok _
   ≈-trav (clos≈ n rs) ok = clos≈ n (≈-travs rs ok)
   ≈-trav (app≈ r s) ok = app≈ (≈-trav r ok) (≈-trav s ok)
@@ -123,8 +128,14 @@ R = _≈_
 Ans′ : ∀ {A} → Tm [] A → Red (Tm [] A) → C.Tm [] A → Set
 Ans′ = Ans T.red Value R
 
-obs≈ : ∀ {A} {V V'} → R {A} V V' → Value V' → S.obs V ≡ T.obs V'
-obss≈ : ∀ {Θ} {Vs : All _ Θ} {Vs'} → All₂ R Vs Vs' → Each Value Vs' → S.obss Vs ≡ T.obss Vs'
+obs≈ : ∀ {A} {V V'}
+  → R {A} V V'
+  → Value V'
+  → S.obs V ≡ T.obs V'
+obss≈ : ∀ {Θ} {Vs : All _ Θ} {Vs'}
+  → All₂ R Vs Vs'
+  → Each Value Vs'
+  → S.obss Vs ≡ T.obss Vs'
 obs≈ (clos≈ _ _) _ = refl
 obs≈ lit≈ _ = refl
 obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
@@ -140,11 +151,18 @@ out≈ P.eq n m with does (n Z.≟ m)
 ... | true = inl≈ (tuple≈ [])
 ... | false = inr≈ (tuple≈ [])
 
-≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → N ≈ N' → R V V' → R (N S.[ V ]) (N' T.[ V' ])
+≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'}
+  → N ≈ N'
+  → R V V'
+  → R (N S.[ V ]) (N' T.[ V' ])
 ≈-[] n m = SubT.≈-trav n λ { Z → m }
 
-sim : ∀ {A} {M M'} → R {A} M M' → Ans′ M (S.red M) M'
-sims : ∀ {Θ} {Ms : All _ Θ} {Ms'} → All₂ R Ms Ms' → Ans T.reds (Each Value) (All₂ R) Ms (S.reds Ms) Ms'
+sim : ∀ {A} {M M'}
+  → R {A} M M'
+  → Ans′ M (S.red M) M'
+sims : ∀ {Θ} {Ms : All _ Θ} {Ms'}
+  → All₂ R Ms Ms'
+  → Ans T.reds (Each Value) (All₂ R) Ms (S.reds Ms) Ms'
 sim (clos≈ {N' = N'} n rs) =
   ans-in (frame-∘ {redU = T.red} {h = C.tuple} {f = C.pair (C.code N')} (frame _ λ _ → refl) (frame _ λ _ → refl))
     (clos≈ n) (sims rs) λ vs ms → val ε (T.pair T.code (T.tuple vs)) (clos≈ n ms)
@@ -152,7 +170,11 @@ sim (app≈ r s) =
   ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
     λ v m → ans-in (frame {g = C.callc _} _ λ _ → val-in (value-red v)) (app≈ m) (sim s) λ w m' → β-sim v m w m'
   where
-  β-sim : ∀ {A B} {V : Tm [] (A ⇒ B)} {V' W W'} → Value V' → R V V' → Value W' → R W W'
+  β-sim : ∀ {A B} {V : Tm [] (A ⇒ B)} {V' W W'}
+    → Value V'
+    → R V V'
+    → Value W'
+    → R W W'
     → Ans′ (app V W) (S.β V refl W) (C.callc V' W')
   β-sim (T.pair T.code (T.tuple vs)) (clos≈ n ms) w m' =
     to (one (trans (val-in (value-red (T.pair T.code (T.tuple vs)))) (val-in (value-red w))))

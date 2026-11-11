@@ -59,13 +59,19 @@ open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (below
 
 {- seq d e is e when e defined implies d defined ------------------------------------}
 
-seq-absorb : (d e : ⟨ 𝔻 ⟩) → (defined e → defined d) → seq · d · e ＝ e
+seq-absorb : (d e : ⟨ 𝔻 ⟩)
+  → (defined e → defined d)
+  → seq · d · e ＝ e
 seq-absorb d e h = antisymmetry 𝔻 (seq · d · e) e
   (∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ _ → e) (defined-is-prop d) e (λ _ → reflexivity 𝔻 e))
   (below-if e (seq · d · e) (λ p → seq-defined d e (h p) ⁻¹))
 
 {- a strict continuous map is defined only on defined values -}
-strict-reflects : (κ : DCPO[ 𝔻 , 𝔻 ]) → κ · ⊥𝔻 ＝ ⊥𝔻 → (d : ⟨ 𝔻 ⟩) → defined (κ · d) → defined d
+strict-reflects : (κ : DCPO[ 𝔻 , 𝔻 ])
+  → κ · ⊥𝔻 ＝ ⊥𝔻
+  → (d : ⟨ 𝔻 ⟩)
+  → defined (κ · d)
+  → defined d
 strict-reflects κ s d p =
   seq-defined-l d (κ · d) (transport defined (ap (κ ·_) (seq-absorb d d id ⁻¹) ∙ seq-strict κ s d d) p)
 
@@ -78,7 +84,8 @@ opaque
  unfolding caseᵈ
 
  case-natural : (E E' : DCPO⊥ {𝓤₁} {𝓤₁}) (h : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , E ⁻ ]) (k : DCPO[ E ⁻ , E' ⁻ ])
-   → k · ⊥ E ＝ ⊥ E' → (d : ⟨ 𝔻 ⟩)
+   → k · ⊥ E ＝ ⊥ E'
+   → (d : ⟨ 𝔻 ⟩)
    → k · (caseᵈ E h · d) ＝ caseᵈ E' (λ t → ∘₁ (obj (Payload t) 𝔻) (E ⁻) (E' ⁻) (h t) k) · d
  case-natural E E' h k s d =
   ∐ˢˢ-＝-if-continuous-and-strict E E' (pr₁ k) (pr₂ k) s
@@ -135,16 +142,22 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
     field agr : ∀ {A} (x : Γ ∋ A) → γ (idx x) ＝ σ (idx (ρ x))
   open Ag
 
-  _⨾_ : ∀ {Γ Δ Δ'} {ρ : Ren Γ Δ} {r : Ren Δ Δ'} {γ σ σ'} → Ag ρ γ σ → Ag r σ σ' → Ag (λ x → r (ρ x)) γ σ'
+  _⨾_ : ∀ {Γ Δ Δ'} {ρ : Ren Γ Δ} {r : Ren Δ Δ'} {γ σ σ'}
+    → Ag ρ γ σ
+    → Ag r σ σ'
+    → Ag (λ x → r (ρ x)) γ σ'
   _⨾_ {ρ = ρ} ag ag' = mk-ag λ x → agr ag x ∙ agr ag' (ρ x)
 
-  ext-ag : ∀ {Γ Δ B} {ρ : Ren Γ Δ} {γ σ} {d : ⟨ 𝔻 ⟩} → Ag ρ γ σ → Ag (ext {B = B} ρ) (d • γ) (d • σ)
+  ext-ag : ∀ {Γ Δ B} {ρ : Ren Γ Δ} {γ σ} {d : ⟨ 𝔻 ⟩}
+    → Ag ρ γ σ
+    → Ag (ext {B = B} ρ) (d • γ) (d • σ)
   ext-ag ag = mk-ag λ { Z → refl ; (S x) → agr ag x }
 
   id-ag : ∀ {Δ σ} → Ag {Δ} (λ y → y) σ σ
   id-ag = mk-ag λ y → refl
 
-  ren-atm : ∀ {Δ Δ' A} {r : Ren Δ Δ'} (a : Atm Σ Δ A) {σ σ' : ⟨ Env ⟩} → Ag r σ σ'
+  ren-atm : ∀ {Δ Δ' A} {r : Ren Δ Δ'} (a : Atm Σ Δ A) {σ σ' : ⟨ Env ⟩}
+    → Ag r σ σ'
     → ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ ＝ ⟦ ⌜ ren r a ⌝ᵃ ⟧[ T' ] · σ'
   ren-atm (var x) ag = agr ag x
   ren-atm (lit B c) ag = refl
@@ -154,21 +167,41 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
   KOK : ∀ {Δ A B} → K Σ Δ A B → ⟨ Env ⟩ → (⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩) → 𝓤₁ ̇
   KOK {Δ} k σ F = ∀ {Δ'} {r : Ren Δ Δ'} {σ'} a → Ag r σ σ' → F (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ') ＝ ⟦ ⌜ k r a ⌝ ⟧[ T' ] · σ'
 
-  rco-sem : ∀ {Γ Δ A} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} {γ σ} → Ag ρ γ σ → ⟦ N ⟧[ T ] · γ ＝ ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] · σ
-  atomize-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ} → Ag ρ γ σ
-    → (F : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩) → Str F → KOK k σ F → F (⟦ N ⟧[ T ] · γ) ＝ ⟦ ⌜ atomize N ρ k ⌝ ⟧[ T' ] · σ
+  rco-sem : ∀ {Γ Δ A} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} {γ σ}
+    → Ag ρ γ σ
+    → ⟦ N ⟧[ T ] · γ ＝ ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] · σ
+  atomize-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ}
+    → Ag ρ γ σ
+    → (F : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩)
+    → Str F
+    → KOK k σ F
+    → F (⟦ N ⟧[ T ] · γ) ＝ ⟦ ⌜ atomize N ρ k ⌝ ⟧[ T' ] · σ
   {- a complex operand, bound by a let -}
-  let-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ} → Ag ρ γ σ
-    → (F : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩) → Str F → KOK k σ F → F (⟦ N ⟧[ T ] · γ) ＝ ⟦ ⌜ M.let′ (rco N ρ) (k S (var Z)) ⌝ ⟧[ T' ] · σ
+  let-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ}
+    → Ag ρ γ σ
+    → (F : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩)
+    → Str F
+    → KOK k σ F
+    → F (⟦ N ⟧[ T ] · γ) ＝ ⟦ ⌜ M.let′ (rco N ρ) (k S (var Z)) ⌝ ⟧[ T' ] · σ
   atomizes-sem : ∀ {Γ Δ Δs B} (Ns : All (Tm Σ Γ) Δs) {ρ : Ren Γ Δ}
-    (k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → Exp Σ Δ' B) {γ σ} → Ag ρ γ σ
-    → (G : (Fin (length Δs) → ⟨ 𝔻 ⟩) → ⟨ 𝔻 ⟩) → ((ds : Fin (length Δs) → ⟨ 𝔻 ⟩) (i : Fin (length Δs)) → defined (G ds) → defined (ds i))
-    → (∀ {Δ'} {r : Ren Δ Δ'} {σ'} as → Ag r σ σ' → G (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] · σ') ＝ ⟦ ⌜ k r as ⌝ ⟧[ T' ] · σ')
+      (k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → Exp Σ Δ' B) {γ σ}
+    → Ag ρ γ σ
+    → (G : (Fin (length Δs) → ⟨ 𝔻 ⟩) → ⟨ 𝔻 ⟩)
+    → (  (ds : Fin (length Δs) → ⟨ 𝔻 ⟩) (i : Fin (length Δs))
+       → defined (G ds)
+       → defined (ds i))
+    → (  ∀ {Δ'} {r : Ren Δ Δ'} {σ'} as
+       → Ag r σ σ'
+       → G (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] · σ') ＝ ⟦ ⌜ k r as ⌝ ⟧[ T' ] · σ')
     → G (⟦ Ns ⟧s[ T ] · γ) ＝ ⟦ ⌜ atomizes Ns ρ k ⌝ ⟧[ T' ] · σ
   atomize₂-sem : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) {ρ : Ren Γ Δ}
-    (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) {γ σ} → Ag ρ γ σ
-    → (F : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩) → ((b : ⟨ 𝔻 ⟩) → Str (λ a → F a b)) → ((a : ⟨ 𝔻 ⟩) → Str (F a))
-    → (∀ {Δ'} (σ' : ⟨ Env ⟩) (a : Atm Σ Δ' A₁) b → F (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ') (⟦ ⌜ b ⌝ᵃ ⟧[ T' ] · σ') ＝ ⟦ ⌜ k a b ⌝ ⟧[ T' ] · σ')
+      (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) {γ σ}
+    → Ag ρ γ σ
+    → (F : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩)
+    → ((b : ⟨ 𝔻 ⟩) → Str (λ a → F a b))
+    → ((a : ⟨ 𝔻 ⟩) → Str (F a))
+    → (  ∀ {Δ'} (σ' : ⟨ Env ⟩) (a : Atm Σ Δ' A₁) b
+       → F (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ') (⟦ ⌜ b ⌝ᵃ ⟧[ T' ] · σ') ＝ ⟦ ⌜ k a b ⌝ ⟧[ T' ] · σ')
     → F (⟦ L ⟧[ T ] · γ) (⟦ N ⟧[ T ] · γ) ＝ ⟦ ⌜ atomize₂ L N ρ k ⌝ ⟧[ T' ] · σ
 
   rco-sem (` x) ag = agr ag x

@@ -40,7 +40,9 @@ data Ext {Σ R} : ∀ {Bs Bs'} → Blocks Σ R Bs → Bs ⊑ Bs' → Blocks Σ R
   more : ∀ {Bs Bs' Δ} {bs : Blocks Σ R Bs} {g} {bs' : Blocks Σ R Bs'} {t : Tail Σ R Bs' Δ} → Ext bs g bs' → Ext bs (there⊑ g) (bs' ▷ t)
 
 ext-trans : ∀ {Σ R Bs₀ Bs₁ Bs₂} {bs₀ : Blocks Σ R Bs₀} {bs₁ : Blocks Σ R Bs₁} {bs₂ : Blocks Σ R Bs₂} {g₁ g₂}
-  → Ext bs₀ g₁ bs₁ → Ext bs₁ g₂ bs₂ → Ext bs₀ (⊑-trans g₁ g₂) bs₂
+  → Ext bs₀ g₁ bs₁
+  → Ext bs₁ g₂ bs₂
+  → Ext bs₀ (⊑-trans g₁ g₂) bs₂
 ext-trans e₁ same = e₁
 ext-trans e₁ (more e₂) = more (ext-trans e₁ e₂)
 
@@ -65,7 +67,8 @@ module _ {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)) 
     module _ {R : Type} where
 
       jump-at : ∀ {Bs Bs' Δ} {bs : Blocks Σ R Bs} {g} {bs' : Blocks Σ R Bs'} (l : Bs ∋ Δ) φ
-        → Ext bs g bs' → G.jump ds' ck bs l φ ≡ G.jump ds' ck bs' (⊑-∋ g l) φ
+        → Ext bs g bs'
+        → G.jump ds' ck bs l φ ≡ G.jump ds' ck bs' (⊑-∋ g l) φ
       jump-at l φ same = refl
       jump-at l φ (more e) = jump-at l φ e
 
@@ -77,7 +80,9 @@ module _ {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)) 
           means : ∀ φ → K φ ≡ G.tail ds' ck (Out.made o) φ (Out.tail o)
 
       after-ok : ∀ {Bs Bs₁ Δ} {bs : Blocks Σ R Bs} {bs₁ : Blocks Σ R Bs₁} {g} (o : Out Σ R Bs₁ Δ) {K}
-        → Ext bs g bs₁ → Ok bs₁ K o → Ok bs K (after g o)
+        → Ext bs g bs₁
+        → Ok bs₁ K o
+        → Ok bs K (after g o)
       after-ok (out g' bs' t) e (ok e' m) = ok (ext-trans e e') m
 
       either-bind : ∀ {A B C} (u : Val (A ⊹ B)) {f : Val A → Result (Val C)} {g : Val B → Result (Val C)}
@@ -86,8 +91,9 @@ module _ {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)) 
       either-bind (inl v) = refl
       either-bind (inr v) = refl
 
-      assign-ok : ∀ {Bs Δ Δ' A} (e : Imp.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ R Bs (A ∷ Δ')) (bs : Blocks Σ R Bs)
-        {K : Env (A ∷ Δ') → Result (Val R)}
+      assign-ok : ∀ {Bs Δ Δ' A} (e : Imp.Exp Σ Δ A)
+        → (p : Δ' ⊑ Δ)
+        → (k : Tail Σ R Bs (A ∷ Δ')) (bs : Blocks Σ R Bs) {K : Env (A ∷ Δ') → Result (Val R)}
         → (∀ φ → K φ ≡ G.tail ds' ck bs φ k)
         → Ok bs (λ φ → I.eval ds ck φ e >>= λ v → K (v ∷ pop p φ)) (explicate-assign e p k bs)
       assign-ok (Imp.simple s) p k bs h = ok same λ φ → bind≡ (simple≡ φ s) λ v → h (v ∷ pop p φ)

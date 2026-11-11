@@ -93,13 +93,21 @@ SelfContainedMaps-++ {U₁ = U₁} {W₁ = W₁} c₁ c₂ = record
 Approx : 𝒫 Value → 𝒫 Value → Set₁
 Approx D D' = ∀ V → mem V ⊆ D' → ApproxLR D V
 
-Approx-const : ∀ {D D' B} {c : base-rep B} → Approx D D' → const c ∈ D' → const c ∈ D
+Approx-const : ∀ {D D' B} {c : base-rep B}
+  → Approx D D'
+  → const c ∈ D'
+  → const c ∈ D
 Approx-const {c = c} r c∈ = ApproxLRLayer.const-obs (unfold (r (const c ∷ []) (single⊆ c∈))) c (here refl)
 
-Approx-ne : ∀ {D D'} → Approx D D' → nonempty D' → nonempty D
+Approx-ne : ∀ {D D'}
+  → Approx D D'
+  → nonempty D'
+  → nonempty D
 Approx-ne r ⟨ v , v∈ ⟩ = ApproxLRLayer.nonempty-obs (unfold (r (v ∷ []) (single⊆ v∈))) (λ ())
 
-Approx-untag : ∀ t {D D'} → Approx D D' → Approx (Untag t D) (Untag t D')
+Approx-untag : ∀ t {D D'}
+  → Approx D D'
+  → Approx (Untag t D) (Untag t D')
 Approx-untag t r W W⊆ = ApproxLRLayer.tag-obs (unfold (r (map (tag t) W) tW⊆)) t W (λ d → ∈-map⁺ (tag t))
   where
   tW⊆ : mem (map (tag t) W) ⊆ _

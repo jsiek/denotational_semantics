@@ -110,23 +110,33 @@ open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧; ⟦_⟧s)
 {- Observations of constants ------------------------------------------------------}
 
 private
- view-＝ : (a b : ⟨ 𝔻 ⟩) (e : a ＝ b) (q : defined a) → view a q ＝ view b (transport defined e q)
+ view-＝ : (a b : ⟨ 𝔻 ⟩)
+   → (e : a ＝ b)
+   → (q : defined a)
+   → view a q ＝ view b (transport defined e q)
  view-＝ a .a refl q = refl
 
 {- values made with different tags differ -}
-inj-tag : (t t' : Tag) (x : _) (y : _) → inj t · x ＝ inj t' · y → t ＝ t'
+inj-tag : (t t' : Tag) (x : _) (y : _)
+  → inj t · x ＝ inj t' · y
+  → t ＝ t'
 inj-tag t t' x y e =
  ap pr₁ (view-inj t x (defined-inj t x) ⁻¹ ∙ view-＝ _ _ e (defined-inj t x) ∙ view-inj t' y _)
 
-con-inj : ∀ {B B' k k'} → con B k ＝ con B' k' → o-const B k ≡ o-const B' k'
+con-inj : ∀ {B B' k k'}
+  → con B k ＝ con B' k'
+  → o-const B k ≡ o-const B' k'
 con-inj refl = ≡-refl
 
-not-con : (t : Tag) (x : _) {B : Base} {k : base-rep B} → ((B' : Base) (k' : base-rep B') → ¬ (t ＝ con B' k'))
+not-con : (t : Tag) (x : _) {B : Base} {k : base-rep B}
+  → ((B' : Base) (k' : base-rep B') → ¬ (t ＝ con B' k'))
   → ¬ (inj t · x ＝ const B k)
 not-con t x {B} {k} h e = h B k (inj-tag t (con B k) x ⋆ e)
 
 {- a value means a constant exactly when it is observed as that constant -}
-𝒱-const : ∀ {A B} {k : base-rep B} (v : Value A) → 𝒱 v ＝ const B k → obs v ≡ o-const B k
+𝒱-const : ∀ {A B} {k : base-rep B} (v : Value A)
+  → 𝒱 v ＝ const B k
+  → obs v ≡ o-const B k
 𝒱-const (cv k') e = con-inj (inj-tag _ _ ⋆ ⋆ e)
 𝒱-const (fold v) e = 𝒱-const v e
 𝒱-const (code N) e = 𝟘-elim (not-con (tup 0) _ (λ _ _ ()) e)
@@ -137,7 +147,9 @@ not-con t x {B} {k} h e = h B k (inj-tag t (con B k) x ⋆ e)
 𝒱-const (inl v) e = 𝟘-elim (not-con left (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
 𝒱-const (inr v) e = 𝟘-elim (not-con right (𝒱 v) (λ _ _ ()) (seq-defined (𝒱 v) _ (𝒱-defined v) ⁻¹ ∙ e))
 
-const-𝒱 : ∀ {A B} {k : base-rep B} (v : Value A) → obs v ≡ o-const B k → 𝒱 v ＝ const B k
+const-𝒱 : ∀ {A B} {k : base-rep B} (v : Value A)
+  → obs v ≡ o-const B k
+  → 𝒱 v ＝ const B k
 const-𝒱 (cv k) ≡-refl = refl
 const-𝒱 (fold v) e = const-𝒱 v e
 const-𝒱 (code N) ()
@@ -154,14 +166,19 @@ data Holds {X : 𝓤₀ ̇ } (P : X → 𝓤₁ ̇ ) : Result X → 𝓤₁ ̇ w
   ret : ∀ {v} → P v → Holds P (ret v)
 
 bind-holds : {X Y : 𝓤₀ ̇ } {P : X → 𝓤₁ ̇ } {Q : Y → 𝓤₁ ̇ } {r : Result X} {f : X → Result Y}
-  → Holds P r → ((v : X) → P v → Holds Q (f v)) → Holds Q (r >>= f)
+  → Holds P r
+  → ((v : X) → P v → Holds Q (f v))
+  → Holds Q (r >>= f)
 bind-holds timeout k = timeout
 bind-holds (ret {v} h) k = k v h
 
 Sound : ∀ {A} → Result (Value A) → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
 Sound r d = Holds (λ v → 𝒱 v ＝ d) r
 
-sound-＝ : ∀ {A} {r : Result (Value A)} {d d'} → d ＝ d' → Sound r d → Sound r d'
+sound-＝ : ∀ {A} {r : Result (Value A)} {d d'}
+  → d ＝ d'
+  → Sound r d
+  → Sound r d'
 sound-＝ refl s = s
 
 {- Soundness ------------------------------------------------------------------------}

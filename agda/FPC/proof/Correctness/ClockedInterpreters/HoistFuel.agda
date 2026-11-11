@@ -85,7 +85,9 @@ data Ext : ∀ {Σ Σ'} → Made Σ → Σ ⊑ Σ' → Made Σ' → Set where
   more : ∀ {Σ Σ' s₀} {D : Made Σ} {s} {D' : Made Σ'} {N : Code Σ' s₀} → Ext D s D' → Ext D (there⊑ s) (D' ▷ N)
 
 ext-trans : ∀ {Σ₀ Σ₁ Σ₂} {D₀ : Made Σ₀} {D₁ : Made Σ₁} {D₂ : Made Σ₂} {s₁ s₂}
-  → Ext D₀ s₁ D₁ → Ext D₁ s₂ D₂ → Ext D₀ (⊑-trans s₁ s₂) D₂
+  → Ext D₀ s₁ D₁
+  → Ext D₁ s₂ D₂
+  → Ext D₀ (⊑-trans s₁ s₂) D₂
 ext-trans e₁ same = e₁
 ext-trans e₁ (more e₂) = more (ext-trans e₁ e₂)
 
@@ -134,12 +136,18 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
   Contains (D ▷ N) r = Σ[ r' ∈ Ren _ Σf ] (∀ {m} (x : _ ∋ m) → r (S x) ≡ r' x) × lookup dsf (r Z) ≡ wk r' N
     × Contains D (λ x → r (S x))
 
-  contains-cong : ∀ {Σ} (D : Made Σ) {r r' : Ren Σ Σf} → (∀ {m} (x : Σ ∋ m) → r x ≡ r' x) → Contains D r → Contains D r'
+  contains-cong : ∀ {Σ} (D : Made Σ) {r r' : Ren Σ Σf}
+    → (∀ {m} (x : Σ ∋ m) → r x ≡ r' x)
+    → Contains D r
+    → Contains D r'
   contains-cong [] h c = tt
   contains-cong (D ▷ N) h (r'' , h' , e , c) =
     r'' , (λ x → trans (sym (h (S x))) (h' x)) , subst (λ f → lookup dsf f ≡ _) (h Z) e , contains-cong D (λ x → h (S x)) c
 
-  contains-ext : ∀ {Σ Σ'} {D : Made Σ} {s} {D' : Made Σ'} {r : Ren Σ' Σf} → Ext D s D' → Contains D' r → Contains D (λ x → r (⊑-∋ s x))
+  contains-ext : ∀ {Σ Σ'} {D : Made Σ} {s} {D' : Made Σ'} {r : Ren Σ' Σf}
+    → Ext D s D'
+    → Contains D' r
+    → Contains D (λ x → r (⊑-∋ s x))
   contains-ext same c = c
   contains-ext (more e) (_ , _ , _ , c) = contains-ext e c
 
@@ -158,12 +166,17 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
   open Rel GCode (Same GCode) public
 
   run≈ : ∀ ck {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) {r : Ren (Out.Σ' (glob M D)) Σf} {ρ₁ ρ₂}
-    → Contains (Out.made (glob M D)) r → All₂ _≈_ ρ₁ ρ₂
+    → Contains (Out.made (glob M D)) r
+    → All₂ _≈_ ρ₁ ρ₂
     → RelResult _≈_ (S4.eval ck ρ₁ M) (T.eval dsf ck ρ₂ (wk r (Out.res (glob M D))))
   runs≈ : ∀ ck {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) {r : Ren (Out.Σ' (globs Ms D)) Σf} {ρ₁ ρ₂}
-    → Contains (Out.made (globs Ms D)) r → All₂ _≈_ ρ₁ ρ₂
+    → Contains (Out.made (globs Ms D)) r
+    → All₂ _≈_ ρ₁ ρ₂
     → RelResult (All₂ _≈_) (S4.evals ck ρ₁ Ms) (T.evals dsf ck ρ₂ (wks r (Out.res (globs Ms D))))
-  call≈ : ∀ ck {A B} {f : S4.Val (A ⇒ B)} {g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S4.call ck f v) (T.call dsf ck g w)
+  call≈ : ∀ ck {A B} {f : S4.Val (A ⇒ B)} {g v w}
+    → f ≈ g
+    → v ≈ w
+    → RelResult _≈_ (S4.call ck f v) (T.call dsf ck g w)
 
   run≈ ck (S.` x) D c E = ret (lookup₂ E x)
   run≈ ck (S.code N) D {r} c E with glob N D in eq
@@ -216,8 +229,10 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
     run≈ ck N D c (w ∷ tup≈ rs ∷ [])
 
 {- the definitions made, closed over the whole table, are found there -}
-close-ok : ∀ {Σ Σf} (dsf : All (Code Σf) Σf) (D : Made Σ) (s : Σ ⊑ Σf)
-  → (∀ {n} (x : Σ ∋ n) → lookup dsf (⊑-∋ s x) ≡ lookup (close D s) x) → G.Contains dsf D (⊑-∋ s)
+close-ok : ∀ {Σ Σf} (dsf : All (Code Σf) Σf) (D : Made Σ)
+  → (s : Σ ⊑ Σf)
+  → (∀ {n} (x : Σ ∋ n) → lookup dsf (⊑-∋ s x) ≡ lookup (close D s) x)
+  → G.Contains dsf D (⊑-∋ s)
 close-ok dsf [] s h = tt
 close-ok dsf (D ▷ N) s h =
   ⊑-∋ s' , (λ x → sym (⊑-∋-trans (there⊑ here⊑) s x)) , h Z
@@ -231,6 +246,10 @@ hoist-correct M with glob M [] in eq
   where
   dsf = close D here⊑
   open G dsf
-  run-out : ∀ ck {o} → glob M [] ≡ o → {r : Ren (Out.Σ' o) _} → Contains (Out.made o) r → All₂ _≈_ [] []
+  run-out : ∀ ck {o}
+    → glob M [] ≡ o
+    → {r : Ren (Out.Σ' o) _}
+    → Contains (Out.made o) r
+    → All₂ _≈_ [] []
     → RelResult _≈_ (S4.eval ck [] M) (T.eval dsf ck [] (wk r (Out.res o)))
   run-out ck refl = run≈ ck M []

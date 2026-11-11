@@ -36,8 +36,10 @@ data Prog {X : Set} (V : X → Set) (M : X) (r : Red X) : Set where
 
 private
   {- reduce in a context, or go on once the subterm is a value -}
-  ctx : ∀ {A B : Set} {V : A → Set} {M : A} {V' : B → Set} {M' : B} {f : A → B} {r k} → Prog V M r
-    → (V M → r ≡ val → Prog V' M' k) → Prog V' M' (step-in f r k)
+  ctx : ∀ {A B : Set} {V : A → Set} {M : A} {V' : B → Set} {M' : B} {f : A → B} {r k}
+    → Prog V M r
+    → (V M → r ≡ val → Prog V' M' k)
+    → Prog V' M' (step-in f r k)
   ctx (steps N refl) h = steps _ refl
   ctx (value v refl) h = h v refl
 
@@ -61,7 +63,9 @@ progress (unfold M) = ctx (progress M) λ { (fold v) e → steps _ refl }
 progresses [] = value [] refl
 progresses (M ∷ Ms) = ctx (progress M) λ v e → ctx (progresses Ms) λ vs es → value (v ∷ vs) refl
 
-value-answer : ∀ {A} {V : Tm [] A} → Value V → Answer (obs V)
+value-answer : ∀ {A} {V : Tm [] A}
+  → Value V
+  → Answer (obs V)
 value-answer lam ()
 value-answer lit ()
 value-answer (tuple vs) ()
@@ -72,7 +76,9 @@ value-answer (fold v) = value-answer v
 fpc-no-error : ∀ {A} (M : Tm [] A) → ¬ Terminates (sem M) o-error
 fpc-no-error M (s , _ , fin) = go (progress s) fin
   where
-  go : Prog Value s (red s) → toNext (obs s) (red s) ≡ stop o-error → ⊥
+  go : Prog Value s (red s)
+    → toNext (obs s) (red s) ≡ stop o-error
+    → ⊥
   go (value v e) f = value-answer v (cong stopped (trans (sym (cong (toNext (obs s)) e)) f))
     where
     stopped : Next (Tm [] _) → Obs

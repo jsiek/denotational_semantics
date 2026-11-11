@@ -42,7 +42,10 @@ NE Γ ρ = ∀ {C} (x : Γ ∋ C) → nonempty (ρ (idx x))
 Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → Env Value → Env Value → Set
 Agree u r ρ ρ' = ∀ {C} x (t : T (u {C} x)) → ρ (idx x) ≃ ρ' (idx (r x t))
 
-ext-ne : ∀ {Γ A ρ X} → nonempty X → NE Γ ρ → NE (A ∷ Γ) (X • ρ)
+ext-ne : ∀ {Γ A ρ X}
+  → nonempty X
+  → NE Γ ρ
+  → NE (A ∷ Γ) (X • ρ)
 ext-ne v V Z = v
 ext-ne v V (S x) = V x
 
@@ -55,36 +58,60 @@ data Th : ∀ {Δ} (fl : Flags Δ) → Rs Δ → Rs (kept fl) → Set₁ where
   keep : ∀ {A Δ fl x y xs ys} → x ≃ y → Th {Δ} fl xs ys → Th {A ∷ Δ} (true ∷ fl) ⟨ x , xs ⟩ ⟨ y , ys ⟩
   drop : ∀ {A Δ fl x xs ys} → nonempty x → Th {Δ} fl xs ys → Th {A ∷ Δ} (false ∷ fl) ⟨ x , xs ⟩ ys
 
-th-ne→ : ∀ {Δ fl Ds Es} → Th {Δ} fl Ds Es → (∀ i → nonempty (nthD Ds i)) → ∀ j → nonempty (nthD Es j)
+th-ne→ : ∀ {Δ fl Ds Es}
+  → Th {Δ} fl Ds Es
+  → (∀ i → nonempty (nthD Ds i))
+  → ∀ j
+  → nonempty (nthD Es j)
 th-ne→ (keep e th) ne zero = ne-≃ e (ne zero)
 th-ne→ (keep e th) ne (suc j) = th-ne→ th (λ i → ne (suc i)) j
 th-ne→ (drop _ th) ne j = th-ne→ th (λ i → ne (suc i)) j
 
-th-ne← : ∀ {Δ fl Ds Es} → Th {Δ} fl Ds Es → (∀ j → nonempty (nthD Es j)) → ∀ i → nonempty (nthD Ds i)
+th-ne← : ∀ {Δ fl Ds Es}
+  → Th {Δ} fl Ds Es
+  → (∀ j → nonempty (nthD Es j))
+  → ∀ i
+  → nonempty (nthD Ds i)
 th-ne← (keep e th) ne zero = ne-≃ (≃-sym e) (ne zero)
 th-ne← (keep e th) ne (suc i) = th-ne← th (λ j → ne (suc j)) i
 th-ne← (drop x th) ne zero = x
 th-ne← (drop x th) ne (suc i) = th-ne← th ne i
 
 {- a kept free variable means the same in the two codes' environments -}
-th-fv : ∀ {Δ fl Ds Es C} → Th {Δ} fl Ds Es → (i : Δ ∋ C) (k : T (FPC.Framework.AllUtil.lookup fl i))
+th-fv : ∀ {Δ fl Ds Es C}
+  → Th {Δ} fl Ds Es
+  → (i : Δ ∋ C)
+  → (k : T (FPC.Framework.AllUtil.lookup fl i))
   → fv-env (length Δ) Ds (idx i) ≃ fv-env (length (kept fl)) Es (idx (sq fl i k))
 th-fv (keep e th) Z k = e
 th-fv (keep e th) (S i) k = th-fv th i k
 th-fv (drop _ th) (S i) k = th-fv th i k
 
-fv-ne : ∀ {Δ C} {Ds : Rs Δ} → (∀ i → nonempty (nthD Ds i)) → (i : Δ ∋ C) → nonempty (fv-env (length Δ) Ds (idx i))
+fv-ne : ∀ {Δ C} {Ds : Rs Δ}
+  → (∀ i → nonempty (nthD Ds i))
+  → (i : Δ ∋ C)
+  → nonempty (fv-env (length Δ) Ds (idx i))
 fv-ne ne Z = ne zero
 fv-ne ne (S i) = fv-ne (λ j → ne (suc j)) i
 
-opt-ok : ∀ {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ ρ'} → NE Γ ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ opt M r ⟧ ρ'
-opts-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'} → NE Γ ρ → Agree (usesA Ms) r ρ ρ'
-  → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts Ms r ⟧s ρ') i
+opt-ok : ∀ {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ ρ'}
+  → NE Γ ρ
+  → Agree (uses M) r ρ ρ'
+  → ⟦ M ⟧ ρ ≃ ⟦ opt M r ⟧ ρ'
+opts-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'}
+  → NE Γ ρ
+  → Agree (usesA Ms) r ρ ρ'
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts Ms r ⟧s ρ') i
 {- a body under a binder, for the variables its binder's term uses -}
-under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) {r : Ren (λ x → uses N (S x)) Γ'} {ρ ρ'} → NE Γ ρ → Agree (λ x → uses N (S x)) r ρ ρ'
+under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) {r : Ren (λ x → uses N (S x)) Γ'} {ρ ρ'}
+  → NE Γ ρ
+  → Agree (λ x → uses N (S x)) r ρ ρ'
   → Body-≃ (λ X → ⟦ N ⟧ (X • ρ)) (λ X → ⟦ opt N (ext {u = uses N} r) ⟧ (X • ρ'))
 th-ok : ∀ {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'}
-  → NE Γ ρ → Agree (usesA Ms) r ρ ρ' → Th (flags u Ms) (⟦ Ms ⟧s ρ) (⟦ select (flags u Ms) (opts Ms r) ⟧s ρ')
+  → NE Γ ρ
+  → Agree (usesA Ms) r ρ ρ'
+  → Th (flags u Ms) (⟦ Ms ⟧s ρ) (⟦ select (flags u Ms) (opts Ms r) ⟧s ρ')
 
 opt-ok (` x) V ag = ag x (fromWitness refl)
 opt-ok (clos {Δ} N Ms) V ag =

@@ -59,25 +59,38 @@ _ ⊆L _ = ⊥
 ⊆L-refl [] = tt
 ⊆L-refl (D ∷ Ds) = ⟨ (λ d z → z) , ⊆L-refl Ds ⟩
 
-At-mono : ∀ {n} (i : Fin n) Ds Es d → Ds ⊆L Es → At i Ds d → At i Es d
+At-mono : ∀ {n} (i : Fin n) Ds Es d
+  → Ds ⊆L Es
+  → At i Ds d
+  → At i Es d
 At-mono {suc n} zero (D ∷ Ds) (E ∷ Es) d ⟨ D⊆ , Ds⊆ ⟩ ⟨ len , d∈ ⟩ =
   ⟨ len' Ds Es Ds⊆ len , D⊆ d d∈ ⟩
   where
-  len' : ∀ {m} Ds Es → Ds ⊆L Es → length Ds ≡ m → length Es ≡ m
+  len' : ∀ {m} Ds Es
+    → Ds ⊆L Es
+    → length Ds ≡ m
+    → length Es ≡ m
   len' [] [] _ refl = refl
   len' (D ∷ Ds) (E ∷ Es) ⟨ _ , s ⟩ refl = cong suc (len' Ds Es s refl)
 At-mono (suc i) (D ∷ Ds) (E ∷ Es) d ⟨ _ , Ds⊆ ⟩ a = At-mono i Ds Es d Ds⊆ a
 
-AllNE-mono : ∀ Ds Es → Ds ⊆L Es → AllNE Ds → AllNE Es
+AllNE-mono : ∀ Ds Es
+  → Ds ⊆L Es
+  → AllNE Ds
+  → AllNE Es
 AllNE-mono [] [] _ _ = tt
 AllNE-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ ⟨ ⟨ d , d∈ ⟩ , ne ⟩ = ⟨ ⟨ d , D⊆ d d∈ ⟩ , AllNE-mono Ds Es s ne ⟩
 
-𝒯L-mono : ∀ Ds Es → Ds ⊆L Es → 𝒯L Ds ⊆ 𝒯L Es
+𝒯L-mono : ∀ Ds Es
+  → Ds ⊆L Es
+  → 𝒯L Ds ⊆ 𝒯L Es
 𝒯L-mono [] [] s ⟨⟩ tt = tt
 𝒯L-mono Ds Es s (tup[ i ] d) ⟨ a , ne ⟩ = ⟨ At-mono i Ds Es d s a , AllNE-mono Ds Es s ne ⟩
 
 
-At-length : ∀ {m} (i : Fin m) Ds d → At i Ds d → length Ds ≡ m
+At-length : ∀ {m} (i : Fin m) Ds d
+  → At i Ds d
+  → length Ds ≡ m
 At-length {suc m} zero (D ∷ Ds) d ⟨ len , _ ⟩ = cong suc len
 At-length (suc i) (D ∷ Ds) d a = cong suc (At-length i Ds d a)
 
@@ -85,15 +98,23 @@ AllCon : List (𝒫 Value) → Set
 AllCon [] = ⊤
 AllCon (D ∷ Ds) = Con D × AllCon Ds
 
-At-con : ∀ {n} (i : Fin n) Ds {d d'} → AllCon Ds → At i Ds d → At i Ds d' → d ~ d'
+At-con : ∀ {n} (i : Fin n) Ds {d d'}
+  → AllCon Ds
+  → At i Ds d
+  → At i Ds d'
+  → d ~ d'
 At-con {suc n} zero (D ∷ Ds) ⟨ c , _ ⟩ ⟨ _ , d∈ ⟩ ⟨ _ , d'∈ ⟩ = c _ _ d∈ d'∈
 At-con (suc i) (D ∷ Ds) ⟨ _ , cs ⟩ a a' = At-con i Ds cs a a'
 
-At-[] : ∀ {n} (i : Fin n) {d} → At i [] d → ⊥
+At-[] : ∀ {n} (i : Fin n) {d}
+  → At i [] d
+  → ⊥
 At-[] zero ()
 At-[] (suc i) ()
 
-𝒯L-con : ∀ Ds → AllCon Ds → Con (𝒯L Ds)
+𝒯L-con : ∀ Ds
+  → AllCon Ds
+  → Con (𝒯L Ds)
 𝒯L-con Ds cs ⟨⟩ ⟨⟩ _ _ = tt
 𝒯L-con Ds cs (tup[ i ] d) (tup[ j ] d') ⟨ a , _ ⟩ ⟨ a' , _ ⟩
     with trans (sym (At-length i Ds d a)) (At-length j Ds d' a')

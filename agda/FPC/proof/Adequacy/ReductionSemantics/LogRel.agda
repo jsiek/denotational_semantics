@@ -63,10 +63,18 @@ _⇓_ : ∀ {A} → Tm [] A → Tm [] A → Set
 M ⇓ V = Star* red M V × Val V
 
 {- reduction is deterministic -}
-⇓-det : ∀ {A} {M V₁ V₂ : Tm [] A} → M ⇓ V₁ → M ⇓ V₂ → V₁ ≡ V₂
+⇓-det : ∀ {A} {M V₁ V₂ : Tm [] A}
+  → M ⇓ V₁
+  → M ⇓ V₂
+  → V₁ ≡ V₂
 ⇓-det ⟨ σ₁ , v₁ ⟩ ⟨ σ₂ , v₂ ⟩ = det σ₁ v₁ σ₂ v₂
   where
-  det : ∀ {A} {M V₁ V₂ : Tm [] A} → Star* red M V₁ → Val V₁ → Star* red M V₂ → Val V₂ → V₁ ≡ V₂
+  det : ∀ {A} {M V₁ V₂ : Tm [] A}
+    → Star* red M V₁
+    → Val V₁
+    → Star* red M V₂
+    → Val V₂
+    → V₁ ≡ V₂
   det ε _ ε _ = refl
   det ε v (s ◅ _) _ with trans (sym (value-red v)) s
   ... | ()
@@ -78,13 +86,16 @@ M ⇓ V = Star* red M V × Val V
 {- the contexts that reduce a subterm first: an operand, once those
    before it are values -}
 fr : ∀ {A B : Set} (g : A → B) {κ : A → Red B} {redA : A → Red A} {redB : B → Red B}
-  → (∀ X → redB (g X) ≡ step-in g (redA X) (κ X)) → Frame redA redB g
+  → (∀ X → redB (g X) ≡ step-in g (redA X) (κ X))
+  → Frame redA redB g
 fr g = frame _
 
 app-l : ∀ {A B} (M : Tm [] A) → Frame red red (λ L → app {B = B} L M)
 app-l M = fr (λ L → app L M) (λ _ → refl)
 
-app-r : ∀ {A B} {V : Tm [] (A ⇒ B)} → Val V → Frame red red (app V)
+app-r : ∀ {A B} {V : Tm [] (A ⇒ B)}
+  → Val V
+  → Frame red red (app V)
 app-r {V = V} v = fr (app V) (λ _ → val-in (value-red v))
 
 {- The logical relation ---------------------------------------------------------------}
@@ -110,15 +121,22 @@ app-r {V = V} v = fr (app V) (λ _ → val-in (value-red v))
 𝕍At (suc i) d (V ∷ Vs) = 𝕍At i d Vs
 𝕍At _ d _ = ⊥
 
-𝕍s-∈ : ∀ {A} U {V : Tm [] A} {d} → 𝕍s U V → d ∈ mem U → 𝕍 d V
+𝕍s-∈ : ∀ {A} U {V : Tm [] A} {d}
+  → 𝕍s U V
+  → d ∈ mem U
+  → 𝕍 d V
 𝕍s-∈ (d ∷ U) ⟨ r , _ ⟩ (here refl) = r
 𝕍s-∈ (d ∷ U) ⟨ _ , rs ⟩ (there d∈) = 𝕍s-∈ U rs d∈
 
-all→𝕍s : ∀ {A} U {V : Tm [] A} → (∀ d → d ∈ mem U → 𝕍 d V) → 𝕍s U V
+all→𝕍s : ∀ {A} U {V : Tm [] A}
+  → (∀ d → d ∈ mem U → 𝕍 d V)
+  → 𝕍s U V
 all→𝕍s [] all = tt
 all→𝕍s (d ∷ U) all = ⟨ all d (here refl) , all→𝕍s U (λ d' d'∈ → all d' (there d'∈)) ⟩
 
-𝕍At-lookup : ∀ {Δ A} (i : Δ ∋ A) d (Vs : All (Tm []) Δ) → 𝕍At (pos i) d Vs → 𝕍 d (lookup Vs i)
+𝕍At-lookup : ∀ {Δ A} (i : Δ ∋ A) d (Vs : All (Tm []) Δ)
+  → 𝕍At (pos i) d Vs
+  → 𝕍 d (lookup Vs i)
 𝕍At-lookup Z d (V ∷ Vs) ⟨ _ , r ⟩ = r
 𝕍At-lookup (S i) d (V ∷ Vs) r = 𝕍At-lookup i d Vs r
 
@@ -136,7 +154,9 @@ out-val eq n m with does (n ≟ℤ m)
 ... | false = tt
 
 {- the observation of a value related to a constant is that constant -}
-𝕍-const : ∀ {A B} {k : base-rep B} (V : Tm [] A) → 𝕍 (dconst k) V → obs V ≡ o-const B k
+𝕍-const : ∀ {A B} {k : base-rep B} (V : Tm [] A)
+  → 𝕍 (dconst k) V
+  → obs V ≡ o-const B k
 𝕍-const (fold V) r = 𝕍-const V r
 𝕍-const (lit B c) refl = refl
 
@@ -147,29 +167,39 @@ out-val eq n m with does (n ≟ℤ m)
 𝔾 : ∀ {Γ} → E.Env Value → (∀ {B} → Γ ∋ B → Tm [] B) → Set
 𝔾 {Γ} ρ σ = ∀ {A} (x : Γ ∋ A) → Val (σ x) × (∀ d → d ∈ ρ (idx x) → 𝕍 d (σ x))
 
-𝔾-ext : ∀ {Γ A ρ} {σ : ∀ {B} → Γ ∋ B → Tm [] B} U {W : Tm [] A} → 𝔾 ρ σ → Val W → 𝕍s U W
+𝔾-ext : ∀ {Γ A ρ} {σ : ∀ {B} → Γ ∋ B → Tm [] B} U {W : Tm [] A}
+  → 𝔾 ρ σ
+  → Val W
+  → 𝕍s U W
   → 𝔾 (mem U • ρ) (W •ₛ σ)
 𝔾-ext U G w r Z = ⟨ w , (λ d d∈ → 𝕍s-∈ U r d∈) ⟩
 𝔾-ext U G w r (S x) = G x
 
 {- one value related to all elements of U, all of which M produces -}
 collect : ∀ {A} (M : Tm [] A) {V} (P : Value → Tm [] A → Set) U
-  → (∀ d → d ∈ mem U → Σ[ V' ∈ Tm [] A ] M ⇓ V' × P d V') → M ⇓ V
-  → ∀ d → d ∈ mem U → P d V
+  → (∀ d → d ∈ mem U → Σ[ V' ∈ Tm [] A ] M ⇓ V' × P d V')
+  → M ⇓ V
+  → ∀ d
+  → d ∈ mem U
+  → P d V
 collect M P U all e d d∈ with all d d∈
 ... | ⟨ V' , ⟨ e' , r ⟩ ⟩ with ⇓-det e e'
 ... | refl = r
 
 {- a body, under a substitution and then for its variable -}
 body : ∀ {Γ A B} (σ : ∀ {C} → Γ ∋ C → Tm [] C) (W : Tm [] A) (N : Tm (A ∷ Γ) B) {V}
-  → Star* red (subst-tm (W •ₛ σ) N) V → Star* red (subst-tm (exts tmK σ) N [ W ]) V
+  → Star* red (subst-tm (W •ₛ σ) N) V
+  → Star* red (subst-tm (exts tmK σ) N [ W ]) V
 body σ W N = subst (λ T → Star* red T _) (sym (exts-[] σ W N))
 
 {- The fundamental lemma ----------------------------------------------------------------}
 
-adequate : ∀ {Γ A} (M : Tm Γ A) {ρ} {σ : ∀ {B} → Γ ∋ B → Tm [] B} {d} → 𝔾 ρ σ → d ∈ ⟦ M ⟧ ρ
+adequate : ∀ {Γ A} (M : Tm Γ A) {ρ} {σ : ∀ {B} → Γ ∋ B → Tm [] B} {d}
+  → 𝔾 ρ σ
+  → d ∈ ⟦ M ⟧ ρ
   → Σ[ V ∈ Tm [] A ] subst-tm σ M ⇓ V × 𝕍 d V
-adequate-args : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ} {σ : ∀ {B} → Γ ∋ B → Tm [] B} → 𝔾 ρ σ
+adequate-args : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ} {σ : ∀ {B} → Γ ∋ B → Tm [] B}
+  → 𝔾 ρ σ
   → (∀ j → nonempty (nthD (⟦ Ms ⟧s ρ) j))
   → Σ[ Vs ∈ All (Tm []) Δ ] (Star* reds (travs tmK σ Ms) Vs × Each Val Vs)
       × (∀ j d → d ∈ nthD (⟦ Ms ⟧s ρ) j → 𝕍At j d Vs)
@@ -178,7 +208,10 @@ adequate (` x) {σ = σ} G d∈ = ⟨ σ x , ⟨ ⟨ ε , proj₁ (G x) ⟩ , pr
 adequate (lam N) {d = ν} G d∈ = ⟨ _ , ⟨ ⟨ ε , lam ⟩ , tt ⟩ ⟩
 adequate (lam N) {σ = σ} {d = U ↦ w} G ⟨ w∈ , _ ⟩ = ⟨ _ , ⟨ ⟨ ε , lam ⟩ , R ⟩ ⟩
   where
-  R : ∀ W → Val W → 𝕍s U W → Σ[ V ∈ Tm [] _ ] (subst-tm (exts tmK σ) N [ W ]) ⇓ V × 𝕍 w V
+  R : ∀ W
+    → Val W
+    → 𝕍s U W
+    → Σ[ V ∈ Tm [] _ ] (subst-tm (exts tmK σ) N [ W ]) ⇓ V × 𝕍 w V
   R W w r with adequate N (𝔾-ext U G w r) w∈
   ... | ⟨ V , ⟨ ⟨ s , v ⟩ , r' ⟩ ⟩ = ⟨ V , ⟨ ⟨ body σ W N s , v ⟩ , r' ⟩ ⟩
 adequate (app L M) G ⟨ [] , ⟨ _ , ⟨ _ , ne ⟩ ⟩ ⟩ = ⊥-elim (ne refl)
@@ -238,6 +271,8 @@ adequate-args (M ∷ Ms) {σ = σ} G ne with adequate M G (proj₂ (ne zero)) | 
 ... | ⟨ V , ⟨ ⟨ s , v ⟩ , _ ⟩ ⟩ | ⟨ Vs , ⟨ ⟨ ss , vs ⟩ , rs ⟩ ⟩ =
   ⟨ V ∷ Vs , ⟨ ⟨ star-in (fr (_∷ _) (λ _ → refl)) s ◅◅ star-in (fr (V ∷_) (λ _ → val-in (value-red v))) ss , v ∷ vs ⟩ , R ⟩ ⟩
   where
-  R : ∀ j d → d ∈ nthD (⟦ M ∷ Ms ⟧s _) j → 𝕍At j d (V ∷ Vs)
+  R : ∀ j d
+    → d ∈ nthD (⟦ M ∷ Ms ⟧s _) j
+    → 𝕍At j d (V ∷ Vs)
   R zero d d∈ = ⟨ refl , collect (subst-tm σ M) 𝕍 (d ∷ []) (λ { d' (here refl) → adequate M G d∈ }) ⟨ s , v ⟩ d (here refl) ⟩
   R (suc j) d d∈ = rs j d d∈

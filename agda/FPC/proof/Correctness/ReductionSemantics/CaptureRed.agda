@@ -107,22 +107,35 @@ module Trav {𝒦₁ 𝒦₂} (laws : S.Laws 𝒦₁)
   VK : ∀ {Γ Δ} → T.Sub 𝒦₂ Γ Δ → Set
   VK τ = ∀ {A} (x : _ ∋ A) → VV (K₂.tm (τ x))
 
-  vvs-trav : ∀ {Γ Δ Δ'} {τ : T.Sub 𝒦₂ Γ Δ} {Fs : All (C.Tm Γ) Δ'} → Each VV Fs → VK τ → Each VV (T.travs 𝒦₂ τ Fs)
+  vvs-trav : ∀ {Γ Δ Δ'} {τ : T.Sub 𝒦₂ Γ Δ} {Fs : All (C.Tm Γ) Δ'}
+    → Each VV Fs
+    → VK τ
+    → Each VV (T.travs 𝒦₂ τ Fs)
   vvs-trav [] vk = []
   vvs-trav (var x ∷ vv) vk = vk x ∷ vvs-trav vv vk
   vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
 
-  ok-exts : ∀ {Γ Δ B} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} → OK σ τ → OK (S.exts 𝒦₁ {B = B} σ) (T.exts 𝒦₂ τ)
+  ok-exts : ∀ {Γ Δ B} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ}
+    → OK σ τ
+    → OK (S.exts 𝒦₁ {B = B} σ) (T.exts 𝒦₂ τ)
   ok-exts h Z = rel-vr Z
   ok-exts h (S x) = rel-wk (h x)
-  vv-exts : ∀ {Γ Δ B} {τ : T.Sub 𝒦₂ Γ Δ} → VK τ → VK (T.exts 𝒦₂ {B = B} τ)
+  vv-exts : ∀ {Γ Δ B} {τ : T.Sub 𝒦₂ Γ Δ}
+    → VK τ
+    → VK (T.exts 𝒦₂ {B = B} τ)
   vv-exts h Z = vv-vr Z
   vv-exts h (S x) = vv-wk (h x)
 
-  ≈-trav : ∀ {Γ Δ A} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {M : Tm Γ A} {M'} → M ≈ M'
-    → OK σ τ → VK τ → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
-  ≈-travs : ∀ {Γ Δ Δ'} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {Ms : All (Tm Γ) Δ'} {Ms'} → All₂ _≈_ Ms Ms'
-    → OK σ τ → VK τ → All₂ _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
+  ≈-trav : ∀ {Γ Δ A} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {M : Tm Γ A} {M'}
+    → M ≈ M'
+    → OK σ τ
+    → VK τ
+    → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
+  ≈-travs : ∀ {Γ Δ Δ'} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {Ms : All (Tm Γ) Δ'} {Ms'}
+    → All₂ _≈_ Ms Ms'
+    → OK σ τ
+    → VK τ
+    → All₂ _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
 
   ≈-trav var≈ ok vk = ok _
   ≈-trav {σ = σ} {τ} (lam≈ {N = N} {σ = ρ} {Fs} n h vv) ok vk =
@@ -147,7 +160,11 @@ module RenT = Trav {S.varK} {T.varK} S.varL (λ _ → var≈) (λ { var≈ → v
 module SubT = Trav {S.tmK} {T.tmK} S.tmL (λ _ → var≈) (λ r → RenT.≈-trav r (λ _ → var≈) (λ _ → var _)) var vv-wk
 
 {- substituting a value for the variable of a binder -}
-≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → N ≈ N' → V ≈ V' → Value V' → (N S.[ V ]) ≈ (N' T.[ V' ])
+≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'}
+  → N ≈ N'
+  → V ≈ V'
+  → Value V'
+  → (N S.[ V ]) ≈ (N' T.[ V' ])
 ≈-[] n m v = SubT.≈-trav n (λ { Z → m }) (λ { Z → val v })
 
 {- The simulation ------------------------------------------------------------------}
@@ -155,12 +172,20 @@ module SubT = Trav {S.tmK} {T.tmK} S.tmL (λ _ → var≈) (λ r → RenT.≈-tr
 Ans′ : ∀ {A} → Tm [] A → Red (Tm [] A) → C.Tm [] A → Set
 Ans′ = Ans T.red Value _≈_
 
-vvs-values : ∀ {Δ} {Fs : All (C.Tm []) Δ} → Each VV Fs → Each Value Fs
+vvs-values : ∀ {Δ} {Fs : All (C.Tm []) Δ}
+  → Each VV Fs
+  → Each Value Fs
 vvs-values [] = []
 vvs-values (v ∷ vv) = vv-value v ∷ vvs-values vv
 
-obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → Value V' → S.obs V ≡ T.obs V'
-obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ _≈_ Vs Vs' → Each Value Vs' → S.obss Vs ≡ T.obss Vs'
+obs≈ : ∀ {A} {V : Tm [] A} {V'}
+  → V ≈ V'
+  → Value V'
+  → S.obs V ≡ T.obs V'
+obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'}
+  → All₂ _≈_ Vs Vs'
+  → Each Value Vs'
+  → S.obss Vs ≡ T.obss Vs'
 obs≈ (lam≈ _ _ _) _ = refl
 obs≈ lit≈ _ = refl
 obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
@@ -176,14 +201,22 @@ out≈ P.eq n m with does (n Z.≟ m)
 ... | true = inl≈ (tuple≈ [])
 ... | false = inr≈ (tuple≈ [])
 
-sim : ∀ {A} {M : Tm [] A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
-sims : ∀ {Δ} {Ms : All (Tm []) Δ} {Ms'} → All₂ _≈_ Ms Ms' → Ans T.reds (Each Value) (All₂ _≈_) Ms (S.reds Ms) Ms'
+sim : ∀ {A} {M : Tm [] A} {M'}
+  → M ≈ M'
+  → Ans′ M (S.red M) M'
+sims : ∀ {Δ} {Ms : All (Tm []) Δ} {Ms'}
+  → All₂ _≈_ Ms Ms'
+  → Ans T.reds (Each Value) (All₂ _≈_) Ms (S.reds Ms) Ms'
 sim m@(lam≈ _ _ vv) = val ε (T.clos (vvs-values vv)) m
 sim (app≈ r s) =
   ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
     λ v m → ans-in (frame {g = C.app _} _ λ _ → val-in (value-red v)) (app≈ m) (sim s) λ w m' → β-sim v m w m'
   where
-  β-sim : ∀ {A B} {V : Tm [] (A ⇒ B)} {V' W W'} → Value V' → V ≈ V' → Value W' → W ≈ W'
+  β-sim : ∀ {A B} {V : Tm [] (A ⇒ B)} {V' W W'}
+    → Value V'
+    → V ≈ V'
+    → Value W'
+    → W ≈ W'
     → Ans′ (app V W) (S.β V refl W) (C.app V' W')
   β-sim (T.clos vs) (lam≈ {N = N} {σ = σ} n h vv) w m' =
     to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))

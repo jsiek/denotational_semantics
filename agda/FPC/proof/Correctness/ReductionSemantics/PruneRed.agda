@@ -45,7 +45,9 @@ open import Relation.Nullary.Decidable using (fromWitness)
 VM : Ctx → Ctx → Set
 VM Γ Γ' = ∀ {A} → Γ ∋ A → Maybe (Γ' ∋ A)
 
-extρ : ∀ {Γ Γ' B} → VM Γ Γ' → VM (B ∷ Γ) (B ∷ Γ')
+extρ : ∀ {Γ Γ' B}
+  → VM Γ Γ'
+  → VM (B ∷ Γ) (B ∷ Γ')
 extρ ρ Z = just Z
 extρ ρ (S x) = Mb.map S (ρ x)
 
@@ -90,7 +92,9 @@ data Caps ρ where
 
 {- The fundamental lemma ----------------------------------------------------------}
 
-ρfl-kept : ∀ {Δ A C} (fl : Flags Δ) (x : (A ∷ Δ) ∋ C) (k : Kept fl x) → ρfl fl x ≡ just (squeeze fl x k)
+ρfl-kept : ∀ {Δ A C} (fl : Flags Δ) (x : (A ∷ Δ) ∋ C)
+  → (k : Kept fl x)
+  → ρfl fl x ≡ just (squeeze fl x k)
 ρfl-kept fl Z _ = refl
 ρfl-kept fl (S i) k = cong (Mb.map S) (ρsq-kept fl i k)
   where ρsq-kept : ∀ {Δ C} (fl : Flags Δ) (i : Δ ∋ C) (k : T (lookup fl i)) → ρsq fl i ≡ just (sq fl i k)
@@ -101,13 +105,20 @@ data Caps ρ where
 Hyp : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → VM Γ Γ' → Ren u Γ' → Set
 Hyp u ρ r = ∀ {C} (x : _ ∋ C) (t : T (u x)) → ρ x ≡ just (r x t)
 
-under : ∀ {Γ Γ' B} {u : ∀ {C} → (B ∷ Γ) ∋ C → Bool} {ρ : VM Γ Γ'} {r : Ren (λ x → u (S x)) Γ'} → Hyp (λ x → u (S x)) ρ r → Hyp u (extρ ρ) (ext {u = u} r)
+under : ∀ {Γ Γ' B} {u : ∀ {C} → (B ∷ Γ) ∋ C → Bool} {ρ : VM Γ Γ'} {r : Ren (λ x → u (S x)) Γ'}
+  → Hyp (λ x → u (S x)) ρ r
+  → Hyp u (extρ ρ) (ext {u = u} r)
 under h Z _ = refl
 under h (S x) t rewrite h x t = refl
 
-opt≈ : ∀ {Γ Γ' A} {ρ : VM Γ Γ'} (M : Tm Γ A) {r : Ren (uses M) Γ'} → Hyp (uses M) ρ r → ρ ⊢ M ≈ opt M r
-opts≈ : ∀ {Γ Γ' Δ} {ρ : VM Γ Γ'} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} → Hyp (usesA Ms) ρ r → All₂ (ρ ⊢_≈_) Ms (opts Ms r)
-caps≈ : ∀ {Γ Γ' Δ} {ρ : VM Γ Γ'} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} → Hyp (usesA Ms) ρ r
+opt≈ : ∀ {Γ Γ' A} {ρ : VM Γ Γ'} (M : Tm Γ A) {r : Ren (uses M) Γ'}
+  → Hyp (uses M) ρ r
+  → ρ ⊢ M ≈ opt M r
+opts≈ : ∀ {Γ Γ' Δ} {ρ : VM Γ Γ'} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'}
+  → Hyp (usesA Ms) ρ r
+  → All₂ (ρ ⊢_≈_) Ms (opts Ms r)
+caps≈ : ∀ {Γ Γ' Δ} {ρ : VM Γ Γ'} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'}
+  → Hyp (usesA Ms) ρ r
   → Caps ρ (flags u Ms) Ms (select (flags u Ms) (opts Ms r))
 opt≈ (` x) h = var≈ (h x (fromWitness refl))
 opt≈ (clos N Ms) h = clos≈ (keeps N Ms) (opt≈ N λ x t → ρfl-kept _ x (covers N Ms x t)) (caps≈ _ Ms h)
@@ -148,22 +159,34 @@ module Trav {𝒦}
     → extρ {B = B} ρ ⊢ Kit.tm 𝒦 (Kit.wk 𝒦 a) ≈ Kit.tm 𝒦 (Kit.wk 𝒦 b))
   (vv-wk : ∀ {Γ A B} {a : Kit.K 𝒦 Γ A} → VV (Kit.tm 𝒦 a) → VV (Kit.tm 𝒦 (Kit.wk 𝒦 {B = B} a))) where
 
-  ok-ext : ∀ {Γ Γ' Δ Δ' B} {ρ : VM Γ Γ'} {ρ₂ : VM Δ Δ'} {σ : T.Sub 𝒦 Γ Δ} {τ : T.Sub 𝒦 Γ' Δ'} → OK 𝒦 ρ ρ₂ σ τ
+  ok-ext : ∀ {Γ Γ' Δ Δ' B} {ρ : VM Γ Γ'} {ρ₂ : VM Δ Δ'} {σ : T.Sub 𝒦 Γ Δ} {τ : T.Sub 𝒦 Γ' Δ'}
+    → OK 𝒦 ρ ρ₂ σ τ
     → OK 𝒦 (extρ {B = B} ρ) (extρ ρ₂) (T.exts 𝒦 σ) (T.exts 𝒦 τ)
   ok-ext ok Z refl = rel-vr
   ok-ext {ρ = ρ} ok (S x) e with ρ x in eq | e
   ... | just y | refl = rel-wk (ok x eq)
 
-  vv-ext : ∀ {Γ Δ B} {σ : T.Sub 𝒦 Γ Δ} → VK 𝒦 σ → VK 𝒦 (T.exts 𝒦 {B = B} σ)
+  vv-ext : ∀ {Γ Δ B} {σ : T.Sub 𝒦 Γ Δ}
+    → VK 𝒦 σ
+    → VK 𝒦 (T.exts 𝒦 {B = B} σ)
   vv-ext h Z = vv-vr
   vv-ext h (S x) = vv-wk (h x)
 
-  ≈-trav : ∀ {Γ Γ' Δ Δ' A} {ρ : VM Γ Γ'} {ρ₂ : VM Δ Δ'} {σ : T.Sub 𝒦 Γ Δ} {τ : T.Sub 𝒦 Γ' Δ'} {M : Tm Γ A} {M'} → ρ ⊢ M ≈ M'
-    → OK 𝒦 ρ ρ₂ σ τ → VK 𝒦 σ → ρ₂ ⊢ trav 𝒦 σ M ≈ trav 𝒦 τ M'
-  ≈-travs : ∀ {Γ Γ' Δ Δ' Θ} {ρ : VM Γ Γ'} {ρ₂ : VM Δ Δ'} {σ : T.Sub 𝒦 Γ Δ} {τ : T.Sub 𝒦 Γ' Δ'} {Ms : All (Tm Γ) Θ} {Ms'} → All₂ (ρ ⊢_≈_) Ms Ms'
-    → OK 𝒦 ρ ρ₂ σ τ → VK 𝒦 σ → All₂ (ρ₂ ⊢_≈_) (travs 𝒦 σ Ms) (travs 𝒦 τ Ms')
-  caps-trav : ∀ {Γ Γ' Δ Δ' Θ} {ρ : VM Γ Γ'} {ρ₂ : VM Δ Δ'} {σ : T.Sub 𝒦 Γ Δ} {τ : T.Sub 𝒦 Γ' Δ'} {fl : Flags Θ} {Ms Ms'} → Caps ρ fl Ms Ms'
-    → OK 𝒦 ρ ρ₂ σ τ → VK 𝒦 σ → Caps ρ₂ fl (travs 𝒦 σ Ms) (travs 𝒦 τ Ms')
+  ≈-trav : ∀ {Γ Γ' Δ Δ' A} {ρ : VM Γ Γ'} {ρ₂ : VM Δ Δ'} {σ : T.Sub 𝒦 Γ Δ} {τ : T.Sub 𝒦 Γ' Δ'} {M : Tm Γ A} {M'}
+    → ρ ⊢ M ≈ M'
+    → OK 𝒦 ρ ρ₂ σ τ
+    → VK 𝒦 σ
+    → ρ₂ ⊢ trav 𝒦 σ M ≈ trav 𝒦 τ M'
+  ≈-travs : ∀ {Γ Γ' Δ Δ' Θ} {ρ : VM Γ Γ'} {ρ₂ : VM Δ Δ'} {σ : T.Sub 𝒦 Γ Δ} {τ : T.Sub 𝒦 Γ' Δ'} {Ms : All (Tm Γ) Θ} {Ms'}
+    → All₂ (ρ ⊢_≈_) Ms Ms'
+    → OK 𝒦 ρ ρ₂ σ τ
+    → VK 𝒦 σ
+    → All₂ (ρ₂ ⊢_≈_) (travs 𝒦 σ Ms) (travs 𝒦 τ Ms')
+  caps-trav : ∀ {Γ Γ' Δ Δ' Θ} {ρ : VM Γ Γ'} {ρ₂ : VM Δ Δ'} {σ : T.Sub 𝒦 Γ Δ} {τ : T.Sub 𝒦 Γ' Δ'} {fl : Flags Θ} {Ms Ms'}
+    → Caps ρ fl Ms Ms'
+    → OK 𝒦 ρ ρ₂ σ τ
+    → VK 𝒦 σ
+    → Caps ρ₂ fl (travs 𝒦 σ Ms) (travs 𝒦 τ Ms')
   ≈-trav (var≈ e) ok vv = ok _ e
   ≈-trav (clos≈ fl n cs) ok vv = clos≈ fl n (caps-trav cs ok vv)
   ≈-trav (app≈ r s) ok vv = app≈ (≈-trav r ok vv) (≈-trav s ok vv)
@@ -201,9 +224,18 @@ Ans′ = Ans T.red Value R
 {- a closed variable or value is a value -}
 
 {- the source of a value is a value -}
-≈-value : ∀ {A} {V V' : Tm [] A} → R V V' → Value V' → Value V
-≈-values : ∀ {Δ} {Vs Vs' : All (Tm []) Δ} → All₂ R Vs Vs' → Each Value Vs' → Each Value Vs
-caps-values : ∀ {Δ} {fl : Flags Δ} {Vs Vs'} → Caps ρ₀ fl Vs Vs' → Each Value Vs' → Each Value Vs
+≈-value : ∀ {A} {V V' : Tm [] A}
+  → R V V'
+  → Value V'
+  → Value V
+≈-values : ∀ {Δ} {Vs Vs' : All (Tm []) Δ}
+  → All₂ R Vs Vs'
+  → Each Value Vs'
+  → Each Value Vs
+caps-values : ∀ {Δ} {fl : Flags Δ} {Vs Vs'}
+  → Caps ρ₀ fl Vs Vs'
+  → Each Value Vs'
+  → Each Value Vs
 ≈-value (clos≈ fl n cs) (T.clos vs) = T.clos (caps-values cs vs)
 ≈-value lit≈ T.lit = T.lit
 ≈-value (tuple≈ rs) (T.tuple vs) = T.tuple (≈-values rs vs)
@@ -217,7 +249,9 @@ caps-values (keep r cs) (v ∷ vs) = ≈-value r v ∷ caps-values cs vs
 caps-values (drop vv cs) vs = vv-value vv ∷ caps-values cs vs
 
 {- the variables of the code of related closures, applied to related values -}
-caps-lookup : ∀ {Δ A} {fl : Flags Δ} {Vs Vs'} {W W' : Tm [] A} → Caps ρ₀ fl Vs Vs' → R W W'
+caps-lookup : ∀ {Δ A} {fl : Flags Δ} {Vs Vs'} {W W' : Tm [] A}
+  → Caps ρ₀ fl Vs Vs'
+  → R W W'
   → OK tmK (ρfl fl) ρ₀ (W T.• lookup Vs) (W' T.• lookup Vs')
 caps-lookup cs m Z refl = m
 caps-lookup {fl = fl} cs m (S i) e with ρsq fl i in eq | e
@@ -229,8 +263,14 @@ caps-lookup {fl = fl} cs m (S i) e with ρsq fl i in eq | e
         ... | just y | refl = go cs i eq
         go (drop vv cs) (S i) e = go cs i e
 
-obs≈ : ∀ {A} {V : Tm [] A} {V'} → R V V' → Value V' → T.obs V ≡ T.obs V'
-obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ R Vs Vs' → Each Value Vs' → T.obss Vs ≡ T.obss Vs'
+obs≈ : ∀ {A} {V : Tm [] A} {V'}
+  → R V V'
+  → Value V'
+  → T.obs V ≡ T.obs V'
+obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'}
+  → All₂ R Vs Vs'
+  → Each Value Vs'
+  → T.obss Vs ≡ T.obss Vs'
 obs≈ (clos≈ _ _ _) _ = refl
 obs≈ lit≈ _ = refl
 obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
@@ -247,19 +287,33 @@ out≈ P.eq n m with does (n Z.≟ m)
 ... | false = inr≈ (tuple≈ [])
 
 {- substituting a value for the variable of a binder -}
-≈-[] : ∀ {A B} {N N' : Tm (A ∷ []) B} {V V'} → extρ ρ₀ ⊢ N ≈ N' → R V V' → Value V → R (N T.[ V ]) (N' T.[ V' ])
+≈-[] : ∀ {A B} {N N' : Tm (A ∷ []) B} {V V'}
+  → extρ ρ₀ ⊢ N ≈ N'
+  → R V V'
+  → Value V
+  → R (N T.[ V ]) (N' T.[ V' ])
 ≈-[] n m v = SubT.≈-trav n (λ { Z refl → m }) (λ { Z → val v })
 
-sim : ∀ {A} {M M' : Tm [] A} → R M M' → Ans′ M (T.red M) M'
-sims : ∀ {Δ} {Ms Ms' : All (Tm []) Δ} → All₂ R Ms Ms' → Ans T.reds (Each Value) (All₂ R) Ms (T.reds Ms) Ms'
-caps-sim : ∀ {Δ} {fl : Flags Δ} {Ms Ms'} → Caps ρ₀ fl Ms Ms' → Ans T.reds (Each Value) (Caps ρ₀ fl) Ms (T.reds Ms) Ms'
+sim : ∀ {A} {M M' : Tm [] A}
+  → R M M'
+  → Ans′ M (T.red M) M'
+sims : ∀ {Δ} {Ms Ms' : All (Tm []) Δ}
+  → All₂ R Ms Ms'
+  → Ans T.reds (Each Value) (All₂ R) Ms (T.reds Ms) Ms'
+caps-sim : ∀ {Δ} {fl : Flags Δ} {Ms Ms'}
+  → Caps ρ₀ fl Ms Ms'
+  → Ans T.reds (Each Value) (Caps ρ₀ fl) Ms (T.reds Ms) Ms'
 sim (clos≈ fl n cs) = ans-in (frame _ λ _ → refl) (clos≈ fl n) (caps-sim cs) λ vs ms → val ε (T.clos vs) (clos≈ fl n ms)
 sim (app≈ r s) =
   ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
     λ v m → ans-in (frame {g = app _} _ λ _ → val-in (value-red v)) (app≈ m) (sim s)
       λ { w m' → β-sim v m w m' }
   where
-  β-sim : ∀ {A B} {V V' : Tm [] (A ⇒ B)} {W W'} → Value V' → R V V' → Value W' → R W W'
+  β-sim : ∀ {A B} {V V' : Tm [] (A ⇒ B)} {W W'}
+    → Value V'
+    → R V V'
+    → Value W'
+    → R W W'
     → Ans′ (app V W) (T.β V refl W) (app V' W')
   β-sim (T.clos vs) (clos≈ fl n cs) w m' =
     to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))

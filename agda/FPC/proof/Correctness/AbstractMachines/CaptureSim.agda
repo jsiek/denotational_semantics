@@ -80,12 +80,16 @@ module _ {T : Type} (P : C2.Tm [] T) where
   capture-fvs {Δ = A ∷ Δ} f vs ρ κ = refl ◅ refl ◅ capture-fvs (λ x → f (S x)) (lookup ρ (f Z) ∷ vs) ρ κ
 
   tuple-next~ : ∀ {Γ Δ' Δ} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'} {Ms : All (Tm Γ) Δ} {ρ₁ : Src.Env Γ} {ρ₂} {κ₁ : Src.Cont (tup (Δ' <>< Δ))} {κ₂}
-    → All₂ _≈_ vs ws → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
+    → All₂ _≈_ vs ws
+    → ρ₁ ≈ρ ρ₂
+    → κ₁ ≈k κ₂
     → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (encs Ms) ρ₂ κ₂
   tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (Src.step s₁) s₂
   sim (eval~ {M = ` x} er k) = steps₁ refl (ret~ (lookup₂ er x) k)
   sim (eval~ {M = lam N} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) =
     steps (plus refl (capture-fvs (λ x → x) [] ρ₂ (Tgt.closK (capture N) κ₂) ◅◅ (refl ◅ ε)))

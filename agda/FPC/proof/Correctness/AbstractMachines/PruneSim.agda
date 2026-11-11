@@ -63,7 +63,9 @@ Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → C.Env
 Agree u r ρ₁ ρ₂ = ∀ {C} x (t : T (u {C} x)) → lookup ρ₁ x ≈ lookup ρ₂ (r x t)
 
 ext-agree : ∀ {Γ Γ' A} {u : ∀ {C} → (A ∷ Γ) ∋ C → Bool} {r : Ren (λ x → u (S x)) Γ'} {ρ₁ ρ₂ v w}
-  → v ≈ w → Agree (λ x → u (S x)) r ρ₁ ρ₂ → Agree u (ext {u = u} r) (v ∷ ρ₁) (w ∷ ρ₂)
+  → v ≈ w
+  → Agree (λ x → u (S x)) r ρ₁ ρ₂
+  → Agree u (ext {u = u} r) (v ∷ ρ₁) (w ∷ ρ₂)
 ext-agree vw ag Z _ = vw
 ext-agree vw ag (S x) t = ag x t
 
@@ -112,8 +114,12 @@ data _~_ : C.State → C.State → Set where
     → C.ret (C.tup V) (C.closK N κ₁) ~ C.ret (C.tup W) (C.closK N' κ₂)
 
 {- Related values are observed alike, and primitives give related values -}
-obs≈ : ∀ {A} {v w : C.Val A} → v ≈ w → C.obs v ≡ C.obs w
-obs≈* : ∀ {Δ} {vs ws : All _ Δ} → All₂ _≈_ vs ws → C.obs-all vs ≡ C.obs-all ws
+obs≈ : ∀ {A} {v w : C.Val A}
+  → v ≈ w
+  → C.obs v ≡ C.obs w
+obs≈* : ∀ {Δ} {vs ws : All _ Δ}
+  → All₂ _≈_ vs ws
+  → C.obs-all vs ≡ C.obs-all ws
 obs≈ (clo≈ _ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)
@@ -137,12 +143,17 @@ module _ {T : Type} (P : Tm [] T) where
   L₂ = C.sem (prune-program P)
   Match = Lag L₁ _~_
 
-  go : ∀ {i s₁ s₂ s₂'} → C.step s₂ ≡ next s₂' → s₁ ~ s₂' → Answers≺ L₂ Match i (next s₁) s₂
+  go : ∀ {i s₁ s₂ s₂'}
+    → C.step s₂ ≡ next s₂'
+    → s₁ ~ s₂'
+    → Answers≺ L₂ Match i (next s₁) s₂
   go e m = steps₁≺ e (lag₀ m)
 
   tuple-next~ : ∀ {Γ Γ' Δ' Δ} {vs ws : All C.Val Δ'} {Ms : All (Tm Γ) Δ} {r : Ren (usesA Ms) Γ'} {ρ₁ ρ₂}
       {κ₁ κ₂ : C.Cont (tup (Δ' <>< Δ))}
-    → All₂ _≈_ vs ws → Agree (usesA Ms) r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → All₂ _≈_ vs ws
+    → Agree (usesA Ms) r ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → C.tuple-next vs Ms ρ₁ κ₁ ~ C.tuple-next ws (opts Ms r) ρ₂ κ₂
   tuple-next~ {Ms = []} rs ag k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs ag k = eval~ (λ x t → ag x (∨-l _ t)) (tupK rs (λ x t → ag x (∨-r (uses M x) t)) k)
@@ -152,7 +163,9 @@ module _ {T : Type} (P : Tm [] T) where
   clos-next~ : ∀ {Γ Γ' Δv Δw Δ A B} {vs : All C.Val Δv} {ws : All C.Val Δw} (u : ∀ {D} → Δ ∋ D → Bool)
       (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {N : Tm (A ∷ (Δv <>< Δ)) B} {N' : Tm (A ∷ (Δw <>< kept (flags u Ms))) B}
       {ρ₁ ρ₂ κ₁ κ₂}
-    → Agree (usesA Ms) r ρ₁ ρ₂ → Done {fl = flags u Ms} N N' vs ws → κ₁ ≈k κ₂
+    → Agree (usesA Ms) r ρ₁ ρ₂
+    → Done {fl = flags u Ms} N N' vs ws
+    → κ₁ ≈k κ₂
     → Σ[ i ∈ ℕ ] Match i (C.tuple-next vs Ms ρ₁ (C.closK N κ₁)) (C.tuple-next ws (select (flags u Ms) (opts Ms r)) ρ₂ (C.closK N' κ₂))
   clos-next~ u [] ag H k = lag-now (close~ (H []) k)
   clos-next~ u (M ∷ Ms) ag H k with keep? M (u Z) | fl-ok M (u Z)
@@ -161,7 +174,9 @@ module _ {T : Type} (P : Tm [] T) where
   ... | false | var-fv = lag-step refl (lag-step refl
     (clos-next~ (λ x → u (S x)) Ms (λ x t → ag x (∨-r (uses M x) t)) (λ th → H (drop th)) k))
 
-  sim : ∀ {i s₁ s₂} → s₁ ~ s₂ → Answers≺ L₂ Match i (C.step s₁) s₂
+  sim : ∀ {i s₁ s₂}
+    → s₁ ~ s₂
+    → Answers≺ L₂ Match i (C.step s₁) s₂
   sim (eval~ {M = ` x} ag k) = go refl (ret~ (ag x (fromWitness refl)) k)
   sim (eval~ {M = clos N Ms} ag k) =
     steps₁≺ refl (proj₂ (clos-next~ (λ x → uses N (S x)) Ms ag (λ th → clo≈ th (covers N Ms)) k))

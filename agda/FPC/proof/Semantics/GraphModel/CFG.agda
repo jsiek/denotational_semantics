@@ -51,18 +51,32 @@ module _ {Σ Δ} {T T' : Table Σ} {σ σ'} (h : ∀ {A} (a : Atm Σ Δ A) → �
   𝒮-⊆ (unfold a) = h a
 
 {- an atom, in the table and the frame -}
-𝒜-⊆ : ∀ {Σ Δ A} {T T' : Table Σ} {σ σ'} → (∀ {s} (f : Σ ∋ s) → T f ⊆ T' f) → σ ⊆ₑ σ' → ∀ (a : Atm Σ Δ A) → 𝒜 a T σ ⊆ 𝒜 a T' σ'
+𝒜-⊆ : ∀ {Σ Δ A} {T T' : Table Σ} {σ σ'}
+  → (∀ {s} (f : Σ ∋ s) → T f ⊆ T' f)
+  → σ ⊆ₑ σ'
+  → ∀ (a : Atm Σ Δ A)
+  → 𝒜 a T σ ⊆ 𝒜 a T' σ'
 𝒜-⊆ h s (var x) = s (idx x)
 𝒜-⊆ h s (lit B c) = λ _ z → z
 𝒜-⊆ h s (ref f) = h f
 
-𝒮-≃ : ∀ {Σ Δ A} {T T' : Table Σ} → (∀ {s} (f : Σ ∋ s) → T f ≃ T' f) → ∀ (s : Simple Σ Δ A) σ → 𝒮 s T σ ≃ 𝒮 s T' σ
+𝒮-≃ : ∀ {Σ Δ A} {T T' : Table Σ}
+  → (∀ {s} (f : Σ ∋ s) → T f ≃ T' f)
+  → ∀ (s : Simple Σ Δ A) σ
+  → 𝒮 s T σ ≃ 𝒮 s T' σ
 𝒮-≃ TT s σ = ⟨ 𝒮-⊆ (𝒜-⊆ (λ f → proj₁ (TT f)) (λ _ _ z → z)) s , 𝒮-⊆ (𝒜-⊆ (λ f → proj₂ (TT f)) (λ _ _ z → z)) s ⟩
 
-𝒜-mono : ∀ {Σ Δ A} {T : Table Σ} {σ σ'} → σ ⊆ₑ σ' → ∀ (a : Atm Σ Δ A) → 𝒜 a T σ ⊆ 𝒜 a T σ'
+𝒜-mono : ∀ {Σ Δ A} {T : Table Σ} {σ σ'}
+  → σ ⊆ₑ σ'
+  → ∀ (a : Atm Σ Δ A)
+  → 𝒜 a T σ ⊆ 𝒜 a T σ'
 𝒜-mono = 𝒜-⊆ (λ _ _ z → z)
 
-drop-mono : ∀ {Δ' Δ : Ctx} (p : Δ' ⊑ Δ) {σ σ'} → σ ⊆ₑ σ' → drop p σ ⊆ₑ drop p σ'
+drop-mono : ∀ {Δ' Δ : Ctx}
+  → (p : Δ' ⊑ Δ)
+  → ∀ {σ σ'}
+  → σ ⊆ₑ σ'
+  → drop p σ ⊆ₑ drop p σ'
 drop-mono here⊑ s = s
 drop-mono (there⊑ p) s = drop-mono p (λ i → s (suc i))
 
@@ -71,7 +85,10 @@ module _ {Σ} {T : Table Σ} where
   MonoB : ∀ {Bs} → Meanings Bs → Set₁
   MonoB B = ∀ {Δ} (l : _ ∋ Δ) {σ σ'} → σ ⊆ₑ σ' → B l σ ⊆ B l σ'
 
-  tail-mono : ∀ {R Bs Δ} (t : Tail Σ R Bs Δ) {B : Meanings Bs} → MonoB B → ∀ {σ σ'} → σ ⊆ₑ σ'
+  tail-mono : ∀ {R Bs Δ} (t : Tail Σ R Bs Δ) {B : Meanings Bs}
+    → MonoB B
+    → ∀ {σ σ'}
+    → σ ⊆ₑ σ'
     → ⟦ t ⟧ᵗ T B σ ⊆ ⟦ t ⟧ᵗ T B σ'
   tail-mono (return s) mB σ⊆ = 𝒮-⊆ (𝒜-mono σ⊆) s
   tail-mono (seq p s t) mB σ⊆ = lower (⋆-mono _ _

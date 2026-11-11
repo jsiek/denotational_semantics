@@ -86,10 +86,14 @@ squeeze fl Z _ = Z
 squeeze fl (S x) k = S (sq fl x k)
 
 {- the two sides of a disjunction -}
-∨-l : ∀ {a} b → T a → T (a ∨ b)
+∨-l : ∀ {a} b
+  → T a
+  → T (a ∨ b)
 ∨-l {true} b t = tt
 
-∨-r : ∀ a {b} → T b → T (a ∨ b)
+∨-r : ∀ a {b}
+  → T b
+  → T (a ∨ b)
 ∨-r true t = tt
 ∨-r false t = t
 
@@ -101,16 +105,23 @@ data All₂ {X : Set} {P Q : X → Set} (R : ∀ {A} → P A → Q A → Set) : 
 
 module _ {X : Set} {P Q : X → Set} {R : ∀ {A} → P A → Q A → Set} where
 
-  lookup₂ : ∀ {Δ A} {ps : All P Δ} {qs} → All₂ R ps qs → (x : Δ ∋ A) → R (lookup ps x) (lookup qs x)
+  lookup₂ : ∀ {Δ A} {ps : All P Δ} {qs}
+    → All₂ R ps qs
+    → (x : Δ ∋ A)
+    → R (lookup ps x) (lookup qs x)
   lookup₂ (r ∷ rs) Z = r
   lookup₂ (r ∷ rs) (S x) = lookup₂ rs x
 
-  _<><₂_ : ∀ {Δ Δ'} {ps : All P Δ'} {qs} {ps' : All P Δ} {qs'} → All₂ R ps qs → All₂ R ps' qs'
+  _<><₂_ : ∀ {Δ Δ'} {ps : All P Δ'} {qs} {ps' : All P Δ} {qs'}
+    → All₂ R ps qs
+    → All₂ R ps' qs'
     → All₂ R (ps <><ᵃ ps') (qs <><ᵃ qs')
   [] <><₂ rs' = rs'
   (r ∷ rs) <><₂ rs' = rs <><₂ (r ∷ rs')
 
-  tab-lookup₂ : ∀ {Δ} {ps : All P Δ} {qs} → All₂ R ps qs → All₂ R ps (tab (lookup qs))
+  tab-lookup₂ : ∀ {Δ} {ps : All P Δ} {qs}
+    → All₂ R ps qs
+    → All₂ R ps (tab (lookup qs))
   tab-lookup₂ [] = []
   tab-lookup₂ (r ∷ rs) = r ∷ tab-lookup₂ rs
 
@@ -123,13 +134,20 @@ data Thin {X : Set} {P Q : X → Set} (R : ∀ {A} → P A → Q A → Set) : �
 
 module _ {X : Set} {P Q : X → Set} {R : ∀ {A} → P A → Q A → Set} where
 
-  thin-sq : ∀ {Δ C fl} {ps : All P Δ} {qs} → Thin R fl ps qs → (i : Δ ∋ C) (k : T (lookup fl i))
+  thin-sq : ∀ {Δ C fl} {ps : All P Δ} {qs}
+    → Thin R fl ps qs
+    → (i : Δ ∋ C)
+    → (k : T (lookup fl i))
     → R (lookup ps i) (lookup qs (sq fl i k))
   thin-sq (keep r th) Z k = r
   thin-sq (keep r th) (S i) k = thin-sq th i k
   thin-sq (drop th) (S i) k = thin-sq th i k
 
-  thin-lookup : ∀ {Δ A C fl p q} {ps : All P Δ} {qs} → R {A} p q → Thin R fl ps qs → (i : (A ∷ Δ) ∋ C) (k : Kept fl i)
+  thin-lookup : ∀ {Δ A C fl p q} {ps : All P Δ} {qs}
+    → R {A} p q
+    → Thin R fl ps qs
+    → (i : (A ∷ Δ) ∋ C)
+    → (k : Kept fl i)
     → R (lookup (p ∷ ps) i) (lookup (q ∷ qs) (squeeze fl i k))
   thin-lookup r th Z k = r
   thin-lookup r th (S i) k = thin-sq th i k

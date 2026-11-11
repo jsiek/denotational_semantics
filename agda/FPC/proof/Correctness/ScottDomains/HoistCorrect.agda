@@ -64,7 +64,9 @@ open import FPC.Semantics.ScottDomains.PairClos pt fe pe renaming (⟦_⟧ to �
 open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe
 open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong)
 
-≡→＝ : ∀ {A : Set} {x y : A} → x Eq.≡ y → x ＝ y
+≡→＝ : ∀ {A : Set} {x y : A}
+  → x Eq.≡ y
+  → x ＝ y
 ≡→＝ Eq.refl = refl
 
 {- Changing the table -----------------------------------------------------------------}
@@ -105,13 +107,22 @@ record Ext {Σ Σ'} (s : Σ ⊑ Σ') (D : Made Σ) (D' : Made Σ') : 𝓤₁ ̇ 
   field agrees : ∀ {t} (f : Σ ∋ t) → made D' (⊑-∋ s f) ＝ made D f
 open Ext
 
-ext-trans : ∀ {Σ₀ Σ₁ Σ₂} {s₁ : Σ₀ ⊑ Σ₁} {s₂ : Σ₁ ⊑ Σ₂} {D₀ D₁ D₂}
-  → Ext s₁ D₀ D₁ → Ext s₂ D₁ D₂ → Ext (⊑-trans s₁ s₂) D₀ D₂
+ext-trans : ∀ {Σ₀ Σ₁ Σ₂}
+  → {s₁ : Σ₀ ⊑ Σ₁}
+  → {s₂ : Σ₁ ⊑ Σ₂}
+  → ∀ {D₀ D₁ D₂}
+  → Ext s₁ D₀ D₁
+  → Ext s₂ D₁ D₂
+  → Ext (⊑-trans s₁ s₂) D₀ D₂
 ext-trans {s₁ = s₁} {s₂} {D₂ = D₂} e₁ e₂ = mk-ext λ f →
   ap (λ g → made D₂ g) (≡→＝ (⊑-∋-trans s₁ s₂ f)) ∙ agrees e₂ (⊑-∋ s₁ f) ∙ agrees e₁ f
 
 {- a term made before more definitions, weakened to them -}
-wk-made : ∀ {Σ Σ' Γ A} {s : Σ ⊑ Σ'} {D D'} → Ext s D D' → (M : Tm Σ Γ A) (ρ : ⟨ Env ⟩)
+wk-made : ∀ {Σ Σ' Γ A}
+  → {s : Σ ⊑ Σ'}
+  → ∀ {D D'}
+  → Ext s D D'
+  → (M : Tm Σ Γ A) (ρ : ⟨ Env ⟩)
   → ⟦ M ⟧[ made D ] · ρ ＝ ⟦ wk (⊑-∋ s) M ⟧[ made D' ] · ρ
 wk-made {s = s} {D} {D'} e = wk-sem (⊑-∋ s) (made D') (made D) (λ f → agrees e f ⁻¹)
 
@@ -145,9 +156,12 @@ open Cong₂
 glob-ok : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → OK M D (glob M D)
 globs-ok : ∀ {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) → OKs Ms D (globs Ms D)
 glob₁-ok : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (D : Made Σ) {M₄ : S.Tm Γ B}
-  → Cong₁ f M M₄ → OK M₄ D (glob₁ f M D)
+  → Cong₁ f M M₄
+  → OK M₄ D (glob₁ f M D)
 glob₂-ok : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B)
-  (D : Made Σ) {M₄ : S.Tm Γ C} → Cong₂ f L M M₄ → OK M₄ D (glob₂ f L M D)
+    (D : Made Σ) {M₄ : S.Tm Γ C}
+  → Cong₂ f L M M₄
+  → OK M₄ D (glob₂ f L M D)
 
 glob-ok (S.` x) D = mk-ok (mk-ext (λ f → refl)) λ ρ → refl
 glob-ok (S.code N) D with glob N D | glob-ok N D
@@ -190,7 +204,10 @@ glob₂-ok f L M D c with glob L D | glob-ok L D
 
 {- The table of the program ------------------------------------------------------------}
 
-table-close : ∀ {Σ Σ'} (D : Made Σ') (s : Σ' ⊑ Σ) {t} (f : Σ' ∋ t) → made D f ＝ tables code′ (close D s) (⊑-∋ s f)
+table-close : ∀ {Σ Σ'} (D : Made Σ')
+  → (s : Σ' ⊑ Σ)
+  → ∀ {t} (f : Σ' ∋ t)
+  → made D f ＝ tables code′ (close D s) (⊑-∋ s f)
 table-close (D ▷ N) s Z =
   codeᶜ-cong ⟦ N ⟧[ made D ] ⟦ wk (⊑-∋ s') N ⟧[ tables code′ (close D s') ]
     (λ X Y _ _ → wk-sem (⊑-∋ s') (tables code′ (close D s')) (made D) (table-close D s') N (env₂ X Y))
@@ -231,7 +248,9 @@ hoist-eq : ∀ {A} (M : S.Tm [] A) → hoist M Eq.≡ programO (glob M [])
 hoist-eq M with glob M []
 ... | out _ _ _ = Eq.refl
 
-program-ok : ∀ {A} (M : S.Tm [] A) o → OK M [] o → ⟦ M ⟧₄ · ρ₀ ＝ ⟦ programO o ⟧ₚ
+program-ok : ∀ {A} (M : S.Tm [] A) o
+  → OK M [] o
+  → ⟦ M ⟧₄ · ρ₀ ＝ ⟦ programO o ⟧ₚ
 program-ok M (out _ D M') (mk-ok _ h) =
   h ρ₀
   ∙ wk-sem (λ f → f) (tables code′ (close D here⊑)) (made D) (table-close D here⊑) M' ρ₀

@@ -46,14 +46,22 @@ shift-ok : ∀ {Γ A B} (r : Ref Γ A) X ρ → ⟦ ref-tm (shift-ref {B = B} r)
 shift-ok (var x) X ρ = refl
 shift-ok (prj i x) X ρ = refl
 
-rel-ext : ∀ {Γ Γ' B} {φ : Refs Γ Γ'} {ρ₂ ρ₃} → EnvRel φ ρ₂ ρ₃ → ∀ {X} → EnvRel (ext-ref {B = B} φ) (X • ρ₂) (X • ρ₃)
+rel-ext : ∀ {Γ Γ' B} {φ : Refs Γ Γ'} {ρ₂ ρ₃}
+  → EnvRel φ ρ₂ ρ₃
+  → ∀ {X}
+  → EnvRel (ext-ref {B = B} φ) (X • ρ₂) (X • ρ₃)
 rel-ext rel Z = ≃-refl
 rel-ext {φ = φ} {ρ₃ = ρ₃} rel {X} (S x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
 
-conc : ∀ {Γ Γ' A} (M : Tm Γ A) (φ : Refs Γ Γ') {ρ₂ ρ₃} → Con-env ρ₃ → EnvRel φ ρ₂ ρ₃
+conc : ∀ {Γ Γ' A} (M : Tm Γ A) (φ : Refs Γ Γ') {ρ₂ ρ₃}
+  → Con-env ρ₃
+  → EnvRel φ ρ₂ ρ₃
   → ⟦ M ⟧ ρ₂ ≃ ⟦ concretize φ M ⟧₃ ρ₃
-concs-nth : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) (φ : Refs Γ Γ') {ρ₂ ρ₃} → Con-env ρ₃ → EnvRel φ ρ₂ ρ₃
-  → ∀ i → nthD (⟦ Ms ⟧s ρ₂) i ≃ nthD (⟦ concs φ Ms ⟧s₃ ρ₃) i
+concs-nth : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) (φ : Refs Γ Γ') {ρ₂ ρ₃}
+  → Con-env ρ₃
+  → EnvRel φ ρ₂ ρ₃
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ₂) i ≃ nthD (⟦ concs φ Ms ⟧s₃ ρ₃) i
 
 conc (` x) φ c rel = rel x
 conc (clos {Δ} N Ms) φ {ρ₂} {ρ₃} c rel =

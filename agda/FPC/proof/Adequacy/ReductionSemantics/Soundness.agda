@@ -63,11 +63,16 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
    a substitution σ, in an environment ρ', means binding each variable x
    to the meaning of σ x in ρ' -}
 sub-≃ : ∀ {Γ Δ A} (σ : ∀ {B} → Γ ∋ B → Tm Δ B) (M : Tm Γ A) {ρ ρ'}
-  → (∀ {B} (x : Γ ∋ B) → ⟦ σ x ⟧ ρ' ≃ ρ (idx x)) → ⟦ sub σ M ⟧ ρ' ≃ ⟦ M ⟧ ρ
+  → (∀ {B} (x : Γ ∋ B) → ⟦ σ x ⟧ ρ' ≃ ρ (idx x))
+  → ⟦ sub σ M ⟧ ρ' ≃ ⟦ M ⟧ ρ
 subs-nth : ∀ {Γ Δ Δ'} (σ : ∀ {B} → Γ ∋ B → Tm Δ B) (Ms : All (Tm Γ) Δ') {ρ ρ'}
-  → (∀ {B} (x : Γ ∋ B) → ⟦ σ x ⟧ ρ' ≃ ρ (idx x)) → ∀ i → nthD (⟦ travs tmK σ Ms ⟧s ρ') i ≃ nthD (⟦ Ms ⟧s ρ) i
-sub-ext : ∀ {Γ Δ C} (σ : ∀ {B} → Γ ∋ B → Tm Δ B) {ρ ρ' X} → (∀ {B} (x : Γ ∋ B) → ⟦ σ x ⟧ ρ' ≃ ρ (idx x))
-  → ∀ {B} (x : (C ∷ Γ) ∋ B) → ⟦ exts tmK σ x ⟧ (X • ρ') ≃ (X • ρ) (idx x)
+  → (∀ {B} (x : Γ ∋ B) → ⟦ σ x ⟧ ρ' ≃ ρ (idx x))
+  → ∀ i
+  → nthD (⟦ travs tmK σ Ms ⟧s ρ') i ≃ nthD (⟦ Ms ⟧s ρ) i
+sub-ext : ∀ {Γ Δ C} (σ : ∀ {B} → Γ ∋ B → Tm Δ B) {ρ ρ' X}
+  → (∀ {B} (x : Γ ∋ B) → ⟦ σ x ⟧ ρ' ≃ ρ (idx x))
+  → ∀ {B} (x : (C ∷ Γ) ∋ B)
+  → ⟦ exts tmK σ x ⟧ (X • ρ') ≃ (X • ρ) (idx x)
 sub-≃ σ (` x) h = h x
 sub-≃ σ (lam N) {ρ} {ρ'} h = lam-≃ λ X _ _ → sub-≃ (exts tmK σ) N {X • ρ} {X • ρ'} (sub-ext σ h)
 sub-≃ σ (app L M) h = ⋆-≃ (sub-≃ σ L h) (sub-≃ σ M h)
@@ -100,8 +105,12 @@ con₀ : Con-env ρ₀
 con₀ _ = Con-⌈⌉ ⟨⟩
 
 {- a value of the reduction semantics is one of simplify -}
-val-sv : ∀ {A} {V : Tm [] A} → Val V → SV V
-vals-svs : ∀ {Δ} {Vs : All (Tm []) Δ} → Each Val Vs → SVs Vs
+val-sv : ∀ {A} {V : Tm [] A}
+  → Val V
+  → SV V
+vals-svs : ∀ {Δ} {Vs : All (Tm []) Δ}
+  → Each Val Vs
+  → SVs Vs
 val-sv lam = F.lam
 val-sv lit = F.lit
 val-sv (tuple vs) = F.tuple (vals-svs vs)
@@ -112,12 +121,16 @@ vals-svs [] = F.[]
 vals-svs (v ∷ vs) = val-sv v F.∷ vals-svs vs
 
 {- so it denotes a nonempty set -}
-val-ne : ∀ {A} {V : Tm [] A} → Val V → nonempty (⟦ V ⟧ ρ₀)
+val-ne : ∀ {A} {V : Tm [] A}
+  → Val V
+  → nonempty (⟦ V ⟧ ρ₀)
 val-ne v = sv-ne (val-sv v) ne₀
 
 {- Progress -------------------------------------------------------------------------}
 
-in-ctx : ∀ {X Y : Set} {f : X → Y} {r : Red X} {k M} → r ≡ to M → step-in f r k ≡ to (f M)
+in-ctx : ∀ {X Y : Set} {f : X → Y} {r : Red X} {k M}
+  → r ≡ to M
+  → step-in f r k ≡ to (f M)
 in-ctx refl = refl
 
 {- a closed term is a value, or it reduces (it is never stuck) -}
@@ -172,7 +185,9 @@ progresses (M ∷ Ms) with progress M
   inj₂ ⟨ _ , trans (val-in (value-red v)) (in-ctx e) ⟩
 
 {- a closed term that reduces to val is a value -}
-val-value : ∀ {A} (M : Tm [] A) → red M ≡ val → Val M
+val-value : ∀ {A} (M : Tm [] A)
+  → red M ≡ val
+  → Val M
 val-value M e with progress M
 ... | inj₁ v = v
 ... | inj₂ ⟨ _ , e' ⟩ with trans (sym e) e'
@@ -185,11 +200,18 @@ out-≡ : ∀ {Γ} p n m → out {Γ} p n m ≡ prim-term p n m
 out-≡ P.sub n m = refl
 out-≡ P.eq n m = refl
 
-β-≃ : ∀ {A B} (N : Tm (A ∷ []) B) (W : Tm [] A) → Val W → ⟦ app (lam N) W ⟧ ρ₀ ≃ ⟦ N [ W ] ⟧ ρ₀
+β-≃ : ∀ {A B} (N : Tm (A ∷ []) B) (W : Tm [] A)
+  → Val W
+  → ⟦ app (lam N) W ⟧ ρ₀ ≃ ⟦ N [ W ] ⟧ ρ₀
 β-≃ N W w = ≃-trans (let-β N ρ₀ (⟦ W ⟧ ρ₀) ne₀ (val-ne w) (con W con₀)) (≃-sym ([]-≃ N W))
 
-step-≃ : ∀ {A} (M : Tm [] A) {N} → red M ≡ to N → ⟦ M ⟧ ρ₀ ≃ ⟦ N ⟧ ρ₀
-steps-≃ : ∀ {Δ} (Ms : All (Tm []) Δ) {Ns} → reds Ms ≡ to Ns → ∀ i → nthD (⟦ Ms ⟧s ρ₀) i ≃ nthD (⟦ Ns ⟧s ρ₀) i
+step-≃ : ∀ {A} (M : Tm [] A) {N}
+  → red M ≡ to N
+  → ⟦ M ⟧ ρ₀ ≃ ⟦ N ⟧ ρ₀
+steps-≃ : ∀ {Δ} (Ms : All (Tm []) Δ) {Ns}
+  → reds Ms ≡ to Ns
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ₀) i ≃ nthD (⟦ Ns ⟧s ρ₀) i
 step-≃ (` ())
 step-≃ (lam N) ()
 step-≃ (app L M) e with red L in eL
@@ -263,6 +285,8 @@ steps-≃ (M ∷ Ms) () i | val | error
 steps-≃ (M ∷ Ms) () i | val | val
 
 {- and so does a run -}
-run-≃ : ∀ {A} {M N : Tm [] A} → Star* red M N → ⟦ M ⟧ ρ₀ ≃ ⟦ N ⟧ ρ₀
+run-≃ : ∀ {A} {M N : Tm [] A}
+  → Star* red M N
+  → ⟦ M ⟧ ρ₀ ≃ ⟦ N ⟧ ρ₀
 run-≃ ε = ≃-refl
 run-≃ {M = M} (s ◅ σ) = ≃-trans (step-≃ M s) (run-≃ σ)

@@ -55,7 +55,11 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; con
 open import Relation.Nullary using (yes; no)
 
 {- a bind of a finite set of values is a β -}
-fin-β : ∀ {G V} → Mono₁ G → V ≢ [] → V ≈ V → G (mem V) ≃ ⋆ ⟨ Λ ⟨ G , ptt ⟩ , ⟨ mem V , ptt ⟩ ⟩
+fin-β : ∀ {G V}
+  → Mono₁ G
+  → V ≢ []
+  → V ≈ V
+  → G (mem V) ≃ ⋆ ⟨ Λ ⟨ G , ptt ⟩ , ⟨ mem V , ptt ⟩ ⟩
 fin-β {V = V} m ne c = ≃-sym (Λ-β m (λ w w∈ → ⟨ V , ⟨ ne , ⟨ (λ _ z → z) , w∈ ⟩ ⟩ ⟩) (≈⇒Con c))
 
 {- The pass -------------------------------------------------------------------------------}
@@ -65,7 +69,9 @@ then : ∀ {n Δ A Δ''} → Out n Δ A Δ'' → (𝒫 Value → 𝒫 Value) →
 then ret K D = D
 then (to p _) K D = ⋆ ⟨ Λ ⟨ K , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
-then-ne : ∀ {n Δ A Δ''} (o : Out n Δ A Δ'') {K D w} → w ∈ then o K D → nonempty D
+then-ne : ∀ {n Δ A Δ''} (o : Out n Δ A Δ'') {K D w}
+  → w ∈ then o K D
+  → nonempty D
 then-ne ret w∈ = ⟨ _ , w∈ ⟩
 then-ne (to p _) {K} {D} w∈ = proj₂ (⋆-ne {Λ ⟨ K , ptt ⟩} {D} ⟨ _ , w∈ ⟩)
 
@@ -84,19 +90,24 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
     Fits (to p _) K k ρ = ∀ {Γ O F} X → Con X → ∀ R F' → K X ≃ X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B' (X • drop p ρ) R F'
 
     put-≃ : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)} {ρ D D' Γ O F R F'}
-      → Fits o K k ρ → D ≃ D' → then o K D ≃ X.put T' (dst o {Γ} {O} {F}) D' (X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B') ρ R F'
+      → Fits o K k ρ
+      → D ≃ D'
+      → then o K D ≃ X.put T' (dst o {Γ} {O} {F}) D' (X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B') ρ R F'
     put-≃ ret f D≃ = ≃-trans D≃ (f _ _ _)
     put-≃ (to p _) {Γ = Γ} {O} {F} {R} {F'} f D≃ = let-≃ D≃ λ X _ cX → f {Γ} {O} {F} X cX R F'
 
     {- a strict write, before a return or a bind -}
     strict-put : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)} {ρ D D' Γ O F R F'}
-      → Fits o K k ρ → D ≃ D' → then o K D ≃ strict D' (X.put T' (dst o {Γ} {O} {F}) D' (X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B') ρ R F')
+      → Fits o K k ρ
+      → D ≃ D'
+      → then o K D ≃ strict D' (X.put T' (dst o {Γ} {O} {F}) D' (X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B') ρ R F')
     strict-put o {K} {k} f D≃ =
       ≃-sym (strict-≃ (≃-sym (put-≃ o {K} {k} f D≃)) (λ w w∈ → then-ne o (proj₂ (put-≃ o {K} {k} f ≃-refl) w w∈)))
 
     {- the code selected for s into o, then k -}
     sel-≃ : ∀ {Δ A Δ''} (s : I.Simple Σ Δ A) (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)} {ρ Γ O F R F'}
-      → Fits o K k ρ → then o K (𝒮 s T ρ) ≃ X.⟦_⟧ˢ T' (sel s o k {Γ} {O} {F}) B' ρ R F'
+      → Fits o K k ρ
+      → then o K (𝒮 s T ρ) ≃ X.⟦_⟧ˢ T' (sel s o k {Γ} {O} {F}) B' ρ R F'
     sel-≃ s@(I.atm a) o f = put-≃ o f (𝒮-≃ TT s _)
     sel-≃ s@(I.pair c e) o f = put-≃ o f (𝒮-≃ TT s _)
     sel-≃ s@(I.callc (var x) a) o f = strict-put o f (𝒮-≃ TT s _)
@@ -114,8 +125,12 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
   BR : ∀ {Bs} → Meanings Bs → Meanings Bs → Set₁
   BR {Bs} B B' = ∀ {Δ} (l : Bs ∋ Δ) ρ → B l ρ ≃ B' l ρ
 
-  tail-≃ : ∀ {n R' Bs Δ} (t : Tail Σ R' Bs Δ) .(le : depth t ≤ n) {B B' : Meanings Bs} → BR B B' → ∀ ρ
-    → ∀ {Γ O F} R F' → ⟦ t ⟧ᵗ T B ρ ≃ X.⟦_⟧ˢ T' (tail t le {Γ} {O} {F}) B' ρ R F'
+  tail-≃ : ∀ {n R' Bs Δ} (t : Tail Σ R' Bs Δ)
+    → .(le : depth t ≤ n)
+    → {B B' : Meanings Bs}
+    → BR B B'
+    → ∀ ρ → ∀ {Γ O F} R F'
+    → ⟦ t ⟧ᵗ T B ρ ≃ X.⟦_⟧ˢ T' (tail t le {Γ} {O} {F}) B' ρ R F'
   tail-≃ (return s) le {B' = B'} br ρ R F' = sel-≃ B' s ret {K = λ X → X} (λ _ _ _ → ≃-refl)
   tail-≃ (seq p s t) le {B} {B'} br ρ R F' =
     sel-≃ B' s (to p _) {K = λ X → ⟦ t ⟧ᵗ T B (X • drop p ρ)} (λ V c R F → tail-≃ t _ br _ R F)
@@ -123,7 +138,9 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
   tail-≃ (case (var x) p l₁ l₂) le br ρ R F' =
     case-≃ (≃-refl {D = ρ (idx x)}) (λ X _ _ → br l₁ (X • drop p ρ)) (λ X _ _ → br l₂ (X • drop p ρ))
 
-  blocks-≃ : ∀ {n R' Bs} (bs : C.Blocks Σ R' Bs) .(le : blocks-depth bs ≤ n) → BR (GC.blocks bs T) (X.blocks T' (sel-blocks bs le))
+  blocks-≃ : ∀ {n R' Bs} (bs : C.Blocks Σ R' Bs)
+    → .(le : blocks-depth bs ≤ n)
+    → BR (GC.blocks bs T) (X.blocks T' (sel-blocks bs le))
   blocks-≃ (bs ▷ t) le Z ρ = tail-≃ t _ (blocks-≃ bs _) ρ _ _
   blocks-≃ (bs ▷ t) le (S l) = blocks-≃ bs _ l
 
@@ -141,7 +158,10 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
     x86 : 𝒫 Value → 𝒫 Value → Env Value → 𝒫 Value
     x86 X Y ρ = X.⟦_⟧ˢ T' (tail t (m≤n⊔m (blocks-depth bs) _) {St.rs (called s)} {nothing} {false})
                   (X.blocks T' (sel-blocks bs (m≤m⊔n _ (depth t)))) ρ (X.args X Y) init
-    mono : ∀ {X X' Y Y'} → X ⊆ X' → Y ⊆ Y' → E (Y • X • ι) ⊆ E (Y' • X' • ι)
+    mono : ∀ {X X' Y Y'}
+      → X ⊆ X'
+      → Y ⊆ Y'
+      → E (Y • X • ι) ⊆ E (Y' • X' • ι)
     mono X⊆ Y⊆ = tail-mono t (blocks-mono bs) λ { zero → Y⊆ ; (suc zero) → X⊆ ; (suc (suc j)) → λ _ z → z }
 
 {- the tables of definitions agree -}

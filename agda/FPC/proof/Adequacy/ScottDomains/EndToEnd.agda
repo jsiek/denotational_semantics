@@ -52,7 +52,11 @@ import FPC.proof.Adequacy.ScottDomains.X86 pt fe pe as AX
 
 private
  {- ⊥ exactly when not defined -}
- ⊥-iff : (d : ⟨ 𝔻 ⟩) → (d ＝ ⊥𝔻 → ¬ defined d) × (¬ defined d → d ＝ ⊥𝔻)
+ ⊥-iff : (d : ⟨ 𝔻 ⟩)
+   → (  d ＝ ⊥𝔻
+      → ¬ defined d)
+   × (  ¬ defined d
+      → d ＝ ⊥𝔻)
  ⊥-iff d = (λ e q → ⊥-undefined (transport defined e q)) , undefined-⊥ d
 
 compile-const : ∀ (M : Tm [] (base Int)) (n : ℤ)

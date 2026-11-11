@@ -64,26 +64,34 @@ import FPC.proof.Adequacy.ScottDomains.EndToEnd pt fe pe as EndToEnd
    ⟦ M ⟧ ρ₀ = c() if and only if the interpreter of FPC terminates on M
    with c -}
 fpc-const-iff : ∀ {A} (M : FPC.Tm [] A) (B : Base) (c : base-rep B)
-  → (⟦ M ⟧ · ρ₀ ＝ const B c → Terminates (FPCᵢ.sem M) (o-const B c))
-  × (Terminates (FPCᵢ.sem M) (o-const B c) → ⟦ M ⟧ · ρ₀ ＝ const B c)
+  → (  ⟦ M ⟧ · ρ₀ ＝ const B c
+     → Terminates (FPCᵢ.sem M) (o-const B c))
+  × (  Terminates (FPCᵢ.sem M) (o-const B c)
+     → ⟦ M ⟧ · ρ₀ ＝ const B c)
 fpc-const-iff = AdequacyFPC.const-iff
 
 {- and ⟦ M ⟧ ρ₀ is ⊥ if and only if the interpreter diverges on M -}
 fpc-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
-  → (Diverges (FPCᵢ.sem M) → ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻)
-  × (⟦ M ⟧ · ρ₀ ＝ ⊥𝔻 → Diverges (FPCᵢ.sem M))
+  → (  Diverges (FPCᵢ.sem M)
+     → ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻)
+  × (  ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻
+     → Diverges (FPCᵢ.sem M))
 fpc-diverges-iff = AdequacyFPC.diverges-iff
 
 {- the same holds for X86μ and compile M -}
 
 x86-const-iff : ∀ {A} (M : FPC.Tm [] A) (B : Base) (c : base-rep B)
-  → (⟦ compile M ⟧ₜ ＝ const B c → Terminates (X86μᵢ.sem (compile M)) (o-const B c))
-  × (Terminates (X86μᵢ.sem (compile M)) (o-const B c) → ⟦ compile M ⟧ₜ ＝ const B c)
+  → (  ⟦ compile M ⟧ₜ ＝ const B c
+     → Terminates (X86μᵢ.sem (compile M)) (o-const B c))
+  × (  Terminates (X86μᵢ.sem (compile M)) (o-const B c)
+     → ⟦ compile M ⟧ₜ ＝ const B c)
 x86-const-iff = AdequacyX86.x86-const-iff
 
 x86-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
-  → (Diverges (X86μᵢ.sem (compile M)) → ⟦ compile M ⟧ₜ ＝ ⊥𝔻)
-  × (⟦ compile M ⟧ₜ ＝ ⊥𝔻 → Diverges (X86μᵢ.sem (compile M)))
+  → (  Diverges (X86μᵢ.sem (compile M))
+     → ⟦ compile M ⟧ₜ ＝ ⊥𝔻)
+  × (  ⟦ compile M ⟧ₜ ＝ ⊥𝔻
+     → Diverges (X86μᵢ.sem (compile M)))
 x86-diverges-iff = AdequacyX86.x86-diverges-iff
 
 {- With compiler correctness (FPC/Theorems/CorrectWrtScottDomains.agda): the compiler,

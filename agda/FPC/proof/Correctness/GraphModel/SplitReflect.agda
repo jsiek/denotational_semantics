@@ -70,7 +70,10 @@ collect L' N' (w ∷ W') W'⊆
   where
   e = ⦅ FV ↦ (U₀ ↦ w) , t ⦆
   ent = usable-entry FV t (here refl) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆C d d∈ in ⟨ u , there (∈-++⁺ˡ i) ⟩)
-  ++⊆ : ∀ {A B : List Value} {D} → mem A ⊆ D → mem B ⊆ D → mem (A ++ B) ⊆ D
+  ++⊆ : ∀ {A B : List Value} {D}
+    → mem A ⊆ D
+    → mem B ⊆ D
+    → mem (A ++ B) ⊆ D
   ++⊆ {A} A⊆ B⊆ d d∈ = [ A⊆ d , B⊆ d ]′ (∈-++⁻ A d∈)
 
 {- The fundamental lemma ------------------------------------------------------}
@@ -83,15 +86,25 @@ record Envs (Γ : Ctx) (ρ ρ' : Env Value) : Set₁ where
     ρ'~ : Con-env ρ'
     ρ⊳ : ∀ {A} (x : Γ ∋ A) → Approx (ρ (idx x)) (ρ' (idx x))
 
-ext-envs : ∀ {Γ B} {ρ ρ' X X'} → Envs Γ ρ ρ' → nonempty X → Con X → Con X' → Approx X X'
+ext-envs : ∀ {Γ B} {ρ ρ' X X'}
+  → Envs Γ ρ ρ'
+  → nonempty X
+  → Con X
+  → Con X'
+  → Approx X X'
   → Envs (B ∷ Γ) (X • ρ) (X' • ρ')
 ext-envs (envs NE ρ~ ρ'~ ρ⊳) ne c c' h =
   envs (extend-nonempty-env NE ne) (Con-• c ρ~) (Con-• c' ρ'~) (λ { Z → h ; (S x) → ρ⊳ x })
 
-split-reflect : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'} → Envs Γ ρ ρ' → Approx (⟦ M ⟧ ρ) (⟦ split M ⟧' ρ')
-reflect-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Envs Γ ρ ρ'
-  → (i : Fin (length Δ)) → Approx (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits Ms ⟧s' ρ') i)
-reflect-𝒯 : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Envs Γ ρ ρ'
+split-reflect : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'}
+  → Envs Γ ρ ρ'
+  → Approx (⟦ M ⟧ ρ) (⟦ split M ⟧' ρ')
+reflect-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'}
+  → Envs Γ ρ ρ'
+  → (i : Fin (length Δ))
+  → Approx (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits Ms ⟧s' ρ') i)
+reflect-𝒯 : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'}
+  → Envs Γ ρ ρ'
   → Approx (𝒯 (length Δ) (⟦ Ms ⟧s ρ)) (𝒯 (length Δ) (⟦ splits Ms ⟧s' ρ'))
 {- Suppose the target scrutinee contains a value tagged s, and the
    source branch B, run on the payloads tagged s of the source
@@ -116,7 +129,9 @@ split-reflect (lit B c) E V' V'⊆ = ApproxLR-data (λ v v∈ → ⟨ V'⊆ v v�
 
 split-reflect (prim p L M) E V' V'⊆ = ApproxLR-data (λ v v∈ → prim-data (V'⊆ v v∈))
   where
-  prim-data : ∀ {v} → v ∈ ⟦ split (prim p L M) ⟧' _ → v ∈ ⟦ prim p L M ⟧ _ × Data v
+  prim-data : ∀ {v}
+    → v ∈ ⟦ split (prim p L M) ⟧' _
+    → v ∈ ⟦ prim p L M ⟧ _ × Data v
   prim-data ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
     ⟨ ⟨ n , ⟨ m , ⟨ Approx-const (split-reflect L E) n∈ , ⟨ Approx-const (split-reflect M E) m∈ , refl ⟩ ⟩ ⟩ ⟩ , out-data (δ p n m) ⟩
 
@@ -127,13 +142,15 @@ split-reflect (get i M) E = Approx-untag (tupT (pos i)) (split-reflect M E)
 split-reflect M₀@(inl M) {ρ} {ρ'} E = Approx-fold₀ (λ _ ()) inl-ne (λ _ _ ())
   λ { leftT → split-reflect M E ; rightT _ → ApproxLR-∅ ; (tupT i) _ → ApproxLR-∅ }
   where
-  inl-ne : nonempty (⟦ split M₀ ⟧' ρ') → nonempty (⟦ M₀ ⟧ ρ)
+  inl-ne : nonempty (⟦ split M₀ ⟧' ρ')
+    → nonempty (⟦ M₀ ⟧ ρ)
   inl-ne ⟨ left d , d∈ ⟩ = let ⟨ m , m∈ ⟩ = Approx-ne (split-reflect M E) ⟨ d , d∈ ⟩ in ⟨ left m , m∈ ⟩
 
 split-reflect M₀@(inr M) {ρ} {ρ'} E = Approx-fold₀ (λ _ ()) inr-ne (λ _ _ ())
   λ { rightT → split-reflect M E ; leftT _ → ApproxLR-∅ ; (tupT i) _ → ApproxLR-∅ }
   where
-  inr-ne : nonempty (⟦ split M₀ ⟧' ρ') → nonempty (⟦ M₀ ⟧ ρ)
+  inr-ne : nonempty (⟦ split M₀ ⟧' ρ')
+    → nonempty (⟦ M₀ ⟧ ρ)
   inr-ne ⟨ right d , d∈ ⟩ = let ⟨ m , m∈ ⟩ = Approx-ne (split-reflect M E) ⟨ d , d∈ ⟩ in ⟨ right m , m∈ ⟩
 
 split-reflect (case L M N) E [] V'⊆ = ApproxLR-∅ (λ _ ())
@@ -180,9 +197,11 @@ split-reflect (clos {Δ} N Ms) {ρ} {ρ'} E = Approx-fold (λ _ ()) (λ ne → �
   open Envs E
   T' = 𝒯 (length Δ) (⟦ splits Ms ⟧s' ρ')
 
-  pair-ne : nonempty (⟦ split (clos N Ms) ⟧' ρ') → nonempty T'
+  pair-ne : nonempty (⟦ split (clos N Ms) ⟧' ρ')
+    → nonempty T'
   pair-ne ⟨ ⦅ u , v ⦆ , ⟨ _ , v∈ ⟩ ⟩ = ⟨ v , v∈ ⟩
-  ν∈ : nonempty T' → ν ∈ ⟦ clos N Ms ⟧ ρ
+  ν∈ : nonempty T'
+    → ν ∈ ⟦ clos N Ms ⟧ ρ
   ν∈ ne = let ⟨ t , t∈ ⟩ = Approx-ne (reflect-𝒯 Ms E) ne in ⟨ t ∷ [] , ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ single⊆ t∈ , (λ ()) ⟩ ⟩ ⟩
 
   clos-app : AppObs (⟦ clos N Ms ⟧ ρ) (⟦ split (clos N Ms) ⟧' ρ')
@@ -217,7 +236,8 @@ reflect-𝒯 {Δ = _ ∷ Δ'} Ms {ρ} {ρ'} E = Approx-fold₀ (λ _ ()) tup-ne 
   n = length Δ'
   Ds' = ⟦ splits Ms ⟧s' ρ'
   Ds = ⟦ Ms ⟧s ρ
-  tup-ne : nonempty (𝒯 (suc n) Ds') → nonempty (𝒯 (suc n) Ds)
+  tup-ne : nonempty (𝒯 (suc n) Ds')
+    → nonempty (𝒯 (suc n) Ds)
   tup-ne ⟨ tup[ i ] d , ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ ⟩ = let ⟨ d₀ , d₀∈ ⟩ = Approx-ne (reflect-nth Ms E i) ⟨ d , d∈ ⟩
     in ⟨ tup[ i ] d₀ , ⟨ refl , ⟨ d₀∈ , (λ j → Approx-ne (reflect-nth Ms E j) (ne j)) ⟩ ⟩ ⟩
   nth-case : ∀ {m} (i : Fin m) → Approx (Untag (tupT i) (𝒯 (suc n) Ds)) (Untag (tupT i) (𝒯 (suc n) Ds'))
@@ -243,8 +263,12 @@ reflect-branch s L B E v sv s~ B⊆ V' V'⊆ =
 Envs₀ : Envs [] ρ₀ ρ₀
 Envs₀ = envs (λ _ → ⟨ ⟨⟩ , refl ⟩) (λ _ → Con-⌈⌉ ⟨⟩) (λ _ → Con-⌈⌉ ⟨⟩) (λ ())
 
-reflect-const : ∀ {A} (M : Tm [] A) {B} (c : base-rep B) → const c ∈ ⟦ split-program M ⟧' ρ₀ → const c ∈ ⟦ M ⟧ ρ₀
+reflect-const : ∀ {A} (M : Tm [] A) {B} (c : base-rep B)
+  → const c ∈ ⟦ split-program M ⟧' ρ₀
+  → const c ∈ ⟦ M ⟧ ρ₀
 reflect-const M c = Approx-const (split-reflect M Envs₀)
 
-reflect-nonempty : ∀ {A} (M : Tm [] A) → nonempty (⟦ split-program M ⟧' ρ₀) → nonempty (⟦ M ⟧ ρ₀)
+reflect-nonempty : ∀ {A} (M : Tm [] A)
+  → nonempty (⟦ split-program M ⟧' ρ₀)
+  → nonempty (⟦ M ⟧ ρ₀)
 reflect-nonempty M = Approx-ne (split-reflect M Envs₀)

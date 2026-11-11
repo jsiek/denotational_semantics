@@ -62,11 +62,15 @@ seq-⊥ e = antisymmetry 𝔻 (seq · ⊥𝔻 · e) ⊥𝔻
   (⊥-is-least 𝔻⊥ (seq · ⊥𝔻 · e))
 
 private
- value-tr : (d e : ⟨ 𝔻 ⟩) (q : d ＝ e) (p : defined d)
+ value-tr : (d e : ⟨ 𝔻 ⟩)
+   → (q : d ＝ e)
+   → (p : defined d)
    → value (unroll · d) p ⊑⟨ V ⟩ value (unroll · e) (transport defined q p)
  value-tr d .d refl p = reflexivity V (value (unroll · d) p)
 
-below-if : (d e : ⟨ 𝔻 ⟩) → (defined d → d ＝ e) → d ⊑⟨ 𝔻 ⟩ e
+below-if : (d e : ⟨ 𝔻 ⟩)
+  → (defined d → d ＝ e)
+  → d ⊑⟨ 𝔻 ⟩ e
 below-if d e h = transport (λ - → d ⊑⟨ 𝔻 ⟩ -) (roll-unroll e)
   (below-roll d (unroll · e) ((λ p → transport defined (h p) p) , (λ p → value-tr d e (h p) p)))
 
@@ -88,9 +92,11 @@ opaque
  unfolding case
 
  case-natural₂ : (A : DCPO₁) (h h' : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , A ⟹₁ 𝔻 ]) (a a' : ⟨ A ⟩)
-   (κ : DCPO[ 𝔻 , 𝔻 ]) → κ · ⊥𝔻 ＝ ⊥𝔻
+     (κ : DCPO[ 𝔻 , 𝔻 ])
+   → κ · ⊥𝔻 ＝ ⊥𝔻
    → ((t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩) → κ · (h t · x · a) ＝ h' t · x · a')
-   → (d : ⟨ 𝔻 ⟩) → κ · (case (A ⟹𝔻) h · d · a) ＝ case (A ⟹𝔻) h' · d · a'
+   → (d : ⟨ 𝔻 ⟩)
+   → κ · (case (A ⟹𝔻) h · d · a) ＝ case (A ⟹𝔻) h' · d · a'
  case-natural₂ A h h' a a' κ s e d =
   ap (κ ·_) (∐ˢˢ-＝-if-continuous-and-strict (A ⟹𝔻) 𝔻⊥ (λ g → g · a) (pr₂ (at-point₁ A 𝔻 a)) refl α ρ)
   ∙ ∐ˢˢ-＝-if-continuous-and-strict 𝔻⊥ 𝔻⊥ (pr₁ κ) (pr₂ κ) s (λ q → α q · a) ρ
@@ -127,25 +133,31 @@ module _ (κ : DCPO[ 𝔻 , 𝔻 ]) (s : κ · ⊥𝔻 ＝ ⊥𝔻) (f g f' g' :
 {- code ---------------------------------------------------------------------------------}
 
 code₂-cong : (B B' : DCPO[ 𝔻 ×₁ 𝔻 , 𝔻 ])
-  → ((X Y : ⟨ 𝔻 ⟩) → defined X → defined Y → B · (X , Y) ＝ B' · (X , Y)) → code₂ B ＝ code₂ B'
+  → ((X Y : ⟨ 𝔻 ⟩) → defined X → defined Y → B · (X , Y) ＝ B' · (X , Y))
+  → code₂ B ＝ code₂ B'
 code₂-cong B B' h =
  Λ-cong (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B) Λ) (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B') Λ)
    (λ X p → Λ-cong (curry₁ 𝔻 𝔻 𝔻 B · X) (curry₁ 𝔻 𝔻 𝔻 B' · X) (λ Y q → h X Y p q))
 
 codeᶜ-cong : (N N' : Den Env)
-  → ((X Y : ⟨ 𝔻 ⟩) → defined X → defined Y → N · env₂ X Y ＝ N' · env₂ X Y) → codeᶜ N ＝ codeᶜ N'
+  → ((X Y : ⟨ 𝔻 ⟩) → defined X → defined Y → N · env₂ X Y ＝ N' · env₂ X Y)
+  → codeᶜ N ＝ codeᶜ N'
 codeᶜ-cong N N' = code₂-cong (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N) (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N')
 
 {- tables ------------------------------------------------------------------------------}
 
 private
- choose-cong : ∀ {P : Set} (q : Dec P) (a b a' b' : ⟨ 𝔻 ⟩) → a ＝ a' → b ＝ b' → choose q a b ＝ choose q a' b'
+ choose-cong : ∀ {P : Set} (q : Dec P) (a b a' b' : ⟨ 𝔻 ⟩)
+   → a ＝ a'
+   → b ＝ b'
+   → choose q a b ＝ choose q a' b'
  choose-cong (yes _) a b a' b' e₁ e₂ = e₁
  choose-cong (no _) a b a' b' e₁ e₂ = e₂
 
 tables-cons : ∀ {Σ} {D D' : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) (cd' : Table Σ → ∀ {s} → D' s → ⟨ 𝔻 ⟩)
-  {s₀ ss} (d : D s₀) (ds : All D ss) (d' : D' s₀) (ds' : All D' ss) {s} (f : Σ ∋ s)
-  → cd (tables cd ds) d ＝ cd' (tables cd' ds') d' → tables cd ds f ＝ tables cd' ds' f
+    {s₀ ss} (d : D s₀) (ds : All D ss) (d' : D' s₀) (ds' : All D' ss) {s} (f : Σ ∋ s)
+  → cd (tables cd ds) d ＝ cd' (tables cd' ds') d'
+  → tables cd ds f ＝ tables cd' ds' f
   → tables cd (d ∷ ds) f ＝ tables cd' (d' ∷ ds') f
 tables-cons cd cd' {ss = ss} d ds d' ds' f =
   choose-cong (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f) (cd' (tables cd' ds') d') (tables cd' ds' f)

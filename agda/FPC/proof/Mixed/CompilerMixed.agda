@@ -58,10 +58,15 @@ open import Data.Product using (_,_; proj₁; proj₂)
 open import Relation.Nullary using (¬_)
 
 private
-  _∘⇔_ : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
+  _∘⇔_ : ∀ {A B C : Set}
+    → A ⇔ B
+    → B ⇔ C
+    → A ⇔ C
   (f , g) ∘⇔ (h , k) = (λ a → h (f a)) , (λ c → g (k c))
 
-  ⇔-sym : ∀ {A B : Set} → A ⇔ B → B ⇔ A
+  ⇔-sym : ∀ {A B : Set}
+    → A ⇔ B
+    → B ⇔ A
   ⇔-sym (f , g) = g , f
 
 {- the passes after simplify, by the interpreters -}

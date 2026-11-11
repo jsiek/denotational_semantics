@@ -47,25 +47,35 @@ open import Relation.Nullary using (¬_)
 
 {- Soundness -------------------------------------------------------------------}
 
-sound-const : ∀ {A} (M : Tm [] A) {B} {k : base-rep B} → Terminates (sem M) (o-const B k) → dconst k ∈ ⟦ M ⟧ ρ₀
+sound-const : ∀ {A} (M : Tm [] A) {B} {k : base-rep B}
+  → Terminates (sem M) (o-const B k)
+  → dconst k ∈ ⟦ M ⟧ ρ₀
 sound-const M t with S.soundness M t
 ... | ⟨ _ , ⟨ v , ⟨ o≡ , v⊆ ⟩ ⟩ ⟩ = v⊆ _ (S.𝒱-const v (sym o≡))
 
-sound-nonempty : ∀ {A} (M : Tm [] A) → Converges (Terminates (sem M)) → nonempty (⟦ M ⟧ ρ₀)
+sound-nonempty : ∀ {A} (M : Tm [] A)
+  → Converges (Terminates (sem M))
+  → nonempty (⟦ M ⟧ ρ₀)
 sound-nonempty M ⟨ o , ⟨ _ , t ⟩ ⟩ with S.soundness M t
 ... | ⟨ _ , ⟨ v , ⟨ _ , v⊆ ⟩ ⟩ ⟩ = let ⟨ d , d∈ ⟩ = S.𝒱-ne v in ⟨ d , v⊆ d d∈ ⟩
 
 {- Adequacy --------------------------------------------------------------------}
 
-adequacy : ∀ {A} (M : Tm [] A) {d} → d ∈ ⟦ M ⟧ ρ₀ → Σ[ v ∈ Val A ] Terminates (sem M) (obs v) × 𝕍 d v
+adequacy : ∀ {A} (M : Tm [] A) {d}
+  → d ∈ ⟦ M ⟧ ρ₀
+  → Σ[ v ∈ Val A ] Terminates (sem M) (obs v) × 𝕍 d v
 adequacy M d∈ with adequate M (λ ()) d∈
 ... | ⟨ v , ⟨ e , r ⟩ ⟩ = ⟨ v , ⟨ ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩ , r ⟩ ⟩
 
-adequacy-const : ∀ {A} (M : Tm [] A) {B} {k : base-rep B} → dconst k ∈ ⟦ M ⟧ ρ₀ → Terminates (sem M) (o-const B k)
+adequacy-const : ∀ {A} (M : Tm [] A) {B} {k : base-rep B}
+  → dconst k ∈ ⟦ M ⟧ ρ₀
+  → Terminates (sem M) (o-const B k)
 adequacy-const M k∈ with adequacy M k∈
 ... | ⟨ v , ⟨ t , r ⟩ ⟩ = subst (Terminates (sem M)) (𝕍-const v r) t
 
-adequacy-converges : ∀ {A} (M : Tm [] A) → nonempty (⟦ M ⟧ ρ₀) → Converges (Terminates (sem M))
+adequacy-converges : ∀ {A} (M : Tm [] A)
+  → nonempty (⟦ M ⟧ ρ₀)
+  → Converges (Terminates (sem M))
 adequacy-converges M ⟨ d , d∈ ⟩ with adequacy M d∈
 ... | ⟨ v , ⟨ t , _ ⟩ ⟩ = ⟨ obs v , ⟨ obs-answer v , t ⟩ ⟩
 
@@ -78,17 +88,25 @@ nonempty-iff : ∀ {A} (M : Tm [] A) → nonempty (⟦ M ⟧ ρ₀) ⇔ Converge
 nonempty-iff M = ⟨ adequacy-converges M , sound-nonempty M ⟩
 
 {- a program that diverges denotes the empty set -}
-diverges-empty : ∀ {A} (M : Tm [] A) → Diverges (sem M) → ∀ (d : Value) → ¬ (d ∈ ⟦ M ⟧ ρ₀)
+diverges-empty : ∀ {A} (M : Tm [] A)
+  → Diverges (sem M)
+  → ∀ (d : Value)
+  → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 diverges-empty M div d d∈ with adequacy M d∈
 ... | ⟨ v , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t
 
 {- a machine that never stops with an error, and does not converge,
    diverges; and one that diverges does not converge -}
-no-error-diverges : ∀ (L : Machine) → ¬ Terminates L o-error → ¬ Converges (Terminates L) → Diverges L
+no-error-diverges : ∀ (L : Machine)
+  → ¬ Terminates L o-error
+  → ¬ Converges (Terminates L)
+  → Diverges L
 no-error-diverges L ok nc = never-final-diverges λ {s} {o} σ fin →
   nc ⟨ o , ⟨ (λ { refl → ok ⟨ s , ⟨ σ , fin ⟩ ⟩ }) , ⟨ s , ⟨ σ , fin ⟩ ⟩ ⟩ ⟩
 
-diverges-not-converges : ∀ {L : Machine} → Diverges L → ¬ Converges (Terminates L)
+diverges-not-converges : ∀ {L : Machine}
+  → Diverges L
+  → ¬ Converges (Terminates L)
 diverges-not-converges div ⟨ o , ⟨ _ , t ⟩ ⟩ = diverges-not-terminates div t
 
 {- ⟦ M ⟧ ρ₀ is empty exactly when the machine diverges -}

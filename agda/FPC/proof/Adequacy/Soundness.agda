@@ -60,14 +60,25 @@ open import Relation.Nullary using (does)
 
 {- monotonicity of an operator in its operands -}
 private
-  m1 : ∀ {g} → Good ⊤ (■ ∷ []) g → ∀ {D E} → D ⊆ E → g ⟨ D , ptt ⟩ ⊆ g ⟨ E , ptt ⟩
+  m1 : ∀ {g}
+    → Good ⊤ (■ ∷ []) g
+    → ∀ {D E}
+    → D ⊆ E
+    → g ⟨ D , ptt ⟩ ⊆ g ⟨ E , ptt ⟩
   m1 G D⊆ = lower (mono G _ _ ⟨ lift D⊆ , ptt ⟩)
-  m2 : ∀ {g} → Good ⊤ (■ ∷ ■ ∷ []) g → ∀ {D D' E E'} → D ⊆ D' → E ⊆ E'
+  m2 : ∀ {g}
+    → Good ⊤ (■ ∷ ■ ∷ []) g
+    → ∀ {D D' E E'}
+    → D ⊆ D'
+    → E ⊆ E'
     → g ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ g ⟨ D' , ⟨ E' , ptt ⟩ ⟩
   m2 G D⊆ E⊆ = lower (mono G _ _ ⟨ lift D⊆ , ⟨ lift E⊆ , ptt ⟩ ⟩)
   ⊆r : ∀ {D : 𝒫 Value} → D ⊆ D
   ⊆r _ z = z
-  _⨾_ : ∀ {D E F : 𝒫 Value} → D ⊆ E → E ⊆ F → D ⊆ F
+  _⨾_ : ∀ {D E F : 𝒫 Value}
+    → D ⊆ E
+    → E ⊆ F
+    → D ⊆ F
   (D⊆ ⨾ E⊆) d d∈ = E⊆ d (D⊆ d d∈)
 
 {- Denotations of values and environments ---------------------------------------}
@@ -142,7 +153,9 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝓔-lookup (v ∷ γ) (S x) = 𝓔-lookup γ x
 
 {- the denotation of a value observed as a constant holds it -}
-𝒱-const : ∀ {A B} {k} (v : Val A) → obs v ≡ o-const B k → dconst k ∈ 𝒱 v
+𝒱-const : ∀ {A B} {k} (v : Val A)
+  → obs v ≡ o-const B k
+  → dconst k ∈ 𝒱 v
 𝒱-const (const k) refl = ⟨ refl , refl ⟩
 𝒱-const (fold v) e = 𝒱-const v e
 𝒱-const (code N) ()
@@ -165,10 +178,15 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
   len (N ∷ Ns) = cong N.suc (len Ns)
 ... | refl = ⟨ refl , ⟨ at (M ∷ Ms) i a , all (M ∷ Ms) ne ⟩ ⟩
   where
-  at : ∀ {Δ} (Ns : All (Tm Γ) Δ) (i : Fin (length Δ)) → At i (⟦ Ns ⟧* ρ) d → d ∈ nthD (⟦ Ns ⟧s ρ) i
+  at : ∀ {Δ} (Ns : All (Tm Γ) Δ) (i : Fin (length Δ))
+    → At i (⟦ Ns ⟧* ρ) d
+    → d ∈ nthD (⟦ Ns ⟧s ρ) i
   at (N ∷ Ns) zero ⟨ _ , d∈ ⟩ = d∈
   at (N ∷ Ns) (suc i) a = at Ns i a
-  all : ∀ {Δ} (Ns : All (Tm Γ) Δ) → AllNE (⟦ Ns ⟧* ρ) → ∀ i → nonempty (nthD (⟦ Ns ⟧s ρ) i)
+  all : ∀ {Δ} (Ns : All (Tm Γ) Δ)
+    → AllNE (⟦ Ns ⟧* ρ)
+    → ∀ i
+    → nonempty (nthD (⟦ Ns ⟧s ρ) i)
   all (N ∷ Ns) ⟨ ne , _ ⟩ zero = ne
   all (N ∷ Ns) ⟨ _ , nes ⟩ (suc i) = all Ns nes i
 𝒯L-args Ms ρ (dconst k) ()
@@ -179,14 +197,18 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝒯L-args Ms ρ (left d) ()
 𝒯L-args Ms ρ (right d) ()
 
-At-lookup : ∀ {Δ A} (vs : All Val Δ) (i : Δ ∋ A) {d} → d ∈ 𝒱 (lookup vs i) → At (pos i) (𝒱s vs) d
+At-lookup : ∀ {Δ A} (vs : All Val Δ) (i : Δ ∋ A) {d}
+  → d ∈ 𝒱 (lookup vs i)
+  → At (pos i) (𝒱s vs) d
 At-lookup (v ∷ vs) Z d∈ = ⟨ len𝒱s vs , d∈ ⟩
 At-lookup (v ∷ vs) (S i) d∈ = At-lookup vs i d∈
 
 prim-⊆ : ∀ p n m → 𝒱 (δ p (const n) (const m)) ⊆ primD p ⟨ ℬ Int n ptt , ⟨ ℬ Int m ptt , ptt ⟩ ⟩
 prim-⊆ p n m d d∈ = ⟨ n , ⟨ m , ⟨ ⟨ refl , refl ⟩ , ⟨ ⟨ refl , refl ⟩ , out-≡ p d d∈ ⟩ ⟩ ⟩ ⟩
   where
-  out-≡ : ∀ p d → d ∈ 𝒱 (δ p (const n) (const m)) → d ≡ dout (δᴾ p n m)
+  out-≡ : ∀ p d
+    → d ∈ 𝒱 (δ p (const n) (const m))
+    → d ≡ dout (δᴾ p n m)
   out-≡ sub (dconst k) ⟨ refl , refl ⟩ = refl
   out-≡ eq d d∈ with does (n ≟ℤ m)
   out-≡ eq (left ⟨⟩) d∈ | true = refl
@@ -203,14 +225,16 @@ app-β N γ w d d∈ with fin₁ (ok N) (𝓔-ne γ) (𝒱-ne w) d d∈
 ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con w) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
 
 case-inl : ∀ {Γ A B C} (L : Tm Γ (A ⊹ B)) (M : Tm (A ∷ Γ) C) N (γ : Env Γ) (v : Val A)
-  → 𝒱 (inl {B = B} v) ⊆ ⟦ L ⟧ (𝓔 γ) → ⟦ M ⟧ (𝓔 (v ∷ γ)) ⊆ ⟦ case L M N ⟧ (𝓔 γ)
+  → 𝒱 (inl {B = B} v) ⊆ ⟦ L ⟧ (𝓔 γ)
+  → ⟦ M ⟧ (𝓔 (v ∷ γ)) ⊆ ⟦ case L M N ⟧ (𝓔 γ)
 case-inl L M N γ v L⊆ d d∈ with fin₁ (ok M) (𝓔-ne γ) (𝒱-ne v) d d∈
 ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
 ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
   inj₁ ⟨ u , ⟨ U , ⟨ (λ d' d'∈ → L⊆ _ (V⊆ d' d'∈)) , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
 
 case-inr : ∀ {Γ A B C} (L : Tm Γ (A ⊹ B)) M (N : Tm (B ∷ Γ) C) (γ : Env Γ) (v : Val B)
-  → 𝒱 (inr {A = A} v) ⊆ ⟦ L ⟧ (𝓔 γ) → ⟦ N ⟧ (𝓔 (v ∷ γ)) ⊆ ⟦ case L M N ⟧ (𝓔 γ)
+  → 𝒱 (inr {A = A} v) ⊆ ⟦ L ⟧ (𝓔 γ)
+  → ⟦ N ⟧ (𝓔 (v ∷ γ)) ⊆ ⟦ case L M N ⟧ (𝓔 γ)
 case-inr L M N γ v L⊆ d d∈ with fin₁ (ok N) (𝓔-ne γ) (𝒱-ne v) d d∈
 ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
 ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
@@ -224,18 +248,26 @@ data Holds {X : Set} (P : X → Set) : Result X → Set where
   ret : ∀ {v} → P v → Holds P (ret v)
 
 bind-holds : ∀ {X Y : Set} {P : X → Set} {Q : Y → Set} {r : Result X} {f : X → Result Y}
-  → Holds P r → (∀ v → P v → Holds Q (f v)) → Holds Q (r >>= f)
+  → Holds P r
+  → (∀ v → P v → Holds Q (f v))
+  → Holds Q (r >>= f)
 bind-holds timeout k = timeout
 bind-holds (ret {v} h) k = k v h
 
-holds-map : ∀ {X : Set} {P Q : X → Set} {r : Result X} → (∀ v → P v → Q v) → Holds P r → Holds Q r
+holds-map : ∀ {X : Set} {P Q : X → Set} {r : Result X}
+  → (∀ v → P v → Q v)
+  → Holds P r
+  → Holds Q r
 holds-map f timeout = timeout
 holds-map f (ret {v} h) = ret (f v h)
 
 Sound : ∀ {A} → Result (Val A) → 𝒫 Value → Set
 Sound r D = Holds (λ v → 𝒱 v ⊆ D) r
 
-sound-⊆ : ∀ {A} {r : Result (Val A)} {D E} → D ⊆ E → Sound r D → Sound r E
+sound-⊆ : ∀ {A} {r : Result (Val A)} {D E}
+  → D ⊆ E
+  → Sound r D
+  → Sound r E
 sound-⊆ D⊆ = holds-map (λ v v⊆ → v⊆ ⨾ D⊆)
 
 {- Soundness ------------------------------------------------------------------}

@@ -52,7 +52,10 @@ module FPC.proof.Correctness.GraphModel.ApproxLR where
 _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩
 
-●-mono : ∀ {D₁ D₂ E₁ E₂} → D₁ ⊆ D₂ → E₁ ⊆ E₂ → (D₁ ● E₁) ⊆ (D₂ ● E₂)
+●-mono : ∀ {D₁ D₂ E₁ E₂}
+  → D₁ ⊆ D₂
+  → E₁ ⊆ E₂
+  → (D₁ ● E₁) ⊆ (D₂ ● E₂)
 ●-mono D⊆ E⊆ w ⟨ V , ⟨ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩ = ⟨ V , ⟨ D⊆ _ V↦w∈ , ⟨ (λ v v∈ → E⊆ v (V⊆E v v∈)) , neV ⟩ ⟩ ⟩
 
 {- Usable entries and self-contained calls ------------------------------------}
@@ -73,11 +76,17 @@ record UsableEntry (V' U₀ : List Value) (w : Value) : Set where
     FV≢[] : FV ≢ []
     FV⊆ : mem FV ⊆ Cdrs V'
 
-UsableEntry-⊆ : ∀ {V₁ V₂ U₀ w} → mem V₁ ⊆ mem V₂ → UsableEntry V₁ U₀ w → UsableEntry V₂ U₀ w
+UsableEntry-⊆ : ∀ {V₁ V₂ U₀ w}
+  → mem V₁ ⊆ mem V₂
+  → UsableEntry V₁ U₀ w
+  → UsableEntry V₂ U₀ w
 UsableEntry-⊆ s (usable-entry FV t e∈ neFV FV⊆) =
   usable-entry FV t (s _ e∈) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , s _ i ⟩)
 
-Bnd-UsableEntry : ∀ {k V' U₀ w} → Bnd (suc k) V' → UsableEntry V' U₀ w → Bnd k U₀ × depth w < k
+Bnd-UsableEntry : ∀ {k V' U₀ w}
+  → Bnd (suc k) V'
+  → UsableEntry V' U₀ w
+  → Bnd k U₀ × depth w < k
 Bnd-UsableEntry {U₀ = U₀}{w} bV (usable-entry FV t e∈ _ _) =
   ⟨ (λ u u∈ → <-shrink (s≤s (≤-trans (depth-⋵ u∈) (≤-trans (m≤m⊔n _ (depth w)) up))) (bV _ e∈))
   , <-shrink (s≤s (≤-trans (m≤n⊔m (depths U₀) _) up)) (bV _ e∈) ⟩
@@ -94,20 +103,32 @@ record SelfContainedMaps (V U W : List Value) : Set where
     results : ∀ w → w ⋵ W → Σ[ U₀ ∈ List Value ] UsableEntry V U₀ w × U₀ ≢ [] × mem U₀ ⊆ mem U
     args : ∀ u → u ⋵ U → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] UsableEntry V U₀ w × u ⋵ U₀
 
-SelfContainedMaps-⊆ : ∀ {V₁ V₂ U W} → mem V₁ ⊆ mem V₂ → SelfContainedMaps V₁ U W → SelfContainedMaps V₂ U W
+SelfContainedMaps-⊆ : ∀ {V₁ V₂ U W}
+  → mem V₁ ⊆ mem V₂
+  → SelfContainedMaps V₁ U W
+  → SelfContainedMaps V₂ U W
 SelfContainedMaps-⊆ s cs = record
   { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = SelfContainedMaps.results cs w w∈ in ⟨ U₀ , ⟨ UsableEntry-⊆ s e , r ⟩ ⟩
   ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = SelfContainedMaps.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ UsableEntry-⊆ s e , r ⟩ ⟩ ⟩
   }
 
-SelfContainedMaps-none : ∀ {V U W} → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥) → SelfContainedMaps V U W → mem W ⊆ ∅
+SelfContainedMaps-none : ∀ {V U W}
+  → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥)
+  → SelfContainedMaps V U W
+  → mem W ⊆ ∅
 SelfContainedMaps-none no cs w w∈ = no _ _ (UsableEntry.car∈ (proj₁ (proj₂ (SelfContainedMaps.results cs w w∈))))
 
-Bnd-SelfContainedMaps-args : ∀ {k V U W} → Bnd (suc k) V → SelfContainedMaps V U W → Bnd k U
+Bnd-SelfContainedMaps-args : ∀ {k V U W}
+  → Bnd (suc k) V
+  → SelfContainedMaps V U W
+  → Bnd k U
 Bnd-SelfContainedMaps-args bV cs u u∈ =
   let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = SelfContainedMaps.args cs u u∈ in proj₁ (Bnd-UsableEntry bV e) u u∈U₀
 
-Bnd-SelfContainedMaps-apps : ∀ {k V U W} → Bnd (suc k) V → SelfContainedMaps V U W → Bnd k W
+Bnd-SelfContainedMaps-apps : ∀ {k V U W}
+  → Bnd (suc k) V
+  → SelfContainedMaps V U W
+  → Bnd k W
 Bnd-SelfContainedMaps-apps bV cs w w∈ = proj₂ (Bnd-UsableEntry bV (proj₁ (proj₂ (SelfContainedMaps.results cs w w∈))))
 
 {- The four clauses of the relation (Figure 5). ApproxLRLayer Q D V
@@ -119,10 +140,13 @@ record ApproxLRLayer (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value)
     app-obs : ∀ {U W} → SelfContainedMaps V U W → ∀ E → Con E → Con (mem U) → Q E U → Q (D ● E) W
     tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q (Untag t D) W
 
-ApproxLRLayer-map : ∀ {k j Q₁ Q₂ D V} → Bnd (suc k) V → Bnd (suc j) V
+ApproxLRLayer-map : ∀ {k j Q₁ Q₂ D V}
+  → Bnd (suc k) V
+  → Bnd (suc j) V
   → (∀ {E W} → Bnd k W → Bnd j W → Q₁ E W → Q₂ E W)
   → (∀ {E W} → Bnd j W → Bnd k W → Q₂ E W → Q₁ E W)
-  → ApproxLRLayer Q₁ D V → ApproxLRLayer Q₂ D V
+  → ApproxLRLayer Q₁ D V
+  → ApproxLRLayer Q₂ D V
 ApproxLRLayer-map bk bj to from o = record
   { const-obs = const-obs
   ; nonempty-obs = nonempty-obs
@@ -156,7 +180,10 @@ private
     where noflat : ∀ {u v} → Data ⦅ u , v ⦆ → ⊥
           noflat ()
 
-  ApproxLR≤-mono : ∀ k {D₁ D₂ V} → D₁ ⊆ D₂ → ApproxLR≤ k D₁ V → ApproxLR≤ k D₂ V
+  ApproxLR≤-mono : ∀ k {D₁ D₂ V}
+    → D₁ ⊆ D₂
+    → ApproxLR≤ k D₁ V
+    → ApproxLR≤ k D₂ V
   ApproxLR≤-mono zero _ _ = ptt
   ApproxLR≤-mono (suc k) D⊆ r = record
     { const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
@@ -181,7 +208,9 @@ unfold : ∀ {D V} → ApproxLR D V → ApproxLRLayer ApproxLR D V
 unfold {V = V} = ApproxLRLayer-map bV bV (λ b _ → ApproxLR-depth-irrelevant b (Bnd-depths _)) (λ _ → ApproxLR-depth-irrelevant (Bnd-depths _))
   where bV = Bnd-depths V
 
-fold : ∀ {D V} → ApproxLRLayer ApproxLR D V → ApproxLR D V
+fold : ∀ {D V}
+  → ApproxLRLayer ApproxLR D V
+  → ApproxLR D V
 fold {V = V} = ApproxLRLayer-map bV bV (λ _ → ApproxLR-depth-irrelevant (Bnd-depths _)) (λ b _ → ApproxLR-depth-irrelevant b (Bnd-depths _))
   where bV = Bnd-depths V
 
@@ -190,7 +219,9 @@ fold {V = V} = ApproxLRLayer-map bV bV (λ _ → ApproxLR-depth-irrelevant (Bnd-
 ApproxLR-data : ∀ {D V} → (∀ v → v ⋵ V → v ∈ D × Data v) → ApproxLR D V
 ApproxLR-data = ApproxLR≤-data _
 
-ApproxLR-∅ : ∀ {D V} → mem V ⊆ ∅ → ApproxLR D V
+ApproxLR-∅ : ∀ {D V}
+  → mem V ⊆ ∅
+  → ApproxLR D V
 ApproxLR-∅ V⊆∅ = ApproxLR-data (λ v v∈ → ⊥-elim (V⊆∅ v v∈))
 
 {- The relation is monotone in D (ApproxLR-mono) and antitone in V
@@ -198,7 +229,10 @@ ApproxLR-∅ V⊆∅ = ApproxLR-data (λ v v∈ → ⊥-elim (V⊆∅ v v∈))
 ApproxLR-mono : ∀ {D₁ D₂ V} → D₁ ⊆ D₂ → ApproxLR D₁ V → ApproxLR D₂ V
 ApproxLR-mono = ApproxLR≤-mono _
 
-ApproxLR-⊆ : ∀ {D V₁ V₂} → mem V₁ ⊆ mem V₂ → ApproxLR D V₂ → ApproxLR D V₁
+ApproxLR-⊆ : ∀ {D V₁ V₂}
+  → mem V₁ ⊆ mem V₂
+  → ApproxLR D V₂
+  → ApproxLR D V₁
 ApproxLR-⊆ V₁⊆V₂ r = fold record
   { const-obs = λ c c∈ → const-obs c (V₁⊆V₂ _ c∈)
   ; nonempty-obs = λ ne → nonempty-obs (ne-⊆ V₁⊆V₂ ne)

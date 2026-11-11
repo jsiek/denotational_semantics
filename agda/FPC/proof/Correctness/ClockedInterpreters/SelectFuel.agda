@@ -59,10 +59,11 @@ module _ {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s)) �
   module _ (ck : ℕ) (H : Calls ck) where
 
     sel-ok : ∀ {n R Bs Δ A Δ''} {bs : Blocks Σ n R Bs} {η Γ O F} {ρ : X.RegVals Σ η Γ} {op : X.Opened Σ η O}
-      {f : X.Flag Σ F} {φ : Env Δ} (o : Out n Δ A Δ'') {k : ∀ {Γ O F} → Seq Σ n R Bs (after o Γ O F)} {K}
-      → (∀ {η Γ O F} (ρ : X.RegVals Σ η Γ) (op : X.Opened Σ η O) (f : X.Flag Σ F) v
-           → K v ≡ X.run xds ck bs η (put (dst o) v ⟨ ρ , φ , op , f ⟩) k)
-      → (s : I.Simple Σ Δ A) → (eval-simple (G.call ds ck) φ s >>= K) ≡ X.run xds ck bs η ⟨ ρ , φ , op , f ⟩ (sel s o k)
+        {f : X.Flag Σ F} {φ : Env Δ} (o : Out n Δ A Δ'') {k : ∀ {Γ O F} → Seq Σ n R Bs (after o Γ O F)} {K}
+      → (  ∀ {η Γ O F} (ρ : X.RegVals Σ η Γ) (op : X.Opened Σ η O) (f : X.Flag Σ F) v
+         → K v ≡ X.run xds ck bs η (put (dst o) v ⟨ ρ , φ , op , f ⟩) k)
+      → (s : I.Simple Σ Δ A)
+      → (eval-simple (G.call ds ck) φ s >>= K) ≡ X.run xds ck bs η ⟨ ρ , φ , op , f ⟩ (sel s o k)
     sel-ok o h (I.atm a) = h _ _ _ _
     sel-ok o h (I.pair a b) = h _ _ _ _
     sel-ok {φ = φ} o h (I.callc (var x) a) = bind≡ (H (lookup φ x) (value-of φ a)) λ v → h _ _ _ v

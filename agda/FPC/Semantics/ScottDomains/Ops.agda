@@ -57,14 +57,18 @@ choose-yes : ∀ {P : Set} (q : Dec P) (d e : ⟨ 𝔻 ⟩) → P → choose q d
 choose-yes (yes _) d e p = refl
 choose-yes (no ¬p) d e p = ⊥-elim (¬p p)
 
-choose-no : ∀ {P : Set} (q : Dec P) (d e : ⟨ 𝔻 ⟩) → ¬ P → choose q d e ＝ e
+choose-no : ∀ {P : Set} (q : Dec P) (d e : ⟨ 𝔻 ⟩)
+  → ¬ P
+  → choose q d e ＝ e
 choose-no (yes p) d e ¬p = ⊥-elim (¬p p)
 choose-no (no _) d e ¬p = refl
 
 tables-yes : ∀ {Σ} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) {s ss} (d : D s) (ds : All D ss) {t} (f : Σ ∋ t)
-  → lvl f ≡ length ss → tables cd (d ∷ ds) f ＝ cd (tables cd ds) d
+  → lvl f ≡ length ss
+  → tables cd (d ∷ ds) f ＝ cd (tables cd ds) d
 tables-yes cd {ss = ss} d ds f e = choose-yes (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f) e
 
 tables-no : ∀ {Σ} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) {s ss} (d : D s) (ds : All D ss) {t} (f : Σ ∋ t)
-  → ¬ (lvl f ≡ length ss) → tables cd (d ∷ ds) f ＝ tables cd ds f
+  → ¬ (lvl f ≡ length ss)
+  → tables cd (d ∷ ds) f ＝ tables cd ds f
 tables-no cd {ss = ss} d ds f ne = choose-no (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f) ne

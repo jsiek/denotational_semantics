@@ -91,7 +91,10 @@ module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
   SEnv : ∀ {Γ : Ctx} → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇
   SEnv {Γ} ρ ρ' = ∀ {C} (x : Γ ∋ C) → (ρ (idx x)) ∼ (ρ' (idx x))
 
-  ext-env : ∀ {Γ B} {ρ ρ' : ⟨ Env ⟩} {a a' : ⟨ 𝔻 ⟩} → a ∼ a' → SEnv {Γ} ρ ρ' → SEnv {B ∷ Γ} (a • ρ) (a' • ρ')
+  ext-env : ∀ {Γ B} {ρ ρ' : ⟨ Env ⟩} {a a' : ⟨ 𝔻 ⟩}
+    → a ∼ a'
+    → SEnv {Γ} ρ ρ'
+    → SEnv {B ∷ Γ} (a • ρ) (a' • ρ')
   ext-env ha h Z = ha
   ext-env ha h (S x) = h x
 

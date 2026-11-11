@@ -49,20 +49,29 @@ open import Relation.Nullary using (¬_)
 
 private
   {- runs of the reduction are runs of its machine, and back -}
-  star→ : ∀ {A} {M₀ M N : Tm [] A} → Star* red M N → Star (sem M₀) M N
+  star→ : ∀ {A} {M₀ M N : Tm [] A}
+    → Star* red M N
+    → Star (sem M₀) M N
   star→ ε* = ε
   star→ {M = M} (s ◅* σ) = cong (toNext (obs M)) s ◅ star→ σ
 
-  star← : ∀ {A} {M₀ M N : Tm [] A} → Star (sem M₀) M N → Star* red M N
+  star← : ∀ {A} {M₀ M N : Tm [] A}
+    → Star (sem M₀) M N
+    → Star* red M N
   star← ε = ε*
   star← (s ◅ σ) = toNext-to s ◅* star← σ
 
   {- a value stops, with its observation -}
-  final : ∀ {A} {M₀ V : Tm [] A} → Val V → Final (sem M₀) V (obs V)
+  final : ∀ {A} {M₀ V : Tm [] A}
+    → Val V
+    → Final (sem M₀) V (obs V)
   final {V = V} v = cong (toNext (obs V)) (value-red v)
 
   {- the denotation of a value observed as a constant holds it -}
-  obs-const : ∀ {A B} {k : base-rep B} {V : Tm [] A} → Val V → obs V ≡ o-const B k → dconst k ∈ ⟦ V ⟧ ρ₀
+  obs-const : ∀ {A B} {k : base-rep B} {V : Tm [] A}
+    → Val V
+    → obs V ≡ o-const B k
+    → dconst k ∈ ⟦ V ⟧ ρ₀
   obs-const lit refl = ⟨ refl , refl ⟩
   obs-const (fold v) e = obs-const v e
   obs-const lam ()
@@ -70,15 +79,21 @@ private
   obs-const (inl v) ()
   obs-const (inr v) ()
 
-  stop-val : ∀ {X : Set} {o o' : Obs} → toNext {X} o val ≡ stop o' → o ≡ o'
+  stop-val : ∀ {X : Set} {o o' : Obs}
+    → toNext {X} o val ≡ stop o'
+    → o ≡ o'
   stop-val refl = refl
 
-  stop-error : ∀ {X : Set} {o o' : Obs} → toNext {X} o error ≡ stop o' → o-error ≡ o'
+  stop-error : ∀ {X : Set} {o o' : Obs}
+    → toNext {X} o error ≡ stop o'
+    → o-error ≡ o'
   stop-error refl = refl
 
   {- a term at which the machine stops with a constant is a value whose
      denotation holds it -}
-  stop-const : ∀ {A B} {k : base-rep B} (V : Tm [] A) → toNext (obs V) (red V) ≡ stop (o-const B k) → dconst k ∈ ⟦ V ⟧ ρ₀
+  stop-const : ∀ {A B} {k : base-rep B} (V : Tm [] A)
+    → toNext (obs V) (red V) ≡ stop (o-const B k)
+    → dconst k ∈ ⟦ V ⟧ ρ₀
   stop-const V e with red V in eV
   ... | val = obs-const (val-value V eV) (stop-val e)
   ... | error with stop-error {o = obs V} e
@@ -86,7 +101,9 @@ private
 
 {- adequacy: an element of the denotation is related to the value the
    program reduces to -}
-returns : ∀ {A} (M : Tm [] A) {d} → d ∈ ⟦ M ⟧ ρ₀ → Σ[ V ∈ Tm [] A ] M ⇓ V × 𝕍 d V
+returns : ∀ {A} (M : Tm [] A) {d}
+  → d ∈ ⟦ M ⟧ ρ₀
+  → Σ[ V ∈ Tm [] A ] M ⇓ V × 𝕍 d V
 returns M d∈ with adequate M {σ = ∅ₛ} (λ ()) d∈
 ... | ⟨ V , ⟨ e , r ⟩ ⟩ = ⟨ V , ⟨ subst (_⇓ V) (sub-id {σ = ∅ₛ} (λ ()) M) e , r ⟩ ⟩
 
@@ -103,7 +120,9 @@ diverges-iff M =
   , (λ ne n → run n M ne) ⟩
   where
   {- a term with an empty denotation takes n steps, for every n -}
-  run : ∀ n (N : Tm [] _) → ¬ nonempty (⟦ N ⟧ ρ₀) → Σ[ N' ∈ Tm [] _ ] Steps (sem M) n N N'
+  run : ∀ n (N : Tm [] _)
+    → ¬ nonempty (⟦ N ⟧ ρ₀)
+    → Σ[ N' ∈ Tm [] _ ] Steps (sem M) n N N'
   run ℕ.zero N ne = ⟨ N , zero ⟩
   run (ℕ.suc n) N ne with progress N
   ... | inj₁ v = ⊥-elim (ne (val-ne v))

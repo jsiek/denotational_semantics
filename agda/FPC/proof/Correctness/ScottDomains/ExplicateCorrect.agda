@@ -61,12 +61,21 @@ data Ext {Σ R} : ∀ {Bs Bs'} → Bs ⊑ Bs' → Blocks Σ R Bs → Blocks Σ R
   here : ∀ {Bs} {bs : Blocks Σ R Bs} → Ext here⊑ bs bs
   there : ∀ {Bs Bs' Δ g bs bs'} {t : Tail Σ R Bs' Δ} → Ext {Bs = Bs} g bs bs' → Ext (there⊑ g) bs (bs' ▷ t)
 
-ext-trans : ∀ {Σ R Bs Bs' Bs''} {g : Bs ⊑ Bs'} {g' : Bs' ⊑ Bs''} {bs bs' bs''}
-  → Ext {Σ} {R} g bs bs' → Ext g' bs' bs'' → Ext (⊑-trans g g') bs bs''
+ext-trans : ∀ {Σ R Bs Bs' Bs''}
+  → {g : Bs ⊑ Bs'}
+  → {g' : Bs' ⊑ Bs''}
+  → ∀ {bs bs' bs''}
+  → Ext {Σ} {R} g bs bs'
+  → Ext g' bs' bs''
+  → Ext (⊑-trans g g') bs bs''
 ext-trans e here = e
 ext-trans e (there e') = there (ext-trans e e')
 
-ext-at : ∀ {Σ R Bs Bs'} {g : Bs ⊑ Bs'} {bs : Blocks Σ R Bs} {bs' : Blocks Σ R Bs'} (T : Table Σ) → Ext g bs bs' → ∀ {Δ} (l : Bs ∋ Δ)
+ext-at : ∀ {Σ R Bs Bs'}
+  → {g : Bs ⊑ Bs'}
+  → {bs : Blocks Σ R Bs} {bs' : Blocks Σ R Bs'} (T : Table Σ)
+  → Ext g bs bs'
+  → ∀ {Δ} (l : Bs ∋ Δ)
   → blocks bs T l ＝ blocks bs' T (⊑-∋ g l)
 ext-at T here l = refl
 ext-at T (there e) l = ext-at T e l
@@ -85,21 +94,25 @@ module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f)
   {- the continuation of the right-hand side of an assignment, when its
      body e₂ runs as the tail t -}
   bind : ∀ {Bs Δ A B} (e₂ : I.Exp Σ (A ∷ Δ) B) (κ : ⟨ K ⟩) (t : Tail Σ R Bs (A ∷ Δ)) (bs : Blocks Σ R Bs) σ
-    → ((X : ⟨ 𝔻 ⟩) → ⟦ e₂ ⟧ᴷ T · (X • σ) · κ ＝ ⟦ t ⟧ᵗ T' (blocks bs T') · (X • σ))
+    → (  (X : ⟨ 𝔻 ⟩)
+       → ⟦ e₂ ⟧ᴷ T · (X • σ) · κ ＝ ⟦ t ⟧ᵗ T' (blocks bs T') · (X • σ))
     → appᵈ · (Λ · (underK (⟦ e₂ ⟧ᴷ T) · (σ , κ))) ＝ asg here⊑ t bs σ
   bind e₂ κ t bs σ h =
     ap (appᵈ ·_) (Λ-cong (underK (⟦ e₂ ⟧ᴷ T) · (σ , κ)) (abs (⟦ t ⟧ᵗ T' (blocks bs T')) · σ) (λ X _ → h X))
 
   {- the two branches of a case -}
   branches : ∀ {Δ A B} (a : I.Atm Σ Δ (A ⊹ B)) (F₁ F₂ G₁ G₂ : DCPO[ 𝔻 , 𝔻 ]) σ
-    → ((X : ⟨ 𝔻 ⟩) → F₁ · X ＝ G₁ · X) → ((X : ⟨ 𝔻 ⟩) → F₂ · X ＝ G₂ · X)
+    → ((X : ⟨ 𝔻 ⟩) → F₁ · X ＝ G₁ · X)
+    → ((X : ⟨ 𝔻 ⟩) → F₂ · X ＝ G₂ · X)
     → cases · (𝒜 a T · σ) · (strict · F₁ , strict · F₂) ＝ cases · (𝒜 a T' · σ) · (strict · G₁ , strict · G₂)
   branches a F₁ F₂ G₁ G₂ σ h₁ h₂ =
     ap₂ (λ x y → cases · x · y) (𝒜-＝ TT a σ)
       (ap₂ _,_ (ap (strict ·_) (to-continuous-function-＝ 𝔻 𝔻 {F₁} {G₁} h₁))
                (ap (strict ·_) (to-continuous-function-＝ 𝔻 𝔻 {F₂} {G₂} h₂)))
 
-  cps : ∀ {Bs Δ Δ' A} (e : I.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ R Bs (A ∷ Δ')) (bs : Blocks Σ R Bs)
+  cps : ∀ {Bs Δ Δ' A} (e : I.Exp Σ Δ A)
+    → (p : Δ' ⊑ Δ)
+    → (k : Tail Σ R Bs (A ∷ Δ')) (bs : Blocks Σ R Bs)
     → Good (λ σ → ⟦ e ⟧ᴷ T · σ · asg p k bs σ) bs (explicate-assign e p k bs)
   cps (I.simple s) p k bs = here , λ σ → ap (asg p k bs σ ·_) (𝒮-＝ TT s σ)
   cps (I.assign e₁ e₂) p k bs =

@@ -116,7 +116,9 @@ E n = mem (e n ∷ [])
 
 {- Lemmas ---------------------------------------------------------------------}
 
-∈-replicate : ∀ {x v : Value} k → x ⋵ replicate k v → x ≡ v
+∈-replicate : ∀ {x v : Value} k
+  → x ⋵ replicate k v
+  → x ≡ v
 ∈-replicate (suc k) (here refl) = refl
 ∈-replicate (suc k) (there x∈) = ∈-replicate k x∈
 
@@ -131,7 +133,9 @@ E n = mem (e n ∷ [])
 Con-single : ∀ v → Con (mem (v ∷ []))
 Con-single v = ≈⇒Con ≈-single
 
-untag-U : ∀ t {w} → tag t w ⋵ U → ⊥
+untag-U : ∀ t {w}
+  → tag t w ⋵ U
+  → ⊥
 untag-U (tupT i) (here ())
 untag-U leftT (here ())
 untag-U rightT (here ())
@@ -145,7 +149,10 @@ E-con n = Con-single (e n)
 E-ne : ∀ n → nonempty (E n)
 E-ne n = ⟨ e n , here refl ⟩
 
-E-disjoint : ∀ {n m v} → v ∈ E n → v ∈ E m → n ≡ m
+E-disjoint : ∀ {n m v}
+  → v ∈ E n
+  → v ∈ E m
+  → n ≡ m
 E-disjoint {n} {m} (here refl) (here eq) =
   suc-injective (trans (sym (length-replicate (suc n))) (trans (cong inputs eq) (length-replicate (suc m))))
   where
@@ -168,17 +175,29 @@ E-related n = foldᴬ record
   ; tag-obs = λ t W W⊆ → ApproxLR-∅ (λ w w∈ → untag-U t (W⊆ w w∈))
   }
   where
-  app-E : ∀ {U' W} → SelfContainedMaps U U' W → ∀ E' → Con E' → Con (mem U') → ApproxLR E' U' → ApproxLR (E n ● E') W
+  app-E : ∀ {U' W}
+    → SelfContainedMaps U U' W
+    → ∀ E'
+    → Con E'
+    → Con (mem U')
+    → ApproxLR E' U'
+    → ApproxLR (E n ● E') W
   app-E cs E' _ _ rE = ApproxLR-data res
     where
-    one∈E' : ∀ {w} → w ⋵ _ → one ∈ E'
+    one∈E' : ∀ {w}
+      → w ⋵ _
+      → one ∈ E'
     one∈E' w∈ = ApproxLRLayer.const-obs (unfoldᴬ rE) 1 (proj₂ (calls-U cs w∈))
-    res : ∀ w → w ⋵ _ → w ∈ (E n ● E') × Data w
+    res : ∀ w
+      → w ⋵ _
+      → w ∈ (E n ● E') × Data w
     res w w∈ with calls-U cs w∈
     ... | ⟨ refl , _ ⟩ =
       ⟨ ⟨ replicate (suc n) one , ⟨ here refl , ⟨ (λ x x∈ → subst∈ (∈-replicate (suc n) x∈)) , (λ ()) ⟩ ⟩ ⟩ , flat-const ⟩
       where
-      subst∈ : ∀ {x} → x ≡ one → x ∈ E'
+      subst∈ : ∀ {x}
+        → x ≡ one
+        → x ∈ E'
       subst∈ refl = one∈E' w∈
 
 {- Each E n is part of the source denotation of λx.1, and U is a finite
@@ -248,7 +267,9 @@ boundBy : (Value → ℕ) → List Value → ℕ
 boundBy size [] = 0
 boundBy size (d ∷ D₀) = widthBy size d + boundBy size D₀
 
-width≤boundBy : ∀ size {d} D₀ → d ⋵ D₀ → widthBy size d ≤ boundBy size D₀
+width≤boundBy : ∀ size {d} D₀
+  → d ⋵ D₀
+  → widthBy size d ≤ boundBy size D₀
 width≤boundBy size (d ∷ D₀) (here refl) = m≤m+n (widthBy size d) (boundBy size D₀)
 width≤boundBy size (d ∷ D₀) (there d∈) =
   ≤-trans (width≤boundBy size D₀ d∈) (m≤n+m (boundBy size D₀) (widthBy size d))
@@ -297,21 +318,27 @@ FinClause3 R U W D₀ = ∀ E₀ → R E₀ U → Σ[ S ∈ List Value ] mem S �
 no-finite-sourceBy : ∀ (R : List Value → List Value → Set₁) {U W}
   → (∀ {S V'} → R S V' → V' ≢ [] → S ≢ [])
   → W ≢ []
-  → ∀ (size : Value → ℕ) (s : ℕ → Value) → (∀ n → n ≤ size (s n))
+  → ∀ (size : Value → ℕ) (s : ℕ → Value)
+  → (∀ n → n ≤ size (s n))
   → (∀ n → R (s n ∷ []) U)
-  → ∀ D₀ → ¬ FinClause3 R U W D₀
+  → ∀ D₀
+  → ¬ FinClause3 R U W D₀
 no-finite-sourceBy R ne neW size s big rel D₀ c3 with c3 (s (suc (boundBy size D₀)) ∷ []) (rel _)
 ... | ⟨ [] , ⟨ _ , rS ⟩ ⟩ = ne rS neW refl
 ... | ⟨ x ∷ _ , ⟨ S⊆ , _ ⟩ ⟩ = finite-emptyBy size s big D₀ x (S⊆ x (here refl))
 
-ne-ApproxLR : ∀ {S V'} → ApproxLR (mem S) V' → V' ≢ [] → S ≢ []
+ne-ApproxLR : ∀ {S V'}
+  → ApproxLR (mem S) V'
+  → V' ≢ []
+  → S ≢ []
 ne-ApproxLR r neV refl with ApproxLRLayer.nonempty-obs (unfoldᴬ r) neV
 ... | ⟨ _ , () ⟩
 
 no-finite-source : ∀ (R : List Value → List Value → Set₁)
   → (∀ {S V'} → R S V' → V' ≢ [] → S ≢ [])
   → (∀ n → R (e n ∷ []) U)
-  → ∀ D₀ → ¬ FinClause3 R U W D₀
+  → ∀ D₀
+  → ¬ FinClause3 R U W D₀
 no-finite-source R ne = no-finite-sourceBy R ne (λ ()) inputs e e-big
 
 no-finite-source-ApproxLR : ∀ D₀ → ¬ FinClause3 (λ S V' → ApproxLR (mem S) V') U W D₀
@@ -340,14 +367,21 @@ E′-con n = Con-single (e′ n)
 E′-ne : ∀ n → nonempty (E′ n)
 E′-ne n = ⟨ e′ n , here refl ⟩
 
-E′-disjoint : ∀ {n m v} → v ∈ E′ n → v ∈ E′ m → n ≡ m
+E′-disjoint : ∀ {n m v}
+  → v ∈ E′ n
+  → v ∈ E′ m
+  → n ≡ m
 E′-disjoint (here refl) (here refl) = refl
 
-no-car-g : ∀ {U₀ w} → UsableEntry (g ∷ []) U₀ w → ⊥
+no-car-g : ∀ {U₀ w}
+  → UsableEntry (g ∷ []) U₀ w
+  → ⊥
 no-car-g (usable-entry _ _ (here ()) _ _)
 no-car-g (usable-entry _ _ (there ()) _ _)
 
-untag-g : ∀ t {w} → tag t w ⋵ (g ∷ []) → ⊥
+untag-g : ∀ t {w}
+  → tag t w ⋵ (g ∷ [])
+  → ⊥
 untag-g (tupT i) (here ())
 untag-g leftT (here ())
 untag-g rightT (here ())

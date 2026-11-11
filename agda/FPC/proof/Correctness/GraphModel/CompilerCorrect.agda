@@ -54,10 +54,15 @@ Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = (∀ {B} (c : base-rep B) → (dconst c ∈ D) ⇔ (dconst c ∈ E)) × (nonempty D ⇔ nonempty E)
 
 {- one Same after another (then), and an equation as one (same) -}
-then : ∀ {D E F} → Same D E → Same E F → Same D F
+then : ∀ {D E F}
+  → Same D E
+  → Same E F
+  → Same D F
 then ⟨ c , n ⟩ ⟨ c' , n' ⟩ = ⟨ (λ k → ⇔∘ (c k) (c' k)) , ⇔∘ n n' ⟩
 
-same : ∀ {D E} → D ≃ E → Same D E
+same : ∀ {D E}
+  → D ≃ E
+  → Same D E
 same D≃@(⟨ D⊆ , E⊆ ⟩) = ⟨ (λ k → ⟨ D⊆ _ , E⊆ _ ⟩) , ⟨ ne-≃ D≃ , ne-≃ (≃-sym D≃) ⟩ ⟩
 
 {- closure conversion, enclose = concretize ∘ prune ∘ capture -}

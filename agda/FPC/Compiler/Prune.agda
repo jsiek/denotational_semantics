@@ -65,11 +65,15 @@ keeps : ∀ {Γ Δ A B} → Tm (A ∷ Δ) B → All (Tm Γ) Δ → Flags Δ
 keeps N = flags (λ x → uses N (S x))
 
 {- the code uses only the argument and kept free variables -}
-covers : ∀ {Γ Δ A B C} (N : Tm (A ∷ Δ) B) (Ms : All (Tm Γ) Δ) (x : (A ∷ Δ) ∋ C) → T (uses N x) → Kept (keeps N Ms) x
+covers : ∀ {Γ Δ A B C} (N : Tm (A ∷ Δ) B) (Ms : All (Tm Γ) Δ) (x : (A ∷ Δ) ∋ C)
+  → T (uses N x)
+  → Kept (keeps N Ms) x
 covers N Ms Z _ = tt
 covers N Ms (S i) = used (λ x → uses N (S x)) Ms i
   where
-  used : ∀ {Γ Δ C} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) (i : Δ ∋ C) → T (u i) → T (lookup (flags u Ms) i)
+  used : ∀ {Γ Δ C} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) (i : Δ ∋ C)
+    → T (u i)
+    → T (lookup (flags u Ms) i)
   used u (M ∷ Ms) Z t with u Z
   ... | true = tt
   used u (M ∷ Ms) (S i) t = used (λ x → u (S x)) Ms i t

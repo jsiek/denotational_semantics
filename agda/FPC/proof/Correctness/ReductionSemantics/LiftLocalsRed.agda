@@ -252,7 +252,10 @@ module _ {Σ' : List DSig} where
     ... | inj₂ st = 1 , lag (suc st zero) refl
 
     {- a target step before an answer -}
-    pre : ∀ {i a s s'} → Step L₂ s s' → Answers≺ L₂ (Lag L₁ R) i a s' → Answers≺ L₂ (Lag L₁ R) i a s
+    pre : ∀ {i a s s'}
+      → Step L₂ s s'
+      → Answers≺ L₂ (Lag L₁ R) i a s'
+      → Answers≺ L₂ (Lag L₁ R) i a s
     pre st (stops fin) = runs (step⁺ st) fin
     pre st (steps (plus st' σ) m) = steps (plus st (st' ◅ σ)) m
     pre st (stutters _ m) = steps (step⁺ st) m
@@ -262,13 +265,17 @@ module _ {Σ' : List DSig} where
     Ans s = ∀ {i} → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ (D s)) s
 
     {- the source reaches what the target reaches -}
-    to-lag : ∀ {i} M {s s'} → Machine.step L₁ M ≡ next (Dsyn s') → Step L₂ s s'
+    to-lag : ∀ {i} M {s s'}
+      → Machine.step L₁ M ≡ next (Dsyn s')
+      → Step L₂ s s'
       → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ M) s
     to-lag M e st = answers-at e (steps (step⁺ st) (proj₂ (lag-of _)))
 
     {- a value to the continuation -}
-    value-ans : ∀ {Δ A} (s : Simple Σ' Δ A) (φ : Env Σ' Δ) (κ : Cont Σ' A) (v : Val Σ' A) → I.run s φ ≡ value v
-      → ∀ {i} → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ (fin κ , plug κ ⌞ v ⌟)) (eval (simple s) φ κ)
+    value-ans : ∀ {Δ A} (s : Simple Σ' Δ A) (φ : Env Σ' Δ) (κ : Cont Σ' A) (v : Val Σ' A)
+      → I.run s φ ≡ value v
+      → ∀ {i}
+      → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ (fin κ , plug κ ⌞ v ⌟)) (eval (simple s) φ κ)
     value-ans s φ halt v e =
       answers-at (cong (toNext _) (val-in (value-red (value-⌞⌟ v))))
         (stops (trans (cong (λ r → I.res ds₂ r halt) e) (cong stop (sym (obs-⌞⌟ v)))))

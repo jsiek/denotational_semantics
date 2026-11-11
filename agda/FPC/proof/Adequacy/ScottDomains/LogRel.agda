@@ -92,42 +92,61 @@ record _⊢_⇓_ {Γ A} (γ : Envᵢ Γ) (M : Tm Γ A) (v : Value A) : 𝓤₀ �
 open _⊢_⇓_ public
 
 private
- ret-inj : {X : 𝓤₀ ̇ } {a b : X} → _≡_ {A = Result X} (ret a) (ret b) → a ＝ b
+ ret-inj : {X : 𝓤₀ ̇ } {a b : X}
+   → _≡_ {A = Result X} (ret a) (ret b)
+   → a ＝ b
  ret-inj ≡-refl = refl
 
-∥⇓∥-det : ∀ {Γ A} {γ : Envᵢ Γ} {M : Tm Γ A} {v₁ v₂} → ∥ γ ⊢ M ⇓ v₁ ∥ → ∥ γ ⊢ M ⇓ v₂ ∥ → v₁ ＝ v₂
+∥⇓∥-det : ∀ {Γ A} {γ : Envᵢ Γ} {M : Tm Γ A} {v₁ v₂}
+  → ∥ γ ⊢ M ⇓ v₁ ∥
+  → ∥ γ ⊢ M ⇓ v₂ ∥
+  → v₁ ＝ v₂
 ∥⇓∥-det = ∥∥-rec₂ K-is-set (λ e₁ e₂ → ret-inj (stable-unique (run e₁) (run e₂)))
 
 {- a value, at every clock; one step after a value -}
-now : ∀ {Γ A} {γ : Envᵢ Γ} {M : Tm Γ A} {v} → (∀ ck → eval ck γ M ≡ ret v) → ∥ γ ⊢ M ⇓ v ∥
+now : ∀ {Γ A} {γ : Envᵢ Γ} {M : Tm Γ A} {v}
+  → (∀ ck → eval ck γ M ≡ ret v)
+  → ∥ γ ⊢ M ⇓ v ∥
 now e = ∣ ev (st-now e) ∣
 
 then : ∀ {Γ A B} {γ : Envᵢ Γ} {M : Tm Γ A} {M' : Tm Γ B} {v w} {g : ℕ → Value A → Result (Value B)}
-  → (∀ ck → eval ck γ M' ≡ (eval ck γ M >>= g ck)) → (∀ ck → g ck v ≡ ret w) → ∥ γ ⊢ M ⇓ v ∥ → ∥ γ ⊢ M' ⇓ w ∥
+  → (∀ ck → eval ck γ M' ≡ (eval ck γ M >>= g ck))
+  → (∀ ck → g ck v ≡ ret w)
+  → ∥ γ ⊢ M ⇓ v ∥
+  → ∥ γ ⊢ M' ⇓ w ∥
 then {γ = γ} {M} {M'} {w = w} {g} e₁ e₂ = ∥∥-functor (λ e → ev (stable-≡ (st-bind (run e) (st-now e₂))))
  where
-  stable-≡ : Stable (λ ck → eval ck γ M >>= g ck) (ret w) → Stable (λ ck → eval ck γ M') (ret w)
+  stable-≡ : Stable (λ ck → eval ck γ M >>= g ck) (ret w)
+    → Stable (λ ck → eval ck γ M') (ret w)
   stable-≡ σ = P.proj₁ σ P., (λ ck le → Eq.trans (e₁ ck) (P.proj₂ σ ck le))
 
 {- a call of a closure whose body returns v from clock c on returns v from c + 1 on -}
-st-call : ∀ {Δ A B} {N : Tm (A ∷ Δ) B} {γ : Envᵢ Δ} {w v} → (w ∷ γ) ⊢ N ⇓ v
+st-call : ∀ {Δ A B} {N : Tm (A ∷ Δ) B} {γ : Envᵢ Δ} {w v}
+  → (w ∷ γ) ⊢ N ⇓ v
   → Stable (λ ck → call ck (pack (code N) (tup γ)) w) (ret v)
 st-call (ev σ) = succ (P.proj₁ σ) P., (λ { (succ ck) (s≤s le) → P.proj₂ σ ck le })
 
 Evals : ∀ {Γ Δ} → Envᵢ Γ → All (Tm Γ) Δ → All Value Δ → 𝓤₀ ̇
 Evals γ = All₂ (λ M v → γ ⊢ M ⇓ v)
 
-evals-st : ∀ {Γ Δ} {γ : Envᵢ Γ} (Ms : All (Tm Γ) Δ) {vs} → Evals γ Ms vs → Stable (λ ck → evals ck γ Ms) (ret vs)
+evals-st : ∀ {Γ Δ} {γ : Envᵢ Γ} (Ms : All (Tm Γ) Δ) {vs}
+  → Evals γ Ms vs
+  → Stable (λ ck → evals ck γ Ms) (ret vs)
 evals-st [] All₂.[] = st-now (λ _ → ≡-refl)
 evals-st (M ∷ Ms) (e All₂.∷ es) = st-bind (run e) (st-bind (evals-st Ms es) (st-now (λ _ → ≡-refl)))
 
 {- a value with an evaluation is unique -}
-Σ⇓-prop : ∀ {Γ B} {γ : Envᵢ Γ} {N : Tm Γ B} (P : Value B → 𝓤₁ ̇ ) → ((v : Value B) → is-prop (P v))
+Σ⇓-prop : ∀ {Γ B} {γ : Envᵢ Γ} {N : Tm Γ B} (P : Value B → 𝓤₁ ̇ )
+  → ((v : Value B) → is-prop (P v))
   → is-prop (Σ v ꞉ Value B , ∥ γ ⊢ N ⇓ v ∥ × P v)
 Σ⇓-prop {γ = γ} {N} P P-prop (v₁ , t₁ , m₁) (v₂ , t₂ , m₂) = go (∥⇓∥-det {γ = γ} {M = N} t₁ t₂) t₁ t₂ m₁ m₂
  where
-  go : {v₁ v₂ : Value _} → v₁ ＝ v₂ → (t₁ : ∥ γ ⊢ N ⇓ v₁ ∥) (t₂ : ∥ γ ⊢ N ⇓ v₂ ∥) (m₁ : P v₁) (m₂ : P v₂)
-     → (v₁ , t₁ , m₁) ＝ (v₂ , t₂ , m₂)
+  go : {v₁ v₂ : Value _}
+    → v₁ ＝ v₂
+    → (t₁ : ∥ γ ⊢ N ⇓ v₁ ∥)
+    → (t₂ : ∥ γ ⊢ N ⇓ v₂ ∥)
+    → (m₁ : P v₁) (m₂ : P v₂)
+    → (v₁ , t₁ , m₁) ＝ (v₂ , t₂ , m₂)
   go {v} refl t₁ t₂ m₁ m₂ = ap₂ (λ a b → v , a , b) (∥∥-is-prop t₁ t₂) (P-prop v m₁ m₂)
 
 {- The relation, by stages ---------------------------------------------------------}
@@ -183,7 +202,10 @@ Res n {B = B} u N γ = Σ v ꞉ Value B , ∥ γ ⊢ N ⇓ v ∥ × Match n u v
 
 R-prop : (n : ℕ) {A : Type} (s : ⟨ 𝓓 n ⟩) (v : Value A) → is-prop (R n s v)
 Match-prop : (n : ℕ) {A : Type} (u : ⟨ obj Val (𝓓 n) ⟩) (v : Value A) → is-prop (Match n u v)
-Pay-prop : (n : ℕ) {t : Tag} {A : Type} {v : Value A} (e : Shape t v) (x : ⟨ obj (Payload t) (𝓓 n) ⟩) → is-prop (Pay n e x)
+Pay-prop : (n : ℕ) {t : Tag} {A : Type} {v : Value A}
+  → (e : Shape t v)
+  → (x : ⟨ obj (Payload t) (𝓓 n) ⟩)
+  → is-prop (Pay n e x)
 Tup-prop : (n : ℕ) {Δ : Ctx} (vs : All Value Δ) (xs : Fin (length Δ) → ⟨ 𝓓 n ⟩) → is-prop (Tup n vs xs)
 Ev-prop : (n : ℕ) {Γ : Ctx} {B : Type} (s : ⟨ 𝓓 n ⟩) (N : Tm Γ B) (γ : Envᵢ Γ) → is-prop (Ev n s N γ)
 
@@ -207,28 +229,50 @@ Ev-prop zero s N γ = 𝟙-is-prop
 Ev-prop (succ n) s N γ = Π-is-prop fe (λ p → Σ⇓-prop {γ = γ} {N = N} (Match n (value s p)) (Match-prop n (value s p)))
 
 {- the payload of a related value, at a given shape -}
-Pay-at : ∀ {n t A} {v : Value A} {x : ⟨ obj (Payload t) (𝓓 n) ⟩} (e : Shape t v) → Match n (t , x) v → Pay n e x
+Pay-at : ∀ {n t A} {v : Value A} {x : ⟨ obj (Payload t) (𝓓 n) ⟩}
+  → (e : Shape t v)
+  → Match n (t , x) v
+  → Pay n e x
 Pay-at {n} {x = x} e (e' , m) = transport (λ e → Pay n e x) (Shape-prop e' e) m
 
 {- a result related to a value that N returns -}
-Res→Match : ∀ {n Γ B} {u : ⟨ obj Val (𝓓 n) ⟩} {N : Tm Γ B} {γ : Envᵢ Γ} {v} → Res n u N γ → ∥ γ ⊢ N ⇓ v ∥ → Match n u v
+Res→Match : ∀ {n Γ B} {u : ⟨ obj Val (𝓓 n) ⟩} {N : Tm Γ B} {γ : Envᵢ Γ} {v}
+  → Res n u N γ
+  → ∥ γ ⊢ N ⇓ v ∥
+  → Match n u v
 Res→Match {n} {u = u} {N} {γ} (v' , t' , m) t = transport (Match n u) (∥⇓∥-det {γ = γ} {M = N} t' t) m
 
-Ev→R : ∀ {n Γ B} {s : ⟨ 𝓓 n ⟩} {N : Tm Γ B} {γ : Envᵢ Γ} {v} → Ev n s N γ → ∥ γ ⊢ N ⇓ v ∥ → R n s v
+Ev→R : ∀ {n Γ B} {s : ⟨ 𝓓 n ⟩} {N : Tm Γ B} {γ : Envᵢ Γ} {v}
+  → Ev n s N γ
+  → ∥ γ ⊢ N ⇓ v ∥
+  → R n s v
 Ev→R {zero} h t = ⋆
 Ev→R {succ n} {N = N} {γ} h t p = Res→Match {N = N} {γ} (h p) t
 
 {- Downward closed in the approximation ---------------------------------------------}
 
-R-mono : (n : ℕ) {A : Type} (s s' : ⟨ 𝓓 n ⟩) (v : Value A) → s' ⊑⟨ 𝓓 n ⟩ s → R n s v → R n s' v
+R-mono : (n : ℕ) {A : Type} (s s' : ⟨ 𝓓 n ⟩) (v : Value A)
+  → s' ⊑⟨ 𝓓 n ⟩ s
+  → R n s v
+  → R n s' v
 Match-mono : (n : ℕ) {A : Type} (u u' : ⟨ obj Val (𝓓 n) ⟩) (v : Value A)
-  → u' ⊑⟨ obj Val (𝓓 n) ⟩ u → Match n u v → Match n u' v
-Pay-mono : (n : ℕ) {t : Tag} {A : Type} {v : Value A} (e : Shape t v) (x x' : ⟨ obj (Payload t) (𝓓 n) ⟩)
-  → x' ⊑⟨ obj (Payload t) (𝓓 n) ⟩ x → Pay n e x → Pay n e x'
+  → u' ⊑⟨ obj Val (𝓓 n) ⟩ u
+  → Match n u v
+  → Match n u' v
+Pay-mono : (n : ℕ) {t : Tag} {A : Type} {v : Value A}
+  → (e : Shape t v)
+  → (x x' : ⟨ obj (Payload t) (𝓓 n) ⟩)
+  → x' ⊑⟨ obj (Payload t) (𝓓 n) ⟩ x
+  → Pay n e x
+  → Pay n e x'
 Tup-mono : (n : ℕ) {Δ : Ctx} (vs : All Value Δ) (xs xs' : Fin (length Δ) → ⟨ 𝓓 n ⟩)
-  → ((i : Fin (length Δ)) → xs' i ⊑⟨ 𝓓 n ⟩ xs i) → Tup n vs xs → Tup n vs xs'
+  → ((i : Fin (length Δ)) → xs' i ⊑⟨ 𝓓 n ⟩ xs i)
+  → Tup n vs xs
+  → Tup n vs xs'
 Ev-mono : (n : ℕ) {Γ : Ctx} {B : Type} (s s' : ⟨ 𝓓 n ⟩) (N : Tm Γ B) (γ : Envᵢ Γ)
-  → s' ⊑⟨ 𝓓 n ⟩ s → Ev n s N γ → Ev n s' N γ
+  → s' ⊑⟨ 𝓓 n ⟩ s
+  → Ev n s N γ
+  → Ev n s' N γ
 
 R-mono zero s s' v le h = ⋆
 R-mono (succ n) s s' v (f , g) h p' = Match-mono n (value s (f p')) (value s' p') v (g p') (h (f p'))
@@ -252,20 +296,32 @@ Ev-mono (succ n) s s' N γ (f , g) h p' =
 
 {- Admissible: closed under directed sups of the approximation ------------------------}
 
-R-sup : (n : ℕ) {A : Type} (v : Value A) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓓 n ⟩) (δ : is-Directed (𝓓 n) α)
-  → ((i : I) → R n (α i) v) → R n (∐ (𝓓 n) {I} {α} δ) v
+R-sup : (n : ℕ) {A : Type} (v : Value A) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓓 n ⟩)
+  → (δ : is-Directed (𝓓 n) α)
+  → ((i : I) → R n (α i) v)
+  → R n (∐ (𝓓 n) {I} {α} δ) v
 Match-sup : (n : ℕ) {A : Type} (v : Value A) {K : 𝓤₀ ̇ } (β : K → ⟨ obj Val (𝓓 n) ⟩)
-  (ε : is-Directed (obj Val (𝓓 n)) β) → ((k : K) → Match n (β k) v) → Match n (∐ (obj Val (𝓓 n)) {K} {β} ε) v
-Pay-sup : (n : ℕ) {t : Tag} {A : Type} {v : Value A} (e : Shape t v) {I : 𝓤₀ ̇ }
-  (β : I → ⟨ obj (Payload t) (𝓓 n) ⟩) (δ : is-Directed (obj (Payload t) (𝓓 n)) β)
-  → ((i : I) → Pay n e (β i)) → Pay n e (∐ (obj (Payload t) (𝓓 n)) {I} {β} δ)
+  → (ε : is-Directed (obj Val (𝓓 n)) β)
+  → ((k : K) → Match n (β k) v)
+  → Match n (∐ (obj Val (𝓓 n)) {K} {β} ε) v
+Pay-sup : (n : ℕ) {t : Tag} {A : Type} {v : Value A}
+  → (e : Shape t v)
+  → {I : 𝓤₀ ̇ } (β : I → ⟨ obj (Payload t) (𝓓 n) ⟩)
+  → (δ : is-Directed (obj (Payload t) (𝓓 n)) β)
+  → ((i : I) → Pay n e (β i))
+  → Pay n e (∐ (obj (Payload t) (𝓓 n)) {I} {β} δ)
 Tup-sup : (n : ℕ) {Δ : Ctx} (vs : All Value Δ) {I : 𝓤₀ ̇ } (β : I → Fin (length Δ) → ⟨ 𝓓 n ⟩)
-  (δs : (i : Fin (length Δ)) → is-Directed (𝓓 n) (λ j → β j i))
-  → ((j : I) → Tup n vs (β j)) → Tup n vs (λ i → ∐ (𝓓 n) (δs i))
+  → (δs : (i : Fin (length Δ)) → is-Directed (𝓓 n) (λ j → β j i))
+  → ((j : I) → Tup n vs (β j))
+  → Tup n vs (λ i → ∐ (𝓓 n) (δs i))
 Ev-sup : (n : ℕ) {Γ : Ctx} {B : Type} (N : Tm Γ B) (γ : Envᵢ Γ) {I : 𝓤₀ ̇ } (α : I → ⟨ 𝓓 n ⟩)
-  (δ : is-Directed (𝓓 n) α) → ((i : I) → Ev n (α i) N γ) → Ev n (∐ (𝓓 n) {I} {α} δ) N γ
+  → (δ : is-Directed (𝓓 n) α)
+  → ((i : I) → Ev n (α i) N γ)
+  → Ev n (∐ (𝓓 n) {I} {α} δ) N γ
 Res-sup : (n : ℕ) {Γ : Ctx} {B : Type} (N : Tm Γ B) (γ : Envᵢ Γ) {K : 𝓤₀ ̇ } (β : K → ⟨ obj Val (𝓓 n) ⟩)
-  (ε : is-Directed (obj Val (𝓓 n)) β) → ((k : K) → Res n (β k) N γ) → Res n (∐ (obj Val (𝓓 n)) {K} {β} ε) N γ
+  → (ε : is-Directed (obj Val (𝓓 n)) β)
+  → ((k : K) → Res n (β k) N γ)
+  → Res n (∐ (obj Val (𝓓 n)) {K} {β} ε) N γ
 
 R-sup zero v α δ h = ⋆
 R-sup (succ n) v α δ h = stage-sup-ind n α δ (λ u → Match n u v) (Match-sup n v) h
@@ -273,8 +329,10 @@ R-sup (succ n) v α δ h = stage-sup-ind n α δ (λ u → Match n u v) (Match-s
 Match-sup n v β ε h =
   Σ-sup-ind Tag Tag-is-set (λ t → obj (Payload t) (𝓓 n)) (λ t x → Match n (t , x) v) Q-sup β ε h
  where
-  Q-sup : (t : Tag) {I : 𝓤₀ ̇ } (β' : I → ⟨ obj (Payload t) (𝓓 n) ⟩) (δ : is-Directed (obj (Payload t) (𝓓 n)) β')
-    → ((i : I) → Match n (t , β' i) v) → Match n (t , ∐ (obj (Payload t) (𝓓 n)) {I} {β'} δ) v
+  Q-sup : (t : Tag) {I : 𝓤₀ ̇ } (β' : I → ⟨ obj (Payload t) (𝓓 n) ⟩)
+    → (δ : is-Directed (obj (Payload t) (𝓓 n)) β')
+    → ((i : I) → Match n (t , β' i) v)
+    → Match n (t , ∐ (obj (Payload t) (𝓓 n)) {I} {β'} δ) v
   Q-sup t β' δ h' =
     ∥∥-rec (Match-prop n _ v)
       (λ i → pr₁ (h' i) , Pay-sup n (pr₁ (h' i)) β' δ (λ j → Pay-at (pr₁ (h' i)) (h' j)))
@@ -305,20 +363,34 @@ Res-sup n N γ {K} β ε h =
 
 {- Moving between stages ---------------------------------------------------------------}
 
-R-π : (n : ℕ) {A : Type} (s : ⟨ 𝓓 (succ n) ⟩) (v : Value A) → R (succ n) s v → R n (π n s) v
-R-ε : (n : ℕ) {A : Type} (s : ⟨ 𝓓 n ⟩) (v : Value A) → R n s v → R (succ n) (ε n s) v
-Pay-π : (n : ℕ) {t : Tag} {A : Type} {v : Value A} (e : Shape t v) (x : ⟨ obj (Payload t) (𝓓 (succ n)) ⟩)
-  → Pay (succ n) e x → Pay n e (fmap (Payload t) (𝓓 (succ n)) (𝓓 n) (π' n) (ε' n) x)
-Pay-ε : (n : ℕ) {t : Tag} {A : Type} {v : Value A} (e : Shape t v) (x : ⟨ obj (Payload t) (𝓓 n) ⟩)
-  → Pay n e x → Pay (succ n) e (fmap (Payload t) (𝓓 n) (𝓓 (succ n)) (ε' n) (π' n) x)
+R-π : (n : ℕ) {A : Type} (s : ⟨ 𝓓 (succ n) ⟩) (v : Value A)
+  → R (succ n) s v
+  → R n (π n s) v
+R-ε : (n : ℕ) {A : Type} (s : ⟨ 𝓓 n ⟩) (v : Value A)
+  → R n s v
+  → R (succ n) (ε n s) v
+Pay-π : (n : ℕ) {t : Tag} {A : Type} {v : Value A}
+  → (e : Shape t v)
+  → (x : ⟨ obj (Payload t) (𝓓 (succ n)) ⟩)
+  → Pay (succ n) e x
+  → Pay n e (fmap (Payload t) (𝓓 (succ n)) (𝓓 n) (π' n) (ε' n) x)
+Pay-ε : (n : ℕ) {t : Tag} {A : Type} {v : Value A}
+  → (e : Shape t v)
+  → (x : ⟨ obj (Payload t) (𝓓 n) ⟩)
+  → Pay n e x
+  → Pay (succ n) e (fmap (Payload t) (𝓓 n) (𝓓 (succ n)) (ε' n) (π' n) x)
 Tup-π : (n : ℕ) {Δ : Ctx} (vs : All Value Δ) (xs : Fin (length Δ) → ⟨ 𝓓 (succ n) ⟩)
-  → Tup (succ n) vs xs → Tup n vs (λ i → π n (xs i))
+  → Tup (succ n) vs xs
+  → Tup n vs (λ i → π n (xs i))
 Tup-ε : (n : ℕ) {Δ : Ctx} (vs : All Value Δ) (xs : Fin (length Δ) → ⟨ 𝓓 n ⟩)
-  → Tup n vs xs → Tup (succ n) vs (λ i → ε n (xs i))
+  → Tup n vs xs
+  → Tup (succ n) vs (λ i → ε n (xs i))
 Ev-π : (n : ℕ) {Γ : Ctx} {B : Type} (s : ⟨ 𝓓 (succ n) ⟩) (N : Tm Γ B) (γ : Envᵢ Γ)
-  → Ev (succ n) s N γ → Ev n (π n s) N γ
+  → Ev (succ n) s N γ
+  → Ev n (π n s) N γ
 Ev-ε : (n : ℕ) {Γ : Ctx} {B : Type} (s : ⟨ 𝓓 n ⟩) (N : Tm Γ B) (γ : Envᵢ Γ)
-  → Ev n s N γ → Ev (succ n) (ε n s) N γ
+  → Ev n s N γ
+  → Ev (succ n) (ε n s) N γ
 
 R-π zero s v h = ⋆
 R-π (succ n) s v h = transport (λ - → R (succ n) - v) (π-succ n s ⁻¹) (λ p →
@@ -356,11 +428,15 @@ Ev-ε zero s N γ h p = 𝟘-elim (ε-zero-undefined s p)
 Ev-ε (succ n) s N γ h = transport (λ - → Ev (succ (succ n)) - N γ) (ε-succ n s ⁻¹) (λ p →
   let (v , t , e , m) = h p in v , t , e , Pay-ε n e (pr₂ (value s p)) m)
 
-R-πs : (k n : ℕ) {A : Type} (s : ⟨ 𝓓 (k + n) ⟩) (v : Value A) → R (k + n) s v → R n (πs k n s) v
+R-πs : (k n : ℕ) {A : Type} (s : ⟨ 𝓓 (k + n) ⟩) (v : Value A)
+  → R (k + n) s v
+  → R n (πs k n s) v
 R-πs zero n s v h = h
 R-πs (succ k) n s v h = R-πs k n (π (k + n) s) v (R-π (k + n) s v h)
 
-R-εs : (k n : ℕ) {A : Type} (s : ⟨ 𝓓 n ⟩) (v : Value A) → R n s v → R (k + n) (εs k n s) v
+R-εs : (k n : ℕ) {A : Type} (s : ⟨ 𝓓 n ⟩) (v : Value A)
+  → R n s v
+  → R (k + n) (εs k n s) v
 R-εs zero n s v h = h
 R-εs (succ k) n s v h = R-ε (k + n) (εs k n s) v (R-εs k n s v h)
 
@@ -375,14 +451,24 @@ Rel-prop : ∀ {A} {d : ⟨ 𝔻 ⟩} {v : Value A} → is-prop (Rel d v)
 Rel-prop {d = d} {v} (rel f) (rel g) = ap rel (dfunext fe (λ n → R-prop n (π∞ n · d) v (f n) (g n)))
 
 {- an approximation related at its stage is related -}
-Rel-ε : ∀ {A} (n : ℕ) {s : ⟨ 𝓓 n ⟩} {v : Value A} → R n s v → Rel (ε∞ n · s) v
+Rel-ε : ∀ {A} (n : ℕ) {s : ⟨ 𝓓 n ⟩} {v : Value A}
+  → R n s v
+  → Rel (ε∞ n · s) v
 Rel-ε n {s} {v} h = rel λ m → go m (split m n)
  where
-  down : (m k n : ℕ) → n ＝ k + m → (s : ⟨ 𝓓 n ⟩) → R n s v → R m (π∞ m · (ε∞ n · s)) v
+  down : (m k n : ℕ)
+    → n ＝ k + m
+    → (s : ⟨ 𝓓 n ⟩)
+    → R n s v
+    → R m (π∞ m · (ε∞ n · s)) v
   down m k .(k + m) refl s h = transport (λ - → R m - v) (π∞-ε∞-down k m s ⁻¹) (R-πs k m s v h)
-  up : (k m : ℕ) → m ＝ k + n → R m (π∞ m · (ε∞ n · s)) v
+  up : (k m : ℕ)
+    → m ＝ k + n
+    → R m (π∞ m · (ε∞ n · s)) v
   up k .(k + n) refl = transport (λ - → R (k + n) - v) (π∞-ε∞-up k n s ⁻¹) (R-εs k n s v h)
-  go : (m : ℕ) → Split m n → R m (π∞ m · (ε∞ n · s)) v
+  go : (m : ℕ)
+    → Split m n
+    → R m (π∞ m · (ε∞ n · s)) v
   go m (lower k e) = down m k n e s h
   go m (higher k e) = up k m e
 
@@ -391,8 +477,10 @@ approx : (n : ℕ) (t : Tag) → ⟨ obj (Payload t) 𝔻 ⟩ → ⟨ obj (Paylo
 approx n t x = fmap (Payload t) 𝔻 (𝓓 n) (π∞ n) (ε∞ n) x
 
 {- a value made with a tag, with related payloads at every depth -}
-Rel-inj : ∀ {t A} {v : Value A} (x : ⟨ obj (Payload t) 𝔻 ⟩) (e : Shape t v)
-  → ((n : ℕ) → Pay n e (approx n t x)) → Rel (inj t · x) v
+Rel-inj : ∀ {t A} {v : Value A} (x : ⟨ obj (Payload t) 𝔻 ⟩)
+  → (e : Shape t v)
+  → ((n : ℕ) → Pay n e (approx n t x))
+  → Rel (inj t · x) v
 Rel-inj {t} {v = v} x e h = rel λ
   { zero → ⋆
   ; (succ n) → transport (λ - → R (succ n) - v) (π∞-inj n t x ⁻¹) (λ _ → e , h n) }
@@ -402,7 +490,10 @@ Rel-inj {t} {v = v} x e h = rel λ
 Inv : ∀ {A} → ⟨ 𝔻 ⟩ → Value A → 𝓤₁ ̇
 Inv {A} d v = Σ t ꞉ Tag , Σ x ꞉ ⟨ obj (Payload t) 𝔻 ⟩ , (d ＝ inj t · x) × (Σ e ꞉ Shape t v , ((n : ℕ) → Pay n e (approx n t x)))
 
-Rel-inv : ∀ {A} {d : ⟨ 𝔻 ⟩} {v : Value A} → Rel d v → defined d → Inv d v
+Rel-inv : ∀ {A} {d : ⟨ 𝔻 ⟩} {v : Value A}
+  → Rel d v
+  → defined d
+  → Inv d v
 Rel-inv {d = d} {v} r q = t , x , inj-view d q , pr₁ (V 0) , (λ n → Pay-at (pr₁ (V 0)) (V n))
  where
   t = pr₁ (view d q)
@@ -411,14 +502,20 @@ Rel-inv {d = d} {v} r q = t , x , inj-view d q , pr₁ (V 0) , (λ n → Pay-at 
   V n = transport (λ - → R (succ n) - v) (π∞-inj n t x)
           (stage (transport (λ - → Rel - v) (inj-view d q) r) (succ n)) ⋆
 
-Rel-fold : ∀ {A} {d : ⟨ 𝔻 ⟩} {v : Value (unrollᵗ A)} → Rel d v → Rel d (fold {A} v)
+Rel-fold : ∀ {A} {d : ⟨ 𝔻 ⟩} {v : Value (unrollᵗ A)}
+  → Rel d v
+  → Rel d (fold {A} v)
 Rel-fold r = rel λ { zero → ⋆ ; (succ n) p → s-fold (pr₁ (stage r (succ n) p)) , pr₂ (stage r (succ n) p) }
 
 private
- unfold-Match : ∀ {n A} {u : ⟨ obj Val (𝓓 n) ⟩} {v : Value (unrollᵗ A)} → Match n u (fold {A} v) → Match n u v
+ unfold-Match : ∀ {n A} {u : ⟨ obj Val (𝓓 n) ⟩} {v : Value (unrollᵗ A)}
+   → Match n u (fold {A} v)
+   → Match n u v
  unfold-Match (s-fold e , m) = e , m
 
-Rel-unfold : ∀ {A} {d : ⟨ 𝔻 ⟩} {v : Value (unrollᵗ A)} → Rel d (fold {A} v) → Rel d v
+Rel-unfold : ∀ {A} {d : ⟨ 𝔻 ⟩} {v : Value (unrollᵗ A)}
+  → Rel d (fold {A} v)
+  → Rel d v
 Rel-unfold r = rel λ { zero → ⋆ ; (succ n) p → unfold-Match (stage r (succ n) p) }
 
 {- Related results -------------------------------------------------------------------}
@@ -427,23 +524,31 @@ Rel-unfold r = rel λ { zero → ⋆ ; (succ n) p → unfold-Match (stage r (suc
 RelE : ∀ {Γ A} → ⟨ 𝔻 ⟩ → Tm Γ A → Envᵢ Γ → 𝓤₁ ̇
 RelE {A = A} d N γ = defined d → Σ v ꞉ Value A , ∥ γ ⊢ N ⇓ v ∥ × Rel d v
 
-RelE-＝ : ∀ {Γ A} {d d' : ⟨ 𝔻 ⟩} {N : Tm Γ A} {γ : Envᵢ Γ} → d ＝ d' → RelE d' N γ → RelE d N γ
+RelE-＝ : ∀ {Γ A} {d d' : ⟨ 𝔻 ⟩} {N : Tm Γ A} {γ : Envᵢ Γ}
+  → d ＝ d'
+  → RelE d' N γ
+  → RelE d N γ
 RelE-＝ refl h = h
 
 RelE-strict : ∀ {Γ A} {N : Tm Γ A} {γ : Envᵢ Γ} (g : DCPO[ 𝔻 , 𝔻 ]) (d : ⟨ 𝔻 ⟩)
-  → (defined d → RelE (g · d) N γ) → RelE (strict · g · d) N γ
+  → (defined d → RelE (g · d) N γ)
+  → RelE (strict · g · d) N γ
 RelE-strict {N = N} {γ} g d h q = RelE-＝ {N = N} {γ = γ} (strict-defined g d q') (h q') q
  where
   q' = seq-defined-l d (g · d) q
 
-Ev-from-RelE : ∀ {Γ A} {d : ⟨ 𝔻 ⟩} {N : Tm Γ A} {γ : Envᵢ Γ} → RelE d N γ → (n : ℕ) → Ev n (π∞ n · d) N γ
+Ev-from-RelE : ∀ {Γ A} {d : ⟨ 𝔻 ⟩} {N : Tm Γ A} {γ : Envᵢ Γ}
+  → RelE d N γ
+  → (n : ℕ)
+  → Ev n (π∞ n · d) N γ
 Ev-from-RelE h zero = ⋆
 Ev-from-RelE {d = d} h (succ n) p = let (v , t , r) = h (π∞-defined n d p) in v , t , stage r (succ n) p
 
 {- a call on a: the results on its approximations e k a, related at depth
    k, give a result related to the call on a, their sup -}
 lim : ∀ {Γ B} {N : Tm Γ B} {γ : Envᵢ Γ} (f : DCPO[ 𝔻 , 𝔻 ]) (a : ⟨ 𝔻 ⟩)
-  → ((k : ℕ) → Ev k (π∞ k · (f · e k a)) N γ) → RelE (f · a) N γ
+  → ((k : ℕ) → Ev k (π∞ k · (f · e k a)) N γ)
+  → RelE (f · a) N γ
 lim {B = B} {N} {γ} f a h q = ∥∥-rec (Σ⇓-prop {γ = γ} {N = N} (Rel (f · a)) (λ v → Rel-prop)) found some
  where
   g : (n : ℕ) → DCPO[ 𝔻 , 𝓓 n ]
@@ -456,7 +561,8 @@ lim {B = B} {N} {γ} f a h q = ∥∥-rec (Σ⇓-prop {γ = γ} {N = N} (Rel (f 
   some = ∥∥-functor (λ (k , p) → k , π∞-defined 0 (f · e k a) p)
            (stage-sup-defined 0 (λ k → g 1 · e k a) (δ 1)
               (transport is-defined (sup 1) (defined-π∞ 0 (f · a) q)))
-  found : (Σ k ꞉ ℕ , defined (f · e k a)) → Σ v ꞉ Value B , ∥ γ ⊢ N ⇓ v ∥ × Rel (f · a) v
+  found : (Σ k ꞉ ℕ , defined (f · e k a))
+    → Σ v ꞉ Value B , ∥ γ ⊢ N ⇓ v ∥ × Rel (f · a) v
   found (k , qk) = v , t , rel stages
    where
     qK : defined (f · e (succ k) a)
@@ -477,13 +583,17 @@ lim {B = B} {N} {γ} f a h q = ∥∥-rec (Σ⇓-prop {γ = γ} {N = N} (Rel (f 
 G : ∀ {Γ} → ⟨ Envᵈ ⟩ → Envᵢ Γ → 𝓤₁ ̇
 G {Γ} ρ γ = ∀ {A} (x : Γ ∋ A) → Rel (ρ (idx x)) (lookup γ x)
 
-G-ext : ∀ {Γ A} {ρ : ⟨ Envᵈ ⟩} {γ : Envᵢ Γ} {d : ⟨ 𝔻 ⟩} {v : Value A} → G ρ γ → Rel d v → G (d • ρ) (v ∷ γ)
+G-ext : ∀ {Γ A} {ρ : ⟨ Envᵈ ⟩} {γ : Envᵢ Γ} {d : ⟨ 𝔻 ⟩} {v : Value A}
+  → G ρ γ
+  → Rel d v
+  → G (d • ρ) (v ∷ γ)
 G-ext g r Z = r
 G-ext g r (S x) = g x
 
 {- a component of a tuple -}
 Tup-lookup : ∀ {n Δ A} (vs : All Value Δ) (xs : Fin (length Δ) → ⟨ 𝓓 n ⟩) (i : Δ ∋ A)
-  → Tup n vs xs → R n (xs (pos i)) (lookup vs i)
+  → Tup n vs xs
+  → R n (xs (pos i)) (lookup vs i)
 Tup-lookup (v ∷ vs) xs Z (r , _) = r
 Tup-lookup (v ∷ vs) xs (S i) (_ , m) = Tup-lookup vs (λ j → xs (suc j)) i m
 
@@ -529,10 +639,13 @@ Out {A = A} d M γ = Σ v ꞉ Value A , ∥ γ ⊢ M ⇓ v ∥ × Rel d v
 {- an application: the operator returns a closure, related to a function
    value f = inj fun h; the call on the argument's value runs the body -}
 fund-app : ∀ {Γ A B} {γ : Envᵢ Γ} (L : Tm Γ (A ⇒ B)) (M : Tm Γ A) (f a : ⟨ 𝔻 ⟩)
-  → Out f L γ → RelE a M γ → RelE (appᵈ · f · a) (app L M) γ
+  → Out f L γ
+  → RelE a M γ
+  → RelE (appᵈ · f · a) (app L M) γ
 fund-app {γ = γ} L M f a (pack (code N) (tup γ') , tL , rL) hM q = body (Rel-inv rL (app-defined f a q))
  where
-  body : Inv f (pack (code N) (tup γ')) → Out (appᵈ · f · a) (app L M) γ
+  body : Inv f (pack (code N) (tup γ'))
+    → Out (appᵈ · f · a) (app L M) γ
   body (_ , h , eqf , s-fun , mL) =
     v , ∥∥-functor₃ (λ eL eM eN → ev (st-bind (run eL) (st-bind (run eM) (st-call eN)))) tL tM tN ,
     transport (λ - → Rel - v) (eqA ⁻¹) rN
@@ -556,7 +669,8 @@ fund-app {γ = γ} L M f a (pack (code N) (tup γ') , tL , rL) hM q = body (Rel-
 
 {- a let: the body runs in the environment extended with the value of M -}
 fund-let : ∀ {Γ A B} {ρ : ⟨ Envᵈ ⟩} {γ : Envᵢ Γ} (M : Tm Γ A) (N : Tm (A ∷ Γ) B)
-  → RelE (⟦ M ⟧ · ρ) M γ → (∀ {d v} → Rel d v → RelE (⟦ N ⟧ · (d • ρ)) N (v ∷ γ))
+  → RelE (⟦ M ⟧ · ρ) M γ
+  → (∀ {d v} → Rel d v → RelE (⟦ N ⟧ · (d • ρ)) N (v ∷ γ))
   → RelE (⟦ let′ M N ⟧ · ρ) (let′ M N) γ
 fund-let {ρ = ρ} {γ} M N hM hN q =
   v , ∥∥-functor₂ (λ eM eN → ev (st-bind (run eM) (run eN))) tM tN ,
@@ -579,10 +693,15 @@ fund-let {ρ = ρ} {γ} M N hM hN q =
   tN = pr₁ (pr₂ resN)
   rN = pr₂ (pr₂ resN)
 
-fund : ∀ {Γ A} (M : Tm Γ A) {ρ : ⟨ Envᵈ ⟩} {γ : Envᵢ Γ} → G ρ γ → RelE (⟦ M ⟧ · ρ) M γ
-funds : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ : ⟨ Envᵈ ⟩} {γ : Envᵢ Γ} → G ρ γ
+fund : ∀ {Γ A} (M : Tm Γ A) {ρ : ⟨ Envᵈ ⟩} {γ : Envᵢ Γ}
+  → G ρ γ
+  → RelE (⟦ M ⟧ · ρ) M γ
+funds : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ : ⟨ Envᵈ ⟩} {γ : Envᵢ Γ}
+  → G ρ γ
   → ((i : Fin (length Δ)) → defined ((⟦ Ms ⟧s · ρ) i))
-  → Σ vs ꞉ All Value Δ , ∥ Evals γ Ms vs ∥ × ((n : ℕ) → Tup n vs (λ i → π∞ n · (⟦ Ms ⟧s · ρ) i))
+  → Σ vs ꞉ All Value Δ , ∥ Evals γ Ms vs ∥
+  × (  (n : ℕ)
+     → Tup n vs (λ i → π∞ n · (⟦ Ms ⟧s · ρ) i))
 
 fund (` x) {ρ} {γ} g q = lookup γ x , now {γ = γ} {M = ` x} (λ _ → ≡-refl) , g x
 
@@ -620,10 +739,12 @@ fund (get {Δ} i M) {ρ} {γ} g q = get-case (fund M {ρ} {γ} g qm)
   m = ⟦ M ⟧ · ρ
   qm : defined m
   qm = proj-defined (pos i) m q
-  get-case : Out m M γ → Out (proj (pos i) · m) (get i M) γ
+  get-case : Out m M γ
+    → Out (proj (pos i) · m) (get i M) γ
   get-case (tup vs , t , r) = body (Rel-inv r qm)
    where
-    body : Inv m (tup vs) → Out (proj (pos i) · m) (get i M) γ
+    body : Inv m (tup vs)
+      → Out (proj (pos i) · m) (get i M) γ
     body (_ , xs , eqm , s-tup , mm) =
       lookup vs i , then (λ _ → ≡-refl) (λ _ → ≡-refl) t ,
       transport (λ - → Rel - (lookup vs i)) ((ap (proj (pos i) ·_) eqm ∙ proj-inj (length Δ) xs (pos i)) ⁻¹)
@@ -667,8 +788,10 @@ fund {Γ} (case {C = C} L M N) {ρ} {γ} g q = case-case (fund L {ρ} {γ} g ql)
   ql = cases-defined l b q
   {- the branch N', on the payload x of l, related to a' -}
   branch-ok : ∀ {A'} (N' : Tm (A' ∷ Γ) C) {a' : Value A'} (x : ⟨ 𝔻 ⟩)
-    → cases · l · b ＝ strict · (abs ⟦ N' ⟧ · ρ) · x → Rel x a'
-    → (∀ {v} → ∥ (a' ∷ γ) ⊢ N' ⇓ v ∥ → ∥ γ ⊢ case L M N ⇓ v ∥) → Out (cases · l · b) (case L M N) γ
+    → cases · l · b ＝ strict · (abs ⟦ N' ⟧ · ρ) · x
+    → Rel x a'
+    → (∀ {v} → ∥ (a' ∷ γ) ⊢ N' ⇓ v ∥ → ∥ γ ⊢ case L M N ⇓ v ∥)
+    → Out (cases · l · b) (case L M N) γ
   branch-ok N' {a'} x eqb rx run' = v , run' tN , transport (λ - → Rel - v) (eqb ⁻¹) rN
    where
     res : Out (strict · (abs ⟦ N' ⟧ · ρ) · x) N' (a' ∷ γ)
@@ -677,16 +800,19 @@ fund {Γ} (case {C = C} L M N) {ρ} {γ} g q = case-case (fund L {ρ} {γ} g ql)
     v = pr₁ res
     tN = pr₁ (pr₂ res)
     rN = pr₂ (pr₂ res)
-  case-case : Out l L γ → Out (cases · l · b) (case L M N) γ
+  case-case : Out l L γ
+    → Out (cases · l · b) (case L M N) γ
   case-case (inl a' , tL , rL) = body (Rel-inv rL ql)
    where
-    body : Inv l (inl a') → Out (cases · l · b) (case L M N) γ
+    body : Inv l (inl a')
+      → Out (cases · l · b) (case L M N) γ
     body (_ , x , eql , s-left , ml) =
       branch-ok M x (ap (λ - → cases · - · b) eql ∙ ap (_· b) (case-inj (Br ⟹𝔻) cases-br left x)) (rel ml)
         (∥∥-functor₂ (λ eL eM → ev (st-bind (run eL) (run eM))) tL)
   case-case (inr a' , tL , rL) = body (Rel-inv rL ql)
    where
-    body : Inv l (inr a') → Out (cases · l · b) (case L M N) γ
+    body : Inv l (inr a')
+      → Out (cases · l · b) (case L M N) γ
     body (_ , x , eql , s-right , ml) =
       branch-ok N x (ap (λ - → cases · - · b) eql ∙ ap (_· b) (case-inj (Br ⟹𝔻) cases-br right x)) (rel ml)
         (∥∥-functor₂ (λ eL eN → ev (st-bind (run eL) (run eN))) tL)
@@ -698,20 +824,24 @@ fund (prim p L M) {ρ} {γ} g q = prim-case (fund L {ρ} {γ} g ql)
   m = ⟦ M ⟧ · ρ
   ql : defined l
   ql = primD-defined₁ p l m q
-  prim-case : Out l L γ → Out (primD p · l · m) (prim p L M) γ
+  prim-case : Out l L γ
+    → Out (primD p · l · m) (prim p L M) γ
   prim-case (cv n , tL , rL) = body (Rel-inv rL ql)
    where
-    body : Inv l (cv n) → Out (primD p · l · m) (prim p L M) γ
+    body : Inv l (cv n)
+      → Out (primD p · l · m) (prim p L M) γ
     body (_ , x , eql , s-con , _) = prim-case₂ (fund M {ρ} {γ} g qm)
      where
       eq₁ : primD p · l · m ＝ caseᵈ 𝔻⊥ (prim-br₂ p n) · m
       eq₁ = ap (λ - → primD p · - · m) eql ∙ ap (_· m) (case-inj (𝔻 ⟹𝔻) (prim-br₁ p) (con Int n) x)
       qm : defined m
       qm = case-defined (prim-br₂ p n) m (transport defined eq₁ q)
-      prim-case₂ : Out m M γ → Out (primD p · l · m) (prim p L M) γ
+      prim-case₂ : Out m M γ
+        → Out (primD p · l · m) (prim p L M) γ
       prim-case₂ (cv n' , tM , rM) = body₂ (Rel-inv rM qm)
        where
-        body₂ : Inv m (cv n') → Out (primD p · l · m) (prim p L M) γ
+        body₂ : Inv m (cv n')
+          → Out (primD p · l · m) (prim p L M) γ
         body₂ (_ , y , eqm , s-con , _) =
           δᵥ p (cv n) (cv n') ,
           ∥∥-functor₂ (λ eL eM → ev (st-bind (run eL) (st-bind (run eM) (st-now (λ _ → ≡-refl))))) tL tM ,
@@ -731,7 +861,8 @@ fund (fold M) {ρ} {γ} g q = fold v , then (λ _ → ≡-refl) (λ _ → ≡-re
 
 fund (unfold M) {ρ} {γ} g q = unfold-case (fund M {ρ} {γ} g q)
  where
-  unfold-case : Out (⟦ M ⟧ · ρ) M γ → Out (⟦ M ⟧ · ρ) (unfold M) γ
+  unfold-case : Out (⟦ M ⟧ · ρ) M γ
+    → Out (⟦ M ⟧ · ρ) (unfold M) γ
   unfold-case (fold v , t , r) = v , then (λ _ → ≡-refl) (λ _ → ≡-refl) t , Rel-unfold r
 
 funds [] g def = [] , ∣ All₂.[] ∣ , (λ n → ⋆)
@@ -750,7 +881,9 @@ funds (M ∷ Ms) {ρ} {γ} g def =
 {- Adequacy -------------------------------------------------------------------------}
 
 {- a closed program whose meaning is defined returns a value from some clock on -}
-adequate : ∀ {A} (M : Tm [] A) → defined (⟦ M ⟧ · ρ₀) → Σ v ꞉ Value A , ∥ [] ⊢ M ⇓ v ∥
+adequate : ∀ {A} (M : Tm [] A)
+  → defined (⟦ M ⟧ · ρ₀)
+  → Σ v ꞉ Value A , ∥ [] ⊢ M ⇓ v ∥
 adequate M q = pr₁ res , pr₁ (pr₂ res)
  where
   res = fund M {ρ₀} {[]} (λ ()) q

@@ -47,23 +47,32 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
 open import Relation.Nullary using (¬_)
 
 private
-  just-inj : ∀ {X : Set} {a b : X} → just a ≡ just b → a ≡ b
+  just-inj : ∀ {X : Set} {a b : X}
+    → just a ≡ just b
+    → a ≡ b
   just-inj refl = refl
 
   {- a sound result observed as a constant: the constant is in D -}
-  const-in : ∀ {A} {r : Result (Val A)} {D B} {k : base-rep B} → Sound r D
-    → outcome obs r ≡ just (o-const B k) → dconst k ∈ D
+  const-in : ∀ {A} {r : Result (Val A)} {D B} {k : base-rep B}
+    → Sound r D
+    → outcome obs r ≡ just (o-const B k)
+    → dconst k ∈ D
   const-in (ret {v} v⊆) e = v⊆ _ (𝒱-const v (just-inj e))
 
   {- a sound result in an empty D times out -}
-  empty-timeout : ∀ {A} {r : Result (Val A)} {D} → Sound r D → ¬ nonempty D → r ≡ timeout
+  empty-timeout : ∀ {A} {r : Result (Val A)} {D}
+    → Sound r D
+    → ¬ nonempty D
+    → r ≡ timeout
   empty-timeout timeout ne = refl
   empty-timeout (ret {v} v⊆) ne with 𝒱-ne v
   ... | ⟨ d , d∈ ⟩ = ⊥-elim (ne ⟨ d , v⊆ d d∈ ⟩)
 
 {- adequacy: an element of the denotation is related to the value the
    interpreter returns from some clock on -}
-returns : ∀ {A} (M : Tm [] A) {d} → d ∈ ⟦ M ⟧ ρ₀ → Σ[ v ∈ Val A ] Σ[ ck ∈ _ ] eval ck [] M ≡ ret v × 𝕍 d v
+returns : ∀ {A} (M : Tm [] A) {d}
+  → d ∈ ⟦ M ⟧ ρ₀
+  → Σ[ v ∈ Val A ] Σ[ ck ∈ _ ] eval ck [] M ≡ ret v × 𝕍 d v
 returns M d∈ with adequate M (λ ()) d∈
 ... | ⟨ v , ⟨ ⟨ c , e ⟩ , r ⟩ ⟩ = ⟨ v , ⟨ c , ⟨ e c ≤-refl , r ⟩ ⟩ ⟩
 

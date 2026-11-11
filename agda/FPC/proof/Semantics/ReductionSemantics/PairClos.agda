@@ -27,8 +27,12 @@ data Value {Γ} : ∀ {A} → Tm Γ A → Set where
   inr : ∀ {A B} {V : Tm Γ B} → Value V → Value (inr {A = A} V)
   fold : ∀ {A} {V : Tm Γ (unroll A)} → Value V → Value (fold {A = A} V)
 
-value-red : ∀ {A} {V : Tm [] A} → Value V → red V ≡ val
-values-red : ∀ {Δ} {Vs : All (Tm []) Δ} → Each Value Vs → reds Vs ≡ val
+value-red : ∀ {A} {V : Tm [] A}
+  → Value V
+  → red V ≡ val
+values-red : ∀ {Δ} {Vs : All (Tm []) Δ}
+  → Each Value Vs
+  → reds Vs ≡ val
 value-red code = refl
 value-red (pair v w) rewrite value-red v | value-red w = refl
 value-red lit = refl

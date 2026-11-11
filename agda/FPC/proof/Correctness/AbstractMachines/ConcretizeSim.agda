@@ -81,7 +81,9 @@ data _~_ : Src.State → Tgt.State → Set where
 
 {- Related environments --------------------------------------------------------}
 
-env-ext : ∀ {Γ Γ' B} {φ : Refs Γ Γ'} {ρ₁ ρ₂ v} {w : Tgt.Val B} → v ≈ w → EnvRel φ ρ₁ ρ₂
+env-ext : ∀ {Γ Γ' B} {φ : Refs Γ Γ'} {ρ₁ ρ₂ v} {w : Tgt.Val B}
+  → v ≈ w
+  → EnvRel φ ρ₁ ρ₂
   → EnvRel (ext-ref φ) (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext r er Z = r
 env-ext {φ = φ} r er (S x) with φ x | er x
@@ -89,7 +91,9 @@ env-ext {φ = φ} r er (S x) with φ x | er x
 ... | prj i y | p = p
 
 {- the environment of a closure's code: its argument and its free variables -}
-env-clos : ∀ {Δ A v w} {vs : All _ Δ} {ws} → v ≈ w → All₂ _≈_ vs ws
+env-clos : ∀ {Δ A v w} {vs : All _ Δ} {ws}
+  → v ≈ w
+  → All₂ _≈_ vs ws
   → EnvRel (fv-ref {A = A}) (v ∷ vs) (w ∷ Tgt.tup ws ∷ [])
 env-clos r rs Z = r
 env-clos r rs (S i) = lookup₂ rs i
@@ -109,12 +113,16 @@ module _ {T : Type} (P : C3.Tm [] T) where
 
   tuple-next~ : ∀ {Γ Γ' Δ' Δ} {φ : Refs Γ Γ'} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'} {Ms : All _ Δ} {ρ₁ ρ₂}
       {κ₁ : Src.Cont (tup (Δ' <>< Δ))} {κ₂}
-    → All₂ _≈_ vs ws → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → All₂ _≈_ vs ws
+    → EnvRel φ ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (concs φ Ms) ρ₂ κ₂
   tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (Src.step s₁) s₂
   sim (eval~ {φ = φ} {M = ` x} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) = steps (ref-run (φ x) ρ₂ κ₂) (ret~ (er x) k)
   sim (eval~ {M = clos N Ms} er k) = steps₁ refl (tuple-next~ [] er (closK k))
   sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))

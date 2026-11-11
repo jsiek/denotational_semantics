@@ -52,7 +52,9 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 open import Relation.Nullary using (¬_)
 
 private
-  just-inj : ∀ {X : Set} {a b : X} → just a ≡ just b → a ≡ b
+  just-inj : ∀ {X : Set} {a b : X}
+    → just a ≡ just b
+    → a ≡ b
   just-inj refl = refl
 
   ret≢timeout : ∀ {X : Set} {v : X} → ¬ (Result.ret v ≡ Result.timeout)
@@ -66,12 +68,17 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
 
   private
     {- a sound result observed as a constant: the constant is in D -}
-    const-in : ∀ {A} {r : Result (Val A)} {D B} {k : base-rep B} → Holds (λ v → 𝒱 v ⊆ D) r
-      → outcome obs r ≡ just (o-const B k) → dconst k ∈ D
+    const-in : ∀ {A} {r : Result (Val A)} {D B} {k : base-rep B}
+      → Holds (λ v → 𝒱 v ⊆ D) r
+      → outcome obs r ≡ just (o-const B k)
+      → dconst k ∈ D
     const-in (ret {v} v⊆) e = v⊆ _ (𝒱-const v (just-inj e))
 
     {- a sound result in an empty D times out -}
-    empty-timeout : ∀ {A} {r : Result (Val A)} {D} → Holds (λ v → 𝒱 v ⊆ D) r → ¬ nonempty D → r ≡ timeout
+    empty-timeout : ∀ {A} {r : Result (Val A)} {D}
+      → Holds (λ v → 𝒱 v ⊆ D) r
+      → ¬ nonempty D
+      → r ≡ timeout
     empty-timeout timeout ne = refl
     empty-timeout (ret {v} v⊆) ne with 𝒱-ne v
     ... | ⟨ d , d∈ ⟩ = ⊥-elim (ne ⟨ d , v⊆ d d∈ ⟩)
@@ -90,11 +97,16 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     , (λ ne ck → empty-timeout (S.soundness ds cT cl (body n bs s) ck) ne) ⟩
 
 {- a program whose table is consistent and contains the code of each definition -}
-program-const-iff : ∀ {A} (P : Program A) → ConT (tables codeₜ (Program.defs P)) → Contains codeₜ (Program.defs P)
-  → ∀ {B} {k : base-rep B} → (dconst k ∈ ⟦ P ⟧ₜ) ⇔ Terminates (sem P) (o-const B k)
+program-const-iff : ∀ {A} (P : Program A)
+  → ConT (tables codeₜ (Program.defs P))
+  → Contains codeₜ (Program.defs P)
+  → ∀ {B} {k : base-rep B}
+  → (dconst k ∈ ⟦ P ⟧ₜ) ⇔ Terminates (sem P) (o-const B k)
 program-const-iff (program ds b) cT cl = const-iff ds cT cl b
 
-program-diverges-iff : ∀ {A} (P : Program A) → ConT (tables codeₜ (Program.defs P)) → Contains codeₜ (Program.defs P)
+program-diverges-iff : ∀ {A} (P : Program A)
+  → ConT (tables codeₜ (Program.defs P))
+  → Contains codeₜ (Program.defs P)
   → Diverges (sem P) ⇔ (¬ nonempty ⟦ P ⟧ₜ)
 program-diverges-iff (program ds b) cT cl = diverges-iff ds cT cl b
 

@@ -72,7 +72,9 @@ st-call : ∀ {Δ A B} {f : Σ ∋ sig Δ A B} {e a v}
   → Stable (λ ck → call ds ck (code f) e a) (ret v)
 st-call ⟨ c , h ⟩ = ⟨ suc c , (λ { (suc ck) (s≤s le) → h ck le }) ⟩
 
-ret-inj : ∀ {X : Set} {u v : X} → Result.ret u ≡ ret v → u ≡ v
+ret-inj : ∀ {X : Set} {u v : X}
+  → Result.ret u ≡ ret v
+  → u ≡ v
 ret-inj refl = refl
 
 {- The logical relation (GlobalFunValues.agda): code f runs definition f ------------------}
@@ -89,25 +91,34 @@ open Rel Run public
 𝕍ᵐ (just tupα) d v = 𝕍 d v
 𝕍ᵐ nothing d v = ⊤
 
-cast-𝕍 : ∀ {η m τ d} {v : MV Σ η m} (e : m ≡ just τ) → 𝕍ᵐ m d v → 𝕍ᵐ (just τ) d (cast e v)
+cast-𝕍 : ∀ {η m τ d} {v : MV Σ η m}
+  → (e : m ≡ just τ)
+  → 𝕍ᵐ m d v
+  → 𝕍ᵐ (just τ) d (cast e v)
 cast-𝕍 refl r = r
 
 ℝ : ∀ {η Γ} → RegsD → RegVals Σ η Γ → Set
 ℝ {Γ = Γ} R ρ = ∀ r d → d ∈ R r → 𝕍ᵐ (Γ ‹ r ›) d (ρ ⦅ r ⦆)
 
-ℝ-upd : ∀ r {η Γ τ} {R : RegsD} {ρ : RegVals Σ η Γ} {D} {v : MV Σ η τ} → ℝ R ρ → (∀ d → d ∈ D → 𝕍ᵐ τ d v)
+ℝ-upd : ∀ r {η Γ τ} {R : RegsD} {ρ : RegVals Σ η Γ} {D} {v : MV Σ η τ}
+  → ℝ R ρ
+  → (∀ d → d ∈ D → 𝕍ᵐ τ d v)
   → ℝ (R [ r ≔ₛ D ]) (_[_≔_] {τ = τ} ρ r v)
 ℝ-upd rax G h = λ { rax → h ; rdi → G rdi ; rsi → G rsi }
 ℝ-upd rdi G h = λ { rax → G rax ; rdi → h ; rsi → G rsi }
 ℝ-upd rsi G h = λ { rax → G rax ; rdi → G rdi ; rsi → h }
 
-wipe-𝕍 : ∀ {η η' d} m {v : MV Σ η m} → 𝕍ᵐ m d v → 𝕍ᵐ {η'} (wipeα m) d (wipeᵥ m v)
+wipe-𝕍 : ∀ {η η' d} m {v : MV Σ η m}
+  → 𝕍ᵐ m d v
+  → 𝕍ᵐ {η'} (wipeα m) d (wipeᵥ m v)
 wipe-𝕍 (just (ty A)) r = r
 wipe-𝕍 (just (codeα A B)) r = tt
 wipe-𝕍 (just tupα) r = tt
 wipe-𝕍 nothing r = tt
 
-ℝ-wipe : ∀ {η η' Γ R} {ρ : RegVals Σ η Γ} → ℝ R ρ → ℝ R (wipeᵣ {η' = η'} ρ)
+ℝ-wipe : ∀ {η η' Γ R} {ρ : RegVals Σ η Γ}
+  → ℝ R ρ
+  → ℝ R (wipeᵣ {η' = η'} ρ)
 ℝ-wipe {Γ = rt a b c} G = λ { rax d d∈ → wipe-𝕍 a (G rax d d∈) ; rdi d d∈ → wipe-𝕍 b (G rdi d d∈) ; rsi d d∈ → wipe-𝕍 c (G rsi d d∈) }
 
 FlR : ∀ {f} → 𝒫 Value → Flag Σ f → Set
@@ -123,40 +134,62 @@ record 𝕄 {η ψ} (ρ : _) (R : RegsD) (F : 𝒫 Value) (m : Mach Σ η ψ) : 
     fl : FlR F (flag m)
     op : OpR (frame m) (St.op ψ) η (clo m)
 
-𝔾-drop : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {ρ} {φ : Env Δ} → 𝔾 ρ φ → 𝔾 (drop p ρ) (pop p φ)
+𝔾-drop : ∀ {Δ' Δ}
+  → (p : Δ' ⊑ Δ)
+  → ∀ {ρ} {φ : Env Δ}
+  → 𝔾 ρ φ
+  → 𝔾 (drop p ρ) (pop p φ)
 𝔾-drop here⊑ G = G
 𝔾-drop (there⊑ p) {φ = v ∷ φ} G = 𝔾-drop p (λ x → G (S x))
 
 {- the environment of the open closure is related to the second component of its slot -}
-snd-𝕍 : ∀ {Δ A B} {φ : Env Δ} {x : Δ ∋ A ⇒ B} {η o d d'} → OpR φ (just (opened x)) η o
-  → 𝕍 ⦅ d' , d ⦆ (lookup φ x) → 𝕍 d o
+snd-𝕍 : ∀ {Δ A B} {φ : Env Δ} {x : Δ ∋ A ⇒ B} {η o d d'}
+  → OpR φ (just (opened x)) η o
+  → 𝕍 ⦅ d' , d ⦆ (lookup φ x)
+  → 𝕍 d o
 snd-𝕍 {φ = φ} {x} agree = snd (lookup φ x)
   where snd : ∀ (v : Val _) {d d'} → 𝕍 ⦅ d' , d ⦆ v → 𝕍 d (env-of v)
         snd (pack c e) r = proj₂ r
 
 {- Values -----------------------------------------------------------------------}
 
-prim-𝕍 : ∀ p {D E} (u v : Val (base Int)) → (∀ d → d ∈ D → 𝕍 d u) → (∀ d → d ∈ E → 𝕍 d v)
-  → ∀ d → d ∈ primD p ⟨ D , ⟨ E , ptt ⟩ ⟩ → 𝕍 d (δ p u v)
+prim-𝕍 : ∀ p {D E} (u v : Val (base Int))
+  → (∀ d → d ∈ D → 𝕍 d u)
+  → (∀ d → d ∈ E → 𝕍 d v)
+  → ∀ d
+  → d ∈ primD p ⟨ D , ⟨ E , ptt ⟩ ⟩
+  → 𝕍 d (δ p u v)
 prim-𝕍 p (const _) (const _) hD hE d ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ with hD _ n∈ | hE _ m∈
 ... | refl | refl = 𝕍-δ p n m
 
 {- what cmpq and sete compute is the primitive eq -}
-eq-𝕍 : ∀ {D E} (u v : Val (base Int)) → (∀ d → d ∈ D → 𝕍 d u) → (∀ d → d ∈ E → 𝕍 d v)
-  → ∀ d → d ∈ primD eq ⟨ D , ⟨ E , ptt ⟩ ⟩ → 𝕍 d (bit {Σ} (equal u v))
+eq-𝕍 : ∀ {D E} (u v : Val (base Int))
+  → (∀ d → d ∈ D → 𝕍 d u)
+  → (∀ d → d ∈ E → 𝕍 d v)
+  → ∀ d
+  → d ∈ primD eq ⟨ D , ⟨ E , ptt ⟩ ⟩
+  → 𝕍 d (bit {Σ} (equal u v))
 eq-𝕍 (const n) (const m) = prim-𝕍 eq (const n) (const m)
 
-unfold-𝕍 : ∀ {A d} (v : Val (μ A)) → 𝕍 d v → 𝕍 d (unfold-v v)
+unfold-𝕍 : ∀ {A d} (v : Val (μ A))
+  → 𝕍 d v
+  → 𝕍 d (unfold-v v)
 unfold-𝕍 (fold v) r = r
 
-nth-𝕍 : ∀ {Δ A d} (i : Δ ∋ A) (v : Val (tup Δ)) → 𝕍 (tup[ pos i ] d) v → 𝕍 d (nth i v)
+nth-𝕍 : ∀ {Δ A d} (i : Δ ∋ A) (v : Val (tup Δ))
+  → 𝕍 (tup[ pos i ] d) v
+  → 𝕍 d (nth i v)
 nth-𝕍 i (tup ws) r = 𝕍At-lookup i _ ws r
 
 {- The fundamental lemma, for a table related to the code pointers ----------------}
 
 module _ {T : Table Σ} (𝕋T : 𝕋 T) where
 
-  arg-𝕍 : ∀ {η ψ τ ρ R F} {m : Mach Σ η ψ} (a : Arg Σ ψ τ) → 𝕄 ρ R F m → ∀ d → d ∈ 𝒪 T a ρ R → 𝕍ᵐ (just τ) d (arg a m)
+  arg-𝕍 : ∀ {η ψ τ ρ R F} {m : Mach Σ η ψ} (a : Arg Σ ψ τ)
+    → 𝕄 ρ R F m
+    → ∀ d
+    → d ∈ 𝒪 T a ρ R
+    → 𝕍ᵐ (just τ) d (arg a m)
   arg-𝕍 (atom (var x)) M = 𝕄.fr M x
   arg-𝕍 (atom (lit B c)) M d d∈ with ℬ-inv d d∈
   ... | refl = refl
@@ -165,7 +198,11 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   arg-𝕍 (a ↑) M = arg-𝕍 a M
   arg-𝕍 {m = m} (a ↓) M d d∈ = unfold-𝕍 (arg a m) (arg-𝕍 a M d d∈)
 
-  obj-𝕍 : ∀ {η ψ A ρ R F} {m : Mach Σ η ψ} (o : Obj Σ ψ A) → 𝕄 ρ R F m → ∀ d → d ∈ object T o ρ R → 𝕍 d (obj o m)
+  obj-𝕍 : ∀ {η ψ A ρ R F} {m : Mach Σ η ψ} (o : Obj Σ ψ A)
+    → 𝕄 ρ R F m
+    → ∀ d
+    → d ∈ object T o ρ R
+    → 𝕍 d (obj o m)
   obj-𝕍 (pair c e) M d d∈ with pair-inv d d∈
   ... | ⟨ u , ⟨ u' , ⟨ refl , ⟨ u∈ , u'∈ ⟩ ⟩ ⟩ ⟩ = ⟨ arg-𝕍 c M u u∈ , arg-𝕍 e M u' u'∈ ⟩
   obj-𝕍 (tuple []) M d d∈ with 𝒯-inv 0 d d∈
@@ -175,7 +212,8 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   ... | inj₁ ⟨ () , _ ⟩
   ... | inj₂ ⟨ _ , ⟨ i , ⟨ u , ⟨ refl , ⟨ refl , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ = comp (a ∷ as) i u u∈
     where
-    comp : ∀ {Δ} (as : All (λ A → Arg Σ _ (ty A)) Δ) (i : Fin (length Δ)) u → u ∈ nthD (𝒪s T as ρ R) i
+    comp : ∀ {Δ} (as : All (λ A → Arg Σ _ (ty A)) Δ) (i : Fin (length Δ)) u
+      → u ∈ nthD (𝒪s T as ρ R) i
       → 𝕍At i u (args as m)
     comp (a ∷ as) zero u u∈ = ⟨ refl , arg-𝕍 a M u u∈ ⟩
     comp (a ∷ as) (suc i) u u∈ = comp as i u u∈
@@ -185,8 +223,10 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   ... | ⟨ u , ⟨ refl , u∈ ⟩ ⟩ = arg-𝕍 a M u u∈
 
   {- d := D, in the semantics and the interpreter -}
-  put-𝕄 : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {η} {m : Mach Σ η ψ} {v : RV Σ η τ} {D κ ρ R F w} → 𝕄 ρ R F m
-    → (∀ x → x ∈ D → 𝕍ᵐ (just τ) x v) → w ∈ putₛ T d D κ ρ R F
+  put-𝕄 : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {η} {m : Mach Σ η ψ} {v : RV Σ η τ} {D κ ρ R F w}
+    → 𝕄 ρ R F m
+    → (∀ x → x ∈ D → 𝕍ᵐ (just τ) x v)
+    → w ∈ putₛ T d D κ ρ R F
     → Σ[ ρ' ∈ _ ] Σ[ R' ∈ RegsD ] Σ[ F' ∈ 𝒫 Value ] 𝕄 ρ' R' F' (put d v m) × w ∈ κ ρ' R' F'
   put-𝕄 (reg r) (𝕞 G Rg Fl Op) h w∈ = ⟨ _ , ⟨ _ , ⟨ _ , ⟨ 𝕞 G (ℝ-upd r Rg h) Fl Op , w∈ ⟩ ⟩ ⟩ ⟩
   put-𝕄 (slot p _) {v = v} (𝕞 G Rg Fl Op) h ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ =
@@ -198,14 +238,20 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
 
   {- callq: an element of the result is related to what the code returns -}
   call-𝕍 : ∀ {η Γ Δ O F A B ρ R F'} {m : Mach Σ η (st Γ Δ O F)} (a : Arg Σ (st Γ Δ O F) (codeα A B))
-    (e₁ : Γ ‹ rdi › ≡ just tupα) (e₂ : Γ ‹ rsi › ≡ just (ty A)) → 𝕄 ρ R F' m
-    → ∀ w → w ∈ ⋆ ⟨ ⋆ ⟨ 𝒪 T a ρ R , ⟨ R rdi , ptt ⟩ ⟩ , ⟨ R rsi , ptt ⟩ ⟩
+    → (e₁ : Γ ‹ rdi › ≡ just tupα)
+    → (e₂ : Γ ‹ rsi › ≡ just (ty A))
+    → 𝕄 ρ R F' m
+    → ∀ w
+    → w ∈ ⋆ ⟨ ⋆ ⟨ 𝒪 T a ρ R , ⟨ R rdi , ptt ⟩ ⟩ , ⟨ R rsi , ptt ⟩ ⟩
     → Σ[ v ∈ Val B ] Stable (λ ck → call ds ck (arg a m) (cast e₁ (regs m ⦅ rdi ⦆)) (cast e₂ (regs m ⦅ rsi ⦆))) (ret v) × 𝕍 w v
   call-𝕍 {m = m} a e₁ e₂ M w ⟨ Y , ⟨ ⟨ X , ⟨ f∈ , ⟨ X⊆ , _ ⟩ ⟩ ⟩ , ⟨ Y⊆ , _ ⟩ ⟩ ⟩ =
     callc (arg a m) (arg-𝕍 a M _ f∈) (all→𝕍s X λ d d∈ → cast-𝕍 e₁ (𝕄.rg M rdi d (X⊆ d d∈)))
       (all→𝕍s Y λ d d∈ → cast-𝕍 e₂ (𝕄.rg M rsi d (Y⊆ d d∈)))
     where
-    callc : ∀ {η A B} (c : Val (code η A B)) {e a X Y w} → 𝕍 (X ↦ (Y ↦ w)) c → 𝕍s X e → 𝕍s Y a
+    callc : ∀ {η A B} (c : Val (code η A B)) {e a X Y w}
+      → 𝕍 (X ↦ (Y ↦ w)) c
+      → 𝕍s X e
+      → 𝕍s Y a
       → Σ[ v ∈ Val B ] Stable (λ ck → call ds ck c e a) (ret v) × 𝕍 w v
     callc (code f) {e} {a} r Xe Ya = r e Xe a Ya
 
@@ -214,12 +260,20 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   AdeqB {R = R} {Bs} bs = ∀ {Δ} (l : Bs ∋ Δ) {η ρ} {φ : Env Δ} {w} → 𝔾 ρ φ → w ∈ blocksₛ T bs l ρ
     → Σ[ v ∈ Val R ] Stable (λ ck → jump ds ck bs η l φ) (ret v) × 𝕍 w v
 
-  adequate : ∀ {n R Bs ψ} (k : Seq Σ n R Bs ψ) {bs : Blocks Σ n R Bs} → AdeqB bs → ∀ {η} {m : Mach Σ η ψ} {ρ R' F w}
-    → 𝕄 ρ R' F m → w ∈ ⟦_⟧ˢ T k (blocksₛ T bs) ρ R' F → Σ[ v ∈ Val R ] Stable (λ ck → run ds ck bs η m k) (ret v) × 𝕍 w v
+  adequate : ∀ {n R Bs ψ} (k : Seq Σ n R Bs ψ) {bs : Blocks Σ n R Bs}
+    → AdeqB bs
+    → ∀ {η} {m : Mach Σ η ψ} {ρ R' F w}
+    → 𝕄 ρ R' F m
+    → w ∈ ⟦_⟧ˢ T k (blocksₛ T bs) ρ R' F
+    → Σ[ v ∈ Val R ] Stable (λ ck → run ds ck bs η m k) (ret v) × 𝕍 w v
   {- a write of a value related to D, then k -}
-  put-adeq : ∀ {n R Bs ψ τ ψ'} (d : Dst n ψ τ ψ') (k : Seq Σ n R Bs ψ') {bs : Blocks Σ n R Bs} → AdeqB bs → ∀ {η} {m : Mach Σ η ψ}
-    {v : RV Σ η τ} {D ρ R' F w} → 𝕄 ρ R' F m → (∀ x → x ∈ D → 𝕍ᵐ (just τ) x v)
-    → w ∈ putₛ T d D (⟦_⟧ˢ T k (blocksₛ T bs)) ρ R' F → Σ[ v' ∈ Val R ] Stable (λ ck → run ds ck bs η (put d v m) k) (ret v') × 𝕍 w v'
+  put-adeq : ∀ {n R Bs ψ τ ψ'} (d : Dst n ψ τ ψ') (k : Seq Σ n R Bs ψ') {bs : Blocks Σ n R Bs}
+    → AdeqB bs
+    → ∀ {η} {m : Mach Σ η ψ} {v : RV Σ η τ} {D ρ R' F w}
+    → 𝕄 ρ R' F m
+    → (∀ x → x ∈ D → 𝕍ᵐ (just τ) x v)
+    → w ∈ putₛ T d D (⟦_⟧ˢ T k (blocksₛ T bs)) ρ R' F
+    → Σ[ v' ∈ Val R ] Stable (λ ck → run ds ck bs η (put d v m) k) (ret v') × 𝕍 w v'
 
   adequate (movq a d ∷ k) AB M w∈ = put-adeq d k AB M (arg-𝕍 a M) w∈
   adequate (subq a r e ∷ k) AB {m = m} M w∈ =
@@ -231,7 +285,9 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   adequate (load i a d ∷ k) AB {m = m} M w∈ = put-adeq d k AB M (λ x x∈ → nth-𝕍 i (arg a m) (arg-𝕍 a M _ x∈)) w∈
   adequate (loadfst x r ∷ k) AB {m = m} {ρ = ρ} (𝕞 G Rg Fl Op) w∈ = adequate k AB (𝕞 G (ℝ-upd r (ℝ-wipe Rg) car) Fl agree) w∈
     where
-    car : ∀ d → d ∈ carD ⟨ ρ (idx x) , ptt ⟩ → 𝕍 d (code-of (lookup (frame m) x))
+    car : ∀ d
+      → d ∈ carD ⟨ ρ (idx x) , ptt ⟩
+      → 𝕍 d (code-of (lookup (frame m) x))
     car d ⟨ d' , d∈ ⟩ = fst (lookup (frame m) x) (G x _ d∈)
       where fst : (v : Val _) → 𝕍 ⦅ d , d' ⦆ v → 𝕍 d (code-of v)
             fst (pack c e) r = proj₁ r
@@ -249,15 +305,19 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   adequate (case x p _ l₁ l₂) {bs} AB {η} {m = m} M (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
     sel (lookup (frame m) x) (λ d d∈ → 𝕄.fr M x _ (allL d d∈))
     where
-    sel : (v : Val _) → (∀ d → d ∈ mem (u ∷ U) → 𝕍 (left d) v) → Σ[ v' ∈ Val _ ]
-      Stable (λ ck → either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m)))) (ret v') × 𝕍 _ v'
+    sel : (v : Val _)
+      → (∀ d → d ∈ mem (u ∷ U) → 𝕍 (left d) v)
+      → Σ[ v' ∈ Val _ ]
+          Stable (λ ck → either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m)))) (ret v') × 𝕍 _ v'
     sel (inl a) h = AB l₁ (λ { Z → h ; (S y) → 𝔾-drop p (𝕄.fr M) y }) w∈
     sel (inr a) h = ⊥-elim (h u (here refl))
   adequate (case x p _ l₁ l₂) {bs} AB {η} {m = m} M (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
     sel (lookup (frame m) x) (λ d d∈ → 𝕄.fr M x _ (allR d d∈))
     where
-    sel : (v : Val _) → (∀ d → d ∈ mem (u ∷ U) → 𝕍 (right d) v) → Σ[ v' ∈ Val _ ]
-      Stable (λ ck → either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m)))) (ret v') × 𝕍 _ v'
+    sel : (v : Val _)
+      → (∀ d → d ∈ mem (u ∷ U) → 𝕍 (right d) v)
+      → Σ[ v' ∈ Val _ ]
+          Stable (λ ck → either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m)))) (ret v') × 𝕍 _ v'
     sel (inr a) h = AB l₂ (λ { Z → h ; (S y) → 𝔾-drop p (𝕄.fr M) y }) w∈
     sel (inl a) h = ⊥-elim (h u (here refl))
 
@@ -278,6 +338,7 @@ tab-ds = tab codeₜ ds λ {T} 𝕋T {Δ} {A} {B} f → code-𝕍 _ λ X Y w w�
 
 {- Adequacy: main returns a related value from some clock on --------------------------}
 
-adequacy : ∀ {A} (b : Body Σ A (entry [])) {w} → w ∈ ⟦ program ds b ⟧ₜ
+adequacy : ∀ {A} (b : Body Σ A (entry [])) {w}
+  → w ∈ ⟦ program ds b ⟧ₜ
   → Σ[ v ∈ Val A ] Stable (λ ck → run ds ck (Body.blocks b) [] ⟨ rv tt tt tt , [] , tt , tt ⟩ (Body.start b)) (ret v) × 𝕍 w v
 adequacy (body n bs k) w∈ = adequate tab-ds k (blocks-adeq tab-ds bs) (𝕞 (λ ()) (λ { rax _ _ → tt ; rdi _ _ → tt ; rsi _ _ → tt }) tt none) w∈

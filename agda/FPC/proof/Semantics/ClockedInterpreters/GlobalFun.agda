@@ -45,6 +45,8 @@ module _ {Σ : List DSig} {ds : All (C.Code Σ) Σ} {ck : ℕ} where
   atoms-bind {φ = φ} (a ∷ as) = trans (bind-assoc (eval ds ck φ ⌜ a ⌝ᵃ)) (trans (atm-bind a) (trans (bind-assoc (evals ds ck φ ⌜ as ⌝ᵛ)) (atoms-bind as)))
 
 either-cong : ∀ {Σ A B} {X : Set} (u : Vals.Val Σ (A ⊹ B)) {f₁ g₁ : Vals.Val Σ A → X} {f₂ g₂ : Vals.Val Σ B → X}
-  → (∀ v → f₁ v ≡ g₁ v) → (∀ v → f₂ v ≡ g₂ v) → Vals.either Σ u f₁ f₂ ≡ Vals.either Σ u g₁ g₂
+  → (∀ v → f₁ v ≡ g₁ v)
+  → (∀ v → f₂ v ≡ g₂ v)
+  → Vals.either Σ u f₁ f₂ ≡ Vals.either Σ u g₁ g₂
 either-cong (Vals.inl v) h₁ h₂ = h₁ v
 either-cong (Vals.inr v) h₁ h₂ = h₂ v

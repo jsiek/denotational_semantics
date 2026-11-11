@@ -39,8 +39,12 @@ data _≈_ : ∀ {A} → S.Val A → T.Val A → Set where
   inr≈ : ∀ {A B v w} → v ≈ w → S.inr {A} {B} v ≈ T.inr w
   fold≈ : ∀ {A v w} → v ≈ w → S.fold {A} v ≈ T.fold w
 
-obs≈ : ∀ {A} {v : S.Val A} {w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈* : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → S.obs-all vs ≡ T.obs-all ws
+obs≈ : ∀ {A} {v : S.Val A} {w}
+  → v ≈ w
+  → S.obs v ≡ T.obs w
+obs≈* : ∀ {Δ} {vs : All _ Δ} {ws}
+  → All₂ _≈_ vs ws
+  → S.obs-all vs ≡ T.obs-all ws
 obs≈ (clos≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)

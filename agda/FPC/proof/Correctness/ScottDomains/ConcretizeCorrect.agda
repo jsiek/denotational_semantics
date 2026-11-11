@@ -55,7 +55,9 @@ shift-ok : ∀ {Γ A B} (r : Ref Γ A) (X : ⟨ 𝔻 ⟩) (ρ : ⟨ Env ⟩) →
 shift-ok (var x) X ρ = refl
 shift-ok (prj i x) X ρ = refl
 
-rel-ext : ∀ {Γ Γ' B} (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩} {X : ⟨ 𝔻 ⟩} → EnvRel φ ρ₂ ρ₃ → EnvRel (ext-ref {B = B} φ) (X • ρ₂) (X • ρ₃)
+rel-ext : ∀ {Γ Γ' B} (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩} {X : ⟨ 𝔻 ⟩}
+  → EnvRel φ ρ₂ ρ₃
+  → EnvRel (ext-ref {B = B} φ) (X • ρ₂) (X • ρ₃)
 rel-ext φ rel Z = refl
 rel-ext φ {ρ₃ = ρ₃} {X} rel (S x) = rel x ∙ (shift-ok (φ x) X ρ₃ ⁻¹)
 
@@ -64,12 +66,18 @@ fv-pos : ∀ {Δ : Ctx} {C} (ds : Fin (length Δ) → ⟨ 𝔻 ⟩) (Y : ⟨ �
 fv-pos ds Y Z = refl
 fv-pos ds Y (S i) = fv-pos (λ j → ds (suc j)) (ds zero) i
 
-conc : ∀ {Γ Γ' A} (M : Tm Γ A) (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩} → EnvRel φ ρ₂ ρ₃ → ⟦ M ⟧ · ρ₂ ＝ ⟦ concretize φ M ⟧₃ · ρ₃
-concs-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩} → EnvRel φ ρ₂ ρ₃
+conc : ∀ {Γ Γ' A} (M : Tm Γ A) (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩}
+  → EnvRel φ ρ₂ ρ₃
+  → ⟦ M ⟧ · ρ₂ ＝ ⟦ concretize φ M ⟧₃ · ρ₃
+concs-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩}
+  → EnvRel φ ρ₂ ρ₃
   → ⟦ Ms ⟧s · ρ₂ ＝ ⟦ concs φ Ms ⟧s₃ · ρ₃
 {- a body under a binder -}
-under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩} → EnvRel φ ρ₂ ρ₃
-  → (d : ⟨ 𝔻 ⟩) → defined d → ⟦ N ⟧ · (d • ρ₂) ＝ ⟦ concretize (ext-ref φ) N ⟧₃ · (d • ρ₃)
+under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩}
+  → EnvRel φ ρ₂ ρ₃
+  → (d : ⟨ 𝔻 ⟩)
+  → defined d
+  → ⟦ N ⟧ · (d • ρ₂) ＝ ⟦ concretize (ext-ref φ) N ⟧₃ · (d • ρ₃)
 
 conc (` x) φ rel = rel x
 conc (clos {Δ} N Ms) φ {ρ₂} {ρ₃} rel =

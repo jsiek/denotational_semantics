@@ -39,21 +39,31 @@ deref (prj i x) ρ = T.nth i (lookup ρ x)
 Env≈ : ∀ {Γ Γ'} → Refs Γ Γ' → S.Env Γ → T.Env Γ' → Set
 Env≈ φ ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ deref (φ x) ρ₂
 
-env-ext : ∀ {Γ Γ' B} {φ : Refs Γ Γ'} {ρ₁ ρ₂ v w} → v ≈ w → Env≈ φ ρ₁ ρ₂ → Env≈ (ext-ref {B = B} φ) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext : ∀ {Γ Γ' B} {φ : Refs Γ Γ'} {ρ₁ ρ₂ v w}
+  → v ≈ w
+  → Env≈ φ ρ₁ ρ₂
+  → Env≈ (ext-ref {B = B} φ) (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext r E Z = r
 env-ext {φ = φ} r E (S x) with φ x | E x
 ... | var y | e = e
 ... | prj i y | e = e
 
-ref≈ : ∀ ck {Γ A v} (a : Ref Γ A) {ρ} → v ≈ deref a ρ → RelResult _≈_ (ret v) (T.eval ck ρ (ref-tm a))
+ref≈ : ∀ ck {Γ A v} (a : Ref Γ A) {ρ}
+  → v ≈ deref a ρ
+  → RelResult _≈_ (ret v) (T.eval ck ρ (ref-tm a))
 ref≈ ck (var x) r = ret r
 ref≈ ck (prj i x) r = ret r
 
-run≈ : ∀ ck {Γ Γ' A} (M : Tm Γ A) {φ : Refs Γ Γ'} {ρ₁ ρ₂} → Env≈ φ ρ₁ ρ₂
+run≈ : ∀ ck {Γ Γ' A} (M : Tm Γ A) {φ : Refs Γ Γ'} {ρ₁ ρ₂}
+  → Env≈ φ ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (concretize φ M))
-runs≈ : ∀ ck {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {φ : Refs Γ Γ'} {ρ₁ ρ₂} → Env≈ φ ρ₁ ρ₂
+runs≈ : ∀ ck {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {φ : Refs Γ Γ'} {ρ₁ ρ₂}
+  → Env≈ φ ρ₁ ρ₂
   → RelResult (All₂ _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (concs φ Ms))
-call≈ : ∀ ck {A B} {f : S.Val (A ⇒ B)} {g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S.call ck f v) (T.call ck g w)
+call≈ : ∀ ck {A B} {f : S.Val (A ⇒ B)} {g v w}
+  → f ≈ g
+  → v ≈ w
+  → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
 run≈ ck (` x) {φ} E = ref≈ ck (φ x) (E x)
 run≈ ck (clos N Ms) E = bind-rel (runs≈ ck Ms E) λ vs → ret (pack≈ vs (same refl))

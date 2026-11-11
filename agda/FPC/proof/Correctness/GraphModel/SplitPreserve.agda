@@ -51,10 +51,16 @@ module FPC.proof.Correctness.GraphModel.SplitPreserve where
 
 {- The relation ---------------------------------------------------------------}
 
-⋆⋆-mono : ∀ {C C' Y Y' X X'} → C ⊆ C' → Y ⊆ Y' → X ⊆ X' → (C ● Y) ● X ⊆ (C' ● Y') ● X'
+⋆⋆-mono : ∀ {C C' Y Y' X X'}
+  → C ⊆ C'
+  → Y ⊆ Y'
+  → X ⊆ X'
+  → (C ● Y) ● X ⊆ (C' ● Y') ● X'
 ⋆⋆-mono {C} {C'} {Y} {Y'} C⊆ Y⊆ = ●-mono {C ● Y} {C' ● Y'} (●-mono C⊆ Y⊆)
 
-⊙-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
+⊙-mono-l : ∀ {D₁ D₂ E}
+  → D₁ ⊆ D₂
+  → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
 ⊙-mono-l {D₁} {D₂} D⊆ = ⋆⋆-mono {car ⟨ D₁ , ptt ⟩} {car ⟨ D₂ , ptt ⟩} {cdr ⟨ D₁ , ptt ⟩} {cdr ⟨ D₂ , ptt ⟩} (λ { u ⟨ v , p ⟩ → ⟨ v , D⊆ _ p ⟩ }) (λ { v ⟨ u , p ⟩ → ⟨ u , D⊆ _ p ⟩ }) (λ d z → z)
 
 {- PairV D' says that D' contains a pair, as a target closure does. -}
@@ -73,7 +79,10 @@ v ⊑ D' = Lift (lsuc lzero) (v ∈ D')
 [] ⊑* E' = pTrue
 (u ∷ U) ⊑* E' = u ⊑ E' × U ⊑* E'
 
-⊑-mono : ∀ v {D₁ D₂} → D₁ ⊆ D₂ → v ⊑ D₁ → v ⊑ D₂
+⊑-mono : ∀ v {D₁ D₂}
+  → D₁ ⊆ D₂
+  → v ⊑ D₁
+  → v ⊑ D₂
 ⊑-mono ν D⊆ (lift ⟨ u , ⟨ t , p ⟩ ⟩) = lift ⟨ u , ⟨ t , D⊆ _ p ⟩ ⟩
 ⊑-mono (U ↦ w) D⊆ ⟨ lift ⟨ u , ⟨ t , p ⟩ ⟩ , f ⟩ =
   ⟨ lift ⟨ u , ⟨ t , D⊆ _ p ⟩ ⟩ , (λ E' cE U⊑ → ⊑-mono w (⊙-mono-l D⊆) (f E' cE U⊑)) ⟩
@@ -85,7 +94,9 @@ v ⊑ D' = Lift (lsuc lzero) (v ∈ D')
 ⊑-mono ⦅ u , v ⦆ D⊆ (lift v∈) = lift (D⊆ _ v∈)
 ⊑-mono ⟨⟩ D⊆ (lift v∈) = lift (D⊆ _ v∈)
 
-⊑-ne : ∀ v {D'} → v ⊑ D' → nonempty D'
+⊑-ne : ∀ v {D'}
+  → v ⊑ D'
+  → nonempty D'
 ⊑-ne ν (lift ⟨ u , ⟨ t , p ⟩ ⟩) = ⟨ _ , p ⟩
 ⊑-ne (U ↦ w) ⟨ lift ⟨ u , ⟨ t , p ⟩ ⟩ , _ ⟩ = ⟨ _ , p ⟩
 ⊑-ne (tup[ i ] d) d⊑ = let ⟨ d' , d'∈ ⟩ = ⊑-ne d d⊑ in ⟨ tup[ i ] d' , d'∈ ⟩
@@ -96,16 +107,25 @@ v ⊑ D' = Lift (lsuc lzero) (v ∈ D')
 ⊑-ne ⦅ u , v ⦆ (lift v∈) = ⟨ _ , v∈ ⟩
 ⊑-ne ⟨⟩ (lift v∈) = ⟨ _ , v∈ ⟩
 
-out-⊑ : ∀ o {D'} → out o ∈ D' → out o ⊑ D'
+out-⊑ : ∀ o {D'}
+  → out o ∈ D'
+  → out o ⊑ D'
 out-⊑ (int n) v∈ = lift v∈
 out-⊑ (bool true) v∈ = lift v∈
 out-⊑ (bool false) v∈ = lift v∈
 
-⊑*-intro : ∀ U {D E'} → mem U ⊆ D → (∀ v → v ∈ D → v ⊑ E') → U ⊑* E'
+⊑*-intro : ∀ U {D E'}
+  → mem U ⊆ D
+  → (∀ v → v ∈ D → v ⊑ E')
+  → U ⊑* E'
 ⊑*-intro [] U⊆ f = ptt
 ⊑*-intro (u ∷ U) U⊆ f = ⟨ f u (U⊆ u (here refl)) , ⊑*-intro U (λ d d∈ → U⊆ d (there d∈)) f ⟩
 
-⊑*-elim : ∀ {U E'} → U ⊑* E' → ∀ u → u ∈ mem U → u ⊑ E'
+⊑*-elim : ∀ {U E'}
+  → U ⊑* E'
+  → ∀ u
+  → u ∈ mem U
+  → u ⊑ E'
 ⊑*-elim ⟨ u⊑ , _ ⟩ u (here refl) = u⊑
 ⊑*-elim ⟨ _ , U⊑ ⟩ u (there u∈) = ⊑*-elim U⊑ u u∈
 
@@ -118,7 +138,11 @@ record Envs (Γ : Ctx) (ρ ρ' : Env Value) : Set₁ where
     ρ'~ : Con-env ρ'
     ρ⊑ : ∀ {A} (x : Γ ∋ A) v → v ∈ ρ (idx x) → v ⊑ ρ' (idx x)
 
-ext-envs : ∀ {Γ B} {ρ ρ' X X'} → Envs Γ ρ ρ' → nonempty X' → Con X' → (∀ v → v ∈ X → v ⊑ X')
+ext-envs : ∀ {Γ B} {ρ ρ' X X'}
+  → Envs Γ ρ ρ'
+  → nonempty X'
+  → Con X'
+  → (∀ v → v ∈ X → v ⊑ X')
   → Envs (B ∷ Γ) (X • ρ) (X' • ρ')
 ext-envs (envs NE' ρ'~ ρ⊑) ne c h = envs (extend-nonempty-env NE' ne) (Con-• c ρ'~) (λ { Z → h ; (S x) → ρ⊑ x })
 
@@ -172,11 +196,16 @@ preserve (clos {Δ} N Ms) {ρ} {ρ'} E v ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , ⟨ FV�
   P' = ⟦ split (clos N Ms) ⟧' ρ'
   fv⊑ = λ fv fv∈ → preserve-𝒯 Ms E fv (FV⊆ fv fv∈)
   NE-T' = let ⟨ fv , fv∈ ⟩ = ne-mem neFV (λ d d∈ → d∈) in ⊑-ne fv (fv⊑ fv fv∈)
-  G : ∀ v → v ∈ Λ ⟨ (λ Y → ⟦ N ⟧ (Y • mem FV • (λ _ → ⌈ ⟨⟩ ⌉))) , ptt ⟩ → v ⊑ P'
+  G : ∀ v
+    → v ∈ Λ ⟨ (λ Y → ⟦ N ⟧ (Y • mem FV • (λ _ → ⌈ ⟨⟩ ⌉))) , ptt ⟩
+    → v ⊑ P'
   G ν _ = lift ⟨ ν , ⟨ _ , ⟨ tt , proj₂ NE-T' ⟩ ⟩ ⟩
   G (U ↦ w) ⟨ w∈ , ⟨ neU , _ ⟩ ⟩ = ⟨ lift ⟨ ν , ⟨ _ , ⟨ tt , proj₂ NE-T' ⟩ ⟩ ⟩ , call ⟩
     where
-    call : ∀ E' → Con E' → U ⊑* E' → w ⊑ P' ⊙ E'
+    call : ∀ E'
+      → Con E'
+      → U ⊑* E'
+      → w ⊑ P' ⊙ E'
     call E' cE' U⊑ = ⊑-mono w β (preserve N Eb w w∈)
       where
       NE-E' = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (⊑*-elim U⊑ u u∈)
@@ -205,8 +234,12 @@ preserve-body B E neU c U⊑ B⊆ v v∈ = ⊑-mono v (B⊆ ne) (preserve B (ext
 Envs₀ : Envs [] ρ₀ ρ₀
 Envs₀ = envs (λ _ → ⟨ ⟨⟩ , refl ⟩) (λ _ → Con-⌈⌉ ⟨⟩) (λ ())
 
-preserve-const : ∀ {A} (M : Tm [] A) {B} (c : base-rep B) → const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ split-program M ⟧' ρ₀
+preserve-const : ∀ {A} (M : Tm [] A) {B} (c : base-rep B)
+  → const c ∈ ⟦ M ⟧ ρ₀
+  → const c ∈ ⟦ split-program M ⟧' ρ₀
 preserve-const M c c∈ = lower (preserve M Envs₀ (const c) c∈)
 
-preserve-nonempty : ∀ {A} (M : Tm [] A) → nonempty (⟦ M ⟧ ρ₀) → nonempty (⟦ split-program M ⟧' ρ₀)
+preserve-nonempty : ∀ {A} (M : Tm [] A)
+  → nonempty (⟦ M ⟧ ρ₀)
+  → nonempty (⟦ split-program M ⟧' ρ₀)
 preserve-nonempty M ⟨ v , v∈ ⟩ = ⊑-ne v (preserve M Envs₀ v v∈)

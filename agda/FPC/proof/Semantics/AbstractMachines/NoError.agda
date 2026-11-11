@@ -28,7 +28,8 @@ open import Relation.Nullary using (¬_)
 
 {- a machine whose final states stop with answers never stops with o-error -}
 module _ {S : Set} {stp : S → _} {s₀ : S} where
-  no-error : (∀ s {o} → stp s ≡ stop o → Answer o) → ¬ Terminates (Semantics.CEK.Smallstep.machine S stp s₀) o-error
+  no-error : (∀ s {o} → stp s ≡ stop o → Answer o)
+    → ¬ Terminates (Semantics.CEK.Smallstep.machine S stp s₀) o-error
   no-error h (s , _ , fin) = h s fin refl
 
 {- FPC -----------------------------------------------------------------------}
@@ -41,7 +42,9 @@ fpc-answer (I.inl _) ()
 fpc-answer (I.inr _) ()
 fpc-answer (I.fold v) = fpc-answer v
 
-fpc-stops : ∀ s {o} → I.step s ≡ stop o → Answer o
+fpc-stops : ∀ s {o}
+  → I.step s ≡ stop o
+  → Answer o
 fpc-stops (I.eval (L.` x) ρ κ) ()
 fpc-stops (I.eval (L.lam N) ρ κ) ()
 fpc-stops (I.eval (L.app L M) ρ κ) ()
@@ -86,10 +89,14 @@ clos5-answer (C5.fold v) = clos5-answer v
 
 module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
 
-  enter-next : ∀ {η A B} (c : C5.Val Σ (code η A B)) e w σ {o} → enter ds c e w σ ≡ stop o → Answer o
+  enter-next : ∀ {η A B} (c : C5.Val Σ (code η A B)) e w σ {o}
+    → enter ds c e w σ ≡ stop o
+    → Answer o
   enter-next (C5.code f) e w σ ()
 
-  x86-stops : ∀ s {o} → step ds s ≡ stop o → Answer o
+  x86-stops : ∀ s {o}
+    → step ds s ≡ stop o
+    → Answer o
   x86-stops (run (movq a d ∷ k) bs σ η m) ()
   x86-stops (run (subq a r e ∷ k) bs σ η m) ()
   x86-stops (run (cmpq a₂ a₁ ∷ k) bs σ η m) ()

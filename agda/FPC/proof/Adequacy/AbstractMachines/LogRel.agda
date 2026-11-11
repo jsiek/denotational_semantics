@@ -58,7 +58,10 @@ infix 4 _⊢_⇓_
 _⊢_⇓_ : ∀ {Γ A} → Env Γ → Tm Γ A → Val A → Set
 γ ⊢ M ⇓ v = ∀ κ → eval M γ κ ↠ ret v κ
 
-⇓-det : ∀ {Γ A} {γ : Env Γ} {M : Tm Γ A} {v₁ v₂} → γ ⊢ M ⇓ v₁ → γ ⊢ M ⇓ v₂ → v₁ ≡ v₂
+⇓-det : ∀ {Γ A} {γ : Env Γ} {M : Tm Γ A} {v₁ v₂}
+  → γ ⊢ M ⇓ v₁
+  → γ ⊢ M ⇓ v₂
+  → v₁ ≡ v₂
 ⇓-det e₁ e₂ with ↠-final-det (e₁ halt) (e₂ halt) refl refl
 ... | refl = refl
 
@@ -85,15 +88,22 @@ _⊢_⇓_ : ∀ {Γ A} → Env Γ → Tm Γ A → Val A → Set
 𝕍At (suc i) d (v ∷ vs) = 𝕍At i d vs
 𝕍At _ d _ = ⊥
 
-𝕍s-∈ : ∀ {A} V {v : Val A} {d} → 𝕍s V v → d ∈ mem V → 𝕍 d v
+𝕍s-∈ : ∀ {A} V {v : Val A} {d}
+  → 𝕍s V v
+  → d ∈ mem V
+  → 𝕍 d v
 𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ (here refl) = r
 𝕍s-∈ (d ∷ V) ⟨ _ , rs ⟩ (there d∈) = 𝕍s-∈ V rs d∈
 
-all→𝕍s : ∀ {A} V {v : Val A} → (∀ d → d ∈ mem V → 𝕍 d v) → 𝕍s V v
+all→𝕍s : ∀ {A} V {v : Val A}
+  → (∀ d → d ∈ mem V → 𝕍 d v)
+  → 𝕍s V v
 all→𝕍s [] all = tt
 all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
 
-𝕍At-lookup : ∀ {Δ A} (i : Δ ∋ A) d (vs : All Val Δ) → 𝕍At (pos i) d vs → 𝕍 d (lookup vs i)
+𝕍At-lookup : ∀ {Δ A} (i : Δ ∋ A) d (vs : All Val Δ)
+  → 𝕍At (pos i) d vs
+  → 𝕍 d (lookup vs i)
 𝕍At-lookup Z d (v ∷ vs) ⟨ _ , r ⟩ = r
 𝕍At-lookup (S i) d (v ∷ vs) r = 𝕍At-lookup i d vs r
 
@@ -104,7 +114,9 @@ all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ �
 ... | false = tt
 
 {- the observation of a value related to a constant is that constant -}
-𝕍-const : ∀ {A B} {k : base-rep B} (v : Val A) → 𝕍 (dconst k) v → obs v ≡ o-const B k
+𝕍-const : ∀ {A B} {k : base-rep B} (v : Val A)
+  → 𝕍 (dconst k) v
+  → obs v ≡ o-const B k
 𝕍-const (fold v) r = 𝕍-const v r
 𝕍-const (const k) refl = refl
 
@@ -122,7 +134,10 @@ obs-answer (fold v) = obs-answer v
 𝔾 : ∀ {Γ} → E.Env Value → Env Γ → Set
 𝔾 {Γ} ρ γ = ∀ {A} (x : Γ ∋ A) d → d ∈ ρ (idx x) → 𝕍 d (lookup γ x)
 
-𝔾-ext : ∀ {Γ A ρ} {γ : Env Γ} V (v : Val A) → 𝔾 ρ γ → 𝕍s V v → 𝔾 (mem V • ρ) (v ∷ γ)
+𝔾-ext : ∀ {Γ A ρ} {γ : Env Γ} V (v : Val A)
+  → 𝔾 ρ γ
+  → 𝕍s V v
+  → 𝔾 (mem V • ρ) (v ∷ γ)
 𝔾-ext V v G Vv Z d d∈ = 𝕍s-∈ V Vv d∈
 𝔾-ext V v G Vv (S x) = G x
 
@@ -130,8 +145,11 @@ obs-answer (fold v) = obs-answer v
 
 {- one value related to all elements of V, all of which M produces -}
 collect : ∀ {Γ A} {γ : Env Γ} {M : Tm Γ A} {v} (P : Value → Val A → Set) V
-  → (∀ d → d ∈ mem V → Σ[ v' ∈ Val A ] γ ⊢ M ⇓ v' × P d v') → γ ⊢ M ⇓ v
-  → ∀ d → d ∈ mem V → P d v
+  → (∀ d → d ∈ mem V → Σ[ v' ∈ Val A ] γ ⊢ M ⇓ v' × P d v')
+  → γ ⊢ M ⇓ v
+  → ∀ d
+  → d ∈ mem V
+  → P d v
 collect P V all e d d∈ with all d d∈
 ... | ⟨ v' , ⟨ e' , r ⟩ ⟩ with ⇓-det e e'
 ... | refl = r
@@ -139,16 +157,21 @@ collect P V all e d d∈ with all d d∈
 Evals : ∀ {Γ Δ} → Env Γ → All (Tm Γ) Δ → All Val Δ → Set
 Evals γ = All₂ (λ M v → γ ⊢ M ⇓ v)
 
-tuple-run : ∀ {Γ Δ' Δ} {γ : Env Γ} (acc : All Val Δ') (Ms : All (Tm Γ) Δ) {vs} → Evals γ Ms vs
-  → ∀ κ → tuple-next acc Ms γ κ ↠ ret (tup (acc <><ᵃ vs)) κ
+tuple-run : ∀ {Γ Δ' Δ} {γ : Env Γ} (acc : All Val Δ') (Ms : All (Tm Γ) Δ) {vs}
+  → Evals γ Ms vs
+  → ∀ κ
+  → tuple-next acc Ms γ κ ↠ ret (tup (acc <><ᵃ vs)) κ
 tuple-run acc [] All₂.[] κ = done
 tuple-run {γ = γ} acc (M ∷ Ms) (e All₂.∷ es) κ = e (tupK acc Ms γ κ) ++↠ (refl ∷↠ tuple-run (_ ∷ acc) Ms es κ)
 
 {- The fundamental lemma ----------------------------------------------------------}
 
-adequate : ∀ {Γ A} (M : Tm Γ A) {ρ} {γ : Env Γ} {d} → 𝔾 ρ γ → d ∈ ⟦ M ⟧ ρ
+adequate : ∀ {Γ A} (M : Tm Γ A) {ρ} {γ : Env Γ} {d}
+  → 𝔾 ρ γ
+  → d ∈ ⟦ M ⟧ ρ
   → Σ[ v ∈ Val A ] γ ⊢ M ⇓ v × 𝕍 d v
-adequate-args : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ} {γ : Env Γ} → 𝔾 ρ γ
+adequate-args : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ} {γ : Env Γ}
+  → 𝔾 ρ γ
   → (∀ j → nonempty (nthD (⟦ Ms ⟧s ρ) j))
   → Σ[ vs ∈ All Val Δ ] Evals γ Ms vs × (∀ j d → d ∈ nthD (⟦ Ms ⟧s ρ) j → 𝕍At j d vs)
 
@@ -207,6 +230,8 @@ adequate-args [] G ne = ⟨ [] , ⟨ All₂.[] , (λ ()) ⟩ ⟩
 adequate-args (M ∷ Ms) G ne with adequate M G (proj₂ (ne zero)) | adequate-args Ms G (λ j → ne (suc j))
 ... | ⟨ v , ⟨ e , _ ⟩ ⟩ | ⟨ vs , ⟨ evs , rs ⟩ ⟩ = ⟨ v ∷ vs , ⟨ e All₂.∷ evs , R ⟩ ⟩
   where
-  R : ∀ j d → d ∈ nthD (⟦ M ∷ Ms ⟧s _) j → 𝕍At j d (v ∷ vs)
+  R : ∀ j d
+    → d ∈ nthD (⟦ M ∷ Ms ⟧s _) j
+    → 𝕍At j d (v ∷ vs)
   R zero d d∈ = ⟨ refl , collect 𝕍 (d ∷ []) (λ { d' (here refl) → adequate M G d∈ }) e d (here refl) ⟩
   R (suc j) d d∈ = rs j d d∈

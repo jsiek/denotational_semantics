@@ -69,7 +69,9 @@ data _~_ : Src.State → Tgt.State → Set where
     → Src.eval M ρ₁ κ₁ ~ Tgt.eval (split M) ρ₂ κ₂
   ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
-env-ext : ∀ {Γ B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {v : Src.Val B} {w} → v ≈ w → EnvRel ρ₁ ρ₂
+env-ext : ∀ {Γ B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {v : Src.Val B} {w}
+  → v ≈ w
+  → EnvRel ρ₁ ρ₂
   → EnvRel (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext r er Z = r
 env-ext r er (S x) = er x
@@ -82,12 +84,16 @@ module _ {T : Type} (P : C4.Tm [] T) where
 
   tuple-next~ : ∀ {Γ Δ' Δ''} {vs : All Src.Val Δ'} {ws : All Tgt.Val Δ'} {Ms : All _ Δ''} {ρ₁ : Src.Env Γ}
       {ρ₂ : Tgt.Env Γ} {κ₁ : Src.Cont (tup (Δ' <>< Δ''))} {κ₂}
-    → All₂ _≈_ vs ws → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → All₂ _≈_ vs ws
+    → EnvRel ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (splits Ms) ρ₂ κ₂
   tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (Src.step s₁) s₂
   sim (eval~ {M = ` x} er k) = steps₁ refl (ret~ (er x) k)
   sim (eval~ {M = clos N Ms} er k) = steps (plus refl (refl ◅ refl ◅ refl ◅ ε)) (tuple-next~ [] er (closK k))
   sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))

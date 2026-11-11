@@ -73,7 +73,9 @@ open import FPC.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using (
 open import FPC.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using (db; code-＝; table-＝; map-db)
 
 private
- ≡→＝ : ∀ {X : Set} {x y : X} → x ≡ y → x ＝ y
+ ≡→＝ : ∀ {X : Set} {x y : X}
+   → x ≡ y
+   → x ＝ y
  ≡→＝ ≡-refl = refl
 
 {- The older definitions --------------------------------------------------------------}
@@ -90,15 +92,20 @@ older-lvl : ∀ {ss : List DSig} {s} (f : ss ∋ s) → length (older f) ≡ lvl
 older-lvl Z = ≡-refl
 older-lvl (S f) = older-lvl f
 
-olderAt : ∀ {Σ ss s} {ps : All (Code Σ) ss} → OlderDefs ps → (f : ss ∋ s) → Older (length (older f)) (lookup ps f)
+olderAt : ∀ {Σ ss s} {ps : All (Code Σ) ss}
+  → OlderDefs ps
+  → (f : ss ∋ s)
+  → Older (length (older f)) (lookup ps f)
 olderAt {ps = p ∷ ps} (o P., _) Z = o
 olderAt {ps = p ∷ ps} (_ P., os) (S f) = olderAt os f
 
 module _ {Σ : List DSig} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) where
 
   {- definition g of a part ps of the table, reached through r -}
-  table-at′ : ∀ {ss} (ps : All D ss) (r : ∀ {s} → ss ∋ s → Σ ∋ s) → (∀ {s} (g : ss ∋ s) → lvl (r g) ≡ lvl g)
-    → ∀ {s} (g : ss ∋ s) → tables cd ps (r g) ＝ cd (tables cd (dropᵗ g ps)) (lookup ps g)
+  table-at′ : ∀ {ss} (ps : All D ss) (r : ∀ {s} → ss ∋ s → Σ ∋ s)
+    → (∀ {s} (g : ss ∋ s) → lvl (r g) ≡ lvl g)
+    → ∀ {s} (g : ss ∋ s)
+    → tables cd ps (r g) ＝ cd (tables cd (dropᵗ g ps)) (lookup ps g)
   table-at′ (p ∷ ps) r rl Z = tables-yes cd p ps (r Z) (rl Z)
   table-at′ (p ∷ ps) r rl (S g) =
     tables-no cd p ps (r (S g)) (λ e → <-irrefl (≡-trans (≡-sym (rl (S g))) e) (lvl-< g))
@@ -108,7 +115,8 @@ module _ {Σ : List DSig} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s 
   table-at ps = table-at′ ps (λ x → x) (λ _ → ≡-refl)
 
   {- the definitions older than f mean the same without the newer ones -}
-  agree : ∀ {ss s} (ps : All D ss) (f : ss ∋ s) {s'} (g : Σ ∋ s') → lvl g < length (older f)
+  agree : ∀ {ss s} (ps : All D ss) (f : ss ∋ s) {s'} (g : Σ ∋ s')
+    → lvl g < length (older f)
     → tables cd ps g ＝ tables cd (dropᵗ f ps) g
   agree (p ∷ ps) Z g g< = tables-no cd p ps g (λ e → <-irrefl e g<)
   agree {_ ∷ ss} (p ∷ ps) (S f) g g< =
@@ -119,8 +127,14 @@ module _ {Σ : List DSig} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s 
 
 module _ {Σ : List DSig} {T T' : Table Σ} {k} (h : ∀ {s} (g : Σ ∋ s) → lvl g < k → T g ＝ T' g) where
 
-  tbl-cong : ∀ {Γ A} (M : Tm Σ Γ A) → Older k M → (ρ : ⟨ Envᵈ ⟩) → ⟦ M ⟧[ T ] · ρ ＝ ⟦ M ⟧[ T' ] · ρ
-  tbl-congs : ∀ {Γ Δ} (Ms : All (Tm Σ Γ) Δ) → Olders k Ms → (ρ : ⟨ Envᵈ ⟩) → ⟦ Ms ⟧s[ T ] · ρ ＝ ⟦ Ms ⟧s[ T' ] · ρ
+  tbl-cong : ∀ {Γ A} (M : Tm Σ Γ A)
+    → Older k M
+    → (ρ : ⟨ Envᵈ ⟩)
+    → ⟦ M ⟧[ T ] · ρ ＝ ⟦ M ⟧[ T' ] · ρ
+  tbl-congs : ∀ {Γ Δ} (Ms : All (Tm Σ Γ) Δ)
+    → Olders k Ms
+    → (ρ : ⟨ Envᵈ ⟩)
+    → ⟦ Ms ⟧s[ T ] · ρ ＝ ⟦ Ms ⟧s[ T' ] · ρ
   tbl-cong (` x) o ρ = refl
   tbl-cong (fun-ref f) o ρ = h f o
   tbl-cong (pair L M) (o₁ P., o₂) ρ = ap₂ (λ a b → pairᵈ · a · b) (tbl-cong L o₁ ρ) (tbl-cong M o₂ ρ)
@@ -143,7 +157,9 @@ module _ {Σ : List DSig} {T T' : Table Σ} {k} (h : ∀ {s} (g : Σ ∋ s) → 
   tbl-congs (M ∷ Ms) (o P., os) ρ = dfunext fe λ { zero → tbl-cong M o ρ ; (suc i) → happly (tbl-congs Ms os ρ) i }
 
 {- each definition of a program that hoist produces is its code with the whole table -}
-clos5-closed : ∀ {Σ} (ds : All (Code Σ) Σ) → OlderDefs ds → ∀ {s} (f : Σ ∋ s)
+clos5-closed : ∀ {Σ} (ds : All (Code Σ) Σ)
+  → OlderDefs ds
+  → ∀ {s} (f : Σ ∋ s)
   → tables code′ ds f ＝ code′ (tables code′ ds) (lookup ds f)
 clos5-closed ds od f =
   table-at code′ ds f

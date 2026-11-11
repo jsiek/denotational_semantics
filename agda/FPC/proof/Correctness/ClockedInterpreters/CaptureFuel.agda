@@ -38,11 +38,16 @@ evals-vars : ∀ ck {Γ Δ} (f : ∀ {C} → Δ ∋ C → Γ ∋ C) (ρ : T.Env 
 evals-vars ck {Δ = []} f ρ = refl
 evals-vars ck {Δ = _ ∷ Δ} f ρ rewrite evals-vars ck (λ x → f (S x)) ρ = refl
 
-run≈ : ∀ ck {Γ A} (M : Tm Γ A) {ρ₁ ρ₂} → All₂ _≈_ ρ₁ ρ₂
+run≈ : ∀ ck {Γ A} (M : Tm Γ A) {ρ₁ ρ₂}
+  → All₂ _≈_ ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (capture M))
-runs≈ : ∀ ck {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ₁ ρ₂} → All₂ _≈_ ρ₁ ρ₂
+runs≈ : ∀ ck {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ₁ ρ₂}
+  → All₂ _≈_ ρ₁ ρ₂
   → RelResult (All₂ _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (encs Ms))
-call≈ : ∀ ck {A B} {f : S.Val (A ⇒ B)} {g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S.call ck f v) (T.call ck g w)
+call≈ : ∀ ck {A B} {f : S.Val (A ⇒ B)} {g v w}
+  → f ≈ g
+  → v ≈ w
+  → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
 run≈ ck (` x) ρ = ret (lookup₂ ρ x)
 run≈ ck (lam N) {ρ₂ = ρ₂} ρ rewrite evals-vars ck (λ x → x) ρ₂ = ret (pack≈ (tab-lookup₂ ρ) (same refl))

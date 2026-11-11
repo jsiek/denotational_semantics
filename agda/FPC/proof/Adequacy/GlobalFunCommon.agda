@@ -64,8 +64,10 @@ older-lvl (S f) = older-lvl f
 module _ {Σ : List DSig} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s → 𝒫 Value) where
 
   {- definition g of a part ps of the table, reached through r -}
-  table-at′ : ∀ {ss} (ps : All D ss) (r : ∀ {s} → ss ∋ s → Σ ∋ s) → (∀ {s} (g : ss ∋ s) → lvl (r g) ≡ lvl g)
-    → ∀ {s} (g : ss ∋ s) → tables cd ps (r g) ≡ cd (tables cd (drop g ps)) (lookup ps g)
+  table-at′ : ∀ {ss} (ps : All D ss) (r : ∀ {s} → ss ∋ s → Σ ∋ s)
+    → (∀ {s} (g : ss ∋ s) → lvl (r g) ≡ lvl g)
+    → ∀ {s} (g : ss ∋ s)
+    → tables cd ps (r g) ≡ cd (tables cd (drop g ps)) (lookup ps g)
   table-at′ {_ ∷ ss} (p ∷ ps) r rl Z with lvl (r Z) ≟ length ss
   ... | yes _ = refl
   ... | no ne = ⊥-elim (ne (rl Z))
@@ -77,7 +79,8 @@ module _ {Σ : List DSig} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s 
   table-at ps = table-at′ ps (λ x → x) (λ _ → refl)
 
   {- the definitions older than f mean the same without the newer ones -}
-  agree : ∀ {ss s} (ps : All D ss) (f : ss ∋ s) {s'} (g : Σ ∋ s') → lvl g < length (older f)
+  agree : ∀ {ss s} (ps : All D ss) (f : ss ∋ s) {s'} (g : Σ ∋ s')
+    → lvl g < length (older f)
     → tables cd ps g ≡ tables cd (drop f ps) g
   agree {_ ∷ ss} (p ∷ ps) Z g g< with lvl g ≟ length ss
   ... | yes e = ⊥-elim (<-irrefl e g<)
@@ -89,19 +92,35 @@ module _ {Σ : List DSig} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s 
 {- The semantics in the table depends only on the references a term makes ---------}
 
 private
-  m1 : ∀ {g} → Good ⊤ (■ ∷ []) g → ∀ {D E} → D ⊆ E → g ⟨ D , ptt ⟩ ⊆ g ⟨ E , ptt ⟩
+  m1 : ∀ {g}
+    → Good ⊤ (■ ∷ []) g
+    → ∀ {D E}
+    → D ⊆ E
+    → g ⟨ D , ptt ⟩ ⊆ g ⟨ E , ptt ⟩
   m1 G D⊆ = lower (mono G _ _ ⟨ lift D⊆ , ptt ⟩)
-  m2 : ∀ {g} → Good ⊤ (■ ∷ ■ ∷ []) g → ∀ {D D' E E'} → D ⊆ D' → E ⊆ E' → g ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ g ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+  m2 : ∀ {g}
+    → Good ⊤ (■ ∷ ■ ∷ []) g
+    → ∀ {D D' E E'}
+    → D ⊆ D'
+    → E ⊆ E'
+    → g ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ g ⟨ D' , ⟨ E' , ptt ⟩ ⟩
   m2 G D⊆ E⊆ = lower (mono G _ _ ⟨ lift D⊆ , ⟨ lift E⊆ , ptt ⟩ ⟩)
   ⊆r : ∀ {D : 𝒫 Value} → D ⊆ D
   ⊆r _ z = z
 
 module _ {Σ : List DSig} where
 
-  tbl-mono : ∀ {Γ A} {T T' : Table Σ} {k} (M : Tm Σ Γ A) → ConT T → Older k M
-    → (∀ {s} (g : Σ ∋ s) → lvl g < k → T g ⊆ T' g) → ∀ ρ → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T' ] ρ
-  tbl-monos : ∀ {Γ Δ} {T T' : Table Σ} {k} (Ms : All (Tm Σ Γ) Δ) → ConT T → Olders k Ms
-    → (∀ {s} (g : Σ ∋ s) → lvl g < k → T g ⊆ T' g) → ∀ ρ
+  tbl-mono : ∀ {Γ A} {T T' : Table Σ} {k} (M : Tm Σ Γ A)
+    → ConT T
+    → Older k M
+    → (∀ {s} (g : Σ ∋ s) → lvl g < k → T g ⊆ T' g)
+    → ∀ ρ
+    → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T' ] ρ
+  tbl-monos : ∀ {Γ Δ} {T T' : Table Σ} {k} (Ms : All (Tm Σ Γ) Δ)
+    → ConT T
+    → Olders k Ms
+    → (∀ {s} (g : Σ ∋ s) → lvl g < k → T g ⊆ T' g)
+    → ∀ ρ
     → results-rel-pres _⊆_ (replicate (length Δ) ■) (⟦ Ms ⟧s[ T ] ρ) (⟦ Ms ⟧s[ T' ] ρ)
   tbl-mono (` x) cT o h ρ = ⊆r
   tbl-mono (fun-ref f) cT o h ρ = h f o
@@ -126,6 +145,9 @@ module _ {Σ : List DSig} where
   tbl-monos [] cT o h ρ = ptt
   tbl-monos (M ∷ Ms) cT ⟨ o , os ⟩ h ρ = ⟨ lift (tbl-mono M cT o h ρ) , tbl-monos Ms cT os h ρ ⟩
 
-  olderAt : ∀ {ss s} {ps : All (Code Σ) ss} → OlderDefs ps → (f : ss ∋ s) → Older (length (older f)) (lookup ps f)
+  olderAt : ∀ {ss s} {ps : All (Code Σ) ss}
+    → OlderDefs ps
+    → (f : ss ∋ s)
+    → Older (length (older f)) (lookup ps f)
   olderAt {ps = p ∷ ps} ⟨ o , _ ⟩ Z = o
   olderAt {ps = p ∷ ps} ⟨ _ , os ⟩ (S f) = olderAt os f

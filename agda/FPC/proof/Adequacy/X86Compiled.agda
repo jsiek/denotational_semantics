@@ -59,7 +59,9 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 Contains : ∀ {Σ} {D : DSig → Set} → (Table Σ → ∀ {s} → D s → 𝒫 Value) → All D Σ → Set
 Contains cd ds = ∀ {s} (f : _ ∋ s) → cd (tables cd ds) (lookup ds f) ⊆ tables cd ds f
 
-clos5-closed : ∀ {Σ} (ds : All (Code Σ) Σ) → OlderDefs ds → Contains code′ ds
+clos5-closed : ∀ {Σ} (ds : All (Code Σ) Σ)
+  → OlderDefs ds
+  → Contains code′ ds
 clos5-closed ds od f d d∈ =
   subst (d ∈_) (sym (table-at code′ ds f))
     (lower (ΛΛ-mono _ _ ⟨ (λ X X' X⊆ Y Y' Y⊆ → lift λ w w∈ →

@@ -47,7 +47,10 @@ open import FPC.Semantics.ScottDomains.Clos pt fe pe renaming (⟦_⟧ to ⟦_�
 Rel : Ctx → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇
 Rel Γ ρ ρ' = ∀ {C} (x : Γ ∋ C) → (ρ (idx x) ＝ ρ' (idx x)) × defined (ρ' (idx x))
 
-rel-ext : ∀ {Γ A ρ ρ'} (d : ⟨ 𝔻 ⟩) → defined d → Rel Γ ρ ρ' → Rel (A ∷ Γ) (d • ρ) (d • ρ')
+rel-ext : ∀ {Γ A ρ ρ'} (d : ⟨ 𝔻 ⟩)
+  → defined d
+  → Rel Γ ρ ρ'
+  → Rel (A ∷ Γ) (d • ρ) (d • ρ')
 rel-ext d p r Z = refl , p
 rel-ext d p r (S x) = r x
 
@@ -58,15 +61,24 @@ tab-fv f ρ Y Z = refl
 tab-fv f ρ Y (S x) = tab-fv (λ y → f (S y)) ρ (⟦ f Z ⟧₂ · ρ) x
 
 tab-defined : ∀ {Γ Δ} (f : ∀ {A} → Δ ∋ A → T.Tm Γ A) (ρ : ⟨ Env ⟩)
-  → (∀ {A} (x : Δ ∋ A) → defined (⟦ f x ⟧₂ · ρ)) → (i : Fin (length Δ)) → defined ((⟦ tab f ⟧s₂ · ρ) i)
+  → (∀ {A} (x : Δ ∋ A) → defined (⟦ f x ⟧₂ · ρ))
+  → (i : Fin (length Δ))
+  → defined ((⟦ tab f ⟧s₂ · ρ) i)
 tab-defined {Δ = A ∷ Δ} f ρ h zero = h Z
 tab-defined {Δ = A ∷ Δ} f ρ h (suc i) = tab-defined (λ y → f (S y)) ρ (λ x → h (S x)) i
 
-enc : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'} → Rel Γ ρ ρ' → ⟦ M ⟧ · ρ ＝ ⟦ capture M ⟧₂ · ρ'
-encs-ok : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Rel Γ ρ ρ' → ⟦ Ms ⟧s · ρ ＝ ⟦ encs Ms ⟧s₂ · ρ'
+enc : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'}
+  → Rel Γ ρ ρ'
+  → ⟦ M ⟧ · ρ ＝ ⟦ capture M ⟧₂ · ρ'
+encs-ok : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'}
+  → Rel Γ ρ ρ'
+  → ⟦ Ms ⟧s · ρ ＝ ⟦ encs Ms ⟧s₂ · ρ'
 {- a body under a binder -}
-under : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) {ρ ρ'} → Rel Γ ρ ρ'
-  → (d : ⟨ 𝔻 ⟩) → defined d → ⟦ N ⟧ · (d • ρ) ＝ ⟦ capture N ⟧₂ · (d • ρ')
+under : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) {ρ ρ'}
+  → Rel Γ ρ ρ'
+  → (d : ⟨ 𝔻 ⟩)
+  → defined d
+  → ⟦ N ⟧ · (d • ρ) ＝ ⟦ capture N ⟧₂ · (d • ρ')
 
 enc (` x) r = pr₁ (r x)
 enc {Γ} (lam N) {ρ} {ρ'} r =

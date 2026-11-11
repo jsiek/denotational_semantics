@@ -36,7 +36,10 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst
 Rel : Ctx → Env Value → Env Value → Set
 Rel Γ ρ ρ' = ∀ {C} (x : Γ ∋ C) → ρ (idx x) ≃ ρ' (idx x) × nonempty (ρ' (idx x))
 
-ext : ∀ {Γ A ρ ρ' X} → nonempty X → Rel Γ ρ ρ' → Rel (A ∷ Γ) (X • ρ) (X • ρ')
+ext : ∀ {Γ A ρ ρ' X}
+  → nonempty X
+  → Rel Γ ρ ρ'
+  → Rel (A ∷ Γ) (X • ρ) (X • ρ')
 ext ne r Z = ⟨ ≃-refl , ne ⟩
 ext ne r (S x) = r x
 
@@ -46,14 +49,20 @@ tab-fv : ∀ {Γ Δ C} (f : ∀ {A} → Δ ∋ A → T.Tm Γ A) ρ (x : Δ ∋ C
 tab-fv f ρ Z = refl
 tab-fv f ρ (S x) = tab-fv (λ y → f (S y)) ρ x
 
-tab-ne : ∀ {Γ Δ} (f : ∀ {A} → Δ ∋ A → T.Tm Γ A) ρ → (∀ {A} (x : Δ ∋ A) → nonempty (⟦ f x ⟧₂ ρ))
-  → ∀ i → nonempty (nthD (⟦ tab f ⟧s₂ ρ) i)
+tab-ne : ∀ {Γ Δ} (f : ∀ {A} → Δ ∋ A → T.Tm Γ A) ρ
+  → (∀ {A} (x : Δ ∋ A) → nonempty (⟦ f x ⟧₂ ρ))
+  → ∀ i
+  → nonempty (nthD (⟦ tab f ⟧s₂ ρ) i)
 tab-ne {Δ = A ∷ Δ} f ρ ne zero = ne Z
 tab-ne {Δ = A ∷ Δ} f ρ ne (suc i) = tab-ne (λ y → f (S y)) ρ (λ x → ne (S x)) i
 
-enc : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'} → Rel Γ ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ'
-encs-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Rel Γ ρ ρ'
-  → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ encs Ms ⟧s₂ ρ') i
+enc : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'}
+  → Rel Γ ρ ρ'
+  → ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ'
+encs-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'}
+  → Rel Γ ρ ρ'
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ encs Ms ⟧s₂ ρ') i
 
 enc (` x) r = proj₁ (r x)
 enc (lam N) {ρ} {ρ'} r =

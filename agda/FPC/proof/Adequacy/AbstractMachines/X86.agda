@@ -46,7 +46,8 @@ open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_
 open import Relation.Binary.PropositionalEquality using (sym; subst)
 open import Relation.Nullary using (¬_)
 
-adequacy : ∀ {A} (P : Program A) {d} → d ∈ ⟦ P ⟧ₜ
+adequacy : ∀ {A} (P : Program A) {d}
+  → d ∈ ⟦ P ⟧ₜ
   → Σ[ v ∈ Val (Program.table P) A ] Terminates (sem P) (obs v) × LR.𝕍 (Program.defs P) d v
 adequacy (program ds b) = LR.adequacy ds b
 

@@ -63,7 +63,9 @@ open import FPC.proof.Adequacy.ScottDomains.X86Compiled pt fe pe using (compiled
 open exit-truncations pt using (exit-truncation)
 
 private
- just-inj : ∀ {X : 𝓤₀ ̇ } {a b : X} → just a ≡ just b → a ≡ b
+ just-inj : ∀ {X : 𝓤₀ ̇ } {a b : X}
+   → just a ≡ just b
+   → a ≡ b
  just-inj ≡-refl = ≡-refl
 
 module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ)
@@ -82,7 +84,9 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
    returns? (ret w) = inl (w , ≡-refl)
 
    {- a program whose meaning is defined returns at some clock -}
-   terminates : ∀ {A} (b : Body Σ A (entry [])) → defined ⟦ program ds b ⟧ₜ → Σ ck ꞉ ℕ , Σ w ꞉ Val A , main b ck ≡ ret w
+   terminates : ∀ {A} (b : Body Σ A (entry []))
+     → defined ⟦ program ds b ⟧ₜ
+     → Σ ck ꞉ ℕ , Σ w ꞉ Val A , main b ck ≡ ret w
    terminates b q =
      exit-truncation (λ ck → Σ w ꞉ Val _ , main b ck ≡ ret w) (λ ck → returns? (main b ck))
        (∥∥-functor (λ e → P.proj₁ (LR.run⇓ e) , _ , P.proj₂ (LR.run⇓ e) (P.proj₁ (LR.run⇓ e)) ≤-refl)
@@ -92,53 +96,74 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
    sound-at b ck = S.soundness ds closed b ck
 
   const-iff : ∀ {A} (b : Body Σ A (entry [])) (B : Base) (k : base-rep B)
-    → (⟦ program ds b ⟧ₜ ＝ const B k → Terminates (sem (program ds b)) (o-const B k))
-    × (Terminates (sem (program ds b)) (o-const B k) → ⟦ program ds b ⟧ₜ ＝ const B k)
+    → (  ⟦ program ds b ⟧ₜ ＝ const B k
+       → Terminates (sem (program ds b)) (o-const B k))
+    × (  Terminates (sem (program ds b)) (o-const B k)
+       → ⟦ program ds b ⟧ₜ ＝ const B k)
   const-iff b B k = to , from
    where
-    to : ⟦ program ds b ⟧ₜ ＝ const B k → Terminates (sem (program ds b)) (o-const B k)
+    to : ⟦ program ds b ⟧ₜ ＝ const B k
+      → Terminates (sem (program ds b)) (o-const B k)
     to e = ck P., ≡-trans (≡-cong (outcome obs) ev) (≡-cong just (S.𝒱-const ds closed w (go (main b ck) (sound-at b ck) ev ∙ e)))
      where
       T' = terminates b (transport defined (e ⁻¹) (const-defined B k))
       ck = pr₁ T'
       w = pr₁ (pr₂ T')
       ev = pr₂ (pr₂ T')
-      go : (r : Result (Val _)) → Holds (λ v → S.𝒱 ds v ＝ ⟦ program ds b ⟧ₜ) r → r ≡ ret w → S.𝒱 ds w ＝ ⟦ program ds b ⟧ₜ
+      go : (r : Result (Val _))
+        → Holds (λ v → S.𝒱 ds v ＝ ⟦ program ds b ⟧ₜ) r
+        → r ≡ ret w
+        → S.𝒱 ds w ＝ ⟦ program ds b ⟧ₜ
       go timeout timeout ()
       go error () e'
       go (ret _) (ret s) ≡-refl = s
-    from : Terminates (sem (program ds b)) (o-const B k) → ⟦ program ds b ⟧ₜ ＝ const B k
+    from : Terminates (sem (program ds b)) (o-const B k)
+      → ⟦ program ds b ⟧ₜ ＝ const B k
     from t = go (main b (P.proj₁ t)) (sound-at b (P.proj₁ t)) (P.proj₂ t)
      where
-      go : (r : Result (Val _)) → Holds (λ v → S.𝒱 ds v ＝ ⟦ program ds b ⟧ₜ) r → outcome obs r ≡ just (o-const B k)
-         → ⟦ program ds b ⟧ₜ ＝ const B k
+      go : (r : Result (Val _))
+        → Holds (λ v → S.𝒱 ds v ＝ ⟦ program ds b ⟧ₜ) r
+        → outcome obs r ≡ just (o-const B k)
+        → ⟦ program ds b ⟧ₜ ＝ const B k
       go timeout timeout ()
       go error () e
       go (ret w) (ret s) e = s ⁻¹ ∙ S.const-𝒱 ds closed w (just-inj e)
 
   diverges-iff : ∀ {A} (b : Body Σ A (entry []))
-    → (Diverges (sem (program ds b)) → ⟦ program ds b ⟧ₜ ＝ ⊥𝔻) × (⟦ program ds b ⟧ₜ ＝ ⊥𝔻 → Diverges (sem (program ds b)))
+    → (  Diverges (sem (program ds b))
+       → ⟦ program ds b ⟧ₜ ＝ ⊥𝔻)
+    × (  ⟦ program ds b ⟧ₜ ＝ ⊥𝔻
+       → Diverges (sem (program ds b)))
   diverges-iff b = to , from
    where
     ret≢timeout : ∀ {A} {w : Val A} → ¬ (_≡_ {A = Result (Val A)} (ret w) timeout)
     ret≢timeout ()
-    to : Diverges (sem (program ds b)) → ⟦ program ds b ⟧ₜ ＝ ⊥𝔻
+    to : Diverges (sem (program ds b))
+      → ⟦ program ds b ⟧ₜ ＝ ⊥𝔻
     to div = undefined-⊥ ⟦ program ds b ⟧ₜ (λ q →
       let T' = terminates b q in ret≢timeout (≡-trans (≡-sym (pr₂ (pr₂ T'))) (div (pr₁ T'))))
-    from : ⟦ program ds b ⟧ₜ ＝ ⊥𝔻 → Diverges (sem (program ds b))
+    from : ⟦ program ds b ⟧ₜ ＝ ⊥𝔻
+      → Diverges (sem (program ds b))
     from e ck = go (main b ck) (sound-at b ck)
      where
-      go : (r : Result (Val _)) → Holds (λ v → S.𝒱 ds v ＝ ⟦ program ds b ⟧ₜ) r → r ≡ timeout
+      go : (r : Result (Val _))
+        → Holds (λ v → S.𝒱 ds v ＝ ⟦ program ds b ⟧ₜ) r
+        → r ≡ timeout
       go timeout timeout = ≡-refl
       go error ()
       go (ret w) (ret s) = 𝟘-elim (⊥-undefined (transport defined (s ∙ e) (S.𝒱-defined ds closed w)))
 
 {- the programs that the compiler produces -}
 x86-const-iff : ∀ {A} (M : Tm [] A) (B : Base) (k : base-rep B)
-  → (⟦ compile M ⟧ₜ ＝ const B k → Terminates (sem (compile M)) (o-const B k))
-  × (Terminates (sem (compile M)) (o-const B k) → ⟦ compile M ⟧ₜ ＝ const B k)
+  → (  ⟦ compile M ⟧ₜ ＝ const B k
+     → Terminates (sem (compile M)) (o-const B k))
+  × (  Terminates (sem (compile M)) (o-const B k)
+     → ⟦ compile M ⟧ₜ ＝ const B k)
 x86-const-iff M = const-iff (Program.defs (compile M)) (compiled M) (Program.main (compile M))
 
 x86-diverges-iff : ∀ {A} (M : Tm [] A)
-  → (Diverges (sem (compile M)) → ⟦ compile M ⟧ₜ ＝ ⊥𝔻) × (⟦ compile M ⟧ₜ ＝ ⊥𝔻 → Diverges (sem (compile M)))
+  → (  Diverges (sem (compile M))
+     → ⟦ compile M ⟧ₜ ＝ ⊥𝔻)
+  × (  ⟦ compile M ⟧ₜ ＝ ⊥𝔻
+     → Diverges (sem (compile M)))
 x86-diverges-iff M = diverges-iff (Program.defs (compile M)) (compiled M) (Program.main (compile M))

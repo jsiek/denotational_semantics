@@ -54,17 +54,28 @@ data Ext {Σ R} : ∀ {Bs Bs'} → Bs ⊑ Bs' → Blocks Σ R Bs → Blocks Σ R
   there : ∀ {Bs Bs' Δ g} {bs : Blocks Σ R Bs} {bs' : Blocks Σ R Bs'} {t : Tail Σ R Bs' Δ} → Ext g bs bs'
     → Ext (there⊑ g) bs (bs' ▷ t)
 
-ext-trans : ∀ {Σ R As Bs Cs} {g : As ⊑ Bs} {g' : Bs ⊑ Cs} {as : Blocks Σ R As} {bs cs}
-  → Ext g as bs → Ext g' bs cs → Ext (⊑-trans g g') as cs
+ext-trans : ∀ {Σ R As Bs Cs}
+  → {g : As ⊑ Bs}
+  → {g' : Bs ⊑ Cs}
+  → ∀ {as : Blocks Σ R As} {bs cs}
+  → Ext g as bs
+  → Ext g' bs cs
+  → Ext (⊑-trans g g') as cs
 ext-trans x here = x
 ext-trans x (there y) = there (ext-trans x y)
 
-ext-block : ∀ {Σ R Bs Bs' Δ} {g : Bs ⊑ Bs'} {bs : Blocks Σ R Bs} {bs'} → Ext g bs bs' → (l : Bs ∋ Δ)
+ext-block : ∀ {Σ R Bs Bs' Δ}
+  → {g : Bs ⊑ Bs'}
+  → ∀ {bs : Blocks Σ R Bs} {bs'}
+  → Ext g bs bs'
+  → (l : Bs ∋ Δ)
   → block bs' (⊑-∋ g l) ≡ block bs l
 ext-block here l = refl
 ext-block (there x) l = ext-block x l
 
-grows-a : ∀ {Σ R Bs Δ Δ' A} (e : Imp.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ R Bs (A ∷ Δ')) bs
+grows-a : ∀ {Σ R Bs Δ Δ' A} (e : Imp.Exp Σ Δ A)
+  → (p : Δ' ⊑ Δ)
+  → ∀ (k : Tail Σ R Bs (A ∷ Δ')) bs
   → Ext (Out.grows (explicate-assign e p k bs)) bs (Out.made (explicate-assign e p k bs))
 grows-a (simple s) p k bs = here
 grows-a (assign e₁ e₂) p k bs = ext-trans (grows-a e₂ (there⊑ p) k bs) (grows-a e₁ here⊑ _ _)
@@ -126,46 +137,70 @@ module Sim {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)
     κ₁ : I.Cont Σ A
 
   {- the tail k, run after the assignment, does what κ₁ does -}
-  ctl : ∀ {Bs Δ} {φ : I.Frame Σ Δ} {k : Tail Σ R Bs (A ∷ Δ)} {bs} {κ₂} → Ctl φ κ₁ k bs κ₂ → ∀ v
+  ctl : ∀ {Bs Δ} {φ : I.Frame Σ Δ} {k : Tail Σ R Bs (A ∷ Δ)} {bs} {κ₂}
+    → Ctl φ κ₁ k bs κ₂
+    → ∀ v
     → Σ[ s₁ ∈ I.State Σ ] I.cont ds v κ₁ ≡ next s₁ × Σ[ j ∈ ℕ ] Reach L₂ (Match j) s₁ (G.exec k (v ∷ φ) bs κ₂)
   ctl (asgT r) v = _ , refl , _ , _ , ε , tail~ r
   ctl (asgA c) v = _ , refl , _ , _ , ε , asg~ c
   ctl (jmp {φ = φ} {κ₂ = κ₂} c eq) v with ctl c v
   ... | s₁ , e , j , t , σ , m = s₁ , e , j , t , cong (λ b → next (G.go ds₂ b (v ∷ φ) κ₂)) eq ◅ σ , m
 
-  cont≈ : ∀ {κ₂} → κ₁ ≈ κ₂ → ∀ v → G.step ds₂ s₂ ≡ G.cont ds₂ v κ₂ → Ans i (I.cont ds v κ₁) s₂
+  cont≈ : ∀ {κ₂}
+    → κ₁ ≈ κ₂
+    → ∀ v
+    → G.step ds₂ s₂ ≡ G.cont ds₂ v κ₂
+    → Ans i (I.cont ds v κ₁) s₂
   cont≈ halt v st = stops st
   cont≈ (retK r) v st = cont≈ r v st
   cont≈ (seqK c) v st with ctl c v
   ... | _ , e , _ , rch = answers-at e (after≺ st rch)
 
-  call≈ : ∀ {A'} (f : I.Val Σ (A' ⇒ A)) w {κ'} → G.step ds₂ s₂ ≡ G.enter ds₂ f w κ' → κ₁ ≈ κ'
+  call≈ : ∀ {A'} (f : I.Val Σ (A' ⇒ A)) w {κ'}
+    → G.step ds₂ s₂ ≡ G.enter ds₂ f w κ'
+    → κ₁ ≈ κ'
     → Ans i (I.res ds (I.call f w) κ₁) s₂
   call≈ (I.pack (I.code g) e) w st r =
     steps₁≺ (trans st (cong (λ d → next (G.exec (Body.start d) _ (Body.blocks d) _)) (lookup-map explicate-body ds g))) (tail~ r)
 
-  res-t : ∀ {κ₂} → κ₁ ≈ κ₂ → ∀ r → G.step ds₂ s₂ ≡ G.retn ds₂ κ₂ r → Ans i (I.res ds r κ₁) s₂
+  res-t : ∀ {κ₂}
+    → κ₁ ≈ κ₂
+    → ∀ r
+    → G.step ds₂ s₂ ≡ G.retn ds₂ κ₂ r
+    → Ans i (I.res ds r κ₁) s₂
   res-t r (I.value v) st = cont≈ r v st
   res-t r (I.call f w) st = call≈ f w st (retK r)
 
-  res-a : ∀ {Bs Δ Δ'} {p : Δ' ⊑ Δ} {φ} {k : Tail Σ R Bs (A ∷ Δ')} {bs κ₂} → Ctl (pop p φ) κ₁ k bs κ₂
-    → ∀ r → G.step ds₂ s₂ ≡ G.assign ds₂ p φ k bs κ₂ r → Ans i (I.res ds r κ₁) s₂
+  res-a : ∀ {Bs Δ Δ'}
+    → {p : Δ' ⊑ Δ}
+    → ∀ {φ} {k : Tail Σ R Bs (A ∷ Δ')} {bs κ₂}
+    → Ctl (pop p φ) κ₁ k bs κ₂
+    → ∀ r
+    → G.step ds₂ s₂ ≡ G.assign ds₂ p φ k bs κ₂ r
+    → Ans i (I.res ds r κ₁) s₂
   res-a c (I.value v) st with ctl c v
   ... | _ , e , _ , rch = answers-at e (after≺ st rch)
   res-a c (I.call f w) st = call≈ f w st (seqK c)
 
   {- a case: both machines take the branch of the injection -}
   branch : ∀ {j₁ j₂ A' B'} (v : I.Val Σ (A' ⊹ B')) {f₁ : I.Val Σ A' → I.State Σ} {f₂ : I.Val Σ B' → I.State Σ}
-    {g₁ : I.Val Σ A' → G.State Σ} {g₂ : I.Val Σ B' → G.State Σ}
-    → G.step ds₂ s₂ ≡ next (I.choose v g₁ g₂) → (∀ u → Match j₁ (f₁ u) (g₁ u)) → (∀ u → Match j₂ (f₂ u) (g₂ u))
+      {g₁ : I.Val Σ A' → G.State Σ} {g₂ : I.Val Σ B' → G.State Σ}
+    → G.step ds₂ s₂ ≡ next (I.choose v g₁ g₂)
+    → (∀ u → Match j₁ (f₁ u) (g₁ u))
+    → (∀ u → Match j₂ (f₂ u) (g₂ u))
     → Ans i (next (I.choose v f₁ f₂)) s₂
   branch (I.inl u) st m₁ m₂ = steps₁≺ st (m₁ u)
   branch (I.inr u) st m₁ m₂ = steps₁≺ st (m₂ u)
 
-  at : ∀ {Δ} {b b' : Blk Σ R Δ} {j s₁ φ κ₂} → b ≡ b' → Match j s₁ (G.go ds₂ b' φ κ₂) → Match j s₁ (G.go ds₂ b φ κ₂)
+  at : ∀ {Δ} {b b' : Blk Σ R Δ} {j s₁ φ κ₂}
+    → b ≡ b'
+    → Match j s₁ (G.go ds₂ b' φ κ₂)
+    → Match j s₁ (G.go ds₂ b φ κ₂)
   at refl m = m
 
-  sim : ∀ {i s₁ s₂} → Match i s₁ s₂ → Ans i (I.step ds s₁) s₂
+  sim : ∀ {i s₁ s₂}
+    → Match i s₁ s₂
+    → Ans i (I.step ds s₁) s₂
   sim (tail~ {e = simple s} {φ = φ} r) = res-t r (I.run s φ) refl
   sim (asg~ {e = simple s} {φ = φ} c) = res-a c (I.run s φ) refl
   sim (tail~ {e = assign e₁ e₂} r) = stutters ≤-refl (asg~ (asgT r))

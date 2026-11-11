@@ -35,21 +35,31 @@ data Safe {A : Set} : Result A → Set where
   timeout : Safe timeout
   ret : ∀ v → Safe (ret v)
 
-bind-safe : ∀ {A B : Set} {r : Result A} {f : A → Result B} → Safe r → (∀ v → Safe (f v)) → Safe (r >>= f)
+bind-safe : ∀ {A B : Set} {r : Result A} {f : A → Result B}
+  → Safe r
+  → (∀ v → Safe (f v))
+  → Safe (r >>= f)
 bind-safe timeout h = timeout
 bind-safe (ret v) h = h v
 
 {- a semantics that is safe at every clock, and observes no value as an
    error, never terminates with o-error -}
-no-error : ∀ {V} {obs : V → Obs} {r : ℕ → Result V} → (∀ v → Answer (obs v)) → (∀ ck → Safe (r ck))
+no-error : ∀ {V} {obs : V → Obs} {r : ℕ → Result V}
+  → (∀ v → Answer (obs v))
+  → (∀ ck → Safe (r ck))
   → ¬ Terminates (semantics V obs r) o-error
 no-error {obs = obs} {r} ans safe (ck , t) = go (safe ck) t
   where
-  go : ∀ {x} → Safe x → outcome obs x ≡ just o-error → _
+  go : ∀ {x}
+    → Safe x
+    → outcome obs x ≡ just o-error
+    → _
   go timeout ()
   go (ret v) e = ans v (just-inj e)
     where
-    just-inj : ∀ {a b : Obs} → just a ≡ just b → a ≡ b
+    just-inj : ∀ {a b : Obs}
+      → just a ≡ just b
+      → a ≡ b
     just-inj refl = refl
 
 module Ans (C : Ctx → Type → Type → Set) where
@@ -65,7 +75,9 @@ module Ans (C : Ctx → Type → Type → Set) where
   obs-answer (fold v) = obs-answer v
 
   either-safe : ∀ {A B X} (u : Val (A ⊹ B)) {f : Val A → Result X} {g : Val B → Result X}
-    → (∀ v → Safe (f v)) → (∀ v → Safe (g v)) → Safe (either u f g)
+    → (∀ v → Safe (f v))
+    → (∀ v → Safe (g v))
+    → Safe (either u f g)
   either-safe (inl v) hf hg = hf v
   either-safe (inr v) hf hg = hg v
 

@@ -63,11 +63,23 @@ open Runs step public
 
 {- monotonicity of an operator in its operands -}
 private
-  m1 : ∀ {g} → Good ⊤ (■ ∷ []) g → ∀ {D E} → D ⊆ E → g ⟨ D , ptt ⟩ ⊆ g ⟨ E , ptt ⟩
+  m1 : ∀ {g}
+    → Good ⊤ (■ ∷ []) g
+    → ∀ {D E}
+    → D ⊆ E
+    → g ⟨ D , ptt ⟩ ⊆ g ⟨ E , ptt ⟩
   m1 G D⊆ = lower (mono G _ _ ⟨ lift D⊆ , ptt ⟩)
-  m2l : ∀ {g} → Good ⊤ (■ ∷ ■ ∷ []) g → ∀ X {D E} → D ⊆ E → g ⟨ D , ⟨ X , ptt ⟩ ⟩ ⊆ g ⟨ E , ⟨ X , ptt ⟩ ⟩
+  m2l : ∀ {g}
+    → Good ⊤ (■ ∷ ■ ∷ []) g
+    → ∀ X {D E}
+    → D ⊆ E
+    → g ⟨ D , ⟨ X , ptt ⟩ ⟩ ⊆ g ⟨ E , ⟨ X , ptt ⟩ ⟩
   m2l G X D⊆ = lower (mono G _ _ ⟨ lift D⊆ , ⟨ lift (λ _ z → z) , ptt ⟩ ⟩)
-  m2r : ∀ {g} → Good ⊤ (■ ∷ ■ ∷ []) g → ∀ X {D E} → D ⊆ E → g ⟨ X , ⟨ D , ptt ⟩ ⟩ ⊆ g ⟨ X , ⟨ E , ptt ⟩ ⟩
+  m2r : ∀ {g}
+    → Good ⊤ (■ ∷ ■ ∷ []) g
+    → ∀ X {D E}
+    → D ⊆ E
+    → g ⟨ X , ⟨ D , ptt ⟩ ⟩ ⊆ g ⟨ X , ⟨ E , ptt ⟩ ⟩
   m2r G X D⊆ = lower (mono G _ _ ⟨ lift (λ _ z → z) , ⟨ lift D⊆ , ptt ⟩ ⟩)
   ⊆r : ∀ {D : 𝒫 Value} → D ⊆ D
   ⊆r _ z = z
@@ -121,13 +133,17 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 𝒮 (eval M γ κ) = 𝒦 κ (⟦ M ⟧ (𝓔 γ))
 𝒮 (ret v κ) = 𝒦 κ (𝒱 v)
 
-𝒦-mono : ∀ {A} (κ : Cont A) {D E} → D ⊆ E → 𝒦 κ D ⊆ 𝒦 κ E
+𝒦-mono : ∀ {A} (κ : Cont A) {D E}
+  → D ⊆ E
+  → 𝒦 κ D ⊆ 𝒦 κ E
 𝒦-mono halt D⊆ = D⊆
 𝒦-mono (appL M γ κ) D⊆ = 𝒦-mono κ (m2l ⋆-good (⟦ M ⟧ (𝓔 γ)) D⊆)
 𝒦-mono (appR f κ) D⊆ = 𝒦-mono κ (m2r ⋆-good (𝒱 f) D⊆)
 𝒦-mono (tupK vs Ms γ κ) D⊆ = 𝒦-mono κ (𝒯L-mono _ _ (rev-mono vs ⟨ D⊆ , ⊆L-refl _ ⟩))
   where
-  rev-mono : ∀ {Δ'} (vs : All Val Δ') {Ds Es} → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
+  rev-mono : ∀ {Δ'} (vs : All Val Δ') {Ds Es}
+    → Ds ⊆L Es
+    → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
   rev-mono [] s = s
   rev-mono (v ∷ vs) s = rev-mono vs ⟨ ⊆r , s ⟩
 𝒦-mono (getK i κ) D⊆ = 𝒦-mono κ (m1 (proj-good (pos i)) D⊆)
@@ -190,7 +206,9 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝓔-lookup (v ∷ γ) (S x) = 𝓔-lookup γ x
 
 {- the denotation of a value observed as a constant holds it -}
-𝒱-const : ∀ {A B} {k} (v : Val A) → obs v ≡ o-const B k → dconst k ∈ 𝒱 v
+𝒱-const : ∀ {A B} {k} (v : Val A)
+  → obs v ≡ o-const B k
+  → dconst k ∈ 𝒱 v
 𝒱-const (const k) refl = ⟨ refl , refl ⟩
 𝒱-const (fold v) e = 𝒱-const v e
 𝒱-const (clo N γ) ()
@@ -221,10 +239,15 @@ tuple-next-𝒮 vs (M ∷ Ms) γ κ d d∈ = d∈
   len (N ∷ Ns) = cong N.suc (len Ns)
 ... | refl = ⟨ refl , ⟨ at (M ∷ Ms) i a , all (M ∷ Ms) ne ⟩ ⟩
   where
-  at : ∀ {Δ} (Ns : All (Tm Γ) Δ) (i : Fin (length Δ)) → At i (⟦ Ns ⟧* ρ) d → d ∈ nthD (⟦ Ns ⟧s ρ) i
+  at : ∀ {Δ} (Ns : All (Tm Γ) Δ) (i : Fin (length Δ))
+    → At i (⟦ Ns ⟧* ρ) d
+    → d ∈ nthD (⟦ Ns ⟧s ρ) i
   at (N ∷ Ns) zero ⟨ _ , d∈ ⟩ = d∈
   at (N ∷ Ns) (suc i) a = at Ns i a
-  all : ∀ {Δ} (Ns : All (Tm Γ) Δ) → AllNE (⟦ Ns ⟧* ρ) → ∀ i → nonempty (nthD (⟦ Ns ⟧s ρ) i)
+  all : ∀ {Δ} (Ns : All (Tm Γ) Δ)
+    → AllNE (⟦ Ns ⟧* ρ)
+    → ∀ i
+    → nonempty (nthD (⟦ Ns ⟧s ρ) i)
   all (N ∷ Ns) ⟨ ne , _ ⟩ zero = ne
   all (N ∷ Ns) ⟨ _ , nes ⟩ (suc i) = all Ns nes i
 𝒯L-args Ms ρ (dconst k) ()
@@ -235,14 +258,18 @@ tuple-next-𝒮 vs (M ∷ Ms) γ κ d d∈ = d∈
 𝒯L-args Ms ρ (left d) ()
 𝒯L-args Ms ρ (right d) ()
 
-At-lookup : ∀ {Δ A} (vs : All Val Δ) (i : Δ ∋ A) {d} → d ∈ 𝒱 (lookup vs i) → At (pos i) (𝒱s vs) d
+At-lookup : ∀ {Δ A} (vs : All Val Δ) (i : Δ ∋ A) {d}
+  → d ∈ 𝒱 (lookup vs i)
+  → At (pos i) (𝒱s vs) d
 At-lookup (v ∷ vs) Z d∈ = ⟨ len𝒱s vs , d∈ ⟩
 At-lookup (v ∷ vs) (S i) d∈ = At-lookup vs i d∈
 
 prim-⊆ : ∀ p n m → 𝒱 (δᵀ p n m) ⊆ primD p ⟨ ℬ Int n ptt , ⟨ ℬ Int m ptt , ptt ⟩ ⟩
 prim-⊆ p n m d d∈ = ⟨ n , ⟨ m , ⟨ ⟨ refl , refl ⟩ , ⟨ ⟨ refl , refl ⟩ , out-≡ p d d∈ ⟩ ⟩ ⟩ ⟩
   where
-  out-≡ : ∀ p d → d ∈ 𝒱 (δᵀ p n m) → d ≡ dout (δ p n m)
+  out-≡ : ∀ p d
+    → d ∈ 𝒱 (δᵀ p n m)
+    → d ≡ dout (δ p n m)
   out-≡ sub (dconst k) ⟨ refl , refl ⟩ = refl
   out-≡ eq d d∈ with does (n ≟ℤ m)
   out-≡ eq (left ⟨⟩) d∈ | true = refl
@@ -255,7 +282,8 @@ prim-⊆ p n m d d∈ = ⟨ n , ⟨ m , ⟨ ⟨ refl , refl ⟩ , ⟨ ⟨ refl ,
 {- Steps shrink the denotation of the state --------------------------------}
 
 {- a body, run on a value, uses a finite part of its denotation -}
-body-in : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) (γ : Env Γ) (v : Val A) d → d ∈ ⟦ N ⟧ (𝓔 (v ∷ γ))
+body-in : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) (γ : Env Γ) (v : Val A) d
+  → d ∈ ⟦ N ⟧ (𝓔 (v ∷ γ))
   → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ 𝒱 v × d ∈ ⟦ N ⟧ (mem V • 𝓔 γ)
 body-in N γ v d d∈ = fin₁ (ok N) (𝓔-ne γ) (𝒱-ne v) d d∈
 
@@ -264,7 +292,9 @@ app-β : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) (γ : Env Γ) (w : Val A)
 app-β N γ w d d∈ with body-in N γ w d d∈
 ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con w) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
 
-step-⊆ : ∀ s {s'} → step s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
+step-⊆ : ∀ s {s'}
+  → step s ≡ next s'
+  → 𝒮 s' ⊆ 𝒮 s
 step-⊆ (eval (` x) γ κ) refl = 𝒦-mono κ (𝓔-lookup γ x)
 step-⊆ (eval (lam N) γ κ) refl = ⊆r
 step-⊆ (eval (app L M) γ κ) refl = ⊆r
@@ -303,14 +333,18 @@ step-⊆ (ret v (letK N γ κ)) refl = 𝒦-mono κ (app-β N γ v)
 step-⊆ (ret v (foldK κ)) refl = ⊆r
 step-⊆ (ret (fold v) (unfoldK κ)) refl = ⊆r
 
-↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
+↠-⊆ : ∀ {s t}
+  → s ↠ t
+  → 𝒮 t ⊆ 𝒮 s
 ↠-⊆ done = ⊆r
 ↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
 
 {- Soundness ------------------------------------------------------------------}
 
 {- the only final state returns a value to halt -}
-halts : ∀ s {o} → step s ≡ stop o → Σ[ A ∈ Type ] Σ[ v ∈ Val A ] s ≡ ret v halt × o ≡ obs v
+halts : ∀ s {o}
+  → step s ≡ stop o
+  → Σ[ A ∈ Type ] Σ[ v ∈ Val A ] s ≡ ret v halt × o ≡ obs v
 halts (eval (` x) γ κ) ()
 halts (eval (lam N) γ κ) ()
 halts (eval (app L M) γ κ) ()
@@ -341,7 +375,8 @@ halts (ret (fold v) (unfoldK κ)) ()
 
 {- a program that terminates with o returns a value observed as o, which
    denotes a part of the program's denotation -}
-soundness : ∀ {A} (M : Tm [] A) {o} → Terminates (sem M) o
+soundness : ∀ {A} (M : Tm [] A) {o}
+  → Terminates (sem M) o
   → Σ[ B ∈ Type ] Σ[ v ∈ Val B ] o ≡ obs v × 𝒱 v ⊆ ⟦ M ⟧ ρ₀
 soundness M ⟨ s , ⟨ σ , fin ⟩ ⟩ with halts s fin
 ... | ⟨ B , ⟨ v , ⟨ refl , refl ⟩ ⟩ ⟩ = ⟨ B , ⟨ v , ⟨ refl , ↠-⊆ (star→↠ σ) ⟩ ⟩ ⟩

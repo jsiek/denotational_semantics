@@ -61,7 +61,10 @@ Same : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇
 Same d e = ((B : Base) (c : base-rep B) → (d ＝ const B c) ⇔ (e ＝ const B c)) × (defined d ⇔ defined e)
 
 {- Same d e, and e ＝ e' -}
-then : (d e e' : ⟨ 𝔻 ⟩) → Same d e → e ＝ e' → Same d e'
+then : (d e e' : ⟨ 𝔻 ⟩)
+  → Same d e
+  → e ＝ e'
+  → Same d e'
 then d e .e s refl = s
 
 compile-to-PairClos-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ · ρ₀) (⟦ compile-to-PairClos M ⟧₄ · ρ₀)

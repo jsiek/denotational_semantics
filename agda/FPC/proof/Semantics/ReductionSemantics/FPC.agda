@@ -36,8 +36,12 @@ data Value {Γ} : ∀ {A} → Tm Γ A → Set where
   inr : ∀ {A B} {V : Tm Γ B} → Value V → Value (inr {A = A} V)
   fold : ∀ {A} {V : Tm Γ (unroll A)} → Value V → Value (fold {A = A} V)
 
-value-red : ∀ {A} {V : Tm [] A} → Value V → red V ≡ val
-values-red : ∀ {Δ} {Vs : All (Tm []) Δ} → Each Value Vs → reds Vs ≡ val
+value-red : ∀ {A} {V : Tm [] A}
+  → Value V
+  → red V ≡ val
+values-red : ∀ {Δ} {Vs : All (Tm []) Δ}
+  → Each Value Vs
+  → reds Vs ≡ val
 value-red lam = refl
 value-red lit = refl
 value-red (tuple vs) rewrite values-red vs = refl
@@ -56,8 +60,14 @@ module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
   (R-exts : ∀ {Γ Δ Θ B} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → R (exts 𝒦₁ {B = B} σ₁) (exts 𝒦₂ σ₂) (exts 𝒦₃ σ₃))
   (R-var : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → ∀ {A} (x : Γ ∋ A) → trav 𝒦₂ σ₂ (Kit.tm 𝒦₁ (σ₁ x)) ≡ Kit.tm 𝒦₃ (σ₃ x)) where
 
-  fuse : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → ∀ {A} (M : Tm Γ A) → trav 𝒦₂ σ₂ (trav 𝒦₁ σ₁ M) ≡ trav 𝒦₃ σ₃ M
-  fuses : ∀ {Γ Δ Θ Δ'} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → (Ms : All (Tm Γ) Δ') → travs 𝒦₂ σ₂ (travs 𝒦₁ σ₁ Ms) ≡ travs 𝒦₃ σ₃ Ms
+  fuse : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
+    → R σ₁ σ₂ σ₃
+    → ∀ {A} (M : Tm Γ A)
+    → trav 𝒦₂ σ₂ (trav 𝒦₁ σ₁ M) ≡ trav 𝒦₃ σ₃ M
+  fuses : ∀ {Γ Δ Θ Δ'} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
+    → R σ₁ σ₂ σ₃
+    → (Ms : All (Tm Γ) Δ')
+    → travs 𝒦₂ σ₂ (travs 𝒦₁ σ₁ Ms) ≡ travs 𝒦₃ σ₃ Ms
   fuse r (` x) = R-var r x
   fuse r (lam N) = cong lam (fuse (R-exts r) N)
   fuse r (app L M) = cong₂ app (fuse r L) (fuse r M)
@@ -75,7 +85,10 @@ module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
   fuses r (M ∷ Ms) = cong₂ _∷_ (fuse r M) (fuses r Ms)
 
 sub-id : SubId
-sub-ids : ∀ {Γ Δ} {σ : Sub tmK Γ Γ} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → (Ms : All (Tm Γ) Δ) → travs tmK σ Ms ≡ Ms
+sub-ids : ∀ {Γ Δ} {σ : Sub tmK Γ Γ}
+  → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x)
+  → (Ms : All (Tm Γ) Δ)
+  → travs tmK σ Ms ≡ Ms
 sub-id h (` x) = h x
 sub-id h (lam N) = cong lam (sub-id (sub-id-exts h) N)
 sub-id h (app L M) = cong₂ app (sub-id h L) (sub-id h M)

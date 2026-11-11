@@ -40,7 +40,9 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
   Agree : ∀ {Γ Δ} → Ren Γ Δ → Env Γ → Env Δ → Set
   Agree ρ γ φ = ∀ {A} (x : _ ∋ A) → lookup γ x ≡ lookup φ (ρ x)
 
-  atom-ren : ∀ {Δ Δ' A} {r : Ren Δ Δ'} {φ φ'} (a : Atm Σ Δ A) → Agree r φ φ' → atom φ a ≡ atom φ' (ren r a)
+  atom-ren : ∀ {Δ Δ' A} {r : Ren Δ Δ'} {φ φ'} (a : Atm Σ Δ A)
+    → Agree r φ φ'
+    → atom φ a ≡ atom φ' (ren r a)
   atom-ren (var x) h = h x
   atom-ren (lit B c) h = refl
   atom-ren (ref f) h = refl
@@ -51,19 +53,29 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
     KOk : ∀ {Δ A B} → (Val A → Result (Val B)) → K Σ Δ A B → Env Δ → Set
     KOk {Δ} K k φ = ∀ {Δ'} (r : Ren Δ Δ') φ' a → Agree r φ φ' → K (atom φ' a) ≡ eval ds' ck φ' ⌜ k r a ⌝
 
-    rco-ok : ∀ {Γ Δ A} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {γ φ} → Agree ρ γ φ
+    rco-ok : ∀ {Γ Δ A} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {γ φ}
+      → Agree ρ γ φ
       → eval ds ck γ N ≡ eval ds' ck φ ⌜ rco N ρ ⌝
-    atomize-let : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {k : K Σ Δ A B} {K' γ φ} → Agree ρ γ φ → KOk K' k φ
+    atomize-let : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {k : K Σ Δ A B} {K' γ φ}
+      → Agree ρ γ φ
+      → KOk K' k φ
       → (eval ds ck γ N >>= K') ≡ eval ds' ck φ ⌜ M.let′ (rco N ρ) (k S (var Z)) ⌝
-    atomize-ok : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {k : K Σ Δ A B} {K' γ φ} → Agree ρ γ φ → KOk K' k φ
+    atomize-ok : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {k : K Σ Δ A B} {K' γ φ}
+      → Agree ρ γ φ
+      → KOk K' k φ
       → (eval ds ck γ N >>= K') ≡ eval ds' ck φ ⌜ atomize N ρ k ⌝
     atomizes-ok : ∀ {Γ Δ Δs B} (Ns : All (Tm Σ Γ) Δs) (ρ : Ren Γ Δ)
-      {k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → M.Exp Σ Δ' B} {K' : All Val Δs → Result (Val B)} {γ φ} → Agree ρ γ φ
-      → (∀ {Δ'} (r : Ren Δ Δ') φ' as → Agree r φ φ' → K' (map (atom φ') as) ≡ eval ds' ck φ' ⌜ k r as ⌝)
+        {k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → M.Exp Σ Δ' B} {K' : All Val Δs → Result (Val B)} {γ φ}
+      → Agree ρ γ φ
+      → (  ∀ {Δ'} (r : Ren Δ Δ') φ' as
+         → Agree r φ φ'
+         → K' (map (atom φ') as) ≡ eval ds' ck φ' ⌜ k r as ⌝)
       → (evals ds ck γ Ns >>= K') ≡ eval ds' ck φ ⌜ atomizes Ns ρ k ⌝
     atomize₂-ok : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) (ρ : Ren Γ Δ)
-      {k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → M.Exp Σ Δ' B} {K₂ : Val A₁ → Val A₂ → Result (Val B)} {γ φ} → Agree ρ γ φ
-      → (∀ {Δ'} (φ' : Env Δ') a b → K₂ (atom φ' a) (atom φ' b) ≡ eval ds' ck φ' ⌜ k a b ⌝)
+        {k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → M.Exp Σ Δ' B} {K₂ : Val A₁ → Val A₂ → Result (Val B)} {γ φ}
+      → Agree ρ γ φ
+      → (  ∀ {Δ'} (φ' : Env Δ') a b
+         → K₂ (atom φ' a) (atom φ' b) ≡ eval ds' ck φ' ⌜ k a b ⌝)
       → (eval ds ck γ L >>= λ v → eval ds ck γ N >>= K₂ v) ≡ eval ds' ck φ ⌜ atomize₂ L N ρ k ⌝
 
     rco-ok (` x) ρ ag = cong ret (ag x)

@@ -66,24 +66,34 @@ module Sim {Σ : List DSig} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) 
     κ₂ : C.Cont Σ A
 
   {- a value goes to related continuations -}
-  val : ∀ {v : C.Val Σ A} → I.step ds₁ s₁ ≡ I.cont ds₁ v κ₁ → κ₂ ≈ κ₁ → Plus L₂ s₂ (C.ret v κ₂) → 𝔅 s₁ s₂
+  val : ∀ {v : C.Val Σ A}
+    → I.step ds₁ s₁ ≡ I.cont ds₁ v κ₁
+    → κ₂ ≈ κ₁
+    → Plus L₂ s₂ (C.ret v κ₂)
+    → 𝔅 s₁ s₂
   val st halt π = halt st (plus→star π) refl
   val st (assignK k) π = move (step⁺ st) (plus-star π (refl ◅ ε)) (eval~ k)
 
-  call : ∀ {A'} (f : C.Val Σ (A' ⇒ A)) w → I.step ds₁ s₁ ≡ I.res ds₁ (I.call f w) κ₁ → κ₂ ≈ κ₁
-    → Plus L₂ s₂ (C.ret w (C.callR f κ₂)) → 𝔅 s₁ s₂
+  call : ∀ {A'} (f : C.Val Σ (A' ⇒ A)) w
+    → I.step ds₁ s₁ ≡ I.res ds₁ (I.call f w) κ₁
+    → κ₂ ≈ κ₁
+    → Plus L₂ s₂ (C.ret w (C.callR f κ₂))
+    → 𝔅 s₁ s₂
   call (C.pack (C.code g) e) w st k π =
     move (step⁺ (trans st (cong (λ d → next (I.eval d _ _)) (lookup-map lift ds g))))
          (plus-star π (cong (λ d → next (C.eval d _ _)) (lookup-map ⌜_⌝ ds g) ◅ ε)) (eval~ k)
 
-  choose : ∀ {Δ A' B'} (v : C.Val Σ (A' ⊹ B')) {e₁ : M.Exp Σ (A' ∷ Δ) A} {e₂ : M.Exp Σ (B' ∷ Δ) A} {φ} → κ₂ ≈ κ₁
+  choose : ∀ {Δ A' B'} (v : C.Val Σ (A' ⊹ B')) {e₁ : M.Exp Σ (A' ∷ Δ) A} {e₂ : M.Exp Σ (B' ∷ Δ) A} {φ}
+    → κ₂ ≈ κ₁
     → I.step ds₁ s₁ ≡ next (C.choose v (λ u → I.eval (lift e₁) (u ∷ φ) κ₁) (λ u → I.eval (lift e₂) (u ∷ φ) κ₁))
-    → Star L₂ s₂ t → C.step ds₂ t ≡ next (C.choose v (λ u → C.eval ⌜ e₁ ⌝ (u ∷ φ) κ₂) (λ u → C.eval ⌜ e₂ ⌝ (u ∷ φ) κ₂))
+    → Star L₂ s₂ t
+    → C.step ds₂ t ≡ next (C.choose v (λ u → C.eval ⌜ e₁ ⌝ (u ∷ φ) κ₂) (λ u → C.eval ⌜ e₂ ⌝ (u ∷ φ) κ₂))
     → 𝔅 s₁ s₂
   choose (C.inl u) k st σ st₂ = move (step⁺ st) (star-plus σ (step⁺ st₂)) (eval~ k)
   choose (C.inr u) k st σ st₂ = move (step⁺ st) (star-plus σ (step⁺ st₂)) (eval~ k)
 
-  sim : s₂ ~ s₁ → 𝔅 s₁ s₂
+  sim : s₂ ~ s₁
+    → 𝔅 s₁ s₂
   sim (eval~ {e = atm a} k) = val refl k (step⁺ (at a))
   sim (eval~ {e = pair a b} k) = val refl k (plus refl (at a ◅ refl ◅ at b ◅ refl ◅ ε))
   sim (eval~ {e = callc f a} k) = call _ _ refl k (plus refl (at f ◅ refl ◅ at a ◅ ε))

@@ -95,7 +95,10 @@ kAt T' k bs' X Y = X86.⟦_⟧ˢ T' k (X86.blocks T' bs') · (env₂ X Y , (X86.
 
 {- the code of a definition, given what its body means -}
 codeₜ-cong : ∀ {Σ} (T T' : Table Σ) {s} (b₀ : C.Body Σ (DSig.cod s) (Args s)) (b : X86Body Σ (DSig.cod s) (called s))
-  → ((X Y : ⟨ 𝔻 ⟩) → defined X → defined Y → CS.run b₀ T · env₂ X Y ＝ runAt T' b X Y)
+  → (  (X Y : ⟨ 𝔻 ⟩)
+     → defined X
+     → defined Y
+     → CS.run b₀ T · env₂ X Y ＝ runAt T' b X Y)
   → CS.code′ T b₀ ＝ X86.codeₜ T' b
 codeₜ-cong T T' b₀ b h =
   code₂-cong (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ (CS.run b₀ T))
@@ -131,7 +134,9 @@ opaque
   map-db : ∀ {Σ ss} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s)) ss) → All-map db ds Eq.≡ All-map def-body ds
   map-db ds = Eq.refl
 
-≡→＝ : ∀ {A : Set} {x y : A} → x Eq.≡ y → x ＝ y
+≡→＝ : ∀ {A : Set} {x y : A}
+  → x Eq.≡ y
+  → x ＝ y
 ≡→＝ Eq.refl = refl
 
 {- for tables T (of CFGμ) and T' (of X86μ) that agree -}
@@ -153,14 +158,21 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
     g₂ : Σ G ꞉ DCPO[ 𝔻 , 𝔻 ] , pr₁ g₁ · X ＝ appᵈ · (Λ · G) · Y
     g₂ = _ , refl
 
-    run-start : defined X → defined Y → runAt T' (X86b.body n bs' (startSeq s k l₁ l₂)) X Y ＝ kAt T' k bs' X Y
+    run-start : defined X
+      → defined Y
+      → runAt T' (X86b.body n bs' (startSeq s k l₁ l₂)) X Y ＝ kAt T' k bs' X Y
     run-start dX dY = pr₂ g₁ ∙ app-Λ-defined (pr₁ g₁) X dX ∙ pr₂ g₂ ∙ app-Λ-defined (pr₁ g₂) Y dY
 
   {- ... for a body that is that start (an equation on syntax) -}
   run-start′ : ∀ {n Bs} (s : DSig) (b' : X86Body Σ (DSig.cod s) (called s)) (bs' : X86b.Blocks Σ n (DSig.cod s) Bs)
-    (k : Seq Σ n (DSig.cod s) Bs (st (St.rs (called s)) (Args s) nothing false))
-    .(l₁ : 0 < n) .(l₂ : 1 < n) → b' Eq.≡ X86b.body n bs' (startSeq s k l₁ l₂)
-    → (X Y : ⟨ 𝔻 ⟩) → defined X → defined Y → runAt T' b' X Y ＝ kAt T' k bs' X Y
+      (k : Seq Σ n (DSig.cod s) Bs (st (St.rs (called s)) (Args s) nothing false))
+    → .(l₁ : 0 < n)
+    → .(l₂ : 1 < n)
+    → b' Eq.≡ X86b.body n bs' (startSeq s k l₁ l₂)
+    → (X Y : ⟨ 𝔻 ⟩)
+    → defined X
+    → defined Y
+    → runAt T' b' X Y ＝ kAt T' k bs' X Y
   run-start′ s .(X86b.body _ bs' (startSeq s k l₁ l₂)) bs' k l₁ l₂ Eq.refl X Y = Start.run-start s bs' k l₁ l₂ X Y
 
   module _ {n R' Bs} (B' : Meanings Bs) where
@@ -172,7 +184,8 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
       → K · X ＝ X86.⟦_⟧ˢ T' (k {Γ} {O} {F}) B' · (X • (drop p · ρ) , (R , F'))
 
     put-＝ : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)} {ρ D} {D' : Den 𝕊} {Γ O F R F'}
-      → Fits o K k ρ → D ＝ D' · (ρ , (R , F'))
+      → Fits o K k ρ
+      → D ＝ D' · (ρ , (R , F'))
       → then o K D ＝ X86.put T' (dst o {Γ} {O} {F}) D' (X86.⟦_⟧ˢ T' (k {Γ} {O} {F}) B') · (ρ , (R , F'))
     put-＝ ret {R = R} {F'} f e = e ∙ f _ _ F'
     put-＝ (to p _) {K} {k} {ρ} {D} {D'} {Γ} {O} {F} {R} {F'} f e =
@@ -183,7 +196,8 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
 
     {- the code selected for s into o, then k -}
     sel-＝ : ∀ {Δ A Δ''} (s : I.Simple Σ Δ A) (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)} {ρ Γ O F R F'}
-      → Fits o K k ρ → then o K (𝒮 s T · ρ) ＝ X86.⟦_⟧ˢ T' (sel s o k {Γ} {O} {F}) B' · (ρ , (R , F'))
+      → Fits o K k ρ
+      → then o K (𝒮 s T · ρ) ＝ X86.⟦_⟧ˢ T' (sel s o k {Γ} {O} {F}) B' · (ρ , (R , F'))
     sel-＝ s@(I.atm a) o f = put-＝ o f (𝒮-＝ TT s _)
     sel-＝ s@(I.pair c e) o f = put-＝ o f (𝒮-＝ TT s _)
     sel-＝ s@(I.callc (var x) a) o {K} {k} {ρ} f =
@@ -202,8 +216,12 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
   BR : ∀ {Bs} → Meanings Bs → Meanings Bs → 𝓤₁ ̇
   BR {Bs} B B' = ∀ {Δ} (l : Bs ∋ Δ) ρ → B l · ρ ＝ B' l · ρ
 
-  tail-＝ : ∀ {n R' Bs Δ} (t : Tail Σ R' Bs Δ) .(le : depth t ≤ n) {B B' : Meanings Bs} → BR B B' → ∀ ρ
-    → ∀ {Γ O F} R F' → ⟦ t ⟧ᵗ T B · ρ ＝ X86.⟦_⟧ˢ T' (tail t le {Γ} {O} {F}) B' · (ρ , (R , F'))
+  tail-＝ : ∀ {n R' Bs Δ} (t : Tail Σ R' Bs Δ)
+    → .(le : depth t ≤ n)
+    → {B B' : Meanings Bs}
+    → BR B B'
+    → ∀ ρ → ∀ {Γ O F} R F'
+    → ⟦ t ⟧ᵗ T B · ρ ＝ X86.⟦_⟧ˢ T' (tail t le {Γ} {O} {F}) B' · (ρ , (R , F'))
   tail-＝ (return s) le {B' = B'} br ρ R F' = sel-＝ B' s ret {K = id₁ 𝔻} {k = retq Eq.refl} (λ ρ' R F' → refl)
   tail-＝ (C.seq p s t) le {B} {B'} br ρ R F' =
     sel-＝ B' s (to p _) {K = abs (⟦ t ⟧ᵗ T B) · (drop p · ρ)} {k = tail t _}
@@ -214,7 +232,8 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
       (ap₂ _,_ (strict-cong (abs (B l₁) · (drop p · ρ)) (abs (B' l₁) · (drop p · ρ)) (λ X _ → br l₁ (X • (drop p · ρ))))
                (strict-cong (abs (B l₂) · (drop p · ρ)) (abs (B' l₂) · (drop p · ρ)) (λ X _ → br l₂ (X • (drop p · ρ)))))
 
-  blocks-＝ : ∀ {n R' Bs} (bs : C.Blocks Σ R' Bs) .(le : blocks-depth bs ≤ n)
+  blocks-＝ : ∀ {n R' Bs} (bs : C.Blocks Σ R' Bs)
+    → .(le : blocks-depth bs ≤ n)
     → BR (CS.blocks bs T) (X86.blocks T' (sel-blocks bs le))
   blocks-＝ (bs ▷ t) le Z ρ =
     tail-＝ t _ (blocks-＝ bs _) ρ (λ _ → init) init
