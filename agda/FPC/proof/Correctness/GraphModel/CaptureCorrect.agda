@@ -23,8 +23,10 @@ open import FPC.Language.Type
 open import FPC.Language.FPC
 import FPC.Language.Clos as T
 open import FPC.Semantics.GraphModel.FPC
-open import FPC.proof.Semantics.GraphModel.Clos using (fv-env) renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
-open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; guard-yes)
+open import FPC.proof.Semantics.GraphModel.Clos using (fv-env) renaming (⟦_⟧ to
+  ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
+open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃;
+  guard-yes)
 open import FPC.Framework.AllUtil using (All; []; _∷_; tab; pos)
 open import FPC.Compiler.Capture
 
@@ -66,7 +68,11 @@ encs-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'}
 
 enc (` x) r = proj₁ (r x)
 enc (lam N) {ρ} {ρ'} r =
-  ≃-trans (lam-≃ λ X ne _ → enc N (ext ne λ x → subst (λ D → _ ≃ D × nonempty D) (sym (tab-fv T.`_ ρ' x)) (r x)))
+  ≃-trans
+    (lam-≃ λ X ne _ →
+      enc N
+      (ext ne λ x →
+        subst (λ D → _ ≃ D × nonempty D) (sym (tab-fv T.`_ ρ' x)) (r x)))
     (≃-sym (guard-yes (tab-ne T.`_ ρ' (λ x → proj₂ (r x)))))
 enc (app L M) r = ⋆-≃ (enc L r) (enc M r)
 enc (lit B c) r = ≃-refl
@@ -75,9 +81,11 @@ enc (get i M) r = proj-≃ (pos i) (enc M r)
 enc (inl M) r = inl-≃ (enc M r)
 enc (inr M) r = inr-≃ (enc M r)
 enc (case L M N) {ρ} {ρ'} r =
-  case-≃ (enc L r) (λ X ne _ → enc M {X • ρ} {X • ρ'} (ext ne r)) (λ X ne _ → enc N {X • ρ} {X • ρ'} (ext ne r))
+  case-≃ (enc L r) (λ X ne _ → enc M {X • ρ} {X • ρ'} (ext ne r))
+    (λ X ne _ → enc N {X • ρ} {X • ρ'} (ext ne r))
 enc (prim p L M) r = primD-≃ p (enc L r) (enc M r)
-enc (let′ M N) {ρ} {ρ'} r = let-≃ (enc M r) λ X ne _ → enc N {X • ρ} {X • ρ'} (ext ne r)
+enc (let′ M N) {ρ} {ρ'} r =
+  let-≃ (enc M r) λ X ne _ → enc N {X • ρ} {X • ρ'} (ext ne r)
 enc (fold M) r = enc M r
 enc (unfold M) r = enc M r
 

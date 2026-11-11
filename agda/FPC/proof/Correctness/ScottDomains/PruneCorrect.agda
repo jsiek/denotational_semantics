@@ -32,7 +32,8 @@ open import UF.Base using (ap₂; happly)
 open import FPC.Language.Type
 open import FPC.Language.Clos
 open import FPC.Compiler.Prune renaming (ext to ext-ren)
-open import FPC.Framework.AllUtil using (All; []; _∷_; Flags; kept; select; sq; squeeze; pos; ∨-l; ∨-r; lookup)
+open import FPC.Framework.AllUtil using (All; []; _∷_; Flags; kept; select; sq;
+  squeeze; pos; ∨-l; ∨-r; lookup)
 open import Framework.abt.GSubst using (_•_)
 open import Data.Bool using (Bool; true; false; T)
 open import Data.List using (List; []; _∷_; length)
@@ -47,16 +48,19 @@ module FPC.proof.Correctness.ScottDomains.PruneCorrect
        where
 
 open import Framework.Scott.Base pt fe
-open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
+open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to
+  inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 open import FPC.Semantics.ScottDomains.Clos pt fe pe
-open import FPC.proof.Semantics.ScottDomains.PruneLemmas pt fe pe using (All-defined; guard-iff)
+open import FPC.proof.Semantics.ScottDomains.PruneLemmas pt fe pe using
+  (All-defined; guard-iff)
 
 NE : Ctx → ⟨ Env ⟩ → 𝓤₀ ̇
 NE Γ ρ = ∀ {C} (x : Γ ∋ C) → defined (ρ (idx x))
 
-Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇
+Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → ⟨ Env ⟩
+  → ⟨ Env ⟩ → 𝓤₁ ̇
 Agree u r ρ ρ' = ∀ {C} x (t : T (u {C} x)) → ρ (idx x) ＝ ρ' (idx (r x t))
 
 ext-ne : ∀ {Γ A ρ d}
@@ -72,7 +76,8 @@ Fs n = Fin n → ⟨ 𝔻 ⟩
 {- the kept free variables: equal; the dropped ones: defined -}
 Th : ∀ {Δ : Ctx} (fl : Flags Δ) → Fs (length Δ) → Fs (length (kept fl)) → 𝓤₁ ̇
 Th [] ds es = 𝟙
-Th (true ∷ fl) ds es = (ds zero ＝ es zero) × Th fl (λ i → ds (suc i)) (λ i → es (suc i))
+Th (true ∷ fl) ds es =
+  (ds zero ＝ es zero) × Th fl (λ i → ds (suc i)) (λ i → es (suc i))
 Th (false ∷ fl) ds es = defined (ds zero) × Th fl (λ i → ds (suc i)) es
 
 th-ne→ : ∀ {Δ : Ctx} (fl : Flags Δ) {ds es}
@@ -103,7 +108,8 @@ th-pos (true ∷ fl) (e , th) (S i) k = th-pos fl th i k
 th-pos (false ∷ fl) (_ , th) (S i) k = th-pos fl th i k
 
 {- free variable i in the environment of a closure's code -}
-fv-pos : ∀ {Δ : Ctx} {C} (ds : Fs (length Δ)) (Y : ⟨ 𝔻 ⟩) (i : Δ ∋ C) → fv-env (length Δ) ds Y (succ (idx i)) ＝ ds (pos i)
+fv-pos : ∀ {Δ : Ctx} {C} (ds : Fs (length Δ)) (Y : ⟨ 𝔻 ⟩) (i : Δ ∋ C)
+  → fv-env (length Δ) ds Y (succ (idx i)) ＝ ds (pos i)
 fv-pos ds Y Z = refl
 fv-pos ds Y (S i) = fv-pos (λ j → ds (suc j)) (ds zero) i
 
@@ -117,11 +123,13 @@ fv-ne ds {Y} p ne (S i) = transport defined (fv-pos ds Y i ⁻¹) (ne (pos i))
 {- the free variables and the kept ones (a non-recursive step) -}
 th-cons : ∀ {Γ Γ' Δ C} (M : Tm Γ C) (Ms : All (Tm Γ) Δ) (b : Bool)
   → Fl b M
-  → (fl : Flags Δ) {r₁ : Ren (uses M) Γ'} {r₂ : Ren (usesA Ms) Γ'} {ρ ρ' : ⟨ Env ⟩}
+  → (fl : Flags Δ) {r₁ : Ren (uses M) Γ'} {r₂ : Ren (usesA Ms) Γ'}
+    {ρ ρ' : ⟨ Env ⟩}
   → NE Γ ρ
   → ⟦ M ⟧ · ρ ＝ ⟦ opt M r₁ ⟧ · ρ'
   → Th fl (⟦ Ms ⟧s · ρ) (⟦ select fl (opts Ms r₂) ⟧s · ρ')
-  → Th (b ∷ fl) (⟦ M ∷ Ms ⟧s · ρ) (⟦ select (b ∷ fl) (opt M r₁ ∷ opts Ms r₂) ⟧s · ρ')
+  → Th (b ∷ fl) (⟦ M ∷ Ms ⟧s · ρ)
+    (⟦ select (b ∷ fl) (opt M r₁ ∷ opts Ms r₂) ⟧s · ρ')
 th-cons M Ms true kept-fv fl V e th = e , th
 th-cons (` x) Ms false var-fv fl V e th = V x , th
 
@@ -140,7 +148,8 @@ under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) {r : Ren (λ x → uses N (S x)) 
   → (d : ⟨ 𝔻 ⟩)
   → defined d
   → ⟦ N ⟧ · (d • ρ) ＝ ⟦ opt N (ext-ren {u = uses N} r) ⟧ · (d • ρ')
-th-ok : ∀ {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'}
+th-ok : ∀ {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ)
+  {r : Ren (usesA Ms) Γ'} {ρ ρ'}
   → NE Γ ρ
   → Agree (usesA Ms) r ρ ρ'
   → Th (flags u Ms) (⟦ Ms ⟧s · ρ) (⟦ select (flags u Ms) (opts Ms r) ⟧s · ρ')
@@ -150,7 +159,9 @@ opt-ok (clos {Δ} N Ms) {ρ = ρ} {ρ'} V ag =
   guard-iff n m xs ys _ _ (th-ne→ fl th) (th-ne← fl th) λ ne →
     Λ-cong (closure-fun n ⟦ N ⟧ xs) (closure-fun m ⟦ opt N rN ⟧ ys) λ W w →
       opt-ok N (fv-ne xs w ne) λ { Z _ → refl
-                                 ; (S i) t → fv-pos xs W i ∙ th-pos fl th i _ ∙ fv-pos ys W (sq fl i _) ⁻¹ }
+                                 ; (S i) t
+                                   → fv-pos xs W i ∙ th-pos fl th i _
+                                   ∙ fv-pos ys W (sq fl i _) ⁻¹ }
   where
   fl = keeps N Ms
   n = length Δ
@@ -160,7 +171,8 @@ opt-ok (clos {Δ} N Ms) {ρ = ρ} {ρ'} V ag =
   ys = ⟦ select fl (opts Ms _) ⟧s · ρ'
   th = th-ok (λ x → uses N (S x)) Ms V ag
 opt-ok (app L M) V ag =
-  ap₂ (λ a b → appᵈ · a · b) (opt-ok L V (λ x t → ag x (∨-l _ t))) (opt-ok M V (λ x t → ag x (∨-r (uses L x) t)))
+  ap₂ (λ a b → appᵈ · a · b) (opt-ok L V (λ x t → ag x (∨-l _ t)))
+    (opt-ok M V (λ x t → ag x (∨-r (uses L x) t)))
 opt-ok (lit B c) V ag = refl
 opt-ok (tuple {Δ} Ms) V ag = ap (tupleᵈ (length Δ) ·_) (opts-ok Ms V ag)
 opt-ok (get i M) V ag = ap (proj (pos i) ·_) (opt-ok M V ag)
@@ -172,22 +184,28 @@ opt-ok (case L M N) {ρ = ρ} {ρ'} V ag =
     (under M V λ x t → ag x (∨-r (uses L x) (∨-l (uses N (S x)) t)))
     (under N V λ x t → ag x (∨-r (uses L x) (∨-r (uses M (S x)) t)))
 opt-ok (prim p L M) V ag =
-  ap₂ (λ a b → primD p · a · b) (opt-ok L V (λ x t → ag x (∨-l _ t))) (opt-ok M V (λ x t → ag x (∨-r (uses L x) t)))
+  ap₂ (λ a b → primD p · a · b) (opt-ok L V (λ x t → ag x (∨-l _ t)))
+    (opt-ok M V (λ x t → ag x (∨-r (uses L x) t)))
 opt-ok (let′ M N) {ρ = ρ} {ρ'} V ag =
-  letᶜ-cong ⟦ M ⟧ ⟦ opt M _ ⟧ ⟦ N ⟧ ⟦ opt N _ ⟧ ρ ρ' (opt-ok M V (λ x t → ag x (∨-l _ t))) (under N V λ x t → ag x (∨-r (uses M x) t))
+  letᶜ-cong ⟦ M ⟧ ⟦ opt M _ ⟧ ⟦ N ⟧ ⟦ opt N _
+    ⟧ ρ ρ' (opt-ok M V (λ x t → ag x (∨-l _ t)))
+    (under N V λ x t → ag x (∨-r (uses M x) t))
 opt-ok (fold M) V ag = opt-ok M V ag
 opt-ok (unfold M) V ag = opt-ok M V ag
 
 opts-ok [] V ag = refl
 opts-ok (M ∷ Ms) V ag =
-  dfunext fe λ { zero → opt-ok M V (λ x t → ag x (∨-l _ t)) ; (suc i) → happly (opts-ok Ms V (λ x t → ag x (∨-r (uses M x) t))) i }
+  dfunext fe
+    λ { zero → opt-ok M V (λ x t → ag x (∨-l _ t)) ; (suc i)
+      → happly (opts-ok Ms V (λ x t → ag x (∨-r (uses M x) t))) i }
 
 under N V ag d p = opt-ok N (ext-ne p V) λ { Z _ → refl ; (S x) t → ag x t }
 
 th-ok u [] V ag = ⋆
 th-ok u (M ∷ Ms) V ag =
   th-cons M Ms (keep? M (u Z)) (fl-ok M (u Z)) (flags (λ x → u (S x)) Ms) V
-    (opt-ok M V (λ x t → ag x (∨-l _ t))) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
+    (opt-ok M V (λ x t → ag x (∨-l _ t)))
+      (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
 
 prune-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ · ρ₀ ＝ ⟦ prune-program M ⟧ · ρ₀
 prune-correct M = opt-ok M (λ ()) (λ ())

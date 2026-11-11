@@ -27,8 +27,10 @@ open import UF.Subsingletons
 
 open import Framework.Primitives using (Base; base-rep)
 open import FPC.Language.FPC using (Tm)
-open import FPC.Semantics.ClockedInterpreters.FPC using (eval; sem; obs) renaming (Val to Value)
-open import Semantics.Interp.Clock using (Result; timeout; error; ret; outcome; Terminates; Diverges)
+open import FPC.Semantics.ClockedInterpreters.FPC using (eval; sem; obs)
+  renaming (Val to Value)
+open import Semantics.Interp.Clock using (Result; timeout; error; ret; outcome;
+  Terminates; Diverges)
 open import Semantics.Observation using (o-const)
 open import Naturals.ExitTruncation using (module exit-truncations)
 
@@ -36,7 +38,8 @@ open import Data.List using ([])
 open import FPC.Framework.AllUtil using ([])
 open import Data.Maybe using (just)
 open import Data.Nat.Properties using (≤-refl)
-open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to ≡-refl; trans to ≡-trans; sym to ≡-sym; cong to ≡-cong)
+open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to
+  ≡-refl; trans to ≡-trans; sym to ≡-sym; cong to ≡-cong)
 import Data.Product as P
 
 module FPC.proof.Adequacy.ScottDomains.FPC
@@ -46,12 +49,15 @@ module FPC.proof.Adequacy.ScottDomains.FPC
        where
 
 open import Framework.Scott.Base pt fe hiding (_>>=_)
-open import proof.Framework.Scott.Ops pt fe pe using (const; ⊥𝔻; defined; const-defined; ⊥-undefined)
+open import proof.Framework.Scott.Ops pt fe pe using (const; ⊥𝔻; defined;
+  const-defined; ⊥-undefined)
 open import proof.Framework.Scott.Values pt fe pe using (undefined-⊥)
 open import FPC.Semantics.ScottDomains.FPC pt fe pe using (⟦_⟧)
 open import FPC.Semantics.ScottDomains.Closed pt fe pe using (ρ₀)
-open import FPC.proof.Adequacy.ScottDomains.Soundness pt fe pe using (𝒱; 𝒱-defined; 𝒱-const; const-𝒱; Holds; timeout; ret; sound)
-open import FPC.proof.Adequacy.ScottDomains.LogRel pt fe pe using (adequate; run)
+open import FPC.proof.Adequacy.ScottDomains.Soundness pt fe pe using (𝒱;
+  𝒱-defined; 𝒱-const; const-𝒱; Holds; timeout; ret; sound)
+open import FPC.proof.Adequacy.ScottDomains.LogRel pt fe pe using (adequate;
+  run)
 open exit-truncations pt using (exit-truncation)
 
 private
@@ -64,7 +70,8 @@ private
  Returns : ∀ {A} → Tm [] A → ℕ → 𝓤₀ ̇
  Returns {A} M ck = Σ w ꞉ Value A , eval ck [] M ≡ ret w
 
- returns? : ∀ {A} (r : Result (Value A)) → is-decidable (Σ w ꞉ Value A , r ≡ ret w)
+ returns? : ∀ {A} (r : Result (Value A))
+   → is-decidable (Σ w ꞉ Value A , r ≡ ret w)
  returns? timeout = inr (λ { (w , ()) })
  returns? error = inr (λ { (w , ()) })
  returns? (ret w) = inl (w , ≡-refl)
@@ -75,7 +82,9 @@ terminates : ∀ {A} (M : Tm [] A)
   → Σ ck ꞉ ℕ , Returns M ck
 terminates M q =
   exit-truncation (Returns M) (λ ck → returns? (eval ck [] M))
-    (∥∥-functor (λ e → P.proj₁ (run e) , _ , P.proj₂ (run e) (P.proj₁ (run e)) ≤-refl) (pr₂ (adequate M q)))
+    (∥∥-functor
+        (λ e → P.proj₁ (run e) , _ , P.proj₂ (run e) (P.proj₁ (run e)) ≤-refl)
+        (pr₂ (adequate M q)))
 
 {- what the interpreter returns means ⟦ M ⟧ ρ₀ -}
 sound-ret : ∀ {A} (M : Tm [] A) {ck} {w : Value A}
@@ -91,7 +100,7 @@ sound-ret M {ck} e = go (eval ck [] M) (sound ck [] M) e
   go error () e
   go (ret _) (ret s) ≡-refl = s
 
-{- Soundness and adequacy -----------------------------------------------------------}
+{- Soundness and adequacy -----------------------------------------------------}
 
 {- for a closed FPC term M (of any type), and every constant c:
    ⟦ M ⟧ ρ₀ = c() if and only if the interpreter terminates with c -}
@@ -104,7 +113,9 @@ const-iff M B k = to , from
  where
   to : ⟦ M ⟧ · ρ₀ ＝ const B k
     → Terminates (sem M) (o-const B k)
-  to e = ck P., ≡-trans (≡-cong (outcome obs) ev) (≡-cong just (𝒱-const w (sound-ret M ev ∙ e)))
+  to e =
+    ck P., ≡-trans (≡-cong (outcome obs) ev)
+    (≡-cong just (𝒱-const w (sound-ret M ev ∙ e)))
    where
     T = terminates M (transport defined (e ⁻¹) (const-defined B k))
     ck = pr₁ T
@@ -130,12 +141,15 @@ diverges-iff : ∀ {A} (M : Tm [] A)
      → Diverges (sem M))
 diverges-iff M = to , from
  where
-  ret≢timeout : ∀ {A} {w : Value A} → ¬ (_≡_ {A = Result (Value A)} (ret w) timeout)
+  ret≢timeout : ∀ {A} {w : Value A}
+    → ¬ (_≡_ {A = Result (Value A)} (ret w) timeout)
   ret≢timeout ()
   to : Diverges (sem M)
     → ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻
   to div = undefined-⊥ (⟦ M ⟧ · ρ₀) (λ q →
-    let T = terminates M q in ret≢timeout (≡-trans (≡-sym (pr₂ (pr₂ T))) (div (pr₁ T))))
+    let T =
+         terminates M q in
+         ret≢timeout (≡-trans (≡-sym (pr₂ (pr₂ T))) (div (pr₁ T))))
   from : ⟦ M ⟧ · ρ₀ ＝ ⊥𝔻
     → Diverges (sem M)
   from e ck = go (eval ck [] M) (sound ck [] M)
@@ -145,4 +159,5 @@ diverges-iff M = to , from
       → r ≡ timeout
     go timeout timeout = ≡-refl
     go error ()
-    go (ret w) (ret s) = 𝟘-elim (⊥-undefined (transport defined (s ∙ e) (𝒱-defined w)))
+    go (ret w) (ret s) =
+      𝟘-elim (⊥-undefined (transport defined (s ∙ e) (𝒱-defined w)))

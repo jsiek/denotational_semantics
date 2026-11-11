@@ -24,7 +24,8 @@ module FPC.proof.Adequacy.ReductionSemantics.Soundness where
 
 open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
 open import FPC.Semantics.GraphModel.Closed using (ρ₀)
-open import proof.Framework.GraphModel.Ops using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; nthD)
+open import proof.Framework.GraphModel.Ops using (⋆-≃; 𝒯-≃; proj-≃; inl-≃;
+  inr-≃; nthD)
 open import proof.Framework.GraphModel.TypedGraph using (proj-𝒯)
 open import proof.Framework.GraphModel.Env using (nonempty-env)
 open import proof.Semantics.Graph.Prim using (primD-≃)
@@ -38,11 +39,11 @@ open import FPC.proof.Compiler.SimplifyFacts using (SV; SVs)
 import FPC.proof.Compiler.SimplifyFacts as F
 open import FPC.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; con)
 open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃)
-open import FPC.proof.Correctness.GraphModel.SimplifyCorrect
-  using (shift-≃; let-β; case-inl; case-inr; sv-ne; svs-ne; nth-lookup; prim-term-≃; prim-fold)
-open import FPC.proof.Semantics.ReductionSemantics.FPC
-  using (red; reds; sub; _[_]; β; get?; case?; prim?; unfold?; out; value-red; lam; lit; tuple; inl; inr; fold)
-  renaming (Value to Val; _•_ to _•ₛ_; ∅ to ∅ₛ)
+open import FPC.proof.Correctness.GraphModel.SimplifyCorrect using (shift-≃;
+  let-β; case-inl; case-inr; sv-ne; svs-ne; nth-lookup; prim-term-≃; prim-fold)
+open import FPC.proof.Semantics.ReductionSemantics.FPC using (red; reds; sub;
+  _[_]; β; get?; case?; prim?; unfold?; out; value-red; lam; lit; tuple; inl;
+  inr; fold) renaming (Value to Val; _•_ to _•ₛ_; ∅ to ∅ₛ)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import Semantics.Observation using (Obs; o-error)
 open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
@@ -55,9 +56,10 @@ open import Data.List using ([]; _∷_; length)
 open import Data.Product using (Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong)
 
-{- The substitution lemma --------------------------------------------------------}
+{- The substitution lemma -----------------------------------------------------}
 
 {- as renaming (ren-≃, FPC/proof/Correctness/GraphModel/SimplifyCorrect.agda):
    a substitution σ, in an environment ρ', means binding each variable x
@@ -74,7 +76,8 @@ sub-ext : ∀ {Γ Δ C} (σ : ∀ {B} → Γ ∋ B → Tm Δ B) {ρ ρ' X}
   → ∀ {B} (x : (C ∷ Γ) ∋ B)
   → ⟦ exts tmK σ x ⟧ (X • ρ') ≃ (X • ρ) (idx x)
 sub-≃ σ (` x) h = h x
-sub-≃ σ (lam N) {ρ} {ρ'} h = lam-≃ λ X _ _ → sub-≃ (exts tmK σ) N {X • ρ} {X • ρ'} (sub-ext σ h)
+sub-≃ σ (lam N) {ρ} {ρ'} h =
+  lam-≃ λ X _ _ → sub-≃ (exts tmK σ) N {X • ρ} {X • ρ'} (sub-ext σ h)
 sub-≃ σ (app L M) h = ⋆-≃ (sub-≃ σ L h) (sub-≃ σ M h)
 sub-≃ σ (lit B c) h = ≃-refl
 sub-≃ σ (tuple {Δ} Ms) h = 𝒯-≃ (length Δ) (subs-nth σ Ms h)
@@ -82,9 +85,12 @@ sub-≃ σ (get i M) h = proj-≃ (pos i) (sub-≃ σ M h)
 sub-≃ σ (inl M) h = inl-≃ (sub-≃ σ M h)
 sub-≃ σ (inr M) h = inr-≃ (sub-≃ σ M h)
 sub-≃ σ (case L M N) {ρ} {ρ'} h = case-≃ (sub-≃ σ L h)
-  (λ X _ _ → sub-≃ (exts tmK σ) M {X • ρ} {X • ρ'} (sub-ext σ h)) (λ X _ _ → sub-≃ (exts tmK σ) N {X • ρ} {X • ρ'} (sub-ext σ h))
+  (λ X _ _ → sub-≃ (exts tmK σ) M {X • ρ} {X • ρ'} (sub-ext σ h))
+    (λ X _ _ → sub-≃ (exts tmK σ) N {X • ρ} {X • ρ'} (sub-ext σ h))
 sub-≃ σ (prim p L M) h = primD-≃ p (sub-≃ σ L h) (sub-≃ σ M h)
-sub-≃ σ (let′ M N) {ρ} {ρ'} h = let-≃ (sub-≃ σ M h) λ X _ _ → sub-≃ (exts tmK σ) N {X • ρ} {X • ρ'} (sub-ext σ h)
+sub-≃ σ (let′ M N) {ρ} {ρ'} h =
+  let-≃ (sub-≃ σ M h) λ X _ _ →
+  sub-≃ (exts tmK σ) N {X • ρ} {X • ρ'} (sub-ext σ h)
 sub-≃ σ (fold M) h = sub-≃ σ M h
 sub-≃ σ (unfold M) h = sub-≃ σ M h
 subs-nth σ (M ∷ Ms) h zero = sub-≃ σ M h
@@ -93,10 +99,11 @@ sub-ext σ h Z = ≃-refl
 sub-ext σ h (S x) = ≃-trans (shift-≃ (σ x) _ _) (h x)
 
 {- substituting a closed W for the variable of N -}
-[]-≃ : ∀ {A B} (N : Tm (A ∷ []) B) (W : Tm [] A) → ⟦ N [ W ] ⟧ ρ₀ ≃ ⟦ N ⟧ (⟦ W ⟧ ρ₀ • ρ₀)
+[]-≃ : ∀ {A B} (N : Tm (A ∷ []) B) (W : Tm [] A)
+  → ⟦ N [ W ] ⟧ ρ₀ ≃ ⟦ N ⟧ (⟦ W ⟧ ρ₀ • ρ₀)
 []-≃ N W = sub-≃ (W •ₛ ∅ₛ) N (λ { Z → ≃-refl })
 
-{- Values ---------------------------------------------------------------------------}
+{- Values ---------------------------------------------------------------------}
 
 ne₀ : nonempty-env ρ₀
 ne₀ _ = ⟨ ⟨⟩ , refl ⟩
@@ -126,7 +133,7 @@ val-ne : ∀ {A} {V : Tm [] A}
   → nonempty (⟦ V ⟧ ρ₀)
 val-ne v = sv-ne (val-sv v) ne₀
 
-{- Progress -------------------------------------------------------------------------}
+{- Progress -------------------------------------------------------------------}
 
 in-ctx : ∀ {X Y : Set} {f : X → Y} {r : Red X} {k M}
   → r ≡ to M
@@ -135,7 +142,8 @@ in-ctx refl = refl
 
 {- a closed term is a value, or it reduces (it is never stuck) -}
 progress : ∀ {A} (M : Tm [] A) → Val M ⊎ Σ[ N ∈ Tm [] A ] red M ≡ to N
-progresses : ∀ {Δ} (Ms : All (Tm []) Δ) → Each Val Ms ⊎ Σ[ Ns ∈ All (Tm []) Δ ] reds Ms ≡ to Ns
+progresses : ∀ {Δ} (Ms : All (Tm []) Δ)
+  → Each Val Ms ⊎ Σ[ Ns ∈ All (Tm []) Δ ] reds Ms ≡ to Ns
 progress (` ())
 progress (lam N) = inj₁ lam
 progress (app L M) with progress L
@@ -149,7 +157,8 @@ progress (tuple Ms) with progresses Ms
 ... | inj₂ ⟨ _ , e ⟩ = inj₂ ⟨ _ , in-ctx e ⟩
 progress (get i M) with progress M
 ... | inj₂ ⟨ _ , e ⟩ = inj₂ ⟨ _ , in-ctx e ⟩
-... | inj₁ (tuple {Vs = Vs} vs) = inj₂ ⟨ lookup Vs i , val-in (value-red (tuple vs)) ⟩
+... | inj₁ (tuple {Vs = Vs} vs) =
+  inj₂ ⟨ lookup Vs i , val-in (value-red (tuple vs)) ⟩
 progress (inl M) with progress M
 ... | inj₁ v = inj₁ (inl v)
 ... | inj₂ ⟨ _ , e ⟩ = inj₂ ⟨ _ , in-ctx e ⟩
@@ -193,7 +202,7 @@ val-value M e with progress M
 ... | inj₂ ⟨ _ , e' ⟩ with trans (sym e) e'
 ...   | ()
 
-{- One step preserves meaning -------------------------------------------------------}
+{- One step preserves meaning -------------------------------------------------}
 
 {- the output of a primitive is simplify's -}
 out-≡ : ∀ {Γ} p n m → out {Γ} p n m ≡ prim-term p n m
@@ -203,7 +212,8 @@ out-≡ P.eq n m = refl
 β-≃ : ∀ {A B} (N : Tm (A ∷ []) B) (W : Tm [] A)
   → Val W
   → ⟦ app (lam N) W ⟧ ρ₀ ≃ ⟦ N [ W ] ⟧ ρ₀
-β-≃ N W w = ≃-trans (let-β N ρ₀ (⟦ W ⟧ ρ₀) ne₀ (val-ne w) (con W con₀)) (≃-sym ([]-≃ N W))
+β-≃ N W w =
+  ≃-trans (let-β N ρ₀ (⟦ W ⟧ ρ₀) ne₀ (val-ne w) (con W con₀)) (≃-sym ([]-≃ N W))
 
 step-≃ : ∀ {A} (M : Tm [] A) {N}
   → red M ≡ to N
@@ -219,7 +229,8 @@ step-≃ (app L M) refl | to L' = ⋆-≃ (step-≃ L eL) (≃-refl {D = ⟦ M �
 step-≃ (app L M) () | error
 step-≃ (app L M) e | val with val-value L eL
 step-≃ (app (lam N) M) e | val | lam with red M in eM
-step-≃ (app (lam N) M) refl | val | lam | to M' = ⋆-≃ (≃-refl {D = ⟦ lam N ⟧ ρ₀}) (step-≃ M eM)
+step-≃ (app (lam N) M) refl | val | lam | to M' =
+  ⋆-≃ (≃-refl {D = ⟦ lam N ⟧ ρ₀}) (step-≃ M eM)
 step-≃ (app (lam N) M) () | val | lam | error
 step-≃ (app (lam N) M) refl | val | lam | val = β-≃ N M (val-value M eM)
 step-≃ (lit B c) ()
@@ -232,7 +243,8 @@ step-≃ (get i M) refl | to M' = proj-≃ (pos i) (step-≃ M eM)
 step-≃ (get i M) () | error
 step-≃ (get i M) e | val with val-value M eM
 step-≃ (get {Δ} i (tuple Vs)) refl | val | tuple vs =
-  ≃-trans (proj-𝒯 (length Δ) (svs-ne (vals-svs vs) ne₀) (pos i)) (≃-reflexive (nth-lookup Vs i ρ₀))
+  ≃-trans (proj-𝒯 (length Δ) (svs-ne (vals-svs vs) ne₀) (pos i))
+    (≃-reflexive (nth-lookup Vs i ρ₀))
 step-≃ (inl M) e with red M in eM
 step-≃ (inl M) refl | to M' = inl-≃ (step-≃ M eM)
 step-≃ (inl M) () | error
@@ -242,26 +254,36 @@ step-≃ (inr M) refl | to M' = inr-≃ (step-≃ M eM)
 step-≃ (inr M) () | error
 step-≃ (inr M) () | val
 step-≃ (case L M N) e with red L in eL
-step-≃ (case L M N) refl | to L' = case-≃ {F = λ X → ⟦ M ⟧ (X • ρ₀)} {G = λ X → ⟦ N ⟧ (X • ρ₀)} (step-≃ L eL)
+step-≃ (case L M N) refl | to L' =
+  case-≃ {F = λ X → ⟦ M ⟧ (X • ρ₀)} {G = λ X → ⟦ N ⟧ (X • ρ₀)} (step-≃ L eL)
   (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl)
 step-≃ (case L M N) () | error
 step-≃ (case L M N) e | val with val-value L eL
 step-≃ (case (inl V) M N) refl | val | inl v =
-  ≃-trans (case-inl (inl V) M N ρ₀ (⟦ V ⟧ ρ₀) ≃-refl ne₀ (val-ne v) (con V con₀)) (≃-sym ([]-≃ M V))
+  ≃-trans
+    (case-inl (inl V) M N ρ₀ (⟦ V ⟧ ρ₀) ≃-refl ne₀ (val-ne v) (con V con₀))
+    (≃-sym ([]-≃ M V))
 step-≃ (case (inr V) M N) refl | val | inr v =
-  ≃-trans (case-inr (inr V) M N ρ₀ (⟦ V ⟧ ρ₀) ≃-refl ne₀ (val-ne v) (con V con₀)) (≃-sym ([]-≃ N V))
+  ≃-trans
+    (case-inr (inr V) M N ρ₀ (⟦ V ⟧ ρ₀) ≃-refl ne₀ (val-ne v) (con V con₀))
+    (≃-sym ([]-≃ N V))
 step-≃ (prim p L M) e with red L in eL
-step-≃ (prim p L M) refl | to L' = primD-≃ p (step-≃ L eL) (≃-refl {D = ⟦ M ⟧ ρ₀})
+step-≃ (prim p L M) refl | to L' =
+  primD-≃ p (step-≃ L eL) (≃-refl {D = ⟦ M ⟧ ρ₀})
 step-≃ (prim p L M) () | error
 step-≃ (prim p L M) e | val with val-value L eL
 step-≃ (prim p (lit _ n) M) e | val | lit with red M in eM
-step-≃ (prim p (lit _ n) M) refl | val | lit | to M' = primD-≃ p (≃-refl {D = ⟦ lit {[]} Int n ⟧ ρ₀}) (step-≃ M eM)
+step-≃ (prim p (lit _ n) M) refl | val | lit | to M' =
+  primD-≃ p (≃-refl {D = ⟦ lit {[]} Int n ⟧ ρ₀}) (step-≃ M eM)
 step-≃ (prim p (lit _ n) M) () | val | lit | error
 step-≃ (prim p (lit _ n) M) e | val | lit | val with val-value M eM
 step-≃ (prim p (lit _ n) (lit _ m)) refl | val | lit | val | lit =
-  ≃-trans (prim-fold p n m) (≃-trans (prim-term-≃ p n m ρ₀) (≃-reflexive (cong (λ T → ⟦ T ⟧ ρ₀) (sym (out-≡ p n m)))))
+  ≃-trans (prim-fold p n m)
+    (≃-trans (prim-term-≃ p n m ρ₀)
+      (≃-reflexive (cong (λ T → ⟦ T ⟧ ρ₀) (sym (out-≡ p n m)))))
 step-≃ (let′ M N) e with red M in eM
-step-≃ (let′ M N) refl | to M' = let-≃ {F = λ X → ⟦ N ⟧ (X • ρ₀)} (step-≃ M eM) (λ _ _ _ → ≃-refl)
+step-≃ (let′ M N) refl | to M' =
+  let-≃ {F = λ X → ⟦ N ⟧ (X • ρ₀)} (step-≃ M eM) (λ _ _ _ → ≃-refl)
 step-≃ (let′ M N) () | error
 step-≃ (let′ M N) refl | val = β-≃ N M (val-value M eM)
 step-≃ (fold M) e with red M in eM

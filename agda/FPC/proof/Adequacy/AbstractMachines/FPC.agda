@@ -6,10 +6,12 @@
   started in ρ₀ on the denotational side and in the empty environment
   on the machine side, as for ISWIM (ISWIM/proof/Adequacy/ISWIM.agda):
 
-    soundness (FPC/proof/Adequacy/AbstractMachines/Soundness.agda): if the machine
+    soundness (FPC/proof/Adequacy/AbstractMachines/Soundness.agda): if the
+    machine
       terminates with o, it returns a value v observed as o, and the
       denotation of v is part of ⟦ M ⟧ ρ₀;
-    adequacy (FPC/proof/Adequacy/AbstractMachines/LogRel.agda): every d ∈ ⟦ M ⟧ ρ₀ is
+    adequacy (FPC/proof/Adequacy/AbstractMachines/LogRel.agda): every d ∈ ⟦ M ⟧
+    ρ₀ is
       related to the value the machine returns.
 
   So ⟦ M ⟧ ρ₀ contains const k exactly when the machine terminates with
@@ -28,24 +30,26 @@ module FPC.proof.Adequacy.AbstractMachines.FPC where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value) renaming (const to
+  dconst)
 open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import FPC.Language.FPC using (Tm)
 open import FPC.Semantics.GraphModel.FPC using (⟦_⟧)
 open import FPC.Semantics.AbstractMachines.FPC using (sem; Val; ret; halt; obs)
 open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep
-  using (Machine; Terminates; Diverges; never-final-diverges; diverges-not-terminates)
+open import proof.Semantics.CEK.Smallstep using (Machine; Terminates; Diverges;
+  never-final-diverges; diverges-not-terminates)
 open import FPC.proof.Semantics.AbstractMachines.NoError using (fpc-no-error)
 import FPC.proof.Adequacy.AbstractMachines.Soundness as S
-open import FPC.proof.Adequacy.AbstractMachines.LogRel using (𝕍; adequate; 𝕍-const; obs-answer; ↠→star)
+open import FPC.proof.Adequacy.AbstractMachines.LogRel using (𝕍; adequate;
+  𝕍-const; obs-answer; ↠→star)
 
 open import Data.List using ([])
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (refl; sym; subst)
 open import Relation.Nullary using (¬_)
 
-{- Soundness -------------------------------------------------------------------}
+{- Soundness ------------------------------------------------------------------}
 
 sound-const : ∀ {A} (M : Tm [] A) {B} {k : base-rep B}
   → Terminates (sem M) (o-const B k)
@@ -59,13 +63,14 @@ sound-nonempty : ∀ {A} (M : Tm [] A)
 sound-nonempty M ⟨ o , ⟨ _ , t ⟩ ⟩ with S.soundness M t
 ... | ⟨ _ , ⟨ v , ⟨ _ , v⊆ ⟩ ⟩ ⟩ = let ⟨ d , d∈ ⟩ = S.𝒱-ne v in ⟨ d , v⊆ d d∈ ⟩
 
-{- Adequacy --------------------------------------------------------------------}
+{- Adequacy -------------------------------------------------------------------}
 
 adequacy : ∀ {A} (M : Tm [] A) {d}
   → d ∈ ⟦ M ⟧ ρ₀
   → Σ[ v ∈ Val A ] Terminates (sem M) (obs v) × 𝕍 d v
 adequacy M d∈ with adequate M (λ ()) d∈
-... | ⟨ v , ⟨ e , r ⟩ ⟩ = ⟨ v , ⟨ ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩ , r ⟩ ⟩
+... | ⟨ v , ⟨ e , r ⟩ ⟩ =
+  ⟨ v , ⟨ ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩ , r ⟩ ⟩
 
 adequacy-const : ∀ {A} (M : Tm [] A) {B} {k : base-rep B}
   → dconst k ∈ ⟦ M ⟧ ρ₀
@@ -79,12 +84,14 @@ adequacy-converges : ∀ {A} (M : Tm [] A)
 adequacy-converges M ⟨ d , d∈ ⟩ with adequacy M d∈
 ... | ⟨ v , ⟨ t , _ ⟩ ⟩ = ⟨ obs v , ⟨ obs-answer v , t ⟩ ⟩
 
-{- Characterizations ------------------------------------------------------------}
+{- Characterizations ----------------------------------------------------------}
 
-const-iff : ∀ {A} (M : Tm [] A) {B} {k : base-rep B} → (dconst k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) (o-const B k)
+const-iff : ∀ {A} (M : Tm [] A) {B} {k : base-rep B}
+  → (dconst k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) (o-const B k)
 const-iff M = ⟨ adequacy-const M , sound-const M ⟩
 
-nonempty-iff : ∀ {A} (M : Tm [] A) → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (sem M))
+nonempty-iff : ∀ {A} (M : Tm [] A)
+  → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (sem M))
 nonempty-iff M = ⟨ adequacy-converges M , sound-nonempty M ⟩
 
 {- a program that diverges denotes the empty set -}
@@ -113,4 +120,7 @@ diverges-not-converges div ⟨ o , ⟨ _ , t ⟩ ⟩ = diverges-not-terminates d
 diverges-iff : ∀ {A} (M : Tm [] A) → Diverges (sem M) ⇔ (¬ nonempty (⟦ M ⟧ ρ₀))
 diverges-iff M =
   ⟨ (λ { div ⟨ d , d∈ ⟩ → diverges-empty M div d d∈ })
-  , (λ ne → no-error-diverges (sem M) (fpc-no-error M) (λ c → ne (sound-nonempty M c))) ⟩
+  ,
+    (λ ne →
+      no-error-diverges (sem M) (fpc-no-error M)
+        (λ c → ne (sound-nonempty M c))) ⟩

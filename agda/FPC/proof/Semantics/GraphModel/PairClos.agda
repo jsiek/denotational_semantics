@@ -23,7 +23,8 @@ open import Data.Product using (proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 ok : ∀ {Γ A} (M : Tm Γ A) → Ok ⟦ M ⟧
-oks : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) → Oks (replicate (length Δ) ■) (split (length Δ) ⟦ Ms ⟧s)
+oks : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ)
+  → Oks (replicate (length Δ) ■) (split (length Δ) ⟦ Ms ⟧s)
 
 ok (` x) = var-ok (idx x)
 ok (code N) = ΛΛ-ok (ok N)

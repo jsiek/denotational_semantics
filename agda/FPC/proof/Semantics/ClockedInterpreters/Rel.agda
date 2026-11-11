@@ -14,7 +14,8 @@
 
 open import FPC.Language.Type using (Ctx; Type)
 
-module FPC.proof.Semantics.ClockedInterpreters.Rel {C₁ C₂ : Ctx → Type → Type → Set} where
+module FPC.proof.Semantics.ClockedInterpreters.Rel
+  {C₁ C₂ : Ctx → Type → Type → Set} where
 
 open import Framework.Primitives using (base-rep)
 open import Language.Prim using (sub; eq)
@@ -39,12 +40,14 @@ data Same (Code : ∀ {Δ A B} → C₁ Δ A B → C₂ Δ A B → Set)
   same : ∀ {Δ A B} {c : C₁ Δ A B} {c' vs} → Code c c' → Same Code c vs c' vs
 
 module Rel (Code : ∀ {Δ A B} → C₁ Δ A B → C₂ Δ A B → Set)
-           (Clo : ∀ {Δ Δ' A B} → C₁ Δ A B → All T.Val Δ → C₂ Δ' A B → All T.Val Δ' → Set) where
+           (Clo : ∀ {Δ Δ' A B} → C₁ Δ A B → All T.Val Δ → C₂ Δ' A B
+               → All T.Val Δ' → Set) where
 
   infix 4 _≈_
   data _≈_ : ∀ {A} → S.Val A → T.Val A → Set where
     code≈ : ∀ {Δ A B} {c : C₁ Δ A B} {c'} → Code c c' → S.code c ≈ T.code c'
-    pack≈ : ∀ {Δ Δ' A B} {c : C₁ Δ A B} {c' : C₂ Δ' A B} {vs vs' ws} → All₂ _≈_ vs vs' → Clo c vs' c' ws
+    pack≈ : ∀ {Δ Δ' A B} {c : C₁ Δ A B} {c' : C₂ Δ' A B} {vs vs' ws}
+      → All₂ _≈_ vs vs' → Clo c vs' c' ws
       → S.pack (S.code c) (S.tup vs) ≈ T.pack (T.code c') (T.tup ws)
     const≈ : ∀ {B} {k : base-rep B} → S.const k ≈ T.const k
     tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → S.tup vs ≈ T.tup ws
@@ -87,10 +90,12 @@ module Rel (Code : ∀ {Δ A B} → C₁ Δ A B → C₂ Δ A B → Set)
     → S.unfold-v v ≈ T.unfold-v w
   unfold≈ (fold≈ r) = r
 
-  either≈ : ∀ {A B} {X Y : Set} {R : X → Y → Set} {u : S.Val (A ⊹ B)} {u'} {f₁ f₂ g₁ g₂}
+  either≈ : ∀ {A B} {X Y : Set} {R : X → Y → Set} {u : S.Val (A ⊹ B)} {u'}
+    {f₁ f₂ g₁ g₂}
     → u ≈ u'
     → (∀ {v w} → v ≈ w → RelResult R (f₁ v) (g₁ w))
     → (∀ {v w} → v ≈ w → RelResult R (f₂ v) (g₂ w))
-    → RelResult R (S.either {X = Result X} u f₁ f₂) (T.either {X = Result Y} u' g₁ g₂)
+    → RelResult R (S.either {X = Result X} u f₁ f₂)
+      (T.either {X = Result Y} u' g₁ g₂)
   either≈ (inl≈ r) h₁ h₂ = h₁ r
   either≈ (inr≈ r) h₁ h₂ = h₂ r

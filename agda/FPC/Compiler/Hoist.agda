@@ -59,7 +59,8 @@ glob (S.case L M N) D with glob L D
 ... | out s₁ D₁ L' with glob M D₁
 ...   | out s₂ D₂ M' with glob N D₂
 ...     | out s₃ D₃ N' =
-  out (⊑-trans s₁ (⊑-trans s₂ s₃)) D₃ (case (wk (⊑-∋ (⊑-trans s₂ s₃)) L') (wk (⊑-∋ s₃) M') N')
+  out (⊑-trans s₁ (⊑-trans s₂ s₃)) D₃
+    (case (wk (⊑-∋ (⊑-trans s₂ s₃)) L') (wk (⊑-∋ s₃) M') N')
 glob (S.prim p L M) D = glob₂ (prim p) L M D
 glob (S.let′ M N) D = glob₂ let′ M N D
 glob (S.fold M) D = glob₁ fold M D

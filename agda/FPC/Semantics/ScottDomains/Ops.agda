@@ -47,9 +47,11 @@ choose : ∀ {P : Set} → Dec P → ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → ⟨ 𝔻 
 choose (yes _) d e = d
 choose (no _) d e = e
 
-tables : ∀ {Σ} {D : DSig → Set} → (Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) → ∀ {ss} → All D ss → Table Σ
+tables : ∀ {Σ} {D : DSig → Set} → (Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) → ∀ {ss}
+  → All D ss → Table Σ
 tables cd [] f = ⊥𝔻
-tables cd {_ ∷ ss} (d ∷ ds) f = choose (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f)
+tables cd {_ ∷ ss} (d ∷ ds) f =
+  choose (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f)
 
 {- the two cases of tables, as equations (proved here: reducing tables
    elsewhere is slow) -}
@@ -63,12 +65,16 @@ choose-no : ∀ {P : Set} (q : Dec P) (d e : ⟨ 𝔻 ⟩)
 choose-no (yes p) d e ¬p = ⊥-elim (¬p p)
 choose-no (no _) d e ¬p = refl
 
-tables-yes : ∀ {Σ} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) {s ss} (d : D s) (ds : All D ss) {t} (f : Σ ∋ t)
+tables-yes : ∀ {Σ} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) {s ss}
+  (d : D s) (ds : All D ss) {t} (f : Σ ∋ t)
   → lvl f ≡ length ss
   → tables cd (d ∷ ds) f ＝ cd (tables cd ds) d
-tables-yes cd {ss = ss} d ds f e = choose-yes (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f) e
+tables-yes cd {ss = ss} d ds f e =
+  choose-yes (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f) e
 
-tables-no : ∀ {Σ} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) {s ss} (d : D s) (ds : All D ss) {t} (f : Σ ∋ t)
+tables-no : ∀ {Σ} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) {s ss}
+  (d : D s) (ds : All D ss) {t} (f : Σ ∋ t)
   → ¬ (lvl f ≡ length ss)
   → tables cd (d ∷ ds) f ＝ tables cd ds f
-tables-no cd {ss = ss} d ds f ne = choose-no (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f) ne
+tables-no cd {ss = ss} d ds f ne =
+  choose-no (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f) ne

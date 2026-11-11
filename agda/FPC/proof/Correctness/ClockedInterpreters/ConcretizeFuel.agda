@@ -21,7 +21,8 @@ open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup�
 open import proof.Semantics.Interp.Clock
 import FPC.Semantics.ClockedInterpreters.Clos as S
 import FPC.Semantics.ClockedInterpreters.EnvClos as T
-open import FPC.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C3.Tm (A ∷ tup Δ ∷ []) B}
+open import FPC.proof.Semantics.ClockedInterpreters.Rel {λ Δ A B → Tm (A ∷ Δ) B}
+  {λ Δ A B → C3.Tm (A ∷ tup Δ ∷ []) B}
 
 open import Data.Nat using (zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
@@ -66,25 +67,32 @@ call≈ : ∀ ck {A B} {f : S.Val (A ⇒ B)} {g v w}
   → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
 run≈ ck (` x) {φ} E = ref≈ ck (φ x) (E x)
-run≈ ck (clos N Ms) E = bind-rel (runs≈ ck Ms E) λ vs → ret (pack≈ vs (same refl))
-run≈ ck (app L M) E = bind-rel (run≈ ck L E) λ f → bind-rel (run≈ ck M E) λ w → call≈ ck f w
+run≈ ck (clos N Ms) E =
+  bind-rel (runs≈ ck Ms E) λ vs → ret (pack≈ vs (same refl))
+run≈ ck (app L M) E =
+  bind-rel (run≈ ck L E) λ f → bind-rel (run≈ ck M E) λ w → call≈ ck f w
 run≈ ck (lit B c) E = ret const≈
 run≈ ck (tuple Ms) E = bind-rel (runs≈ ck Ms E) λ vs → ret (tup≈ vs)
 run≈ ck (get i M) E = bind-rel (run≈ ck M E) λ v → ret (nth≈ i v)
 run≈ ck (inl M) E = bind-rel (run≈ ck M E) λ v → ret (inl≈ v)
 run≈ ck (inr M) E = bind-rel (run≈ ck M E) λ v → ret (inr≈ v)
 run≈ ck (case L M N) E =
-  bind-rel (run≈ ck L E) λ u → either≈ u (λ v → run≈ ck M (env-ext v E)) (λ v → run≈ ck N (env-ext v E))
-run≈ ck (prim p L M) E = bind-rel (run≈ ck L E) λ v → bind-rel (run≈ ck M E) λ w → ret (δ≈ p v w)
+  bind-rel (run≈ ck L E) λ u →
+    either≈ u (λ v → run≈ ck M (env-ext v E)) (λ v → run≈ ck N (env-ext v E))
+run≈ ck (prim p L M) E =
+  bind-rel (run≈ ck L E) λ v → bind-rel (run≈ ck M E) λ w → ret (δ≈ p v w)
 run≈ ck (let′ M N) E = bind-rel (run≈ ck M E) λ v → run≈ ck N (env-ext v E)
 run≈ ck (fold M) E = bind-rel (run≈ ck M E) λ v → ret (fold≈ v)
 run≈ ck (unfold M) E = bind-rel (run≈ ck M E) λ v → ret (unfold≈ v)
 
 runs≈ ck [] E = ret []
-runs≈ ck (M ∷ Ms) E = bind-rel (run≈ ck M E) λ v → bind-rel (runs≈ ck Ms E) λ vs → ret (v ∷ vs)
+runs≈ ck (M ∷ Ms) E =
+  bind-rel (run≈ ck M E) λ v → bind-rel (runs≈ ck Ms E) λ vs → ret (v ∷ vs)
 
 call≈ zero f w = timeout
-call≈ (suc ck) (pack≈ {c = N} rs (same refl)) w = run≈ ck N λ { Z → w ; (S i) → lookup₂ rs i }
+call≈ (suc ck) (pack≈ {c = N} rs (same refl)) w =
+  run≈ ck N λ { Z → w ; (S i) → lookup₂ rs i }
 
-concretize-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (T.sem (concretize-program M))
+concretize-correct : ∀ {A} (M : Tm [] A)
+  → Equivalent (S.sem M) (T.sem (concretize-program M))
 concretize-correct M = clocked _≈_ obs≈ λ ck → run≈ ck M λ ()

@@ -2,11 +2,12 @@
 
   The adequacy of the graph model for the abstract machines (CEK
   machines) of FPC and X86μ: the analogue, for the machines, of
-  Proposition 5.1 (adequacy) of the paper (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for
-  the clocked interpreters), and the consequence drawn from it with
-  Theorem 4.1, the theorem the operational proofs state. It is an
-  alternative to FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported separately. The
-  proofs are in FPC/proof/Adequacy/AbstractMachines/.
+  Proposition 5.1 (adequacy) of the paper
+  (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, for the clocked
+  interpreters), and the consequence drawn from it with Theorem 4.1, the theorem
+  the operational proofs state. It is an alternative to
+  FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda, reported
+  separately. The proofs are in FPC/proof/Adequacy/AbstractMachines/.
 
   compile is FPC/Compiler/Pipeline.agda's. The X86μ statements are for
   the programs the compiler produces, so that their preconditions (in
@@ -68,7 +69,8 @@ fpc-diverges-iff M = ⇔∘ (AdequacyFPC.diverges-iff M) ¬nonempty⇔≃∅
 {- the same holds for X86μ and compile M -}
 
 x86-const-iff : ∀ {A} (M : FPC.Tm [] A) {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile M ⟧ₜ) ⇔ Terminates (X86μₘ.sem (compile M)) (o-const B k)
+  → (const k ∈ ⟦ compile M ⟧ₜ)
+    ⇔ Terminates (X86μₘ.sem (compile M)) (o-const B k)
 x86-const-iff = AdequacyX86.x86-const-iff
 
 x86-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
@@ -82,7 +84,8 @@ x86-diverges-iff M = ⇔∘ (AdequacyX86.x86-diverges-iff M) ¬nonempty⇔≃∅
    integer, or both diverge -}
 
 end-to-end-x86-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)
-  → Terminates (FPCₘ.sem M) (o-const Int n) ⇔ Terminates (X86μₘ.sem (compile M)) (o-const Int n)
+  → Terminates (FPCₘ.sem M) (o-const Int n)
+    ⇔ Terminates (X86μₘ.sem (compile M)) (o-const Int n)
 end-to-end-x86-const = EndToEnd.end-to-end-x86-const
 
 end-to-end-x86-diverges : ∀ (M : FPC.Tm [] (base Int))

@@ -52,10 +52,12 @@ Meanings Bs = ∀ {Δ} → Bs ∋ Δ → Den Env
 
 ⟦_⟧ᵗ : ∀ {Σ R Bs Δ} → Tail Σ R Bs Δ → Table Σ → Meanings Bs → Den Env
 ⟦ return s ⟧ᵗ T B = 𝒮 s T
-⟦ seq p s t ⟧ᵗ T B = op₂ appᵈ (∘₁ Env Env 𝔻 (drop p) (lamᶜ (⟦ t ⟧ᵗ T B))) (𝒮 s T)
+⟦ seq p s t ⟧ᵗ T B =
+  op₂ appᵈ (∘₁ Env Env 𝔻 (drop p) (lamᶜ (⟦ t ⟧ᵗ T B))) (𝒮 s T)
 ⟦ goto l ⟧ᵗ T B = B l
 ⟦ case a p l₁ l₂ ⟧ᵗ T B =
-  casesᶜ (𝒜 a T) (∘₁ Env Env (𝔻 ⟹₁ 𝔻) (drop p) (abs (B l₁))) (∘₁ Env Env (𝔻 ⟹₁ 𝔻) (drop p) (abs (B l₂)))
+  casesᶜ (𝒜 a T) (∘₁ Env Env (𝔻 ⟹₁ 𝔻) (drop p) (abs (B l₁)))
+    (∘₁ Env Env (𝔻 ⟹₁ 𝔻) (drop p) (abs (B l₂)))
 
 blocks : ∀ {Σ R Bs} → Blocks Σ R Bs → Table Σ → Meanings Bs
 blocks (bs ▷ t) T Z = ⟦ t ⟧ᵗ T (blocks bs T)

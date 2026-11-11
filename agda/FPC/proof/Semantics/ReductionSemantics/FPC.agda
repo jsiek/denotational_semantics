@@ -57,8 +57,11 @@ open Traversal trav (λ _ _ _ → refl) public
 
 module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
   (R : ∀ {Γ Δ Θ} → Sub 𝒦₁ Γ Δ → Sub 𝒦₂ Δ Θ → Sub 𝒦₃ Γ Θ → Set)
-  (R-exts : ∀ {Γ Δ Θ B} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → R (exts 𝒦₁ {B = B} σ₁) (exts 𝒦₂ σ₂) (exts 𝒦₃ σ₃))
-  (R-var : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → ∀ {A} (x : Γ ∋ A) → trav 𝒦₂ σ₂ (Kit.tm 𝒦₁ (σ₁ x)) ≡ Kit.tm 𝒦₃ (σ₃ x)) where
+  (R-exts : ∀ {Γ Δ Θ B} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
+      → R σ₁ σ₂ σ₃ → R (exts 𝒦₁ {B = B} σ₁) (exts 𝒦₂ σ₂) (exts 𝒦₃ σ₃))
+  (R-var : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
+      → R σ₁ σ₂ σ₃ → ∀ {A} (x : Γ ∋ A)
+        → trav 𝒦₂ σ₂ (Kit.tm 𝒦₁ (σ₁ x)) ≡ Kit.tm 𝒦₃ (σ₃ x)) where
 
   fuse : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
     → R σ₁ σ₂ σ₃
@@ -76,7 +79,8 @@ module _ (𝒦₁ 𝒦₂ 𝒦₃ : Kit)
   fuse r (get i M) = cong (get i) (fuse r M)
   fuse r (inl M) = cong inl (fuse r M)
   fuse r (inr M) = cong inr (fuse r M)
-  fuse r (case L M N) rewrite fuse r L | fuse (R-exts r) M | fuse (R-exts r) N = refl
+  fuse r (case L M N) rewrite fuse r L | fuse (R-exts r) M
+    | fuse (R-exts r) N = refl
   fuse r (prim p L M) = cong₂ (prim p) (fuse r L) (fuse r M)
   fuse r (let′ M N) = cong₂ let′ (fuse r M) (fuse (R-exts r) N)
   fuse r (fold M) = cong fold (fuse r M)
@@ -97,7 +101,8 @@ sub-id h (tuple Ms) = cong tuple (sub-ids h Ms)
 sub-id h (get i M) = cong (get i) (sub-id h M)
 sub-id h (inl M) = cong inl (sub-id h M)
 sub-id h (inr M) = cong inr (sub-id h M)
-sub-id h (case L M N) rewrite sub-id h L | sub-id (sub-id-exts h) M | sub-id (sub-id-exts h) N = refl
+sub-id h (case L M N) rewrite sub-id h L | sub-id (sub-id-exts h) M
+  | sub-id (sub-id-exts h) N = refl
 sub-id h (prim p L M) = cong₂ (prim p) (sub-id h L) (sub-id h M)
 sub-id h (let′ M N) = cong₂ let′ (sub-id h M) (sub-id (sub-id-exts h) N)
 sub-id h (fold M) = cong fold (sub-id h M)

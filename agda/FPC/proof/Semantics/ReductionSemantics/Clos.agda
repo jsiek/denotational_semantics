@@ -20,7 +20,8 @@ open import Data.List using ([]; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 data Value {Γ} : ∀ {A} → Tm Γ A → Set where
-  clos : ∀ {Δ A B} {N : Tm (A ∷ Δ) B} {Vs : All (Tm Γ) Δ} → Each Value Vs → Value (clos N Vs)
+  clos : ∀ {Δ A B} {N : Tm (A ∷ Δ) B} {Vs : All (Tm Γ) Δ} → Each Value Vs
+    → Value (clos N Vs)
   lit : ∀ {B c} → Value (lit B c)
   tuple : ∀ {Δ} {Vs : All (Tm Γ) Δ} → Each Value Vs → Value (tuple Vs)
   inl : ∀ {A B} {V : Tm Γ A} → Value V → Value (inl {B = B} V)
@@ -57,7 +58,8 @@ value-trav (fold v) = fold (value-trav v)
 values-trav [] = []
 values-trav (v ∷ vs) = value-trav v ∷ values-trav vs
 
-lookup-travs : ∀ {𝒦 Γ Δ Δ' A} (σ : Sub 𝒦 Γ Δ) (Ms : All (Tm Γ) Δ') (i : Δ' ∋ A) → lookup (travs 𝒦 σ Ms) i ≡ trav 𝒦 σ (lookup Ms i)
+lookup-travs : ∀ {𝒦 Γ Δ Δ' A} (σ : Sub 𝒦 Γ Δ) (Ms : All (Tm Γ) Δ') (i : Δ' ∋ A)
+  → lookup (travs 𝒦 σ Ms) i ≡ trav 𝒦 σ (lookup Ms i)
 lookup-travs σ (M ∷ Ms) Z = refl
 lookup-travs σ (M ∷ Ms) (S i) = lookup-travs σ Ms i
 

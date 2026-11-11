@@ -25,7 +25,8 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 module _ {Σ} {T : Table Σ} (cT : ConT T) where
   ok : ∀ {Γ A} (M : Tm Σ Γ A) → Ok ⟦ M ⟧[ T ]
-  oks : ∀ {Γ Δ} (Ms : All (Tm Σ Γ) Δ) → Oks (replicate (length Δ) ■) (split (length Δ) ⟦ Ms ⟧s[ T ])
+  oks : ∀ {Γ Δ} (Ms : All (Tm Σ Γ) Δ)
+    → Oks (replicate (length Δ) ■) (split (length Δ) ⟦ Ms ⟧s[ T ])
 
   ok (` x) = var-ok (idx x)
   ok (fun-ref f) = const-ok (cT f)

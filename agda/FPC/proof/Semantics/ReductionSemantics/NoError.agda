@@ -17,16 +17,19 @@ module FPC.proof.Semantics.ReductionSemantics.NoError where
 open import FPC.Language.Type hiding (_[_])
 open import FPC.Language.FPC
 open import FPC.Semantics.ReductionSemantics.FPC
-open import FPC.proof.Semantics.ReductionSemantics.FPC using (Value; lam; lit; tuple; inl; inr; fold)
+open import FPC.proof.Semantics.ReductionSemantics.FPC using (Value; lam; lit;
+  tuple; inl; inr; fold)
 open import Semantics.Observation using (Obs; o-error; Answer)
 open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import FPC.Framework.AllUtil using (All; []; _∷_)
-open import Semantics.Reduction.Smallstep using (Red; val; to; step-in; toNext; Terminates; Next; next; stop)
+open import Semantics.Reduction.Smallstep using (Red; val; to; step-in; toNext;
+  Terminates; Next; next; stop)
 open import Data.Empty using (⊥)
 
 open import Data.List using ([])
 open import Data.Product using (_,_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym;
+  cong)
 open import Relation.Nullary using (¬_)
 
 {- a value, or a term that reduces -}
@@ -36,7 +39,8 @@ data Prog {X : Set} (V : X → Set) (M : X) (r : Red X) : Set where
 
 private
   {- reduce in a context, or go on once the subterm is a value -}
-  ctx : ∀ {A B : Set} {V : A → Set} {M : A} {V' : B → Set} {M' : B} {f : A → B} {r k}
+  ctx : ∀ {A B : Set} {V : A → Set} {M : A} {V' : B → Set} {M' : B}
+    {f : A → B} {r k}
     → Prog V M r
     → (V M → r ≡ val → Prog V' M' k)
     → Prog V' M' (step-in f r k)
@@ -48,20 +52,24 @@ progresses : ∀ {Δ} (Ms : All (Tm []) Δ) → Prog (Each Value) Ms (reds Ms)
 
 progress (` ())
 progress (lam N) = value lam refl
-progress (app L M) = ctx (progress L) λ { lam eL → ctx (progress M) λ vM eM → steps _ refl }
+progress (app L M) =
+  ctx (progress L) λ { lam eL → ctx (progress M) λ vM eM → steps _ refl }
 progress (lit B c) = value lit refl
 progress (tuple Ms) = ctx (progresses Ms) λ vs e → value (tuple vs) refl
 progress (get i M) = ctx (progress M) λ { (tuple vs) e → steps _ refl }
 progress (inl M) = ctx (progress M) λ v e → value (inl v) refl
 progress (inr M) = ctx (progress M) λ v e → value (inr v) refl
-progress (case L M N) = ctx (progress L) λ { (inl v) e → steps _ refl ; (inr v) e → steps _ refl }
-progress (prim p L M) = ctx (progress L) λ { lit eL → ctx (progress M) λ { lit eM → steps _ refl } }
+progress (case L M N) =
+  ctx (progress L) λ { (inl v) e → steps _ refl ; (inr v) e → steps _ refl }
+progress (prim p L M) =
+  ctx (progress L) λ { lit eL → ctx (progress M) λ { lit eM → steps _ refl } }
 progress (let′ M N) = ctx (progress M) λ v e → steps _ refl
 progress (fold M) = ctx (progress M) λ v e → value (fold v) refl
 progress (unfold M) = ctx (progress M) λ { (fold v) e → steps _ refl }
 
 progresses [] = value [] refl
-progresses (M ∷ Ms) = ctx (progress M) λ v e → ctx (progresses Ms) λ vs es → value (v ∷ vs) refl
+progresses (M ∷ Ms) =
+  ctx (progress M) λ v e → ctx (progresses Ms) λ vs es → value (v ∷ vs) refl
 
 value-answer : ∀ {A} {V : Tm [] A}
   → Value V
@@ -79,7 +87,8 @@ fpc-no-error M (s , _ , fin) = go (progress s) fin
   go : Prog Value s (red s)
     → toNext (obs s) (red s) ≡ stop o-error
     → ⊥
-  go (value v e) f = value-answer v (cong stopped (trans (sym (cong (toNext (obs s)) e)) f))
+  go (value v e) f =
+    value-answer v (cong stopped (trans (sym (cong (toNext (obs s)) e)) f))
     where
     stopped : Next (Tm [] _) → Obs
     stopped (stop o) = o

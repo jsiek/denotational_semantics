@@ -38,11 +38,13 @@ module FPC.proof.Correctness.ScottDomains.CaptureCorrect
        where
 
 open import Framework.Scott.Base pt fe
-open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
+open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to
+  inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 open import FPC.Semantics.ScottDomains.FPC pt fe pe
-open import FPC.Semantics.ScottDomains.Clos pt fe pe renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
+open import FPC.Semantics.ScottDomains.Clos pt fe pe renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s
+  to ⟦_⟧s₂)
 
 Rel : Ctx → ⟨ Env ⟩ → ⟨ Env ⟩ → 𝓤₁ ̇
 Rel Γ ρ ρ' = ∀ {C} (x : Γ ∋ C) → (ρ (idx x) ＝ ρ' (idx x)) × defined (ρ' (idx x))
@@ -55,7 +57,8 @@ rel-ext d p r Z = refl , p
 rel-ext d p r (S x) = r x
 
 {- the free variables of a closure built by tab -}
-tab-fv : ∀ {Γ Δ C} (f : ∀ {A} → Δ ∋ A → T.Tm Γ A) (ρ : ⟨ Env ⟩) (Y : ⟨ 𝔻 ⟩) (x : Δ ∋ C)
+tab-fv : ∀ {Γ Δ C} (f : ∀ {A} → Δ ∋ A → T.Tm Γ A) (ρ : ⟨ Env ⟩)
+  (Y : ⟨ 𝔻 ⟩) (x : Δ ∋ C)
   → fv-env (length Δ) (⟦ tab f ⟧s₂ · ρ) Y (succ (idx x)) ＝ ⟦ f x ⟧₂ · ρ
 tab-fv f ρ Y Z = refl
 tab-fv f ρ Y (S x) = tab-fv (λ y → f (S y)) ρ (⟦ f Z ⟧₂ · ρ) x
@@ -65,7 +68,8 @@ tab-defined : ∀ {Γ Δ} (f : ∀ {A} → Δ ∋ A → T.Tm Γ A) (ρ : ⟨ Env
   → (i : Fin (length Δ))
   → defined ((⟦ tab f ⟧s₂ · ρ) i)
 tab-defined {Δ = A ∷ Δ} f ρ h zero = h Z
-tab-defined {Δ = A ∷ Δ} f ρ h (suc i) = tab-defined (λ y → f (S y)) ρ (λ x → h (S x)) i
+tab-defined {Δ = A ∷ Δ} f ρ h (suc i) =
+  tab-defined (λ y → f (S y)) ρ (λ x → h (S x)) i
 
 enc : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'}
   → Rel Γ ρ ρ'
@@ -85,7 +89,8 @@ enc {Γ} (lam N) {ρ} {ρ'} r =
   Λ-cong (abs ⟦ N ⟧ · ρ) (closure-fun (length Γ) ⟦ capture N ⟧₂ xs)
     (λ d p → enc N (λ { Z → refl , p
                       ; (S x) → (pr₁ (r x) ∙ (tab-fv T.`_ ρ' d x ⁻¹))
-                              , transport defined (tab-fv T.`_ ρ' d x ⁻¹) (pr₂ (r x)) }))
+                              , transport defined (tab-fv T.`_ ρ' d x ⁻¹)
+                                  (pr₂ (r x)) }))
   ∙ (guard-defined (length Γ) xs (tab-defined T.`_ ρ' (λ x → pr₂ (r x)))
        (Λ · closure-fun (length Γ) ⟦ capture N ⟧₂ xs) ⁻¹)
  where
@@ -97,14 +102,17 @@ enc (get i M) r = ap (proj (pos i) ·_) (enc M r)
 enc (inl M) r = ap (inlᵈ ·_) (enc M r)
 enc (inr M) r = ap (inrᵈ ·_) (enc M r)
 enc (case L M N) {ρ} {ρ'} r =
-  caseᶜ-cong ⟦ L ⟧ ⟦ capture L ⟧₂ ⟦ M ⟧ ⟦ capture M ⟧₂ ⟦ N ⟧ ⟦ capture N ⟧₂ ρ ρ' (enc L r) (under M r) (under N r)
+  caseᶜ-cong ⟦ L ⟧ ⟦ capture L ⟧₂ ⟦ M ⟧ ⟦ capture M ⟧₂ ⟦ N ⟧ ⟦ capture N
+    ⟧₂ ρ ρ' (enc L r) (under M r) (under N r)
 enc (prim p L M) r = ap₂ (λ a b → primD p · a · b) (enc L r) (enc M r)
-enc (let′ M N) {ρ} {ρ'} r = letᶜ-cong ⟦ M ⟧ ⟦ capture M ⟧₂ ⟦ N ⟧ ⟦ capture N ⟧₂ ρ ρ' (enc M r) (under N r)
+enc (let′ M N) {ρ} {ρ'} r =
+  letᶜ-cong ⟦ M ⟧ ⟦ capture M ⟧₂ ⟦ N ⟧ ⟦ capture N ⟧₂ ρ ρ' (enc M r) (under N r)
 enc (fold M) r = enc M r
 enc (unfold M) r = enc M r
 
 encs-ok [] r = refl
-encs-ok (M ∷ Ms) r = dfunext fe λ { zero → enc M r ; (suc i) → happly (encs-ok Ms r) i }
+encs-ok (M ∷ Ms) r =
+  dfunext fe λ { zero → enc M r ; (suc i) → happly (encs-ok Ms r) i }
 
 under N r d p = enc N (rel-ext d p r)
 

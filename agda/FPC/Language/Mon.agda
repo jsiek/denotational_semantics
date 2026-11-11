@@ -35,8 +35,10 @@ data Exp (Σ : List DSig) (Γ : Ctx) : Type → Set where
   get : ∀ {Δ A} → Δ ∋ A → Atm Σ Γ (tup Δ) → Exp Σ Γ A
   inl : ∀ {A B} → Atm Σ Γ A → Exp Σ Γ (A ⊹ B)
   inr : ∀ {A B} → Atm Σ Γ B → Exp Σ Γ (A ⊹ B)
-  case : ∀ {A B C} → Atm Σ Γ (A ⊹ B) → Exp Σ (A ∷ Γ) C → Exp Σ (B ∷ Γ) C → Exp Σ Γ C
-  prim : (p : Prim) → Atm Σ Γ (base Int) → Atm Σ Γ (base Int) → Exp Σ Γ (out-ty p)
+  case : ∀ {A B C} → Atm Σ Γ (A ⊹ B) → Exp Σ (A ∷ Γ) C
+    → Exp Σ (B ∷ Γ) C → Exp Σ Γ C
+  prim : (p : Prim) → Atm Σ Γ (base Int) → Atm Σ Γ (base Int)
+    → Exp Σ Γ (out-ty p)
   let′ : ∀ {A B} → Exp Σ Γ A → Exp Σ (A ∷ Γ) B → Exp Σ Γ B
   fold : ∀ {A} → Atm Σ Γ (unroll A) → Exp Σ Γ (μ A)
   unfold : ∀ {A} → Atm Σ Γ (μ A) → Exp Σ Γ (unroll A)

@@ -28,7 +28,8 @@ module FPC.Semantics.GraphModel.X86 where
 
 open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.DOpSig using (Results)
-open import Framework.GraphModel.Ops renaming (pair to pairD; inl to inlD; inr to inrD)
+open import Framework.GraphModel.Ops renaming (pair to pairD; inl to inlD; inr
+  to inrD)
 open import Semantics.Graph.Prim using (primD)
 open import FPC.Semantics.GraphModel.Ops
 open import FPC.Semantics.GraphModel.Imp using (𝒜)
@@ -74,7 +75,8 @@ module _ {Σ : List DSig} (T : Table Σ) where
   𝒪 (a ↑) ρ R = 𝒪 a ρ R
   𝒪 (a ↓) ρ R = 𝒪 a ρ R
 
-  𝒪s : ∀ {ψ Δ} → All (λ A → Arg Σ ψ (ty A)) Δ → Env Value → RegsD → Results (𝒫 Value) (replicate (length Δ) ■)
+  𝒪s : ∀ {ψ Δ} → All (λ A → Arg Σ ψ (ty A)) Δ → Env Value → RegsD
+    → Results (𝒫 Value) (replicate (length Δ) ■)
   𝒪s [] ρ R = ptt
   𝒪s (a ∷ as) ρ R = ⟨ 𝒪 a ρ R , 𝒪s as ρ R ⟩
 
@@ -87,17 +89,20 @@ module _ {Σ : List DSig} (T : Table Σ) where
   {- d := D, then κ -}
   put : ∀ {n ψ τ ψ'} → Dst n ψ τ ψ' → 𝒫 Value → Kont → Kont
   put (reg r) D κ ρ R F = κ ρ (R [ r ≔ D ]) F
-  put (slot p _) D κ ρ R F = ⋆ ⟨ Λ ⟨ (λ X → κ (X • drop p ρ) R F) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
+  put (slot p _) D κ ρ R F =
+    ⋆ ⟨ Λ ⟨ (λ X → κ (X • drop p ρ) R F) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
   ⟦_⟧ⁱ : ∀ {n ψ ψ'} → Instr Σ n ψ ψ' → Kont → Kont
   ⟦ movq a d ⟧ⁱ κ ρ R F = put d (𝒪 a ρ R) κ ρ R F
-  ⟦ subq a r _ ⟧ⁱ κ ρ R F = κ ρ (R [ r ≔ primD sub ⟨ R r , ⟨ 𝒪 a ρ R , ptt ⟩ ⟩ ]) F
+  ⟦ subq a r _ ⟧ⁱ κ ρ R F =
+    κ ρ (R [ r ≔ primD sub ⟨ R r , ⟨ 𝒪 a ρ R , ptt ⟩ ⟩ ]) F
   ⟦ cmpq a₂ a₁ ⟧ⁱ κ ρ R F = κ ρ R (primD eq ⟨ 𝒪 a₁ ρ R , ⟨ 𝒪 a₂ ρ R , ptt ⟩ ⟩)
   ⟦ sete d ⟧ⁱ κ ρ R F = put d F κ ρ R F
   ⟦ alloc o d ⟧ⁱ κ ρ R F = put d (object o ρ R) κ ρ R F
   ⟦ load i a d ⟧ⁱ κ ρ R F = put d (proj (pos i) ⟨ 𝒪 a ρ R , ptt ⟩) κ ρ R F
   ⟦ loadfst x r ⟧ⁱ κ ρ R F = κ ρ (R [ r ≔ car ⟨ ρ (idx x) , ptt ⟩ ]) F
-  ⟦ loadsnd {x = opened x} r ⟧ⁱ κ ρ R F = κ ρ (R [ r ≔ cdr ⟨ ρ (idx x) , ptt ⟩ ]) F
+  ⟦ loadsnd {x = opened x} r ⟧ⁱ κ ρ R F =
+    κ ρ (R [ r ≔ cdr ⟨ ρ (idx x) , ptt ⟩ ]) F
   ⟦ callq a _ _ ⟧ⁱ κ ρ R F = strict C (κ ρ (called-regs C) init)
     where C = ⋆ ⟨ ⋆ ⟨ 𝒪 a ρ R , ⟨ R rdi , ptt ⟩ ⟩ , ⟨ R rsi , ptt ⟩ ⟩
 
@@ -106,7 +111,11 @@ module _ {Σ : List DSig} (T : Table Σ) where
   ⟦ retq _ ⟧ˢ B ρ R F = R rax
   ⟦ jmp l ⟧ˢ B ρ R F = B l ρ
   ⟦ case x p _ l₁ l₂ ⟧ˢ B ρ R F =
-    𝒞 ⟨ ρ (idx x) , ⟨ (λ X → B l₁ (X • drop p ρ)) , ⟨ (λ X → B l₂ (X • drop p ρ)) , ptt ⟩ ⟩ ⟩
+    𝒞
+      ⟨ ρ (idx x)
+        ,
+        ⟨ (λ X → B l₁ (X • drop p ρ))
+          , ⟨ (λ X → B l₂ (X • drop p ρ)) , ptt ⟩ ⟩ ⟩
 
   {- each block, from its frame, with the meanings of the older ones -}
   blocks : ∀ {n R' Bs} → Blocks Σ n R' Bs → Meanings Bs
@@ -118,7 +127,8 @@ module _ {Σ : List DSig} (T : Table Σ) where
 
 {- the code of a definition: its body with %rdi and %rsi set -}
 codeₜ : ∀ {Σ} → Table Σ → ∀ {s} → Body Σ (DSig.cod s) (called s) → 𝒫 Value
-codeₜ T b = Λ ⟨ (λ X → Λ ⟨ (λ Y → run T b (λ _ → init) (args X Y) init) , ptt ⟩) , ptt ⟩
+codeₜ T b =
+  Λ ⟨ (λ X → Λ ⟨ (λ Y → run T b (λ _ → init) (args X Y) init) , ptt ⟩) , ptt ⟩
 
 {- the meaning of a whole program: the value of main -}
 ⟦_⟧ₜ : ∀ {A} → Program A → 𝒫 Value

@@ -29,7 +29,8 @@ open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-t
 import FPC.Language.PairClos as S
 open import FPC.Language.GlobalFun
 open import FPC.Compiler.Hoist
-open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂; lookup₂; _<><₂_)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; All₂;
+  lookup₂; _<><₂_)
 open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
@@ -43,7 +44,8 @@ open import Data.List using (List; []; _∷_)
 open import Data.Product using (_×_; _,_; proj₁; proj₂; uncurry′)
 open import Data.Unit using (⊤; tt)
 open import Language.Prim using (sub; eq)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; cong₂; subst)
 open import Relation.Nullary using (does)
 
 {- Terms, relative to an interpretation of the references ---------------------}
@@ -56,17 +58,23 @@ infix 4 _⊢_⇝_
 data _⊢_⇝_ {Σ} (I : Interp Σ) {Γ} : ∀ {A} → S.Tm Γ A → Tm Σ Γ A → Set where
   var : ∀ {A} {x : Γ ∋ A} → I ⊢ S.` x ⇝ ` x
   code : ∀ {Δ A B} {g : Σ ∋ sig Δ A B} {N} → I g N → I ⊢ S.code N ⇝ fun-ref g
-  pair : ∀ {Δ A B} {L : S.Tm Γ (code Δ A B)} {L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.pair L M ⇝ pair L' M'
-  callc : ∀ {A B} {L : S.Tm Γ (A ⇒ B)} {L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.callc L M ⇝ callc L' M'
+  pair : ∀ {Δ A B} {L : S.Tm Γ (code Δ A B)} {L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M'
+    → I ⊢ S.pair L M ⇝ pair L' M'
+  callc : ∀ {A B} {L : S.Tm Γ (A ⇒ B)} {L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M'
+    → I ⊢ S.callc L M ⇝ callc L' M'
   lit : ∀ {B c} → I ⊢ S.lit B c ⇝ lit B c
-  tuple : ∀ {Δ} {Ms : All _ Δ} {Ms'} → All₂ (I ⊢_⇝_) Ms Ms' → I ⊢ S.tuple Ms ⇝ tuple Ms'
+  tuple : ∀ {Δ} {Ms : All _ Δ} {Ms'} → All₂ (I ⊢_⇝_) Ms Ms'
+    → I ⊢ S.tuple Ms ⇝ tuple Ms'
   get : ∀ {Δ A} {i : Δ ∋ A} {M M'} → I ⊢ M ⇝ M' → I ⊢ S.get i M ⇝ get i M'
   inl : ∀ {A B} {M : S.Tm Γ A} {M'} → I ⊢ M ⇝ M' → I ⊢ S.inl {B = B} M ⇝ inl M'
   inr : ∀ {A B} {M : S.Tm Γ B} {M'} → I ⊢ M ⇝ M' → I ⊢ S.inr {A = A} M ⇝ inr M'
-  case : ∀ {A B C} {L : S.Tm Γ (A ⊹ B)} {L'} {M : S.Tm (A ∷ Γ) C} {M' N N'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ N ⇝ N'
+  case : ∀ {A B C} {L : S.Tm Γ (A ⊹ B)} {L'} {M : S.Tm (A ∷ Γ) C} {M' N N'}
+    → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ N ⇝ N'
     → I ⊢ S.case L M N ⇝ case L' M' N'
-  prim : ∀ {p L L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.prim p L M ⇝ prim p L' M'
-  let′ : ∀ {A B} {M : S.Tm Γ A} {M'} {N : S.Tm (A ∷ Γ) B} {N'} → I ⊢ M ⇝ M' → I ⊢ N ⇝ N' → I ⊢ S.let′ M N ⇝ let′ M' N'
+  prim : ∀ {p L L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M'
+    → I ⊢ S.prim p L M ⇝ prim p L' M'
+  let′ : ∀ {A B} {M : S.Tm Γ A} {M'} {N : S.Tm (A ∷ Γ) B} {N'} → I ⊢ M ⇝ M'
+    → I ⊢ N ⇝ N' → I ⊢ S.let′ M N ⇝ let′ M' N'
   fold : ∀ {A M M'} → I ⊢ M ⇝ M' → I ⊢ S.fold {A = A} M ⇝ fold M'
   unfold : ∀ {A M M'} → I ⊢ M ⇝ M' → I ⊢ S.unfold {A = A} M ⇝ unfold M'
 
@@ -101,7 +109,8 @@ data _⊢_⇝_ {Σ} (I : Interp Σ) {Γ} : ∀ {A} → S.Tm Γ A → Tm Σ Γ A 
 {- the definitions made before grow into those made after -}
 data MExt : ∀ {Σ₁ Σ₂} → Σ₁ ⊑ Σ₂ → Made Σ₁ → Made Σ₂ → Set where
   here : ∀ {Σ} {D : Made Σ} → MExt here⊑ D D
-  there : ∀ {Σ₁ Σ₂ s g} {D : Made Σ₁} {D' : Made Σ₂} {N : Code Σ₂ s} → MExt g D D' → MExt (there⊑ g) D (D' ▷ N)
+  there : ∀ {Σ₁ Σ₂ s g} {D : Made Σ₁} {D' : Made Σ₂} {N : Code Σ₂ s}
+    → MExt g D D' → MExt (there⊑ g) D (D' ▷ N)
 
 mext-trans : ∀ {Σ₁ Σ₂ Σ₃}
   → {g : Σ₁ ⊑ Σ₂}
@@ -113,8 +122,10 @@ mext-trans : ∀ {Σ₁ Σ₂ Σ₃}
 mext-trans x here = x
 mext-trans x (there y) = there (mext-trans x y)
 
-glob-grows : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → MExt (Out.grows (glob M D)) D (Out.made (glob M D))
-globs-grows : ∀ {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) → MExt (Out.grows (globs Ms D)) D (Out.made (globs Ms D))
+glob-grows : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ)
+  → MExt (Out.grows (glob M D)) D (Out.made (glob M D))
+globs-grows : ∀ {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ)
+  → MExt (Out.grows (globs Ms D)) D (Out.made (globs Ms D))
 glob-grows (S.` x) D = here
 glob-grows (S.code N) D = there (glob-grows N D)
 glob-grows (S.pair L M) D = mext-trans (glob-grows L D) (glob-grows M _)
@@ -124,7 +135,8 @@ glob-grows (S.tuple Ms) D = globs-grows Ms D
 glob-grows (S.get i M) D = glob-grows M D
 glob-grows (S.inl M) D = glob-grows M D
 glob-grows (S.inr M) D = glob-grows M D
-glob-grows (S.case L M N) D = mext-trans (glob-grows L D) (mext-trans (glob-grows M _) (glob-grows N _))
+glob-grows (S.case L M N) D =
+  mext-trans (glob-grows L D) (mext-trans (glob-grows M _) (glob-grows N _))
 glob-grows (S.prim p L M) D = mext-trans (glob-grows L D) (glob-grows M _)
 glob-grows (S.let′ M N) D = mext-trans (glob-grows M D) (glob-grows N _)
 glob-grows (S.fold M) D = glob-grows M D
@@ -132,7 +144,7 @@ glob-grows (S.unfold M) D = glob-grows M D
 globs-grows [] D = here
 globs-grows (M ∷ Ms) D = mext-trans (glob-grows M D) (globs-grows Ms _)
 
-{- The definitions of the final table ------------------------------------------}
+{- The definitions of the final table -----------------------------------------}
 
 module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
 
@@ -149,7 +161,9 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
   {- the definitions made, each related to the definition at its position -}
   Faithful : ∀ {Σ₀} → Made Σ₀ → Σ₀ ⊑ Σ → Set
   Faithful [] s = ⊤
-  Faithful (D ▷ N') s = (∀ N → I[ ⊑-trans (there⊑ here⊑) s ] ⊢ N ⇝ N' → Top (⊑-∋ s Z) N) × Faithful D (⊑-trans (there⊑ here⊑) s)
+  Faithful (D ▷ N') s =
+    (∀ N → I[ ⊑-trans (there⊑ here⊑) s ] ⊢ N ⇝ N' → Top (⊑-∋ s Z) N)
+    × Faithful D (⊑-trans (there⊑ here⊑) s)
 
   faithful-ext : ∀ {Σ₁ Σ₂}
     → {t : Σ₁ ⊑ Σ₂}
@@ -159,7 +173,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     → Faithful D₂ s
     → Faithful D₁ (⊑-trans t s)
   faithful-ext {s = s} {D₁ = D₁} here F = subst (Faithful D₁) (⊑-irr _ _) F
-  faithful-ext {t = there⊑ t} {s} {D₁ = D₁} (there x) (_ , F) = subst (Faithful D₁) (⊑-irr _ _) (faithful-ext x F)
+  faithful-ext {t = there⊑ t} {s} {D₁ = D₁} (there x) (_ , F) =
+    subst (Faithful D₁) (⊑-irr _ _) (faithful-ext x F)
 
   {- weakening a term made earlier -}
   lift : ∀ {Σ₁ Σ₂}
@@ -168,7 +183,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     → ∀ {Γ A} {M : S.Tm Γ A} {M'}
     → I[ ⊑-trans t s ] ⊢ M ⇝ M'
     → I[ s ] ⊢ M ⇝ wk (⊑-∋ t) M'
-  lift {t = t} {s} = ⊢-wk λ {_} {g} r → subst (λ h → Top h _) (⊑-∋-trans t s g) r
+  lift {t = t} {s} =
+    ⊢-wk λ {_} {g} r → subst (λ h → Top h _) (⊑-∋-trans t s g) r
 
   glob-⇝ : ∀ {Σ₀ Γ A} (M : S.Tm Γ A) (D : Made Σ₀) {s}
     → Faithful (Out.made (glob M D)) s
@@ -178,7 +194,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     → All₂ (I[ s ] ⊢_⇝_) Ms (Out.res (globs Ms D))
   two : ∀ {Σ₀ Γ₁ Γ₂ A B} (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B) (D : Made Σ₀) {s}
     → Faithful (Out.made (glob M (Out.made (glob L D)))) s
-    → I[ s ] ⊢ L ⇝ wk (⊑-∋ (Out.grows (glob M (Out.made (glob L D))))) (Out.res (glob L D))
+    → I[ s ] ⊢ L
+      ⇝ wk (⊑-∋ (Out.grows (glob M (Out.made (glob L D))))) (Out.res (glob L D))
         × I[ s ] ⊢ M ⇝ Out.res (glob M (Out.made (glob L D)))
 
   glob-⇝ (S.` x) D F = var
@@ -191,7 +208,10 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
   glob-⇝ (S.inl M) D F = inl (glob-⇝ M D F)
   glob-⇝ (S.inr M) D F = inr (glob-⇝ M D F)
   glob-⇝ (S.case L M N) D F =
-    case (lift (glob-⇝ L D (faithful-ext (mext-trans (glob-grows M _) (glob-grows N _)) F)))
+    case
+      (lift
+        (glob-⇝ L D
+          (faithful-ext (mext-trans (glob-grows M _) (glob-grows N _)) F)))
          (lift (glob-⇝ M _ (faithful-ext (glob-grows N _) F))) (glob-⇝ N _ F)
   glob-⇝ (S.prim p L M) D F = uncurry′ prim (two L M D F)
   glob-⇝ (S.let′ M N) D F = uncurry′ let′ (two M N D F)
@@ -199,7 +219,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
   glob-⇝ (S.unfold M) D F = unfold (glob-⇝ M D F)
   globs-⇝ [] D F = []
   globs-⇝ (M ∷ Ms) D F = proj₁ (two M (S.tuple Ms) D F) ∷ globs-⇝ Ms _ F
-  two L M D F = lift (glob-⇝ L D (faithful-ext (glob-grows M _) F)) , glob-⇝ M _ F
+  two L M D F =
+    lift (glob-⇝ L D (faithful-ext (glob-grows M _) F)) , glob-⇝ M _ F
 
   {- close puts the definitions made before at their positions -}
   suffix : ∀ {Σ₀ Σ₁}
@@ -210,7 +231,9 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     → ∀ {t} (x : Σ₀ ∋ t)
     → lookup (close D₁ q) (⊑-∋ s x) ≡ lookup (close D (⊑-trans s q)) x
   suffix {D = D} here q x = cong (λ r → lookup (close D r) x) (⊑-irr _ _)
-  suffix {D = D} (there e) q x = trans (suffix e (⊑-trans (there⊑ here⊑) q) x) (cong (λ r → lookup (close D r) x) (⊑-irr _ _))
+  suffix {D = D} (there e) q x =
+    trans (suffix e (⊑-trans (there⊑ here⊑) q) x)
+    (cong (λ r → lookup (close D r) x) (⊑-irr _ _))
 
   close-faithful : ∀ {D_f : Made Σ}
     → defs ≡ close D_f here⊑
@@ -221,11 +244,14 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     → Faithful D s
   close-faithful e {D = []} x = tt
   close-faithful e {s = s} {D = D ▷ N'} x =
-    (λ N r → top (subst ((λ {m} → Top {m}) ⊢ N ⇝_) (sym (trans (cong (λ ds → lookup ds (⊑-∋ s Z)) e) (suffix x here⊑ Z)))
+    (λ N r →
+        top
+        (subst ((λ {m} → Top {m}) ⊢ N ⇝_)
+          (sym (trans (cong (λ ds → lookup ds (⊑-∋ s Z)) e) (suffix x here⊑ Z)))
                         (⊢-wk (λ r → r) r)))
     , close-faithful e (mext-trans (there here) x)
 
-  {- The simulation relation ----------------------------------------------------}
+  {- The simulation relation --------------------------------------------------}
 
   infix 4 _⇝_ _≈_ _≈k_ _~_
   _⇝_ : ∀ {Γ A} → S.Tm Γ A → Tm Σ Γ A → Set
@@ -233,7 +259,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
 
   data _≈_ : ∀ {A} → Sₘ.Val A → Tₘ.Val Σ A → Set where
     code≈ : ∀ {Δ A B N} {g : Σ ∋ sig Δ A B} → Top g N → Sₘ.code N ≈ Tₘ.code g
-    pack≈ : ∀ {Δ A B} {c : Sₘ.Val (code Δ A B)} {c' e e'} → c ≈ c' → e ≈ e' → Sₘ.pack c e ≈ Tₘ.pack c' e'
+    pack≈ : ∀ {Δ A B} {c : Sₘ.Val (code Δ A B)} {c' e e'} → c ≈ c' → e ≈ e'
+      → Sₘ.pack c e ≈ Tₘ.pack c' e'
     const≈ : ∀ {B c} → Sₘ.const {B} c ≈ Tₘ.const c
     tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Sₘ.tup vs ≈ Tₘ.tup ws
     inl≈ : ∀ {A B v w} → v ≈ w → Sₘ.inl {A} {B} v ≈ Tₘ.inl w
@@ -245,32 +272,42 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
 
   data _≈k_ : ∀ {A} → Sₘ.Cont A → Tₘ.Cont Σ A → Set where
     halt : ∀ {A} → Sₘ.halt {A} ≈k Tₘ.halt
-    callL : ∀ {Γ A B} {M : S.Tm Γ A} {M' ρ₁ ρ₂} {κ₁ : Sₘ.Cont B} {κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    callL : ∀ {Γ A B} {M : S.Tm Γ A} {M' ρ₁ ρ₂} {κ₁ : Sₘ.Cont B} {κ₂} → M ⇝ M'
+      → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
       → Sₘ.callL M ρ₁ κ₁ ≈k Tₘ.callL M' ρ₂ κ₂
-    callR : ∀ {A B v w} {κ₁ : Sₘ.Cont B} {κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.callR {A} v κ₁ ≈k Tₘ.callR w κ₂
-    pairL : ∀ {Γ Δ A B} {M : S.Tm Γ (tup Δ)} {M' ρ₁ ρ₂} {κ₁ : Sₘ.Cont (A ⇒ B)} {κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    callR : ∀ {A B v w} {κ₁ : Sₘ.Cont B} {κ₂} → v ≈ w → κ₁ ≈k κ₂
+      → Sₘ.callR {A} v κ₁ ≈k Tₘ.callR w κ₂
+    pairL : ∀ {Γ Δ A B} {M : S.Tm Γ (tup Δ)} {M' ρ₁ ρ₂} {κ₁ : Sₘ.Cont (A ⇒ B)}
+      {κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
       → Sₘ.pairL M ρ₁ κ₁ ≈k Tₘ.pairL M' ρ₂ κ₂
-    pairR : ∀ {Δ A B} {v : Sₘ.Val (code Δ A B)} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.pairR v κ₁ ≈k Tₘ.pairR w κ₂
-    tupK : ∀ {Γ Δ' A Δ} {vs : All _ Δ'} {ws} {Ms : All (S.Tm Γ) Δ} {Ms'} {ρ₁ ρ₂} {κ₁ : Sₘ.Cont (tup (Δ' <>< (A ∷ Δ)))} {κ₂}
+    pairR : ∀ {Δ A B} {v : Sₘ.Val (code Δ A B)} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+      → Sₘ.pairR v κ₁ ≈k Tₘ.pairR w κ₂
+    tupK : ∀ {Γ Δ' A Δ} {vs : All _ Δ'} {ws} {Ms : All (S.Tm Γ) Δ} {Ms'} {ρ₁ ρ₂}
+      {κ₁ : Sₘ.Cont (tup (Δ' <>< (A ∷ Δ)))} {κ₂}
       → All₂ _≈_ vs ws → All₂ _⇝_ Ms Ms' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
       → Sₘ.tupK vs Ms ρ₁ κ₁ ≈k Tₘ.tupK ws Ms' ρ₂ κ₂
     getK : ∀ {Δ A i κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.getK {Δ} {A} i κ₁ ≈k Tₘ.getK i κ₂
     inlK : ∀ {A B κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.inlK {A} {B} κ₁ ≈k Tₘ.inlK κ₂
     inrK : ∀ {A B κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.inrK {A} {B} κ₁ ≈k Tₘ.inrK κ₂
-    caseK : ∀ {Γ A B C} {M : S.Tm (A ∷ Γ) C} {M'} {N : S.Tm (B ∷ Γ) C} {N' ρ₁ ρ₂ κ₁ κ₂} → M ⇝ M' → N ⇝ N' → EnvRel ρ₁ ρ₂
+    caseK : ∀ {Γ A B C} {M : S.Tm (A ∷ Γ) C} {M'} {N : S.Tm (B ∷ Γ) C}
+      {N' ρ₁ ρ₂ κ₁ κ₂} → M ⇝ M' → N ⇝ N' → EnvRel ρ₁ ρ₂
       → κ₁ ≈k κ₂ → Sₘ.caseK M N ρ₁ κ₁ ≈k Tₘ.caseK M' N' ρ₂ κ₂
-    primL : ∀ {Γ p} {M : S.Tm Γ _} {M' ρ₁ ρ₂ κ₁ κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    primL : ∀ {Γ p} {M : S.Tm Γ _} {M' ρ₁ ρ₂ κ₁ κ₂} → M ⇝ M'
+      → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
       → Sₘ.primL p M ρ₁ κ₁ ≈k Tₘ.primL p M' ρ₂ κ₂
     primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.primR p n κ₁ ≈k Tₘ.primR p n κ₂
-    letK : ∀ {Γ A B} {N : S.Tm (A ∷ Γ) B} {N' ρ₁ ρ₂ κ₁ κ₂} → N ⇝ N' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    letK : ∀ {Γ A B} {N : S.Tm (A ∷ Γ) B} {N' ρ₁ ρ₂ κ₁ κ₂} → N ⇝ N'
+      → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
       → Sₘ.letK N ρ₁ κ₁ ≈k Tₘ.letK N' ρ₂ κ₂
     foldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.foldK {A} κ₁ ≈k Tₘ.foldK κ₂
     unfoldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.unfoldK {A} κ₁ ≈k Tₘ.unfoldK κ₂
 
   data _~_ : Sₘ.State → Tₘ.State Σ → Set where
-    eval~ : ∀ {Γ A} {M : S.Tm Γ A} {M' ρ₁ ρ₂ κ₁ κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    eval~ : ∀ {Γ A} {M : S.Tm Γ A} {M' ρ₁ ρ₂ κ₁ κ₂} → M ⇝ M'
+      → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
       → Sₘ.eval M ρ₁ κ₁ ~ Tₘ.eval M' ρ₂ κ₂
-    ret~ : ∀ {A} {v : Sₘ.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.ret v κ₁ ~ Tₘ.ret w κ₂
+    ret~ : ∀ {A} {v : Sₘ.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+      → Sₘ.ret v κ₁ ~ Tₘ.ret w κ₂
 
   obs≈ : ∀ {A} {v : Sₘ.Val A} {w}
     → v ≈ w
@@ -298,7 +335,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
 
     L₂ = Tₘ.sem (program defs M₀)
 
-    tuple-next~ : ∀ {Γ Δ' Δ} {vs : All _ Δ'} {ws} {Ms : All (S.Tm Γ) Δ} {Ms'} {ρ₁ ρ₂} {κ₁ : Sₘ.Cont (tup (Δ' <>< Δ))} {κ₂}
+    tuple-next~ : ∀ {Γ Δ' Δ} {vs : All _ Δ'} {ws} {Ms : All (S.Tm Γ) Δ} {Ms'}
+      {ρ₁ ρ₂} {κ₁ : Sₘ.Cont (tup (Δ' <>< Δ))} {κ₂}
       → All₂ _≈_ vs ws
       → All₂ _⇝_ Ms Ms'
       → EnvRel ρ₁ ρ₂
@@ -319,14 +357,16 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     sim (eval~ (get m) er k) = steps₁ refl (eval~ m er (getK k))
     sim (eval~ (inl m) er k) = steps₁ refl (eval~ m er (inlK k))
     sim (eval~ (inr m) er k) = steps₁ refl (eval~ m er (inrK k))
-    sim (eval~ (case m m' m'') er k) = steps₁ refl (eval~ m er (caseK m' m'' er k))
+    sim (eval~ (case m m' m'') er k) =
+      steps₁ refl (eval~ m er (caseK m' m'' er k))
     sim (eval~ (prim m m') er k) = steps₁ refl (eval~ m er (primL m' er k))
     sim (eval~ (let′ m m') er k) = steps₁ refl (eval~ m er (letK m' er k))
     sim (eval~ (fold m) er k) = steps₁ refl (eval~ m er (foldK k))
     sim (eval~ (unfold m) er k) = steps₁ refl (eval~ m er (unfoldK k))
     sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
     sim (ret~ r (callL m er k)) = steps₁ refl (eval~ m er (callR r k))
-    sim (ret~ r (callR (pack≈ (code≈ (top h)) re) k)) = steps₁ refl (eval~ h (r ∷ re ∷ []) k)
+    sim (ret~ r (callR (pack≈ (code≈ (top h)) re) k)) =
+      steps₁ refl (eval~ h (r ∷ re ∷ []) k)
     sim (ret~ r (pairL m er k)) = steps₁ refl (eval~ m er (pairR r k))
     sim (ret~ r (pairR r' k)) = steps₁ refl (ret~ (pack≈ r' r) k)
     sim (ret~ r (tupK rs ms er k)) = steps₁ refl (tuple-next~ (r ∷ rs) ms er k)
@@ -336,14 +376,18 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     sim (ret~ (inl≈ r) (caseK m m' er k)) = steps₁ refl (eval~ m (r ∷ er) k)
     sim (ret~ (inr≈ r) (caseK m m' er k)) = steps₁ refl (eval~ m' (r ∷ er) k)
     sim (ret~ const≈ (primL m er k)) = steps₁ refl (eval~ m er (primR k))
-    sim (ret~ (const≈ {c = c}) (primR {p} {n} k)) = steps₁ refl (ret~ (δ≈ p n c) k)
+    sim (ret~ (const≈ {c = c}) (primR {p} {n} k)) =
+      steps₁ refl (ret~ (δ≈ p n c) k)
     sim (ret~ r (letK m er k)) = steps₁ refl (eval~ m (r ∷ er) k)
     sim (ret~ r (foldK k)) = steps₁ refl (ret~ (fold≈ r) k)
     sim (ret~ (fold≈ r) (unfoldK k)) = steps₁ refl (ret~ r k)
 
-{- The end theorem: for every PairClosμ program ----------------------------------}
+{- The end theorem: for every PairClosμ program -------------------------------}
 
 hoist-correct : ∀ {A} (M : S.Tm [] A) → Equivalent (Sₘ.sem M) (Tₘ.sem (hoist M))
 hoist-correct M =
-  equivalent (plus-simulation _~_ (eval~ (glob-⇝ M [] (close-faithful refl here)) [] halt) (sim (Out.res (glob M []))))
+  equivalent
+    (plus-simulation _~_
+      (eval~ (glob-⇝ M [] (close-faithful refl here)) [] halt)
+      (sim (Out.res (glob M []))))
   where open Table (close (Out.made (glob M [])) here⊑)

@@ -31,7 +31,8 @@ private
 
 {- each element with the property Q -}
 infixr 5 _∷_
-data Each {X : Set} {P : X → Set} (Q : ∀ {A} → P A → Set) : ∀ {Δ} → All P Δ → Set where
+data Each {X : Set} {P : X → Set} (Q : ∀ {A} → P A → Set) : ∀ {Δ}
+  → All P Δ → Set where
   [] : Each Q []
   _∷_ : ∀ {A Δ p ps} → Q {A} p → Each Q {Δ} ps → Each Q (p ∷ ps)
 
@@ -42,10 +43,12 @@ each-lookup : ∀ {Q : ∀ {A} → P A → Set} {Δ A} {ps : All P Δ}
 each-lookup (q ∷ qs) Z = q
 each-lookup (q ∷ qs) (S x) = each-lookup qs x
 
-module _ {X : Set} {P₁ P₂ : X → Set} {red : ∀ {A} → P₂ A → Red (P₂ A)} {Val : ∀ {A} → P₂ A → Set}
+module _ {X : Set} {P₁ P₂ : X → Set} {red : ∀ {A} → P₂ A → Red (P₂ A)}
+  {Val : ∀ {A} → P₂ A → Set}
   {R : ∀ {A} → P₁ A → P₂ A → Set}
   (reds : ∀ {Δ} → All P₂ Δ → Red (All P₂ Δ))
-  (reds-∷ : ∀ {A Δ} (M : P₂ A) (Ms : All P₂ Δ) → reds (M ∷ Ms) ≡ red-∷ M Ms (red M) (reds Ms))
+  (reds-∷ : ∀ {A Δ} (M : P₂ A) (Ms : All P₂ Δ)
+      → reds (M ∷ Ms) ≡ red-∷ M Ms (red M) (reds Ms))
   (val-red : ∀ {A} {V : P₂ A} → Val V → red V ≡ val) where
 
   ans-∷ : ∀ {A Δ M M' r r'} {Ms : All P₁ Δ} {Ms' : All P₂ Δ}
@@ -54,11 +57,15 @@ module _ {X : Set} {P₁ P₂ : X → Set} {red : ∀ {A} → P₂ A → Red (P�
     → Ans reds (Each Val) (All₂ R) Ms r' Ms'
     → Ans reds (Each Val) (All₂ R) (M ∷ Ms) (red-∷ M Ms r r') (M' ∷ Ms')
   ans-∷ rs a as = ans-in (frame _ (λ X → reds-∷ X _)) (_∷ rs) a
-    λ v m → ans-in (frame {g = λ Xs → _ ∷ Xs} _ (λ Xs → trans (reds-∷ _ Xs) (val-in (val-red v)))) (m ∷_) as
+    λ v m →
+      ans-in
+      (frame {g = λ Xs → _ ∷ Xs} _
+        (λ Xs → trans (reds-∷ _ Xs) (val-in (val-red v)))) (m ∷_) as
       λ vs ms → val ε (v ∷ vs) (m ∷ ms)
 
 {- a reduction on terms of every type, on pairs of a type and a term -}
-module _ {Ty : Set} {T : Ty → Set} (obs : ∀ {B} → T B → Obs) (red : ∀ {B} → T B → Red (T B)) where
+module _ {Ty : Set} {T : Ty → Set} (obs : ∀ {B} → T B → Obs)
+  (red : ∀ {B} → T B → Red (T B)) where
 
   obsΣ : Σ Ty T → Obs
   obsΣ (B , M) = obs M
@@ -69,7 +76,9 @@ module _ {Ty : Set} {T : Ty → Set} (obs : ∀ {B} → T B → Obs) (red : ∀ 
   pairs : ∀ {B}
     → (M : T B)
     → Equivalent (reduction obs red M) (reduction obsΣ redΣ (B , M))
-  pairs {B} M = red-equivalent {Val = λ P → redΣ P ≡ val} (λ v → v) R sim (λ { refl _ _ → refl }) refl
+  pairs {B} M =
+    red-equivalent {Val = λ P → redΣ P ≡ val} (λ v → v) R sim
+    (λ { refl _ _ → refl }) refl
     where
     R : T B → Σ Ty T → Set
     R M P = P ≡ (B , M)

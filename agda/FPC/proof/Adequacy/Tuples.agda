@@ -25,7 +25,8 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong)
 
 {- Tuples of sets ------------------------------------------------------------}
 
@@ -79,13 +80,15 @@ AllNE-mono : ∀ Ds Es
   → AllNE Ds
   → AllNE Es
 AllNE-mono [] [] _ _ = tt
-AllNE-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ ⟨ ⟨ d , d∈ ⟩ , ne ⟩ = ⟨ ⟨ d , D⊆ d d∈ ⟩ , AllNE-mono Ds Es s ne ⟩
+AllNE-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ ⟨ ⟨ d , d∈ ⟩ , ne ⟩ =
+  ⟨ ⟨ d , D⊆ d d∈ ⟩ , AllNE-mono Ds Es s ne ⟩
 
 𝒯L-mono : ∀ Ds Es
   → Ds ⊆L Es
   → 𝒯L Ds ⊆ 𝒯L Es
 𝒯L-mono [] [] s ⟨⟩ tt = tt
-𝒯L-mono Ds Es s (tup[ i ] d) ⟨ a , ne ⟩ = ⟨ At-mono i Ds Es d s a , AllNE-mono Ds Es s ne ⟩
+𝒯L-mono Ds Es s (tup[ i ] d) ⟨ a , ne ⟩ =
+  ⟨ At-mono i Ds Es d s a , AllNE-mono Ds Es s ne ⟩
 
 
 At-length : ∀ {m} (i : Fin m) Ds d

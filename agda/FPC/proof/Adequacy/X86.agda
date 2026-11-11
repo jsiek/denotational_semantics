@@ -26,15 +26,18 @@ module FPC.proof.Adequacy.X86 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using () renaming (const to
+  dconst)
 open import FPC.proof.Semantics.GraphModel.Ops using (ConT; tables)
 open import FPC.Language.Type using (Type)
-open import FPC.Language.X86 using (DSig; Body; called; entry; Program; program; body)
+open import FPC.Language.X86 using (DSig; Body; called; entry; Program; program;
+  body)
 open import FPC.Language.FPC using (Tm)
 open import FPC.Compiler.Pipeline using (compile)
 open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation using (o-const; _⇔_)
-open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome; Terminates; Diverges)
+open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome;
+  Terminates; Diverges)
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.X86 using (sem)
 open import FPC.Framework.AllUtil using (All)
@@ -47,8 +50,10 @@ open import Data.Empty using (⊥-elim)
 open import Data.List using (List; [])
 open import Data.Maybe using (just)
 open import Data.Nat.Properties using (≤-refl)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong)
 open import Relation.Nullary using (¬_)
 
 private
@@ -84,19 +89,25 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     ... | ⟨ d , d∈ ⟩ = ⊥-elim (ne ⟨ d , v⊆ d d∈ ⟩)
 
   const-iff : ∀ {A} (b : Body Σ A (entry [])) {B} {k : base-rep B}
-    → (dconst k ∈ ⟦ program ds b ⟧ₜ) ⇔ Terminates (sem (program ds b)) (o-const B k)
+    → (dconst k ∈ ⟦ program ds b ⟧ₜ)
+      ⇔ Terminates (sem (program ds b)) (o-const B k)
   const-iff (body n bs s) =
     ⟨ (λ k∈ → let ⟨ v , ⟨ ⟨ c , e ⟩ , r ⟩ ⟩ = LR.adequacy ds (body n bs s) k∈ in
-         ⟨ c , trans (cong (outcome obs) (e c ≤-refl)) (cong just (LR.𝕍-const ds v r)) ⟩)
+         ⟨ c
+             , trans (cong (outcome obs) (e c ≤-refl))
+               (cong just (LR.𝕍-const ds v r)) ⟩)
     , (λ { ⟨ ck , e ⟩ → const-in (S.soundness ds cT cl (body n bs s) ck) e }) ⟩
 
-  diverges-iff : ∀ {A} (b : Body Σ A (entry [])) → Diverges (sem (program ds b)) ⇔ (¬ nonempty ⟦ program ds b ⟧ₜ)
+  diverges-iff : ∀ {A} (b : Body Σ A (entry []))
+    → Diverges (sem (program ds b)) ⇔ (¬ nonempty ⟦ program ds b ⟧ₜ)
   diverges-iff (body n bs s) =
-    ⟨ (λ { div ⟨ d , d∈ ⟩ → let ⟨ v , ⟨ ⟨ c , e ⟩ , _ ⟩ ⟩ = LR.adequacy ds (body n bs s) d∈ in
+    ⟨ (λ { div ⟨ d , d∈ ⟩ →
+        let ⟨ v , ⟨ ⟨ c , e ⟩ , _ ⟩ ⟩ = LR.adequacy ds (body n bs s) d∈ in
              ret≢timeout (trans (sym (e c ≤-refl)) (div c)) })
     , (λ ne ck → empty-timeout (S.soundness ds cT cl (body n bs s) ck) ne) ⟩
 
-{- a program whose table is consistent and contains the code of each definition -}
+{- a program whose table is consistent and contains the code of each
+   definition -}
 program-const-iff : ∀ {A} (P : Program A)
   → ConT (tables codeₜ (Program.defs P))
   → Contains codeₜ (Program.defs P)
@@ -113,7 +124,10 @@ program-diverges-iff (program ds b) cT cl = diverges-iff ds cT cl b
 {- the programs that the compiler produces -}
 x86-const-iff : ∀ {A} (M : Tm [] A) {B} {k : base-rep B}
   → (dconst k ∈ ⟦ compile M ⟧ₜ) ⇔ Terminates (sem (compile M)) (o-const B k)
-x86-const-iff M = program-const-iff (compile M) (proj₁ (compiled M)) (proj₂ (compiled M))
+x86-const-iff M =
+  program-const-iff (compile M) (proj₁ (compiled M)) (proj₂ (compiled M))
 
-x86-diverges-iff : ∀ {A} (M : Tm [] A) → Diverges (sem (compile M)) ⇔ (¬ nonempty ⟦ compile M ⟧ₜ)
-x86-diverges-iff M = program-diverges-iff (compile M) (proj₁ (compiled M)) (proj₂ (compiled M))
+x86-diverges-iff : ∀ {A} (M : Tm [] A)
+  → Diverges (sem (compile M)) ⇔ (¬ nonempty ⟦ compile M ⟧ₜ)
+x86-diverges-iff M =
+  program-diverges-iff (compile M) (proj₁ (compiled M)) (proj₂ (compiled M))

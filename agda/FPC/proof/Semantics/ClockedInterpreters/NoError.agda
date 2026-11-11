@@ -13,8 +13,9 @@ module FPC.proof.Semantics.ClockedInterpreters.NoError where
 
 open import FPC.Language.Type
 open import FPC.Language.FPC using (Tm)
-open import FPC.Language.X86 using (DSig; sig; called; Program; program; body; Body; Blocks; _▷_; Seq; _∷_; retq; jmp; case;
-  movq; subq; cmpq; sete; alloc; load; loadfst; loadsnd; callq)
+open import FPC.Language.X86 using (DSig; sig; called; Program; program; body;
+  Body; Blocks; _▷_; Seq; _∷_; retq; jmp; case; movq; subq; cmpq; sete; alloc;
+  load; loadfst; loadsnd; callq)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup)
 open import Semantics.Observation using (Obs; o-error; Answer)
 open import Semantics.Interp.Clock
@@ -74,7 +75,8 @@ module Ans (C : Ctx → Type → Type → Set) where
   obs-answer (inr _) ()
   obs-answer (fold v) = obs-answer v
 
-  either-safe : ∀ {A B X} (u : Val (A ⊹ B)) {f : Val A → Result X} {g : Val B → Result X}
+  either-safe : ∀ {A B X} (u : Val (A ⊹ B)) {f : Val A → Result X}
+    {g : Val B → Result X}
     → (∀ v → Safe (f v))
     → (∀ v → Safe (g v))
     → Safe (either u f g)
@@ -95,22 +97,28 @@ module _ where
   eval-safe ck ρ (` x) = ret _
   eval-safe ck ρ (lam N) = ret _
   eval-safe ck ρ (app L M) =
-    bind-safe (eval-safe ck ρ L) λ f → bind-safe (eval-safe ck ρ M) λ w → call-safe ck f w
+    bind-safe (eval-safe ck ρ L) λ f → bind-safe (eval-safe ck ρ M) λ w →
+      call-safe ck f w
   eval-safe ck ρ (lit B c) = ret _
   eval-safe ck ρ (tuple Ms) = bind-safe (evals-safe ck ρ Ms) λ _ → ret _
   eval-safe ck ρ (get i M) = bind-safe (eval-safe ck ρ M) λ _ → ret _
   eval-safe ck ρ (inl M) = bind-safe (eval-safe ck ρ M) λ _ → ret _
   eval-safe ck ρ (inr M) = bind-safe (eval-safe ck ρ M) λ _ → ret _
   eval-safe ck ρ (case L M N) =
-    bind-safe (eval-safe ck ρ L) λ u → either-safe u (λ v → eval-safe ck (v ∷ ρ) M) (λ v → eval-safe ck (v ∷ ρ) N)
+    bind-safe (eval-safe ck ρ L) λ u →
+      either-safe u (λ v → eval-safe ck (v ∷ ρ) M)
+      (λ v → eval-safe ck (v ∷ ρ) N)
   eval-safe ck ρ (prim p L M) =
     bind-safe (eval-safe ck ρ L) λ _ → bind-safe (eval-safe ck ρ M) λ _ → ret _
-  eval-safe ck ρ (let′ M N) = bind-safe (eval-safe ck ρ M) λ v → eval-safe ck (v ∷ ρ) N
+  eval-safe ck ρ (let′ M N) =
+    bind-safe (eval-safe ck ρ M) λ v → eval-safe ck (v ∷ ρ) N
   eval-safe ck ρ (fold M) = bind-safe (eval-safe ck ρ M) λ _ → ret _
   eval-safe ck ρ (unfold M) = bind-safe (eval-safe ck ρ M) λ _ → ret _
 
   evals-safe ck ρ [] = ret _
-  evals-safe ck ρ (M ∷ Ms) = bind-safe (eval-safe ck ρ M) λ _ → bind-safe (evals-safe ck ρ Ms) λ _ → ret _
+  evals-safe ck ρ (M ∷ Ms) =
+    bind-safe (eval-safe ck ρ M) λ _ →
+    bind-safe (evals-safe ck ρ Ms) λ _ → ret _
 
   call-safe zero f w = timeout
   call-safe (suc ck) (pack (code N) (tup ρ)) w = eval-safe ck (w ∷ ρ) N
@@ -118,16 +126,20 @@ module _ where
   fpc-no-error : ∀ {A} (M : Tm [] A) → ¬ Terminates (sem M) o-error
   fpc-no-error M = no-error obs-answer λ ck → eval-safe ck [] M
 
-{- X86μ ------------------------------------------------------------------------}
+{- X86μ -----------------------------------------------------------------------}
 
-module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
+module _ {Σ : List DSig}
+  (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
   open C5.Vals Σ
   open Ans (λ Δ A B → Σ ∋ sig Δ A B)
   open X using (Mach; rv; ⟨_,_,_,_⟩)
 
-  run-safe : ∀ {n R Bs ψ} ck (bs : Blocks Σ n R Bs) η (m : Mach Σ η ψ) (k : Seq Σ n R Bs ψ) → Safe (X.run ds ck bs η m k)
-  jump-safe : ∀ {n R Bs Δ} ck (bs : Blocks Σ n R Bs) η (l : Bs ∋ Δ) (φ : Env Δ) → Safe (X.jump ds ck bs η l φ)
-  callx-safe : ∀ {η A B} ck (c : Val (code η A B)) (e : Val (tup η)) (w : Val A) → Safe (X.call ds ck c e w)
+  run-safe : ∀ {n R Bs ψ} ck (bs : Blocks Σ n R Bs) η (m : Mach Σ η ψ)
+    (k : Seq Σ n R Bs ψ) → Safe (X.run ds ck bs η m k)
+  jump-safe : ∀ {n R Bs Δ} ck (bs : Blocks Σ n R Bs) η (l : Bs ∋ Δ) (φ : Env Δ)
+    → Safe (X.jump ds ck bs η l φ)
+  callx-safe : ∀ {η A B} ck (c : Val (code η A B)) (e : Val (tup η)) (w : Val A)
+    → Safe (X.call ds ck c e w)
 
   run-safe ck bs η m (movq a d ∷ k) = run-safe ck bs η _ k
   run-safe ck bs η m (subq a r e ∷ k) = run-safe ck bs η _ k
@@ -138,18 +150,22 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
   run-safe ck bs η m (loadfst x r ∷ k) = run-safe ck bs _ _ k
   run-safe ck bs η m (loadsnd r ∷ k) = run-safe ck bs η _ k
   run-safe ck bs η m (callq a e₁ e₂ ∷ k) =
-    bind-safe (callx-safe ck (X.arg a m) _ _) λ v → run-safe ck bs η ⟨ rv v _ _ , _ , _ , _ ⟩ k
+    bind-safe (callx-safe ck (X.arg a m) _ _) λ v →
+      run-safe ck bs η ⟨ rv v _ _ , _ , _ , _ ⟩ k
   run-safe ck bs η m (retq e) = ret _
   run-safe ck bs η m (jmp l) = jump-safe ck bs η l _
   run-safe ck bs η m (case x p _ l₁ l₂) =
-    either-safe (lookup (X.frame m) x) (λ v → jump-safe ck bs η l₁ _) (λ v → jump-safe ck bs η l₂ _)
+    either-safe (lookup (X.frame m) x) (λ v → jump-safe ck bs η l₁ _)
+      (λ v → jump-safe ck bs η l₂ _)
 
   jump-safe ck (bs ▷ k) η Z φ = run-safe ck bs η _ k
   jump-safe ck (bs ▷ k) η (S l) φ = jump-safe ck bs η l φ
 
   callx-safe zero c e w = timeout
-  callx-safe {η} (suc ck) (code f) e w = run-safe ck (Body.blocks (lookup ds f)) η _ (Body.start (lookup ds f))
+  callx-safe {η} (suc ck) (code f) e w =
+    run-safe ck (Body.blocks (lookup ds f)) η _ (Body.start (lookup ds f))
 
 x86-no-error : ∀ {A} (P : Program A) → ¬ Terminates (X.sem P) o-error
 x86-no-error {A} (program {Σ} ds (body n bs k)) =
-  no-error (Ans.obs-answer (λ Δ A B → Σ ∋ sig Δ A B)) λ ck → run-safe ds ck bs [] _ k
+  no-error (Ans.obs-answer (λ Δ A B → Σ ∋ sig Δ A B)) λ ck →
+    run-safe ds ck bs [] _ k

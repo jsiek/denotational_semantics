@@ -1,8 +1,8 @@
 {-
 
   A CEK machine for GlobalFunμ (FPC/Language/GlobalFun.agda), as the one for
-  PairClosμ (FPC/Semantics/AbstractMachines/PairClos.agda), except for code: a program
-  runs with its table of definitions, fun-ref f evaluates to the code
+  PairClosμ (FPC/Semantics/AbstractMachines/PairClos.agda), except for code: a
+  program runs with its table of definitions, fun-ref f evaluates to the code
   pointer code f, and a call runs definition f, as the Clos5ᵀ machine
   (ISWIM/Semantics/CEK/Typed/Clos5.agda) does. Values, environments and
   continuations are indexed by the table Σ.
@@ -21,7 +21,8 @@ open import Language.Prim using (Prim; sub; eq)
 open import FPC.Language.Type
 open import FPC.Language.GlobalFun
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl;
+  o-inr)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 
 open import Data.Bool using (if_then_else_)
@@ -78,15 +79,19 @@ data Cont (Σ : List DSig) : Type → Set where
   halt : ∀ {A} → Cont Σ A
   callL : ∀ {Γ A B} → Tm Σ Γ A → Env Σ Γ → Cont Σ B → Cont Σ (A ⇒ B)
   callR : ∀ {A B} → Val Σ (A ⇒ B) → Cont Σ B → Cont Σ A
-  pairL : ∀ {Γ Δ A B} → Tm Σ Γ (tup Δ) → Env Σ Γ → Cont Σ (A ⇒ B) → Cont Σ (code Δ A B)
+  pairL : ∀ {Γ Δ A B} → Tm Σ Γ (tup Δ) → Env Σ Γ → Cont Σ (A ⇒ B)
+    → Cont Σ (code Δ A B)
   pairR : ∀ {Δ A B} → Val Σ (code Δ A B) → Cont Σ (A ⇒ B) → Cont Σ (tup Δ)
   {- the values so far (newest first) and the components still to evaluate -}
-  tupK : ∀ {Γ Δ' A Δ} → All (Val Σ) Δ' → All (Tm Σ Γ) Δ → Env Σ Γ → Cont Σ (tup (Δ' <>< (A ∷ Δ))) → Cont Σ A
+  tupK : ∀ {Γ Δ' A Δ} → All (Val Σ) Δ' → All (Tm Σ Γ) Δ → Env Σ Γ
+    → Cont Σ (tup (Δ' <>< (A ∷ Δ))) → Cont Σ A
   getK : ∀ {Δ A} → Δ ∋ A → Cont Σ A → Cont Σ (tup Δ)
   inlK : ∀ {A B} → Cont Σ (A ⊹ B) → Cont Σ A
   inrK : ∀ {A B} → Cont Σ (A ⊹ B) → Cont Σ B
-  caseK : ∀ {Γ A B C} → Tm Σ (A ∷ Γ) C → Tm Σ (B ∷ Γ) C → Env Σ Γ → Cont Σ C → Cont Σ (A ⊹ B)
-  primL : ∀ {Γ} p → Tm Σ Γ (base Int) → Env Σ Γ → Cont Σ (out-ty p) → Cont Σ (base Int)
+  caseK : ∀ {Γ A B C} → Tm Σ (A ∷ Γ) C → Tm Σ (B ∷ Γ) C → Env Σ Γ → Cont Σ C
+    → Cont Σ (A ⊹ B)
+  primL : ∀ {Γ} p → Tm Σ Γ (base Int) → Env Σ Γ → Cont Σ (out-ty p)
+    → Cont Σ (base Int)
   primR : ∀ p → ℤ → Cont Σ (out-ty p) → Cont Σ (base Int)
   letK : ∀ {Γ A B} → Tm Σ (A ∷ Γ) B → Env Σ Γ → Cont Σ B → Cont Σ A
   foldK : ∀ {A} → Cont Σ (μ A) → Cont Σ (unroll A)
@@ -99,7 +104,8 @@ data State (Σ : List DSig) : Set where
 module _ {Σ : List DSig} where
 
   {- evaluate the rest of a tuple's components, or build it -}
-  tuple-next : ∀ {Γ Δ' Δ} → All (Val Σ) Δ' → All (Tm Σ Γ) Δ → Env Σ Γ → Cont Σ (tup (Δ' <>< Δ)) → State Σ
+  tuple-next : ∀ {Γ Δ' Δ} → All (Val Σ) Δ' → All (Tm Σ Γ) Δ → Env Σ Γ
+    → Cont Σ (tup (Δ' <>< Δ)) → State Σ
   tuple-next vs [] ρ κ = ret (tup (vs <><ᵃ [])) κ
   tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 
@@ -138,7 +144,8 @@ module _ {Σ : List DSig} where
     step (ret v (getK i κ)) = next (ret (lookup (elems v) i) κ)
     step (ret v (inlK κ)) = next (ret (inl v) κ)
     step (ret v (inrK κ)) = next (ret (inr v) κ)
-    step (ret v (caseK M N ρ κ)) = next (choose v (λ u → eval M (u ∷ ρ) κ) (λ u → eval N (u ∷ ρ) κ))
+    step (ret v (caseK M N ρ κ)) =
+      next (choose v (λ u → eval M (u ∷ ρ) κ) (λ u → eval N (u ∷ ρ) κ))
     step (ret v (primL p M ρ κ)) = next (eval M ρ (primR p (int v) κ))
     step (ret v (primR p n κ)) = next (ret (δᵀ p n (int v)) κ)
     step (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)

@@ -21,15 +21,19 @@ open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
 open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.Env using (Env; •-~)
-open import proof.Framework.GraphModel.TypedGraph using (ΛΛ-⋆; 𝒯-ne; 𝒯-intro; proj-𝒯)
+open import proof.Framework.GraphModel.TypedGraph using (ΛΛ-⋆; 𝒯-ne; 𝒯-intro;
+  proj-𝒯)
 open import proof.Framework.GraphModel.TypedOkBase using (fin-code)
 open import proof.Semantics.Graph.Prim using (primD-≃)
 open import FPC.Language.Type
 open import FPC.Language.Clos
 import FPC.Language.EnvClos as T
-open import FPC.proof.Semantics.GraphModel.Clos using (⟦_⟧; ⟦_⟧s; fv-env; fv-env-pos)
-open import FPC.proof.Semantics.GraphModel.EnvClos using (ok; con) renaming (⟦_⟧ to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
-open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃; ne-≃; guard-yes)
+open import FPC.proof.Semantics.GraphModel.Clos using (⟦_⟧; ⟦_⟧s; fv-env;
+  fv-env-pos)
+open import FPC.proof.Semantics.GraphModel.EnvClos using (ok; con) renaming (⟦_⟧
+  to ⟦_⟧₃; ⟦_⟧s to ⟦_⟧s₃)
+open import FPC.proof.Semantics.GraphModel.Binders using (lam-≃; let-≃; case-≃;
+  ne-≃; guard-yes)
 open import FPC.Framework.AllUtil using (All; []; _∷_; pos)
 open import FPC.Compiler.Concretize
 
@@ -42,7 +46,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 EnvRel : ∀ {Γ Γ'} → Refs Γ Γ' → Env Value → Env Value → Set
 EnvRel φ ρ₂ ρ₃ = ∀ {C} (x : _ ∋ C) → ρ₂ (idx x) ≃ ⟦ ref-tm (φ x) ⟧₃ ρ₃
 
-shift-ok : ∀ {Γ A B} (r : Ref Γ A) X ρ → ⟦ ref-tm (shift-ref {B = B} r) ⟧₃ (X • ρ) ≡ ⟦ ref-tm r ⟧₃ ρ
+shift-ok : ∀ {Γ A B} (r : Ref Γ A) X ρ
+  → ⟦ ref-tm (shift-ref {B = B} r) ⟧₃ (X • ρ) ≡ ⟦ ref-tm r ⟧₃ ρ
 shift-ok (var x) X ρ = refl
 shift-ok (prj i x) X ρ = refl
 
@@ -51,7 +56,8 @@ rel-ext : ∀ {Γ Γ' B} {φ : Refs Γ Γ'} {ρ₂ ρ₃}
   → ∀ {X}
   → EnvRel (ext-ref {B = B} φ) (X • ρ₂) (X • ρ₃)
 rel-ext rel Z = ≃-refl
-rel-ext {φ = φ} {ρ₃ = ρ₃} rel {X} (S x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
+rel-ext {φ = φ} {ρ₃ = ρ₃} rel {X} (S x) =
+  ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
 
 conc : ∀ {Γ Γ' A} (M : Tm Γ A) (φ : Refs Γ Γ') {ρ₂ ρ₃}
   → Con-env ρ₃
@@ -68,12 +74,15 @@ conc (clos {Δ} N Ms) φ {ρ₂} {ρ₃} c rel =
   ≃-when (λ { w ⟨ ne , _ ⟩ i → ne-≃ (concs-nth Ms φ c rel i) (ne i) })
     (λ { w ⟨ V , ⟨ _ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ → 𝒯-ne n (ne-mem neV V⊆) }) λ ne →
   ≃-trans (guard-yes λ i → ne-≃ (≃-sym (concs-nth Ms φ c rel i)) (ne i))
-    (≃-trans (lam-≃ λ X _ cX → conc N fv-ref (Con-• cX (Con-• cT (λ _ → Con-⌈⌉ ⟨⟩)))
+    (≃-trans
+        (lam-≃ λ X _ cX → conc N fv-ref (Con-• cX (Con-• cT (λ _ → Con-⌈⌉ ⟨⟩)))
                 λ { Z → ≃-refl
                   ; (S i) → ≃-trans (≃-reflexive (fv-env-pos Ds i))
-                              (≃-trans (concs-nth Ms φ c rel (pos i)) (≃-sym (proj-𝒯 n ne (pos i)))) })
+                              (≃-trans (concs-nth Ms φ c rel (pos i))
+                                  (≃-sym (proj-𝒯 n ne (pos i)))) })
       (≃-sym (ΛΛ-⋆ cT (𝒯-intro n ne)
-        (λ X⊆ → proj₁ (ok N') (•-~ _⊆_ (•-~ _⊆_ (λ _ _ z → z) X⊆) (λ _ z → z))) (fin-code (ok N') (𝒯-intro n ne)))))
+        (λ X⊆ → proj₁ (ok N') (•-~ _⊆_ (•-~ _⊆_ (λ _ _ z → z) X⊆) (λ _ z → z)))
+            (fin-code (ok N') (𝒯-intro n ne)))))
   where
   n = length Δ
   N' = concretize fv-ref N
@@ -86,15 +95,19 @@ conc (get i M) φ c rel = proj-≃ (pos i) (conc M φ c rel)
 conc (inl M) φ c rel = inl-≃ (conc M φ c rel)
 conc (inr M) φ c rel = inr-≃ (conc M φ c rel)
 conc (case L M N) φ {ρ₂} {ρ₃} c rel =
-  case-≃ (conc L φ c rel) (λ X _ cX → conc M (ext-ref φ) {X • ρ₂} (Con-• cX c) (rel-ext rel))
+  case-≃ (conc L φ c rel)
+    (λ X _ cX → conc M (ext-ref φ) {X • ρ₂} (Con-• cX c) (rel-ext rel))
     (λ X _ cX → conc N (ext-ref φ) {X • ρ₂} (Con-• cX c) (rel-ext rel))
 conc (prim p L M) φ c rel = primD-≃ p (conc L φ c rel) (conc M φ c rel)
-conc (let′ M N) φ {ρ₂} c rel = let-≃ (conc M φ c rel) λ X _ cX → conc N (ext-ref φ) {X • ρ₂} (Con-• cX c) (rel-ext rel)
+conc (let′ M N) φ {ρ₂} c rel =
+  let-≃ (conc M φ c rel) λ X _ cX →
+  conc N (ext-ref φ) {X • ρ₂} (Con-• cX c) (rel-ext rel)
 conc (fold M) φ c rel = conc M φ c rel
 conc (unfold M) φ c rel = conc M φ c rel
 
 concs-nth (M ∷ Ms) φ c rel zero = conc M φ c rel
 concs-nth (M ∷ Ms) φ c rel (suc i) = concs-nth Ms φ c rel i
 
-concretize-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
+concretize-correct : ∀ {A} (M : Tm [] A)
+  → ⟦ M ⟧ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct M = conc M (λ ()) (λ _ → Con-⌈⌉ ⟨⟩) (λ ())

@@ -20,15 +20,19 @@ module FPC.proof.Correctness.AbstractMachines.LiftLocalsSim where
 
 open import FPC.Language.Type
 import FPC.Language.Mon as M
-open M using (DSig; Args; atm; pair; callc; tuple; get; inl; inr; case; prim; let′; fold; unfold; ⌜_⌝; ⌜_⌝ₚ)
+open M using (DSig; Args; atm; pair; callc; tuple; get; inl; inr; case; prim;
+  let′; fold; unfold; ⌜_⌝; ⌜_⌝ₚ)
 open import FPC.Compiler.LiftLocals using (lift; lift-program)
 open import FPC.Framework.AllUtil using (All; []; _∷_; map)
 open import FPC.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation using (Obs)
-open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; Plus; plus; plus-star; star-plus; step⁺; plus→star)
-open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent; equiv-sym)
+open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; Plus; plus;
+  plus-star; star-plus; step⁺; plus→star)
+open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent;
+  equiv-sym)
 open import proof.Framework.Both Obs using (Both; halt; move; both-fsim)
-open import FPC.proof.Correctness.AbstractMachines.GlobalFunCommon using (atm-step; tuple-atoms)
+open import FPC.proof.Correctness.AbstractMachines.GlobalFunCommon using
+  (atm-step; tuple-atoms)
 import FPC.Semantics.AbstractMachines.GlobalFun as C
 import FPC.Semantics.AbstractMachines.Imp as I
 
@@ -36,7 +40,8 @@ open import Data.List using (List; []; _∷_)
 open import Function using (flip)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong)
 
-module Sim {Σ : List DSig} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) Σ) {T} (e₀ : M.Exp Σ [] T) where
+module Sim {Σ : List DSig} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) Σ)
+  {T} (e₀ : M.Exp Σ [] T) where
 
   ds₁ = map lift ds
   ds₂ = map ⌜_⌝ ds
@@ -49,10 +54,12 @@ module Sim {Σ : List DSig} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) 
   {- the source's (GlobalFunμ) on the left, the target's (Impμ) on the right -}
   data _≈_ : ∀ {A} → C.Cont Σ A → I.Cont Σ A → Set where
     halt : ∀ {A} → C.halt {A = A} ≈ I.halt
-    assignK : ∀ {Δ A B} {e : M.Exp Σ (A ∷ Δ) B} {φ κ₁ κ₂} → κ₂ ≈ κ₁ → C.letK ⌜ e ⌝ φ κ₂ ≈ I.assignK (lift e) φ κ₁
+    assignK : ∀ {Δ A B} {e : M.Exp Σ (A ∷ Δ) B} {φ κ₁ κ₂} → κ₂ ≈ κ₁
+      → C.letK ⌜ e ⌝ φ κ₂ ≈ I.assignK (lift e) φ κ₁
 
   data _~_ : C.State Σ → I.State Σ → Set where
-    eval~ : ∀ {Δ A} {e : M.Exp Σ Δ A} {φ κ₁ κ₂} → κ₂ ≈ κ₁ → C.eval ⌜ e ⌝ φ κ₂ ~ I.eval (lift e) φ κ₁
+    eval~ : ∀ {Δ A} {e : M.Exp Σ Δ A} {φ κ₁ κ₂} → κ₂ ≈ κ₁
+      → C.eval ⌜ e ⌝ φ κ₂ ~ I.eval (lift e) φ κ₁
 
   {- the Impμ machine (L₁) is the one simulated, so Both takes the
      converse of _~_ -}
@@ -80,35 +87,56 @@ module Sim {Σ : List DSig} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) 
     → Plus L₂ s₂ (C.ret w (C.callR f κ₂))
     → 𝔅 s₁ s₂
   call (C.pack (C.code g) e) w st k π =
-    move (step⁺ (trans st (cong (λ d → next (I.eval d _ _)) (lookup-map lift ds g))))
-         (plus-star π (cong (λ d → next (C.eval d _ _)) (lookup-map ⌜_⌝ ds g) ◅ ε)) (eval~ k)
+    move
+      (step⁺
+        (trans st (cong (λ d → next (I.eval d _ _)) (lookup-map lift ds g))))
+         (plus-star π
+             (cong (λ d → next (C.eval d _ _)) (lookup-map ⌜_⌝ ds g) ◅ ε))
+             (eval~ k)
 
-  choose : ∀ {Δ A' B'} (v : C.Val Σ (A' ⊹ B')) {e₁ : M.Exp Σ (A' ∷ Δ) A} {e₂ : M.Exp Σ (B' ∷ Δ) A} {φ}
+  choose : ∀ {Δ A' B'} (v : C.Val Σ (A' ⊹ B')) {e₁ : M.Exp Σ (A' ∷ Δ) A}
+    {e₂ : M.Exp Σ (B' ∷ Δ) A} {φ}
     → κ₂ ≈ κ₁
-    → I.step ds₁ s₁ ≡ next (C.choose v (λ u → I.eval (lift e₁) (u ∷ φ) κ₁) (λ u → I.eval (lift e₂) (u ∷ φ) κ₁))
+    → I.step ds₁ s₁
+      ≡ next
+      (C.choose v (λ u → I.eval (lift e₁) (u ∷ φ) κ₁)
+        (λ u → I.eval (lift e₂) (u ∷ φ) κ₁))
     → Star L₂ s₂ t
-    → C.step ds₂ t ≡ next (C.choose v (λ u → C.eval ⌜ e₁ ⌝ (u ∷ φ) κ₂) (λ u → C.eval ⌜ e₂ ⌝ (u ∷ φ) κ₂))
+    → C.step ds₂ t
+      ≡ next
+      (C.choose v (λ u → C.eval ⌜ e₁ ⌝ (u ∷ φ) κ₂)
+        (λ u → C.eval ⌜ e₂ ⌝ (u ∷ φ) κ₂))
     → 𝔅 s₁ s₂
-  choose (C.inl u) k st σ st₂ = move (step⁺ st) (star-plus σ (step⁺ st₂)) (eval~ k)
-  choose (C.inr u) k st σ st₂ = move (step⁺ st) (star-plus σ (step⁺ st₂)) (eval~ k)
+  choose (C.inl u) k st σ st₂ =
+    move (step⁺ st) (star-plus σ (step⁺ st₂)) (eval~ k)
+  choose (C.inr u) k st σ st₂ =
+    move (step⁺ st) (star-plus σ (step⁺ st₂)) (eval~ k)
 
   sim : s₂ ~ s₁
     → 𝔅 s₁ s₂
   sim (eval~ {e = atm a} k) = val refl k (step⁺ (at a))
-  sim (eval~ {e = pair a b} k) = val refl k (plus refl (at a ◅ refl ◅ at b ◅ refl ◅ ε))
-  sim (eval~ {e = callc f a} k) = call _ _ refl k (plus refl (at f ◅ refl ◅ at a ◅ ε))
-  sim (eval~ {e = tuple as} k) = val refl k (plus refl (tuple-atoms ds₂ ⌜ e₀ ⌝ [] as))
+  sim (eval~ {e = pair a b} k) =
+    val refl k (plus refl (at a ◅ refl ◅ at b ◅ refl ◅ ε))
+  sim (eval~ {e = callc f a} k) =
+    call _ _ refl k (plus refl (at f ◅ refl ◅ at a ◅ ε))
+  sim (eval~ {e = tuple as} k) =
+    val refl k (plus refl (tuple-atoms ds₂ ⌜ e₀ ⌝ [] as))
   sim (eval~ {e = get i a} k) = val refl k (plus refl (at a ◅ refl ◅ ε))
   sim (eval~ {e = inl a} k) = val refl k (plus refl (at a ◅ refl ◅ ε))
   sim (eval~ {e = inr a} k) = val refl k (plus refl (at a ◅ refl ◅ ε))
-  sim (eval~ {e = case a e₁ e₂} {φ = φ} k) = choose (I.atom φ a) {e₁} {e₂} {φ} k refl (refl ◅ at a ◅ ε) refl
-  sim (eval~ {e = prim p a b} k) = val refl k (plus refl (at a ◅ refl ◅ at b ◅ refl ◅ ε))
-  sim (eval~ {e = let′ e₁ e₂} k) = move (step⁺ refl) (step⁺ refl) (eval~ (assignK k))
+  sim (eval~ {e = case a e₁ e₂} {φ = φ} k) =
+    choose (I.atom φ a) {e₁} {e₂} {φ} k refl (refl ◅ at a ◅ ε) refl
+  sim (eval~ {e = prim p a b} k) =
+    val refl k (plus refl (at a ◅ refl ◅ at b ◅ refl ◅ ε))
+  sim (eval~ {e = let′ e₁ e₂} k) =
+    move (step⁺ refl) (step⁺ refl) (eval~ (assignK k))
   sim (eval~ {e = fold a} k) = val refl k (plus refl (at a ◅ refl ◅ ε))
   sim (eval~ {e = unfold a} k) = val refl k (plus refl (at a ◅ refl ◅ ε))
 
-{- The end theorem -------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
-lift-locals-correct : ∀ {A} (P : M.Program A) → Equivalent (C.sem ⌜ P ⌝ₚ) (I.sem (lift-program P))
-lift-locals-correct (M.program ds e) = equiv-sym (equivalent (both-fsim (flip _~_) (eval~ halt) sim))
+lift-locals-correct : ∀ {A} (P : M.Program A)
+  → Equivalent (C.sem ⌜ P ⌝ₚ) (I.sem (lift-program P))
+lift-locals-correct (M.program ds e) =
+  equiv-sym (equivalent (both-fsim (flip _~_) (eval~ halt) sim))
   where open Sim ds e

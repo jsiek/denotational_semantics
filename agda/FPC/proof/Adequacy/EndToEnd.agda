@@ -4,8 +4,9 @@
   interpreters: for a closed FPC program M,
 
     FPC interpreter  ⇔  ⟦ M ⟧ ρ₀             (Adequacy/FPC.agda)
-                     ⇔  ⟦ compile M ⟧ₜ       (Correctness/GraphModel/CompilerCorrect.agda)
-                     ⇔  X86μ interpreter     (Adequacy/X86.agda)
+                     ⇔ ⟦ compile M ⟧ₜ
+                     (Correctness/GraphModel/CompilerCorrect.agda) ⇔ X86μ
+                     interpreter (Adequacy/X86.agda)
 
   for constants, and for divergence through the emptiness of the
   denotations. Since both adequacy theorems give divergence directly
@@ -34,7 +35,8 @@ import FPC.Semantics.ClockedInterpreters.FPC as I
 import FPC.Semantics.ClockedInterpreters.X86 as X
 import FPC.proof.Adequacy.FPC as AI
 import FPC.proof.Adequacy.X86 as AX
-open import FPC.proof.Correctness.GraphModel.CompilerCorrect using (compile-same)
+open import FPC.proof.Correctness.GraphModel.CompilerCorrect using
+  (compile-same)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
@@ -54,11 +56,15 @@ private
   ⇔-sym (f , g) = g , f
 
 compile-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
-  → Terminates (I.sem M) (o-const Int k) ⇔ Terminates (X.sem (compile M)) (o-const Int k)
-compile-const M k = ⇔-sym (AI.const-iff M) ∘⇔ (proj₁ (compile-same M) k ∘⇔ AX.x86-const-iff M)
+  → Terminates (I.sem M) (o-const Int k)
+    ⇔ Terminates (X.sem (compile M)) (o-const Int k)
+compile-const M k =
+  ⇔-sym (AI.const-iff M) ∘⇔ (proj₁ (compile-same M) k ∘⇔ AX.x86-const-iff M)
 
-compile-diverges : ∀ (M : Tm [] (base Int)) → Diverges (I.sem M) ⇔ Diverges (X.sem (compile M))
-compile-diverges M = AI.diverges-iff M ∘⇔ (empty ∘⇔ ⇔-sym (AX.x86-diverges-iff M))
+compile-diverges : ∀ (M : Tm [] (base Int))
+  → Diverges (I.sem M) ⇔ Diverges (X.sem (compile M))
+compile-diverges M =
+  AI.diverges-iff M ∘⇔ (empty ∘⇔ ⇔-sym (AX.x86-diverges-iff M))
   where
   S = proj₂ (compile-same M)
   empty : (¬ nonempty (⟦ M ⟧ ρ₀)) ⇔ (¬ nonempty ⟦ compile M ⟧ₜ)

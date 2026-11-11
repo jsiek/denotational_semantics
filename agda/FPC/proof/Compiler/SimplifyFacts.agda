@@ -29,7 +29,7 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
 open import Relation.Nullary using (does)
 
-{- Values ----------------------------------------------------------------------}
+{- Values ---------------------------------------------------------------------}
 
 data SV {Γ} : ∀ {A} → Tm Γ A → Set
 data SVs {Γ} : ∀ {Δ} → All (Tm Γ) Δ → Set
@@ -159,7 +159,7 @@ small-value : ∀ {Γ A} (T : Tm Γ A)
   → value T ≡ true
 small-value T s = sv-value (small-sv T s)
 
-{- Known values -----------------------------------------------------------------}
+{- Known values ---------------------------------------------------------------}
 
 {- a component of a known tuple of values -}
 svs-lookup : ∀ {Γ Δ A} {Ks : All (Tm Γ) Δ}
@@ -181,7 +181,8 @@ comp-inv : ∀ {Γ C Δ A} (i : Δ ∋ A) (k : Maybe (Known Γ C))
   → (e : C ≡ tup Δ)
   → ∀ {K}
   → component i k e ≡ just K
-  → Σ[ Ks ∈ All (Tm Γ) Δ ] subst (λ C → Maybe (Known Γ C)) e k ≡ just (val (tuple Ks)) × lookup Ks i ≡ K
+  → Σ[ Ks ∈ All (Tm Γ) Δ ] subst (λ C → Maybe (Known Γ C)) e k
+    ≡ just (val (tuple Ks)) × lookup Ks i ≡ K
 comp-inv i (just (val (tuple Ks))) refl refl = Ks , refl , refl
 
 branch-inl : ∀ {Γ C A B} (k : Maybe (Known Γ C))

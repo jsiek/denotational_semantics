@@ -3,12 +3,13 @@
   The passes of the FPC compiler, composed: from FPC to X86μ,
 
     FPC --simplify--> FPC --capture--> Closμ --prune--> Closμ
-           --concretize--> EnvClosμ --split--> PairClosμ --hoist--> GlobalFunμ --rco--> Monμ
+           --concretize--> EnvClosμ --split--> PairClosμ --hoist--> GlobalFunμ
+           --rco--> Monμ
            --lift locals--> Impμ --explicate control--> CFGμ
            --select instructions--> X86μ
 
-  as the typed pipeline's (ISWIM/Compiler/Pipeline.agda), without cast insertion:
-  enclose (FPC → EnvClosμ), the closure-conversion pass, is made of
+  as the typed pipeline's (ISWIM/Compiler/Pipeline.agda), without cast
+  insertion: enclose (FPC → EnvClosμ), the closure-conversion pass, is made of
   three steps, enclose = concretize ∘ prune ∘ capture. compile is the
   whole compiler, into X86μ; its prefixes compile-to-PairClos,
   compile-to-GlobalFun, compile-to-Mon, compile-to-Imp and compile-to-CFG

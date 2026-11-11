@@ -53,8 +53,10 @@ open import Data.Nat.Properties using (n≮0; ≤-refl)
 open import Data.List using (List; []; _∷_; _++_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻)
-open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩ )
+open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ;
+  ∈-++⁻)
+open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to
+  ⟨_,_⟩ )
 open import Data.Sum using ([_,_]′)
 open import Data.Empty using (⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
@@ -97,22 +99,31 @@ record UsableEntryS (T : 𝒫 Value) (U₀ : List Value) (w : Value) : Set where
    sets. -}
 record SelfContainedMapsS (T U W : 𝒫 Value) : Set where
   field
-    results : ∀ w → w ∈ W → Σ[ U₀ ∈ List Value ] UsableEntryS T U₀ w × U₀ ≢ [] × mem U₀ ⊆ U
-    args : ∀ u → u ∈ U → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] UsableEntryS T U₀ w × u ⋵ U₀
+    results : ∀ w → w ∈ W
+      → Σ[ U₀ ∈ List Value ] UsableEntryS T U₀ w × U₀ ≢ [] × mem U₀ ⊆ U
+    args : ∀ u → u ∈ U
+      → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] UsableEntryS T U₀ w × u ⋵ U₀
 
 {- If V ⊆ T, then every usable entry of the list V is a usable entry of
    the set T. -}
 UsableEntry→S : ∀ {V T U₀ w} → mem V ⊆ T → UsableEntry V U₀ w → UsableEntryS T U₀ w
 UsableEntry→S V⊆ (usable-entry FV t e∈ neFV FV⊆) =
-  usable-entryS FV t (V⊆ _ e∈) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , V⊆ _ i ⟩)
+  usable-entryS FV t (V⊆ _ e∈) neFV
+    (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , V⊆ _ i ⟩)
 
 SelfContainedMaps→S : ∀ {V T U W}
   → mem V ⊆ T
   → SelfContainedMaps V U W
   → SelfContainedMapsS T (mem U) (mem W)
 SelfContainedMaps→S V⊆ cs = record
-  { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = SelfContainedMaps.results cs w w∈ in ⟨ U₀ , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩
-  ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = SelfContainedMaps.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩ ⟩
+  { results = λ w w∈ →
+      let ⟨ U₀ , ⟨ e , r ⟩ ⟩ =
+           SelfContainedMaps.results cs w w∈ in
+           ⟨ U₀ , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩
+  ; args = λ u u∈ →
+    let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ =
+         SelfContainedMaps.args cs u u∈ in
+         ⟨ U₀ , ⟨ w , ⟨ UsableEntry→S V⊆ e , r ⟩ ⟩ ⟩
   }
 
 {- Every usable entry of T is a usable entry of some finite V ⊆ T. The
@@ -122,27 +133,33 @@ S→UsableEntry : ∀ {T U₀ w} → UsableEntryS T U₀ w → Σ[ V ∈ List Va
 S→UsableEntry {T} {U₀} {w} (usable-entryS FV t e∈ neFV FV⊆) with cdr-witness FV FV⊆
 ... | ⟨ P , ⟨ P⊆T , FV⊆P ⟩ ⟩ =
   ⟨ e ∷ P , ⟨ (λ { _ (here refl) → e∈ ; d (there d∈) → P⊆T d d∈ })
-  , usable-entry FV t (here refl) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆P d d∈ in ⟨ u , there i ⟩) ⟩ ⟩
+  , usable-entry FV t (here refl) neFV
+      (λ d d∈ → let ⟨ u , i ⟩ = FV⊆P d d∈ in ⟨ u , there i ⟩) ⟩ ⟩
   where e = ⦅ FV ↦ (U₀ ↦ w) , t ⦆
 
 Bnd-UsableEntryS : ∀ {k T U₀ w}
   → Bnd𝒫 (suc k) T
   → UsableEntryS T U₀ w
   → Bnd k U₀ × depth w < k
-Bnd-UsableEntryS bT e = let ⟨ V , ⟨ V⊆ , e' ⟩ ⟩ = S→UsableEntry e in Bnd-UsableEntry (Bnd𝒫-mem bT V⊆) e'
+Bnd-UsableEntryS bT e =
+  let ⟨ V , ⟨ V⊆ , e' ⟩ ⟩ =
+       S→UsableEntry e in Bnd-UsableEntry (Bnd𝒫-mem bT V⊆) e'
 
 Bnd-SelfContainedMapsS-args : ∀ {k T U W}
   → Bnd𝒫 (suc k) T
   → SelfContainedMapsS T U W
   → Bnd𝒫 k U
 Bnd-SelfContainedMapsS-args bT cs u u∈ =
-  let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = SelfContainedMapsS.args cs u u∈ in proj₁ (Bnd-UsableEntryS bT e) u u∈U₀
+  let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ =
+       SelfContainedMapsS.args cs u u∈ in proj₁ (Bnd-UsableEntryS bT e) u u∈U₀
 
 Bnd-SelfContainedMapsS-apps : ∀ {k T U W}
   → Bnd𝒫 (suc k) T
   → SelfContainedMapsS T U W
   → Bnd𝒫 k W
-Bnd-SelfContainedMapsS-apps bT cs w w∈ = proj₂ (Bnd-UsableEntryS bT (proj₁ (proj₂ (SelfContainedMapsS.results cs w w∈))))
+Bnd-SelfContainedMapsS-apps bT cs w w∈ =
+  proj₂
+  (Bnd-UsableEntryS bT (proj₁ (proj₂ (SelfContainedMapsS.results cs w w∈))))
 
 {- If T maps U to W and W₀ is a finite part of W, then some finite
    V ⊆ T maps some finite U₁ ⊆ U to W₀. -}
@@ -150,13 +167,18 @@ collectS : ∀ {T U W} → SelfContainedMapsS T U W → ∀ W₀ → mem W₀ �
   → Σ[ V ∈ List Value ] Σ[ U₁ ∈ List Value ] mem V ⊆ T × mem U₁ ⊆ U × SelfContainedMaps V U₁ W₀
 collectS cs [] _ = ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
 collectS cs (w ∷ W₀) W₀⊆
-    with SelfContainedMapsS.results cs w (W₀⊆ w (here refl)) | collectS cs W₀ (λ d d∈ → W₀⊆ d (there d∈))
+    with SelfContainedMapsS.results cs w (W₀⊆ w (here refl))
+      | collectS cs W₀ (λ d d∈ → W₀⊆ d (there d∈))
 ... | ⟨ U₀ , ⟨ e , ⟨ neU₀ , U₀⊆U ⟩ ⟩ ⟩ | ⟨ V , ⟨ U₁ , ⟨ V⊆ , ⟨ U₁⊆ , cs' ⟩ ⟩ ⟩ ⟩
     with S→UsableEntry e
 ... | ⟨ P , ⟨ P⊆ , ent ⟩ ⟩ =
   ⟨ P ++ V , ⟨ U₀ ++ U₁ , ⟨ ++⊆ P⊆ V⊆ , ⟨ ++⊆ U₀⊆U U₁⊆
   , SelfContainedMaps-++ (SelfContainedMaps-⊆ (λ d d∈ → ∈-++⁺ˡ d∈)
-                (record { results = λ { _ (here refl) → ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ _ d∈ → d∈) ⟩ ⟩ ⟩ ; _ (there ()) }
+                (record
+                    { results =
+                      λ { _ (here refl)
+                        → ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ _ d∈ → d∈) ⟩ ⟩ ⟩
+                        ; _ (there ()) }
                         ; args = λ u u∈ → ⟨ U₀ , ⟨ w , ⟨ ent , u∈ ⟩ ⟩ ⟩ }))
              (SelfContainedMaps-⊆ (λ d d∈ → ∈-++⁺ʳ P d∈) cs') ⟩ ⟩ ⟩ ⟩
   where
@@ -168,11 +190,13 @@ collectS cs (w ∷ W₀) W₀⊆
 
 {- The relation on bounded target sets ----------------------------------------}
 
-record ApproxLRSetLayer (Q : 𝒫 Value → 𝒫 Value → Set₁) (D T : 𝒫 Value) : Set₁ where
+record ApproxLRSetLayer (Q : 𝒫 Value → 𝒫 Value → Set₁)
+  (D T : 𝒫 Value) : Set₁ where
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ∈ T → const c ∈ D
     nonempty-obs : nonempty T → nonempty D
-    app-obs : ∀ {U W} → SelfContainedMapsS T U W → ∀ E → Con E → Con U → Q E U → Q (D ● E) W
+    app-obs : ∀ {U W} → SelfContainedMapsS T U W → ∀ E → Con E → Con U → Q E U
+      → Q (D ● E) W
     tag-obs : ∀ t → Q (Untag t D) (Untag t T)
 
 ApproxLRSet≤ : ℕ → 𝒫 Value → 𝒫 Value → Set₁
@@ -190,14 +214,16 @@ ApproxLRSet⇐ : ∀ k {D T}
   → Approx D T
   → ApproxLRSet≤ k D T
 
-ApproxLRSet⇒ zero bT _ V V⊆ = ApproxLR-∅ (λ v v∈ → ⊥-elim (n≮0 (bT v (V⊆ v v∈))))
+ApproxLRSet⇒ zero bT _ V V⊆ =
+  ApproxLR-∅ (λ v v∈ → ⊥-elim (n≮0 (bT v (V⊆ v v∈))))
 ApproxLRSet⇒ (suc k) {D} {T} bT r V V⊆ = fold record
   { const-obs = λ c c∈ → const-obs c (V⊆ _ c∈)
   ; nonempty-obs = λ neV → nonempty-obs (ne-mem neV V⊆)
   ; app-obs = λ {U} {W} cs E cE cU rU →
       ApproxLRSet⇒ k (Bnd𝒫-mem-inv (Bnd-SelfContainedMaps-apps bV cs))
         (app-obs (SelfContainedMaps→S V⊆ cs) E cE cU
-           (ApproxLRSet⇐ k (Bnd𝒫-mem-inv (Bnd-SelfContainedMaps-args bV cs)) (λ U' U'⊆ → ApproxLR-⊆ U'⊆ rU)))
+           (ApproxLRSet⇐ k (Bnd𝒫-mem-inv (Bnd-SelfContainedMaps-args bV cs))
+               (λ U' U'⊆ → ApproxLR-⊆ U'⊆ rU)))
         W (λ _ d∈ → d∈)
   ; tag-obs = λ t W W⊆ →
       ApproxLRSet⇒ k (Bnd𝒫-Untag t bT) (tag-obs t) W (λ d d∈ → V⊆ _ (W⊆ d d∈))

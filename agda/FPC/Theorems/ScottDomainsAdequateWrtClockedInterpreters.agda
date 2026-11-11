@@ -2,13 +2,13 @@
 
   The adequacy of the Scott-domain semantics for the clocked
   interpreters of FPC and X86μ: the Scott-domain half of
-  Proposition 5.1 (adequacy) of the paper (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda has
-  the graph-model half), and the consequence drawn from it with compiler
-  correctness in Scott domains (FPC/Theorems/CorrectWrtScottDomains.agda), the
-  theorem the operational proofs state. The proofs are in
-  FPC/proof/Adequacy/ScottDomains/. The X86μ statements are for the
-  programs the compiler produces, so that their precondition (in
-  FPC/proof/) need not be audited.
+  Proposition 5.1 (adequacy) of the paper
+  (FPC/Theorems/GraphModelAdequateWrtClockedInterpreters.agda has the
+  graph-model half), and the consequence drawn from it with compiler correctness
+  in Scott domains (FPC/Theorems/CorrectWrtScottDomains.agda), the theorem the
+  operational proofs state. The proofs are in FPC/proof/Adequacy/ScottDomains/.
+  The X86μ statements are for the programs the compiler produces, so that their
+  precondition (in FPC/proof/) need not be audited.
 
   A term means an element of the domain of values 𝔻
   (Framework/Scott/Domain.agda); const B c is the constant c() and ⊥𝔻
@@ -58,7 +58,7 @@ import FPC.proof.Adequacy.ScottDomains.FPC pt fe pe as AdequacyFPC
 import FPC.proof.Adequacy.ScottDomains.X86 pt fe pe as AdequacyX86
 import FPC.proof.Adequacy.ScottDomains.EndToEnd pt fe pe as EndToEnd
 
-{- Adequacy, Scott domains -----------------------------------------------------}
+{- Adequacy, Scott domains ----------------------------------------------------}
 
 {- for a closed FPC term M (of any type), and every constant c:
    ⟦ M ⟧ ρ₀ = c() if and only if the interpreter of FPC terminates on M
@@ -94,15 +94,17 @@ x86-diverges-iff : ∀ {A} (M : FPC.Tm [] A)
      → Diverges (X86μᵢ.sem (compile M)))
 x86-diverges-iff = AdequacyX86.x86-diverges-iff
 
-{- With compiler correctness (FPC/Theorems/CorrectWrtScottDomains.agda): the compiler,
-   observed through the interpreters ----------------------------------------}
+{- With compiler correctness (FPC/Theorems/CorrectWrtScottDomains.agda): the
+   compiler, observed through the interpreters
+   ----------------------------------------}
 
 {- for a program of type Int, the theorem the operational proofs state:
    the interpreters of FPC and X86μ terminate with the same integer, or
    both diverge -}
 
 end-to-end-x86-const : ∀ (M : FPC.Tm [] (base Int)) (n : ℤ)
-  → Terminates (FPCᵢ.sem M) (o-const Int n) ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int n)
+  → Terminates (FPCᵢ.sem M) (o-const Int n)
+    ⇔ Terminates (X86μᵢ.sem (compile M)) (o-const Int n)
 end-to-end-x86-const = EndToEnd.compile-const
 
 end-to-end-x86-diverges : ∀ (M : FPC.Tm [] (base Int))

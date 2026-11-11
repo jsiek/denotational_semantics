@@ -1,8 +1,8 @@
 {-
 
   The relation between the values of two CEK machines
-  (FPC/Semantics/AbstractMachines/Values.agda, with codes C₁ and C₂) for a pass that
-  maps the code of each closure by f (capture, concretize, split), as
+  (FPC/Semantics/AbstractMachines/Values.agda, with codes C₁ and C₂) for a pass
+  that maps the code of each closure by f (capture, concretize, split), as
   proof/Semantics/ClockedInterpreters/Rel.agda for the interpreters: values are
   related (_≈_) when they have the same shape, except that a closure of
   code c is related to one of code f c, with related environments.
@@ -12,7 +12,8 @@
 
 open import FPC.Language.Type using (Ctx; Type)
 
-module FPC.proof.Semantics.AbstractMachines.Rel {C₁ C₂ : Ctx → Type → Type → Set} (f : ∀ {Δ A B} → C₁ Δ A B → C₂ Δ A B) where
+module FPC.proof.Semantics.AbstractMachines.Rel
+  {C₁ C₂ : Ctx → Type → Type → Set} (f : ∀ {Δ A B} → C₁ Δ A B → C₂ Δ A B) where
 
 open import Framework.Primitives using (base-rep)
 open import Language.Prim using (sub; eq)
@@ -32,7 +33,8 @@ open import Relation.Nullary using (does)
 
 infix 4 _≈_
 data _≈_ : ∀ {A} → S.Val A → T.Val A → Set where
-  clos≈ : ∀ {Δ A B} {c : C₁ Δ A B} {vs ws} → All₂ _≈_ vs ws → S.pack (S.code c) (S.tup vs) ≈ T.pack (T.code (f c)) (T.tup ws)
+  clos≈ : ∀ {Δ A B} {c : C₁ Δ A B} {vs ws} → All₂ _≈_ vs ws
+    → S.pack (S.code c) (S.tup vs) ≈ T.pack (T.code (f c)) (T.tup ws)
   const≈ : ∀ {B} {c : base-rep B} → S.const c ≈ T.const c
   tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → S.tup vs ≈ T.tup ws
   inl≈ : ∀ {A B v w} → v ≈ w → S.inl {A} {B} v ≈ T.inl w

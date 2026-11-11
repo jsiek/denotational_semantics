@@ -49,7 +49,8 @@ case-≃ : ∀ {D D' F F' G G'}
   → Body-≃ G G'
   → 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
 case-≃ {F = F} {F'} {G} {G'} D≃ F≃ G≃ =
-  𝒞-≃ {F = F} {F'} {G} {G'} D≃ (λ v V c → F≃ _ ⟨ v , here refl ⟩ (≈⇒Con c)) (λ v V c → G≃ _ ⟨ v , here refl ⟩ (≈⇒Con c))
+  𝒞-≃ {F = F} {F'} {G} {G'} D≃ (λ v V c → F≃ _ ⟨ v , here refl ⟩ (≈⇒Con c))
+    (λ v V c → G≃ _ ⟨ v , here refl ⟩ (≈⇒Con c))
 
 {- an equation carries nonemptiness -}
 ne-≃ : ∀ {T} {D E : 𝒫 T}

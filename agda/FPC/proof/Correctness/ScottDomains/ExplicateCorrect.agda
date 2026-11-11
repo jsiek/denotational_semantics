@@ -46,20 +46,24 @@ module FPC.proof.Correctness.ScottDomains.ExplicateCorrect
        where
 
 open import Framework.Scott.Base pt fe
-open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
+open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to
+  inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import FPC.Semantics.ScottDomains.Ops pt fe pe
 open import FPC.Semantics.ScottDomains.Imp pt fe pe using (⟦_⟧ᴷ; K; idK; underK)
   renaming (code′ to codeᵢ; ⟦_⟧ₚ to ⟦_⟧ᵢ)
-open import FPC.Semantics.ScottDomains.CFG pt fe pe using (⟦_⟧ᵗ; blocks; run; drop; 𝒜; 𝒮)
-  renaming (code′ to codeᶜ′; ⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong; tables-cons; 𝒜-＝; 𝒮-＝)
+open import FPC.Semantics.ScottDomains.CFG pt fe pe using (⟦_⟧ᵗ; blocks; run;
+  drop; 𝒜; 𝒮) renaming (code′ to codeᶜ′; ⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using
+  (codeᶜ-cong; tables-cons; 𝒜-＝; 𝒮-＝)
 
-{- blocks that extend others -----------------------------------------------------------}
+{- blocks that extend others --------------------------------------------------}
 
-data Ext {Σ R} : ∀ {Bs Bs'} → Bs ⊑ Bs' → Blocks Σ R Bs → Blocks Σ R Bs' → Set where
+data Ext {Σ R} : ∀ {Bs Bs'} → Bs ⊑ Bs' → Blocks Σ R Bs
+  → Blocks Σ R Bs' → Set where
   here : ∀ {Bs} {bs : Blocks Σ R Bs} → Ext here⊑ bs bs
-  there : ∀ {Bs Bs' Δ g bs bs'} {t : Tail Σ R Bs' Δ} → Ext {Bs = Bs} g bs bs' → Ext (there⊑ g) bs (bs' ▷ t)
+  there : ∀ {Bs Bs' Δ g bs bs'} {t : Tail Σ R Bs' Δ} → Ext {Bs = Bs} g bs bs'
+    → Ext (there⊑ g) bs (bs' ▷ t)
 
 ext-trans : ∀ {Σ R Bs Bs' Bs''}
   → {g : Bs ⊑ Bs'}
@@ -80,31 +84,37 @@ ext-at : ∀ {Σ R Bs Bs'}
 ext-at T here l = refl
 ext-at T (there e) l = ext-at T e l
 
-{- The pass preserves meanings -----------------------------------------------------------}
+{- The pass preserves meanings ------------------------------------------------}
 
 module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
 
   {- assign the next slot of the frame cut by p, then k with the blocks bs -}
-  asg : ∀ {Bs Δ Δ' A} → Δ' ⊑ Δ → Tail Σ R Bs (A ∷ Δ') → Blocks Σ R Bs → ⟨ Env ⟩ → ⟨ K ⟩
+  asg : ∀ {Bs Δ Δ' A} → Δ' ⊑ Δ → Tail Σ R Bs (A ∷ Δ') → Blocks Σ R Bs
+    → ⟨ Env ⟩ → ⟨ K ⟩
   asg p k bs σ = appᵈ · (lamᶜ (⟦ k ⟧ᵗ T' (blocks bs T')) · (drop p · σ))
 
   Good : ∀ {Bs Δ} → (⟨ Env ⟩ → ⟨ 𝔻 ⟩) → Blocks Σ R Bs → Out Σ R Bs Δ → 𝓤₁ ̇
-  Good F bs (out g bs' t) = Ext g bs bs' × ((σ : ⟨ Env ⟩) → F σ ＝ ⟦ t ⟧ᵗ T' (blocks bs' T') · σ)
+  Good F bs (out g bs' t) =
+    Ext g bs bs' × ((σ : ⟨ Env ⟩) → F σ ＝ ⟦ t ⟧ᵗ T' (blocks bs' T') · σ)
 
   {- the continuation of the right-hand side of an assignment, when its
      body e₂ runs as the tail t -}
-  bind : ∀ {Bs Δ A B} (e₂ : I.Exp Σ (A ∷ Δ) B) (κ : ⟨ K ⟩) (t : Tail Σ R Bs (A ∷ Δ)) (bs : Blocks Σ R Bs) σ
+  bind : ∀ {Bs Δ A B} (e₂ : I.Exp Σ (A ∷ Δ) B) (κ : ⟨ K ⟩)
+    (t : Tail Σ R Bs (A ∷ Δ)) (bs : Blocks Σ R Bs) σ
     → (  (X : ⟨ 𝔻 ⟩)
        → ⟦ e₂ ⟧ᴷ T · (X • σ) · κ ＝ ⟦ t ⟧ᵗ T' (blocks bs T') · (X • σ))
     → appᵈ · (Λ · (underK (⟦ e₂ ⟧ᴷ T) · (σ , κ))) ＝ asg here⊑ t bs σ
   bind e₂ κ t bs σ h =
-    ap (appᵈ ·_) (Λ-cong (underK (⟦ e₂ ⟧ᴷ T) · (σ , κ)) (abs (⟦ t ⟧ᵗ T' (blocks bs T')) · σ) (λ X _ → h X))
+    ap (appᵈ ·_)
+      (Λ-cong (underK (⟦ e₂ ⟧ᴷ T) · (σ , κ))
+        (abs (⟦ t ⟧ᵗ T' (blocks bs T')) · σ) (λ X _ → h X))
 
   {- the two branches of a case -}
   branches : ∀ {Δ A B} (a : I.Atm Σ Δ (A ⊹ B)) (F₁ F₂ G₁ G₂ : DCPO[ 𝔻 , 𝔻 ]) σ
     → ((X : ⟨ 𝔻 ⟩) → F₁ · X ＝ G₁ · X)
     → ((X : ⟨ 𝔻 ⟩) → F₂ · X ＝ G₂ · X)
-    → cases · (𝒜 a T · σ) · (strict · F₁ , strict · F₂) ＝ cases · (𝒜 a T' · σ) · (strict · G₁ , strict · G₂)
+    → cases · (𝒜 a T · σ) · (strict · F₁ , strict · F₂)
+      ＝ cases · (𝒜 a T' · σ) · (strict · G₁ , strict · G₂)
   branches a F₁ F₂ G₁ G₂ σ h₁ h₂ =
     ap₂ (λ x y → cases · x · y) (𝒜-＝ TT a σ)
       (ap₂ _,_ (ap (strict ·_) (to-continuous-function-＝ 𝔻 𝔻 {F₁} {G₁} h₁))
@@ -117,7 +127,10 @@ module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f)
   cps (I.simple s) p k bs = here , λ σ → ap (asg p k bs σ ·_) (𝒮-＝ TT s σ)
   cps (I.assign e₁ e₂) p k bs =
     ext-trans (pr₁ c₂) (pr₁ c₁) ,
-    λ σ → ap (⟦ e₁ ⟧ᴷ T · σ ·_) (bind e₂ (asg p k bs σ) (Out.tail o₂) (Out.made o₂) σ (λ X → pr₂ c₂ (X • σ)))
+    λ σ →
+      ap (⟦ e₁ ⟧ᴷ T · σ ·_)
+      (bind e₂ (asg p k bs σ) (Out.tail o₂) (Out.made o₂) σ
+        (λ X → pr₂ c₂ (X • σ)))
           ∙ pr₂ c₁ σ
    where
     o₂ = explicate-assign e₂ (there⊑ p) k bs
@@ -125,22 +138,37 @@ module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f)
     c₁ = cps e₁ here⊑ (Out.tail o₂) (Out.made o₂)
   cps (I.case a e₁ e₂) p k bs =
     there (ext-trans (there (ext-trans (there here) (pr₁ c₁))) (pr₁ c₂)) ,
-    λ σ → branches a (underK (⟦ e₁ ⟧ᴷ T) · (σ , asg p k bs σ)) (underK (⟦ e₂ ⟧ᴷ T) · (σ , asg p k bs σ))
-            (abs (blocks (Out.made o₂) T' (⊑-∋ (Out.grows o₂) Z)) · σ) (abs (⟦ Out.tail o₂ ⟧ᵗ T' (blocks (Out.made o₂) T')) · σ) σ
-            (λ X → pr₂ c₁ (X • σ) ∙ ap (λ N → N · (X • σ)) (ext-at T' (pr₁ c₂) Z))
-            (λ X → ap (λ N → ⟦ e₂ ⟧ᴷ T · (X • σ) · (appᵈ · (Λ · (abs N · (drop p · σ))))) (ext-at T' (pr₁ c₁) Z)
+    λ σ →
+      branches a (underK (⟦ e₁ ⟧ᴷ T) · (σ , asg p k bs σ))
+      (underK (⟦ e₂ ⟧ᴷ T) · (σ , asg p k bs σ))
+            (abs (blocks (Out.made o₂) T' (⊑-∋ (Out.grows o₂) Z)) · σ)
+              (abs (⟦ Out.tail o₂ ⟧ᵗ T' (blocks (Out.made o₂) T')) · σ) σ
+            (λ X →
+                pr₂ c₁ (X • σ) ∙ ap (λ N → N · (X • σ)) (ext-at T' (pr₁ c₂) Z))
+            (λ X →
+                ap
+                (λ N →
+                  ⟦ e₂ ⟧ᴷ T · (X • σ) · (appᵈ · (Λ · (abs N · (drop p · σ)))))
+                  (ext-at T' (pr₁ c₁) Z)
                    ∙ pr₂ c₂ (X • σ))
    where
     o₁ = explicate-assign e₁ (there⊑ p) (goto Z) (bs ▷ k)
     c₁ = cps e₁ (there⊑ p) (goto Z) (bs ▷ k)
-    o₂ = explicate-assign e₂ (there⊑ p) (goto (⊑-∋ (there⊑ (Out.grows o₁)) Z)) (Out.made o₁ ▷ Out.tail o₁)
-    c₂ = cps e₂ (there⊑ p) (goto (⊑-∋ (there⊑ (Out.grows o₁)) Z)) (Out.made o₁ ▷ Out.tail o₁)
+    o₂ =
+      explicate-assign e₂ (there⊑ p) (goto (⊑-∋ (there⊑ (Out.grows o₁)) Z))
+      (Out.made o₁ ▷ Out.tail o₁)
+    c₂ =
+      cps e₂ (there⊑ p) (goto (⊑-∋ (there⊑ (Out.grows o₁)) Z))
+      (Out.made o₁ ▷ Out.tail o₁)
 
-  tl : ∀ {Bs Δ} (e : I.Exp Σ Δ R) (bs : Blocks Σ R Bs) → Good (λ σ → ⟦ e ⟧ᴷ T · σ · idK) bs (explicate-tail e bs)
+  tl : ∀ {Bs Δ} (e : I.Exp Σ Δ R) (bs : Blocks Σ R Bs)
+    → Good (λ σ → ⟦ e ⟧ᴷ T · σ · idK) bs (explicate-tail e bs)
   tl (I.simple s) bs = here , 𝒮-＝ TT s
   tl (I.assign e₁ e₂) bs =
     ext-trans (pr₁ c₂) (pr₁ c₁) ,
-    λ σ → ap (⟦ e₁ ⟧ᴷ T · σ ·_) (bind e₂ idK (Out.tail o₂) (Out.made o₂) σ (λ X → pr₂ c₂ (X • σ)))
+    λ σ →
+      ap (⟦ e₁ ⟧ᴷ T · σ ·_)
+      (bind e₂ idK (Out.tail o₂) (Out.made o₂) σ (λ X → pr₂ c₂ (X • σ)))
           ∙ pr₂ c₁ σ
    where
     o₂ = explicate-tail e₂ bs
@@ -148,9 +176,13 @@ module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f)
     c₁ = cps e₁ here⊑ (Out.tail o₂) (Out.made o₂)
   tl (I.case a e₁ e₂) bs =
     there (ext-trans (there (pr₁ c₁)) (pr₁ c₂)) ,
-    λ σ → branches a (underK (⟦ e₁ ⟧ᴷ T) · (σ , idK)) (underK (⟦ e₂ ⟧ᴷ T) · (σ , idK))
-            (abs (blocks (Out.made o₂) T' (⊑-∋ (Out.grows o₂) Z)) · σ) (abs (⟦ Out.tail o₂ ⟧ᵗ T' (blocks (Out.made o₂) T')) · σ) σ
-            (λ X → pr₂ c₁ (X • σ) ∙ ap (λ N → N · (X • σ)) (ext-at T' (pr₁ c₂) Z))
+    λ σ →
+      branches a (underK (⟦ e₁ ⟧ᴷ T) · (σ , idK))
+      (underK (⟦ e₂ ⟧ᴷ T) · (σ , idK))
+            (abs (blocks (Out.made o₂) T' (⊑-∋ (Out.grows o₂) Z)) · σ)
+              (abs (⟦ Out.tail o₂ ⟧ᵗ T' (blocks (Out.made o₂) T')) · σ) σ
+            (λ X →
+                pr₂ c₁ (X • σ) ∙ ap (λ N → N · (X • σ)) (ext-at T' (pr₁ c₂) Z))
             (λ X → pr₂ c₂ (X • σ))
    where
     o₁ = explicate-tail e₁ bs
@@ -158,17 +190,20 @@ module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f)
     o₂ = explicate-tail e₂ (Out.made o₁ ▷ Out.tail o₁)
     c₂ = tl e₂ (Out.made o₁ ▷ Out.tail o₁)
 
-  body-＝ : ∀ {Δ} (e : I.Exp Σ Δ R) σ → ⟦ e ⟧ᴷ T · σ · idK ＝ run (explicate-body e) T' · σ
+  body-＝ : ∀ {Δ} (e : I.Exp Σ Δ R) σ
+    → ⟦ e ⟧ᴷ T · σ · idK ＝ run (explicate-body e) T' · σ
   body-＝ e σ = pr₂ (tl e []) σ
 
-{- Programs ------------------------------------------------------------------------------}
+{- Programs -------------------------------------------------------------------}
 
-table-explicate : ∀ {Σ ss} (ds : All (λ s → I.Exp Σ (Args s) (DSig.cod s)) ss) {s} (f : Σ ∋ s)
+table-explicate : ∀ {Σ ss} (ds : All (λ s → I.Exp Σ (Args s) (DSig.cod s)) ss)
+  {s} (f : Σ ∋ s)
   → tables codeᵢ ds f ＝ tables codeᶜ′ (All-map explicate-body ds) f
 table-explicate [] f = refl
 table-explicate (d ∷ ds) f =
   tables-cons codeᵢ codeᶜ′ d ds (explicate-body d) (All-map explicate-body ds) f
-    (codeᶜ-cong (∘₁ Env (K ⟹₁ 𝔻) 𝔻 (⟦ d ⟧ᴷ T) (at-point₁ K 𝔻 idK)) (run (explicate-body d) T')
+    (codeᶜ-cong (∘₁ Env (K ⟹₁ 𝔻) 𝔻 (⟦ d ⟧ᴷ T) (at-point₁ K 𝔻 idK))
+        (run (explicate-body d) T')
        (λ X Y _ _ → body-＝ (table-explicate ds) d (env₂ X Y)))
     (table-explicate ds f)
  where

@@ -23,23 +23,28 @@ module FPC.proof.Adequacy.AbstractMachines.Soundness where
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; sub; eq; δ)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain hiding (ρ₀) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain hiding (ρ₀) renaming (const to
+  dconst)
 open import FPC.Semantics.GraphModel.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; 𝒞; Λ; proj; Λ-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (inl to inlD; inr to inrD)
-open import proof.Framework.GraphModel.Continuity using (⋆-good; proj-good; inl-good; inr-good)
+open import proof.Framework.GraphModel.Continuity using (⋆-good; proj-good;
+  inl-good; inr-good)
 open import proof.Framework.GraphModel.ContinuityBase using (Good; mono)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.TypedOkBase using (fin₁)
 import proof.Framework.GraphModel.Env as E
-open import proof.Semantics.Graph.Prim using (primD; primD-good) renaming (out to dout)
+open import proof.Semantics.Graph.Prim using (primD; primD-good) renaming (out
+  to dout)
 open import proof.Framework.Runs using (module Runs)
-open import FPC.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
+open import FPC.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con;
+  _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
 open import FPC.Language.Type
 open import FPC.Language.FPC
 open import FPC.proof.Semantics.GraphModel.FPC using (⟦_⟧; ⟦_⟧s; ok; con)
-open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos; _<><_; _<><ᵃ_)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos; _<><_;
+  _<><ᵃ_)
 open import FPC.Semantics.AbstractMachines.FPC
 open import Semantics.Observation using (Obs; o-const)
 open import Semantics.CEK.Smallstep using (Star; Terminates; next; stop)
@@ -51,12 +56,14 @@ open import Data.Nat using (zero; suc)
 import Data.Nat as N
 open import Data.Integer using (ℤ) renaming (_≟_ to _≟ℤ_)
 open import Data.List using (List; []; _∷_; length; replicate)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to
+  ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym;
+  trans; cong; subst)
 open import Relation.Nullary using (does)
 
 open Runs step public
@@ -122,7 +129,9 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 𝒦 (getK i κ) D = 𝒦 κ (proj (pos i) ⟨ D , ptt ⟩)
 𝒦 (inlK κ) D = 𝒦 κ (inlD ⟨ D , ptt ⟩)
 𝒦 (inrK κ) D = 𝒦 κ (inrD ⟨ D , ptt ⟩)
-𝒦 (caseK M N γ κ) D = 𝒦 κ (𝒞 ⟨ D , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
+𝒦 (caseK M N γ κ) D =
+  𝒦 κ
+  (𝒞 ⟨ D , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
 𝒦 (primL p M γ κ) D = 𝒦 κ (primD p ⟨ D , ⟨ ⟦ M ⟧ (𝓔 γ) , ptt ⟩ ⟩)
 𝒦 (primR p n κ) D = 𝒦 κ (primD p ⟨ ℬ Int n ptt , ⟨ D , ptt ⟩ ⟩)
 𝒦 (letK N γ κ) D = 𝒦 κ (⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
@@ -139,7 +148,8 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 𝒦-mono halt D⊆ = D⊆
 𝒦-mono (appL M γ κ) D⊆ = 𝒦-mono κ (m2l ⋆-good (⟦ M ⟧ (𝓔 γ)) D⊆)
 𝒦-mono (appR f κ) D⊆ = 𝒦-mono κ (m2r ⋆-good (𝒱 f) D⊆)
-𝒦-mono (tupK vs Ms γ κ) D⊆ = 𝒦-mono κ (𝒯L-mono _ _ (rev-mono vs ⟨ D⊆ , ⊆L-refl _ ⟩))
+𝒦-mono (tupK vs Ms γ κ) D⊆ =
+  𝒦-mono κ (𝒯L-mono _ _ (rev-mono vs ⟨ D⊆ , ⊆L-refl _ ⟩))
   where
   rev-mono : ∀ {Δ'} (vs : All Val Δ') {Ds Es}
     → Ds ⊆L Es
@@ -152,11 +162,14 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 𝒦-mono (caseK M N γ κ) D⊆ = 𝒦-mono κ G
   where
   G : _ ⊆ _
-  G w (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩) = inj₁ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allL d d∈)) , w∈ ⟩ ⟩ ⟩
-  G w (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩) = inj₂ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allR d d∈)) , w∈ ⟩ ⟩ ⟩
+  G w (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩) =
+    inj₁ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allL d d∈)) , w∈ ⟩ ⟩ ⟩
+  G w (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩) =
+    inj₂ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allR d d∈)) , w∈ ⟩ ⟩ ⟩
 𝒦-mono (primL p M γ κ) D⊆ = 𝒦-mono κ (m2l (primD-good p) (⟦ M ⟧ (𝓔 γ)) D⊆)
 𝒦-mono (primR p n κ) D⊆ = 𝒦-mono κ (m2r (primD-good p) (ℬ Int n ptt) D⊆)
-𝒦-mono (letK N γ κ) D⊆ = 𝒦-mono κ (m2r ⋆-good (Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩) D⊆)
+𝒦-mono (letK N γ κ) D⊆ =
+  𝒦-mono κ (m2r ⋆-good (Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩) D⊆)
 𝒦-mono (foldK κ) D⊆ = 𝒦-mono κ D⊆
 𝒦-mono (unfoldK κ) D⊆ = 𝒦-mono κ D⊆
 
@@ -173,7 +186,8 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝒱-ne (const k) = ⟨ dconst k , ⟨ refl , refl ⟩ ⟩
 𝒱-ne (tup []) = ⟨ ⟨⟩ , tt ⟩
 𝒱-ne (tup (v ∷ vs)) with 𝒱-ne v
-... | ⟨ d , d∈ ⟩ = ⟨ tup[ zero ] d , ⟨ ⟨ len𝒱s vs , d∈ ⟩ , ⟨ ⟨ d , d∈ ⟩ , 𝒱s-ne vs ⟩ ⟩ ⟩
+... | ⟨ d , d∈ ⟩ =
+  ⟨ tup[ zero ] d , ⟨ ⟨ len𝒱s vs , d∈ ⟩ , ⟨ ⟨ d , d∈ ⟩ , 𝒱s-ne vs ⟩ ⟩ ⟩
 𝒱-ne (inl v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ left d , d∈ ⟩
 𝒱-ne (inr v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ right d , d∈ ⟩
 𝒱-ne (fold v) = 𝒱-ne v
@@ -189,7 +203,11 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝒱s-con : ∀ {Δ} (vs : All Val Δ) → AllCon (𝒱s vs)
 𝓔-con : ∀ {Γ} (γ : Env Γ) → Con-env (𝓔 γ)
 𝒱-con (code N) = Con-⌈⌉ ⟨⟩
-𝒱-con (clo N γ) = lower (Λ-consis _ _ ⟨ (λ X X' X~ → lift (proj₂ (proj₂ (ok N)) (E.•-~ (Every _~_) (𝓔-con γ) X~))) , ptt ⟩)
+𝒱-con (clo N γ) =
+  lower
+  (Λ-consis _ _
+    ⟨ (λ X X' X~ → lift (proj₂ (proj₂ (ok N)) (E.•-~ (Every _~_) (𝓔-con γ) X~)))
+      , ptt ⟩)
 𝒱-con (const {B} k) = lower (ℬ-consis B k ptt ptt ptt)
 𝒱-con (tup vs) = 𝒯L-con (𝒱s vs) (𝒱s-con vs)
 𝒱-con (inl v) = lower (inl-consis _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
@@ -216,9 +234,10 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝒱-const (inl v) ()
 𝒱-const (inr v) ()
 
-{- Tuples and primitives --------------------------------------------------------}
+{- Tuples and primitives ------------------------------------------------------}
 
-𝒱s-<>< : ∀ {Δ' Δ} (vs : All Val Δ') (ws : All Val Δ) → 𝒱s (vs <><ᵃ ws) ≡ rev𝒱 vs (𝒱s ws)
+𝒱s-<>< : ∀ {Δ' Δ} (vs : All Val Δ') (ws : All Val Δ)
+  → 𝒱s (vs <><ᵃ ws) ≡ rev𝒱 vs (𝒱s ws)
 𝒱s-<>< [] ws = refl
 𝒱s-<>< (v ∷ vs) ws = 𝒱s-<>< vs (v ∷ ws)
 
@@ -227,12 +246,14 @@ tuple-next-𝒮 : ∀ {Γ Δ' Δ} (vs : All Val Δ') (Ms : All (Tm Γ) Δ) (γ :
 tuple-next-𝒮 vs [] γ κ d d∈ = subst (λ Ds → 𝒦 κ (𝒯L Ds) d) (𝒱s-<>< vs []) d∈
 tuple-next-𝒮 vs (M ∷ Ms) γ κ d d∈ = d∈
 
-𝒯L-args : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) ρ → 𝒯L (⟦ Ms ⟧* ρ) ⊆ 𝒯 (length Δ) (⟦ Ms ⟧s ρ)
+𝒯L-args : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) ρ
+  → 𝒯L (⟦ Ms ⟧* ρ) ⊆ 𝒯 (length Δ) (⟦ Ms ⟧s ρ)
 𝒯L-args [] ρ ⟨⟩ tt = tt
 𝒯L-args [] ρ (tup[ zero ] d) ⟨ () , _ ⟩
 𝒯L-args [] ρ (tup[ suc i ] d) ⟨ () , _ ⟩
 𝒯L-args (M ∷ Ms) ρ ⟨⟩ ()
-𝒯L-args {Γ} (M ∷ Ms) ρ (tup[_]_ {m} i d) ⟨ a , ne ⟩ with trans (sym (At-length i _ d a)) (len (M ∷ Ms))
+𝒯L-args {Γ} (M ∷ Ms) ρ (tup[_]_ {m} i d) ⟨ a , ne ⟩
+  with trans (sym (At-length i _ d a)) (len (M ∷ Ms))
   where
   len : ∀ {Δ} (Ns : All (Tm Γ) Δ) → length (⟦ Ns ⟧* ρ) ≡ length Δ
   len [] = refl
@@ -264,8 +285,10 @@ At-lookup : ∀ {Δ A} (vs : All Val Δ) (i : Δ ∋ A) {d}
 At-lookup (v ∷ vs) Z d∈ = ⟨ len𝒱s vs , d∈ ⟩
 At-lookup (v ∷ vs) (S i) d∈ = At-lookup vs i d∈
 
-prim-⊆ : ∀ p n m → 𝒱 (δᵀ p n m) ⊆ primD p ⟨ ℬ Int n ptt , ⟨ ℬ Int m ptt , ptt ⟩ ⟩
-prim-⊆ p n m d d∈ = ⟨ n , ⟨ m , ⟨ ⟨ refl , refl ⟩ , ⟨ ⟨ refl , refl ⟩ , out-≡ p d d∈ ⟩ ⟩ ⟩ ⟩
+prim-⊆ : ∀ p n m
+  → 𝒱 (δᵀ p n m) ⊆ primD p ⟨ ℬ Int n ptt , ⟨ ℬ Int m ptt , ptt ⟩ ⟩
+prim-⊆ p n m d d∈ =
+  ⟨ n , ⟨ m , ⟨ ⟨ refl , refl ⟩ , ⟨ ⟨ refl , refl ⟩ , out-≡ p d d∈ ⟩ ⟩ ⟩ ⟩
   where
   out-≡ : ∀ p d
     → d ∈ 𝒱 (δᵀ p n m)
@@ -288,9 +311,11 @@ body-in : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) (γ : Env Γ) (v : Val A) d
 body-in N γ v d d∈ = fin₁ (ok N) (𝓔-ne γ) (𝒱-ne v) d d∈
 
 app-β : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) (γ : Env Γ) (w : Val A)
-  → ⟦ N ⟧ (𝓔 (w ∷ γ)) ⊆ ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ , ⟨ 𝒱 w , ptt ⟩ ⟩
+  → ⟦ N ⟧ (𝓔 (w ∷ γ))
+    ⊆ ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ , ⟨ 𝒱 w , ptt ⟩ ⟩
 app-β N γ w d d∈ with body-in N γ w d d∈
-... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con w) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
+... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
+  ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con w) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
 
 step-⊆ : ∀ s {s'}
   → step s ≡ next s'
@@ -299,7 +324,8 @@ step-⊆ (eval (` x) γ κ) refl = 𝒦-mono κ (𝓔-lookup γ x)
 step-⊆ (eval (lam N) γ κ) refl = ⊆r
 step-⊆ (eval (app L M) γ κ) refl = ⊆r
 step-⊆ (eval (lit B c) γ κ) refl = ⊆r
-step-⊆ (eval (tuple Ms) γ κ) refl d d∈ = 𝒦-mono κ (𝒯L-args Ms (𝓔 γ)) d (tuple-next-𝒮 [] Ms γ κ d d∈)
+step-⊆ (eval (tuple Ms) γ κ) refl d d∈ =
+  𝒦-mono κ (𝒯L-args Ms (𝓔 γ)) d (tuple-next-𝒮 [] Ms γ κ d d∈)
 step-⊆ (eval (get i M) γ κ) refl = ⊆r
 step-⊆ (eval (inl M) γ κ) refl = ⊆r
 step-⊆ (eval (inr M) γ κ) refl = ⊆r
@@ -312,7 +338,8 @@ step-⊆ (ret v halt) ()
 step-⊆ (ret f (appL M γ κ)) refl = ⊆r
 step-⊆ (ret w (appR (clo N γ) κ)) refl = 𝒦-mono κ (app-β N γ w)
 step-⊆ (ret v (tupK vs Ms γ κ)) refl = tuple-next-𝒮 (v ∷ vs) Ms γ κ
-step-⊆ (ret (tup vs) (getK i κ)) refl = 𝒦-mono κ λ d d∈ → ⟨ At-lookup vs i d∈ , 𝒱s-ne vs ⟩
+step-⊆ (ret (tup vs) (getK i κ)) refl =
+  𝒦-mono κ λ d d∈ → ⟨ At-lookup vs i d∈ , 𝒱s-ne vs ⟩
 step-⊆ (ret v (inlK κ)) refl = ⊆r
 step-⊆ (ret v (inrK κ)) refl = ⊆r
 step-⊆ (ret (inl v) (caseK M N γ κ)) refl = 𝒦-mono κ β
@@ -320,13 +347,15 @@ step-⊆ (ret (inl v) (caseK M N γ κ)) refl = 𝒦-mono κ β
   β : ⟦ M ⟧ (𝓔 (v ∷ γ)) ⊆ _
   β d d∈ with body-in M γ v d d∈
   ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-  ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
+  ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
+    inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
 step-⊆ (ret (inr v) (caseK M N γ κ)) refl = 𝒦-mono κ β
   where
   β : ⟦ N ⟧ (𝓔 (v ∷ γ)) ⊆ _
   β d d∈ with body-in N γ v d d∈
   ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-  ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₂ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
+  ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
+    inj₂ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
 step-⊆ (ret (const n) (primL p M γ κ)) refl = ⊆r
 step-⊆ (ret (const m) (primR p n κ)) refl = 𝒦-mono κ (prim-⊆ p n m)
 step-⊆ (ret v (letK N γ κ)) refl = 𝒦-mono κ (app-β N γ v)
@@ -379,4 +408,5 @@ soundness : ∀ {A} (M : Tm [] A) {o}
   → Terminates (sem M) o
   → Σ[ B ∈ Type ] Σ[ v ∈ Val B ] o ≡ obs v × 𝒱 v ⊆ ⟦ M ⟧ ρ₀
 soundness M ⟨ s , ⟨ σ , fin ⟩ ⟩ with halts s fin
-... | ⟨ B , ⟨ v , ⟨ refl , refl ⟩ ⟩ ⟩ = ⟨ B , ⟨ v , ⟨ refl , ↠-⊆ (star→↠ σ) ⟩ ⟩ ⟩
+... | ⟨ B , ⟨ v , ⟨ refl , refl ⟩ ⟩ ⟩ =
+  ⟨ B , ⟨ v , ⟨ refl , ↠-⊆ (star→↠ σ) ⟩ ⟩ ⟩

@@ -27,20 +27,23 @@ open import UF.Base using (ap₂; happly)
 
 open import Framework.abt.GSubst using (_•_)
 open import FPC.Language.Type using (Type; _∋_; Z; S; idx; lvl)
-open import FPC.Language.GlobalFun using (DSig; Code; Tm; `_; fun-ref; pair; callc; lit; tuple; get; inl; inr; case; prim;
-                                         let′; fold; unfold)
+open import FPC.Language.GlobalFun using (DSig; Code; Tm; `_; fun-ref; pair;
+  callc; lit; tuple; get; inl; inr; case; prim; let′; fold; unfold)
 import FPC.Language.GlobalFun as GlobalFun
 open import FPC.Language.X86 using (Program)
 open import FPC.Language.FPC using () renaming (Tm to FPC-Tm)
 open import FPC.Language.Mon using (⌜_⌝)
-open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos) renaming (map to All-map)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos) renaming
+  (map to All-map)
 open import FPC.proof.Framework.AllProp using (lookup-map)
-open import FPC.Compiler.Pipeline using (compile-to-GlobalFun; compile-to-PairClos; compile)
+open import FPC.Compiler.Pipeline using (compile-to-GlobalFun;
+  compile-to-PairClos; compile)
 open import FPC.Compiler.RCO using (rco)
 open import FPC.Compiler.LiftLocals using () renaming (lift to liftₗ)
 open import FPC.Compiler.Explicate using (explicate-body)
 open import FPC.Compiler.Select using (def-body)
-open import FPC.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs; hoist-older)
+open import FPC.proof.Compiler.HoistOlder using (Older; Olders; OlderDefs;
+  hoist-older)
 open import proof.Framework.Lookup using (lvl-<)
 
 open import Data.List using (List; []; _∷_; length)
@@ -48,7 +51,8 @@ open import Data.Fin using (zero; suc)
 import Data.Product as P
 open import Data.Nat using (_<_; _≟_)
 open import Data.Nat.Properties using (<-irrefl; <-trans)
-open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to ≡-refl; sym to ≡-sym; trans to ≡-trans; subst to ≡-subst; cong to ≡-cong)
+open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to
+  ≡-refl; sym to ≡-sym; trans to ≡-trans; subst to ≡-subst; cong to ≡-cong)
 
 module FPC.proof.Adequacy.ScottDomains.X86Compiled
         (pt : propositional-truncations-exist)
@@ -57,20 +61,29 @@ module FPC.proof.Adequacy.ScottDomains.X86Compiled
        where
 
 open import Framework.Scott.Base pt fe
-open import proof.Framework.Scott.Ops pt fe pe hiding (Val; case)
-  renaming (Env to Envᵈ; app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; pair to pairᵈ)
-open import proof.Framework.Scott.Semantics pt fe pe using (env₂; caseᶜ-cong; letᶜ-cong)
+open import proof.Framework.Scott.Ops pt fe pe hiding (Val; case) renaming (Env
+  to Envᵈ; app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ; pair to
+  pairᵈ)
+open import proof.Framework.Scott.Semantics pt fe pe using (env₂; caseᶜ-cong;
+  letᶜ-cong)
 open import Semantics.Scott.Prim pt fe pe using (primD)
-open import FPC.Semantics.ScottDomains.Ops pt fe pe using (Table; tables; tables-yes; tables-no)
-open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe using (⟦_⟧[_]; ⟦_⟧s[_]; code′)
+open import FPC.Semantics.ScottDomains.Ops pt fe pe using (Table; tables;
+  tables-yes; tables-no)
+open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe using (⟦_⟧[_];
+  ⟦_⟧s[_]; code′)
 import FPC.Semantics.ScottDomains.Imp pt fe pe as I
 import FPC.Semantics.ScottDomains.CFG pt fe pe as C
 open import FPC.Semantics.ScottDomains.X86 pt fe pe using (codeₜ)
-open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (codeᶜ-cong)
-open import FPC.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using (code-rco; table-rco)
-open import FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using (code-lift; table-lift)
-open import FPC.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using (body-＝; table-explicate)
-open import FPC.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using (db; code-＝; table-＝; map-db)
+open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using
+  (codeᶜ-cong)
+open import FPC.proof.Correctness.ScottDomains.RCOCorrect pt fe pe using
+  (code-rco; table-rco)
+open import FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect pt fe pe using
+  (code-lift; table-lift)
+open import FPC.proof.Correctness.ScottDomains.ExplicateCorrect pt fe pe using
+  (body-＝; table-explicate)
+open import FPC.proof.Correctness.ScottDomains.SelectCorrect pt fe pe using (db;
+  code-＝; table-＝; map-db)
 
 private
  ≡→＝ : ∀ {X : Set} {x y : X}
@@ -78,7 +91,7 @@ private
    → x ＝ y
  ≡→＝ ≡-refl = refl
 
-{- The older definitions --------------------------------------------------------------}
+{- The older definitions ------------------------------------------------------}
 
 older : ∀ {ss : List DSig} {s} → ss ∋ s → List DSig
 older {_ ∷ ss} Z = ss
@@ -99,7 +112,8 @@ olderAt : ∀ {Σ ss s} {ps : All (Code Σ) ss}
 olderAt {ps = p ∷ ps} (o P., _) Z = o
 olderAt {ps = p ∷ ps} (_ P., os) (S f) = olderAt os f
 
-module _ {Σ : List DSig} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) where
+module _ {Σ : List DSig} {D : DSig → Set}
+  (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) where
 
   {- definition g of a part ps of the table, reached through r -}
   table-at′ : ∀ {ss} (ps : All D ss) (r : ∀ {s} → ss ∋ s → Σ ∋ s)
@@ -108,10 +122,12 @@ module _ {Σ : List DSig} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s 
     → tables cd ps (r g) ＝ cd (tables cd (dropᵗ g ps)) (lookup ps g)
   table-at′ (p ∷ ps) r rl Z = tables-yes cd p ps (r Z) (rl Z)
   table-at′ (p ∷ ps) r rl (S g) =
-    tables-no cd p ps (r (S g)) (λ e → <-irrefl (≡-trans (≡-sym (rl (S g))) e) (lvl-< g))
+    tables-no cd p ps (r (S g))
+      (λ e → <-irrefl (≡-trans (≡-sym (rl (S g))) e) (lvl-< g))
     ∙ table-at′ ps (λ x → r (S x)) (λ x → rl (S x)) g
 
-  table-at : (ps : All D Σ) → ∀ {s} (f : Σ ∋ s) → tables cd ps f ＝ cd (tables cd (dropᵗ f ps)) (lookup ps f)
+  table-at : (ps : All D Σ) → ∀ {s} (f : Σ ∋ s)
+    → tables cd ps f ＝ cd (tables cd (dropᵗ f ps)) (lookup ps f)
   table-at ps = table-at′ ps (λ x → x) (λ _ → ≡-refl)
 
   {- the definitions older than f mean the same without the newer ones -}
@@ -120,12 +136,16 @@ module _ {Σ : List DSig} {D : DSig → Set} (cd : Table Σ → ∀ {s} → D s 
     → tables cd ps g ＝ tables cd (dropᵗ f ps) g
   agree (p ∷ ps) Z g g< = tables-no cd p ps g (λ e → <-irrefl e g<)
   agree {_ ∷ ss} (p ∷ ps) (S f) g g< =
-    tables-no cd p ps g (λ e → <-irrefl e (<-trans g< (≡-subst (_< length ss) (≡-sym (older-lvl f)) (lvl-< f))))
+    tables-no cd p ps g
+      (λ e →
+        <-irrefl e
+        (<-trans g< (≡-subst (_< length ss) (≡-sym (older-lvl f)) (lvl-< f))))
     ∙ agree ps f g g<
 
-{- A term means the same in tables that agree on the references it makes -----------}
+{- A term means the same in tables that agree on the references it makes ------}
 
-module _ {Σ : List DSig} {T T' : Table Σ} {k} (h : ∀ {s} (g : Σ ∋ s) → lvl g < k → T g ＝ T' g) where
+module _ {Σ : List DSig} {T T' : Table Σ} {k}
+  (h : ∀ {s} (g : Σ ∋ s) → lvl g < k → T g ＝ T' g) where
 
   tbl-cong : ∀ {Γ A} (M : Tm Σ Γ A)
     → Older k M
@@ -137,40 +157,54 @@ module _ {Σ : List DSig} {T T' : Table Σ} {k} (h : ∀ {s} (g : Σ ∋ s) → 
     → ⟦ Ms ⟧s[ T ] · ρ ＝ ⟦ Ms ⟧s[ T' ] · ρ
   tbl-cong (` x) o ρ = refl
   tbl-cong (fun-ref f) o ρ = h f o
-  tbl-cong (pair L M) (o₁ P., o₂) ρ = ap₂ (λ a b → pairᵈ · a · b) (tbl-cong L o₁ ρ) (tbl-cong M o₂ ρ)
+  tbl-cong (pair L M) (o₁ P., o₂) ρ =
+    ap₂ (λ a b → pairᵈ · a · b) (tbl-cong L o₁ ρ) (tbl-cong M o₂ ρ)
   tbl-cong (callc L M) (o₁ P., o₂) ρ =
-    ap₂ (λ a b → appᵈ · (appᵈ · (car · a) · (cdr · a)) · b) (tbl-cong L o₁ ρ) (tbl-cong M o₂ ρ)
+    ap₂ (λ a b → appᵈ · (appᵈ · (car · a) · (cdr · a)) · b) (tbl-cong L o₁ ρ)
+      (tbl-cong M o₂ ρ)
   tbl-cong (lit B c) o ρ = refl
   tbl-cong (tuple {Δ} Ms) o ρ = ap (tupleᵈ (length Δ) ·_) (tbl-congs Ms o ρ)
   tbl-cong (get i M) o ρ = ap (proj (pos i) ·_) (tbl-cong M o ρ)
   tbl-cong (inl M) o ρ = ap (inlᵈ ·_) (tbl-cong M o ρ)
   tbl-cong (inr M) o ρ = ap (inrᵈ ·_) (tbl-cong M o ρ)
   tbl-cong (case L M N) (o₁ P., o₂ P., o₃) ρ =
-    caseᶜ-cong ⟦ L ⟧[ T ] ⟦ L ⟧[ T' ] ⟦ M ⟧[ T ] ⟦ M ⟧[ T' ] ⟦ N ⟧[ T ] ⟦ N ⟧[ T' ] ρ ρ
-      (tbl-cong L o₁ ρ) (λ d _ → tbl-cong M o₂ (d • ρ)) (λ d _ → tbl-cong N o₃ (d • ρ))
-  tbl-cong (prim p L M) (o₁ P., o₂) ρ = ap₂ (λ a b → primD p · a · b) (tbl-cong L o₁ ρ) (tbl-cong M o₂ ρ)
+    caseᶜ-cong ⟦ L ⟧[ T ] ⟦ L ⟧[ T' ] ⟦ M ⟧[ T ] ⟦ M ⟧[ T' ] ⟦ N ⟧[ T
+      ] ⟦ N ⟧[ T' ] ρ ρ
+      (tbl-cong L o₁ ρ) (λ d _ → tbl-cong M o₂ (d • ρ))
+        (λ d _ → tbl-cong N o₃ (d • ρ))
+  tbl-cong (prim p L M) (o₁ P., o₂) ρ =
+    ap₂ (λ a b → primD p · a · b) (tbl-cong L o₁ ρ) (tbl-cong M o₂ ρ)
   tbl-cong (let′ M N) (o₁ P., o₂) ρ =
-    letᶜ-cong ⟦ M ⟧[ T ] ⟦ M ⟧[ T' ] ⟦ N ⟧[ T ] ⟦ N ⟧[ T' ] ρ ρ (tbl-cong M o₁ ρ) (λ d _ → tbl-cong N o₂ (d • ρ))
+    letᶜ-cong ⟦ M ⟧[ T ] ⟦ M ⟧[ T' ] ⟦ N ⟧[ T ] ⟦ N ⟧[ T'
+      ] ρ ρ (tbl-cong M o₁ ρ) (λ d _ → tbl-cong N o₂ (d • ρ))
   tbl-cong (fold M) o ρ = tbl-cong M o ρ
   tbl-cong (unfold M) o ρ = tbl-cong M o ρ
   tbl-congs [] o ρ = refl
-  tbl-congs (M ∷ Ms) (o P., os) ρ = dfunext fe λ { zero → tbl-cong M o ρ ; (suc i) → happly (tbl-congs Ms os ρ) i }
+  tbl-congs (M ∷ Ms) (o P., os) ρ =
+    dfunext fe
+    λ { zero → tbl-cong M o ρ ; (suc i) → happly (tbl-congs Ms os ρ) i }
 
-{- each definition of a program that hoist produces is its code with the whole table -}
+{- each definition of a program that hoist produces is its code with the whole
+   table -}
 clos5-closed : ∀ {Σ} (ds : All (Code Σ) Σ)
   → OlderDefs ds
   → ∀ {s} (f : Σ ∋ s)
   → tables code′ ds f ＝ code′ (tables code′ ds) (lookup ds f)
 clos5-closed ds od f =
   table-at code′ ds f
-  ∙ codeᶜ-cong ⟦ lookup ds f ⟧[ tables code′ (dropᵗ f ds) ] ⟦ lookup ds f ⟧[ tables code′ ds ]
-      (λ X Y _ _ → tbl-cong (λ g g< → agree code′ ds f g g< ⁻¹) (lookup ds f) (olderAt od f) (env₂ X Y))
+  ∙ codeᶜ-cong ⟦ lookup ds f ⟧[ tables code′ (dropᵗ f ds) ] ⟦ lookup ds f
+    ⟧[ tables code′ ds ]
+      (λ X Y _ _ →
+          tbl-cong (λ g g< → agree code′ ds f g g< ⁻¹) (lookup ds f)
+          (olderAt od f) (env₂ X Y))
 
-{- The X86μ program that the compiler produces, from its GlobalFunμ one ----------------}
+{- The X86μ program that the compiler produces, from its GlobalFunμ one -------}
 
 compiled : ∀ {A} (M : FPC-Tm [] A) → let ds = Program.defs (compile M) in
   ∀ {s} (f : _ ∋ s) → tables codeₜ ds f ＝ codeₜ (tables codeₜ ds) (lookup ds f)
-compiled M f = TT f ⁻¹ ∙ clos5-closed ds₅ (hoist-older (compile-to-PairClos M)) f ∙ code-chain
+compiled M f =
+  TT f ⁻¹ ∙ clos5-closed ds₅ (hoist-older (compile-to-PairClos M)) f
+  ∙ code-chain
  where
   ds₅ = GlobalFun.Program.defs (compile-to-GlobalFun M)
   dsₘ = All-map (λ D → rco D (λ x → x)) ds₅
@@ -188,14 +222,20 @@ compiled M f = TT f ⁻¹ ∙ clos5-closed ds₅ (hoist-older (compile-to-PairCl
   {- the definition, in CFGμ and X86μ -}
   eq꜀ : lookup ds꜀ f ≡ explicate-body (liftₗ dₘ)
   eq꜀ = ≡-trans (lookup-map explicate-body dsᵢ f)
-          (≡-cong explicate-body (≡-trans (lookup-map liftₗ dsₘ f) (≡-cong liftₗ (lookup-map (λ D → rco D (λ x → x)) ds₅ f))))
+          (≡-cong explicate-body
+              (≡-trans (lookup-map liftₗ dsₘ f)
+                (≡-cong liftₗ (lookup-map (λ D → rco D (λ x → x)) ds₅ f))))
   eqₓ : db (lookup ds꜀ f) ≡ lookup dsₓ f
-  eqₓ = ≡-trans (≡-sym (lookup-map db ds꜀ f)) (≡-cong (λ l → lookup l f) (map-db ds꜀))
+  eqₓ =
+    ≡-trans (≡-sym (lookup-map db ds꜀ f))
+    (≡-cong (λ l → lookup l f) (map-db ds꜀))
   code-chain : code′ T₅ (lookup ds₅ f) ＝ codeₜ Tₓ (lookup dsₓ f)
   code-chain =
     code-rco (table-rco ds₅) (lookup ds₅ f)
     ∙ code-lift (table-lift dsₘ) dₘ
-    ∙ codeᶜ-cong (∘₁ Envᵈ (I.K ⟹₁ 𝔻) 𝔻 (I.⟦ liftₗ dₘ ⟧ᴷ (tables I.code′ dsᵢ)) (at-point₁ I.K 𝔻 I.idK))
+    ∙ codeᶜ-cong
+      (∘₁ Envᵈ (I.K ⟹₁ 𝔻) 𝔻 (I.⟦ liftₗ dₘ ⟧ᴷ (tables I.code′ dsᵢ))
+        (at-point₁ I.K 𝔻 I.idK))
         (C.run (explicate-body (liftₗ dₘ)) T꜀)
         (λ X Y _ _ → body-＝ (table-explicate dsᵢ) (liftₗ dₘ) (env₂ X Y))
     ∙ ap (C.code′ T꜀) (≡→＝ eq꜀) ⁻¹

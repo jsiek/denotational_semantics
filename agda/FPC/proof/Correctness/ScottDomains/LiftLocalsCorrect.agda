@@ -29,7 +29,8 @@ open import FPC.Language.Type
 import FPC.Language.Mon as M
 open M using (DSig; Args; Atm; var; lit; ref; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
 open import FPC.Compiler.LiftLocals
-open import FPC.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
+open import FPC.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to
+  All-map)
 open import Framework.abt.GSubst using (_•_)
 open import Data.List using (List; []; _∷_; length)
 open import Data.Fin using (Fin; zero; suc)
@@ -41,14 +42,16 @@ module FPC.proof.Correctness.ScottDomains.LiftLocalsCorrect
        where
 
 open import Framework.Scott.Base pt fe
-open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
+open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to
+  inlᵈ; inr to inrᵈ; tuple to tupleᵈ)
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Semantics.Scott.Prim pt fe pe using (primD)
 open import FPC.Semantics.ScottDomains.Ops pt fe pe
 open import FPC.Semantics.ScottDomains.GlobalFun pt fe pe
 import FPC.Semantics.ScottDomains.Imp pt fe pe as I
 open I using (⟦_⟧ᴷ; 𝒜; 𝒜s; K; idK; underK)
-open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using (seq-⊥; cases-strict-natural; codeᶜ-cong; tables-cons)
+open import FPC.proof.Semantics.ScottDomains.BackEndLemmas pt fe pe using
+  (seq-⊥; cases-strict-natural; codeᶜ-cong; tables-cons)
 
 module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
 
@@ -57,22 +60,28 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
   atm-＝ (lit B c) σ = refl
   atm-＝ (ref f) σ = TT f
 
-  atms-＝ : ∀ {Δ Δs} (as : All (Atm Σ Δ) Δs) σ → ⟦ ⌜ as ⌝ᵛ ⟧s[ T ] · σ ＝ 𝒜s as T' · σ
+  atms-＝ : ∀ {Δ Δs} (as : All (Atm Σ Δ) Δs) σ
+    → ⟦ ⌜ as ⌝ᵛ ⟧s[ T ] · σ ＝ 𝒜s as T' · σ
   atms-＝ [] σ = refl
-  atms-＝ (a ∷ as) σ = dfunext fe λ { zero → atm-＝ a σ ; (suc i) → happly (atms-＝ as σ) i }
+  atms-＝ (a ∷ as) σ =
+    dfunext fe λ { zero → atm-＝ a σ ; (suc i) → happly (atms-＝ as σ) i }
 
   lift-sem : ∀ {Δ A} (e : M.Exp Σ Δ A) σ (κ : ⟨ K ⟩)
     → κ · ⊥𝔻 ＝ ⊥𝔻
     → κ · (⟦ ⌜ e ⌝ ⟧[ T ] · σ) ＝ ⟦ lift e ⟧ᴷ T' · σ · κ
   lift-sem (M.atm a) σ κ s = ap (κ ·_) (atm-＝ a σ)
-  lift-sem (M.pair a b) σ κ s = ap₂ (λ x y → κ · (pair · x · y)) (atm-＝ a σ) (atm-＝ b σ)
+  lift-sem (M.pair a b) σ κ s =
+    ap₂ (λ x y → κ · (pair · x · y)) (atm-＝ a σ) (atm-＝ b σ)
   lift-sem (M.callc a b) σ κ s =
-    ap₂ (λ x y → κ · (appᵈ · (appᵈ · (car · x) · (cdr · x)) · y)) (atm-＝ a σ) (atm-＝ b σ)
-  lift-sem (M.tuple {Δs} as) σ κ s = ap (λ x → κ · (tupleᵈ (length Δs) · x)) (atms-＝ as σ)
+    ap₂ (λ x y → κ · (appᵈ · (appᵈ · (car · x) · (cdr · x)) · y))
+      (atm-＝ a σ) (atm-＝ b σ)
+  lift-sem (M.tuple {Δs} as) σ κ s =
+    ap (λ x → κ · (tupleᵈ (length Δs) · x)) (atms-＝ as σ)
   lift-sem (M.get i a) σ κ s = ap (λ x → κ · (proj (pos i) · x)) (atm-＝ a σ)
   lift-sem (M.inl a) σ κ s = ap (λ x → κ · (inlᵈ · x)) (atm-＝ a σ)
   lift-sem (M.inr a) σ κ s = ap (λ x → κ · (inrᵈ · x)) (atm-＝ a σ)
-  lift-sem (M.prim p a b) σ κ s = ap₂ (λ x y → κ · (primD p · x · y)) (atm-＝ a σ) (atm-＝ b σ)
+  lift-sem (M.prim p a b) σ κ s =
+    ap₂ (λ x y → κ · (primD p · x · y)) (atm-＝ a σ) (atm-＝ b σ)
   lift-sem (M.fold a) σ κ s = ap (κ ·_) (atm-＝ a σ)
   lift-sem (M.unfold a) σ κ s = ap (κ ·_) (atm-＝ a σ)
   lift-sem (M.let′ e₁ e₂) σ κ s =
@@ -87,22 +96,28 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
     D = Mᵈ · σ
     F = underK (⟦ lift e₂ ⟧ᴷ T') · (σ , κ)
   lift-sem (M.case a e₁ e₂) σ κ s =
-    cases-strict-natural κ s (abs ⟦ ⌜ e₁ ⌝ ⟧[ T ] · σ) (abs ⟦ ⌜ e₂ ⌝ ⟧[ T ] · σ) F₁ F₂
-      (λ X → lift-sem e₁ (X • σ) κ s) (λ X → lift-sem e₂ (X • σ) κ s) (⟦ ⌜ a ⌝ᵃ ⟧[ T ] · σ)
+    cases-strict-natural κ s (abs ⟦ ⌜ e₁ ⌝ ⟧[ T ] · σ)
+      (abs ⟦ ⌜ e₂ ⌝ ⟧[ T ] · σ) F₁ F₂
+      (λ X → lift-sem e₁ (X • σ) κ s) (λ X → lift-sem e₂ (X • σ) κ s)
+        (⟦ ⌜ a ⌝ᵃ ⟧[ T ] · σ)
     ∙ ap (λ x → cases · x · (strict · F₁ , strict · F₂)) (atm-＝ a σ)
    where
     F₁ = underK (⟦ lift e₁ ⟧ᴷ T') · (σ , κ)
     F₂ = underK (⟦ lift e₂ ⟧ᴷ T') · (σ , κ)
 
   {- the code of a definition means the code of its output -}
-  code-lift : ∀ {s} (d : M.Exp Σ (Args s) (DSig.cod s)) → code′ T ⌜ d ⌝ ＝ I.code′ T' (lift d)
-  code-lift d = codeᶜ-cong ⟦ ⌜ d ⌝ ⟧[ T ] (∘₁ Env (K ⟹₁ 𝔻) 𝔻 (⟦ lift d ⟧ᴷ T') (at-point₁ K 𝔻 idK))
+  code-lift : ∀ {s} (d : M.Exp Σ (Args s) (DSig.cod s))
+    → code′ T ⌜ d ⌝ ＝ I.code′ T' (lift d)
+  code-lift d =
+    codeᶜ-cong ⟦ ⌜ d ⌝ ⟧[ T
+    ] (∘₁ Env (K ⟹₁ 𝔻) 𝔻 (⟦ lift d ⟧ᴷ T') (at-point₁ K 𝔻 idK))
                   (λ X Y _ _ → lift-sem d (env₂ X Y) idK refl)
 
-{- Programs ---------------------------------------------------------------------------}
+{- Programs -------------------------------------------------------------------}
 
 {- the table of the output means what the table of the input does -}
-table-lift : ∀ {Σ ss} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) ss) {s} (f : Σ ∋ s)
+table-lift : ∀ {Σ ss} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) ss)
+  {s} (f : Σ ∋ s)
   → tables code′ (All-map ⌜_⌝ ds) f ＝ tables I.code′ (All-map lift ds) f
 table-lift [] f = refl
 table-lift (d ∷ ds) f =
@@ -110,6 +125,7 @@ table-lift (d ∷ ds) f =
     (code-lift (table-lift ds) d)
     (table-lift ds f)
 
-lift-locals-correct : ∀ {A} (P : M.Program A) → ⟦ ⌜ P ⌝ₚ ⟧ₚ ＝ I.⟦ lift-program P ⟧ₚ
+lift-locals-correct : ∀ {A} (P : M.Program A)
+  → ⟦ ⌜ P ⌝ₚ ⟧ₚ ＝ I.⟦ lift-program P ⟧ₚ
 lift-locals-correct (M.program ds e) =
   lift-sem (table-lift ds) e ρ₀ idK refl

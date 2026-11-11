@@ -25,8 +25,10 @@ open import FPC.Language.Type
 open import FPC.Language.Clos
 open import FPC.proof.Semantics.GraphModel.Clos using (⟦_⟧; ⟦_⟧s; fv-env)
 open import FPC.Compiler.Prune
-open import FPC.proof.Semantics.GraphModel.Binders using (Body-≃; lam-≃; let-≃; case-≃; ne-≃)
-open import FPC.Framework.AllUtil using (All; []; _∷_; Flags; kept; select; sq; squeeze; pos; ∨-l; ∨-r)
+open import FPC.proof.Semantics.GraphModel.Binders using (Body-≃; lam-≃; let-≃;
+  case-≃; ne-≃)
+open import FPC.Framework.AllUtil using (All; []; _∷_; Flags; kept; select; sq;
+  squeeze; pos; ∨-l; ∨-r)
 
 open import Data.Bool using (Bool; true; false; T)
 open import Data.Fin using (Fin; zero; suc)
@@ -39,7 +41,8 @@ open import Relation.Nullary.Decidable using (fromWitness)
 NE : Ctx → Env Value → Set
 NE Γ ρ = ∀ {C} (x : Γ ∋ C) → nonempty (ρ (idx x))
 
-Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → Env Value → Env Value → Set
+Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → Env Value
+  → Env Value → Set
 Agree u r ρ ρ' = ∀ {C} x (t : T (u {C} x)) → ρ (idx x) ≃ ρ' (idx (r x t))
 
 ext-ne : ∀ {Γ A ρ X}
@@ -55,8 +58,10 @@ Rs Δ = Results (𝒫 Value) (replicate (length Δ) ■)
 {- the kept free variables: equal; the dropped ones: nonempty -}
 data Th : ∀ {Δ} (fl : Flags Δ) → Rs Δ → Rs (kept fl) → Set₁ where
   [] : Th [] ptt ptt
-  keep : ∀ {A Δ fl x y xs ys} → x ≃ y → Th {Δ} fl xs ys → Th {A ∷ Δ} (true ∷ fl) ⟨ x , xs ⟩ ⟨ y , ys ⟩
-  drop : ∀ {A Δ fl x xs ys} → nonempty x → Th {Δ} fl xs ys → Th {A ∷ Δ} (false ∷ fl) ⟨ x , xs ⟩ ys
+  keep : ∀ {A Δ fl x y xs ys} → x ≃ y → Th {Δ} fl xs ys
+    → Th {A ∷ Δ} (true ∷ fl) ⟨ x , xs ⟩ ⟨ y , ys ⟩
+  drop : ∀ {A Δ fl x xs ys} → nonempty x → Th {Δ} fl xs ys
+    → Th {A ∷ Δ} (false ∷ fl) ⟨ x , xs ⟩ ys
 
 th-ne→ : ∀ {Δ fl Ds Es}
   → Th {Δ} fl Ds Es
@@ -82,7 +87,8 @@ th-fv : ∀ {Δ fl Ds Es C}
   → Th {Δ} fl Ds Es
   → (i : Δ ∋ C)
   → (k : T (FPC.Framework.AllUtil.lookup fl i))
-  → fv-env (length Δ) Ds (idx i) ≃ fv-env (length (kept fl)) Es (idx (sq fl i k))
+  → fv-env (length Δ) Ds (idx i)
+    ≃ fv-env (length (kept fl)) Es (idx (sq fl i k))
 th-fv (keep e th) Z k = e
 th-fv (keep e th) (S i) k = th-fv th i k
 th-fv (drop _ th) (S i) k = th-fv th i k
@@ -108,17 +114,22 @@ under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) {r : Ren (λ x → uses N (S x)) 
   → NE Γ ρ
   → Agree (λ x → uses N (S x)) r ρ ρ'
   → Body-≃ (λ X → ⟦ N ⟧ (X • ρ)) (λ X → ⟦ opt N (ext {u = uses N} r) ⟧ (X • ρ'))
-th-ok : ∀ {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'}
+th-ok : ∀ {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ)
+  {r : Ren (usesA Ms) Γ'} {ρ ρ'}
   → NE Γ ρ
   → Agree (usesA Ms) r ρ ρ'
   → Th (flags u Ms) (⟦ Ms ⟧s ρ) (⟦ select (flags u Ms) (opts Ms r) ⟧s ρ')
 
 opt-ok (` x) V ag = ag x (fromWitness refl)
 opt-ok (clos {Δ} N Ms) V ag =
-  guard-≃ (length Δ) (length (kept (keeps N Ms))) (th-ne→ th) (th-ne← th) λ ne → lam-≃ λ W neW _ →
-    opt-ok N (ext-ne neW (fv-ne ne)) λ { Z _ → ≃-refl ; (S i) t → th-fv th i (covers N Ms (S i) t) }
+  guard-≃ (length Δ) (length (kept (keeps N Ms))) (th-ne→ th) (th-ne← th) λ ne →
+    lam-≃ λ W neW _ →
+    opt-ok N (ext-ne neW (fv-ne ne))
+      λ { Z _ → ≃-refl ; (S i) t → th-fv th i (covers N Ms (S i) t) }
   where th = th-ok (λ x → uses N (S x)) Ms V ag
-opt-ok (app L M) V ag = ⋆-≃ (opt-ok L V (λ x t → ag x (∨-l _ t))) (opt-ok M V (λ x t → ag x (∨-r (uses L x) t)))
+opt-ok (app L M) V ag =
+  ⋆-≃ (opt-ok L V (λ x t → ag x (∨-l _ t)))
+  (opt-ok M V (λ x t → ag x (∨-r (uses L x) t)))
 opt-ok (lit B c) V ag = ≃-refl
 opt-ok (tuple {Δ} Ms) V ag = 𝒯-≃ (length Δ) (opts-ok Ms V ag)
 opt-ok (get i M) V ag = proj-≃ (pos i) (opt-ok M V ag)
@@ -128,20 +139,28 @@ opt-ok (case L M N) V ag =
   case-≃ (opt-ok L V (λ x t → ag x (∨-l _ t)))
     (under M V λ x t → ag x (∨-r (uses L x) (∨-l (uses N (S x)) t)))
     (under N V λ x t → ag x (∨-r (uses L x) (∨-r (uses M (S x)) t)))
-opt-ok (prim p L M) V ag = primD-≃ p (opt-ok L V (λ x t → ag x (∨-l _ t))) (opt-ok M V (λ x t → ag x (∨-r (uses L x) t)))
-opt-ok (let′ M N) V ag = let-≃ (opt-ok M V (λ x t → ag x (∨-l _ t))) (under N V λ x t → ag x (∨-r (uses M x) t))
+opt-ok (prim p L M) V ag =
+  primD-≃ p (opt-ok L V (λ x t → ag x (∨-l _ t)))
+  (opt-ok M V (λ x t → ag x (∨-r (uses L x) t)))
+opt-ok (let′ M N) V ag =
+  let-≃ (opt-ok M V (λ x t → ag x (∨-l _ t)))
+  (under N V λ x t → ag x (∨-r (uses M x) t))
 opt-ok (fold M) V ag = opt-ok M V ag
 opt-ok (unfold M) V ag = opt-ok M V ag
 
 opts-ok (M ∷ Ms) V ag zero = opt-ok M V (λ x t → ag x (∨-l _ t))
 opts-ok (M ∷ Ms) V ag (suc i) = opts-ok Ms V (λ x t → ag x (∨-r (uses M x) t)) i
 
-under N V ag X ne _ = opt-ok N (ext-ne ne V) λ { Z _ → ≃-refl ; (S x) t → ag x t }
+under N V ag X ne _ =
+  opt-ok N (ext-ne ne V) λ { Z _ → ≃-refl ; (S x) t → ag x t }
 
 th-ok u [] V ag = []
 th-ok u (M ∷ Ms) V ag with keep? M (u Z) | fl-ok M (u Z)
-... | true | _ = keep (opt-ok M V (λ x t → ag x (∨-l _ t))) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
-... | false | var-fv {x = x} = drop (V x) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
+... | true | _ =
+  keep (opt-ok M V (λ x t → ag x (∨-l _ t)))
+  (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
+... | false | var-fv {x = x} =
+  drop (V x) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
 
 prune-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ ρ₀ ≃ ⟦ prune-program M ⟧ ρ₀
 prune-correct M = opt-ok M (λ ()) (λ ())

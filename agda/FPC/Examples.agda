@@ -48,7 +48,7 @@ open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-{- Helpers ---------------------------------------------------------------------}
+{- Helpers --------------------------------------------------------------------}
 
 {- run a program with clock ck -}
 run : ℕ → Semantics → Maybe Obs
@@ -78,7 +78,7 @@ L ≐ M = prim eq L M
 _⊕_ : ∀ {Γ} → Tm Γ ℤ′ → Tm Γ ℤ′ → Tm Γ ℤ′
 L ⊕ M = L ⊖ (# 0 ⊖ M)
 
-{- Recursion through recursive types --------------------------------------------}
+{- Recursion through recursive types ------------------------------------------}
 
 ω : Tm [] (μ (var zero ⇒ ℤ′) ⇒ ℤ′)
 ω = lam (app (unfold (` Z)) (` Z))
@@ -102,7 +102,8 @@ fix = lam (app g (fold g))
 countdown : Tm [] (ℤ′ ⇒ ℤ′)
 countdown = app fix (lam (lam (case (prim eq (` Z) (lit Int (+ 0)))
                                  (lit Int (+ 0))
-                                 (app (` S (S Z)) (prim sub (` S Z) (lit Int (+ 1)))))))
+                                 (app (` S (S Z))
+                                     (prim sub (` S Z) (lit Int (+ 1)))))))
 
 three : Tm [] ℤ′
 three = app countdown (lit Int (+ 3))
@@ -128,7 +129,7 @@ eq-cases = case ((# 7 ⊖ # 7) ≐ # 0)
 eq-cases-eval : run 1 (FPCᵢ.sem eq-cases) ≡ just (o-const 𝔹 true)
 eq-cases-eval = refl
 
-{- Tuples ----------------------------------------------------------------------}
+{- Tuples ---------------------------------------------------------------------}
 
 {- let t = ⟨1000, λx. x - 300, 20, ⟨5, 9⟩⟩ in (t.1 t.0 - t.2) - t.3.1
    = (700 - 20) - 9 = 671 -}
@@ -141,7 +142,7 @@ tuple-get =
 tuple-get-eval : run 1 (FPCᵢ.sem tuple-get) ≡ just (o-const Int (+ 671))
 tuple-get-eval = refl
 
-{- Sums ------------------------------------------------------------------------}
+{- Sums -----------------------------------------------------------------------}
 
 {- let x = 50 in case inl 8 of inl y ⇒ y - x | inr z ⇒ x = -42 -}
 sum-inl : Tm [] ℤ′
@@ -157,12 +158,13 @@ sum-inr = let′ (# 50) (case (inr {A = ℤ′} (# 8)) (` S Z) (` S Z ⊖ ` Z))
 sum-inr-eval : run 1 (FPCᵢ.sem sum-inr) ≡ just (o-const Int (+ 42))
 sum-inr-eval = refl
 
-{- Let and closures ------------------------------------------------------------}
+{- Let and closures -----------------------------------------------------------}
 
 {- let x = 10 in let y = x - 7 in let x = 100 in (x - y) - x₀ = 87,
    where x₀ is the outer x -}
 let-shadow : Tm [] ℤ′
-let-shadow = let′ (# 10) (let′ (` Z ⊖ # 7) (let′ (# 100) ((` Z ⊖ ` S Z) ⊖ ` S (S Z))))
+let-shadow =
+  let′ (# 10) (let′ (` Z ⊖ # 7) (let′ (# 100) ((` Z ⊖ ` S Z) ⊖ ` S (S Z))))
 
 let-shadow-eval : run 1 (FPCᵢ.sem let-shadow) ≡ just (o-const Int (+ 87))
 let-shadow-eval = refl
@@ -211,7 +213,7 @@ twice-app = app (app twice (app twice (lam (` Z ⊖ # 3)))) (# 50)
 twice-app-eval : run 4 (FPCᵢ.sem twice-app) ≡ just (o-const Int (+ 38))
 twice-app-eval = refl
 
-{- A recursive data type: lists of integers ------------------------------------}
+{- A recursive data type: lists of integers -----------------------------------}
 
 {- IntList = μX. ⟨⟩ ⊹ ⟨Int, X⟩ -}
 IntList : ∀ {n} → Ty n
@@ -233,7 +235,9 @@ altsum = app body (fold body)
   body : Tm [] (L ⇒ IntList ⇒ ℤ′)
   body = lam (lam (case (unfold (` Z))
                         (# 0)
-                        (get Z (` Z) ⊖ app (app (unfold (` S (S Z))) (` S (S Z))) (get (S Z) (` Z)))))
+                        (get Z (` Z)
+                            ⊖ app (app (unfold (` S (S Z))) (` S (S Z)))
+                              (get (S Z) (` Z)))))
 
 {- alt [100, 20, 3] = 100 - (20 - (3 - 0)) = 83 -}
 list-altsum : Tm [] ℤ′
@@ -242,7 +246,7 @@ list-altsum = app altsum (cons (# 100) (cons (# 20) (cons (# 3) nil)))
 list-altsum-eval : run 10 (FPCᵢ.sem list-altsum) ≡ just (o-const Int (+ 83))
 list-altsum-eval = refl
 
-{- Recursion with the fixed-point combinator -----------------------------------}
+{- Recursion with the fixed-point combinator ----------------------------------}
 
 {- the type of fix -}
 Fix : Type
@@ -252,7 +256,8 @@ Fix = F ⇒ (ℤ′ ⇒ ℤ′)
 mul : Tm (Fix ∷ []) (ℤ′ ⇒ ℤ′ ⇒ ℤ′)
 mul = lam (app (` S Z) (lam (lam (case (` Z ≐ # 0)
                                        (# 0)
-                                       (` S (S (S Z)) ⊕ app (` S (S Z)) (` S Z ⊖ # 1))))))
+                                       (` S (S (S Z))
+                                           ⊕ app (` S (S Z)) (` S Z ⊖ # 1))))))
 
 {- let fix = fix in let mul = mul in
    fix (λf. λn. if n = 0 then 1 else mul (f (n - 1)) n) 5 = 120 -}
@@ -262,7 +267,9 @@ fact5 = let′ fix (let′ mul (app (app (` S Z) factF) (# 5)))
   factF : Tm ((ℤ′ ⇒ ℤ′ ⇒ ℤ′) ∷ Fix ∷ []) F
   factF = lam (lam (case (` Z ≐ # 0)
                          (# 1)
-                         (app (app (` S (S (S Z))) (app (` S (S Z)) (` S Z ⊖ # 1))) (` S Z))))
+                         (app
+                             (app (` S (S (S Z)))
+                               (app (` S (S Z)) (` S Z ⊖ # 1))) (` S Z))))
 
 fact5-eval : run 30 (FPCᵢ.sem fact5) ≡ just (o-const Int (+ 120))
 fact5-eval = refl
@@ -286,7 +293,7 @@ fib7 = app (app fix fibF) (# 7)
 fib7-eval : run 30 (FPCᵢ.sem fib7) ≡ just (o-const Int (+ 13))
 fib7-eval = refl
 
-{- Divergence ------------------------------------------------------------------}
+{- Divergence -----------------------------------------------------------------}
 
 {- Ω times out -}
 Ω-eval : run 50 (FPCᵢ.sem Ω) ≡ nothing

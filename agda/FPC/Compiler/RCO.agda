@@ -53,7 +53,9 @@ rco (tuple Ms) ρ = atomizes Ms ρ λ _ as → M.tuple as
 rco (get i N) ρ = atomize N ρ λ _ a → M.get i a
 rco (inl N) ρ = atomize N ρ λ _ a → M.inl a
 rco (inr N) ρ = atomize N ρ λ _ a → M.inr a
-rco (case L N₁ N₂) ρ = atomize L ρ λ r a → M.case a (rco N₁ (ext λ x → r (ρ x))) (rco N₂ (ext λ x → r (ρ x)))
+rco (case L N₁ N₂) ρ =
+  atomize L ρ λ r a →
+  M.case a (rco N₁ (ext λ x → r (ρ x))) (rco N₂ (ext λ x → r (ρ x)))
 rco (prim p L N) ρ = atomize₂ L N ρ (M.prim p)
 rco (let′ N₁ N₂) ρ = M.let′ (rco N₁ ρ) (rco N₂ (ext ρ))
 rco (fold N) ρ = atomize N ρ λ _ a → M.fold a
@@ -66,10 +68,13 @@ atomize N ρ k = M.let′ (rco N ρ) (k S (var Z))
 
 atomizes [] ρ k = k (λ y → y) []
 atomizes (N ∷ Ns) ρ k =
-  atomize N ρ λ r a → atomizes Ns (λ x → r (ρ x)) λ r' as → k (λ x → r' (r x)) (ren r' a ∷ as)
+  atomize N ρ λ r a → atomizes Ns (λ x → r (ρ x)) λ r' as →
+    k (λ x → r' (r x)) (ren r' a ∷ as)
 
-atomize₂ L N ρ k = atomize L ρ λ r a → atomize N (λ x → r (ρ x)) λ r' b → k (ren r' a) b
+atomize₂ L N ρ k =
+  atomize L ρ λ r a → atomize N (λ x → r (ρ x)) λ r' b → k (ren r' a) b
 
 {- the pass, for a whole program -}
 rco-program : ∀ {A} → Program A → M.Program A
-rco-program (program ds N) = M.program (All-map (λ D → rco D (λ x → x)) ds) (rco N λ x → x)
+rco-program (program ds N) =
+  M.program (All-map (λ D → rco D (λ x → x)) ds) (rco N λ x → x)

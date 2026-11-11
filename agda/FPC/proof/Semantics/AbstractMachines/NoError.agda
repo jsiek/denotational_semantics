@@ -18,7 +18,8 @@ import FPC.Language.FPC as L
 import FPC.Semantics.AbstractMachines.FPC as I
 import FPC.Semantics.AbstractMachines.GlobalFun as C5
 open import FPC.Language.X86
-open import FPC.Semantics.AbstractMachines.X86 using (State; run; halt; retK; enter; step; sem; cast; regs; _⦅_⦆)
+open import FPC.Semantics.AbstractMachines.X86 using (State; run; halt; retK;
+  enter; step; sem; cast; regs; _⦅_⦆)
 open import FPC.Framework.AllUtil using (All)
 
 open import Data.List using (List; [])
@@ -76,7 +77,7 @@ fpc-stops (I.ret (I.fold v) (I.unfoldK κ)) ()
 fpc-no-error : ∀ {A} (M : L.Tm [] A) → ¬ Terminates (I.sem M) o-error
 fpc-no-error M = no-error fpc-stops
 
-{- X86μ --------------------------------------------------------------------------}
+{- X86μ -----------------------------------------------------------------------}
 
 clos5-answer : ∀ {Σ A} (v : C5.Val Σ A) → Answer (C5.obs v)
 clos5-answer (C5.code _) ()
@@ -87,7 +88,8 @@ clos5-answer (C5.inl _) ()
 clos5-answer (C5.inr _) ()
 clos5-answer (C5.fold v) = clos5-answer v
 
-module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
+module _ {Σ : List DSig}
+  (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
 
   enter-next : ∀ {η A B} (c : C5.Val Σ (code η A B)) e w σ {o}
     → enter ds c e w σ ≡ stop o
@@ -106,7 +108,8 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
   x86-stops (run (loadfst x r ∷ k) bs σ η m) ()
   x86-stops (run (loadsnd r ∷ k) bs σ η m) ()
   x86-stops (run (callq a e₁ e₂ ∷ k) bs σ η m) = enter-next _ _ _ _
-  x86-stops (run (retq e) bs halt η m) refl = clos5-answer (cast e (regs m ⦅ rax ⦆))
+  x86-stops (run (retq e) bs halt η m) refl =
+    clos5-answer (cast e (regs m ⦅ rax ⦆))
   x86-stops (run (retq e) bs (retK k bs' φ σ) η m) ()
   x86-stops (run (jmp l) bs σ η m) ()
   x86-stops (run (case x p _ l₁ l₂) bs σ η m) ()

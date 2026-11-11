@@ -2,8 +2,8 @@
 
   Correctness of lift locals (Monμ → Impμ) by a forward simulation of
   the GlobalFunμ reduction semantics of the Monμ program (its embedding,
-  ⌜_⌝ₚ) by the Impμ machine (FPC/Semantics/AbstractMachines/Imp.agda), as for typed
-  lift locals (ISWIM/proof/Correctness/Reduction/LiftLocalsRed.agda).
+  ⌜_⌝ₚ) by the Impμ machine (FPC/Semantics/AbstractMachines/Imp.agda), as for
+  typed lift locals (ISWIM/proof/Correctness/Reduction/LiftLocalsRed.agda).
 
   A machine state decodes to a term (D): its expression, with the values
   of its frame substituted for the slots (env), in the stack of lets of
@@ -31,20 +31,27 @@ import FPC.Language.Mon as Mon
 open Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ₚ)
 open import FPC.Language.Imp
 open import FPC.Compiler.LiftLocals using (lift; lift-program)
-open import FPC.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to All-map)
+open import FPC.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to
+  All-map)
 open import FPC.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation
-open import Framework.Smallstep Obs using (Machine; Next; next; stop; Step; Steps; zero; suc; ε; _◅_)
+open import Framework.Smallstep Obs using (Machine; Next; next; stop; Step;
+  Steps; zero; suc; ε; _◅_)
 open import proof.Framework.Smallstep Obs using (plus; step⁺)
-open import proof.Framework.Simulation Obs using (Answers≺; stops; steps; stutters; runs; Lag; lag; lag-fsim; equivalent; answers-at; equiv-trans)
-open import proof.Framework.Reduction Obs o-error using (Red; val; error; to; step-in; toNext; reduction; Frame; frame; frame-id; frame-∘; val-in; step-in-to)
-open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_; obsΣ; redΣ; pairs)
+open import proof.Framework.Simulation Obs using (Answers≺; stops; steps;
+  stutters; runs; Lag; lag; lag-fsim; equivalent; answers-at; equiv-trans)
+open import proof.Framework.Reduction Obs o-error using (Red; val; error; to;
+  step-in; toNext; reduction; Frame; frame; frame-id; frame-∘; val-in;
+  step-in-to)
+open import FPC.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_;
+  obsΣ; redΣ; pairs)
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import FPC.proof.Semantics.ReductionSemantics.GlobalFun as T
 open T using (Value; value-red; sub; exts; tmK; _•_; ∅; _[_])
 import FPC.Semantics.AbstractMachines.Imp as I
 import FPC.Semantics.AbstractMachines.GlobalFun as C5ₘ
-open I using (Val; code; pack; const; tup; inl; inr; fold; Env; Res; value; call; Cont; halt; assignK; State; eval)
+open I using (Val; code; pack; const; tup; inl; inr; fold; Env; Res; value;
+  call; Cont; halt; assignK; State; eval)
 import Language.Prim as P
 
 open import Data.Bool using (true; false)
@@ -53,12 +60,13 @@ open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (Σ; Σ-syntax; _,_; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans;
+  cong; cong₂; subst)
 open import Relation.Nullary using (does)
 
 module _ {Σ' : List DSig} where
 
-  {- Decoding -----------------------------------------------------------------------}
+  {- Decoding -----------------------------------------------------------------}
 
   {- a machine value as a value term -}
   ⌞_⌟ : ∀ {A} → Val Σ' A → Tm Σ' [] A
@@ -139,16 +147,19 @@ module _ {Σ' : List DSig} where
   ⌜lift⌝ (Mon.unfold a) = refl
 
   {- an atom, and atoms -}
-  atom-⌞⌟ : ∀ {Δ A} (φ : Env Σ' Δ) (a : Atm Σ' Δ A) → sub (env φ) ⌜ a ⌝ᵃ ≡ ⌞ I.atom φ a ⌟
+  atom-⌞⌟ : ∀ {Δ A} (φ : Env Σ' Δ) (a : Atm Σ' Δ A)
+    → sub (env φ) ⌜ a ⌝ᵃ ≡ ⌞ I.atom φ a ⌟
   atom-⌞⌟ φ (var x) = env-lookup φ x
   atom-⌞⌟ φ (lit B c) = refl
   atom-⌞⌟ φ (ref f) = refl
 
-  atoms-⌞⌟ : ∀ {Δ Δ'} (φ : Env Σ' Δ) (as : All (Atm Σ' Δ) Δ') → T.travs tmK (env φ) Mon.⌜ as ⌝ᵛ ≡ ⌞ All-map (I.atom φ) as ⌟ᵛ
+  atoms-⌞⌟ : ∀ {Δ Δ'} (φ : Env Σ' Δ) (as : All (Atm Σ' Δ) Δ')
+    → T.travs tmK (env φ) Mon.⌜ as ⌝ᵛ ≡ ⌞ All-map (I.atom φ) as ⌟ᵛ
   atoms-⌞⌟ φ [] = refl
   atoms-⌞⌟ φ (a ∷ as) = cong₂ _∷_ (atom-⌞⌟ φ a) (atoms-⌞⌟ φ as)
 
-  lookup-⌞⌟ : ∀ {Δ A} (vs : All (Val Σ') Δ) (i : Δ ∋ A) → lookup ⌞ vs ⌟ᵛ i ≡ ⌞ lookup vs i ⌟
+  lookup-⌞⌟ : ∀ {Δ A} (vs : All (Val Σ') Δ) (i : Δ ∋ A)
+    → lookup ⌞ vs ⌟ᵛ i ≡ ⌞ lookup vs i ⌟
   lookup-⌞⌟ (v ∷ vs) Z = refl
   lookup-⌞⌟ (v ∷ vs) (S i) = lookup-⌞⌟ vs i
 
@@ -158,9 +169,10 @@ module _ {Σ' : List DSig} where
   ... | true = refl
   ... | false = refl
 
-  {- The machine ---------------------------------------------------------------------------}
+  {- The machine --------------------------------------------------------------}
 
-  module _ (ds : All (λ s → Mon.Exp Σ' (Args s) (DSig.cod s)) Σ') {A₀} (e₀ : Mon.Exp Σ' [] A₀) where
+  module _ (ds : All (λ s → Mon.Exp Σ' (Args s) (DSig.cod s)) Σ') {A₀}
+    (e₀ : Mon.Exp Σ' [] A₀) where
 
     ds₁ : All (Code Σ') Σ'
     ds₁ = All-map Mon.⌜_⌝ ds
@@ -173,10 +185,13 @@ module _ {Σ' : List DSig} where
 
     {- what a simple expression does, in both -}
     data SV {Δ} (φ : Env Σ' Δ) : ∀ {A} → Simple Σ' Δ A → Res A → Set where
-      val0 : ∀ {A} {s : Simple Σ' Δ A} {v} → sub (env φ) ⌜ s ⌝ˢ ≡ ⌞ v ⌟ → SV φ s (value v)
-      val1 : ∀ {A} {s : Simple Σ' Δ A} {v} → red₁ (sub (env φ) ⌜ s ⌝ˢ) ≡ to ⌞ v ⌟ → SV φ s (value v)
+      val0 : ∀ {A} {s : Simple Σ' Δ A} {v} → sub (env φ) ⌜ s ⌝ˢ ≡ ⌞ v ⌟
+        → SV φ s (value v)
+      val1 : ∀ {A} {s : Simple Σ' Δ A} {v}
+        → red₁ (sub (env φ) ⌜ s ⌝ˢ) ≡ to ⌞ v ⌟ → SV φ s (value v)
       cal : ∀ {Δ' A B} {s : Simple Σ' Δ B} {f : Σ' ∋ sig Δ' A B} {e w}
-        → sub (env φ) ⌜ s ⌝ˢ ≡ C.callc (C.pair (C.fun-ref f) ⌞ e ⌟) ⌞ w ⌟ → SV φ s (call (pack (code f) e) w)
+        → sub (env φ) ⌜ s ⌝ˢ ≡ C.callc (C.pair (C.fun-ref f) ⌞ e ⌟) ⌞ w ⌟
+          → SV φ s (call (pack (code f) e) w)
 
     sv : ∀ {Δ A} (s : Simple Σ' Δ A) (φ : Env Σ' Δ) → SV φ s (I.run s φ)
     sv (atm a) φ = val0 (atom-⌞⌟ φ a)
@@ -186,14 +201,22 @@ module _ {Σ' : List DSig} where
     sv (tuple as) φ = val0 (cong C.tuple (atoms-⌞⌟ φ as))
     sv (get i a) φ with I.atom φ a | atom-⌞⌟ φ a
     ... | tup vs | ea = val1 (trans (cong (λ X → red₁ (C.get i X)) ea)
-                               (trans (val-in (value-red (T.tuple (values-⌞⌟ vs)))) (cong to (lookup-⌞⌟ vs i))))
+                               (trans
+                                   (val-in (value-red (T.tuple (values-⌞⌟ vs))))
+                                     (cong to (lookup-⌞⌟ vs i))))
     sv (inl a) φ = val0 (cong C.inl (atom-⌞⌟ φ a))
     sv (inr a) φ = val0 (cong C.inr (atom-⌞⌟ φ a))
     sv (prim p a b) φ with I.atom φ a | atom-⌞⌟ φ a | I.atom φ b | atom-⌞⌟ φ b
-    ... | const n | ea | const m | eb = val1 (trans (cong₂ (λ X Y → red₁ (C.prim p X Y)) ea eb) (cong to (out-⌞⌟ p n m)))
+    ... | const n | ea | const m | eb =
+      val1
+      (trans (cong₂ (λ X Y → red₁ (C.prim p X Y)) ea eb)
+        (cong to (out-⌞⌟ p n m)))
     sv (fold a) φ = val0 (cong C.fold (atom-⌞⌟ φ a))
     sv (unfold a) φ with I.atom φ a | atom-⌞⌟ φ a
-    ... | fold v | ea = val1 (trans (cong (λ X → red₁ (C.unfold X)) ea) (val-in (value-red (T.fold (value-⌞⌟ v)))))
+    ... | fold v | ea =
+      val1
+      (trans (cong (λ X → red₁ (C.unfold X)) ea)
+        (val-in (value-red (T.fold (value-⌞⌟ v)))))
 
     {- the type of the result of a continuation, and its stack of lets -}
     fin : ∀ {A} → Cont Σ' A → Type
@@ -227,7 +250,8 @@ module _ {Σ' : List DSig} where
     res-tm (call f w) X = X
 
     D : State Σ' → TmΣ
-    D (eval (simple s) φ κ) = fin κ , plug κ (res-tm (I.run s φ) (sub (env φ) ⌜ s ⌝ˢ))
+    D (eval (simple s) φ κ) =
+      fin κ , plug κ (res-tm (I.run s φ) (sub (env φ) ⌜ s ⌝ˢ))
     D s = Dsyn s
 
     L₁ L₂ : Machine
@@ -272,49 +296,89 @@ module _ {Σ' : List DSig} where
     to-lag M e st = answers-at e (steps (step⁺ st) (proj₂ (lag-of _)))
 
     {- a value to the continuation -}
-    value-ans : ∀ {Δ A} (s : Simple Σ' Δ A) (φ : Env Σ' Δ) (κ : Cont Σ' A) (v : Val Σ' A)
+    value-ans : ∀ {Δ A} (s : Simple Σ' Δ A) (φ : Env Σ' Δ) (κ : Cont Σ' A)
+      (v : Val Σ' A)
       → I.run s φ ≡ value v
       → ∀ {i}
-      → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ (fin κ , plug κ ⌞ v ⌟)) (eval (simple s) φ κ)
+      → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ (fin κ , plug κ ⌞ v ⌟))
+        (eval (simple s) φ κ)
     value-ans s φ halt v e =
       answers-at (cong (toNext _) (val-in (value-red (value-⌞⌟ v))))
-        (stops (trans (cong (λ r → I.res ds₂ r halt) e) (cong stop (sym (obs-⌞⌟ v)))))
+        (stops
+            (trans (cong (λ r → I.res ds₂ r halt) e)
+              (cong stop (sym (obs-⌞⌟ v)))))
     value-ans s φ (assignK e₂ φ' κ) v e =
-      to-lag (fin κ , plug κ (C.let′ ⌞ v ⌟ (sub (exts tmK (env φ')) ⌜ e₂ ⌝ⁱ))) (cong (toNext _) (step-in-to (plugΣ κ)
-                (trans (val-in (value-red (value-⌞⌟ v))) (cong to (T.exts-[] (env φ') ⌞ v ⌟ ⌜ e₂ ⌝ⁱ)))))
+      to-lag (fin κ , plug κ (C.let′ ⌞ v ⌟ (sub (exts tmK (env φ')) ⌜ e₂ ⌝ⁱ)))
+        (cong (toNext _) (step-in-to (plugΣ κ)
+                (trans (val-in (value-red (value-⌞⌟ v)))
+                    (cong to (T.exts-[] (env φ') ⌞ v ⌟ ⌜ e₂ ⌝ⁱ)))))
         (cong (λ r → I.res ds₂ r (assignK e₂ φ' κ)) e)
 
-    sim : ∀ {Δ A} (e : Exp Σ' Δ A) (φ : Env Σ' Δ) (κ : Cont Σ' A) → Ans (eval e φ κ)
+    sim : ∀ {Δ A} (e : Exp Σ' Δ A) (φ : Env Σ' Δ) (κ : Cont Σ' A)
+      → Ans (eval e φ κ)
     sim (simple s) φ κ with I.run s φ in e | sv s φ
     ... | value v | _ = value-ans s φ κ v e
     ... | call (pack (code f) e') w | cal r rewrite r =
-      to-lag (fin κ , plug κ (C.callc (C.pair (C.fun-ref f) ⌞ e' ⌟) ⌞ w ⌟)) (cong (toNext _) (step-in-to (plugΣ κ)
-        (trans (val-in (value-red (T.pair T.fun-ref (value-⌞⌟ e')))) (trans (val-in (value-red (value-⌞⌟ w)))
+      to-lag (fin κ , plug κ (C.callc (C.pair (C.fun-ref f) ⌞ e' ⌟) ⌞ w ⌟))
+        (cong (toNext _) (step-in-to (plugΣ κ)
+        (trans (val-in (value-red (T.pair T.fun-ref (value-⌞⌟ e'))))
+            (trans (val-in (value-red (value-⌞⌟ w)))
           (cong (λ X → to (sub (env (w ∷ e' ∷ [])) X))
-            (trans (lookup-map Mon.⌜_⌝ ds f) (sym (trans (cong ⌜_⌝ⁱ (lookup-map lift ds f)) (⌜lift⌝ (lookup ds f))))))))))
+            (trans (lookup-map Mon.⌜_⌝ ds f)
+                (sym
+                  (trans (cong ⌜_⌝ⁱ (lookup-map lift ds f))
+                    (⌜lift⌝ (lookup ds f))))))))))
         (cong (λ x → I.res ds₂ x κ) e)
     sim (assign e₁ e₂) φ κ with catch (eval e₁ φ (assignK e₂ φ κ))
-    ... | inj₁ eq = pre refl (subst (λ X → Answers≺ L₂ (Lag L₁ R) _ (Machine.step L₁ X) _) eq (sim e₁ φ (assignK e₂ φ κ)))
+    ... | inj₁ eq =
+      pre refl
+      (subst (λ X → Answers≺ L₂ (Lag L₁ R) _ (Machine.step L₁ X) _) eq
+        (sim e₁ φ (assignK e₂ φ κ)))
     ... | inj₂ st = answers-at st (steps (step⁺ refl) (lag zero refl))
     sim (case a e₁ e₂) φ κ with I.atom φ a in eq | atom-⌞⌟ φ a
     ... | inl w | ea rewrite ea =
-      to-lag (fin κ , plug κ (C.case (C.inl ⌞ w ⌟) (sub (exts tmK (env φ)) ⌜ e₁ ⌝ⁱ) (sub (exts tmK (env φ)) ⌜ e₂ ⌝ⁱ)))
+      to-lag
+        (fin κ
+          , plug κ
+          (C.case (C.inl ⌞ w ⌟) (sub (exts tmK (env φ)) ⌜ e₁ ⌝ⁱ)
+            (sub (exts tmK (env φ)) ⌜ e₂ ⌝ⁱ)))
         (cong (toNext _) (step-in-to (plugΣ κ)
-          (trans (val-in (value-red (T.inl (value-⌞⌟ w)))) (cong to (T.exts-[] (env φ) ⌞ w ⌟ ⌜ e₁ ⌝ⁱ)))))
-        (cong (λ x → next (I.choose x (λ v → eval e₁ (v ∷ φ) κ) (λ v → eval e₂ (v ∷ φ) κ))) eq)
+          (trans (val-in (value-red (T.inl (value-⌞⌟ w))))
+              (cong to (T.exts-[] (env φ) ⌞ w ⌟ ⌜ e₁ ⌝ⁱ)))))
+        (cong
+            (λ x →
+              next
+                (I.choose x (λ v → eval e₁ (v ∷ φ) κ)
+                  (λ v → eval e₂ (v ∷ φ) κ))) eq)
     ... | inr w | ea rewrite ea =
-      to-lag (fin κ , plug κ (C.case (C.inr ⌞ w ⌟) (sub (exts tmK (env φ)) ⌜ e₁ ⌝ⁱ) (sub (exts tmK (env φ)) ⌜ e₂ ⌝ⁱ)))
+      to-lag
+        (fin κ
+          , plug κ
+          (C.case (C.inr ⌞ w ⌟) (sub (exts tmK (env φ)) ⌜ e₁ ⌝ⁱ)
+            (sub (exts tmK (env φ)) ⌜ e₂ ⌝ⁱ)))
         (cong (toNext _) (step-in-to (plugΣ κ)
-          (trans (val-in (value-red (T.inr (value-⌞⌟ w)))) (cong to (T.exts-[] (env φ) ⌞ w ⌟ ⌜ e₂ ⌝ⁱ)))))
-        (cong (λ x → next (I.choose x (λ v → eval e₁ (v ∷ φ) κ) (λ v → eval e₂ (v ∷ φ) κ))) eq)
+          (trans (val-in (value-red (T.inr (value-⌞⌟ w))))
+              (cong to (T.exts-[] (env φ) ⌞ w ⌟ ⌜ e₂ ⌝ⁱ)))))
+        (cong
+            (λ x →
+              next
+                (I.choose x (λ v → eval e₁ (v ∷ φ) κ)
+                  (λ v → eval e₂ (v ∷ φ) κ))) eq)
 
     correct : Equivalent L₁ L₂
-    correct = equivalent (lag-fsim (subst (λ X → Σ[ i ∈ ℕ ] Lag L₁ R i X (Machine.start L₂)) start-eq (lag-of (Machine.start L₂)))
+    correct =
+      equivalent
+      (lag-fsim
+        (subst (λ X → Σ[ i ∈ ℕ ] Lag L₁ R i X (Machine.start L₂)) start-eq
+          (lag-of (Machine.start L₂)))
                                    λ { {s₂ = eval e φ κ} refl → sim e φ κ })
       where start-eq : Dsyn (eval (lift e₀) [] halt) ≡ (A₀ , Mon.⌜ e₀ ⌝)
-            start-eq = cong (A₀ ,_) (trans (T.sub-id (λ ()) ⌜ lift e₀ ⌝ⁱ) (⌜lift⌝ e₀))
+            start-eq =
+              cong (A₀ ,_) (trans (T.sub-id (λ ()) ⌜ lift e₀ ⌝ⁱ) (⌜lift⌝ e₀))
 
-{- The end theorem -------------------------------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
-lift-locals-correct : ∀ {A} (P : Mon.Program A) → Equivalent (T.sem ⌜ P ⌝ₚ) (I.sem (lift-program P))
-lift-locals-correct (Mon.program ds e₀) = equiv-trans (pairs T.obs (T.red _) _) (correct ds e₀)
+lift-locals-correct : ∀ {A} (P : Mon.Program A)
+  → Equivalent (T.sem ⌜ P ⌝ₚ) (I.sem (lift-program P))
+lift-locals-correct (Mon.program ds e₀) =
+  equiv-trans (pairs T.obs (T.red _) _) (correct ds e₀)

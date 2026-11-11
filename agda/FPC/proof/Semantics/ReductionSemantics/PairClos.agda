@@ -20,7 +20,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 data Value {Γ} : ∀ {A} → Tm Γ A → Set where
   code : ∀ {Δ A B} {N : Tm (A ∷ tup Δ ∷ []) B} → Value (code {Γ} N)
-  pair : ∀ {Δ A B} {L : Tm Γ (code Δ A B)} {M} → Value L → Value M → Value (pair L M)
+  pair : ∀ {Δ A B} {L : Tm Γ (code Δ A B)} {M} → Value L → Value M
+    → Value (pair L M)
   lit : ∀ {B c} → Value (lit B c)
   tuple : ∀ {Δ} {Vs : All (Tm Γ) Δ} → Each Value Vs → Value (tuple Vs)
   inl : ∀ {A B} {V : Tm Γ A} → Value V → Value (inl {B = B} V)

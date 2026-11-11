@@ -23,7 +23,8 @@ open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 
 import FPC.Semantics.ClockedInterpreters.Values
-module Vals (Σ : List DSig) = FPC.Semantics.ClockedInterpreters.Values (λ Δ A B → Σ ∋ sig Δ A B)
+module Vals (Σ : List DSig) =
+  FPC.Semantics.ClockedInterpreters.Values (λ Δ A B → Σ ∋ sig Δ A B)
 
 module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
   open Vals Σ
@@ -41,7 +42,9 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
   eval ck ρ (get i M) = do v ← eval ck ρ M; ret (nth i v)
   eval ck ρ (inl M) = do v ← eval ck ρ M; ret (inl v)
   eval ck ρ (inr M) = do v ← eval ck ρ M; ret (inr v)
-  eval ck ρ (case L M N) = eval ck ρ L >>= λ u → either u (λ v → eval ck (v ∷ ρ) M) (λ v → eval ck (v ∷ ρ) N)
+  eval ck ρ (case L M N) =
+    eval ck ρ L >>= λ u →
+    either u (λ v → eval ck (v ∷ ρ) M) (λ v → eval ck (v ∷ ρ) N)
   eval ck ρ (prim p L M) = do v ← eval ck ρ L; w ← eval ck ρ M; ret (δ p v w)
   eval ck ρ (let′ M N) = do v ← eval ck ρ M; eval ck (v ∷ ρ) N
   eval ck ρ (fold M) = do v ← eval ck ρ M; ret (fold v)

@@ -23,10 +23,12 @@ open import Data.Product using (proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 ok : ∀ {Γ A} (M : Tm Γ A) → Ok ⟦ M ⟧
-oks : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) → Oks (replicate (length Δ) ■) (split (length Δ) ⟦ Ms ⟧s)
+oks : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ)
+  → Oks (replicate (length Δ) ■) (split (length Δ) ⟦ Ms ⟧s)
 
 ok (` x) = var-ok (idx x)
-ok (clos N Ms) = ok-op ⋆-good ⟨ ΛΛ-ok (ok N) , ⟨ ok-vec (𝒯-good _) (oks Ms) , ptt ⟩ ⟩
+ok (clos N Ms) =
+  ok-op ⋆-good ⟨ ΛΛ-ok (ok N) , ⟨ ok-vec (𝒯-good _) (oks Ms) , ptt ⟩ ⟩
 ok (app L M) = ok-op ⋆-good ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
 ok (lit B c) = ok-op (ℬ-good B c) ptt
 ok (tuple Ms) = ok-vec (𝒯-good _) (oks Ms)

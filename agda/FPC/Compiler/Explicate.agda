@@ -43,10 +43,13 @@ explicate-assign : ∀ {Σ R Bs Δ Δ' A} → I.Exp Σ Δ A
   → Tail Σ R Bs (A ∷ Δ') → Blocks Σ R Bs
   → Out Σ R Bs Δ
 explicate-assign (I.simple s) p k bs = out here⊑ bs (seq p s k)
-explicate-assign (I.assign e₁ e₂) p k bs with explicate-assign e₂ (there⊑ p) k bs
+explicate-assign (I.assign e₁ e₂) p k bs
+  with explicate-assign e₂ (there⊑ p) k bs
 ... | out g bs₁ t = after g (explicate-assign e₁ here⊑ t bs₁)
-explicate-assign (I.case a e₁ e₂) p k bs with explicate-assign e₁ (there⊑ p) (goto Z) (bs ▷ k)
-... | out g₁ bs₁ t₁ with explicate-assign e₂ (there⊑ p) (goto (⊑-∋ (there⊑ g₁) Z)) (bs₁ ▷ t₁)
+explicate-assign (I.case a e₁ e₂) p k bs
+  with explicate-assign e₁ (there⊑ p) (goto Z) (bs ▷ k)
+... | out g₁ bs₁ t₁
+  with explicate-assign e₂ (there⊑ p) (goto (⊑-∋ (there⊑ g₁) Z)) (bs₁ ▷ t₁)
 ...   | out g₂ bs₂ t₂ =
   out (there⊑ (⊑-trans (there⊑ (⊑-trans (there⊑ here⊑) g₁)) g₂)) (bs₂ ▷ t₂)
       (case a here⊑ (⊑-∋ (there⊑ g₂) Z) Z)
@@ -58,7 +61,8 @@ explicate-tail (I.assign e₁ e₂) bs with explicate-tail e₂ bs
 explicate-tail (I.case a e₁ e₂) bs with explicate-tail e₁ bs
 ... | out g₁ bs₁ t₁ with explicate-tail e₂ (bs₁ ▷ t₁)
 ...   | out g₂ bs₂ t₂ =
-  out (there⊑ (⊑-trans (there⊑ g₁) g₂)) (bs₂ ▷ t₂) (case a here⊑ (⊑-∋ (there⊑ g₂) Z) Z)
+  out (there⊑ (⊑-trans (there⊑ g₁) g₂)) (bs₂ ▷ t₂)
+    (case a here⊑ (⊑-∋ (there⊑ g₂) Z) Z)
 
 explicate-body : ∀ {Σ R Δ} → I.Exp Σ Δ R → Body Σ R Δ
 explicate-body e with explicate-tail e []
@@ -66,4 +70,5 @@ explicate-body e with explicate-tail e []
 
 {- the pass, for a whole program -}
 explicate : ∀ {A} → I.Program A → Program A
-explicate (I.program ds e) = program (All-map explicate-body ds) (explicate-body e)
+explicate (I.program ds e) =
+  program (All-map explicate-body ds) (explicate-body e)

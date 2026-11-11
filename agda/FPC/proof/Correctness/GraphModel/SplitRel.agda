@@ -51,8 +51,10 @@ open import Data.Nat.Properties using (≤-trans; m≤m⊔n; m≤n⊔m; n≤1+n;
 open import Data.List using (List; []; _∷_; _++_; map)
 open import Data.List.Relation.Unary.Any using (here)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties using (∈-map⁺; ∈-map⁻; ∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻)
-open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩ )
+open import Data.List.Membership.Propositional.Properties using (∈-map⁺; ∈-map⁻;
+  ∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻)
+open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to
+  ⟨_,_⟩ )
 import Data.Product as Prod
 open import Data.Sum using ([_,_]′)
 open import Data.Empty using (⊥; ⊥-elim)
@@ -80,9 +82,22 @@ out-data (bool false) = flat-⟨⟩
    W₁ ++ W₂. -}
 SelfContainedMaps-++ : ∀ {V U₁ U₂ W₁ W₂} → SelfContainedMaps V U₁ W₁ → SelfContainedMaps V U₂ W₂ → SelfContainedMaps V (U₁ ++ U₂) (W₁ ++ W₂)
 SelfContainedMaps-++ {U₁ = U₁} {W₁ = W₁} c₁ c₂ = record
-  { results = λ w w∈ → [ (λ i → Prod.map₂ (Prod.map₂ (Prod.map₂ λ ⊆U d d∈ → ∈-++⁺ˡ (⊆U d d∈))) (SelfContainedMaps.results c₁ w i))
-                       , (λ i → Prod.map₂ (Prod.map₂ (Prod.map₂ λ ⊆U d d∈ → ∈-++⁺ʳ U₁ (⊆U d d∈))) (SelfContainedMaps.results c₂ w i)) ]′ (∈-++⁻ W₁ w∈)
-  ; args = λ u u∈ → [ SelfContainedMaps.args c₁ u , SelfContainedMaps.args c₂ u ]′ (∈-++⁻ U₁ u∈)
+  { results =
+      λ w w∈ →
+      [
+      (λ i →
+        Prod.map₂ (Prod.map₂ (Prod.map₂ λ ⊆U d d∈ → ∈-++⁺ˡ (⊆U d d∈)))
+        (SelfContainedMaps.results c₁ w i))
+                       ,
+                         (λ i →
+                           Prod.map₂
+                             (Prod.map₂
+                               (Prod.map₂ λ ⊆U d d∈ → ∈-++⁺ʳ U₁ (⊆U d d∈)))
+                                 (SelfContainedMaps.results c₂ w i))
+                                 ]′ (∈-++⁻ W₁ w∈)
+  ; args =
+    λ u u∈ →
+    [ SelfContainedMaps.args c₁ u , SelfContainedMaps.args c₂ u ]′ (∈-++⁻ U₁ u∈)
   }
 
 {- Approx D D' says that D is related to every finite part of the target
@@ -97,18 +112,22 @@ Approx-const : ∀ {D D' B} {c : base-rep B}
   → Approx D D'
   → const c ∈ D'
   → const c ∈ D
-Approx-const {c = c} r c∈ = ApproxLRLayer.const-obs (unfold (r (const c ∷ []) (single⊆ c∈))) c (here refl)
+Approx-const {c = c} r c∈ =
+  ApproxLRLayer.const-obs (unfold (r (const c ∷ []) (single⊆ c∈))) c (here refl)
 
 Approx-ne : ∀ {D D'}
   → Approx D D'
   → nonempty D'
   → nonempty D
-Approx-ne r ⟨ v , v∈ ⟩ = ApproxLRLayer.nonempty-obs (unfold (r (v ∷ []) (single⊆ v∈))) (λ ())
+Approx-ne r ⟨ v , v∈ ⟩ =
+  ApproxLRLayer.nonempty-obs (unfold (r (v ∷ []) (single⊆ v∈))) (λ ())
 
 Approx-untag : ∀ t {D D'}
   → Approx D D'
   → Approx (Untag t D) (Untag t D')
-Approx-untag t r W W⊆ = ApproxLRLayer.tag-obs (unfold (r (map (tag t) W) tW⊆)) t W (λ d → ∈-map⁺ (tag t))
+Approx-untag t r W W⊆ =
+  ApproxLRLayer.tag-obs (unfold (r (map (tag t) W) tW⊆)) t W
+  (λ d → ∈-map⁺ (tag t))
   where
   tW⊆ : mem (map (tag t) W) ⊆ _
   tW⊆ d d∈ with ∈-map⁻ (tag t) d∈
@@ -117,7 +136,9 @@ Approx-untag t r W W⊆ = ApproxLRLayer.tag-obs (unfold (r (map (tag t) W) tW⊆
 {- AppObs D D' is the third clause of the relation (app-obs), for every
    finite part of D'. -}
 AppObs : 𝒫 Value → 𝒫 Value → Set₁
-AppObs D D' = ∀ {V U W} → mem V ⊆ D' → SelfContainedMaps V U W → ∀ E → Con E → Con (mem U) → ApproxLR E U → ApproxLR (D ● E) W
+AppObs D D' =
+  ∀ {V U W} → mem V ⊆ D' → SelfContainedMaps V U W → ∀ E → Con E → Con (mem U)
+  → ApproxLR E U → ApproxLR (D ● E) W
 
 {- Approx-fold proves Approx D D' from the four clauses, stated for the
    sets D and D' as a whole. -}

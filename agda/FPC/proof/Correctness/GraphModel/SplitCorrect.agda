@@ -18,8 +18,10 @@ open import FPC.Language.EnvClos using (Tm)
 open import FPC.Compiler.Split using (split-program)
 open import FPC.Semantics.GraphModel.EnvClos using (⟦_⟧)
 open import FPC.Semantics.GraphModel.PairClos renaming (⟦_⟧ to ⟦_⟧₄)
-open import FPC.proof.Correctness.GraphModel.SplitPreserve using (preserve-const; preserve-nonempty)
-open import FPC.proof.Correctness.GraphModel.SplitReflect using (reflect-const; reflect-nonempty)
+open import FPC.proof.Correctness.GraphModel.SplitPreserve using
+  (preserve-const; preserve-nonempty)
+open import FPC.proof.Correctness.GraphModel.SplitReflect using (reflect-const;
+  reflect-nonempty)
 
 open import Data.List using ([])
 open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩)
