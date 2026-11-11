@@ -26,7 +26,7 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 |                     | Lemmas   |         |        |       |     |           |        | Theorems   |
 | Semantics \ Passes  | Simplify | Enclose | Split  | Hoist | RCO | Explicate | Select | End-to-end |
 |---------------------+----------+---------+--------+-------+-----+-----------+--------+------------|
-| Graph Model (new)   |          |         | ＊ J/M |       |     |           |        | ＊ T+D     |
+| Graph Model (new)   |          |         | ＊ J✓   |       |     |           |        | ＊ T+D     |
 | Scott Domains (new) |          |         | ＊ J/M |       |     |           |        | ＊ T+D     |
 | Reduction Semantics |          |         |        |       |     |           |        | ＊ T+D     |
 | Clocked Interpreter |          |         |        |       |     |           |        | ＊ T+D     |
