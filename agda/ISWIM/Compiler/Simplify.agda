@@ -95,8 +95,8 @@ self V = V ∣ just (val V)
 
 {- under one more binder -}
 shift-info : Info → Info
-shift-known : Known → Known
 shift-mk : Maybe Known → Maybe Known
+shift-known : Known → Known
 shift-info I = shift (term I) ∣ shift-mk (known I)
 shift-mk nothing = nothing
 shift-mk (just K) = just (shift-known K)

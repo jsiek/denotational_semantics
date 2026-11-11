@@ -82,9 +82,9 @@ _⊑ₑ_ : Env → Env → Set₁
 ⊑-mono ⦅ u , v ⦆ D⊆ (lift ())
 ⊑-mono ⟨⟩ D⊆ (lift v∈) = lift (D⊆ _ v∈)
 
+⊑-ne : ∀ v {D'} → v ⊑ D' → nonempty D'
 {- a source value other than ω is exhibited by a target value of its kind -}
 ⊑-wit : ∀ v {D'} → v ⊑ D' → v ≢ ω → Σ[ d' ∈ Value ] d' ∈ ⌊ D' ⌋ × kind d' ≡ tgt (kind v) × kind v ≢ prod
-⊑-ne : ∀ v {D'} → v ⊑ D' → nonempty D'
 ⊑-ne v {D'} v⊑ with ω? v
 ... | inj₁ refl = ⟨ ω , lower v⊑ ⟩
 ... | inj₂ v≢ = let ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = ⊑-wit v v⊑ v≢ in ⟨ d' , proj₁ d'∈ ⟩
@@ -145,18 +145,18 @@ fun? (base B) = inj₂ (λ ())
 
 {- The fundamental lemma ------------------------------------------------------}
 
-preserve : ∀ (M : AST) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ' → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split M ⟧' ρ')
-preserve-nth : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
-  → ∀ i → Lifted _⊑_ (nthD (⟦ args ⟧₊ ρ) i) (nthD (⟦ del-map-args args ⟧₊' ρ') i)
-preserve-𝒯 : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
-  → Lifted _⊑_ (𝒯ᵐ n (⟦ args ⟧₊ ρ)) (𝒯ᵐ n (⟦ del-map-args args ⟧₊' ρ'))
-
 args-con' : ∀ {n} (args : Args (replicate n ■)) {ρ} → Con-env ρ → ∀ i → Con (nthD (⟦ del-map-args args ⟧₊' ρ) i)
 args-con' {suc n} (M ,, args) c zero = Clos4ᵐ-con (split M) c
 args-con' {suc n} (M ,, args) c (suc i) = args-con' args c i
 
 clean⌊⌋ : ∀ {D} → Clean ⌊ D ⌋
 clean⌊⌋ d d∈ = proj₂ d∈
+
+preserve : ∀ (M : AST) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ' → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split M ⟧' ρ')
+preserve-nth : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
+  → ∀ i → Lifted _⊑_ (nthD (⟦ args ⟧₊ ρ) i) (nthD (⟦ del-map-args args ⟧₊' ρ') i)
+preserve-𝒯 : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
+  → Lifted _⊑_ (𝒯ᵐ n (⟦ args ⟧₊ ρ)) (𝒯ᵐ n (⟦ del-map-args args ⟧₊' ρ'))
 
 preserve (` x) NE C' ρ⊑ = ρ⊑ x
 

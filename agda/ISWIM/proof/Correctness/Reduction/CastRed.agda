@@ -111,16 +111,16 @@ data _⊢_≈*_ {k} ρ where
 
 {- The fundamental lemma ----------------------------------------------------}
 
-cast≈ : ∀ {k k'} {r : Fin k → Fin k'} {ρ : VM k'} → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
-  → ∀ M (w : WS k M) → ρ ⊢ M ≈ cast r M w
-casts≈ : ∀ {k k' n} {r : Fin k → Fin k'} {ρ : VM k'} → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
-  → (Ms : Args (replicate n ■)) (ws : WS-args k Ms) → ρ ⊢ Ms ≈* casts r Ms ws
-
 private
   ext-ok : ∀ {k k'} {r : Fin k → Fin k'} {ρ : VM k'} → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
     → ∀ x (lt : x < suc k) → extρ ρ (ext r (fromℕ< lt)) ≡ just x
   ext-ok h zero (s≤s z≤n) = refl
   ext-ok h (suc x) (s≤s lt) rewrite h x lt = refl
+
+cast≈ : ∀ {k k'} {r : Fin k → Fin k'} {ρ : VM k'} → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
+  → ∀ M (w : WS k M) → ρ ⊢ M ≈ cast r M w
+casts≈ : ∀ {k k' n} {r : Fin k → Fin k'} {ρ : VM k'} → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
+  → (Ms : Args (replicate n ■)) (ws : WS-args k Ms) → ρ ⊢ Ms ≈* casts r Ms ws
 
 cast≈ h (` x) lt = var≈ (h x lt)
 cast≈ h (lam ⦅ ⟩ N ,, Nil ⦆) (w , _) = lam≈ (cast≈ (ext-ok h) N w)

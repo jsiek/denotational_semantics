@@ -40,8 +40,8 @@ data Value : Set where
 infix 5 _~_
 infix 5 _≈_
 
-_≈_ : List Value → List Value → Set
 _~_ : Value → Value → Set
+_≈_ : List Value → List Value → Set
 const {B} x ~ const {B₁} x₁ = Σ[ B≡ ∈ B ≡ B₁ ] (subst base-rep B≡ x) ≡ x₁
 (V ↦ w) ~ (V' ↦ w') = V ≈ V' → w ~ w'
 (V ↦ w) ~ ν = True

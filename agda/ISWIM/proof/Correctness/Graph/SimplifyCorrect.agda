@@ -205,19 +205,15 @@ simp-args-ok : ∀ fl {n} (as : Args (replicate n ■)) {E γ γ'} → Wf γ →
   → ∀ i → nthD (⟦ as ⟧₊ γ) i ≃ nthD (⟦ simp-args fl E as ⟧₊ γ') i
 app-ok : ∀ fl L M {E γ γ' I} → Wf γ → Wf γ' → Ok E γ γ' → Desc (⟦ M ⟧ γ) I γ'
   → Desc (⟦ app ⦅ L ,, M ,, Nil ⦆ ⟧ γ) (simp-app fl E L I) γ'
-let-ok : ∀ fl N {E γ γ' I D} → Wf γ → Wf γ' → Ok E γ γ' → Desc D I γ' → Con D
-  → Desc (⋆ ⟨ ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ γ , ⟨ D , ptt ⟩ ⟩) (simp-let fl E N I) γ'
 call-ok : ∀ fl J I {γ' F D} → Wf γ' → Desc F J γ' → Desc D I γ' → Con D
   → Desc (⋆ ⟨ F , ⟨ D , ptt ⟩ ⟩) (simp-call fl J I) γ'
+let-ok : ∀ fl N {E γ γ' I D} → Wf γ → Wf γ' → Ok E γ γ' → Desc D I γ' → Con D
+  → Desc (⋆ ⟨ ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ γ , ⟨ D , ptt ⟩ ⟩) (simp-let fl E N I) γ'
 case-ok : ∀ fl L M N {E γ γ' I} → Wf γ → Wf γ' → Ok E γ γ' → Desc (⟦ L ⟧ γ) I γ'
   → Desc (⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ γ) (simp-case fl E I M N) γ'
-
 {- a body under a binder that stays -}
 under-ok : ∀ fl N {E γ γ'} → Wf γ → Wf γ' → Ok E γ γ' → ∀ V → V ≢ [] → V ≈ V
   → ⟦ N ⟧ (mem V • γ) ≃ ⟦ term (simp fl (under E) N) ⟧ (mem V • γ')
-under-ok fl N wf wf' ok V ne c =
-  tm (simp-ok fl N (wf-• wf (E≢[]⇒nonempty-mem ne) (≈⇒Con c)) (wf-• wf' (E≢[]⇒nonempty-mem ne) (≈⇒Con c))
-                 (ok-under (mem V) ok))
 
 simp-ok fl (` x) wf wf' ok = ok x
 simp-ok fl (lam ⦅ ⟩ N ,, Nil ⦆) {γ = γ} wf wf' ok =
@@ -339,6 +335,10 @@ case-ok fl L M N {E} {γ} {γ'} {I} wf wf' ok d with branch (known I) in e
   taken (just (val Kt)) e h | ⟨ P.inl {K₀} v , _ ⟩ with small K₀ | e
   taken (just (val Kt)) e h | ⟨ P.inl {K₀} v , _ ⟩ | true | ()
   taken (just (val Kt)) e h | ⟨ P.inl {K₀} v , _ ⟩ | false | ()
+
+under-ok fl N wf wf' ok V ne c =
+  tm (simp-ok fl N (wf-• wf (E≢[]⇒nonempty-mem ne) (≈⇒Con c)) (wf-• wf' (E≢[]⇒nonempty-mem ne) (≈⇒Con c))
+                 (ok-under (mem V) ok))
 
 {- The end theorem: every program, in the environment where every variable
    means {ω} -}

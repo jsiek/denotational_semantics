@@ -107,12 +107,13 @@ trav-sub {𝒦} L = fuse tmK 𝒦 tmK (λ σ τ ρ → ∀ x → trav 𝒦 τ (�
   (λ { h zero → Laws.tm-vr L zero ; {σ₁ = σ} {τ} h (suc x) → trans (Laws.exts-ren L τ (σ x)) (cong (ren suc) (h x)) })
   (λ h x → h x)
 
-{- substituting variables for themselves -}
-sub-id : ∀ {k A} {σ : Fin k → Tm k Any} → (∀ x → σ x ≡ ` x) → (M : Tm k A) → sub σ M ≡ M
-sub-ids : ∀ {k n} {σ : Fin k → Tm k Any} → (∀ x → σ x ≡ ` x) → (Ms : Vec (Tm k Any) n) → travs tmK σ Ms ≡ Ms
 sub-id-exts : ∀ {k} {σ : Fin k → Tm k Any} → (∀ x → σ x ≡ ` x) → ∀ x → exts tmK σ x ≡ ` x
 sub-id-exts h zero = refl
 sub-id-exts h (suc x) = cong (ren suc) (h x)
+
+{- substituting variables for themselves -}
+sub-id : ∀ {k A} {σ : Fin k → Tm k Any} → (∀ x → σ x ≡ ` x) → (M : Tm k A) → sub σ M ≡ M
+sub-ids : ∀ {k n} {σ : Fin k → Tm k Any} → (∀ x → σ x ≡ ` x) → (Ms : Vec (Tm k Any) n) → travs tmK σ Ms ≡ Ms
 sub-id h (` x) = h x
 sub-id h (lam N) = cong lam (sub-id (sub-id-exts h) N)
 sub-id h (app L M) = cong₂ app (sub-id h L) (sub-id h M)

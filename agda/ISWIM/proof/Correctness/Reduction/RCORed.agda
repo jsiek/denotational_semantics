@@ -132,14 +132,10 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
     → (∀ {Δ'} (τ' : Clo Δ') a b → Value (sub τ' ⌜ a ⌝ᵃ) → Value (sub τ' ⌜ b ⌝ᵃ)
          → h (sub τ' ⌜ a ⌝ᵃ) (sub τ' ⌜ b ⌝ᵃ) ≈ sub τ' ⌜ k a b ⌝)
     → h (sub σ L) (sub σ M) ≈ sub τ ⌜ atomize₂ L M ρ k ⌝
-
   {- a complex operand: a let -}
   let-op : ∀ {Γ Δ A B} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
     → {h : Tm Σ [] A → Tm Σ [] B} → Frame red₁ red₁ h → Kont h τ k
     → h (sub σ M) ≈ sub τ ⌜ Mon.let′ (rco M ρ) (k S (var Z)) ⌝
-  let-op M ρ k σ τ a vs F kk =
-    letc≈ F (rco≈ M ρ σ τ a vs)
-      λ W w → subst (_ ≈_) (sym (T.exts-[] τ W ⌜ k S (var Z) ⌝)) (kk S (W • τ) (var Z) (λ _ → refl) w)
 
   rco≈ (` x) ρ σ τ a vs = subst (_≈ _) (a x) (val≈ (subst Value (sym (a x)) (vs x)))
   rco≈ (fun-ref f) ρ σ τ a vs = val≈ T.fun-ref
@@ -191,6 +187,10 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
     atomize≈ L ρ _ σ τ a vs F₁
       λ r τ' b e v → atomize≈ M _ _ σ τ' (λ x → trans (e (ρ x)) (a x)) vs (F₂ v)
         λ r' τ'' c e' w → subst (λ X → h X (sub τ'' ⌜ c ⌝ᵃ) ≈ _) (atm-ren b e') (kk τ'' (Mon.ren r' b) c (subst Value (sym (atm-ren b e')) v) w)
+
+  let-op M ρ k σ τ a vs F kk =
+    letc≈ F (rco≈ M ρ σ τ a vs)
+      λ W w → subst (_ ≈_) (sym (T.exts-[] τ W ⌜ k S (var Z) ⌝)) (kk S (W • τ) (var Z) (λ _ → refl) w)
 
   {- The simulation ------------------------------------------------------------------}
 

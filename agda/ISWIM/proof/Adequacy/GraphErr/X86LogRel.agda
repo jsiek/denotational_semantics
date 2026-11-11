@@ -328,26 +328,17 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
   BR B bs = ∀ {Δ} (l : _ ∋ Δ) η (φ : Frame Σ Δ) ρ → (∀ {A} (x : Δ ∋ A) → PS (ρ (idx x)) (φ ! x))
     → ∀ w → w ∈ B l ρ → Res w (go ds (block bs l) halt η φ) (𝕍 w)
 
-  adequate : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {bs : Blocks Σ n Bs} {B : BEnv Bs} → BR B bs → ∀ {η} (m : Mach Σ η ψ) {ρ R F}
-    → Rel ρ R F m → ∀ w → w ∈ ⟦_⟧ˢ T k B ρ R F → Res w (run k bs halt η m) (𝕍 w)
-
-  put-adeq : ∀ {n Bs ψ τ ψ' η} (d : Dst n ψ τ ψ') (k : Seq Σ n Bs ψ') {bs} {B : BEnv Bs} {m : Mach Σ η ψ} {ρ R F v D}
-    → BR B bs → Rel ρ R F m → PR τ D v → ∀ w → w ∈ putᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res w (run k bs halt η (put d v m)) (𝕍 w)
-  put-adeq (reg r) k br q h = adequate k br _ (reg-rel r h q)
-  put-adeq (slot p _) k {v = v} br q h w (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (no-ω {v = v} h ω∈)
-  put-adeq (slot p _) k br q h w (inj₂ ⟨ _ , ⟨ V , ⟨ ⟨ ⟨ w∈ , _ ⟩ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ ⟩) =
-    adequate k br _ (slot-rel p (λ d d∈ → h d (proj₁ (V⊆ d d∈))) q) w w∈
-
-  {- chk's strict write -}
-  putˢ-adeq : ∀ {n Bs ψ A ψ' η} (d : Dst n ψ (ty A) ψ') (k : Seq Σ n Bs ψ') {bs} {B : BEnv Bs} {m : Mach Σ η ψ} {ρ R F v D}
-    → BR B bs → Rel ρ R F m → PS D v → ∀ w → w ∈ putˢᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res w (run k bs halt η (put d v m)) (𝕍 w)
-  putˢ-adeq (reg r) k {v = v} br q h w (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (no-ω {v = v} h ω∈)
-  putˢ-adeq (reg r) k br q h w (inj₂ ⟨ _ , w∈ ⟩) = adequate k br _ (reg-rel r h q) w w∈
-  putˢ-adeq (slot p lt) = put-adeq (slot p lt)
-
   putˢ-ω : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {D κ ρ R F w} → (∀ d → d ∈ D → d ≡ ω) → w ∈ putˢᴰ {Σ} T d D κ ρ R F → w ≡ ω
   putˢ-ω (reg r) all = bind-ω all
   putˢ-ω (slot p _) all = bind-ω all
+
+  adequate : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {bs : Blocks Σ n Bs} {B : BEnv Bs} → BR B bs → ∀ {η} (m : Mach Σ η ψ) {ρ R F}
+    → Rel ρ R F m → ∀ w → w ∈ ⟦_⟧ˢ T k B ρ R F → Res w (run k bs halt η m) (𝕍 w)
+  put-adeq : ∀ {n Bs ψ τ ψ' η} (d : Dst n ψ τ ψ') (k : Seq Σ n Bs ψ') {bs} {B : BEnv Bs} {m : Mach Σ η ψ} {ρ R F v D}
+    → BR B bs → Rel ρ R F m → PR τ D v → ∀ w → w ∈ putᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res w (run k bs halt η (put d v m)) (𝕍 w)
+  {- chk's strict write -}
+  putˢ-adeq : ∀ {n Bs ψ A ψ' η} (d : Dst n ψ (ty A) ψ') (k : Seq Σ n Bs ψ') {bs} {B : BEnv Bs} {m : Mach Σ η ψ} {ρ R F v D}
+    → BR B bs → Rel ρ R F m → PS D v → ∀ w → w ∈ putˢᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res w (run k bs halt η (put d v m)) (𝕍 w)
 
   adequate (movq a d ∷ k) br m q w w∈ = Res-step refl (put-adeq d k br q (𝒪-adeq a q) w w∈)
   adequate (subq a r e ∷ k) br m q w w∈ =
@@ -396,6 +387,15 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
       Res-step (cong nx (l _ (fl q _ (proj₁ (proj₁ (ls u (here refl))))))) (br l₁ _ (frame m) _ (fr q) w w∈)
     J w (inj₂ ⟨ u , ⟨ U , ⟨ rs , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
       Res-step (cong nx (r _ (fl q _ (proj₁ (proj₁ (rs u (here refl))))))) (br l₂ _ (frame m) _ (fr q) w w∈)
+
+  put-adeq (reg r) k br q h = adequate k br _ (reg-rel r h q)
+  put-adeq (slot p _) k {v = v} br q h w (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (no-ω {v = v} h ω∈)
+  put-adeq (slot p _) k br q h w (inj₂ ⟨ _ , ⟨ V , ⟨ ⟨ ⟨ w∈ , _ ⟩ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ ⟩) =
+    adequate k br _ (slot-rel p (λ d d∈ → h d (proj₁ (V⊆ d d∈))) q) w w∈
+
+  putˢ-adeq (reg r) k {v = v} br q h w (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (no-ω {v = v} h ω∈)
+  putˢ-adeq (reg r) k br q h w (inj₂ ⟨ _ , w∈ ⟩) = adequate k br _ (reg-rel r h q) w w∈
+  putˢ-adeq (slot p lt) = put-adeq (slot p lt)
 
   blocks-adeq : ∀ {n Bs} (bs : Blocks Σ n Bs) → BR (blocksᴰ T bs) bs
   blocks-adeq (bs ▷ k) Z η φ ρ f = adequate k (blocks-adeq bs) _ (mr f (λ { rax → tt ; rdi → tt ; rsi → tt }) tt tt)

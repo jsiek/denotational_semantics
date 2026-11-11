@@ -74,8 +74,6 @@ rens-nth : ∀ {Γ Δ Δ'} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (Ms : All (Tm
   → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ≃ ρ (idx x)) → ∀ i → nthD (⟦ travs varK r Ms ⟧s ρ') i ≃ nthD (⟦ Ms ⟧s ρ) i
 ren-ext : ∀ {Γ Δ C} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) {ρ ρ' X} → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ≃ ρ (idx x))
   → ∀ {B} (x : (C ∷ Γ) ∋ B) → (X • ρ') (idx (exts varK r x)) ≃ (X • ρ) (idx x)
-ren-ext r h Z = ≃-refl
-ren-ext r h (S x) = h x
 ren-≃ r (` x) h = h x
 ren-≃ r (lam N) {ρ} {ρ'} h = lam-≃ λ X _ _ → ren-≃ (exts varK r) N {X • ρ} {X • ρ'} (ren-ext r h)
 ren-≃ r (app L M) h = ⋆-≃ (ren-≃ r L h) (ren-≃ r M h)
@@ -92,6 +90,8 @@ ren-≃ r (fold M) h = ren-≃ r M h
 ren-≃ r (unfold M) h = ren-≃ r M h
 rens-nth r (M ∷ Ms) h zero = ren-≃ r M h
 rens-nth r (M ∷ Ms) h (suc i) = rens-nth r Ms h i
+ren-ext r h Z = ≃-refl
+ren-ext r h (S x) = h x
 
 shift-≃ : ∀ {Γ A B} (M : Tm Γ A) X γ → ⟦ ren (S {b = B}) M ⟧ (X • γ) ≃ ⟦ M ⟧ γ
 shift-≃ M X γ = ren-≃ S M (λ x → ≃-refl)
@@ -234,17 +234,15 @@ simps-ok : ∀ {Δ Γ Δ'} fl (Ms : All (Tm Δ) Δ') {E : Facts Δ Γ} {γ γ'} 
   → ∀ i → nthD (⟦ Ms ⟧s γ) i ≃ nthD (⟦ simps fl E Ms ⟧s γ') i
 app-ok : ∀ {Δ Γ A B} fl (L : Tm Δ (A ⇒ B)) (M : Tm Δ A) {E : Facts Δ Γ} {γ γ' I} → Wf γ → Wf γ' → Ok E γ γ' → Desc (⟦ M ⟧ γ) I γ'
   → Desc (⟦ app L M ⟧ γ) (simp-app fl E L I) γ'
-let-ok : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {γ γ' I D} → Wf γ → Wf γ' → Ok E γ γ' → Desc D I γ' → Con D
-  → Desc (⋆ ⟨ ⟦ lam N ⟧ γ , ⟨ D , ptt ⟩ ⟩) (simp-let fl E N I) γ'
 call-ok : ∀ {Γ A B} fl (J : Info Γ (A ⇒ B)) I {γ' F D} → Wf γ' → Desc F J γ' → Desc D I γ' → Con D
   → Desc (⋆ ⟨ F , ⟨ D , ptt ⟩ ⟩) (simp-call fl J I) γ'
+let-ok : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {γ γ' I D} → Wf γ → Wf γ' → Ok E γ γ' → Desc D I γ' → Con D
+  → Desc (⋆ ⟨ ⟦ lam N ⟧ γ , ⟨ D , ptt ⟩ ⟩) (simp-let fl E N I) γ'
 case-ok : ∀ {Δ Γ A B C} fl (L : Tm Δ (A ⊹ B)) (M : Tm (A ∷ Δ) C) N {E : Facts Δ Γ} {γ γ' I} → Wf γ → Wf γ' → Ok E γ γ'
   → Desc (⟦ L ⟧ γ) I γ' → Desc (⟦ case L M N ⟧ γ) (simp-case fl E I M N) γ'
-
 {- a body under a binder that stays -}
 under-ok : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {γ γ'} → Wf γ → Wf γ' → Ok E γ γ'
   → Body-≃ (λ X → ⟦ N ⟧ (X • γ)) (λ X → ⟦ term (simp fl (under E) N) ⟧ (X • γ'))
-under-ok fl N wf wf' ok X ne c = tm (simp-ok fl N (wf-• wf ne c) (wf-• wf' ne c) (ok-under X ok))
 
 simp-ok fl (` x) wf wf' ok = ok x
 simp-ok fl (lam N) {γ = γ} wf wf' ok =
@@ -355,6 +353,8 @@ case-ok fl L M N {E} {γ} {γ'} {I} wf wf' ok d | just (inj₂ K) with branch-in
   ok' : Ok (self K P.• E) (⟦ K ⟧ γ' • γ) γ'
   ok' Z = desc-self v ≃-refl
   ok' (S x) = ok x
+
+under-ok fl N wf wf' ok X ne c = tm (simp-ok fl N (wf-• wf ne c) (wf-• wf' ne c) (ok-under X ok))
 
 {- The end theorem: every closed program -}
 simplify-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀

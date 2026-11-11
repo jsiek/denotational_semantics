@@ -123,12 +123,9 @@ preserve-nth : ∀ {Γ Δ Δ'} (Ms : All (Tm Γ) Δ') {r : Ren Γ Δ} {ρ ρ'} �
   → ∀ i v → v ∈ nthD (⟦ Ms ⟧s ρ) i → v ⊑ nthD (⟦ splits r Ms ⟧s' ρ') i
 preserve-𝒯 : ∀ {Γ Δ Δ'} (Ms : All (Tm Γ) Δ') {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
   → ∀ v → v ∈ 𝒯 (length Δ') (⟦ Ms ⟧s ρ) → v ⊑ 𝒯 (length Δ') (⟦ splits r Ms ⟧s' ρ')
-
 {- the body B of a binder, on the meaning X' of the target's bound term, which satisfies the source's U -}
 preserve-body : ∀ {Γ Δ A C} (B : Tm (A ∷ Γ) C) {r : Ren Γ Δ} {ρ ρ' U X' Y'} → Envs r ρ ρ' → U ≢ [] → Con X'
   → (∀ u → u ∈ mem U → u ⊑ X') → (nonempty X' → ⟦ split (ext r) B ⟧' (X' • ρ') ⊆ Y') → ∀ v → v ∈ ⟦ B ⟧ (mem U • ρ) → v ⊑ Y'
-preserve-body B E neU c U⊑ B⊆ v v∈ = ⊑-mono v (B⊆ ne) (preserve B (ext-envs E ne c U⊑) v v∈)
-  where ne = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (U⊑ u u∈)
 
 preserve (` x) E = Envs.ρ⊑ E x
 preserve (app L N) {r} E v ⟨ U , ⟨ U↦v∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ =
@@ -191,6 +188,9 @@ preserve-𝒯 {Δ' = _ ∷ _} Ms E (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩
   ⊑-mono d (λ d' d'∈ → ⟨ refl , ⟨ d'∈ , ne' ⟩ ⟩) (preserve-nth Ms E i d d∈)
   where
   ne' = λ j → ⊑-ne (proj₁ (ne j)) (preserve-nth Ms E j _ (proj₂ (ne j)))
+
+preserve-body B E neU c U⊑ B⊆ v v∈ = ⊑-mono v (B⊆ ne) (preserve B (ext-envs E ne c U⊑) v v∈)
+  where ne = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (U⊑ u u∈)
 
 {- The end theorem (forward half) ------------------------------------------------}
 

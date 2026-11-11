@@ -101,13 +101,14 @@ data Caps ρ where
 Hyp : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → VM Γ Γ' → Ren u Γ' → Set
 Hyp u ρ r = ∀ {C} (x : _ ∋ C) (t : T (u x)) → ρ x ≡ just (r x t)
 
+under : ∀ {Γ Γ' B} {u : ∀ {C} → (B ∷ Γ) ∋ C → Bool} {ρ : VM Γ Γ'} {r : Ren (λ x → u (S x)) Γ'} → Hyp (λ x → u (S x)) ρ r → Hyp u (extρ ρ) (ext {u = u} r)
+under h Z _ = refl
+under h (S x) t rewrite h x t = refl
+
 opt≈ : ∀ {Γ Γ' A} {ρ : VM Γ Γ'} (M : Tm Γ A) {r : Ren (uses M) Γ'} → Hyp (uses M) ρ r → ρ ⊢ M ≈ opt M r
 opts≈ : ∀ {Γ Γ' Δ} {ρ : VM Γ Γ'} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} → Hyp (usesA Ms) ρ r → All₂ (ρ ⊢_≈_) Ms (opts Ms r)
 caps≈ : ∀ {Γ Γ' Δ} {ρ : VM Γ Γ'} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} → Hyp (usesA Ms) ρ r
   → Caps ρ (flags u Ms) Ms (select (flags u Ms) (opts Ms r))
-under : ∀ {Γ Γ' B} {u : ∀ {C} → (B ∷ Γ) ∋ C → Bool} {ρ : VM Γ Γ'} {r : Ren (λ x → u (S x)) Γ'} → Hyp (λ x → u (S x)) ρ r → Hyp u (extρ ρ) (ext {u = u} r)
-under h Z _ = refl
-under h (S x) t rewrite h x t = refl
 opt≈ (` x) h = var≈ (h x (fromWitness refl))
 opt≈ (clos N Ms) h = clos≈ (keeps N Ms) (opt≈ N λ x t → ρfl-kept _ x (covers N Ms x t)) (caps≈ _ Ms h)
 opt≈ (app L M) h = app≈ (opt≈ L λ x t → h x (∨-l _ t)) (opt≈ M λ x t → h x (∨-r (uses L x) t))

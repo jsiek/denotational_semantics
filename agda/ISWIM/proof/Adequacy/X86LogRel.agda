@@ -243,19 +243,16 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   AdeqB {Bs = Bs} bs = ∀ {Δ} (l : Bs ∋ Δ) {η ρ} {φ : Frame Σ Δ} {w} → 𝔾 ρ φ → w ∈ blocksₛ T bs l ρ
     → Σ[ v ∈ Val Σ Any ] Ret (λ σ → go ds (block bs l) σ η φ) v × 𝕍 w v
 
-  adequate : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {bs : Blocks Σ n Bs} → AdeqB bs → ∀ {η} {m : Mach Σ η ψ} {ρ R F w}
-    → 𝕄 ρ R F m → w ∈ ⟦_⟧ˢ T k (blocksₛ T bs) ρ R F → Σ[ v ∈ Val Σ Any ] Ret (λ σ → run k bs σ η m) v × 𝕍 w v
-
   ⇐ : ∀ {S S' w} → (∀ σ → step ds (S σ) ≡ next (S' σ)) → Σ[ v ∈ Val Σ Any ] Ret S' v × 𝕍 w v
     → Σ[ v ∈ Val Σ Any ] Ret S v × 𝕍 w v
   ⇐ stp ⟨ v , ⟨ r , r𝕍 ⟩ ⟩ = ⟨ v , ⟨ Ret-step stp r , r𝕍 ⟩ ⟩
 
+  adequate : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {bs : Blocks Σ n Bs} → AdeqB bs → ∀ {η} {m : Mach Σ η ψ} {ρ R F w}
+    → 𝕄 ρ R F m → w ∈ ⟦_⟧ˢ T k (blocksₛ T bs) ρ R F → Σ[ v ∈ Val Σ Any ] Ret (λ σ → run k bs σ η m) v × 𝕍 w v
   {- a write of a value related to D, then k -}
   put-adeq : ∀ {n Bs ψ τ ψ'} (d : Dst n ψ τ ψ') (k : Seq Σ n Bs ψ') {bs : Blocks Σ n Bs} → AdeqB bs → ∀ {η} {m : Mach Σ η ψ}
     {v : RV Σ η τ} {D ρ R F w} → 𝕄 ρ R F m → (∀ x → x ∈ D → 𝕍ᵐ (just τ) x v)
     → w ∈ putₛ T d D (⟦_⟧ˢ T k (blocksₛ T bs)) ρ R F → Σ[ v' ∈ Val Σ Any ] Ret (λ σ → run k bs σ η (put d v m)) v' × 𝕍 w v'
-  put-adeq d k AB M h w∈ with put-𝕄 d M h w∈
-  ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ M' , w∈' ⟩ ⟩ ⟩ ⟩ = adequate k AB M' w∈'
 
   adequate (movq a d ∷ k) AB M w∈ = ⇐ (λ _ → refl) (put-adeq d k AB M (arg-𝕍 a M) w∈)
   adequate (subq a r e ∷ k) AB {m = m} M w∈ =
@@ -293,6 +290,9 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
   adequate (je l₁ l₂) AB {m = ⟨ _ , _ , _ , false ⟩} M (inj₂ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = ⇐ (λ _ → refl) (AB l₂ (𝕄.fr M) w∈)
   adequate (je l₁ l₂) AB {m = ⟨ _ , _ , _ , false ⟩} M (inj₁ ⟨ u , ⟨ _ , ⟨ allL , _ ⟩ ⟩ ⟩) = ⊥-elim (𝕄.fl M _ (allL u (here refl)))
   adequate (je l₁ l₂) AB {m = ⟨ _ , _ , _ , true ⟩} M (inj₂ ⟨ u , ⟨ _ , ⟨ allR , _ ⟩ ⟩ ⟩) = ⊥-elim (𝕄.fl M _ (allR u (here refl)))
+
+  put-adeq d k AB M h w∈ with put-𝕄 d M h w∈
+  ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ M' , w∈' ⟩ ⟩ ⟩ ⟩ = adequate k AB M' w∈'
 
   blocks-adeq : ∀ {n Bs} (bs : Blocks Σ n Bs) → AdeqB bs
   blocks-adeq (bs ▷ k) Z G w∈ = adequate k (blocks-adeq bs) (𝕞 G (λ { rax _ _ → tt ; rdi _ _ → tt ; rsi _ _ → tt }) tt tt) w∈

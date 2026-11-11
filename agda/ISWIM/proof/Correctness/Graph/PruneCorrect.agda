@@ -100,14 +100,9 @@ of-vec n ne i = subst nonempty (vec-nth n _ i) (ne i)
 opt-ok : ∀ {k k' A} (M : Tm k A) {r : Fin k → Fin k'} {ρ ρ'} → NE k ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ opt r M ⟧ ρ'
 opts-ok : ∀ {k k' n} (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ ρ'} → NE k ρ → Agree (usesV Ms) r ρ ρ'
   → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts r Ms ⟧s ρ') i
-
 th-ok : ∀ {k k' n} (fl : Vec Bool n) (Ms : Vec (Tm k Any) n) {u : Fin n → Bool} {r : Fin k → Fin k'} {ρ ρ'}
   → (∀ i → Fl (u i) (lookup fl i) (lookup Ms i)) → NE k ρ → Agree (usesV Ms) r ρ ρ'
   → Th fl (vec n (⟦ Ms ⟧s ρ)) (vec _ (⟦ select fl (opts r Ms) ⟧s ρ'))
-th-ok [] [] s V ag = []
-th-ok (b ∷ fl) (M ∷ Ms) s V ag with s zero
-... | kept = keep (opt-ok M V (subL ag)) (th-ok fl Ms (λ i → s (suc i)) V (subR ag))
-... | var {x = x} _ = drop (V x) (th-ok fl Ms (λ i → s (suc i)) V (subR ag))
 
 opt-ok (` x) V ag = ag x (fromWitness refl)
 opt-ok (clos {n} N Ms) {r} {ρ} {ρ'} V ag =
@@ -143,6 +138,11 @@ opt-ok (project t M) V ag = project-≃ _ t (opt-ok M V ag)
 
 opts-ok (M ∷ Ms) V ag zero = opt-ok M V (subL ag)
 opts-ok (M ∷ Ms) V ag (suc i) = opts-ok Ms V (subR ag) i
+
+th-ok [] [] s V ag = []
+th-ok (b ∷ fl) (M ∷ Ms) s V ag with s zero
+... | kept = keep (opt-ok M V (subL ag)) (th-ok fl Ms (λ i → s (suc i)) V (subR ag))
+... | var {x = x} _ = drop (V x) (th-ok fl Ms (λ i → s (suc i)) V (subR ag))
 
 prune-correct : ∀ (M : Tm 0 Any) → ⟦ M ⟧ ρ₀ ≃ ⟦ prune-program M ⟧ ρ₀
 prune-correct M = opt-ok M (λ ()) (λ ())

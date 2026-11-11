@@ -53,10 +53,10 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
 
     rco-ok : ∀ {Γ Δ A} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {γ φ} → Agree ρ γ φ
       → eval ds ck γ N ≡ eval ds' ck φ ⌜ rco N ρ ⌝
-    atomize-ok : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {k : K Σ Δ A B} {K' γ φ} → Agree ρ γ φ → KOk K' k φ
-      → (eval ds ck γ N >>= K') ≡ eval ds' ck φ ⌜ atomize N ρ k ⌝
     atomize-let : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {k : K Σ Δ A B} {K' γ φ} → Agree ρ γ φ → KOk K' k φ
       → (eval ds ck γ N >>= K') ≡ eval ds' ck φ ⌜ M.let′ (rco N ρ) (k S (var Z)) ⌝
+    atomize-ok : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) {k : K Σ Δ A B} {K' γ φ} → Agree ρ γ φ → KOk K' k φ
+      → (eval ds ck γ N >>= K') ≡ eval ds' ck φ ⌜ atomize N ρ k ⌝
     atomizes-ok : ∀ {Γ Δ Δs B} (Ns : All (Tm Σ Γ) Δs) (ρ : Ren Γ Δ)
       {k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → M.Exp Σ Δ' B} {K' : All Val Δs → Result (Val B)} {γ φ} → Agree ρ γ φ
       → (∀ {Δ'} (r : Ren Δ Δ') φ' as → Agree r φ φ' → K' (map (atom φ') as) ≡ eval ds' ck φ' ⌜ k r as ⌝)

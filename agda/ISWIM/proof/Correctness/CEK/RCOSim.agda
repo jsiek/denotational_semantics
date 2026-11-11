@@ -174,6 +174,12 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
   krel-primR {p = p} a k r₂ φ₂'' b e₂ = move (step⁺ refl) (plus refl (at₂ (ren r₂ a) ◅ refl ◅ at₂ b ◅ refl ◅ ε))
     (ret≡ (cong (λ u → δᵀ p (int u) (int (atom φ₂'' b))) (sym (atom-ren e₂ a))) k)
 
+  {- a tuple of atoms -}
+  kv-tuple : ∀ {Δ j} {φ₂ : Env Σ Δ} {κ₁ κ₂} → κ₁ ≈ κ₂ → ∀ {Δ'} (r' : Ren Δ Δ') φ₂' (as : Vec (Atm Σ Δ' Any) j)
+    → ER r' φ₂ φ₂' → ∀ {s V} → V ≡ map (atom φ₂') as → step ds s ≡ next (ret (tup V) κ₁)
+    → B s (eval ⌜ M.tuple as ⌝ φ₂' κ₂)
+  kv-tuple k r' φ₂' as e' refl st = move (step⁺ st) (plus refl (tuple-atoms ds₂ ⌜ rco M₀ (λ x → x) ⌝ [] as)) (ret~ k)
+
   sim-eval : ∀ {Γ Δ A} (M : Tm Σ Γ A) {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂} → ER r φ₁ φ₂ → κ₁ ≈ κ₂
     → B (eval M φ₁ κ₁) (eval ⌜ rco M r ⌝ φ₂ κ₂)
   atz : ∀ {Γ Δ A B'} (N : Tm Σ Γ A) {r : Ren Γ Δ} {k : K Σ Δ A B'} {φ₁ φ₂ κ₁ κ₂} → ER r φ₁ φ₂ → KRel κ₁ k φ₂ κ₂
@@ -184,25 +190,13 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
     → (∀ {Δ'} (r' : Ren Δ Δ') φ₂' (as : Vec (Atm Σ Δ' Any) j) → ER r' φ₂ φ₂' → ∀ {s V} → V ≡ vs <>< map (atom φ₂') as
         → step ds s ≡ next (ret (tup V) κ₁) → B s (eval ⌜ k r' as ⌝ φ₂' κ₂))
     → step ds s₁ ≡ next (tuple-next vs Ns φ₁ κ₁) → B s₁ (eval ⌜ atomizes Ns r k ⌝ φ₂ κ₂)
-
   {- the first operand of pack, callc and prim -}
   krel-packL : ∀ {Γ Δ n} (N : Tm Σ Γ ⟪ tup n ⟫) {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂} → ER r φ₁ φ₂ → κ₁ ≈ κ₂
     → KRel (packL N φ₁ κ₁) (λ r₁ a → atomize N (λ x → r₁ (r x)) (λ r₂ b → M.pack (ren r₂ a) b)) φ₂ κ₂
-  krel-packL N e k r₁ φ₂' a e₁ = pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-packR a k))
-
   krel-callL : ∀ {Γ Δ} (N : Tm Σ Γ Any) {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂} → ER r φ₁ φ₂ → κ₁ ≈ κ₂
     → KRel (callL N φ₁ κ₁) (λ r₁ a → atomize N (λ x → r₁ (r x)) (λ r₂ b → M.callc (ren r₂ a) b)) φ₂ κ₂
-  krel-callL N e k r₁ φ₂' a e₁ = pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-callR a k))
-
   krel-primL : ∀ {Γ Δ p} (N : Tm Σ Γ ⟪ base Int ⟫) {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂} → ER r φ₁ φ₂ → κ₁ ≈ κ₂
     → KRel (primL p N φ₁ κ₁) (λ r₁ a → atomize N (λ x → r₁ (r x)) (λ r₂ b → M.prim p (ren r₂ a) b)) φ₂ κ₂
-  krel-primL N e k r₁ φ₂' a e₁ = pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-primR a k))
-
-  {- a tuple of atoms -}
-  kv-tuple : ∀ {Δ j} {φ₂ : Env Σ Δ} {κ₁ κ₂} → κ₁ ≈ κ₂ → ∀ {Δ'} (r' : Ren Δ Δ') φ₂' (as : Vec (Atm Σ Δ' Any) j)
-    → ER r' φ₂ φ₂' → ∀ {s V} → V ≡ map (atom φ₂') as → step ds s ≡ next (ret (tup V) κ₁)
-    → B s (eval ⌜ M.tuple as ⌝ φ₂' κ₂)
-  kv-tuple k r' φ₂' as e' refl st = move (step⁺ st) (plus refl (tuple-atoms ds₂ ⌜ rco M₀ (λ x → x) ⌝ [] as)) (ret~ k)
 
   sim-eval (` x) e k = move (step⁺ refl) (step⁺ refl) (ret≡ (sym (at e x)) k)
   sim-eval (fun-ref f) e k = move (step⁺ refl) (step⁺ refl) (ret~ k)
@@ -240,6 +234,12 @@ module Sim {Σ : List ℕ} (ds : All (Code Σ) Σ) (M₀ : Tm Σ [] Any) where
     pre₁ _~_ st refl (atz N e λ r₁ φ₂' a e₁ →
       atzs Ns (er-∘ e e₁) (λ r₂ φ₂'' as e₂ eqL st' →
         kv _ φ₂'' (ren r₂ a ∷ as) (er-∘ e₁ e₂) (trans eqL (cong (λ u → (u ∷ vs) <>< map (atom φ₂'') as) (sym (atom-ren e₂ a)))) st') refl)
+
+  krel-packL N e k r₁ φ₂' a e₁ = pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-packR a k))
+
+  krel-callL N e k r₁ φ₂' a e₁ = pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-callR a k))
+
+  krel-primL N e k r₁ φ₂' a e₁ = pre₁ _~_ refl refl (atz N (er-∘ e e₁) (krel-primR a k))
 
   sim : ∀ {s₁ s₂} → s₁ ~ s₂ → B s₁ s₂
   sim (eval~ {M = M} e k) = sim-eval M e k

@@ -58,13 +58,13 @@ out-ty eq = tup [] ⊹ tup []
 
 {- Renaming and substitution of type variables ---------------------------------}
 
-tren : ∀ {n m} → (Fin n → Fin m) → Ty n → Ty m
-trens : ∀ {n m} → (Fin n → Fin m) → List (Ty n) → List (Ty m)
-
 private
   ext : ∀ {n m} → (Fin n → Fin m) → Fin (suc n) → Fin (suc m)
   ext r zero = zero
   ext r (suc x) = suc (r x)
+
+tren : ∀ {n m} → (Fin n → Fin m) → Ty n → Ty m
+trens : ∀ {n m} → (Fin n → Fin m) → List (Ty n) → List (Ty m)
 
 tren r (base B) = base B
 tren r (A ⇒ B) = tren r A ⇒ tren r B
@@ -76,13 +76,13 @@ tren r (μ A) = μ (tren (ext r) A)
 trens r [] = []
 trens r (A ∷ Δ) = tren r A ∷ trens r Δ
 
-tsubst : ∀ {n m} → (Fin n → Ty m) → Ty n → Ty m
-tsubsts : ∀ {n m} → (Fin n → Ty m) → List (Ty n) → List (Ty m)
-
 private
   exts : ∀ {n m} → (Fin n → Ty m) → Fin (suc n) → Ty (suc m)
   exts σ zero = var zero
   exts σ (suc x) = tren suc (σ x)
+
+tsubst : ∀ {n m} → (Fin n → Ty m) → Ty n → Ty m
+tsubsts : ∀ {n m} → (Fin n → Ty m) → List (Ty n) → List (Ty m)
 
 tsubst σ (base B) = base B
 tsubst σ (A ⇒ B) = tsubst σ A ⇒ tsubst σ B

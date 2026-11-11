@@ -678,54 +678,16 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
 
   adequate : ∀ {n} is j bs {σ ρs F φ ρm f w} → Code (_< K) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → Fl F f
     → w ∈ ⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs)) σ ρs F → Res (λ stk → run is j bs stk f φ ρm) w
-
   {- a write to d, then the rest -}
   put-case : ∀ {n} d {D m} is j bs {σ ρs F φ ρm f w} {S : Fam}
     → (∀ stk → step ds (S stk) ≡ putM d m φ ρm (run is j bs stk f)) → 𝕄 D m
     → Code (_< K) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → Fl F f
     → w ∈ putD n d D (⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs))) σ ρs F → Res S w
-  put-case (var x) {D} {m} is j bs {σ} {ρs} {Φ} {φ} {ρm} {f} {w} st h c AB refl F G Fl' w∈ with x <? length φ
-  put-case (var x) {D} {m} is j bs {σ} {ρs} {Φ} {φ} {ρm} {f} {w} st h c AB refl F G Fl' w∈ | yes x<
-      with proj₁ (letᵐ-unfold {D} {λ X → ⟦ is ⟧ˢ T (length φ) (⟦ j ⟧ʲ (blocks T (length φ) bs)) (σ [ x ↦ₛ X ]) ρs Φ}) w w∈
-  ... | inj₁ ⟨ refl , ω∈ ⟩ = Res-stop (λ stk → trans (st stk) (cong (λ m' → putM (var x) m' φ ρm (run is j bs stk f)) (𝕄-ω h ω∈)))
-  ... | inj₂ ⟨ _ , ⟨ V , ⟨ ⟨ ⟨ w∈' , _ ⟩ , _ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ ⟩ with 𝕄→𝕍s h V V⊆ ne
-  ...   | ⟨ v , ⟨ refl , Vs ⟩ ⟩ with ≔-ok φ x v x<
-  ...     | ⟨ φ' , e ⟩ = Res-step (λ stk → trans (st stk) (cong (λ mφ → upd mφ ρm (run is j bs stk f)) e))
-                           (adequate is j bs c AB (Assigned.len a) F' G Fl' w∈')
-    where
-    a = ≔-inv φ x e
-    F' : 𝔽 (σ [ x ↦ₛ mem V ]) φ'
-    F' y y< with y ≟ x
-    ... | yes refl = λ d d∈ → inj₂ ⟨ v , ⟨ Assigned.here a , 𝕍s-∈ V Vs d∈ ⟩ ⟩
-    ... | no ne' = subst (𝕄 (σ y)) (sym (Assigned.other a y ne')) (F y (subst (y <_) (Assigned.len a) y<))
-  put-case (var x) is j bs {φ = φ} {ρm} {f} st h c AB refl F G Fl' (inj₁ ⟨ refl , ω∈ ⟩) | no ¬x< =
-    Res-stop (λ stk → trans (st stk) (cong (λ m' → putM (var x) m' φ ρm (run is j bs stk f)) (𝕄-ω h ω∈)))
-  put-case (var x) is j bs {φ = φ} {ρm} {f} st h c AB refl F G Fl' (inj₂ ⟨ ⟨ d₀ , ⟨ d₀∈ , d₀≢ ⟩ ⟩ , refl ⟩) | no ¬x<
-      with 𝕄-val h d₀ d₀∈ d₀≢
-  ... | ⟨ v , ⟨ e , _ ⟩ ⟩ =
-    Res-stop (λ stk → trans (st stk) (trans (cong (λ m' → putM (var x) m' φ ρm (run is j bs stk f)) e)
-                                            (cong (λ mφ → upd mφ ρm (run is j bs stk f)) (≔-out φ x v ¬x<))))
-  put-case (reg g) is j bs {φ = φ} {ρm} {f} st h c AB nφ F G Fl' (inj₁ ⟨ refl , ω∈ ⟩) =
-    Res-stop (λ stk → trans (st stk) (cong (λ m' → putM (reg g) m' φ ρm (run is j bs stk f)) (𝕄-ω h ω∈)))
-  put-case (reg g) {D} is j bs {ρs = ρs} {φ = φ} {ρm} st h c AB nφ F G Fl' (inj₂ ⟨ ⟨ d₀ , ⟨ d₀∈ , d₀≢ ⟩ ⟩ , w∈ ⟩)
-      with 𝕄-val h d₀ d₀∈ d₀≢
-  ... | ⟨ v , ⟨ refl , _ ⟩ ⟩ = Res-step st (adequate is j bs c AB nφ F G' Fl' w∈)
-    where
-    G' : ℝ (ρs [ g ≔ D ]) (ρm [ g ↦ₘ just v ])
-    G' g' with g' ≟R g
-    ... | yes refl rewrite ≔-here ρs g D | ↦ₘ-here ρm g (just v) = h
-    ... | no ne rewrite ≔-other ρs g D g' ne | ↦ₘ-other ρm g (just v) g' ne = G g'
-
   {- a test that sets the flag, then the rest -}
   flag-case : ∀ {n} is j bs {σ ρs F₀ φ ρm mb w} {S : Fam}
     → (∀ stk → step ds (S stk) ≡ test mb (λ f' → run is j bs stk f' φ ρm)) → Fl F₀ mb
     → Code (_< K) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm
     → w ∈ flagD F₀ (⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs))) σ ρs → Res S w
-  flag-case is j bs {φ = φ} {ρm} st Fl₀ c AB nφ F G (inj₁ ⟨ refl , ω∈ ⟩) =
-    Res-stop (λ stk → trans (st stk) (cong (λ mb → test mb (λ f' → run is j bs stk f' φ ρm)) (Fl-ω Fl₀ ω∈)))
-  flag-case is j bs {mb = mb} st Fl₀ c AB nφ F G (inj₂ ⟨ ⟨ d₀ , ⟨ d₀∈ , d₀≢ ⟩ ⟩ , w∈ ⟩) with 𝕄-val Fl₀ d₀ d₀∈ d₀≢
-  ... | ⟨ _ , ⟨ e , _ ⟩ ⟩ with mmap-just mb e
-  ...   | ⟨ b , ⟨ refl , _ ⟩ ⟩ = Res-step st (adequate is j bs c AB nφ F G Fl₀ w∈)
 
   adequate (movq a d ∷ is) j bs ⟨ oa , c ⟩ AB nφ F G Fl' w∈ =
     put-case d is j bs (λ _ → refl) (𝒪-𝕄 a oa nφ F G) c AB nφ F G Fl' w∈
@@ -777,6 +739,44 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   adequate [] (je l₁ l₂) bs {f = f} _ AB nφ F G Fl' (inj₂ ⟨ _ , inj₂ (inj₂ ⟨ u , ⟨ U , ⟨ all , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) ⟩)
       with fl-right f (Fl' (right u) (proj₁ (proj₁ (all u (here refl)))))
   ... | refl = go {bs = bs} {l = l₂} (λ _ → refl) (AB l₂ nφ F G Fl' w∈)
+
+  put-case (var x) {D} {m} is j bs {σ} {ρs} {Φ} {φ} {ρm} {f} {w} st h c AB refl F G Fl' w∈ with x <? length φ
+  put-case (var x) {D} {m} is j bs {σ} {ρs} {Φ} {φ} {ρm} {f} {w} st h c AB refl F G Fl' w∈ | yes x<
+      with proj₁ (letᵐ-unfold {D} {λ X → ⟦ is ⟧ˢ T (length φ) (⟦ j ⟧ʲ (blocks T (length φ) bs)) (σ [ x ↦ₛ X ]) ρs Φ}) w w∈
+  ... | inj₁ ⟨ refl , ω∈ ⟩ = Res-stop (λ stk → trans (st stk) (cong (λ m' → putM (var x) m' φ ρm (run is j bs stk f)) (𝕄-ω h ω∈)))
+  ... | inj₂ ⟨ _ , ⟨ V , ⟨ ⟨ ⟨ w∈' , _ ⟩ , _ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ ⟩ with 𝕄→𝕍s h V V⊆ ne
+  ...   | ⟨ v , ⟨ refl , Vs ⟩ ⟩ with ≔-ok φ x v x<
+  ...     | ⟨ φ' , e ⟩ = Res-step (λ stk → trans (st stk) (cong (λ mφ → upd mφ ρm (run is j bs stk f)) e))
+                           (adequate is j bs c AB (Assigned.len a) F' G Fl' w∈')
+    where
+    a = ≔-inv φ x e
+    F' : 𝔽 (σ [ x ↦ₛ mem V ]) φ'
+    F' y y< with y ≟ x
+    ... | yes refl = λ d d∈ → inj₂ ⟨ v , ⟨ Assigned.here a , 𝕍s-∈ V Vs d∈ ⟩ ⟩
+    ... | no ne' = subst (𝕄 (σ y)) (sym (Assigned.other a y ne')) (F y (subst (y <_) (Assigned.len a) y<))
+  put-case (var x) is j bs {φ = φ} {ρm} {f} st h c AB refl F G Fl' (inj₁ ⟨ refl , ω∈ ⟩) | no ¬x< =
+    Res-stop (λ stk → trans (st stk) (cong (λ m' → putM (var x) m' φ ρm (run is j bs stk f)) (𝕄-ω h ω∈)))
+  put-case (var x) is j bs {φ = φ} {ρm} {f} st h c AB refl F G Fl' (inj₂ ⟨ ⟨ d₀ , ⟨ d₀∈ , d₀≢ ⟩ ⟩ , refl ⟩) | no ¬x<
+      with 𝕄-val h d₀ d₀∈ d₀≢
+  ... | ⟨ v , ⟨ e , _ ⟩ ⟩ =
+    Res-stop (λ stk → trans (st stk) (trans (cong (λ m' → putM (var x) m' φ ρm (run is j bs stk f)) e)
+                                            (cong (λ mφ → upd mφ ρm (run is j bs stk f)) (≔-out φ x v ¬x<))))
+  put-case (reg g) is j bs {φ = φ} {ρm} {f} st h c AB nφ F G Fl' (inj₁ ⟨ refl , ω∈ ⟩) =
+    Res-stop (λ stk → trans (st stk) (cong (λ m' → putM (reg g) m' φ ρm (run is j bs stk f)) (𝕄-ω h ω∈)))
+  put-case (reg g) {D} is j bs {ρs = ρs} {φ = φ} {ρm} st h c AB nφ F G Fl' (inj₂ ⟨ ⟨ d₀ , ⟨ d₀∈ , d₀≢ ⟩ ⟩ , w∈ ⟩)
+      with 𝕄-val h d₀ d₀∈ d₀≢
+  ... | ⟨ v , ⟨ refl , _ ⟩ ⟩ = Res-step st (adequate is j bs c AB nφ F G' Fl' w∈)
+    where
+    G' : ℝ (ρs [ g ≔ D ]) (ρm [ g ↦ₘ just v ])
+    G' g' with g' ≟R g
+    ... | yes refl rewrite ≔-here ρs g D | ↦ₘ-here ρm g (just v) = h
+    ... | no ne rewrite ≔-other ρs g D g' ne | ↦ₘ-other ρm g (just v) g' ne = G g'
+
+  flag-case is j bs {φ = φ} {ρm} st Fl₀ c AB nφ F G (inj₁ ⟨ refl , ω∈ ⟩) =
+    Res-stop (λ stk → trans (st stk) (cong (λ mb → test mb (λ f' → run is j bs stk f' φ ρm)) (Fl-ω Fl₀ ω∈)))
+  flag-case is j bs {mb = mb} st Fl₀ c AB nφ F G (inj₂ ⟨ ⟨ d₀ , ⟨ d₀∈ , d₀≢ ⟩ ⟩ , w∈ ⟩) with 𝕄-val Fl₀ d₀ d₀∈ d₀≢
+  ... | ⟨ _ , ⟨ e , _ ⟩ ⟩ with mmap-just mb e
+  ...   | ⟨ b , ⟨ refl , _ ⟩ ⟩ = Res-step st (adequate is j bs c AB nφ F G Fl₀ w∈)
 
   blocks-adeq : ∀ {n} bs → All (λ b → Code (_< K) (Block.instrs b)) bs → AdeqB n bs
   blocks-adeq [] _ l nφ F G Fl' w∈ = inj₁ ⟨ refl , w∈ ⟩

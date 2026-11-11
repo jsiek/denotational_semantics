@@ -300,23 +300,16 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
 
   adequate : ∀ {L n} is j bs {σ ρs F φ ρm f w} → Code L (_< n) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → Fl F f
     → w ∈ ⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs)) σ ρs F → Σ[ v ∈ Val ] R is j bs f φ ρm v × 𝕍 w v
-
   {- a write to d, then the rest -}
   put-case : ∀ {L n} d {D m} is j bs {σ ρs F φ ρm f w} {S : Stack → State}
     → (∀ stk → step ds (S stk) ≡ putM d m φ ρm (run is j bs stk f)) → 𝕄 D m
     → Code L (_< n) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → Fl F f
     → w ∈ putD n d D (⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs))) σ ρs F → Σ[ v ∈ Val ] Ret S v × 𝕍 w v
-  put-case d is j bs st h c AB nφ F G Fl' w∈ with put-𝕄 d nφ h F G w∈
-  ... | ⟨ φ' , ⟨ ρm' , ⟨ st' , ⟨ nφ' , ⟨ σ' , ⟨ ρs' , ⟨ F' , ⟨ G' , w∈' ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ with adequate is j bs c AB nφ' F' G' Fl' w∈'
-  ... | ⟨ v , ⟨ r , rv ⟩ ⟩ = ⟨ v , ⟨ Ret-step (λ stk → trans (st stk) (st' _)) r , rv ⟩ ⟩
-
   {- a test that sets the flag, then the rest -}
   flag-case : ∀ {L n} is j bs {σ ρs F φ ρm b w} {S : Stack → State}
     → (∀ stk → step ds (S stk) ≡ next (run is j bs stk (just b) φ ρm)) → Fl F (just b)
     → Code L (_< n) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm
     → w ∈ ⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs)) σ ρs F → Σ[ v ∈ Val ] Ret S v × 𝕍 w v
-  flag-case is j bs st Fl' c AB nφ F G w∈ with adequate is j bs c AB nφ F G Fl' w∈
-  ... | ⟨ v , ⟨ r , rv ⟩ ⟩ = ⟨ v , ⟨ Ret-step st r , rv ⟩ ⟩
 
   adequate (movq a d ∷ is) j bs ⟨ oa , c ⟩ AB nφ F G Fl' w∈ =
     put-case d is j bs (λ _ → refl) (𝒪-𝕄 a oa nφ F G) c AB nφ F G Fl' w∈
@@ -374,6 +367,13 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
   ... | ⟨ false , ⟨ refl , _ ⟩ ⟩ with AB l₂ nφ F G Fl' w∈
   ... | ⟨ v , ⟨ ⟨ b , ⟨ bs' , ⟨ eb , r ⟩ ⟩ ⟩ , rv ⟩ ⟩ =
     ⟨ v , ⟨ Ret-step (λ stk → cong (λ mb → goto mb stk (just false) φ ρm) eb) r , rv ⟩ ⟩
+
+  put-case d is j bs st h c AB nφ F G Fl' w∈ with put-𝕄 d nφ h F G w∈
+  ... | ⟨ φ' , ⟨ ρm' , ⟨ st' , ⟨ nφ' , ⟨ σ' , ⟨ ρs' , ⟨ F' , ⟨ G' , w∈' ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ with adequate is j bs c AB nφ' F' G' Fl' w∈'
+  ... | ⟨ v , ⟨ r , rv ⟩ ⟩ = ⟨ v , ⟨ Ret-step (λ stk → trans (st stk) (st' _)) r , rv ⟩ ⟩
+
+  flag-case is j bs st Fl' c AB nφ F G w∈ with adequate is j bs c AB nφ F G Fl' w∈
+  ... | ⟨ v , ⟨ r , rv ⟩ ⟩ = ⟨ v , ⟨ Ret-step st r , rv ⟩ ⟩
 
   blocks-adeq : ∀ {L n} bs → All (λ b → Code L (_< n) (Block.instrs b)) bs → AdeqB n bs
   blocks-adeq (b ∷ bs) (c ∷ cs) l nφ F G Fl' w∈ with l ≟ length bs

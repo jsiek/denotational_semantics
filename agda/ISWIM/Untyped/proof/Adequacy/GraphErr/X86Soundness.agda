@@ -545,9 +545,12 @@ module _ (ds : List Body) (wfd : DefsWF ds) where
   𝒱-clean (T.inl v) ω ⟨ _ , ⟨ () , _ ⟩ ⟩ refl
   𝒱-clean (T.inr v) ω ⟨ _ , ⟨ () , _ ⟩ ⟩ refl
 
+  AtV-len : ∀ {n} (i : Fin n) vs d → AtV i vs d → length vs ≡ n
+  AtV-len {suc n} zero (v ∷ vs) d ⟨ len , _ ⟩ = cong suc len
+  AtV-len (suc i) (v ∷ vs) d a = cong suc (AtV-len i vs d a)
+
   {- every value means a consistent set -}
   𝒱-con : ∀ v → Con (𝒱 v)
-  AtV-len : ∀ {n} (i : Fin n) vs d → AtV i vs d → length vs ≡ n
   AtV-con : ∀ {n} (i j : Fin n) vs d d' → AtV i vs d → AtV j vs d' → (¬ (i ≡ j)) ⊎ (i ≡ j × d ~ d')
 
   𝒱-con (code k) = table-con ds k
@@ -562,9 +565,6 @@ module _ (ds : List Body) (wfd : DefsWF ds) where
   ... | refl = ⟨ refl , AtV-con i j vs d d' a a' ⟩
   𝒱-con (T.inl v) _ _ ⟨ _ , ⟨ refl , p∈ ⟩ ⟩ ⟨ _ , ⟨ refl , p∈' ⟩ ⟩ = 𝒱-con v _ _ p∈ p∈'
   𝒱-con (T.inr v) _ _ ⟨ _ , ⟨ refl , p∈ ⟩ ⟩ ⟨ _ , ⟨ refl , p∈' ⟩ ⟩ = 𝒱-con v _ _ p∈ p∈'
-
-  AtV-len {suc n} zero (v ∷ vs) d ⟨ len , _ ⟩ = cong suc len
-  AtV-len (suc i) (v ∷ vs) d a = cong suc (AtV-len i vs d a)
 
   AtV-con zero zero (v ∷ vs) d d' ⟨ _ , d∈ ⟩ ⟨ _ , d'∈ ⟩ = inj₂ ⟨ refl , 𝒱-con v d d' d∈ d'∈ ⟩
   AtV-con zero (suc j) (v ∷ vs) d d' _ _ = inj₁ λ ()

@@ -107,17 +107,22 @@ module Trav {𝒦₁ 𝒦₂} (laws : S.Laws 𝒦₁)
   VK : ∀ {Γ Δ} → T.Sub 𝒦₂ Γ Δ → Set
   VK τ = ∀ {A} (x : _ ∋ A) → VV (K₂.tm (τ x))
 
-  ≈-trav : ∀ {Γ Δ A} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {M : Tm Γ A} {M'} → M ≈ M'
-    → OK σ τ → VK τ → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
-  ≈-travs : ∀ {Γ Δ Δ'} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {Ms : All (Tm Γ) Δ'} {Ms'} → All₂ _≈_ Ms Ms'
-    → OK σ τ → VK τ → All₂ _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
   vvs-trav : ∀ {Γ Δ Δ'} {τ : T.Sub 𝒦₂ Γ Δ} {Fs : All (C.Tm Γ) Δ'} → Each VV Fs → VK τ → Each VV (T.travs 𝒦₂ τ Fs)
+  vvs-trav [] vk = []
+  vvs-trav (var x ∷ vv) vk = vk x ∷ vvs-trav vv vk
+  vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
+
   ok-exts : ∀ {Γ Δ B} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} → OK σ τ → OK (S.exts 𝒦₁ {B = B} σ) (T.exts 𝒦₂ τ)
   ok-exts h Z = rel-vr Z
   ok-exts h (S x) = rel-wk (h x)
   vv-exts : ∀ {Γ Δ B} {τ : T.Sub 𝒦₂ Γ Δ} → VK τ → VK (T.exts 𝒦₂ {B = B} τ)
   vv-exts h Z = vv-vr Z
   vv-exts h (S x) = vv-wk (h x)
+
+  ≈-trav : ∀ {Γ Δ A} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {M : Tm Γ A} {M'} → M ≈ M'
+    → OK σ τ → VK τ → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
+  ≈-travs : ∀ {Γ Δ Δ'} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {Ms : All (Tm Γ) Δ'} {Ms'} → All₂ _≈_ Ms Ms'
+    → OK σ τ → VK τ → All₂ _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
 
   ≈-trav var≈ ok vk = ok _
   ≈-trav {σ = σ} {τ} (lam≈ {N = N} {σ = ρ} {Fs} n h vv) ok vk =
@@ -137,9 +142,6 @@ module Trav {𝒦₁ 𝒦₂} (laws : S.Laws 𝒦₁)
   ≈-trav (unfold≈ r) ok vk = unfold≈ (≈-trav r ok vk)
   ≈-travs [] ok vk = []
   ≈-travs (r ∷ rs) ok vk = ≈-trav r ok vk ∷ ≈-travs rs ok vk
-  vvs-trav [] vk = []
-  vvs-trav (var x ∷ vv) vk = vk x ∷ vvs-trav vv vk
-  vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
 
 module RenT = Trav {S.varK} {T.varK} S.varL (λ _ → var≈) (λ { var≈ → var≈ }) var (λ _ → var _)
 module SubT = Trav {S.tmK} {T.tmK} S.tmL (λ _ → var≈) (λ r → RenT.≈-trav r (λ _ → var≈) (λ _ → var _)) var vv-wk

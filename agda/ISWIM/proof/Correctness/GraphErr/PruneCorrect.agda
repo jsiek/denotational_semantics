@@ -62,21 +62,11 @@ code-env (suc n) ⟨ X , Xs ⟩ Y (suc (suc i)) = code-env n Xs X (suc i)
 opt-ok : ∀ {k k' A} (M : Tm k A) {r : Fin k → Fin k'} {ρ ρ'} → Vals k ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ opt r M ⟧ ρ'
 opts-ok : ∀ {k k' n} (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ ρ'} → Vals k ρ → Agree (usesV Ms) r ρ ρ'
   → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts r Ms ⟧s ρ') i
-
 {- binding the free variables and binding the kept ones -}
 binds-ok : ∀ {k k' n} (fl : Vec Bool n) (Ms : Vec (Tm k Any) n) {u : Fin n → Bool} {r : Fin k → Fin k'} {ρ ρ' K K'}
   → (∀ i → Fl (u i) (lookup fl i) (lookup Ms i)) → Vals k ρ → Agree (usesV Ms) r ρ ρ'
   → (∀ {Xs Ys} → AllVal n Xs → Thin _≃_ fl (vec n Xs) (vec _ Ys) → K Xs ≃ K' Ys)
   → binds n (⟦ Ms ⟧s ρ) K ≃ binds (count fl) (⟦ select fl (opts r Ms) ⟧s ρ') K'
-binds-ok [] [] s V ag h = h (λ ()) []
-binds-ok (b ∷ fl) (M ∷ Ms) {r = r} {ρ} {ρ'} {K} {K'} s V ag h with s zero
-... | kept = ≫=-≃ {F = λ X → binds _ (⟦ Ms ⟧s ρ) (λ Xs → K ⟨ X , Xs ⟩)} {λ Y → binds _ (⟦ select fl (opts r Ms) ⟧s ρ') (λ Ys → K' ⟨ Y , Ys ⟩)}
-    M≃ λ c _ → binds-ok fl Ms (λ i → s (suc i)) V (subR ag)
-      λ vs th → h (λ { zero → ⌊⌋-val c ; (suc i) → vs i }) (keep (⌊⌋-≃ M≃) th)
-  where M≃ = opt-ok M V (subL ag)
-... | var {x = x} _ = ≃-trans (≫=-val-β {F = λ X → binds _ (⟦ Ms ⟧s ρ) (λ Xs → K ⟨ X , Xs ⟩)} (V x))
-    (binds-ok fl Ms (λ i → s (suc i)) V (subR ag)
-      λ vs th → h (λ { zero → ⌊⌋-val (Val⇒Conv (V x)) ; (suc i) → vs i }) (drop th))
 
 opt-ok (` x) V ag = ag x (fromWitness refl)
 opt-ok (clos {n} N Ms) V ag =
@@ -106,6 +96,16 @@ opt-ok (project G M) V ag = projectᵗ-≃ (λ k → k) _ (opt-ok M V ag)
 
 opts-ok (M ∷ Ms) V ag zero = opt-ok M V (subL ag)
 opts-ok (M ∷ Ms) V ag (suc i) = opts-ok Ms V (subR ag) i
+
+binds-ok [] [] s V ag h = h (λ ()) []
+binds-ok (b ∷ fl) (M ∷ Ms) {r = r} {ρ} {ρ'} {K} {K'} s V ag h with s zero
+... | kept = ≫=-≃ {F = λ X → binds _ (⟦ Ms ⟧s ρ) (λ Xs → K ⟨ X , Xs ⟩)} {λ Y → binds _ (⟦ select fl (opts r Ms) ⟧s ρ') (λ Ys → K' ⟨ Y , Ys ⟩)}
+    M≃ λ c _ → binds-ok fl Ms (λ i → s (suc i)) V (subR ag)
+      λ vs th → h (λ { zero → ⌊⌋-val c ; (suc i) → vs i }) (keep (⌊⌋-≃ M≃) th)
+  where M≃ = opt-ok M V (subL ag)
+... | var {x = x} _ = ≃-trans (≫=-val-β {F = λ X → binds _ (⟦ Ms ⟧s ρ) (λ Xs → K ⟨ X , Xs ⟩)} (V x))
+    (binds-ok fl Ms (λ i → s (suc i)) V (subR ag)
+      λ vs th → h (λ { zero → ⌊⌋-val (Val⇒Conv (V x)) ; (suc i) → vs i }) (drop th))
 
 {- The end theorem: closed programs ------------------------------------------------}
 

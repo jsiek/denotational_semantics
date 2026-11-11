@@ -32,10 +32,14 @@ open import Data.Nat using (ℕ; zero; suc)
 {- the interpreter for a program with global definitions ds -}
 module _ (ds : List AST) where
 
+  {- the definition a code pointer refers to -}
+  code? : Val → Maybe AST
+  code? (code k) = global ds k
+  code? _ = nothing
+
   eval : ℕ → Env → AST → Result Val
   eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■) → Result (List Val)
   apply : ℕ → Env → AST → AST → Val → Result Val
-  code? : Val → Maybe AST
   call : ℕ → Maybe AST → Env → Result Val
   branch : ℕ → Env → AST → AST → Val → Result Val
 
@@ -60,10 +64,6 @@ module _ (ds : List AST) where
   eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
 
   apply ck ρ M N f = do e ← eval ck ρ M; w ← eval ck ρ N; call ck (code? f) (w ∷ e ∷ [])
-
-  {- the definition a code pointer refers to -}
-  code? (code k) = global ds k
-  code? _ = nothing
 
   call ck nothing ρ = error
   call zero (just N) ρ = timeout

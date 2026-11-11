@@ -240,14 +240,10 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     → FrameAgree σ φ → Sound (jump ds ck bs η l φ) (blocksₛ T bs l · σ)
   sound-call : ∀ ck {η A B} (c : Val (code η A B)) (e : Val (tup η)) (w : Val A)
     → Sound (call ds ck c e w) (appᵈ · (appᵈ · 𝒱 c · 𝒱 e) · 𝒱 w)
-
   {- a write, then k -}
   sound-put : ∀ ck {n R Bs ψ τ ψ'} (bs : Blocks Σ n R Bs) η (d : Dst n ψ τ ψ') (k : Seq Σ n R Bs ψ')
     {m : Mach Σ η ψ} {v : RV Σ η τ} (S : ⟨ 𝕊 ⟩) (D : Den 𝕊) → Agree S m → D · S ＝ 𝒱ᵣ τ v
     → Sound (run ds ck bs η (put d v m) k) (putₛ T d D (⟦_⟧ˢ T k (blocksₛ T bs)) · S)
-  sound-put ck bs η d k 𝔰 D A hD =
-    let (S' , A' , e) = put-agree d 𝔰 D (⟦_⟧ˢ T k (blocksₛ T bs)) A hD in
-    sound-＝ (e ⁻¹) (sound-run ck bs η _ k S' A')
 
   sound-run ck bs η m (movq a d ∷ k) 𝔰 A = sound-put ck bs η d k 𝔰 (𝒪 T a) A (arg-agree A a)
   sound-run ck bs η m (subq a r e ∷ k) 𝔰 A =
@@ -325,6 +321,10 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
          ∙ code₂-β _ (𝒱 e) (𝒱 w)
          ∙ seq-defined (𝒱 e) _ (𝒱-defined e)
          ∙ seq-defined (𝒱 w) _ (𝒱-defined w)
+
+  sound-put ck bs η d k 𝔰 D A hD =
+    let (S' , A' , e) = put-agree d 𝔰 D (⟦_⟧ˢ T k (blocksₛ T bs)) A hD in
+    sound-＝ (e ⁻¹) (sound-run ck bs η _ k S' A')
 
   {- main, run from no slot, no register and no flag, means the program -}
   soundness : ∀ {A} (b : Body Σ A (entry [])) ck

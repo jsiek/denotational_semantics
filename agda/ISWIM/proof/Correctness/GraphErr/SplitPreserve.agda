@@ -95,9 +95,9 @@ PairV-mono s ⟨ u , ⟨ t , p∈ ⟩ ⟩ = ⟨ u , ⟨ t , s u t p∈ ⟩ ⟩
 ⊑-mono ⦅ u , v ⦆ D⊆ (lift ())
 ⊑-mono ⟨⟩ D⊆ (lift v∈) = lift (D⊆ _ v∈)
 
+⊑-ne : ∀ v {D'} → v ⊑ D' → nonempty D'
 {- a source value other than ω is exhibited by a target value of its kind -}
 ⊑-wit : ∀ v {D'} → v ⊑ D' → v ≢ ω → Σ[ d' ∈ Value ] d' ∈ ⌊ D' ⌋ × kind₄ (kind d') ≡ kind v
-⊑-ne : ∀ v {D'} → v ⊑ D' → nonempty D'
 ⊑-ne v {D'} v⊑ with ω? v
 ... | inj₁ refl = ⟨ ω , lower v⊑ ⟩
 ... | inj₂ v≢ = let ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = ⊑-wit v v⊑ v≢ in ⟨ d' , proj₁ d'∈ ⟩
@@ -172,18 +172,18 @@ ext-envs : ∀ {Γ Δ} {r : Ren Γ Δ} {ρ ρ' X X'} → Envs r ρ ρ' → nonem
   → Envs (ext {B = Any} r) (X • ρ) (X' • ρ')
 ext-envs (envs NE' ρ'~ ρ⊑) ne c h = envs (extend-nonempty-env NE' ne) (Con-• c ρ'~) (λ { Z → h ; (S x) → ρ⊑ x })
 
-preserve : ∀ {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ' → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split r M ⟧' ρ')
-preserve-nth : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → ∀ i → Lifted _⊑_ (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits r Ms ⟧s' ρ') i)
-preserve-𝒯 : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → Lifted _⊑_ (𝒯ᵐ n (⟦ Ms ⟧s ρ)) (𝒯ᵐ n (⟦ splits r Ms ⟧s' ρ'))
-
 args-con' : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ} → Con-env ρ → ∀ i → Con (nthD (⟦ splits r Ms ⟧s' ρ) i)
 args-con' (M ∷ Ms) c zero = S4.con (split _ M) c
 args-con' (M ∷ Ms) c (suc i) = args-con' Ms c i
 
 clean⌊⌋ : ∀ {D} → Clean ⌊ D ⌋
 clean⌊⌋ d d∈ = proj₂ d∈
+
+preserve : ∀ {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ' → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split r M ⟧' ρ')
+preserve-nth : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
+  → ∀ i → Lifted _⊑_ (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits r Ms ⟧s' ρ') i)
+preserve-𝒯 : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
+  → Lifted _⊑_ (𝒯ᵐ n (⟦ Ms ⟧s ρ)) (𝒯ᵐ n (⟦ splits r Ms ⟧s' ρ'))
 
 preserve (` x) E = Envs.ρ⊑ E x
 

@@ -64,11 +64,9 @@ tab-defined {Δ = A ∷ Δ} f ρ h (suc i) = tab-defined (λ y → f (S y)) ρ (
 
 enc : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'} → Rel Γ ρ ρ' → ⟦ M ⟧ · ρ ＝ ⟦ capture M ⟧₂ · ρ'
 encs-ok : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Rel Γ ρ ρ' → ⟦ Ms ⟧s · ρ ＝ ⟦ encs Ms ⟧s₂ · ρ'
-
 {- a body under a binder -}
 under : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) {ρ ρ'} → Rel Γ ρ ρ'
   → (d : ⟨ 𝔻 ⟩) → defined d → ⟦ N ⟧ · (d • ρ) ＝ ⟦ capture N ⟧₂ · (d • ρ')
-under N r d p = enc N (rel-ext d p r)
 
 enc (` x) r = pr₁ (r x)
 enc {Γ} (lam N) {ρ} {ρ'} r =
@@ -95,6 +93,8 @@ enc (unfold M) r = enc M r
 
 encs-ok [] r = refl
 encs-ok (M ∷ Ms) r = dfunext fe λ { zero → enc M r ; (suc i) → happly (encs-ok Ms r) i }
+
+under N r d p = enc N (rel-ext d p r)
 
 capture-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ · ρ₀ ＝ ⟦ capture M ⟧₂ · ρ₀
 capture-correct M = enc M (λ ())

@@ -114,16 +114,6 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TV : ∀ k → Val (T k))
   Kont {Σ} {Δ} {A} H k ρ' = ∀ {Δ'} (r' : Ren Δ Δ') {ρ''} → R' r' ρ' ρ'' → (a : Atm Σ Δ' A) → ∀ {X} → Val X → X ≃ 𝒜 a ρ''
     → H X ≃ ⟦ ⌜ k r' a ⌝ ⟧[ T' ] ρ''
 
-  rco-sem : ∀ {Σ Γ Δ A} (M : Tm Σ Γ A) (r : Ren Γ Δ) {ρ ρ'} → R r ρ ρ' → ⟦ M ⟧[ T ] ρ ≃ ⟦ ⌜ rco M r ⌝ ⟧[ T' ] ρ'
-  atomize-sem : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (k : K Σ Δ A B) {ρ ρ' H} → R r ρ ρ' → Kont H k ρ'
-    → (⟦ N ⟧[ T ] ρ ≫= H) ≃ ⟦ ⌜ atomize N r k ⌝ ⟧[ T' ] ρ'
-
-  {- a complex operand: a let -}
-  cx : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (k : K Σ Δ A B) {ρ ρ' H} → R r ρ ρ' → Kont H k ρ'
-    → (⟦ N ⟧[ T ] ρ ≫= H) ≃ ⟦ ⌜ M.let′ (rco N r) (k S (var Z)) ⌝ ⟧[ T' ] ρ'
-  cx N r k {ρ} {ρ'} {H} h hk = ≫=-≃ {F = H} {λ X → ⟦ ⌜ k S (var Z) ⌝ ⟧[ T' ] (X • ρ')} (rco-sem N r h)
-    λ c _ → hk S R'-S (var Z) (⌊⌋-val c) (⌊⌋-≃ (rco-sem N r h))
-
   {- an atom: a set of values -}
   at : ∀ {Σ Δ A B} {k : K Σ Δ A B} {ρ' H} (a : Atm Σ Δ A) {D} → Kont H k ρ' → Val D → D ≃ 𝒜 a ρ'
     → (D ≫= H) ≃ ⟦ ⌜ k (λ y → y) a ⌝ ⟧[ T' ] ρ'
@@ -132,39 +122,21 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TV : ∀ k → Val (T k))
     where ⌊⌋-≃′ : ∀ {D} → Val D → ⌊ D ⌋ ≃ D
           ⌊⌋-≃′ v = ⟨ ⌊⌋-⊆ , ⌊⌋-clean (proj₁ v) ⟩
 
-  atomize-sem (` x) r k h hk = at {k = k} (var (r x)) hk (Val-≃ (≃-sym (proj₁ (R.at h x))) (proj₂ (R.at h x))) (proj₁ (R.at h x))
-  atomize-sem (fun-ref f) r k h hk = at {k = k} (ref f) hk (TV _) (TT _)
-  atomize-sem (lit B c) r k h hk = at {k = k} (lit B c) hk ℬ-val ≃-refl
-  atomize-sem N@(pack _ _) r k h hk = cx N r k h hk
-  atomize-sem N@(callc _ _) r k h hk = cx N r k h hk
-  atomize-sem N@(tuple _) r k h hk = cx N r k h hk
-  atomize-sem N@(get _ _) r k h hk = cx N r k h hk
-  atomize-sem N@(inl _) r k h hk = cx N r k h hk
-  atomize-sem N@(inr _) r k h hk = cx N r k h hk
-  atomize-sem N@(case _ _ _) r k h hk = cx N r k h hk
-  atomize-sem N@(prim _ _ _) r k h hk = cx N r k h hk
-  atomize-sem N@(let′ _ _) r k h hk = cx N r k h hk
-  atomize-sem N@(inject _ _) r k h hk = cx N r k h hk
-  atomize-sem N@(project _ _) r k h hk = cx N r k h hk
-
+  rco-sem : ∀ {Σ Γ Δ A} (M : Tm Σ Γ A) (r : Ren Γ Δ) {ρ ρ'} → R r ρ ρ' → ⟦ M ⟧[ T ] ρ ≃ ⟦ ⌜ rco M r ⌝ ⟧[ T' ] ρ'
+  atomize-sem : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (k : K Σ Δ A B) {ρ ρ' H} → R r ρ ρ' → Kont H k ρ'
+    → (⟦ N ⟧[ T ] ρ ≫= H) ≃ ⟦ ⌜ atomize N r k ⌝ ⟧[ T' ] ρ'
+  {- a complex operand: a let -}
+  cx : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (k : K Σ Δ A B) {ρ ρ' H} → R r ρ ρ' → Kont H k ρ'
+    → (⟦ N ⟧[ T ] ρ ≫= H) ≃ ⟦ ⌜ M.let′ (rco N r) (k S (var Z)) ⌝ ⟧[ T' ] ρ'
   {- one operand, into a kernel κ -}
   op₁ : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (f : ∀ {Δ'} → Atm Σ Δ' A → M.Exp Σ Δ' B) {κ} → Good ⊤ (■ ∷ []) κ
     → (∀ {Δ'} (a : Atm Σ Δ' A) {ρ''} → binds 1 ⟨ 𝒜 a ρ'' , ptt ⟩ κ ≡ ⟦ ⌜ f a ⌝ ⟧[ T' ] ρ'')
     → ∀ {ρ ρ'} → R r ρ ρ' → binds 1 ⟨ ⟦ N ⟧[ T ] ρ , ptt ⟩ κ ≃ ⟦ ⌜ atomize N r (λ _ a → f a) ⌝ ⟧[ T' ] ρ'
-  op₁ N r f G hf h = atomize-sem N r (λ _ a → f a) h λ r' h' a {X} v e →
-    ≃-trans (βₙ 1 G (λ { zero → Val-≃ e v }) λ { zero → e }) (≃-reflexive (hf a))
-
   {- two operands, into a kernel κ -}
   op₂ : ∀ {Σ Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) (r : Ren Γ Δ)
     (f : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → M.Exp Σ Δ' B) {κ} → Good ⊤ (■ ∷ ■ ∷ []) κ
     → (∀ {Δ'} (a : Atm Σ Δ' A₁) b {ρ''} → binds 2 ⟨ 𝒜 a ρ'' , ⟨ 𝒜 b ρ'' , ptt ⟩ ⟩ κ ≡ ⟦ ⌜ f a b ⌝ ⟧[ T' ] ρ'')
     → ∀ {ρ ρ'} → R r ρ ρ' → binds 2 ⟨ ⟦ L ⟧[ T ] ρ , ⟨ ⟦ N ⟧[ T ] ρ , ptt ⟩ ⟩ κ ≃ ⟦ ⌜ atomize₂ L N r f ⌝ ⟧[ T' ] ρ'
-  op₂ L N r f G hf h = atomize-sem L r _ h λ r' h' a {X} v e →
-    atomize-sem N (λ x → r' (r x)) _ (R-∘ h h') λ r'' h'' b {Y} w e' →
-      ≃-trans (βₙ 2 G (λ { zero → Val-≃ (≃-trans e (ren-𝒜 h'' a)) v ; (suc zero) → Val-≃ e' w })
-                      λ { zero → ≃-trans e (ren-𝒜 h'' a) ; (suc zero) → e' })
-        (≃-reflexive (hf (ren r'' a) b))
-
   {- n operands, into a kernel K -}
   atomizes-sem : ∀ {Σ Γ Δ n B} (Ns : Vec (Tm Σ Γ Any) n) (r : Ren Γ Δ)
     (k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) n → M.Exp Σ Δ' B) {ρ ρ'} {H : Results (𝒫 Value) (replicate n ■) → 𝒫 Value}
@@ -172,11 +144,6 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TV : ∀ k → Val (T k))
     → (∀ {Δ'} (r' : Ren Δ Δ') {ρ''} → R' r' ρ' ρ'' → (as : Vec (Atm Σ Δ' Any) n) → ∀ {Xs} → AllVal n Xs
          → (∀ i → nthD Xs i ≃ nthD (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] ρ'') i) → H Xs ≃ ⟦ ⌜ k r' as ⌝ ⟧[ T' ] ρ'')
     → binds n (⟦ Ns ⟧s[ T ] ρ) H ≃ ⟦ ⌜ atomizes Ns r k ⌝ ⟧[ T' ] ρ'
-  atomizes-sem [] r k h hk = hk (λ y → y) R'-id [] (λ ()) (λ ())
-  atomizes-sem (N ∷ Ns) r k h hk = atomize-sem N r _ h λ r' h' a {X} v e →
-    atomizes-sem Ns (λ x → r' (r x)) _ (R-∘ h h') λ r'' h'' as {Xs} vs es →
-      hk (λ x → r'' (r' x)) (mkR' λ x → ≃-trans (R'.at h' x) (R'.at h'' _)) (ren r'' a ∷ as)
-         (λ { zero → v ; (suc i) → vs i }) λ { zero → ≃-trans e (ren-𝒜 h'' a) ; (suc i) → es i }
 
   rco-sem (` x) r h = proj₁ (R.at h x)
   rco-sem (fun-ref f) r h = TT _
@@ -201,6 +168,39 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TV : ∀ k → Val (T k))
       λ _ c → rco-sem N₂ (ext r) (R-ext h (⌊⌋-≃ (rco-sem N₁ r h)) (⌊⌋-val c))
   rco-sem (inject G N) r h = ≃-trans (≃-sym ≫=-η) (atomize-sem N r _ h λ r' h' a v e → e)
   rco-sem (project t N) r h = op₁ N r (M.project t) (pk t) (λ _ → refl) h
+
+  atomize-sem (` x) r k h hk = at {k = k} (var (r x)) hk (Val-≃ (≃-sym (proj₁ (R.at h x))) (proj₂ (R.at h x))) (proj₁ (R.at h x))
+  atomize-sem (fun-ref f) r k h hk = at {k = k} (ref f) hk (TV _) (TT _)
+  atomize-sem (lit B c) r k h hk = at {k = k} (lit B c) hk ℬ-val ≃-refl
+  atomize-sem N@(pack _ _) r k h hk = cx N r k h hk
+  atomize-sem N@(callc _ _) r k h hk = cx N r k h hk
+  atomize-sem N@(tuple _) r k h hk = cx N r k h hk
+  atomize-sem N@(get _ _) r k h hk = cx N r k h hk
+  atomize-sem N@(inl _) r k h hk = cx N r k h hk
+  atomize-sem N@(inr _) r k h hk = cx N r k h hk
+  atomize-sem N@(case _ _ _) r k h hk = cx N r k h hk
+  atomize-sem N@(prim _ _ _) r k h hk = cx N r k h hk
+  atomize-sem N@(let′ _ _) r k h hk = cx N r k h hk
+  atomize-sem N@(inject _ _) r k h hk = cx N r k h hk
+  atomize-sem N@(project _ _) r k h hk = cx N r k h hk
+
+  cx N r k {ρ} {ρ'} {H} h hk = ≫=-≃ {F = H} {λ X → ⟦ ⌜ k S (var Z) ⌝ ⟧[ T' ] (X • ρ')} (rco-sem N r h)
+    λ c _ → hk S R'-S (var Z) (⌊⌋-val c) (⌊⌋-≃ (rco-sem N r h))
+
+  op₁ N r f G hf h = atomize-sem N r (λ _ a → f a) h λ r' h' a {X} v e →
+    ≃-trans (βₙ 1 G (λ { zero → Val-≃ e v }) λ { zero → e }) (≃-reflexive (hf a))
+
+  op₂ L N r f G hf h = atomize-sem L r _ h λ r' h' a {X} v e →
+    atomize-sem N (λ x → r' (r x)) _ (R-∘ h h') λ r'' h'' b {Y} w e' →
+      ≃-trans (βₙ 2 G (λ { zero → Val-≃ (≃-trans e (ren-𝒜 h'' a)) v ; (suc zero) → Val-≃ e' w })
+                      λ { zero → ≃-trans e (ren-𝒜 h'' a) ; (suc zero) → e' })
+        (≃-reflexive (hf (ren r'' a) b))
+
+  atomizes-sem [] r k h hk = hk (λ y → y) R'-id [] (λ ()) (λ ())
+  atomizes-sem (N ∷ Ns) r k h hk = atomize-sem N r _ h λ r' h' a {X} v e →
+    atomizes-sem Ns (λ x → r' (r x)) _ (R-∘ h h') λ r'' h'' as {Xs} vs es →
+      hk (λ x → r'' (r' x)) (mkR' λ x → ≃-trans (R'.at h' x) (R'.at h'' _)) (ren r'' a ∷ as)
+         (λ { zero → v ; (suc i) → vs i }) λ { zero → ≃-trans e (ren-𝒜 h'' a) ; (suc i) → es i }
 
 {- Programs -------------------------------------------------------------------------}
 

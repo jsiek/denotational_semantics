@@ -124,9 +124,7 @@ R-prop : (δ : Dir) (n : ℕ) (s : ⟨ 𝓓 n ⟩) (w : ⟨ 𝔻 ⟩) → is-pro
 M-prop : (δ : Dir) (n : ℕ) {t t' : Tag} (e : Same δ t t') (x : ⟨ obj (Payload t) (𝓓 n) ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
   → is-prop (M δ n e x y)
 Call-prop : (n : ℕ) (cd : Fin 2 → ⟨ 𝓓 n ⟩) (s : DCPO[ 𝔻 , 𝔻 ]) → is-prop (Call n cd s)
-
 Match-prop : (δ : Dir) (n : ℕ) (v : ⟨ obj Val (𝓓 n) ⟩) (u : ⟨ obj Val 𝔻 ⟩) → is-prop (Match δ n v u)
-Match-prop δ n (t , x) (t' , y) = Σ-is-prop Same-prop (λ e → M-prop δ n e x y)
 
 R-prop δ zero s w = 𝟙-is-prop
 R-prop δ (succ n) s w =
@@ -143,6 +141,8 @@ Call-prop zero cd s = 𝟙-is-prop
 Call-prop (succ zero) cd s = 𝟙-is-prop
 Call-prop (succ (succ m)) cd s =
   Π-is-prop fe (λ v → Π-is-prop fe (λ a → Π-is-prop fe (λ _ → R-prop reflect m (callₛ m cd v) (strict · s · a))))
+
+Match-prop δ n (t , x) (t' , y) = Σ-is-prop Same-prop (λ e → M-prop δ n e x y)
 
 {- Downward closed in the approximated value ---------------------------------------}
 

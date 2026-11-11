@@ -112,8 +112,8 @@ self V = V ∣ just (val V)
 
 {- under one more binder -}
 shift-info : ∀ {Γ A B} → Info Γ A → Info (B ∷ Γ) A
-shift-known : ∀ {Γ A B} → Known Γ A → Known (B ∷ Γ) A
 shift-mk : ∀ {Γ A B} → Maybe (Known Γ A) → Maybe (Known (B ∷ Γ) A)
+shift-known : ∀ {Γ A B} → Known Γ A → Known (B ∷ Γ) A
 shift-info I = ren S (term I) ∣ shift-mk (known I)
 shift-mk nothing = nothing
 shift-mk (just K) = just (shift-known K)

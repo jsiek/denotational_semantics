@@ -77,23 +77,19 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 
 infix 4 _≈_ _≈k_ _~_
 
+{- what simp knows of each variable is true of the source's environment ρ
+   and the target's ρ' -}
+record Ok (E : Facts) (ρ ρ' : S.Env) : Set
 data _≈_ : S.Val → S.Val → Set
 {- v is related to a value that the value term T denotes in ρ' (Strong);
    or the same, but a function describes any value (Den) -}
 Desc : Bool → S.Val → AST → S.Env → Set
 Descs : Bool → List S.Val → ∀ {n} → Args (replicate n ■) → S.Env → Set
 Strong Den : S.Val → AST → S.Env → Set
-Strong = Desc true
-Den = Desc false
-
-{- what simp knows of each variable is true of the source's environment ρ
-   and the target's ρ' -}
-record Ok (E : Facts) (ρ ρ' : S.Env) : Set
 {- what simp knows a term is describes v: a value, or a function λ N closed
    in a source environment ρ of which its Facts are true (KDen) -}
 KDen : S.Val → Known → S.Env → Set
 Kn : S.Val → Info → S.Env → Set
-Kn v I ρ' = ∀ {K} → known I ≡ just K → KDen v K ρ'
 
 record Ok E ρ ρ' where
   inductive
@@ -122,8 +118,13 @@ Desc b v _ ρ' = ⊥
 Descs b vs {zero} Nil ρ' = vs ≡ []
 Descs b vs {suc n} (M ,, as) ρ' = Σ[ v ∈ S.Val ] Σ[ vs' ∈ List S.Val ] vs ≡ v ∷ vs' × Desc b v M ρ' × Descs b vs' as ρ'
 
+Strong = Desc true
+Den = Desc false
+
 KDen v (P.val K) ρ' = Den v K ρ'
 KDen v (P.fun N E) ρ' = Σ[ ρ ∈ S.Env ] v ≡ S.clo N ρ × Ok E ρ ρ' × WS (suc (length ρ)) N
+
+Kn v I ρ' = ∀ {K} → known I ≡ just K → KDen v K ρ'
 
 Strongs Dens : List S.Val → ∀ {n} → Args (replicate n ■) → S.Env → Set
 Strongs = Descs true
@@ -381,8 +382,6 @@ module _ (P P' : AST) where
 
   run-term : ∀ fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → value (term (simp fl E M)) ≡ true
     → Σ[ v ∈ S.Val ] Run M ρ v × Strong v (term (simp fl E M)) ρ'
-  run-known : ∀ fl M {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) M → known (simp fl E M) ≡ just K
-    → Σ[ v ∈ S.Val ] Run M ρ v × KDen v K ρ'
   run-terms : ∀ fl {n} (as : Args (replicate n ■)) {E ρ ρ'} → Ok E ρ ρ' → WS-args (length ρ) as
     → values (simp-args fl E as) ≡ true
     → ∀ {acc} → Σ[ vs ∈ List S.Val ] (∀ κ → Star L₂ (S.tuple-next acc (args→list as) ρ κ) (S.ret (S.tup (reverse (reverseAcc acc vs))) κ))
@@ -397,6 +396,8 @@ module _ (P P' : AST) where
     → Σ[ v ∈ S.Val ] (∀ M N κ → Star L₂ (S.eval L ρ (S.caseK M N ρ κ)) (S.eval N (v ∷ ρ) κ)) × Strong v K ρ'
   {- a primitive on known integers -}
   run-int : ∀ fl L {E ρ ρ' n} → Ok E ρ ρ' → WS (length ρ) L → int-of (known (simp fl E L)) ≡ just n → Run L ρ (S.const Int n)
+  run-known : ∀ fl M {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) M → known (simp fl E M) ≡ just K
+    → Σ[ v ∈ S.Val ] Run M ρ v × KDen v K ρ'
 
   {- an operand that becomes a value: the source runs it to a value that
      it describes, and that what simp knows of it describes -}

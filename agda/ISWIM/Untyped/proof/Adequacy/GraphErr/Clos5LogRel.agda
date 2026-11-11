@@ -307,19 +307,12 @@ length-obs-list (v ∷ vs) = cong suc (length-obs-list vs)
 {- The fundamental lemma ----------------------------------------------------------}
 
 adequate : ∀ M {T n ρ γ d} → 𝕋 n T → RB n M → 𝔾 ρ γ → d ∈ ⟦ M ⟧[ T ] ρ → ℝ d γ M
-
 {- the operands of a tuple, bound left to right by the machine's tupK -}
 tuple-ℂ : ∀ {m} (as : Args (replicate m ■)) {T n ρ γ} → 𝕋 n T → RB-args n as → 𝔾 ρ γ
   → ∀ {K w} acc → w ∈ binds m (⟦ as ⟧₊[ T ] ρ) K
   → (∀ vs Xs → length vs ≡ m → (∀ j d → d ∈ nthD Xs j → 𝕍At j d vs) → ∀ w → w ∈ K Xs
        → ℂ w (λ κ → ret (tup (reverse (reverseAcc acc vs))) κ))
   → ℂ w (λ κ → tuple-next acc (args→list as) γ κ)
-tuple-ℂ {zero} Nil 𝕋T rb G acc w∈ k = k [] ptt refl (λ ()) _ w∈
-tuple-ℂ {suc m} (M ,, as) {T} {n} {ρ} {γ} 𝕋T ⟨ rM , rs ⟩ G {K} acc w∈ k =
-  ℂ-bind {F = λ X → binds m (⟦ as ⟧₊[ T ] ρ) (λ Xs → K ⟨ X , Xs ⟩)} (tupK acc (args→list as) γ) (λ d → adequate M 𝕋T rM G) w∈
-    λ v all w w∈′ → step₁ (λ κ → refl) (tuple-ℂ as 𝕋T rs G (v ∷ acc) w∈′
-      λ vs Xs len rels w′ w∈″ → k (v ∷ vs) _ (cong suc len)
-        (λ { zero d d∈ → ⟨ len , all d d∈ ⟩ ; (suc j) d d∈ → rels j d d∈ }) w′ w∈″)
 
 adequate (` x) {γ = γ} 𝕋T rb G d∈ with G x _ d∈
 ... | inj₁ ⟨ refl , look ⟩ = ℂ-stop (λ κ → cong (λ m → ret? m κ) look) refl
@@ -442,6 +435,13 @@ adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {T} {n} {ρ} {γ} 𝕋T ⟨ rM , ⟨
     λ { v all w ⟨ V , ⟨ ⟨ ⟨ w∈′ , _ ⟩ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ →
         step₁ (λ κ → refl) (adequate N 𝕋T rN (𝔾-ext V v G (all→𝕍s V (λ d d∈ → all d (V⊆ d d∈)))) w∈′) })
   where F = λ Y → ⟦ N ⟧[ T ] (Y • ρ)
+
+tuple-ℂ {zero} Nil 𝕋T rb G acc w∈ k = k [] ptt refl (λ ()) _ w∈
+tuple-ℂ {suc m} (M ,, as) {T} {n} {ρ} {γ} 𝕋T ⟨ rM , rs ⟩ G {K} acc w∈ k =
+  ℂ-bind {F = λ X → binds m (⟦ as ⟧₊[ T ] ρ) (λ Xs → K ⟨ X , Xs ⟩)} (tupK acc (args→list as) γ) (λ d → adequate M 𝕋T rM G) w∈
+    λ v all w w∈′ → step₁ (λ κ → refl) (tuple-ℂ as 𝕋T rs G (v ∷ acc) w∈′
+      λ vs Xs len rels w′ w∈″ → k (v ∷ vs) _ (cong suc len)
+        (λ { zero d d∈ → ⟨ len , all d d∈ ⟩ ; (suc j) d d∈ → rels j d d∈ }) w′ w∈″)
 
 {- The table of the program --------------------------------------------------------}
 
