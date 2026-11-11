@@ -58,7 +58,9 @@ Refl d d' = Rel reflect d' d
    related by Refl. -}
 Refl-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
   → Refl t t'
-  → (∀ {X X' Y Y'} → Refl X X' → Refl Y Y' → Refl (B · env₂ X Y) (B' · env₂ X' Y'))
+  →
+    (∀ {X X' Y Y'} → Refl X X' → Refl Y Y'
+      → Refl (B · env₂ X Y) (B' · env₂ X' Y'))
   → Refl (appᵈ · codeᶜ B · t) (pairᵈ · codeᶜ B' · t')
 Refl-clos B B' {t} {t'} ht hB =
   Rel-from-defined λ q →
@@ -79,7 +81,9 @@ Refl-clos B B' {t} {t'} ht hB =
   body : ∀ {a a'}
     → Refl a a'
     → Refl (strict · s · a) (appᵈ · (appᵈ · codeᶜ B' · t') · a')
-  body {a} {a'} ha = transport (λ - → Rel reflect - (strict · s · a)) (codeᶜ-β B' t' a' ⁻¹) (Rel-seq-l (Rel-seq ha (hB ht ha)))
+  body {a} {a'} ha =
+    transport (λ - → Rel reflect - (strict · s · a)) (codeᶜ-β B' t' a' ⁻¹)
+    (Rel-seq-l (Rel-seq ha (hB ht ha)))
   {- The clause for the target pair (Call) holds at every depth. -}
   calls : (n : ℕ)
     → Call n (approx n pr (pick₂ (codeᶜ B') t')) (strict · s)
@@ -122,8 +126,13 @@ Refl-call : {l l' a a' : ⟨ 𝔻 ⟩}
   → Refl (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
 Refl-call {l} {l'} {a} {a'} hl ha =
   Rel-from-defined λ q →
-    Rel-inv hl (component-defined zero l' (app-defined (car · l') (cdr · l') (app-defined (appᵈ · (car · l') · (cdr · l')) a' q)))
-      (λ u v → Rel reflect (appᵈ · (appᵈ · (car · u) · (cdr · u)) · a') (appᵈ · v · a))
+    Rel-inv hl
+      (component-defined zero l'
+        (app-defined (car · l') (cdr · l')
+          (app-defined (appᵈ · (car · l') · (cdr · l')) a' q)))
+      (λ u v →
+          Rel reflect (appᵈ · (appᵈ · (car · u) · (cdr · u)) · a')
+          (appᵈ · v · a))
       (λ {t} {t'} x y e m → transport₂ (Rel reflect)
                               (ap₂ (λ c d → appᵈ · (appᵈ · c · d) · a')
                                   (case-inj 𝔻⊥ (component-br zero) t x)
@@ -154,7 +163,8 @@ Refl-call {l} {l'} {a} {a'} hl ha =
     c = cd zero
     env = cd (suc zero)
     core : (n l i j : ℕ)
-      → R reflect n (π∞ n · (appᵈ · (appᵈ · e l c · e i env) · e j a')) (strict · s · a)
+      → R reflect n (π∞ n · (appᵈ · (appᵈ · e l c · e i env) · e j a'))
+        (strict · s · a)
     core n l i j =
       R-mono reflect n (π∞ n · G)
         (π∞ n · (appᵈ · (appᵈ · e l c · e i env) · e j a')) (strict · s · a)
@@ -198,7 +208,9 @@ Refl-call {l} {l'} {a} {a'} hl ha =
      source value. -}
   ⊥-call : ∀ {w}
     → Rel reflect (appᵈ · (appᵈ · ⊥𝔻 · ⊥𝔻) · a') w
-  ⊥-call = transport (λ - → Rel reflect - _) ((ap (λ - → appᵈ · - · a') (app-⊥ ⊥𝔻) ∙ app-⊥ a') ⁻¹) Rel-⊥
+  ⊥-call =
+    transport (λ - → Rel reflect - _)
+    ((ap (λ - → appᵈ · - · a') (app-⊥ ⊥𝔻) ∙ app-⊥ a') ⁻¹) Rel-⊥
 
   call-ok : ∀ {t t'} (x : ⟨ obj (Payload t) 𝔻 ⟩) (y : ⟨ obj (Payload t') 𝔻 ⟩)
     → (e : Same reflect t t')

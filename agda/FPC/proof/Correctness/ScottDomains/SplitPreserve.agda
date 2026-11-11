@@ -52,7 +52,9 @@ Pres = Rel preserve
    related. -}
 Pres-clos : (B B' : Den Env) {t t' : ⟨ 𝔻 ⟩}
   → Pres t t'
-  → (∀ {X X' Y Y'} → Pres X X' → Pres Y Y' → Pres (B · env₂ X Y) (B' · env₂ X' Y'))
+  →
+    (∀ {X X' Y Y'} → Pres X X' → Pres Y Y'
+      → Pres (B · env₂ X Y) (B' · env₂ X' Y'))
   → Pres (appᵈ · codeᶜ B · t) (pairᵈ · codeᶜ B' · t')
 Pres-clos B B' {t} {t'} ht hB =
   Rel-from-defined λ q →
@@ -84,10 +86,18 @@ Pres-call : {l l' a a' : ⟨ 𝔻 ⟩}
   → Pres (appᵈ · l · a) (appᵈ · (appᵈ · (car · l') · (cdr · l')) · a')
 Pres-call {l} {l'} {a} {a'} hl ha =
   Rel-from-defined λ q →
-    Rel-inv hl (app-defined l a q) (λ u v → Pres (appᵈ · u · a) (appᵈ · (appᵈ · (car · v) · (cdr · v)) · a'))
-      (λ {t} {t'} x y e m → transport₂ Pres (ap (_· a) (case-inj (𝔻 ⟹𝔻) app-br t x) ⁻¹)
-                                            (ap₂ (λ c d → appᵈ · (appᵈ · c · d) · a') (case-inj 𝔻⊥ (component-br zero) t' y)
-                                                 (case-inj 𝔻⊥ (component-br (suc zero)) t' y) ⁻¹)
+    Rel-inv hl (app-defined l a q)
+      (λ u v → Pres (appᵈ · u · a) (appᵈ · (appᵈ · (car · v) · (cdr · v)) · a'))
+      (λ {t} {t'} x y e m →
+          transport₂ Pres (ap (_· a) (case-inj (𝔻 ⟹𝔻) app-br t x) ⁻¹)
+                                            (ap₂
+                                                (λ c d →
+                                                  appᵈ · (appᵈ · c · d) · a')
+                                                  (case-inj 𝔻⊥
+                                                    (component-br zero) t' y)
+                                                 (case-inj 𝔻⊥
+                                                     (component-br (suc zero))
+                                                       t' y) ⁻¹)
                               (call-ok x y e m))
  where
   call-fun : (s : DCPO[ 𝔻 , 𝔻 ]) (cd : Fin 2 → ⟨ 𝔻 ⟩)

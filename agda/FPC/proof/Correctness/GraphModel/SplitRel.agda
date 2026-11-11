@@ -80,7 +80,10 @@ out-data (bool false) = flat-⟨⟩
 
 {- If V maps U₁ to W₁ and maps U₂ to W₂, then V maps U₁ ++ U₂ to
    W₁ ++ W₂. -}
-SelfContainedMaps-++ : ∀ {V U₁ U₂ W₁ W₂} → SelfContainedMaps V U₁ W₁ → SelfContainedMaps V U₂ W₂ → SelfContainedMaps V (U₁ ++ U₂) (W₁ ++ W₂)
+SelfContainedMaps-++ : ∀ {V U₁ U₂ W₁ W₂}
+  → SelfContainedMaps V U₁ W₁
+  → SelfContainedMaps V U₂ W₂
+  → SelfContainedMaps V (U₁ ++ U₂) (W₁ ++ W₂)
 SelfContainedMaps-++ {U₁ = U₁} {W₁ = W₁} c₁ c₂ = record
   { results =
       λ w w∈ →
@@ -142,8 +145,12 @@ AppObs D D' =
 
 {- Approx-fold proves Approx D D' from the four clauses, stated for the
    sets D and D' as a whole. -}
-Approx-fold : ∀ {D D'} → (∀ {B} (c : base-rep B) → const c ∈ D' → const c ∈ D) → (nonempty D' → nonempty D)
-  → AppObs D D' → (∀ t → Approx (Untag t D) (Untag t D')) → Approx D D'
+Approx-fold : ∀ {D D'}
+  → (∀ {B} (c : base-rep B) → const c ∈ D' → const c ∈ D)
+  → (nonempty D' → nonempty D)
+  → AppObs D D'
+  → (∀ t → Approx (Untag t D) (Untag t D'))
+  → Approx D D'
 Approx-fold cs ne app tg V V⊆ = fold record
   { const-obs = λ c c∈ → cs c (V⊆ _ c∈)
   ; nonempty-obs = λ neV → ne (ne-mem neV V⊆)
@@ -153,6 +160,12 @@ Approx-fold cs ne app tg V V⊆ = fold record
 
 {- If D' contains no pair, then D' has no calls, so Approx-fold₀ needs
    only the other three clauses. -}
-Approx-fold₀ : ∀ {D D'} → (∀ {B} (c : base-rep B) → const c ∈ D' → const c ∈ D) → (nonempty D' → nonempty D)
-  → (∀ u v → ⦅ u , v ⦆ ∈ D' → ⊥) → (∀ t → Approx (Untag t D) (Untag t D')) → Approx D D'
-Approx-fold₀ cs ne np = Approx-fold cs ne λ V⊆ calls _ _ _ _ → ApproxLR-∅ (SelfContainedMaps-none (λ u v uv∈ → np u v (V⊆ _ uv∈)) calls)
+Approx-fold₀ : ∀ {D D'}
+  → (∀ {B} (c : base-rep B) → const c ∈ D' → const c ∈ D)
+  → (nonempty D' → nonempty D)
+  → (∀ u v → ⦅ u , v ⦆ ∈ D' → ⊥)
+  → (∀ t → Approx (Untag t D) (Untag t D'))
+  → Approx D D'
+Approx-fold₀ cs ne np =
+  Approx-fold cs ne λ V⊆ calls _ _ _ _ →
+  ApproxLR-∅ (SelfContainedMaps-none (λ u v uv∈ → np u v (V⊆ _ uv∈)) calls)

@@ -106,7 +106,10 @@ record SelfContainedMapsS (T U W : 𝒫 Value) : Set where
 
 {- If V ⊆ T, then every usable entry of the list V is a usable entry of
    the set T. -}
-UsableEntry→S : ∀ {V T U₀ w} → mem V ⊆ T → UsableEntry V U₀ w → UsableEntryS T U₀ w
+UsableEntry→S : ∀ {V T U₀ w}
+  → mem V ⊆ T
+  → UsableEntry V U₀ w
+  → UsableEntryS T U₀ w
 UsableEntry→S V⊆ (usable-entry FV t e∈ neFV FV⊆) =
   usable-entryS FV t (V⊆ _ e∈) neFV
     (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , V⊆ _ i ⟩)
@@ -129,8 +132,11 @@ SelfContainedMaps→S V⊆ cs = record
 {- Every usable entry of T is a usable entry of some finite V ⊆ T. The
    list V consists of the entry's pair and the pairs that supply its
    environments. -}
-S→UsableEntry : ∀ {T U₀ w} → UsableEntryS T U₀ w → Σ[ V ∈ List Value ] mem V ⊆ T × UsableEntry V U₀ w
-S→UsableEntry {T} {U₀} {w} (usable-entryS FV t e∈ neFV FV⊆) with cdr-witness FV FV⊆
+S→UsableEntry : ∀ {T U₀ w}
+  → UsableEntryS T U₀ w
+  → Σ[ V ∈ List Value ] mem V ⊆ T × UsableEntry V U₀ w
+S→UsableEntry {T} {U₀} {w} (usable-entryS FV t e∈ neFV FV⊆)
+  with cdr-witness FV FV⊆
 ... | ⟨ P , ⟨ P⊆T , FV⊆P ⟩ ⟩ =
   ⟨ e ∷ P , ⟨ (λ { _ (here refl) → e∈ ; d (there d∈) → P⊆T d d∈ })
   , usable-entry FV t (here refl) neFV
@@ -163,9 +169,19 @@ Bnd-SelfContainedMapsS-apps bT cs w w∈ =
 
 {- If T maps U to W and W₀ is a finite part of W, then some finite
    V ⊆ T maps some finite U₁ ⊆ U to W₀. -}
-collectS : ∀ {T U W} → SelfContainedMapsS T U W → ∀ W₀ → mem W₀ ⊆ W
-  → Σ[ V ∈ List Value ] Σ[ U₁ ∈ List Value ] mem V ⊆ T × mem U₁ ⊆ U × SelfContainedMaps V U₁ W₀
-collectS cs [] _ = ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
+collectS : ∀ {T U W}
+  → SelfContainedMapsS T U W
+  → ∀ W₀
+  → mem W₀ ⊆ W
+  → Σ[ V ∈ List Value ] Σ[ U₁ ∈ List Value ] mem V ⊆ T × mem U₁
+    ⊆ U × SelfContainedMaps V U₁ W₀
+collectS cs [] _ =
+  ⟨ []
+    ,
+    ⟨ []
+      ,
+        ⟨ (λ _ ())
+          , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
 collectS cs (w ∷ W₀) W₀⊆
     with SelfContainedMapsS.results cs w (W₀⊆ w (here refl))
       | collectS cs W₀ (λ d d∈ → W₀⊆ d (there d∈))

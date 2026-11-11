@@ -157,18 +157,35 @@ ext-envs : ∀ {Γ B} {ρ ρ' X X'}
 ext-envs (envs NE' ρ'~ ρ⊑) ne c h =
   envs (extend-nonempty-env NE' ne) (Con-• c ρ'~) (λ { Z → h ; (S x) → ρ⊑ x })
 
-preserve : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'} → Envs Γ ρ ρ' → ∀ v → v ∈ ⟦ M ⟧ ρ → v ⊑ ⟦ split M ⟧' ρ'
-preserve-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Envs Γ ρ ρ'
-  → ∀ i v → v ∈ nthD (⟦ Ms ⟧s ρ) i → v ⊑ nthD (⟦ splits Ms ⟧s' ρ') i
-preserve-𝒯 : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Envs Γ ρ ρ'
-  → ∀ v → v ∈ 𝒯 (length Δ) (⟦ Ms ⟧s ρ) → v ⊑ 𝒯 (length Δ) (⟦ splits Ms ⟧s' ρ')
+preserve : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'}
+  → Envs Γ ρ ρ'
+  → ∀ v
+  → v ∈ ⟦ M ⟧ ρ
+  → v ⊑ ⟦ split M ⟧' ρ'
+preserve-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'}
+  → Envs Γ ρ ρ'
+  → ∀ i v
+  → v ∈ nthD (⟦ Ms ⟧s ρ) i
+  → v ⊑ nthD (⟦ splits Ms ⟧s' ρ') i
+preserve-𝒯 : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'}
+  → Envs Γ ρ ρ'
+  → ∀ v
+  → v ∈ 𝒯 (length Δ) (⟦ Ms ⟧s ρ)
+  → v ⊑ 𝒯 (length Δ) (⟦ splits Ms ⟧s' ρ')
 {- preserve-body handles the body B of a binder (case or let). Suppose
    every element of the nonempty list U is related to the consistent set
    X', and the translated body, with X' bound, produces results within
    Y' whenever X' is nonempty. If B, with U bound, produces v, then v is
    related to Y'. -}
-preserve-body : ∀ {Γ A C} (B : Tm (A ∷ Γ) C) {ρ ρ' U X' Y'} → Envs Γ ρ ρ' → U ≢ [] → Con X'
-  → (∀ u → u ∈ mem U → u ⊑ X') → (nonempty X' → ⟦ split B ⟧' (X' • ρ') ⊆ Y') → ∀ v → v ∈ ⟦ B ⟧ (mem U • ρ) → v ⊑ Y'
+preserve-body : ∀ {Γ A C} (B : Tm (A ∷ Γ) C) {ρ ρ' U X' Y'}
+  → Envs Γ ρ ρ'
+  → U ≢ []
+  → Con X'
+  → (∀ u → u ∈ mem U → u ⊑ X')
+  → (nonempty X' → ⟦ split B ⟧' (X' • ρ') ⊆ Y')
+  → ∀ v
+  → v ∈ ⟦ B ⟧ (mem U • ρ)
+  → v ⊑ Y'
 
 preserve (` x) E = Envs.ρ⊑ E x
 preserve (app L N) E v ⟨ U , ⟨ U↦v∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ =

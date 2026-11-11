@@ -169,7 +169,10 @@ E-disjoint {n} {m} (here refl) (here eq) =
 
 {- If U maps U' to W, then every result in W is 1, and 1 is among the
    arguments U'. -}
-calls-U : ∀ {U' W w} → SelfContainedMaps U U' W → w ⋵ W → w ≡ one × one ⋵ U'
+calls-U : ∀ {U' W w}
+  → SelfContainedMaps U U' W
+  → w ⋵ W
+  → w ≡ one × one ⋵ U'
 calls-U cs w∈ with SelfContainedMaps.results cs _ w∈
 ... | ⟨ _ , ⟨ usable-entry _ _ (here refl) _ _ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ =
   ⟨ refl , U₀⊆ one (here refl) ⟩
@@ -302,8 +305,10 @@ width≤boundBy size (d ∷ D₀) (there d∈) =
 {- Suppose the size of s n is at least n for every n, and let b be the
    bound of a finite list D₀. Then applying D₀ to the singleton set of
    s (b + 1) gives the empty set. -}
-finite-emptyBy : ∀ (size : Value → ℕ) (s : ℕ → Value) → (∀ n → n ≤ size (s n))
-  → ∀ D₀ w → ¬ (w ∈ (mem D₀ ● mem (s (suc (boundBy size D₀)) ∷ [])))
+finite-emptyBy : ∀ (size : Value → ℕ) (s : ℕ → Value)
+  → (∀ n → n ≤ size (s n))
+  → ∀ D₀ w
+  → ¬ (w ∈ (mem D₀ ● mem (s (suc (boundBy size D₀)) ∷ [])))
 finite-emptyBy size s big D₀ w ⟨ [] , ⟨ _ , ⟨ _ , neX ⟩ ⟩ ⟩ = neX refl
 finite-emptyBy size s big D₀ w ⟨ x ∷ X , ⟨ X↦w∈ , ⟨ X⊆ , _ ⟩ ⟩ ⟩
   with X⊆ x (here refl)
@@ -336,8 +341,10 @@ finite-source D₀ =
 {- Therefore no finite list D₀ satisfies clause 3 for the call in which
    V maps U to W, although the whole source denotation D satisfies it
    (whole-source). -}
-finite-source-clause3 : ∀ (D₀ : List Value) → ¬ (∀ n → ApproxLR (mem D₀ ● E n) W)
-finite-source-clause3 D₀ all = proj₂ (finite-source D₀) (all (proj₁ (finite-source D₀)))
+finite-source-clause3 : ∀ (D₀ : List Value)
+  → ¬ (∀ n → ApproxLR (mem D₀ ● E n) W)
+finite-source-clause3 D₀ all =
+  proj₂ (finite-source D₀) (all (proj₁ (finite-source D₀)))
 
 {- The same failure holds for any relation R between finite source
    lists and finite target lists that relates each [s n] to U and
@@ -345,8 +352,10 @@ finite-source-clause3 D₀ all = proj₂ (finite-source D₀) (all (proj₁ (fin
    clause 3 for R at the finite source list D₀ and a self-contained
    call that maps U to W. It says that for every source list E₀ related
    to U, some finite part S of D₀ ● E₀ is related to W. -}
-FinClause3 : (List Value → List Value → Set₁) → List Value → List Value → List Value → Set₁
-FinClause3 R U W D₀ = ∀ E₀ → R E₀ U → Σ[ S ∈ List Value ] mem S ⊆ (mem D₀ ● mem E₀) × R S W
+FinClause3 : (List Value → List Value → Set₁) → List Value → List Value
+  → List Value → Set₁
+FinClause3 R U W D₀ =
+  ∀ E₀ → R E₀ U → Σ[ S ∈ List Value ] mem S ⊆ (mem D₀ ● mem E₀) × R S W
 
 no-finite-sourceBy : ∀ (R : List Value → List Value → Set₁) {U W}
   → (∀ {S V'} → R S V' → V' ≢ [] → S ≢ [])
@@ -424,7 +433,9 @@ untag-g _ (there ())
 
 {- Every nonempty source set is related to [g], because [g] offers no
    constants, calls, or projections to match. -}
-g-related : ∀ {E₁} → nonempty E₁ → ApproxLR E₁ (g ∷ [])
+g-related : ∀ {E₁}
+  → nonempty E₁
+  → ApproxLR E₁ (g ∷ [])
 g-related neE = foldᴬ record
   { const-obs = λ { c (here ()) ; c (there ()) }
   ; nonempty-obs = λ _ → neE

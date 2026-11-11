@@ -152,7 +152,8 @@ Bnd-SelfContainedMaps-apps bV cs w w∈ =
 
 {- The four clauses of the relation (Figure 5). ApproxLRLayer Q D V
    uses Q at the recursive occurrences. -}
-record ApproxLRLayer (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value) (V : List Value) : Set₁ where
+record ApproxLRLayer (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value)
+  (V : List Value) : Set₁ where
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
     nonempty-obs : V ≢ [] → nonempty D
@@ -194,7 +195,9 @@ ApproxLR D V = ApproxLR≤ (suc (depths V)) D V
 private
   {- If every element of V is a first-order datum in D, then D ⊵ₖ V for
      every k. In particular, D ⊵ₖ [] holds. -}
-  ApproxLR≤-data : ∀ k {D V} → (∀ v → v ⋵ V → v ∈ D × Data v) → ApproxLR≤ k D V
+  ApproxLR≤-data : ∀ k {D V}
+    → (∀ v → v ⋵ V → v ∈ D × Data v)
+    → ApproxLR≤ k D V
   ApproxLR≤-data zero _ = ptt
   ApproxLR≤-data (suc k) dV = record
     { const-obs = λ c c∈ → proj₁ (dV _ c∈)
@@ -234,7 +237,11 @@ private
 {- Lemma 4.4 (1). Suppose every element of V has depth less than k and
    less than j. If D ⊵ₖ V, then D ⊵ⱼ V. Swapping k and j gives the
    converse. -}
-ApproxLR-depth-irrelevant : ∀ {k j D V} → Bnd k V → Bnd j V → ApproxLR≤ k D V → ApproxLR≤ j D V
+ApproxLR-depth-irrelevant : ∀ {k j D V}
+  → Bnd k V
+  → Bnd j V
+  → ApproxLR≤ k D V
+  → ApproxLR≤ j D V
 ApproxLR-depth-irrelevant {j = zero} _ _ _ = ptt
 ApproxLR-depth-irrelevant {zero} {suc j} bk _ _ =
   ApproxLR≤-data (suc j) (λ v v∈ → ⊥-elim (n≮0 (bk v v∈)))
@@ -244,8 +251,12 @@ ApproxLR-depth-irrelevant {suc k} {suc j} bk bj =
 {- Lemma 4.4 (2). D ⊵ V holds if and only if its four clauses hold with
    ⊵ at the recursive occurrences. The function unfold proves one
    direction, and fold proves the other. -}
-unfold : ∀ {D V} → ApproxLR D V → ApproxLRLayer ApproxLR D V
-unfold {V = V} = ApproxLRLayer-map bV bV (λ b _ → ApproxLR-depth-irrelevant b (Bnd-depths _)) (λ _ → ApproxLR-depth-irrelevant (Bnd-depths _))
+unfold : ∀ {D V}
+  → ApproxLR D V
+  → ApproxLRLayer ApproxLR D V
+unfold {V = V} =
+  ApproxLRLayer-map bV bV (λ b _ → ApproxLR-depth-irrelevant b (Bnd-depths _))
+  (λ _ → ApproxLR-depth-irrelevant (Bnd-depths _))
   where bV = Bnd-depths V
 
 fold : ∀ {D V}
@@ -258,7 +269,9 @@ fold {V = V} =
 
 {- ApproxLR-data relates D to every list of first-order data in D, and
    ApproxLR-∅ relates D to every list without elements. -}
-ApproxLR-data : ∀ {D V} → (∀ v → v ⋵ V → v ∈ D × Data v) → ApproxLR D V
+ApproxLR-data : ∀ {D V}
+  → (∀ v → v ⋵ V → v ∈ D × Data v)
+  → ApproxLR D V
 ApproxLR-data = ApproxLR≤-data _
 
 ApproxLR-∅ : ∀ {D V}
@@ -268,7 +281,10 @@ ApproxLR-∅ V⊆∅ = ApproxLR-data (λ v v∈ → ⊥-elim (V⊆∅ v v∈))
 
 {- The relation is monotone in D (ApproxLR-mono) and antitone in V
    (ApproxLR-⊆). -}
-ApproxLR-mono : ∀ {D₁ D₂ V} → D₁ ⊆ D₂ → ApproxLR D₁ V → ApproxLR D₂ V
+ApproxLR-mono : ∀ {D₁ D₂ V}
+  → D₁ ⊆ D₂
+  → ApproxLR D₁ V
+  → ApproxLR D₂ V
 ApproxLR-mono = ApproxLR≤-mono _
 
 ApproxLR-⊆ : ∀ {D V₁ V₂}

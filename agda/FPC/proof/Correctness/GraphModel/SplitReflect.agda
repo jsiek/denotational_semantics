@@ -58,8 +58,10 @@ module FPC.proof.Correctness.GraphModel.SplitReflect where
 {- If every element of the finite list W' is a result of the call
    L' ⊙ N', then some finite V ⊆ L' maps some finite U ⊆ N' to W' by a
    self-contained call. -}
-collect : ∀ (L' N' : 𝒫 Value) W' → mem W' ⊆ (L' ⊙ N')
-  → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ] mem V ⊆ L' × mem U ⊆ N' × SelfContainedMaps V U W'
+collect : ∀ (L' N' : 𝒫 Value) W'
+  → mem W' ⊆ (L' ⊙ N')
+  → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ] mem V ⊆ L' × mem U
+    ⊆ N' × SelfContainedMaps V U W'
 collect L' N' [] _ =
   ⟨ []
       ,
@@ -137,8 +139,12 @@ reflect-𝒯 : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'}
    for case in split-reflect first uses the consistency of the target
    scrutinee to show that all results of the target case come from the
    same branch. -}
-reflect-branch : ∀ {Γ} {A₁ A₂ A C : Type} (s : Tag) (L : Tm Γ (A₁ ⊹ A₂)) (B : Tm (A ∷ Γ) C) {ρ ρ' C} → Envs Γ ρ ρ'
-  → ∀ v → tag s v ∈ ⟦ split L ⟧' ρ' → (∀ {a b} → tag s a ~ tag s b → a ~ b)
+reflect-branch : ∀ {Γ} {A₁ A₂ A C : Type} (s : Tag) (L : Tm Γ (A₁ ⊹ A₂))
+  (B : Tm (A ∷ Γ) C) {ρ ρ' C}
+  → Envs Γ ρ ρ'
+  → ∀ v
+  → tag s v ∈ ⟦ split L ⟧' ρ'
+  → (∀ {a b} → tag s a ~ tag s b → a ~ b)
   → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)
   → Approx C (⟦ split B ⟧' (Untag s (⟦ split L ⟧' ρ') • ρ'))
 

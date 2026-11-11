@@ -111,9 +111,13 @@ module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
 
   {- The fundamental lemma. If the environments are related, then the
      meaning of M and the meaning of its translation are related. -}
-  ok : ∀ {Γ A} (M : Tm Γ A) {ρ ρ' : ⟨ Env ⟩} → SEnv {Γ} ρ ρ' → ⟦ M ⟧₃ · ρ ∼ ⟦ split M ⟧₄ · ρ'
-  oks : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ' : ⟨ Env ⟩} → SEnv {Γ} ρ ρ'
-    → (i : Fin (length Δ)) → ((⟦ Ms ⟧s₃ · ρ) i) ∼ ((⟦ splits Ms ⟧s₄ · ρ') i)
+  ok : ∀ {Γ A} (M : Tm Γ A) {ρ ρ' : ⟨ Env ⟩}
+    → SEnv {Γ} ρ ρ'
+    → ⟦ M ⟧₃ · ρ ∼ ⟦ split M ⟧₄ · ρ'
+  oks : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ' : ⟨ Env ⟩}
+    → SEnv {Γ} ρ ρ'
+    → (i : Fin (length Δ))
+    → ((⟦ Ms ⟧s₃ · ρ) i) ∼ ((⟦ splits Ms ⟧s₄ · ρ') i)
 
   ok (` x) h = h x
   ok (clos {Δ} N Ms) h =
@@ -151,9 +155,10 @@ module Terms (_∼_ : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → 𝓤₁ ̇)
    source and target arguments of Rel-case and of its premises in
    swapped order. -}
 
-open Terms Pres Pres-clos Pres-call Rel-const Rel-tuple Rel-proj Rel-inl Rel-inr Rel-case Rel-prim Rel-seq
-  using () renaming (split-ok to split-pres) public
-open Terms Refl Refl-clos Refl-call Rel-const (λ k h → Rel-tuple k h) (λ i h → Rel-proj i h) (λ h → Rel-inl h) (λ h → Rel-inr h)
-  (λ f g f' g' h hf hg → Rel-case f' g' f g h (λ {a} {a'} r → hf {a'} {a} r) (λ {a} {a'} r → hg {a'} {a} r))
-  (λ p h h' → Rel-prim p h h') (λ h h' → Rel-seq h h')
-  using () renaming (split-ok to split-refl) public
+open Terms Pres Pres-clos Pres-call Rel-const Rel-tuple Rel-proj Rel-inl Rel-inr
+  Rel-case Rel-prim Rel-seq using () renaming (split-ok to split-pres) public
+open Terms Refl Refl-clos Refl-call Rel-const (λ k h → Rel-tuple k h) (λ i h →
+  Rel-proj i h) (λ h → Rel-inl h) (λ h → Rel-inr h) (λ f g f' g' h hf hg →
+  Rel-case f' g' f g h (λ {a} {a'} r → hf {a'} {a} r) (λ {a} {a'} r → hg {a'}
+  {a} r)) (λ p h h' → Rel-prim p h h') (λ h h' → Rel-seq h h') using () renaming
+  (split-ok to split-refl) public
