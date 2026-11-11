@@ -60,6 +60,19 @@
   Renaming is the kit's (FPC/Language/FPCSubst.agda), which the
   reduction semantics shares.
 
+  In the presentation of this pass in the Appendix of the paper
+
+  + `simp` returns a pair (M, θ), which is `Info` in this file, written M ∣ θ.
+
+  + The three forms of θ, namely V, ⟨λx.N, E⟩ and ⊥, are
+    `just (val V)`, `just (fun N E)` and `nothing` in Agda.
+
+  + An environment E is `Facts` in Agda. E[x := (M′, θ)] is `I • E`,
+    E[x := self(x)] is `under E`, and E[x := (x, θ)] is `known-as I E`.
+
+  + The fuel ϕ is the first argument of `simp`, and res(δ(p, n, m)) is
+    `prim-term p n m`.
+
 -}
 
 module FPC.Compiler.Simplify where
@@ -114,7 +127,7 @@ self V = V ∣ just (val V)
 shift-info : ∀ {Γ A B} → Info Γ A → Info (B ∷ Γ) A
 shift-mk : ∀ {Γ A B} → Maybe (Known Γ A) → Maybe (Known (B ∷ Γ) A)
 shift-known : ∀ {Γ A B} → Known Γ A → Known (B ∷ Γ) A
-shift-info I = ren S (term I) ∣ shift-mk (known I)
+shift-info I = ren S (I .term) ∣ shift-mk (I .known)
 shift-mk nothing = nothing
 shift-mk (just K) = just (shift-known K)
 shift-known (val V) = val (ren S V)
@@ -132,7 +145,7 @@ under E = self (` Z) • (λ x → shift-info (E x))
 
 {- under a binder that stays, whose variable is known as I is -}
 known-as : ∀ {Δ Γ B} → Info Γ B → Facts Δ Γ → Facts (B ∷ Δ) (B ∷ Γ)
-known-as I E = ((` Z) ∣ known (shift-info I)) • (λ x → shift-info (E x))
+known-as I E = ((` Z) ∣ shift-info I .known) • (λ x → shift-info (E x))
 
 {- Values --------------------------------------------------------------------}
 
@@ -243,72 +256,73 @@ simp-case : ∀ {Δ Γ A B C} → ℕ → Facts Δ Γ → Info Γ (A ⊹ B) → 
 simp-prim : ∀ {Γ} p → Info Γ (base Int) → Info Γ (base Int) → Info Γ (out-ty p)
 simp-unfold : ∀ {Γ A} → Info Γ (μ A) → Info Γ (unroll A)
 
-simp f E (` x) = E x
-simp f E (lam N) = lam (term (simp f (under E) N)) ∣ just (fun N E)
-simp f E (app L M) = simp-app f E L (simp f E M)
-simp f E (lit B c) = self (lit B c)
-simp f E (tuple Ms) = info (tuple (simps f E Ms))
-simp f E (get i L) = simp-get i (simp f E L)
-simp f E (inl M) = info (inl (term (simp f E M)))
-simp f E (inr M) = info (inr (term (simp f E M)))
-simp f E (case L M N) = simp-case f E (simp f E L) M N
-simp f E (prim p L M) = simp-prim p (simp f E L) (simp f E M)
-simp f E (let′ M N) = simp-let f E N (simp f E M)
-simp f E (fold M) = info (fold (term (simp f E M)))
-simp f E (unfold L) = simp-unfold (simp f E L)
+simp ϕ E (` x) = E x
+simp ϕ E (lam N) = lam (simp ϕ (under E) N .term) ∣ just (fun N E)
+simp ϕ E (app L M) = simp-app ϕ E L (simp ϕ E M)
+simp ϕ E (lit B c) = self (lit B c)
+simp ϕ E (tuple Ms) = info (tuple (simps ϕ E Ms))
+simp ϕ E (get i L) = simp-get i (simp ϕ E L)
+simp ϕ E (inl M) = info (inl (simp ϕ E M .term))
+simp ϕ E (inr M) = info (inr (simp ϕ E M .term))
+simp ϕ E (case L M N) = simp-case ϕ E (simp ϕ E L) M N
+simp ϕ E (prim p L M) = simp-prim p (simp ϕ E L) (simp ϕ E M)
+simp ϕ E (let′ M N) = simp-let ϕ E N (simp ϕ E M)
+simp ϕ E (fold M) = info (fold (simp ϕ E M .term))
+simp ϕ E (unfold L) = simp-unfold (simp ϕ E L)
 
-simps f E [] = []
-simps f E (M ∷ Ms) = term (simp f E M) ∷ simps f E Ms
+simps ϕ E [] = []
+simps ϕ E (M ∷ Ms) = (simp ϕ E M .term) ∷ simps ϕ E Ms
 
 {- an application: β, if the operator is a function, and otherwise a call -}
-simp-app f E L I with lam? L
-... | is-lam N = simp-let f E N I
-... | other = simp-call f (simp f E L) I
+simp-app ϕ E L I with lam? L
+... | is-lam N = simp-let ϕ E N I
+... | other = simp-call ϕ (simp ϕ E L) I
 
 {- a call of a known function λ N, with fuel: its body is simplified at
    the call, with the operand bound (simp-let), and inlined if the result
    is small enough. The operator, known, has no effect, and is dropped -}
-simp-call (suc f) (T ∣ just (fun N E)) I
-  with size (term (simp-let f E N I)) ≤ᵇ inline-size
-... | true = simp-let f E N I
-... | false = app T (term I) ∣ nothing
-simp-call f J I = app (term J) (term I) ∣ nothing
+simp-call (suc ϕ) (T ∣ just (fun N E)) I
+  with size (simp-let ϕ E N I .term) ≤ᵇ inline-size
+... | true = simp-let ϕ E N I
+... | false = app T (I .term) ∣ nothing
+simp-call ϕ J I = app (J .term) (I .term) ∣ nothing
 
 {- the body N of a function, applied to the operand I, or of a let that
    binds I: a small value is substituted, and known as I is; another value
    stays bound by a let, and known; anything else stays bound by a let -}
-simp-let f E N I with small (term I) | value (term I)
-... | true | _ = simp f (I • E) N
-... | false | true = let′ (term I) (term (simp f (known-as I E) N)) ∣ nothing
-... | false | false = let′ (term I) (term (simp f (under E) N)) ∣ nothing
+simp-let ϕ E N I with small (I .term) | value (I .term)
+  -- if `I.term` is a small value
+... | true  |     _ = simp ϕ (I • E) N
+  -- if `I.term` is another value
+... | false |  true = let′ (I .term) (simp ϕ (known-as I E) N .term) ∣ nothing
+  -- otherwise
+... | false | false = let′ (I .term) (simp ϕ (under E) N .term) ∣ nothing
 
 {- a projection from a known tuple: the component, if it is small, and
    otherwise the projection, known to be the component -}
-simp-get i I with component i (known I) refl
-... | just K = if small K then self K else (get i (term I) ∣ just (val K))
-... | nothing = get i (term I) ∣ nothing
+simp-get i I with component i (I .known) refl
+... | just K = if small K then self K else (get i (I .term) ∣ just (val K))
+... | nothing = get i (I .term) ∣ nothing
 
 {- a case on a known injection: the branch it takes -}
-simp-case f E I M N with branch (known I) refl
-... | just (inj₁ K) = simp f (self K • E) M
-... | just (inj₂ K) = simp f (self K • E) N
+simp-case ϕ E I M N with branch (I .known) refl
+... | just (inj₁ K) = simp ϕ (self K • E) M
+... | just (inj₂ K) = simp ϕ (self K • E) N
 ... | nothing =
-  case (term I) (term (simp f (under E) M))
-  (term (simp f (under E) N)) ∣ nothing
+  case (I .term) (simp ϕ (under E) M .term)
+  (simp ϕ (under E) N .term) ∣ nothing
 
 {- a primitive on known integers: its result -}
-simp-prim p I J with int-of (known I)
-... | nothing = prim p (term I) (term J) ∣ nothing
-... | just n with int-of (known J)
-...   | nothing = prim p (term I) (term J) ∣ nothing
-...   | just m = self (prim-term p n m)
+simp-prim p I J with int-of (I .known) | int-of (J .known)
+... | just n | just m = self (prim-term p n m)                -- if n,m are ints
+... |      _ |      _ = prim p (I .term) (J .term) ∣ nothing  -- otherwise
 
 {- an unfold of a known fold: the value under it, if it is small, and
    otherwise the unfold, known to be that value (as simp-get) -}
-simp-unfold I with unfolded (known I) refl
-... | just K = if small K then self K else (unfold (term I) ∣ just (val K))
-... | nothing = unfold (term I) ∣ nothing
+simp-unfold I with unfolded (I .known) refl
+... | just K = if small K then self K else (unfold (I .term) ∣ just (val K))
+... | nothing = unfold (I .term) ∣ nothing
 
 {- the pass, for a whole program: every variable is itself, and unknown -}
 simplify : ∀ {A} → Tm [] A → Tm [] A
-simplify M = term (simp inline-fuel (λ x → self (` x)) M)
+simplify M = (simp inline-fuel (λ x → self (` x)) M) .term
