@@ -1,8 +1,7 @@
 %% Section 6: evaluation, comparing the denotational proof with the three
 %% operational ones (RQ2 and RQ3). Budget: 3.0 pages
 %% (notes/paper-outline.md, section 5). Numbers come from
-%% `python3 papers/PLDI-2027/loc.py --tables` (lexical tokens, with the
-%% totals in lines); update them before submission.
+%% `python3 papers/PLDI-2027/loc.py --tables` (lexical tokens); update them before submission.
 %% Why the equational passes exceed the interpreter's: the comparison of
 %% Graph/*Correct.agda with Interp/*Fuel.agda (nonemptiness, laws,
 %% consistency, binder annotations).
@@ -114,7 +113,6 @@ lemmas shared by the passes & --- & 3,186 & 2,971 & 2,289 & 2,289\\
 composition & 514 & 592 & 351 & 378 & \textbf{320}\\
 \midrule
 total & 40,905 & 54,972 & 50,631 & \textbf{35,860} & 68,243\\
-\emph{total in lines} & \emph{2,964} & \emph{3,859} & \emph{3,246} & \emph{2,350} & \emph{4,623}\\
 \bottomrule
 \end{tabular}
 \caption{Lexical tokens of Agda in the five correctness proofs. The smallest number in each row is in bold.}
