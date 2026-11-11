@@ -219,7 +219,7 @@ calls = record
 {- the whole source denotation satisfies clause 3, by the fundamental lemma -}
 whole-source : ∀ n → ApproxLR (D ● E n) W
 whole-source n =
-  ApproxLRLayer.app-obs (unfoldᴬ (split-reflect idC {r = λ ()} (Envs₀ (λ ())) V V⊆idC'))
+  ApproxLRLayer.app-obs (unfoldᴬ (split-reflect idC Envs₀ V V⊆idC'))
     calls (E n) (E-con n) (Con-single u₁) (E-related n)
 
 {- a finite list of values names finitely many n: the width of an entry
@@ -389,7 +389,7 @@ calls′ = record
 {- the whole source denotation satisfies clause 3, by the fundamental lemma -}
 whole-source′ : ∀ n → ApproxLR (D ● E′ n) W′
 whole-source′ n =
-  ApproxLRLayer.app-obs (unfoldᴬ (split-reflect idC {r = λ ()} (Envs₀ (λ ())) V′ V′⊆idC'))
+  ApproxLRLayer.app-obs (unfoldᴬ (split-reflect idC Envs₀ V′ V′⊆idC'))
     calls′ (E′ n) (E′-con n) (Con-single g) (E′-related n)
 
 {- the size of an entry [k, …] ↦ w is k, so the size of e′ n is n -}

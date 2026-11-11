@@ -4,10 +4,9 @@
   split (ISWIM/proof/Correctness/Interp/SplitFuel.agda; see the design note in
   Semantics/Interp/Clock.agda): clos N Ms becomes
   pair (code N') (tuple Ms'), and app becomes callc, which calls as app
-  does. The pass renames variables (the identity for a program), so
-  environments are related through the renaming (Env≈); a closure of N
-  and vs is related to a pack of the code split N and related values
-  (Rel, Same).
+  does. Environments are related pointwise (Env≈); a closure of N and
+  vs is related to a pack of the code split N and related values (Rel,
+  Same).
 
 -}
 
@@ -28,25 +27,25 @@ open import Data.Nat using (zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
 
 Code : ∀ {Δ A B} → Tm (A ∷ tup Δ ∷ []) B → C4.Tm (A ∷ tup Δ ∷ []) B → Set
-Code N N' = split (λ x → x) N ≡ N'
+Code N N' = split N ≡ N'
 
 open Rel Code (Same Code)
 
-Env≈ : ∀ {Γ Δ} → Ren Γ Δ → S.Env Γ → T.Env Δ → Set
-Env≈ r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ lookup ρ₂ (r x)
+Env≈ : ∀ {Γ} → S.Env Γ → T.Env Γ → Set
+Env≈ ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ lookup ρ₂ x
 
-env-ext : ∀ {Γ Δ B} {r : Ren Γ Δ} {ρ₁ ρ₂ v w} → v ≈ w → Env≈ r ρ₁ ρ₂ → Env≈ (ext {B = B} r) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext : ∀ {Γ B} {ρ₁ : S.Env Γ} {ρ₂} {v : S.Val B} {w} → v ≈ w → Env≈ ρ₁ ρ₂ → Env≈ (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext v E Z = v
 env-ext v E (S x) = E x
 
-run≈ : ∀ ck {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ₁ ρ₂} → Env≈ r ρ₁ ρ₂
-  → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (split r M))
-runs≈ : ∀ ck {Γ Δ Δ'} (Ms : All (Tm Γ) Δ') {r : Ren Γ Δ} {ρ₁ ρ₂} → Env≈ r ρ₁ ρ₂
-  → RelResult (All₂ _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (splits r Ms))
+run≈ : ∀ ck {Γ A} (M : Tm Γ A) {ρ₁ ρ₂} → Env≈ ρ₁ ρ₂
+  → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (split M))
+runs≈ : ∀ ck {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ₁ ρ₂} → Env≈ ρ₁ ρ₂
+  → RelResult (All₂ _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (splits Ms))
 call≈ : ∀ ck {A B} {f : S.Val (A ⇒ B)} {g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
 run≈ ck (` x) E = ret (E x)
-run≈ ck (clos N Ms) {r} {ρ₂ = ρ₂} E = subst (RelResult _≈_ _) (sym (bind-assoc (T.evals ck ρ₂ (splits r Ms))))
+run≈ ck (clos N Ms) {ρ₂ = ρ₂} E = subst (RelResult _≈_ _) (sym (bind-assoc (T.evals ck ρ₂ (splits Ms))))
   (bind-rel (runs≈ ck Ms E) λ vs → ret (pack≈ vs (same refl)))
 run≈ ck (app L M) E = bind-rel (run≈ ck L E) λ f → bind-rel (run≈ ck M E) λ w → call≈ ck f w
 run≈ ck (lit B c) E = ret const≈

@@ -11,9 +11,8 @@
 
   Values are related (_≈_) when they agree, except that a Clos3ᵀ closure
   of N and vs is related to the pack of code (split N) and a tuple of
-  values related to vs. Environments are related through the renaming r
-  that split carries (EnvRel): variable x of ρ₁ and variable r x of ρ₂
-  hold related values. Continuations are related frame by frame: appL
+  values related to vs. Environments are related pointwise (EnvRel):
+  variable x of ρ₁ and variable x of ρ₂ hold related values. Continuations are related frame by frame: appL
   to callL, appR to callR, and closK to packR.
 
 -}
@@ -48,41 +47,41 @@ infix 4 _≈_ _≈k_ _~_
 
 data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
   clos≈ : ∀ {n N} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws
-    → Src.clos N vs ≈ Tgt.pack (Tgt.code (split (λ x → x) N)) (Tgt.tup ws)
+    → Src.clos N vs ≈ Tgt.pack (Tgt.code (split N)) (Tgt.tup ws)
   const≈ : ∀ {B c} → Src.const {B} c ≈ Tgt.const c
   tup≈ : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
   inl≈ : ∀ {v w} → v ≈ w → Src.inl v ≈ Tgt.inl w
   inr≈ : ∀ {v w} → v ≈ w → Src.inr v ≈ Tgt.inr w
   dyn≈ : ∀ {G v w} → v ≈ w → Src.dyn G v ≈ Tgt.dyn G w
 
-EnvRel : ∀ {Γ Δ} → Ren Γ Δ → Src.Env Γ → Tgt.Env Δ → Set
-EnvRel r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ Src.! x ≈ ρ₂ Tgt.! r x
+EnvRel : ∀ {Γ} → Src.Env Γ → Tgt.Env Γ → Set
+EnvRel ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ Src.! x ≈ ρ₂ Tgt.! x
 
 data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   halt : Src.halt ≈k Tgt.halt
-  appL : ∀ {Γ Δ} {r : Ren Γ Δ} {M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.appL M ρ₁ κ₁ ≈k Tgt.callL (split r M) ρ₂ κ₂
+  appL : ∀ {Γ} {M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.appL M ρ₁ κ₁ ≈k Tgt.callL (split M) ρ₂ κ₂
   appR : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.appR v κ₁ ≈k Tgt.callR w κ₂
-  tupK : ∀ {Γ Δ} {r : Ren Γ Δ} {m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂}
-    → V.Pointwise _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.tupK vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (splits r Ms) ρ₂ κ₂
-  closK : ∀ {n N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {n} N κ₁ ≈k Tgt.packR (Tgt.code (split (λ x → x) N)) κ₂
+  tupK : ∀ {Γ} {m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂}
+    → V.Pointwise _≈_ vs ws → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tupK vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (splits Ms) ρ₂ κ₂
+  closK : ∀ {n N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {n} N κ₁ ≈k Tgt.packR (Tgt.code (split N)) κ₂
   getK : ∀ {n i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {n} i κ₁ ≈k Tgt.getK i κ₂
   inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inlK κ₁ ≈k Tgt.inlK κ₂
   inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inrK κ₁ ≈k Tgt.inrK κ₂
-  caseK : ∀ {Γ Δ} {r : Ren Γ Δ} {M N} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.caseK M N ρ₁ κ₁ ≈k Tgt.caseK (split (ext r) M) (split (ext r) N) ρ₂ κ₂
-  primL : ∀ {Γ Δ} {r : Ren Γ Δ} {p M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.primL p M ρ₁ κ₁ ≈k Tgt.primL p (split r M) ρ₂ κ₂
+  caseK : ∀ {Γ} {M N} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.caseK M N ρ₁ κ₁ ≈k Tgt.caseK (split M) (split N) ρ₂ κ₂
+  primL : ∀ {Γ} {p M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.primL p M ρ₁ κ₁ ≈k Tgt.primL p (split M) ρ₂ κ₂
   primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Src.primR p n κ₁ ≈k Tgt.primR p n κ₂
-  letK : ∀ {Γ Δ} {r : Ren Γ Δ} {N} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.letK N ρ₁ κ₁ ≈k Tgt.letK (split (ext r) N) ρ₂ κ₂
+  letK : ∀ {Γ} {N} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.letK N ρ₁ κ₁ ≈k Tgt.letK (split N) ρ₂ κ₂
   injK : ∀ {G κ₁ κ₂} → κ₁ ≈k κ₂ → Src.injK G κ₁ ≈k Tgt.injK G κ₂
   projK : ∀ {G κ₁ κ₂} → κ₁ ≈k κ₂ → Src.projK G κ₁ ≈k Tgt.projK G κ₂
 
 data _~_ : Src.State → Tgt.State → Set where
-  eval~ : ∀ {Γ Δ A} {r : Ren Γ Δ} {M : Tm Γ A} {ρ₁} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.eval M ρ₁ κ₁ ~ Tgt.eval (split r M) ρ₂ κ₂
+  eval~ : ∀ {Γ A} {M : Tm Γ A} {ρ₁} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂} → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.eval M ρ₁ κ₁ ~ Tgt.eval (split M) ρ₂ κ₂
   ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
 {- Related values are observed alike, and primitives give related values -}
@@ -103,8 +102,8 @@ obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 ... | true = inl≈ (dyn≈ (tup≈ []))
 ... | false = inr≈ (dyn≈ (tup≈ []))
 
-env-ext : ∀ {Γ Δ B} {r : Ren Γ Δ} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {v : Src.Val B} {w} → v ≈ w → EnvRel r ρ₁ ρ₂
-  → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext : ∀ {Γ B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {v : Src.Val B} {w} → v ≈ w → EnvRel ρ₁ ρ₂
+  → EnvRel (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext r er Z = r
 env-ext r er (S x) = er x
 
@@ -121,9 +120,9 @@ module _ (P : C4.Tm [] Any) where
 
   L₂ = Tgt.sem P
 
-  tuple-next~ : ∀ {Γ Δ} {r : Ren Γ Δ} {m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂}
-    → V.Pointwise _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (splits r Ms) ρ₂ κ₂
+  tuple-next~ : ∀ {Γ} {m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Γ} {κ₁ κ₂}
+    → V.Pointwise _≈_ vs ws → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (splits Ms) ρ₂ κ₂
   tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
