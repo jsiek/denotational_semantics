@@ -13,19 +13,25 @@
     (case-natural₂), so with a case (cases-strict-natural): the
     continuation of a case can go into its branches;
   * the code of a closure is determined by its body on defined
-    arguments (code₂-cong, codeᶜ-cong);
+    arguments (code₂-cong, codeᶜ-cong, codeᶠ-cong, codeᶜ-codeᶠ);
+  * the argument and the environment of a definition are at different
+    positions of its frame (params-≢), and frame₂ holds them there
+    (frame₂-arg, frame₂-env);
   * the tables of two programs agree when their newest definitions and
     the tables of the older ones do (tables-cons).
 
 -}
 
-open import MLTT.Spartan hiding (inl; inr; cases)
+open import MLTT.Spartan hiding (inl; inr; cases; Type)
 open import UF.FunExt
 open import UF.PropTrunc
 open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
-open import FPC.Language.Type using (_∋_; lvl)
+open import FPC.Language.Type using (Type; Ctx; _∋_; Z; S; lvl; idx)
+open import Framework.Membership using (_⊑_; ⊑-∋)
+open import FPC.Language.Frame using (none; _⊕_; ∈-⊕; ∈∉-idx; params-fresh)
+open import Relation.Binary.PropositionalEquality using (_≢_)
 open import FPC.Language.GlobalFun using (DSig)
 open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
@@ -34,6 +40,7 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Data.Fin using (zero; suc)
 import FPC.Language.Imp as I
 open import FPC.Framework.AllUtil using (pos)
+import Relation.Binary.PropositionalEquality as Eq
 
 module FPC.proof.Semantics.ScottDomains.BackEndLemmas
         (pt : propositional-truncations-exist)
@@ -161,6 +168,51 @@ codeᶜ-cong : (N N' : Den Env)
 codeᶜ-cong N N' =
   code₂-cong (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N) (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N')
 
+codeᶠ-cong : ∀ {A B : Type} {Δ} (p : (A ∷ B ∷ []) ⊑ Δ) (N N' : Den Env)
+  → (  (X Y : ⟨ 𝔻 ⟩)
+     → defined X
+     → defined Y
+     → N · frame₂ (idx (⊑-∋ p (S Z))) (idx (⊑-∋ p Z)) X Y
+       ＝ N' · frame₂ (idx (⊑-∋ p (S Z))) (idx (⊑-∋ p Z)) X Y)
+  → codeᶠ p N ＝ codeᶠ p N'
+codeᶠ-cong p N N' =
+  code₂-cong
+    (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 (frame₂ᶜ (idx (⊑-∋ p (S Z))) (idx (⊑-∋ p Z))) N)
+    (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 (frame₂ᶜ (idx (⊑-∋ p (S Z))) (idx (⊑-∋ p Z))) N')
+
+{- the code of a closure whose body runs in env₂ X Y, and the code of a
+   definition whose body runs in its frame -}
+codeᶜ-codeᶠ : ∀ {A B : Type} {Δ} (p : (A ∷ B ∷ []) ⊑ Δ) (N N' : Den Env)
+  → (  (X Y : ⟨ 𝔻 ⟩)
+     → defined X
+     → defined Y
+     → N · env₂ X Y
+       ＝ N' · frame₂ (idx (⊑-∋ p (S Z))) (idx (⊑-∋ p Z)) X Y)
+  → codeᶜ N ＝ codeᶠ p N'
+codeᶜ-codeᶠ p N N' =
+  code₂-cong (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N)
+    (∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 (frame₂ᶜ (idx (⊑-∋ p (S Z))) (idx (⊑-∋ p Z))) N')
+
+{- frames ---------------------------------------------------------------------}
+
+{- the slots of the environment and the argument of a definition are at
+   different positions -}
+params-≢ : ∀ {A B : Type} {Δ : Ctx} (p : (A ∷ B ∷ []) ⊑ Δ)
+  → idx (⊑-∋ p (S Z)) ≢ idx (⊑-∋ p Z)
+params-≢ {Δ = Δ} p =
+  ∈∉-idx {I = none Δ ⊕ ⊑-∋ p (S Z)} (⊑-∋ p (S Z)) (⊑-∋ p Z)
+    (∈-⊕ {I = none Δ} (⊑-∋ p (S Z))) (params-fresh p)
+
+frame₂-arg : (e a : ℕ) (X Y : ⟨ 𝔻 ⟩) → frame₂ e a X Y a ＝ Y
+frame₂-arg e a X Y = write-same a (write e (λ _ → init) X) Y
+
+frame₂-env : (e a : ℕ) (X Y : ⟨ 𝔻 ⟩)
+  → e ≢ a
+  → frame₂ e a X Y e ＝ X
+frame₂-env e a X Y ne =
+  write-other a e (write e (λ _ → init) X) Y (λ q → ne (Eq.sym q))
+  ∙ write-same e (λ _ → init) X
+
 {- tables ---------------------------------------------------------------------}
 
 private
@@ -185,17 +237,17 @@ tables-cons cd cd' {ss = ss} d ds d' ds' f =
 {- atoms and simple expressions (of Impμ, CFGμ), for tables that agree -}
 module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
 
-  𝒜-＝ : ∀ {Δ A} (a : I.Atm Σ Δ A) σ → 𝒜 a T · σ ＝ 𝒜 a T' · σ
-  𝒜-＝ (I.var x) σ = refl
+  𝒜-＝ : ∀ {Δ I A} (a : I.Atm Σ Δ I A) σ → 𝒜 a T · σ ＝ 𝒜 a T' · σ
+  𝒜-＝ (I.var x _) σ = refl
   𝒜-＝ (I.lit B c) σ = refl
   𝒜-＝ (I.ref f) σ = TT f
 
-  𝒜s-＝ : ∀ {Δ Δs} (as : All (I.Atm Σ Δ) Δs) σ → 𝒜s as T · σ ＝ 𝒜s as T' · σ
+  𝒜s-＝ : ∀ {Δ I Δs} (as : All (I.Atm Σ Δ I) Δs) σ → 𝒜s as T · σ ＝ 𝒜s as T' · σ
   𝒜s-＝ [] σ = refl
   𝒜s-＝ (a ∷ as) σ =
     dfunext fe λ { zero → 𝒜-＝ a σ ; (suc i) → happly (𝒜s-＝ as σ) i }
 
-  𝒮-＝ : ∀ {Δ A} (s : I.Simple Σ Δ A) σ → 𝒮 s T · σ ＝ 𝒮 s T' · σ
+  𝒮-＝ : ∀ {Δ I A} (s : I.Simple Σ Δ I A) σ → 𝒮 s T · σ ＝ 𝒮 s T' · σ
   𝒮-＝ (I.atm a) σ = 𝒜-＝ a σ
   𝒮-＝ (I.pair a b) σ = ap₂ (λ x y → pair · x · y) (𝒜-＝ a σ) (𝒜-＝ b σ)
   𝒮-＝ (I.callc a b) σ =
