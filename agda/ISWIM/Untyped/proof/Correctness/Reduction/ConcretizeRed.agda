@@ -89,8 +89,14 @@ data _≈_ : AST → C.AST → Set where
 module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x)
   (pok : ∀ {σ σ'} → P σ σ' → ⊤) (pexts : ∀ {σ σ'} → P σ σ' → P (exts σ) (TS.exts σ')) where
 
-  ≈-sub : ∀ {σ σ' M M'} → P σ σ' → M ≈ M' → sub σ M ≈ TS.sub σ' M'
-  ≈-subs : ∀ {σ σ' n as as'} → P σ σ' → Pw _≈_ {n} as as' → Pw _≈_ (sub-args σ as) (TS.sub-args σ' as')
+  ≈-sub : ∀ {σ σ' M M'}
+    → P σ σ'
+    → M ≈ M'
+    → sub σ M ≈ TS.sub σ' M'
+  ≈-subs : ∀ {σ σ' n as as'}
+    → P σ σ'
+    → Pw _≈_ {n} as as'
+    → Pw _≈_ (sub-args σ as) (TS.sub-args σ' as')
   ≈-sub p var≈ = p≈ p _
   ≈-sub {σ' = σ'} p (prj≈ {i = i} r e vs) = prj≈ (≈-sub p r) (TS.sub-proj σ' i e) (T.values-sub σ' vs)
   ≈-sub p (clos≈ w rs) = clos≈ w (≈-subs p rs)
@@ -115,15 +121,22 @@ ref-shift (var x) = refl
 ref-shift (prj i x) = refl
 
 {- under a binder -}
-under : ∀ {k τ τ'} φ → (∀ x → x < k → τ x ≈ TS.sub τ' (ref-ast (φ x)))
-  → ∀ x → x < suc k → exts τ x ≈ TS.sub (TS.exts τ') (ref-ast (ext-ref φ x))
+under : ∀ {k τ τ'} φ
+  → (∀ x → x < k → τ x ≈ TS.sub τ' (ref-ast (φ x)))
+  → ∀ x
+  → x < suc k
+  → exts τ x ≈ TS.sub (TS.exts τ') (ref-ast (ext-ref φ x))
 under φ h zero _ = var≈
 under {τ' = τ'} φ h (suc x) (s≤s x<) rewrite ref-shift (φ x) | TS.exts-shift τ' (ref-ast (φ x)) = ≈-rename suc (h x x<)
 
-conc : ∀ {k τ τ'} φ M → WS k M → (∀ x → x < k → τ x ≈ TS.sub τ' (ref-ast (φ x)))
+conc : ∀ {k τ τ'} φ M
+  → WS k M
+  → (∀ x → x < k → τ x ≈ TS.sub τ' (ref-ast (φ x)))
   → sub τ M ≈ TS.sub τ' (concretize φ M)
-concs : ∀ {k τ τ' n} φ (as : Args (replicate n ■)) → WS-args k as
-  → (∀ x → x < k → τ x ≈ TS.sub τ' (ref-ast (φ x))) → Pw _≈_ (sub-args τ as) (TS.sub-args τ' (conc-args φ as))
+concs : ∀ {k τ τ' n} φ (as : Args (replicate n ■))
+  → WS-args k as
+  → (∀ x → x < k → τ x ≈ TS.sub τ' (ref-ast (φ x)))
+  → Pw _≈_ (sub-args τ as) (TS.sub-args τ' (conc-args φ as))
 conc φ (` x) w h = h x w
 conc φ (clos-op n ⦅ cons (clear a) Fs ⦆) (wa , ws) h =
   clos≈ (ws-unbind₀ n a wa) (concs φ Fs ws h)
@@ -146,7 +159,10 @@ conc-body-eq n zero (bind (ast N)) = refl
 conc-body-eq n (suc k) (bind a) = conc-body-eq n k a
 
 {- free variable k of the body is component fv-index n k of the tuple -}
-fv-proj : ∀ {n Fs Fs'} → Pw _≈_ {n} Fs Fs' → ∀ ρ k (k< : k < n)
+fv-proj : ∀ {n Fs Fs'}
+  → Pw _≈_ {n} Fs Fs'
+  → ∀ ρ k
+  → (k< : k < n)
   → Σ[ V' ∈ C.AST ] proj (fv-index n k k<) (args→list Fs') ≡ just V' × extend Fs ρ k ≈ V'
 fv-proj {suc n} {F ,, Fs} {F' ,, Fs'} (r ∷ rs) ρ k k< with k <? n
 ... | yes k<n = fv-proj rs (F • ρ) k k<n
@@ -160,8 +176,14 @@ fv-proj {suc n} {F ,, Fs} {F' ,, Fs'} (r ∷ rs) ρ k k< with k <? n
 
 Ans′ = Ans T.red T.Value _≈_
 
-obs≈ : ∀ {M M'} → T.Value M' → M ≈ M' → S.obs M ≡ T.obs M'
-obs≈s : ∀ {n as as'} → T.Values as' → Pw _≈_ {n} as as' → S.obs-args as ≡ T.obs-args as'
+obs≈ : ∀ {M M'}
+  → T.Value M'
+  → M ≈ M'
+  → S.obs M ≡ T.obs M'
+obs≈s : ∀ {n as as'}
+  → T.Values as'
+  → Pw _≈_ {n} as as'
+  → S.obs-args as ≡ T.obs-args as'
 obs≈ (T.clos _) (clos≈ _ _) = refl
 obs≈ T.lit lit≈ = refl
 obs≈ (T.tuple vs) (tuple≈ rs) = cong o-tuple (obs≈s vs rs)
@@ -170,25 +192,35 @@ obs≈ (T.inr v) (inr≈ r) = cong o-inr (obs≈ v r)
 obs≈s T.[] [] = refl
 obs≈s (v T.∷ vs) (r ∷ rs) = cong₂ _∷_ (obs≈ v r) (obs≈s vs rs)
 
-sim : ∀ {M M'} → M ≈ M' → Ans′ M (S.red M) M'
-sims : ∀ {n as as'} → Pw _≈_ {n} as as' → Ans T.red-args T.Values (Pw _≈_) as (S.red-args as) as'
+sim : ∀ {M M'}
+  → M ≈ M'
+  → Ans′ M (S.red M) M'
+sims : ∀ {n as as'}
+  → Pw _≈_ {n} as as'
+  → Ans T.red-args T.Values (Pw _≈_) as (S.red-args as) as'
 sim var≈ = error ε refl
 sim (prj≈ r e vs) = ans-step (trans (val-in (T.value-red (T.tuple vs))) (cong ret? e)) (sim r)
 sim (clos≈ w rs) = ans-in (frame _ (λ _ → refl)) (clos≈ w) (sims rs) (λ vs rs' → val ε (T.clos vs) (clos≈ w rs'))
 sim (app≈ r s) = ans-in (frame _ (λ _ → refl)) (λ r' → app≈ r' s) (sim r) (λ v r' → app-sim v r' s)
   where
-  app-sim : ∀ {L V' M M'} → T.Value V' → L ≈ V' → M ≈ M'
+  app-sim : ∀ {L V' M M'}
+    → T.Value V'
+    → L ≈ V'
+    → M ≈ M'
     → Ans′ (app ⦅ L ,, M ,, Nil ⦆) (S.app? L (S.red M) M) (C.app C.⦅ V' ,, M' ,, Nil ⦆)
   app-sim v@(T.clos vs) (clos≈ {n} {a} {Fs} {Fs'} w rs) s =
     ans-in (frame {g = λ X → C.app C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (T.value-red v))) (app≈ (clos≈ w rs)) (sim s)
       λ v' s' → to (one (trans (val-in (T.value-red v)) (val-in (T.value-red v')))) (β s')
     where
-    β : ∀ {M W'} → M ≈ W'
+    β : ∀ {M W'}
+      → M ≈ W'
       → sub (M • extend Fs ids) (unbind-n n a) ≈ TS.sub (W' TS.• C.tuple n C.⦅ Fs' ⦆ TS.• TS.ids) (conc-body n n a)
     β {M} {W'} s' = subst (λ B → sub (M • extend Fs ids) (unbind-n n a) ≈ TS.sub (W' TS.• C.tuple n C.⦅ Fs' ⦆ TS.• TS.ids) B)
                           (sym (conc-body-eq n n a)) (conc (fv-ref n) (unbind-n n a) w body)
       where
-      body : ∀ x → x < suc n → (M • extend Fs ids) x ≈ TS.sub (W' TS.• C.tuple n C.⦅ Fs' ⦆ TS.• TS.ids) (ref-ast (fv-ref n x))
+      body : ∀ x
+        → x < suc n
+        → (M • extend Fs ids) x ≈ TS.sub (W' TS.• C.tuple n C.⦅ Fs' ⦆ TS.• TS.ids) (ref-ast (fv-ref n x))
       body zero _ = s'
       body (suc k) (s≤s k<) with k <? n
       ... | yes k<n with fv-proj rs ids k k<n
@@ -202,7 +234,10 @@ sim lit≈ = val ε T.lit lit≈
 sim (tuple≈ rs) = ans-in (frame _ (λ _ → refl)) tuple≈ (sims rs) (λ vs rs' → val ε (T.tuple vs) (tuple≈ rs'))
 sim (get≈ {i = i} r) = ans-in (frame _ (λ _ → refl)) get≈ (sim r) get-sim
   where
-  get-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
+  get-sim : ∀ {M V'}
+    → T.Value V'
+    → M ≈ V'
+    → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
   get-sim v@(T.tuple _) (tuple≈ rs) = ret?-ans (proj-pw {R = _≈_} i (pw-list rs)) (val-in (T.value-red v))
   get-sim v@(T.clos _) (clos≈ _ _) = error ε (val-in (T.value-red v))
   get-sim T.lit lit≈ = error ε refl
@@ -212,7 +247,9 @@ sim (inl≈ r) = ans-in (frame _ (λ _ → refl)) inl≈ (sim r) (λ v r' → va
 sim (inr≈ r) = ans-in (frame _ (λ _ → refl)) inr≈ (sim r) (λ v r' → val ε (T.inr v) (inr≈ r'))
 sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ r' → case≈ r' s t) (sim r) case-sim
   where
-  case-sim : ∀ {L V'} → T.Value V' → L ≈ V'
+  case-sim : ∀ {L V'}
+    → T.Value V'
+    → L ≈ V'
     → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
   case-sim v@(T.inl _) (inl≈ r') = to (one (val-in (T.value-red v))) (≈-[] tt r' s)
   case-sim v@(T.inr _) (inr≈ r') = to (one (val-in (T.value-red v))) (≈-[] tt r' t)
@@ -224,7 +261,9 @@ sim (prim≈ {p} r s) =
     λ v r' → ans-in (frame {g = λ X → C.prim p C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (T.value-red v))) (prim≈ r') (sim s)
       λ v' s' → ret?-ans (out≈ (obs≈ v r') (obs≈ v' s')) (trans (val-in (T.value-red v)) (val-in (T.value-red v')))
   where
-  out≈ : ∀ {o₁ o₁' o₂ o₂'} → o₁ ≡ o₁' → o₂ ≡ o₂'
+  out≈ : ∀ {o₁ o₁' o₂ o₂'}
+    → o₁ ≡ o₁'
+    → o₂ ≡ o₂'
     → M.Pointwise _≈_ (map S.out (δ? p o₁ o₂)) (map T.out (δ? p o₁' o₂'))
   out≈ {o₁} {_} {o₂} refl refl with δ? p o₁ o₂
   ... | nothing = M.nothing
@@ -238,7 +277,9 @@ sims (r ∷ rs) = ans-cons T.red-args (λ _ _ → refl) T.value-red rs (sim r) (
 
 {- The end theorem: for well-scoped programs ------------------------------------}
 
-concretize-correct : ∀ M → WS 0 M → Equivalent (S.sem M) (T.sem (concretize-program M))
+concretize-correct : ∀ M
+  → WS 0 M
+  → Equivalent (S.sem M) (T.sem (concretize-program M))
 concretize-correct M w =
   red-equivalent T.value-red _≈_ sim (λ m _ v → obs≈ v m)
     (subst₂ _≈_ (SS.sub-id M) (TS.sub-id (concretize var M)) (conc var M w (λ x ())))

@@ -27,7 +27,8 @@ open import proof.Framework.GraphModel.Env using (Env; _~ₑ[_]_)
    operators. -}
 
 apply-n-pres : ∀ (R : 𝒫 Value → 𝒫 Value → Set) n {b} (F F' : Result (𝒫 Value) (ν-n n b)) Ds Ds'
-  → result-rel-pres R (ν-n n b) F F' → results-rel-pres R (replicate n ■) Ds Ds'
+  → result-rel-pres R (ν-n n b) F F'
+  → results-rel-pres R (replicate n ■) Ds Ds'
   → result-rel-pres R b (apply-n n F Ds) (apply-n n F' Ds')
 apply-n-pres R zero F F' _ _ F~ _ = F~
 apply-n-pres R (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D~ , Ds~ ⟩ =
@@ -83,11 +84,14 @@ push-plus : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ j → push Ds
 push-plus zero _ ρ j = refl
 push-plus (suc n) ⟨ D , Ds ⟩ ρ j rewrite sym (+-suc n j) = push-plus n Ds (D • ρ) (suc j)
 
-Clos2ᵐ-con-env : ∀ M {ρ ρ'} → ρ ~ₑ[ Every _~_ ] ρ' → Every _~_ (⟦ M ⟧ ρ) (⟦ M ⟧ ρ')
+Clos2ᵐ-con-env : ∀ M {ρ ρ'}
+  → ρ ~ₑ[ Every _~_ ] ρ'
+  → Every _~_ (⟦ M ⟧ ρ) (⟦ M ⟧ ρ')
 Clos2ᵐ-con-env M = ⟦⟧-pres (Every _~_) 𝕆-Clos2ᵐ-consis (Con-⌈⌉ ω) M
 
 {- a closure over n values is the function of its body on them -}
-clos-β : ∀ m (a : Arg (ν-n m (ν ■))) ρ {Ds} → AllVal m Ds
+clos-β : ∀ m (a : Arg (ν-n m (ν ■))) ρ {Ds}
+  → AllVal m Ds
   → 𝕆-Clos2ᵐ (clos-op m) ⟨ ⟦ a ⟧ₐ ρ , Ds ⟩ ≃ Λᵐ ⟨ apply-n m (⟦ a ⟧ₐ ρ) Ds , ptt ⟩
 clos-β m a ρ = binds-β m (λ {Xs} {Ys} Xs⊆ → lower (mono (Λᵐ-good {⊤}) _ _
   ⟨ apply-n-pres _⊆_ m (⟦ a ⟧ₐ ρ) (⟦ a ⟧ₐ ρ) Xs Ys (⟦⟧-monotone-arg a (λ _ _ z → z)) Xs⊆ , ptt ⟩))

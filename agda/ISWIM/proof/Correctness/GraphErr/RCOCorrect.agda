@@ -51,18 +51,28 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; con
 open import Function using (_$_)
 
 {- binds on sets of values equal to Ys are the kernel on Ys -}
-≃s⇒RRs : ∀ n {Ds Es : Results (𝒫 Value) (replicate n ■)} → (∀ i → nthD Ds i ≃ nthD Es i) → RRs (replicate n ■) Ds Es
+≃s⇒RRs : ∀ n {Ds Es : Results (𝒫 Value) (replicate n ■)}
+  → (∀ i → nthD Ds i ≃ nthD Es i)
+  → RRs (replicate n ■) Ds Es
 ≃s⇒RRs zero _ = ptt
 ≃s⇒RRs (suc n) e = ⟨ lift (e zero) , ≃s⇒RRs n (λ i → e (suc i)) ⟩
 
-βₙ : ∀ n {K Ds Ys} → Good ⊤ (replicate n ■) K → AllVal n Ds → (∀ i → nthD Ys i ≃ nthD Ds i) → K Ys ≃ binds n Ds K
+βₙ : ∀ n {K Ds Ys}
+  → Good ⊤ (replicate n ■) K
+  → AllVal n Ds
+  → (∀ i → nthD Ys i ≃ nthD Ds i)
+  → K Ys ≃ binds n Ds K
 βₙ n G vs e = ≃-sym (binds-val-≃ n vs λ Xs≃ → mono-≃ (mono G) (≃s⇒RRs n λ i → ≃-trans (Xs≃ i) (≃-sym (e i))))
 
 ℬ-val : ∀ {B c} → Val (ℬ B c ptt)
 ℬ-val {c = c} = ⟨ (λ { _ d∈ refl → ⊥-elim d∈ }) , ⟨ const c , ⟨ refl , refl ⟩ ⟩ ⟩
 
 {- a case on a set of values equal to A -}
-case-val : ∀ {A X F F' G G'} → Val X → X ≃ A → BodyEq F F' → BodyEq G G'
+case-val : ∀ {A X F F' G G'}
+  → Val X
+  → X ≃ A
+  → BodyEq F F'
+  → BodyEq G G'
   → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ caseᵗ A F' G'
 case-val {A} {X} {F} {F'} {G} {G'} v e eF eG =
   ≃-trans ⟨ 𝒞⇂-⊆ {X} {⌊ A ⌋} {F} {F'} {G} {G'} (λ d d∈ → ⟨ proj₁ e d d∈ , proj₁ v d d∈ ⟩) (λ V a b c → proj₁ (eF V a b c)) (λ V a b c → proj₁ (eG V a b c))
@@ -85,10 +95,17 @@ record R' {Δ Δ'} (r : Ren Δ Δ') (ρ' ρ'' : Env Value) : Set where
   constructor mkR'
   field at : ∀ {A} (x : Δ ∋ A) → ρ' (idx x) ≃ ρ'' (idx (r x))
 
-R-∘ : ∀ {Γ Δ Δ'} {r : Ren Γ Δ} {r' : Ren Δ Δ'} {ρ ρ' ρ''} → R r ρ ρ' → R' r' ρ' ρ'' → R (λ x → r' (r x)) ρ ρ''
+R-∘ : ∀ {Γ Δ Δ'} {r : Ren Γ Δ} {r' : Ren Δ Δ'} {ρ ρ' ρ''}
+  → R r ρ ρ'
+  → R' r' ρ' ρ''
+  → R (λ x → r' (r x)) ρ ρ''
 R-∘ h h' = mkR λ x → ⟨ ≃-trans (proj₁ (R.at h x)) (R'.at h' _) , Val-≃ (R'.at h' _) (proj₂ (R.at h x)) ⟩
 
-R-ext : ∀ {Γ Δ B} {r : Ren Γ Δ} {ρ ρ' X X'} → R r ρ ρ' → X ≃ X' → Val X' → R (ext {B = B} r) (X • ρ) (X' • ρ')
+R-ext : ∀ {Γ Δ B} {r : Ren Γ Δ} {ρ ρ' X X'}
+  → R r ρ ρ'
+  → X ≃ X'
+  → Val X'
+  → R (ext {B = B} r) (X • ρ) (X' • ρ')
 R-ext h e v = mkR λ { Z → ⟨ e , v ⟩ ; (S x) → R.at h x }
 
 R'-id : ∀ {Δ} {ρ' : Env Value} → R' {Δ} (λ y → y) ρ' ρ'
@@ -104,7 +121,10 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TV : ∀ k → Val (T k))
   𝒜 : ∀ {Σ Δ A} → Atm Σ Δ A → Env Value → 𝒫 Value
   𝒜 a = ⟦ ⌜ a ⌝ᵃ ⟧[ T' ]
 
-  ren-𝒜 : ∀ {Σ Δ Δ' A} {r : Ren Δ Δ'} {ρ' ρ''} → R' r ρ' ρ'' → (a : Atm Σ Δ A) → 𝒜 a ρ' ≃ 𝒜 (ren r a) ρ''
+  ren-𝒜 : ∀ {Σ Δ Δ' A} {r : Ren Δ Δ'} {ρ' ρ''}
+    → R' r ρ' ρ''
+    → (a : Atm Σ Δ A)
+    → 𝒜 a ρ' ≃ 𝒜 (ren r a) ρ''
   ren-𝒜 h (var x) = R'.at h x
   ren-𝒜 h (lit B c) = ≃-refl
   ren-𝒜 h (ref f) = ≃-refl
@@ -115,34 +135,55 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TV : ∀ k → Val (T k))
     → H X ≃ ⟦ ⌜ k r' a ⌝ ⟧[ T' ] ρ''
 
   {- an atom: a set of values -}
-  at : ∀ {Σ Δ A B} {k : K Σ Δ A B} {ρ' H} (a : Atm Σ Δ A) {D} → Kont H k ρ' → Val D → D ≃ 𝒜 a ρ'
+  at : ∀ {Σ Δ A B} {k : K Σ Δ A B} {ρ' H} (a : Atm Σ Δ A) {D}
+    → Kont H k ρ'
+    → Val D
+    → D ≃ 𝒜 a ρ'
     → (D ≫= H) ≃ ⟦ ⌜ k (λ y → y) a ⌝ ⟧[ T' ] ρ'
   at {H = H} a {D} hk v e = ≃-trans (≫=-val-β {D} {H} v)
                         (hk (λ y → y) R'-id a (⌊⌋-val (Val⇒Conv v)) (≃-trans (⌊⌋-≃′ v) e))
     where ⌊⌋-≃′ : ∀ {D} → Val D → ⌊ D ⌋ ≃ D
           ⌊⌋-≃′ v = ⟨ ⌊⌋-⊆ , ⌊⌋-clean (proj₁ v) ⟩
 
-  rco-sem : ∀ {Σ Γ Δ A} (M : Tm Σ Γ A) (r : Ren Γ Δ) {ρ ρ'} → R r ρ ρ' → ⟦ M ⟧[ T ] ρ ≃ ⟦ ⌜ rco M r ⌝ ⟧[ T' ] ρ'
-  atomize-sem : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (k : K Σ Δ A B) {ρ ρ' H} → R r ρ ρ' → Kont H k ρ'
+  rco-sem : ∀ {Σ Γ Δ A} (M : Tm Σ Γ A) (r : Ren Γ Δ) {ρ ρ'}
+    → R r ρ ρ'
+    → ⟦ M ⟧[ T ] ρ ≃ ⟦ ⌜ rco M r ⌝ ⟧[ T' ] ρ'
+  atomize-sem : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (k : K Σ Δ A B) {ρ ρ' H}
+    → R r ρ ρ'
+    → Kont H k ρ'
     → (⟦ N ⟧[ T ] ρ ≫= H) ≃ ⟦ ⌜ atomize N r k ⌝ ⟧[ T' ] ρ'
   {- a complex operand: a let -}
-  cx : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (k : K Σ Δ A B) {ρ ρ' H} → R r ρ ρ' → Kont H k ρ'
+  cx : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (k : K Σ Δ A B) {ρ ρ' H}
+    → R r ρ ρ'
+    → Kont H k ρ'
     → (⟦ N ⟧[ T ] ρ ≫= H) ≃ ⟦ ⌜ M.let′ (rco N r) (k S (var Z)) ⌝ ⟧[ T' ] ρ'
   {- one operand, into a kernel κ -}
-  op₁ : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (f : ∀ {Δ'} → Atm Σ Δ' A → M.Exp Σ Δ' B) {κ} → Good ⊤ (■ ∷ []) κ
-    → (∀ {Δ'} (a : Atm Σ Δ' A) {ρ''} → binds 1 ⟨ 𝒜 a ρ'' , ptt ⟩ κ ≡ ⟦ ⌜ f a ⌝ ⟧[ T' ] ρ'')
-    → ∀ {ρ ρ'} → R r ρ ρ' → binds 1 ⟨ ⟦ N ⟧[ T ] ρ , ptt ⟩ κ ≃ ⟦ ⌜ atomize N r (λ _ a → f a) ⌝ ⟧[ T' ] ρ'
+  op₁ : ∀ {Σ Γ Δ A B} (N : Tm Σ Γ A) (r : Ren Γ Δ) (f : ∀ {Δ'} → Atm Σ Δ' A → M.Exp Σ Δ' B) {κ}
+    → Good ⊤ (■ ∷ []) κ
+    → (  ∀ {Δ'} (a : Atm Σ Δ' A) {ρ''}
+       → binds 1 ⟨ 𝒜 a ρ'' , ptt ⟩ κ ≡ ⟦ ⌜ f a ⌝ ⟧[ T' ] ρ'')
+    → ∀ {ρ ρ'}
+    → R r ρ ρ'
+    → binds 1 ⟨ ⟦ N ⟧[ T ] ρ , ptt ⟩ κ ≃ ⟦ ⌜ atomize N r (λ _ a → f a) ⌝ ⟧[ T' ] ρ'
   {- two operands, into a kernel κ -}
   op₂ : ∀ {Σ Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) (r : Ren Γ Δ)
-    (f : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → M.Exp Σ Δ' B) {κ} → Good ⊤ (■ ∷ ■ ∷ []) κ
-    → (∀ {Δ'} (a : Atm Σ Δ' A₁) b {ρ''} → binds 2 ⟨ 𝒜 a ρ'' , ⟨ 𝒜 b ρ'' , ptt ⟩ ⟩ κ ≡ ⟦ ⌜ f a b ⌝ ⟧[ T' ] ρ'')
-    → ∀ {ρ ρ'} → R r ρ ρ' → binds 2 ⟨ ⟦ L ⟧[ T ] ρ , ⟨ ⟦ N ⟧[ T ] ρ , ptt ⟩ ⟩ κ ≃ ⟦ ⌜ atomize₂ L N r f ⌝ ⟧[ T' ] ρ'
+      (f : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → M.Exp Σ Δ' B) {κ}
+    → Good ⊤ (■ ∷ ■ ∷ []) κ
+    → (  ∀ {Δ'} (a : Atm Σ Δ' A₁) b {ρ''}
+       → binds 2 ⟨ 𝒜 a ρ'' , ⟨ 𝒜 b ρ'' , ptt ⟩ ⟩ κ ≡ ⟦ ⌜ f a b ⌝ ⟧[ T' ] ρ'')
+    → ∀ {ρ ρ'}
+    → R r ρ ρ'
+    → binds 2 ⟨ ⟦ L ⟧[ T ] ρ , ⟨ ⟦ N ⟧[ T ] ρ , ptt ⟩ ⟩ κ ≃ ⟦ ⌜ atomize₂ L N r f ⌝ ⟧[ T' ] ρ'
   {- n operands, into a kernel K -}
   atomizes-sem : ∀ {Σ Γ Δ n B} (Ns : Vec (Tm Σ Γ Any) n) (r : Ren Γ Δ)
-    (k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) n → M.Exp Σ Δ' B) {ρ ρ'} {H : Results (𝒫 Value) (replicate n ■) → 𝒫 Value}
+      (k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) n → M.Exp Σ Δ' B) {ρ ρ'} {H : Results (𝒫 Value) (replicate n ■) → 𝒫 Value}
     → R r ρ ρ'
-    → (∀ {Δ'} (r' : Ren Δ Δ') {ρ''} → R' r' ρ' ρ'' → (as : Vec (Atm Σ Δ' Any) n) → ∀ {Xs} → AllVal n Xs
-         → (∀ i → nthD Xs i ≃ nthD (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] ρ'') i) → H Xs ≃ ⟦ ⌜ k r' as ⌝ ⟧[ T' ] ρ'')
+    → (  ∀ {Δ'} (r' : Ren Δ Δ') {ρ''}
+       → R' r' ρ' ρ''
+       → (as : Vec (Atm Σ Δ' Any) n) → ∀ {Xs}
+       → AllVal n Xs
+       → (∀ i → nthD Xs i ≃ nthD (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] ρ'') i)
+       → H Xs ≃ ⟦ ⌜ k r' as ⌝ ⟧[ T' ] ρ'')
     → binds n (⟦ Ns ⟧s[ T ] ρ) H ≃ ⟦ ⌜ atomizes Ns r k ⌝ ⟧[ T' ] ρ'
 
   rco-sem (` x) r h = proj₁ (R.at h x)
@@ -160,7 +201,9 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TV : ∀ k → Val (T k))
       λ r' {ρ''} h' a v e → case-val {F = λ Z → ⟦ N₁ ⟧[ T ] (Z • ρ)} {λ Z → ⟦ ⌜ rco N₁ (ext λ x → r' (r x)) ⌝ ⟧[ T' ] (Z • ρ'')}
         {λ Z → ⟦ N₂ ⟧[ T ] (Z • ρ)} {λ Z → ⟦ ⌜ rco N₂ (ext λ x → r' (r x)) ⌝ ⟧[ T' ] (Z • ρ'')} v e (br N₁ r' {ρ''} h') (br N₂ r' {ρ''} h')
     where
-    br : ∀ {Δ'} N (r' : Ren _ Δ') {ρ''} → R' r' ρ' ρ'' → BodyEq (λ Z → ⟦ N ⟧[ T ] (Z • ρ)) (λ Z → ⟦ ⌜ rco N (ext λ x → r' (r x)) ⌝ ⟧[ T' ] (Z • ρ''))
+    br : ∀ {Δ'} N (r' : Ren _ Δ') {ρ''}
+      → R' r' ρ' ρ''
+      → BodyEq (λ Z → ⟦ N ⟧[ T ] (Z • ρ)) (λ Z → ⟦ ⌜ rco N (ext λ x → r' (r x)) ⌝ ⟧[ T' ] (Z • ρ''))
     br N r' h' V ne _ n = rco-sem N _ (R-ext (R-∘ h h') ≃-refl (noerr-val V ne n))
   rco-sem (prim p L N) r h = op₂ L N r (M.prim p) (primD-good p) (λ _ _ → refl) h
   rco-sem (let′ N₁ N₂) r {ρ} {ρ'} h =

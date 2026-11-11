@@ -92,20 +92,31 @@ _ ⊆L _ = ⊥
 ⊆L-refl [] = tt
 ⊆L-refl (D ∷ Ds) = ⟨ (λ d z → z) , ⊆L-refl Ds ⟩
 
-At-mono : ∀ {n} (i : Fin n) Ds Es d → Ds ⊆L Es → At i Ds d → At i Es d
+At-mono : ∀ {n} (i : Fin n) Ds Es d
+  → Ds ⊆L Es
+  → At i Ds d
+  → At i Es d
 At-mono {suc n} zero (D ∷ Ds) (E ∷ Es) d ⟨ D⊆ , Ds⊆ ⟩ ⟨ len , d∈ ⟩ =
   ⟨ len' Ds Es Ds⊆ len , D⊆ d d∈ ⟩
   where
-  len' : ∀ {m} Ds Es → Ds ⊆L Es → length Ds ≡ m → length Es ≡ m
+  len' : ∀ {m} Ds Es
+    → Ds ⊆L Es
+    → length Ds ≡ m
+    → length Es ≡ m
   len' [] [] _ refl = refl
   len' (D ∷ Ds) (E ∷ Es) ⟨ _ , s ⟩ refl = cong suc (len' Ds Es s refl)
 At-mono (suc i) (D ∷ Ds) (E ∷ Es) d ⟨ _ , Ds⊆ ⟩ a = At-mono i Ds Es d Ds⊆ a
 
-AllNE-mono : ∀ Ds Es → Ds ⊆L Es → AllNE Ds → AllNE Es
+AllNE-mono : ∀ Ds Es
+  → Ds ⊆L Es
+  → AllNE Ds
+  → AllNE Es
 AllNE-mono [] [] _ _ = tt
 AllNE-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ ⟨ ⟨ d , d∈ ⟩ , ne ⟩ = ⟨ ⟨ d , D⊆ d d∈ ⟩ , AllNE-mono Ds Es s ne ⟩
 
-𝒯L-mono : ∀ Ds Es → Ds ⊆L Es → 𝒯L Ds ⊆ 𝒯L Es
+𝒯L-mono : ∀ Ds Es
+  → Ds ⊆L Es
+  → 𝒯L Ds ⊆ 𝒯L Es
 𝒯L-mono [] [] s ⟨⟩ tt = tt
 𝒯L-mono Ds Es s (tup[ i ] d) ⟨ a , ne ⟩ = ⟨ At-mono i Ds Es d s a , AllNE-mono Ds Es s ne ⟩
 
@@ -137,7 +148,9 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 ⟦ [] ⟧* ρ = []
 ⟦ M ∷ Ms ⟧* ρ = ⟦ M ⟧ ρ ∷ ⟦ Ms ⟧* ρ
 
-inl-⊆ : ∀ {D E} → D ⊆ E → inl ⟨ D , ptt ⟩ ⊆ inl ⟨ E , ptt ⟩
+inl-⊆ : ∀ {D E}
+  → D ⊆ E
+  → inl ⟨ D , ptt ⟩ ⊆ inl ⟨ E , ptt ⟩
 inl-⊆ D⊆ (left d) d∈ = D⊆ d d∈
 inl-⊆ D⊆ (dconst k) ()
 inl-⊆ D⊆ (V ↦ w) ()
@@ -148,7 +161,9 @@ inl-⊆ D⊆ (tup[ i ] d) ()
 inl-⊆ D⊆ (right d) ()
 inl-⊆ D⊆ ⟨⟩ ()
 
-inr-⊆ : ∀ {D E} → D ⊆ E → inr ⟨ D , ptt ⟩ ⊆ inr ⟨ E , ptt ⟩
+inr-⊆ : ∀ {D E}
+  → D ⊆ E
+  → inr ⟨ D , ptt ⟩ ⊆ inr ⟨ E , ptt ⟩
 inr-⊆ D⊆ (right d) d∈ = D⊆ d d∈
 inr-⊆ D⊆ (dconst k) ()
 inr-⊆ D⊆ (V ↦ w) ()
@@ -180,14 +195,20 @@ inr-⊆ D⊆ ⟨⟩ ()
 
 {- Basic properties ----------------------------------------------------------}
 
-rev𝒱-mono : ∀ vs Ds Es → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
+rev𝒱-mono : ∀ vs Ds Es
+  → Ds ⊆L Es
+  → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
 rev𝒱-mono [] Ds Es s = s
 rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es) ⟨ (λ d z → z) , s ⟩
 
-⋆-⊆ : ∀ {F D E} → D ⊆ E → ⋆ ⟨ F , ⟨ D , ptt ⟩ ⟩ ⊆ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩
+⋆-⊆ : ∀ {F D E}
+  → D ⊆ E
+  → ⋆ ⟨ F , ⟨ D , ptt ⟩ ⟩ ⊆ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩
 ⋆-⊆ D⊆ w ⟨ V , ⟨ f∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ⟨ V , ⟨ f∈ , ⟨ (λ d d∈ → D⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩
 
-𝒦-mono : ∀ κ {D E} → D ⊆ E → 𝒦 κ D ⊆ 𝒦 κ E
+𝒦-mono : ∀ κ {D E}
+  → D ⊆ E
+  → 𝒦 κ D ⊆ 𝒦 κ E
 𝒦-mono halt D⊆ = D⊆
 𝒦-mono (appL M γ κ) D⊆ = 𝒦-mono κ λ { w ⟨ V , ⟨ f∈ , rest ⟩ ⟩ → ⟨ V , ⟨ D⊆ _ f∈ , rest ⟩ ⟩ }
 𝒦-mono (appR v κ) D⊆ = 𝒦-mono κ (⋆-⊆ {𝒱 v} D⊆)
@@ -234,7 +255,9 @@ rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es
 𝓔-nonempty (v ∷ γ) zero = 𝒱-nonempty v
 𝓔-nonempty (v ∷ γ) (suc x) = 𝓔-nonempty γ x
 
-𝓔-lookup : ∀ γ x {v} → γ ‼ x ≡ just v → 𝒱 v ⊆ 𝓔 γ x
+𝓔-lookup : ∀ γ x {v}
+  → γ ‼ x ≡ just v
+  → 𝒱 v ⊆ 𝓔 γ x
 𝓔-lookup (v ∷ γ) zero refl d d∈ = d∈
 𝓔-lookup (v ∷ γ) (suc x) eq = 𝓔-lookup γ x eq
 
@@ -243,7 +266,8 @@ rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es
 𝓔-ext v γ (suc x) d d∈ = d∈
 
 {- β: the body of a function, run on a value, is in the application -}
-body-in : ∀ N γ v d → d ∈ ⟦ N ⟧ (𝓔 (v ∷ γ))
+body-in : ∀ N γ v d
+  → d ∈ ⟦ N ⟧ (𝓔 (v ∷ γ))
   → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ 𝒱 v × d ∈ ⟦ N ⟧ (mem V • 𝓔 γ)
 body-in N γ v d d∈ =
   body-continuous N (𝓔 γ) (𝓔-nonempty γ) (𝒱 v) (𝒱-nonempty v) d
@@ -261,16 +285,21 @@ tuple-next-𝒮 vs [] γ κ d d∈ = subst (λ Ds → 𝒦 κ (𝒯L Ds) d) (�
 tuple-next-𝒮 vs (M ∷ Ms) γ κ d d∈ = d∈
 
 At-args : ∀ {n} (args : Args (replicate n ■)) ρ (i : Fin n) d
-  → At i (⟦ args→list args ⟧* ρ) d → d ∈ nthD (⟦ args ⟧₊ ρ) i
+  → At i (⟦ args→list args ⟧* ρ) d
+  → d ∈ nthD (⟦ args ⟧₊ ρ) i
 At-args {suc n} (M ,, args) ρ zero d ⟨ _ , d∈ ⟩ = d∈
 At-args {suc n} (M ,, args) ρ (suc i) d a = At-args args ρ i d a
 
 AllNE-args : ∀ {n} (args : Args (replicate n ■)) ρ
-  → AllNE (⟦ args→list args ⟧* ρ) → ∀ i → nonempty (nthD (⟦ args ⟧₊ ρ) i)
+  → AllNE (⟦ args→list args ⟧* ρ)
+  → ∀ i
+  → nonempty (nthD (⟦ args ⟧₊ ρ) i)
 AllNE-args {suc n} (M ,, args) ρ ⟨ ne , _ ⟩ zero = ne
 AllNE-args {suc n} (M ,, args) ρ ⟨ _ , nes ⟩ (suc i) = AllNE-args args ρ nes i
 
-At-length : ∀ {m} (i : Fin m) Ds d → At i Ds d → length Ds ≡ m
+At-length : ∀ {m} (i : Fin m) Ds d
+  → At i Ds d
+  → length Ds ≡ m
 At-length {suc m} zero (D ∷ Ds) d ⟨ len , _ ⟩ = cong suc len
 At-length (suc i) (D ∷ Ds) d a = cong suc (At-length i Ds d a)
 
@@ -288,12 +317,18 @@ length-args {suc n} (M ,, args) ρ = cong suc (length-args args ρ)
 ... | len with subst (λ k → k ≡ m) (length-args args ρ) len
 ... | refl = ⟨ refl , ⟨ At-args args ρ i d a , AllNE-args args ρ ne ⟩ ⟩
 
-proj-𝒱s : ∀ {n} (i : Fin n) vs {v} → proj i vs ≡ just v → ∀ d → d ∈ 𝒱 v → At i (𝒱s vs) d
+proj-𝒱s : ∀ {n} (i : Fin n) vs {v}
+  → proj i vs ≡ just v
+  → ∀ d
+  → d ∈ 𝒱 v
+  → At i (𝒱s vs) d
 proj-𝒱s {suc n} zero (v ∷ vs) eq d d∈ with has-length n vs in h
 proj-𝒱s {suc n} zero (v ∷ vs) refl d d∈ | true =
   ⟨ len vs (has-length→length n vs h) , d∈ ⟩
   where
-  len : ∀ vs {m} → length vs ≡ m → length (𝒱s vs) ≡ m
+  len : ∀ vs {m}
+    → length vs ≡ m
+    → length (𝒱s vs) ≡ m
   len [] refl = refl
   len (v ∷ vs) refl = cong suc (len vs refl)
 proj-𝒱s {suc n} zero (v ∷ vs) () d d∈ | false
@@ -304,15 +339,23 @@ AllCon : List (𝒫 Value) → Set
 AllCon [] = ⊤
 AllCon (D ∷ Ds) = Con D × AllCon Ds
 
-At-con : ∀ {n} (i : Fin n) Ds {d d'} → AllCon Ds → At i Ds d → At i Ds d' → d ~ d'
+At-con : ∀ {n} (i : Fin n) Ds {d d'}
+  → AllCon Ds
+  → At i Ds d
+  → At i Ds d'
+  → d ~ d'
 At-con {suc n} zero (D ∷ Ds) ⟨ c , _ ⟩ ⟨ _ , d∈ ⟩ ⟨ _ , d'∈ ⟩ = c _ _ d∈ d'∈
 At-con (suc i) (D ∷ Ds) ⟨ _ , cs ⟩ a a' = At-con i Ds cs a a'
 
-At-[] : ∀ {n} (i : Fin n) {d} → At i [] d → ⊥
+At-[] : ∀ {n} (i : Fin n) {d}
+  → At i [] d
+  → ⊥
 At-[] zero ()
 At-[] (suc i) ()
 
-𝒯L-con : ∀ Ds → AllCon Ds → Con (𝒯L Ds)
+𝒯L-con : ∀ Ds
+  → AllCon Ds
+  → Con (𝒯L Ds)
 𝒯L-con Ds cs ⟨⟩ ⟨⟩ _ _ = tt
 𝒯L-con Ds cs (tup[ i ] d) (tup[ j ] d') ⟨ a , _ ⟩ ⟨ a' , _ ⟩
     with trans (sym (At-length i Ds d a)) (At-length j Ds d' a')
@@ -354,10 +397,14 @@ At-[] (suc i) ()
 
 {- Primitives -------------------------------------------------------------------}
 
-int-in : ∀ v {n} → obs v ≡ o-const Int n → dconst {Int} n ∈ 𝒱 v
+int-in : ∀ v {n}
+  → obs v ≡ o-const Int n
+  → dconst {Int} n ∈ 𝒱 v
 int-in (const B k) refl = ⟨ refl , refl ⟩
 
-𝒱-out : ∀ r d → d ∈ 𝒱 (out r) → d ≡ dout r
+𝒱-out : ∀ r d
+  → d ∈ 𝒱 (out r)
+  → d ≡ dout r
 𝒱-out (int k) (dconst k') ⟨ refl , refl ⟩ = refl
 𝒱-out (bool true) (left ⟨⟩) tt = refl
 𝒱-out (bool false) (right ⟨⟩) tt = refl
@@ -366,7 +413,9 @@ int-in (const B k) refl = ⟨ refl , refl ⟩
 𝒱-out (bool false) (right (tup[ zero ] d)) ⟨ () , _ ⟩
 𝒱-out (bool false) (right (tup[ suc i ] d)) ⟨ () , _ ⟩
 
-prim-⊆ : ∀ p v w r → δ? p (obs v) (obs w) ≡ just r → 𝒱 (out r) ⊆ primD p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
+prim-⊆ : ∀ p v w r
+  → δ? p (obs v) (obs w) ≡ just r
+  → 𝒱 (out r) ⊆ primD p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
 prim-⊆ p v w r e d d∈ with δ?-inv p (obs v) (obs w) e
 ... | ⟨ n , ⟨ m , ⟨ ov , ⟨ ow , refl ⟩ ⟩ ⟩ ⟩ = ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , 𝒱-out (δ p n m) d d∈ ⟩ ⟩ ⟩ ⟩
 
@@ -377,7 +426,9 @@ app-β : ∀ N γ w → ⟦ N ⟧ (𝓔 (w ∷ γ)) ⊆ ⋆ ⟨ 𝒱 (clo N γ) 
 app-β N γ w d d∈ with body-in N γ w d d∈
 ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con w) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
 
-step-⊆ : ∀ s {s'} → step s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
+step-⊆ : ∀ s {s'}
+  → step s ≡ next s'
+  → 𝒮 s' ⊆ 𝒮 s
 step-⊆ (eval (` x) γ κ) eq with γ ‼ x in look
 step-⊆ (eval (` x) γ κ) refl | just v = 𝒦-mono κ (𝓔-lookup γ x look)
 step-⊆ (eval (` x) γ κ) () | nothing
@@ -435,7 +486,9 @@ step-⊆ (ret w (primR p v κ)) () | nothing
 step-⊆ (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
 step-⊆ (ret w (letK N γ κ)) refl = 𝒦-mono κ (app-β N γ w)
 
-↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
+↠-⊆ : ∀ {s t}
+  → s ↠ t
+  → 𝒮 t ⊆ 𝒮 s
 ↠-⊆ done d d∈ = d∈
 ↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
 
@@ -460,7 +513,10 @@ step-⊆ (ret w (letK N γ κ)) refl = 𝒦-mono κ (app-β N γ w)
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ right d , ⟨ d∈ , sh ⟩ ⟩
 
 {- a state that stops with an answer has an element of that shape -}
-final-shape : ∀ s {o} → step s ≡ stop o → Answer o → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
+final-shape : ∀ s {o}
+  → step s ≡ stop o
+  → Answer o
+  → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
 final-shape (eval (` x) γ κ) eq ans with γ ‼ x
 final-shape (eval (` x) γ κ) () ans | just v
 final-shape (eval (` x) γ κ) refl ans | nothing = ⊥-elim (ans refl)
@@ -501,7 +557,9 @@ final-shape (ret w (primR p v κ)) refl ans | nothing = ⊥-elim (ans refl)
 
 {- a program that terminates with an answer o has an element of the shape
    of o in its denotation -}
-soundness : ∀ M {o} → Terminates (sem M) o → Answer o
+soundness : ∀ M {o}
+  → Terminates (sem M) o
+  → Answer o
   → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × ShapeOf o d
 soundness M (⟨ s , ⟨ σ , fin ⟩ ⟩) ans
     with final-shape s fin ans

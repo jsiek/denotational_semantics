@@ -43,7 +43,9 @@ open import Data.Product using (_,_; proj₁; proj₂)
 
 {- The end theorem -------------------------------------------------------------}
 
-compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
+compile-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (capture-prune-correct (simplify M) (simplify-closed M c))
     (equiv-trans (concretize-correct M₂) (equiv-trans (split-correct M₃) (hoist-correct M₄))))
@@ -53,20 +55,26 @@ compile-correct M c =
 
 {- in particular -}
 
-compile-const : ∀ M → Closed M → ∀ B k
+compile-const : ∀ M
+  → Closed M
+  → ∀ B k
   → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (compile M)) (o-const B k)
 compile-const M c B k = Equivalent.terminates (compile-correct M c) (o-const B k)
 
-compile-converges : ∀ M → Closed M
+compile-converges : ∀ M
+  → Closed M
   → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (compile M)))
 compile-converges M c =
     (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
   , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
   where E = compile-correct M c
 
-compile-error : ∀ M → Closed M
+compile-error : ∀ M
+  → Closed M
   → Terminates (S.sem M) o-error ⇔ Terminates (T.sem (compile M)) o-error
 compile-error M c = Equivalent.terminates (compile-correct M c) o-error
 
-compile-diverges : ∀ M → Closed M → Diverges (S.sem M) ⇔ Diverges (T.sem (compile M))
+compile-diverges : ∀ M
+  → Closed M
+  → Diverges (S.sem M) ⇔ Diverges (T.sem (compile M))
 compile-diverges M c = Equivalent.diverges (compile-correct M c)

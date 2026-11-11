@@ -61,7 +61,9 @@ lvl< Z = ≤-refl
 lvl< (S x) = m<n⇒m<1+n (lvl< x)
 
 {- an index is determined by its level -}
-lvl-inj : ∀ {Γ : List ℕ} {m n} (f : Γ ∋ m) (g : Γ ∋ n) → lvl f ≡ lvl g → _≡_ {A = ∃[ k ] Γ ∋ k} ⟨ m , f ⟩ ⟨ n , g ⟩
+lvl-inj : ∀ {Γ : List ℕ} {m n} (f : Γ ∋ m) (g : Γ ∋ n)
+  → lvl f ≡ lvl g
+  → _≡_ {A = ∃[ k ] Γ ∋ k} ⟨ m , f ⟩ ⟨ n , g ⟩
 lvl-inj Z Z e = refl
 lvl-inj Z (S g) e = ⊥-elim (<-irrefl (sym e) (lvl< g))
 lvl-inj (S f) Z e = ⊥-elim (<-irrefl e (lvl< f))
@@ -70,7 +72,9 @@ lvl-inj (S f) (S g) e with lvl-inj f g e
 
 {- Inversions ------------------------------------------------------------------------}
 
-ℬ-inv : ∀ {B} {k : base-rep B} d → d ∈ ℬ B k ptt → d ≡ dconst k
+ℬ-inv : ∀ {B} {k : base-rep B} d
+  → d ∈ ℬ B k ptt
+  → d ≡ dconst k
 ℬ-inv (dconst k) ⟨ refl , refl ⟩ = refl
 ℬ-inv (V ↦ w) ()
 ℬ-inv ν ()
@@ -81,7 +85,9 @@ lvl-inj (S f) (S g) e with lvl-inj f g e
 ℬ-inv (right d) ()
 ℬ-inv ⟨⟩ ()
 
-pair-inv : ∀ {D E} d → d ∈ dpair ⟨ D , ⟨ E , ptt ⟩ ⟩ → Σ[ u ∈ Value ] Σ[ u' ∈ Value ] d ≡ ⦅ u , u' ⦆ × u ∈ D × u' ∈ E
+pair-inv : ∀ {D E} d
+  → d ∈ dpair ⟨ D , ⟨ E , ptt ⟩ ⟩
+  → Σ[ u ∈ Value ] Σ[ u' ∈ Value ] d ≡ ⦅ u , u' ⦆ × u ∈ D × u' ∈ E
 pair-inv ⦅ u , u' ⦆ ⟨ u∈ , u'∈ ⟩ = ⟨ u , ⟨ u' , ⟨ refl , ⟨ u∈ , u'∈ ⟩ ⟩ ⟩ ⟩
 pair-inv (dconst k) ()
 pair-inv (V ↦ w) ()
@@ -92,7 +98,9 @@ pair-inv (left d) ()
 pair-inv (right d) ()
 pair-inv ⟨⟩ ()
 
-inl-inv : ∀ {D} d → d ∈ inlD ⟨ D , ptt ⟩ → Σ[ u ∈ Value ] d ≡ left u × u ∈ D
+inl-inv : ∀ {D} d
+  → d ∈ inlD ⟨ D , ptt ⟩
+  → Σ[ u ∈ Value ] d ≡ left u × u ∈ D
 inl-inv (left u) u∈ = ⟨ u , ⟨ refl , u∈ ⟩ ⟩
 inl-inv (dconst k) ()
 inl-inv (V ↦ w) ()
@@ -103,7 +111,9 @@ inl-inv (tup[ i ] d) ()
 inl-inv (right d) ()
 inl-inv ⟨⟩ ()
 
-inr-inv : ∀ {D} d → d ∈ inrD ⟨ D , ptt ⟩ → Σ[ u ∈ Value ] d ≡ right u × u ∈ D
+inr-inv : ∀ {D} d
+  → d ∈ inrD ⟨ D , ptt ⟩
+  → Σ[ u ∈ Value ] d ≡ right u × u ∈ D
 inr-inv (right u) u∈ = ⟨ u , ⟨ refl , u∈ ⟩ ⟩
 inr-inv (dconst k) ()
 inr-inv (V ↦ w) ()
@@ -115,9 +125,10 @@ inr-inv (left d) ()
 inr-inv ⟨⟩ ()
 
 {- an element of a tuple of n components -}
-𝒯-inv : ∀ n {Ds} d → d ∈ 𝒯 n Ds
+𝒯-inv : ∀ n {Ds} d
+  → d ∈ 𝒯 n Ds
   → (n ≡ 0 × d ≡ ⟨⟩) ⊎ Σ[ m ∈ ℕ ] Σ[ i ∈ Fin (suc m) ] Σ[ u ∈ Value ] Σ[ e ∈ n ≡ suc m ]
-       d ≡ tup[ i ] u × u ∈ nthD Ds (subst Fin (sym e) i) × (∀ j → nonempty (nthD Ds j))
+      d ≡ tup[ i ] u × u ∈ nthD Ds (subst Fin (sym e) i) × (∀ j → nonempty (nthD Ds j))
 𝒯-inv zero ⟨⟩ _ = inj₁ ⟨ refl , refl ⟩
 𝒯-inv (suc n) (tup[ i ] u) ⟨ refl , ⟨ u∈ , ne ⟩ ⟩ = inj₂ ⟨ n , ⟨ i , ⟨ u , ⟨ refl , ⟨ refl , ⟨ u∈ , ne ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
 𝒯-inv zero (tup[ i ] u) ()
@@ -137,7 +148,9 @@ inr-inv ⟨⟩ ()
 𝒯-inv zero (right d) ()
 𝒯-inv (suc n) (right d) ()
 
-𝒯L[]-inv : ∀ d → d ∈ 𝒯L [] → d ≡ ⟨⟩
+𝒯L[]-inv : ∀ d
+  → d ∈ 𝒯L []
+  → d ≡ ⟨⟩
 𝒯L[]-inv ⟨⟩ _ = refl
 𝒯L[]-inv (tup[ zero ] d) ⟨ () , _ ⟩
 𝒯L[]-inv (tup[ suc i ] d) ⟨ () , _ ⟩
@@ -185,24 +198,36 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
   𝕍At (suc i) d (v ∷ vs) = 𝕍At i d vs
   𝕍At _ d [] = ⊥
 
-  𝕍s-∈ : ∀ {A} V {v : Val Σ A} {d} → 𝕍s V v → d ∈ mem V → 𝕍 d v
+  𝕍s-∈ : ∀ {A} V {v : Val Σ A} {d}
+    → 𝕍s V v
+    → d ∈ mem V
+    → 𝕍 d v
   𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ (here refl) = r
   𝕍s-∈ (d ∷ V) ⟨ _ , rs ⟩ (there d∈) = 𝕍s-∈ V rs d∈
 
-  all→𝕍s : ∀ {A} V {v : Val Σ A} → (∀ d → d ∈ mem V → 𝕍 d v) → 𝕍s V v
+  all→𝕍s : ∀ {A} V {v : Val Σ A}
+    → (∀ d → d ∈ mem V → 𝕍 d v)
+    → 𝕍s V v
   all→𝕍s [] all = tt
   all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
 
-  𝕍At-lookup : ∀ {n} (i : Fin n) d (ws : Vec (Val Σ Any) n) → 𝕍At i d (toList ws) → 𝕍 d (lookup ws i)
+  𝕍At-lookup : ∀ {n} (i : Fin n) d (ws : Vec (Val Σ Any) n)
+    → 𝕍At i d (toList ws)
+    → 𝕍 d (lookup ws i)
   𝕍At-lookup zero d (w ∷ ws) ⟨ _ , r ⟩ = r
   𝕍At-lookup (suc i) d (w ∷ ws) r = 𝕍At-lookup i d ws r
 
-  𝕍At-len : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → length vs ≡ n
+  𝕍At-len : ∀ {n} (i : Fin n) d vs
+    → 𝕍At i d vs
+    → length vs ≡ n
   𝕍At-len {suc n} zero d (v ∷ vs) ⟨ len , _ ⟩ = cong suc len
   𝕍At-len (suc i) d (v ∷ vs) r = cong suc (𝕍At-len i d vs r)
 
   {- the tag of a value of type Any, read off a related element that a tag accepts -}
-  tag : ∀ t {H} d (u : Val Σ ⟪ H ⟫) → accepts fun₄ t d → 𝕍 d u → H ≡ flat t
+  tag : ∀ t {H} d (u : Val Σ ⟪ H ⟫)
+    → accepts fun₄ t d
+    → 𝕍 d u
+    → H ≡ flat t
   tag tfun ⦅ _ , _ ⦆ (pack c e) _ _ = refl
   tag tfun ⦅ _ , _ ⦆ (const k) _ ()
   tag tfun ⦅ _ , _ ⦆ (tup ws) _ ()
@@ -245,7 +270,9 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
   ... | false = tt
 
   {- the observation of a value related to a constant is that constant -}
-  𝕍-const : ∀ {A B} {k : base-rep B} (v : Val Σ A) → 𝕍 (dconst k) v → obs v ≡ o-const B k
+  𝕍-const : ∀ {A B} {k : base-rep B} (v : Val Σ A)
+    → 𝕍 (dconst k) v
+    → obs v ≡ o-const B k
   𝕍-const (dyn G v) r = 𝕍-const v r
   𝕍-const (const k) refl = refl
   𝕍-const (code f) ()
@@ -267,7 +294,10 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
   𝔾 : ∀ {Γ} → E.Env Value → Env Σ Γ → Set
   𝔾 {Γ} ρ γ = ∀ {A} (x : Γ ∋ A) d → d ∈ ρ (idx x) → 𝕍 d (γ ! x)
 
-  𝔾-ext : ∀ {Γ A ρ} {γ : Env Σ Γ} V (v : Val Σ A) → 𝔾 ρ γ → 𝕍s V v → 𝔾 (mem V • ρ) (v ∷ γ)
+  𝔾-ext : ∀ {Γ A ρ} {γ : Env Σ Γ} V (v : Val Σ A)
+    → 𝔾 ρ γ
+    → 𝕍s V v
+    → 𝔾 (mem V • ρ) (v ∷ γ)
   𝔾-ext V v G Vv Z d d∈ = 𝕍s-∈ V Vv d∈
   𝔾-ext V v G Vv (S x) = G x
 
@@ -278,8 +308,16 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
 
   {- code is related to a function of two parameters that runs as definition f does -}
   code-𝕍 : ∀ {n} {f : Σ ∋ n} (F : 𝒫 Value → 𝒫 Value → 𝒫 Value)
-    → (∀ X Y w → w ∈ F (mem X) (mem Y) → ∀ e → 𝕍s X e → ∀ a → 𝕍s Y a → Run f e a (𝕍 w))
-    → ∀ d → d ∈ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ → 𝕍 d (code f)
+    → (  ∀ X Y w
+       → w ∈ F (mem X) (mem Y)
+       → ∀ e
+       → 𝕍s X e
+       → ∀ a
+       → 𝕍s Y a
+       → Run f e a (𝕍 w))
+    → ∀ d
+    → d ∈ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩
+    → 𝕍 d (code f)
   code-𝕍 F h ν _ = tt
   code-𝕍 F h (X ↦ ν) _ = tt
   code-𝕍 F h (X ↦ (Y ↦ w)) ⟨ ⟨ w∈ , _ ⟩ , _ ⟩ = h X Y w w∈
@@ -304,8 +342,10 @@ module Rel {Σ : List ℕ} (Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ 
     (rel : ∀ {T : Table Σ} → 𝕋 T → ∀ {n} (f : Σ ∋ n) d → d ∈ cd T (ds ! f) → 𝕍 d (code f)) where
 
     {- a part ps of the table, reached through r -}
-    tab′ : ∀ {ns} (ps : All D ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n) → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
-      → (∀ {n} (g : ns ∋ n) → ds ! r g ≡ ps ! g) → 𝕋 (tables cd ps)
+    tab′ : ∀ {ns} (ps : All D ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n)
+      → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
+      → (∀ {n} (g : ns ∋ n) → ds ! r g ≡ ps ! g)
+      → 𝕋 (tables cd ps)
     tab′ [] r rl L f d ()
     tab′ {_ ∷ ns} (N ∷ ps) r rl L f d d∈ with lvl f ≟ length ns
     ... | no _ = tab′ ps (λ x → r (S x)) (λ x → rl (S x)) (λ x → L (S x)) f d d∈
@@ -364,7 +404,9 @@ module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ 
   𝒱v-con [] = tt
   𝒱v-con (w ∷ ws) = ⟨ 𝒱-con w , 𝒱v-con ws ⟩
 
-  At-lookup : ∀ {n} (i : Fin n) (ws : Vec (Val Σ Any) n) {d} → d ∈ 𝒱 (lookup ws i) → At i (𝒱v ws) d
+  At-lookup : ∀ {n} (i : Fin n) (ws : Vec (Val Σ Any) n) {d}
+    → d ∈ 𝒱 (lookup ws i)
+    → At i (𝒱v ws) d
   At-lookup zero (w ∷ ws) d∈ = ⟨ len𝒱v ws , d∈ ⟩
   At-lookup (suc i) (w ∷ ws) d∈ = At-lookup i ws d∈
 
@@ -386,7 +428,9 @@ module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ 
   prim-⊆ : ∀ p n m → 𝒱 (δᵀ {Σ} p n m) ⊆ primD p ⟨ ℬ Int n ptt , ⟨ ℬ Int m ptt , ptt ⟩ ⟩
   prim-⊆ p n m d d∈ = ⟨ n , ⟨ m , ⟨ ⟨ refl , refl ⟩ , ⟨ ⟨ refl , refl ⟩ , out-≡ p d d∈ ⟩ ⟩ ⟩ ⟩
     where
-    out-≡ : ∀ p d → d ∈ 𝒱 (δᵀ {Σ} p n m) → d ≡ dout (δ p n m)
+    out-≡ : ∀ p d
+      → d ∈ 𝒱 (δᵀ {Σ} p n m)
+      → d ≡ dout (δ p n m)
     out-≡ sub d d∈ = ℬ-inv d d∈
     out-≡ eq d d∈ with does (n ≟ℤ m)
     ... | true with inl-inv d d∈
@@ -405,7 +449,9 @@ module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ 
     let ⟨ d , d∈ ⟩ = 𝒱-ne (lookup ws i) in ⟨ tup[ i ] d , ⟨ ⟨ At-lookup i ws d∈ , 𝒱v-ne ws ⟩ , ⟨ d , refl ⟩ ⟩ ⟩
 
   {- the denotation of a value observed as a constant holds it -}
-  𝒱-const : ∀ {A B} {k : base-rep B} (v : Val Σ A) → obs v ≡ o-const B k → dconst k ∈ 𝒱 v
+  𝒱-const : ∀ {A B} {k : base-rep B} (v : Val Σ A)
+    → obs v ≡ o-const B k
+    → dconst k ∈ 𝒱 v
   𝒱-const (dyn G v) e = 𝒱-const v e
   𝒱-const (const k) refl = ⟨ refl , refl ⟩
   𝒱-const (code f) ()

@@ -53,11 +53,19 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T k))
   Ret k κ = ∀ D → Con D → K⟨ k ⟩ D ≃ κ D
 
   {- a simple expression -}
-  ret : ∀ {Σ Δ A} (e : M.Exp Σ Δ A) {ρ} k {κ} → KOK k → Con-env ρ → Ret k κ → K⟨ k ⟩ (⟦ e ⟧ₘ ρ) ≃ κ (⟦ ⌜ e ⌝ ⟧[ T' ] ρ)
+  ret : ∀ {Σ Δ A} (e : M.Exp Σ Δ A) {ρ} k {κ}
+    → KOK k
+    → Con-env ρ
+    → Ret k κ
+    → K⟨ k ⟩ (⟦ e ⟧ₘ ρ) ≃ κ (⟦ ⌜ e ⌝ ⟧[ T' ] ρ)
   ret e k ok cρ r = ≃-trans (K-≃ k ok eq) (r _ (Con-⊆ (con TC ⌜ e ⌝ cρ) (proj₂ eq)))
     where eq = tm-≃ TT ⌜ e ⌝ (λ _ → ≃-refl)
 
-  lift-sem : ∀ {Σ Δ A} (e : M.Exp Σ Δ A) {ρ} k {κ} → KOK k → nonempty-env ρ → Con-env ρ → Ret k κ
+  lift-sem : ∀ {Σ Δ A} (e : M.Exp Σ Δ A) {ρ} k {κ}
+    → KOK k
+    → nonempty-env ρ
+    → Con-env ρ
+    → Ret k κ
     → K⟨ k ⟩ (⟦ e ⟧ₘ ρ) ≃ ⟦ lift e ⟧ᴷ T' ρ κ
   lift-sem e@(M.atm _) k ok NE cρ r = ret e k ok cρ r
   lift-sem e@(M.pack _ _) k ok NE cρ r = ret e k ok cρ r

@@ -63,7 +63,9 @@ open import proof.Framework.GraphModel.Laws
 
 {- Slots ----------------------------------------------------------------------------}
 
-checked-at : ∀ {n x D} → x < n → checked n x D ≃ D
+checked-at : ∀ {n x D}
+  → x < n
+  → checked n x D ≃ D
 checked-at {n} {x} x<n with x <? n
 ... | yes _ = ≃-refl
 ... | no x≮n = ⊥-elim (x≮n x<n)
@@ -79,7 +81,13 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
 
   {- lift at depth d, then a continuation that means K, given a store
      that agrees with ρ -}
-  lift-sem : ∀ {M} (m : Mon M) {n d σ ρ} k {κ : Kont} → d + height m ≤ n → Scope d ρ → Agree d σ ρ → Con-env ρ
+  lift-sem : ∀ {M}
+    → (m : Mon M)
+    → ∀ {n d σ ρ} k {κ : Kont}
+    → d + height m ≤ n
+    → Scope d ρ
+    → Agree d σ ρ
+    → Con-env ρ
     → (∀ D σ' → Agree d σ' ρ → κ D σ' ≃ K⟨ k ⟩ D)
     → ⟦ lift n d m ⟧ᴷ[ T ] n σ κ ≃ K⟨ k ⟩ (⟦ M ⟧[ T' ] ρ)
   lift-sem (atom a) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (atom-≃ a H O A))
@@ -115,9 +123,10 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
     where
     H₂ = fits {d} _ (⊔ʳ (height m₁) _ H)
     G = λ X → K⟨ k ⟩ (⟦ M₂ ⟧[ T' ] (X • ρ))
-    κ₁≃ : ∀ D σ' → Agree d σ' ρ
+    κ₁≃ : ∀ D σ'
+      → Agree d σ' ρ
       → checked n d (⋆ ⟨ Λ ⟨ (λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ' [ d ↦ X ]) κ) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
-        ≃ K⟨ just G ⟩ D
+          ≃ K⟨ just G ⟩ D
     κ₁≃ D σ' A' = ≃-trans (checked-at (fits-< _ H₂))
       (⋆-≃ (Λ-≃ {λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ' [ d ↦ X ]) κ} {G} λ V _ cV → lift-sem m₂ k H₂ (scope-ext O) (agree-ext A') (Con-• (≈⇒Con cV) cρ)
                               (λ D' σ'' A'' → κ≃ D' σ'' (weak A''))) ≃-refl)
@@ -135,7 +144,9 @@ table-lift {N ∷ Ns} (m ∷ ms) k with k ≟ length (lift-defs ms) | k ≟ leng
 ... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-lift-defs ms)))
 ... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-lift-defs ms))))
 
-lift-program-correct : ∀ P (mp : MonProgram P) → ⟦ lift-program P mp ⟧ᴷₚ ≃ ⟦ P ⟧ₚ
+lift-program-correct : ∀ P
+  → (mp : MonProgram P)
+  → ⟦ lift-program P mp ⟧ᴷₚ ≃ ⟦ P ⟧ₚ
 lift-program-correct (program ds M) ⟨ ms , m ⟩ =
   lift-sem (table-lift ms) (table-con ds) m nothing ≤-refl (λ x _ → ≃-refl) (agree λ x ())
     (λ _ → Con-⌈⌉ ω) (λ _ _ _ → ≃-refl)

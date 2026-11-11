@@ -69,11 +69,15 @@ WS-lets : ℕ → List AST → Set
 WS-lets k [] = ⊤
 WS-lets k (M ∷ Ms) = WS k M × WS-lets (suc k) Ms
 
-ws-lets : ∀ {k} bs N → WS-lets k bs → WS (k + length bs) N → WS k (lets bs N)
+ws-lets : ∀ {k} bs N
+  → WS-lets k bs
+  → WS (k + length bs) N
+  → WS k (lets bs N)
 ws-lets {k} [] N _ w = subst (λ j → WS j N) (+-identityʳ k) w
 ws-lets {k} (M ∷ Ms) N (wM , wl) w = wM , ws-lets Ms N wl (subst (λ j → WS j N) (+-suc k (length Ms)) w) , tt
 
-ws-atomize : ∀ {k n} (Ms : Args (replicate n ■)) → WS-args k Ms
+ws-atomize : ∀ {k n} (Ms : Args (replicate n ■))
+  → WS-args k Ms
   → WS-lets k (binds (atomize Ms)) × WS-args (k + length (binds (atomize Ms))) (atoms (atomize Ms))
 ws-atomize {n = zero} Nil _ = tt , tt
 ws-atomize {k} {suc n} (M ,, Ms) (w , ws) with atom? M
@@ -85,12 +89,18 @@ ws-atomize {k} {suc n} (M ,, Ms) (w , ws) with atom? M
         IH = ws-atomize {suc k} (rename-args suc Ms) (ws-rename-args {k} {suc k} suc Ms (λ x → s≤s) ws)
         j = length (binds B)
 
-ws-lift : ∀ {k n} (f : ℕ → Args (replicate n ■) → AST) Ms → WS-args k Ms
-  → (∀ j As → WS-args (k + j) As → WS (k + j) (f j As)) → WS k (lift f Ms)
+ws-lift : ∀ {k n} (f : ℕ → Args (replicate n ■) → AST) Ms
+  → WS-args k Ms
+  → (∀ j As → WS-args (k + j) As → WS (k + j) (f j As))
+  → WS k (lift f Ms)
 ws-lift f Ms w hf = let (wl , wa) = ws-atomize Ms w in ws-lets (binds (atomize Ms)) _ wl (hf _ _ wa)
 
-ws-rco : ∀ {k} M → WS k M → WS k (rco M)
-ws-rco-args : ∀ {k n} (Ms : Args (replicate n ■)) → WS-args k Ms → WS-args k (rco-args Ms)
+ws-rco : ∀ {k} M
+  → WS k M
+  → WS k (rco M)
+ws-rco-args : ∀ {k n} (Ms : Args (replicate n ■))
+  → WS-args k Ms
+  → WS-args k (rco-args Ms)
 ws-rco (` x) w = w
 ws-rco (fun-ref k ⦅ Nil ⦆) w = w
 ws-rco (app ⦅ Ms ⦆) w = ws-lift _ (rco-args Ms) (ws-rco-args Ms w) λ _ _ z → z
@@ -115,9 +125,15 @@ ws-rco-args {n = suc n} (M ,, Ms) (w , ws) = ws-rco M w , ws-rco-args Ms ws
 
 module _ {K : ℕ} where
 
-  rb-rename : ∀ r M → RB K M → RB K (rename r M)
-  rb-rename-arg : ∀ {b} r (a : Arg b) → RB-arg K a → RB-arg K (rename-arg r a)
-  rb-rename-args : ∀ {bs} r (as : Args bs) → RB-args K as → RB-args K (rename-args r as)
+  rb-rename : ∀ r M
+    → RB K M
+    → RB K (rename r M)
+  rb-rename-arg : ∀ {b} r (a : Arg b)
+    → RB-arg K a
+    → RB-arg K (rename-arg r a)
+  rb-rename-args : ∀ {bs} r (as : Args bs)
+    → RB-args K as
+    → RB-args K (rename-args r as)
   rb-rename r (` x) _ = tt
   rb-rename r (fun-ref k ⦅ as ⦆) k< = k<
   rb-rename r (app ⦅ as ⦆) rb = rb-rename-args r as rb
@@ -138,23 +154,33 @@ module _ {K : ℕ} where
   rb-rename-args r nil _ = tt
   rb-rename-args r (cons a as) (ra , rs) = rb-rename-arg r a ra , rb-rename-args r as rs
 
-  rb-lets : ∀ bs N → All (RB K) bs → RB K N → RB K (lets bs N)
+  rb-lets : ∀ bs N
+    → All (RB K) bs
+    → RB K N
+    → RB K (lets bs N)
   rb-lets [] N _ r = r
   rb-lets (M ∷ Ms) N (rM ∷ rs) r = rM , rb-lets Ms N rs r , tt
 
-  rb-atomize : ∀ {n} (Ms : Args (replicate n ■)) → RB-args K Ms
+  rb-atomize : ∀ {n} (Ms : Args (replicate n ■))
+    → RB-args K Ms
     → All (RB K) (binds (atomize Ms)) × RB-args K (atoms (atomize Ms))
   rb-atomize {zero} Nil _ = [] , tt
   rb-atomize {suc n} (M ,, Ms) (r , rs) with atom? M
   ... | yes _ = let (rl , ra) = rb-atomize Ms rs in rl , rb-rename _ M r , ra
   ... | no _ = let (rl , ra) = rb-atomize (rename-args suc Ms) (rb-rename-args suc Ms rs) in (r ∷ rl) , tt , ra
 
-  rb-lift : ∀ {n} (f : ℕ → Args (replicate n ■) → AST) Ms → RB-args K Ms
-    → (∀ j As → RB-args K As → RB K (f j As)) → RB K (lift f Ms)
+  rb-lift : ∀ {n} (f : ℕ → Args (replicate n ■) → AST) Ms
+    → RB-args K Ms
+    → (∀ j As → RB-args K As → RB K (f j As))
+    → RB K (lift f Ms)
   rb-lift f Ms r hf = let (rl , ra) = rb-atomize Ms r in rb-lets (binds (atomize Ms)) _ rl (hf _ _ ra)
 
-  rb-rco : ∀ M → RB K M → RB K (rco M)
-  rb-rco-args : ∀ {n} (Ms : Args (replicate n ■)) → RB-args K Ms → RB-args K (rco-args Ms)
+  rb-rco : ∀ M
+    → RB K M
+    → RB K (rco M)
+  rb-rco-args : ∀ {n} (Ms : Args (replicate n ■))
+    → RB-args K Ms
+    → RB-args K (rco-args Ms)
   rb-rco (` x) r = r
   rb-rco (fun-ref k ⦅ Nil ⦆) r = r
   rb-rco (app ⦅ Ms ⦆) r = rb-lift (λ _ → app ⦅_⦆) (rco-args Ms) (rb-rco-args Ms r) λ _ _ z → z
@@ -176,7 +202,10 @@ module _ {K : ℕ} where
 
 {- Lift locals, explicate control and select instructions keep the atoms ---------------}
 
-Code-++ : ∀ {L S} xs {ys} → Code L S xs → Code L S ys → Code L S (xs ++ ys)
+Code-++ : ∀ {L S} xs {ys}
+  → Code L S xs
+  → Code L S ys
+  → Code L S (xs ++ ys)
 Code-++ [] _ c = c
 Code-++ (i ∷ xs) (r , cs) c = r , Code-++ xs cs c
 
@@ -195,7 +224,10 @@ module _ (K n : ℕ) where
   TailOK : G.Tail → Set
   TailOK t = Code (_< K) (_< n) (Block.instrs (select-tail t))
 
-  ex-assign : ∀ e x k bs → ExpOK e → TailOK k → All TailOK bs
+  ex-assign : ∀ e x k bs
+    → ExpOK e
+    → TailOK k
+    → All TailOK bs
     → TailOK (proj₁ (explicate-assign e x k bs)) × All TailOK (proj₂ (explicate-assign e x k bs))
   ex-assign (simple s) x k bs ok tk ab = Code-++ (select-simple s (var x)) (ok (var x)) tk , ab
   ex-assign (assign y e₁ e₂) x k bs (o₁ , o₂) tk ab =
@@ -205,7 +237,10 @@ module _ (K n : ℕ) where
         (t₂ , ab₄) = ex-assign e₂ x (G.goto _) (_ ∷ _) o₂ tt (t₁ ∷ ab₂) in
     (oa , oa , tt) , t₂ ∷ ab₄
 
-  ex-tail : ∀ e bs → ExpOK e → All TailOK bs → TailOK (proj₁ (explicate-tail e bs)) × All TailOK (proj₂ (explicate-tail e bs))
+  ex-tail : ∀ e bs
+    → ExpOK e
+    → All TailOK bs
+    → TailOK (proj₁ (explicate-tail e bs)) × All TailOK (proj₂ (explicate-tail e bs))
   ex-tail (simple s) bs ok ab = ok (reg ISWIM.Language.X86.rax) , ab
   ex-tail (assign x e₁ e₂) bs (o₁ , o₂) ab = let (t , ab₁) = ex-tail e₂ bs o₂ ab in ex-assign e₁ x _ _ o₁ t ab₁
   ex-tail (case a x e₁ e₂) bs (oa , o₁ , o₂) ab =
@@ -214,22 +249,42 @@ module _ (K n : ℕ) where
     (oa , oa , tt) , t₂ ∷ ab₃
 
   {- the slots of the variables in scope at depth d are below d -}
-  atom-ok : ∀ {d M} (a : Atom M) → WS d M → RB K M → d ≤ n → OK (_< K) (_< n) (select-atm (lift-atom n d a))
+  atom-ok : ∀ {d M}
+    → (a : Atom M)
+    → WS d M
+    → RB K M
+    → d ≤ n
+    → OK (_< K) (_< n) (select-atm (lift-atom n d a))
   atom-ok {d} (Mo.var x) x< _ d≤ with x <? d
   ... | yes _ = <-≤-trans (∸-monoʳ-< (s≤s z≤n) x<) d≤
   ... | no ¬x< = ⊥-elim (¬x< x<)
   atom-ok (Mo.lit B k) _ _ _ = tt
   atom-ok (Mo.ref k) _ k< _ = k<
 
-  atoms-ok : ∀ {d m Ms} (as : Atoms {m} Ms) → WS-args d Ms → RB-args K Ms → d ≤ n
+  atoms-ok : ∀ {d m Ms}
+    → (as : Atoms {m} Ms)
+    → WS-args d Ms
+    → RB-args K Ms
+    → d ≤ n
     → All (OK (_< K) (_< n)) (map select-atm (lift-atoms n d as))
   atoms-ok [] _ _ _ = []
   atoms-ok (a ∷ as) (w , ws) (r , rs) d≤ = atom-ok a w r d≤ ∷ atoms-ok as ws rs d≤
 
-  lift-ok : ∀ {d M} (m : Mon M) → WS d M → RB K M → d + height m ≤ n → ExpOK (liftL n d m)
+  lift-ok : ∀ {d M}
+    → (m : Mon M)
+    → WS d M
+    → RB K M
+    → d + height m ≤ n
+    → ExpOK (liftL n d m)
   lift-ok {d} m w r le = go m w r le (≤-trans (m≤m+n d (height m)) le)
     where
-    go : ∀ {d M} (m : Mon M) → WS d M → RB K M → d + height m ≤ n → d ≤ n → ExpOK (liftL n d m)
+    go : ∀ {d M}
+      → (m : Mon M)
+      → WS d M
+      → RB K M
+      → d + height m ≤ n
+      → d ≤ n
+      → ExpOK (liftL n d m)
     go (Mo.atom a) w r _ d≤ _ = atom-ok a w r d≤ , tt
     go (Mo.app (a ∷ b ∷ c ∷ [])) (wa , wb , wc , _) (ra , rb , rc , _) _ d≤ _ =
       atom-ok b wb rb d≤ , atom-ok c wc rc d≤ , atom-ok a wa ra d≤ , tt , tt
@@ -258,7 +313,13 @@ module _ (K n : ℕ) where
 {- The compiled program ---------------------------------------------------------------}
 
 {- a body compiled at depth d₀, with the instructions pre first -}
-body-ok : ∀ {K} pre d₀ {M} (m : Mon M) → WS d₀ M → RB K M → (∀ {is} → Code (_< K) (_< (d₀ + height m)) is → Code (_< K) (_< (d₀ + height m)) (pre ++ is))
+body-ok : ∀ {K} pre d₀ {M}
+  → (m : Mon M)
+  → WS d₀ M
+  → RB K M
+  → (  ∀ {is}
+     → Code (_< K) (_< (d₀ + height m)) is
+     → Code (_< K) (_< (d₀ + height m)) (pre ++ is))
   → BodyOK K (d₀ + height m) (select-body pre (explicate-body (lift-body d₀ m)))
 body-ok {K} pre d₀ m w r hp =
   let (t , ab) = ex-tail K _ _ [] (lift-ok K _ m w r Data.Nat.Properties.≤-refl) [] in hp t ∷ map⁺ ab
@@ -269,7 +330,8 @@ length-lift [] = refl
 length-lift (m ∷ ms) = cong suc (length-lift ms)
 
 {- the definitions, newest first -}
-defs-ok : ∀ ds (ms : All Mon (map rco ds)) → F.DefsWF ds
+defs-ok : ∀ ds (ms : All Mon (map rco ds))
+  → F.DefsWF ds
   → DefsWF (map (select-body prologue) (map explicate-body (lift-defs ms)))
 defs-ok [] [] _ = tt
 defs-ok (N ∷ Ns) (m ∷ ms) ((rb , ws) , wf) =
@@ -278,10 +340,14 @@ defs-ok (N ∷ Ns) (m ∷ ms) ((rb , ws) , wf) =
   len = trans (length-map _ (map explicate-body (lift-defs ms)))
           (trans (length-map _ (lift-defs ms)) (trans (length-lift ms) (length-map rco Ns)))
 
-compile-x86-wf : ∀ M → Closed M → WF (compile-x86 M)
+compile-x86-wf : ∀ M
+  → Closed M
+  → WF (compile-x86 M)
 compile-x86-wf M c = wf (compile M) (compile-wf M c)
   where
-  wf : ∀ P → F.WF P → WF (select (explicate (lift-program (rco-program P) (rco-program-mon P))))
+  wf : ∀ P
+    → F.WF P
+    → WF (select (explicate (lift-program (rco-program P) (rco-program-mon P))))
   wf (C5.program ds M) (wfd , rb , ws) =
     defs-ok ds ms wfd
     , subst (λ K → BodyOK K (0 + height m) (select-body [] (explicate-body (lift-body 0 m)))) (sym len) (body-ok {length ds} [] 0 m (ws-rco M ws) (rb-rco M rb) λ c → c)

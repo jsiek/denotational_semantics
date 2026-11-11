@@ -70,7 +70,10 @@ prim-proj p = ⟨ (λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , e ⟩ ⟩ ⟩ �
               , (λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , e ⟩ ⟩ ⟩ ⟩ →
                   ⟨ n , ⟨ m , ⟨ ⟨ ⟨ _ , ⟨ n∈ , ⟨ n , refl ⟩ ⟩ ⟩ , n∈ ⟩ , ⟨ ⟨ ⟨ _ , ⟨ m∈ , ⟨ m , refl ⟩ ⟩ ⟩ , m∈ ⟩ , e ⟩ ⟩ ⟩ ⟩ }) ⟩
 
-pmono : ∀ p {X X' Y Y'} → X ⊆ X' → Y ⊆ Y' → primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩ ⊆ primD p ⟨ X' , ⟨ Y' , ptt ⟩ ⟩
+pmono : ∀ p {X X' Y Y'}
+  → X ⊆ X'
+  → Y ⊆ Y'
+  → primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩ ⊆ primD p ⟨ X' , ⟨ Y' , ptt ⟩ ⟩
 pmono p X⊆ Y⊆ = lower (primD-mono p _ _ ⟨ lift X⊆ , ⟨ lift Y⊆ , ptt ⟩ ⟩)
 
 {- a primitive needs one integer of each operand -}
@@ -87,15 +90,25 @@ let-prim₂ p {D} {E} = let-single {F = λ Y → primD p ⟨ D , ⟨ Y , ptt ⟩
 Agree : ∀ {k k'} → (Fin k → Fin k') → Env Value → Env Value → Set
 Agree r ρ σ = ∀ x → ρ (toℕ x) ≃ σ (toℕ (r x))
 
-agree-• : ∀ {k k'} {r : Fin k → Fin k'} {ρ σ X} → Agree r ρ σ → Agree (ext r) (X • ρ) (X • σ)
+agree-• : ∀ {k k'} {r : Fin k → Fin k'} {ρ σ X}
+  → Agree r ρ σ
+  → Agree (ext r) (X • ρ) (X • σ)
 agree-• R zero = ≃-refl
 agree-• R (suc x) = R x
 
 {- The main lemma --------------------------------------------------------------------}
 
-cc : ∀ {k k'} (r : Fin k → Fin k') M (w : WS k M) {ρ σ} → Agree r ρ σ → ⟦ M ⟧ ρ ≃ T.⟦ cast r M w ⟧ σ
-ccs : ∀ {k k' n} (r : Fin k → Fin k') (Ms : Args (replicate n ■)) (ws : WS-args k Ms) {ρ σ} → Agree r ρ σ
-  → ∀ i → nthD (⟦ Ms ⟧₊ ρ) i ≃ nthD (T.⟦ casts r Ms ws ⟧s σ) i
+cc : ∀ {k k'} (r : Fin k → Fin k') M
+  → (w : WS k M)
+  → ∀ {ρ σ}
+  → Agree r ρ σ
+  → ⟦ M ⟧ ρ ≃ T.⟦ cast r M w ⟧ σ
+ccs : ∀ {k k' n} (r : Fin k → Fin k') (Ms : Args (replicate n ■))
+  → (ws : WS-args k Ms)
+  → ∀ {ρ σ}
+  → Agree r ρ σ
+  → ∀ i
+  → nthD (⟦ Ms ⟧₊ ρ) i ≃ nthD (T.⟦ casts r Ms ws ⟧s σ) i
 
 cc r (` x) x<k {ρ} R = ≃-trans (≃-reflexive (cong ρ (sym (toℕ-fromℕ< x<k)))) (R _)
 cc r (lam ⦅ ⟩ N ,, Nil ⦆) ⟨ w , _ ⟩ R = Λ-≃ λ _ _ _ → cc (ext r) N w (agree-• R)
@@ -130,9 +143,13 @@ ccs {n = suc n} r (M ,, Ms) ⟨ w , ws ⟩ R (suc i) = ccs r Ms ws R i
 {- The end theorems -----------------------------------------------------------------}
 
 {- well-scoped programs -}
-cast-program-correct : ∀ (M : AST) (w : WS 0 M) → ⟦ M ⟧ ρ₀ ≃ T.⟦ cast-program M w ⟧ ρ₀
+cast-program-correct : ∀ (M : AST)
+  → (w : WS 0 M)
+  → ⟦ M ⟧ ρ₀ ≃ T.⟦ cast-program M w ⟧ ρ₀
 cast-program-correct M w = cc (λ x → x) M w (λ ())
 
 {- closed programs -}
-cast-correct : ∀ (M : AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ T.⟦ cast-closed M ⟧ ρ₀
+cast-correct : ∀ (M : AST)
+  → Closed M
+  → ⟦ M ⟧ ρ₀ ≃ T.⟦ cast-closed M ⟧ ρ₀
 cast-correct M c rewrite cast-closed-≡ M (closed-ws {M} c) = cast-program-correct M (closed-ws {M} c)

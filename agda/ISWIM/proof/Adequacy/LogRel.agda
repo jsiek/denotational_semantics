@@ -63,7 +63,10 @@ infix 4 _⊢_⇓_
 _⊢_⇓_ : Env → AST → Val → Set
 γ ⊢ M ⇓ v = ∀ κ → eval M γ κ ↠ ret v κ
 
-⇓-det : ∀ {γ M v₁ v₂} → γ ⊢ M ⇓ v₁ → γ ⊢ M ⇓ v₂ → v₁ ≡ v₂
+⇓-det : ∀ {γ M v₁ v₂}
+  → γ ⊢ M ⇓ v₁
+  → γ ⊢ M ⇓ v₂
+  → v₁ ≡ v₂
 ⇓-det {v₁ = v₁} {v₂} e₁ e₂ with ↠-final-det (e₁ halt) (e₂ halt) refl refl
 ... | refl = refl
 
@@ -89,11 +92,16 @@ _⊢_⇓_ : Env → AST → Val → Set
 𝕍At (suc i) d (v ∷ vs) = 𝕍At i d vs
 𝕍At _ d [] = ⊥
 
-𝕍s-∈ : ∀ V {v d} → 𝕍s V v → d ∈ mem V → 𝕍 d v
+𝕍s-∈ : ∀ V {v d}
+  → 𝕍s V v
+  → d ∈ mem V
+  → 𝕍 d v
 𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ (here refl) = r
 𝕍s-∈ (d ∷ V) ⟨ _ , rs ⟩ (there d∈) = 𝕍s-∈ V rs d∈
 
-𝕍At-proj : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
+𝕍At-proj : ∀ {n} (i : Fin n) d vs
+  → 𝕍At i d vs
+  → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
 𝕍At-proj {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ rewrite length→has-length n vs len = ⟨ v , ⟨ refl , r ⟩ ⟩
 𝕍At-proj (suc i) d (v ∷ vs) r = 𝕍At-proj i d vs r
 
@@ -103,8 +111,12 @@ _⊢_⇓_ : Env → AST → Val → Set
 𝕍-out (bool false) = refl
 
 {- related values are observed in the shape of the denotational value -}
-𝕍-shape : ∀ d v → 𝕍 d v → ShapeOf (obs v) d
-𝕍At-shape : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → ShapeAt i (obs-list vs) d
+𝕍-shape : ∀ d v
+  → 𝕍 d v
+  → ShapeOf (obs v) d
+𝕍At-shape : ∀ {n} (i : Fin n) d vs
+  → 𝕍At i d vs
+  → ShapeAt i (obs-list vs) d
 𝕍-shape (dconst k) (const B k) refl = refl
 𝕍-shape (V ↦ w) (clo N γ) r = tt
 𝕍-shape ν (clo N γ) r = tt
@@ -120,7 +132,10 @@ _⊢_⇓_ : Env → AST → Val → Set
 𝔾 : (Var → Set) → VEnv → Env → Set
 𝔾 P ρ γ = ∀ x → P x → ∀ d → d ∈ ρ x → Σ[ v ∈ Val ] γ ‼ x ≡ just v × 𝕍 d v
 
-𝔾-ext : ∀ {P ρ γ} V v → 𝔾 (λ x → P (suc x)) ρ γ → 𝕍s V v → 𝔾 P (mem V • ρ) (v ∷ γ)
+𝔾-ext : ∀ {P ρ γ} V v
+  → 𝔾 (λ x → P (suc x)) ρ γ
+  → 𝕍s V v
+  → 𝔾 P (mem V • ρ) (v ∷ γ)
 𝔾-ext V v G Vv zero _ d d∈ = ⟨ v , ⟨ refl , 𝕍s-∈ V Vv d∈ ⟩ ⟩
 𝔾-ext V v G Vv (suc x) u d d∈ = G x u d d∈
 
@@ -128,20 +143,26 @@ _⊢_⇓_ : Env → AST → Val → Set
 
 {- one value related to all elements of V, all of which M produces -}
 collect : ∀ {γ M v} (P : Value → Val → Set) V
-  → (∀ d → d ∈ mem V → Σ[ v' ∈ Val ] γ ⊢ M ⇓ v' × P d v') → γ ⊢ M ⇓ v
-  → ∀ d → d ∈ mem V → P d v
+  → (∀ d → d ∈ mem V → Σ[ v' ∈ Val ] γ ⊢ M ⇓ v' × P d v')
+  → γ ⊢ M ⇓ v
+  → ∀ d
+  → d ∈ mem V
+  → P d v
 collect P V all e d d∈ with all d d∈
 ... | ⟨ v' , ⟨ e' , r ⟩ ⟩ with ⇓-det e e'
 ... | refl = r
 
-all→𝕍s : ∀ V {v} → (∀ d → d ∈ mem V → 𝕍 d v) → 𝕍s V v
+all→𝕍s : ∀ V {v}
+  → (∀ d → d ∈ mem V → 𝕍 d v)
+  → 𝕍s V v
 all→𝕍s [] all = tt
 all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
 
 Evals : Env → List AST → List Val → Set
 Evals γ = Pointwise (λ M v → γ ⊢ M ⇓ v)
 
-tuple-run : ∀ {γ κ} acc Ms vs → Evals γ Ms vs
+tuple-run : ∀ {γ κ} acc Ms vs
+  → Evals γ Ms vs
   → tuple-next acc Ms γ κ ↠ ret (tup (reverse (reverseAcc acc vs))) κ
 tuple-run acc [] [] [] = done
 tuple-run {γ} {κ} acc (M ∷ Ms) (v ∷ vs) (e ∷ es) =
@@ -152,10 +173,13 @@ tuple-run {γ} {κ} acc (M ∷ Ms) (v ∷ vs) (e ∷ es) =
 UsesP : AST → Var → Set
 UsesP M x = Uses x M
 
-adequate : ∀ M {ρ γ d} → 𝔾 (UsesP M) ρ γ → d ∈ ⟦ M ⟧ ρ
+adequate : ∀ M {ρ γ d}
+  → 𝔾 (UsesP M) ρ γ
+  → d ∈ ⟦ M ⟧ ρ
   → Σ[ v ∈ Val ] γ ⊢ M ⇓ v × 𝕍 d v
 adequate-args : ∀ {n} (args : Args (replicate n ■)) {ρ γ}
-  → 𝔾 (λ x → UsesArgs x args) ρ γ → (∀ j → nonempty (nthD (⟦ args ⟧₊ ρ) j))
+  → 𝔾 (λ x → UsesArgs x args) ρ γ
+  → (∀ j → nonempty (nthD (⟦ args ⟧₊ ρ) j))
   → Σ[ vs ∈ List Val ] Evals γ (args→list args) vs × length vs ≡ n
       × (∀ j d → d ∈ nthD (⟦ args ⟧₊ ρ) j → 𝕍At j d vs)
 
@@ -289,6 +313,8 @@ adequate-args {suc n} (M ,, args) G ne
 ... | ⟨ v , ⟨ e , _ ⟩ ⟩ | ⟨ vs , ⟨ es , ⟨ len , rs ⟩ ⟩ ⟩ =
   ⟨ v ∷ vs , ⟨ e ∷ es , ⟨ cong suc len , R ⟩ ⟩ ⟩
   where
-  R : ∀ j d → d ∈ nthD (⟦ M ,, args ⟧₊ _) j → 𝕍At j d (v ∷ vs)
+  R : ∀ j d
+    → d ∈ nthD (⟦ M ,, args ⟧₊ _) j
+    → 𝕍At j d (v ∷ vs)
   R zero d d∈ = ⟨ len , collect 𝕍 (d ∷ []) (λ { d' (here refl) → adequate M (λ x p → G x (inj₁ p)) d∈ }) e d (here refl) ⟩
   R (suc j) d d∈ = rs j d d∈

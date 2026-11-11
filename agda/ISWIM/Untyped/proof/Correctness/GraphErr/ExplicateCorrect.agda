@@ -65,7 +65,10 @@ bs ≼ bs' = Σ[ more ∈ List C.Tail ] bs' ≡ more ++ bs
 ≼-refl : ∀ {bs} → bs ≼ bs
 ≼-refl = ⟨ [] , refl ⟩
 
-≼-trans : ∀ {bs₁ bs₂ bs₃} → bs₁ ≼ bs₂ → bs₂ ≼ bs₃ → bs₁ ≼ bs₃
+≼-trans : ∀ {bs₁ bs₂ bs₃}
+  → bs₁ ≼ bs₂
+  → bs₂ ≼ bs₃
+  → bs₁ ≼ bs₃
 ≼-trans {bs₁} ⟨ m₁ , refl ⟩ ⟨ m₂ , refl ⟩ = ⟨ m₂ ++ m₁ , sym (++-assoc m₂ m₁ bs₁) ⟩
 
 ≼-∷ : ∀ {t bs} → bs ≼ t ∷ bs
@@ -87,14 +90,18 @@ grows-tail (case a x e₁ e₂) bs =
 module _ (T : Table) (n : ℕ) where
 
   {- the blocks of bs keep their labels among newer blocks -}
-  blocks-≼ : ∀ more bs l → l < length bs → blocks T n (more ++ bs) l ≡ blocks T n bs l
+  blocks-≼ : ∀ more bs l
+    → l < length bs
+    → blocks T n (more ++ bs) l ≡ blocks T n bs l
   blocks-≼ [] bs l l< = refl
   blocks-≼ (t ∷ more) bs l l< with l ≟ length (more ++ bs)
   ... | yes refl = ⊥-elim (<-irrefl refl (<-≤-trans l< (subst (length bs ≤_) (sym (length-++ more))
                                                              (m≤n+m (length bs) (length more)))))
   ... | no _ = blocks-≼ more bs l l<
 
-  blocks-at : ∀ {t bs bs''} → t ∷ bs ≼ bs'' → blocks T n bs'' (length bs) ≡ ⟪ t ⟫[ T ] n (blocks T n bs)
+  blocks-at : ∀ {t bs bs''}
+    → t ∷ bs ≼ bs''
+    → blocks T n bs'' (length bs) ≡ ⟪ t ⟫[ T ] n (blocks T n bs)
   blocks-at {t} {bs} ⟨ more , refl ⟩ = trans (blocks-≼ more (t ∷ bs) (length bs) (n<1+n _)) top
     where
     top : blocks T n (t ∷ bs) (length bs) ≡ ⟪ t ⟫[ T ] n (blocks T n bs)
@@ -102,11 +109,17 @@ module _ (T : Table) (n : ℕ) where
     ... | yes _ = refl
     ... | no ne = ⊥-elim (ne refl)
 
-at-σ : ∀ {F G : Store → 𝒫 Value} → F ≡ G → ∀ σ → F σ ≃ G σ
+at-σ : ∀ {F G : Store → 𝒫 Value}
+  → F ≡ G
+  → ∀ σ
+  → F σ ≃ G σ
 at-σ eq σ = ≃-reflexive (cong (λ f → f σ) eq)
 
 {- CFG and Imp check the slots alike -}
-frameᵐ-≃ : ∀ n {x D D' E E'} → D ≃ D' → E ≃ E' → frameᵐ n x D E ≃ frameᵐ n x D' E'
+frameᵐ-≃ : ∀ n {x D D' E E'}
+  → D ≃ D'
+  → E ≃ E'
+  → frameᵐ n x D E ≃ frameᵐ n x D' E'
 frameᵐ-≃ n {x} D≃ E≃ with x <? n
 ... | yes _ = E≃
 ... | no _ = ⟨ ≫=-mono (proj₁ D≃) (λ _ w z → z) , ≫=-mono (proj₂ D≃) (λ _ w z → z) ⟩
@@ -140,7 +153,10 @@ module Agreeing {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
   𝒮-≃ (prim p a b) σ = primᵐ-≃ p (𝒜-≃ a σ) (𝒜-≃ b σ)
 
   {- a jump to the block that holds k means the same with newer blocks -}
-  goto-≃ : ∀ {k bs bs₁ bs''} → k ∷ bs ≼ bs₁ → bs₁ ≼ bs'' → ∀ σ
+  goto-≃ : ∀ {k bs bs₁ bs''}
+    → k ∷ bs ≼ bs₁
+    → bs₁ ≼ bs''
+    → ∀ σ
     → ⟪ C.goto (length bs) ⟫[ T ] n (B bs'') σ ≃ ⟪ C.goto (length bs) ⟫[ T ] n (B bs₁) σ
   goto-≃ e₁ e = at-σ (trans (blocks-at T n (≼-trans e₁ e)) (sym (blocks-at T n e₁)))
 
@@ -152,7 +168,9 @@ module _ (n : ℕ) where
   assignK : ℕ → (Store → 𝒫 Value) → Kont
   assignK x K D σ = frameᵐ n x D (letᵐ ⟨ D , ⟨ (λ X → K (σ [ x ↦ X ])) , ptt ⟩ ⟩)
 
-  assignK-≃ : ∀ {x} {K K' : Store → 𝒫 Value} {D D' σ} → (∀ σ' → K σ' ≃ K' σ') → D ≃ D'
+  assignK-≃ : ∀ {x} {K K' : Store → 𝒫 Value} {D D' σ}
+    → (∀ σ' → K σ' ≃ K' σ')
+    → D ≃ D'
     → assignK x K D σ ≃ assignK x K' D' σ
   assignK-≃ {x} {K} {K'} {σ = σ} K≃ D≃ =
     frameᵐ-≃ n {x} D≃ (letᵐ-≃ {F = λ X → K (σ [ x ↦ X ])} {λ X → K' (σ [ x ↦ X ])} D≃ (λ V _ _ _ → K≃ _))
@@ -167,11 +185,17 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
   Stable : List C.Tail → C.Tail → Set₁
   Stable bs k = ∀ bs'' → bs ≼ bs'' → ∀ σ → ⟪ k ⟫[ T ] n (B bs'') σ ≃ ⟪ k ⟫[ T ] n (B bs) σ
 
-  goto-stable : ∀ {k bs bs₁} → k ∷ bs ≼ bs₁ → Stable bs₁ (C.goto (length bs))
+  goto-stable : ∀ {k bs bs₁}
+    → k ∷ bs ≼ bs₁
+    → Stable bs₁ (C.goto (length bs))
   goto-stable e₁ bs'' e = goto-≃ e₁ e
 
   {- explicate-assign e x k: e, then assign x and run k -}
-  cps : ∀ e x k bs → Stable bs k → ∀ bs'' → proj₂ (explicate-assign e x k bs) ≼ bs'' → ∀ σ {κ : Kont}
+  cps : ∀ e x k bs
+    → Stable bs k
+    → ∀ bs''
+    → proj₂ (explicate-assign e x k bs) ≼ bs''
+    → ∀ σ {κ : Kont}
     → (∀ D σ' → κ D σ' ≃ assignK n x (⟪ k ⟫[ T ] n (B bs)) D σ')
     → ⟪ proj₁ (explicate-assign e x k bs) ⟫[ T ] n (B bs'') σ ≃ ⟦ e ⟧ᴷ[ T' ] n σ κ
   cps (simple s) x k bs st bs'' ext σ κ≃ =
@@ -202,11 +226,16 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
     e₁₃ : bs₁ ≼ bs₃
     e₁₃ = ≼-trans (grows-assign e₁ x (C.goto l) bs₁) ≼-∷
     {- the join point: a jump to the block that holds k -}
-    κ≃' : ∀ {bs'} → bs₁ ≼ bs' → ∀ D σ' → κ D σ' ≃ assignK n x (⟪ C.goto l ⟫[ T ] n (B bs')) D σ'
+    κ≃' : ∀ {bs'}
+      → bs₁ ≼ bs'
+      → ∀ D σ'
+      → κ D σ' ≃ assignK n x (⟪ C.goto l ⟫[ T ] n (B bs')) D σ'
     κ≃' e D σ' = ≃-trans (κ≃ D σ') (≃-reflexive (cong (λ K → assignK n x K D σ') (sym (blocks-at T n e))))
 
   {- explicate-tail e: e, then halt -}
-  tail : ∀ e bs bs'' → proj₂ (explicate-tail e bs) ≼ bs'' → ∀ σ
+  tail : ∀ e bs bs''
+    → proj₂ (explicate-tail e bs) ≼ bs''
+    → ∀ σ
     → ⟪ proj₁ (explicate-tail e bs) ⟫[ T ] n (B bs'') σ ≃ ⟦ e ⟧ᴷ[ T' ] n σ halt
   tail (simple s) bs bs'' ext σ = 𝒮-≃ s σ
   tail (assign x e₁ e₂) bs bs'' ext σ =
@@ -244,5 +273,7 @@ explicate-correct : ∀ (P : I.Program) → ⟦ explicate P ⟧ₚ ≃ ⟦ P ⟧
 explicate-correct (program ds (body n e)) = tail (table-≃ ds) n e [] _ ≼-refl zeros
 
 {- for the programs the compiler produces -}
-explicate-correct-compile : ∀ (M : ISWIM.AST) → Closed M → ⟦ compile-cfg M ⟧ₚ ≃ ⟦ compile-imp M ⟧ᴷₚ
+explicate-correct-compile : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ⟦ compile-cfg M ⟧ₚ ≃ ⟦ compile-imp M ⟧ᴷₚ
 explicate-correct-compile M _ = explicate-correct (compile-imp M)

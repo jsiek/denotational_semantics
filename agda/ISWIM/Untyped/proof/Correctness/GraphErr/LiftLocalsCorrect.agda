@@ -73,7 +73,9 @@ module ISWIM.Untyped.proof.Correctness.GraphErr.LiftLocalsCorrect where
 
 {- Slots and stores ----------------------------------------------------------------}
 
-read-at : ∀ {n σ y} → y < n → read n σ y ≡ σ y
+read-at : ∀ {n σ y}
+  → y < n
+  → read n σ y ≡ σ y
 read-at {n} {σ} {y} y<n with y <? n
 ... | yes _ = refl
 ... | no y≮n = ⊥-elim (y≮n y<n)
@@ -88,30 +90,44 @@ upd-at σ x with x ≟ x
 ... | yes _ = refl
 ... | no x≢x = ⊥-elim (x≢x refl)
 
-upd-< : ∀ {σ X y d} → y < d → (σ [ d ↦ X ]) y ≃ σ y
+upd-< : ∀ {σ X y d}
+  → y < d
+  → (σ [ d ↦ X ]) y ≃ σ y
 upd-< {σ} {X} {y} {d} y<d with y ≟ d
 ... | yes refl = ⊥-elim (<-irrefl refl y<d)
 ... | no _ = ≃-refl
 
-slot-< : ∀ {x d} → x < d → d ∸ suc x < d
+slot-< : ∀ {x d}
+  → x < d
+  → d ∸ suc x < d
 slot-< {x} {suc d} _ = s≤s (m∸n≤m d x)
 
-checked-at : ∀ {n x D E} → x < n → frameᵐ n x D E ≃ E
+checked-at : ∀ {n x D E}
+  → x < n
+  → frameᵐ n x D E ≃ E
 checked-at {n} {x} x<n with x <? n
 ... | yes _ = ≃-refl
 ... | no x≮n = ⊥-elim (x≮n x<n)
 
 {- the frame is large enough for what lift assigns at depth d -}
-fits : ∀ {d n} k → d + suc k ≤ n → suc d + k ≤ n
+fits : ∀ {d n} k
+  → d + suc k ≤ n
+  → suc d + k ≤ n
 fits {d} {n} k H = subst (_≤ n) (+-suc d k) H
 
-fits-< : ∀ {d n} k → suc d + k ≤ n → d < n
+fits-< : ∀ {d n} k
+  → suc d + k ≤ n
+  → d < n
 fits-< {d} k H = ≤-trans (s≤s (m≤m+n d k)) H
 
-⊔ˡ : ∀ {d n} a b → d + (a ⊔ b) ≤ n → d + a ≤ n
+⊔ˡ : ∀ {d n} a b
+  → d + (a ⊔ b) ≤ n
+  → d + a ≤ n
 ⊔ˡ {d} a b H = ≤-trans (+-mono-≤ (≤-refl {d}) (m≤m⊔n a b)) H
 
-⊔ʳ : ∀ {d n} a b → d + (a ⊔ b) ≤ n → d + b ≤ n
+⊔ʳ : ∀ {d n} a b
+  → d + (a ⊔ b) ≤ n
+  → d + b ≤ n
 ⊔ʳ {d} a b H = ≤-trans (+-mono-≤ (≤-refl {d}) (m≤n⊔m a b)) H
 
 {- The invariant ---------------------------------------------------------------------}
@@ -124,14 +140,20 @@ open Agree public
 Scope : ℕ → Env Value → Set
 Scope d ρ = ∀ x → d ≤ x → ρ x ≃ init
 
-agree-ext : ∀ {d σ ρ X} → Agree d σ ρ → Agree (suc d) (σ [ d ↦ X ]) (X • ρ)
+agree-ext : ∀ {d σ ρ X}
+  → Agree d σ ρ
+  → Agree (suc d) (σ [ d ↦ X ]) (X • ρ)
 agree-ext {d} {σ} A = agree λ { zero _ → ≃-reflexive (upd-at σ d)
   ; (suc x) (s≤s x<d) → ≃-trans (upd-< (slot-< x<d)) (at A x x<d) }
 
-scope-ext : ∀ {d ρ X} → Scope d ρ → Scope (suc d) (X • ρ)
+scope-ext : ∀ {d ρ X}
+  → Scope d ρ
+  → Scope (suc d) (X • ρ)
 scope-ext O (suc x) (s≤s d≤x) = O x d≤x
 
-weak : ∀ {d σ ρ X} → Agree (suc d) σ (X • ρ) → Agree d σ ρ
+weak : ∀ {d σ ρ X}
+  → Agree (suc d) σ (X • ρ)
+  → Agree d σ ρ
 weak A = agree λ x x<d → at A (suc x) (s≤s x<d)
 
 agree-frame : ∀ X Y → Agree 2 (frame X Y) (Y • X • (λ _ → init))
@@ -148,7 +170,11 @@ length-lift-defs (m ∷ ms) rewrite length-lift-defs ms = refl
 
 module AtomsSame {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
 
-  atom-≃ : ∀ {n d h σ ρ M} (a : Atom M) → d + h ≤ n → Scope d ρ → Agree d σ ρ
+  atom-≃ : ∀ {n d h σ ρ M}
+    → (a : Atom M)
+    → d + h ≤ n
+    → Scope d ρ
+    → Agree d σ ρ
     → 𝒜 T n σ (lift-atom n d a) ≃ ⟦ M ⟧[ T' ] ρ
   atom-≃ {n} {d} {h} {σ} (var x) H O A with x <? d
   ... | yes x<d = ≃-trans (≃-reflexive (read-at (<-≤-trans (slot-< x<d) (≤-trans (m≤m+n d h) H)))) (at A x x<d)
@@ -156,10 +182,15 @@ module AtomsSame {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
   atom-≃ (lit B k) _ _ _ = ≃-refl
   atom-≃ (ref k) _ _ _ = TT k
 
-  atoms-≃ : ∀ {n d h σ ρ k} {Ms : Args (replicate k ■)} (as : Atoms Ms) → d + h ≤ n → Scope d ρ → Agree d σ ρ
+  atoms-≃ : ∀ {n d h σ ρ k} {Ms : Args (replicate k ■)}
+    → (as : Atoms Ms)
+    → d + h ≤ n
+    → Scope d ρ
+    → Agree d σ ρ
     → (Q : ∀ m → Results (𝒫 Value) (replicate m ■) → Set)
     → (∀ {m Ds Es} → RRs _ Ds Es → Q m Es → Q m Ds)
-    → Q k (⟦ Ms ⟧₊[ T' ] ρ) → Q (length (lift-atoms n d as)) (𝒜s T n σ (lift-atoms n d as))
+    → Q k (⟦ Ms ⟧₊[ T' ] ρ)
+    → Q (length (lift-atoms n d as)) (𝒜s T n σ (lift-atoms n d as))
   atoms-≃ [] H O A Q resp q = q
   atoms-≃ (a ∷ as) H O A Q resp q =
     atoms-≃ as H O A (λ m Ds → Q (suc m) ⟨ _ , Ds ⟩) (λ eq → resp ⟨ up ≃-refl , eq ⟩)
@@ -175,12 +206,25 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
   Ret d σ ρ k κ = ∀ D σ' → Con D → Agree d σ' ρ → κ D σ' ≃ K⟨ k ⟩ D
 
   {- a result D that means M -}
-  ret : ∀ {d σ ρ k κ} M {D} → KOK k → Con-env ρ → Ret d σ ρ k κ → Agree d σ ρ → D ≃ ⟦ M ⟧[ T' ] ρ
+  ret : ∀ {d σ ρ k κ} M {D}
+    → KOK k
+    → Con-env ρ
+    → Ret d σ ρ k κ
+    → Agree d σ ρ
+    → D ≃ ⟦ M ⟧[ T' ] ρ
     → κ D σ ≃ K⟨ k ⟩ (⟦ M ⟧[ T' ] ρ)
   ret {k = k} M ok cρ κ≃ A eq = ≃-trans (κ≃ _ _ (Con-⊆ (Clos5ᵐ-con T' TC M cρ) (proj₁ eq)) A) (K-≃ k ok eq)
 
-  lift-sem : ∀ {M} (m : Mon M) {n d σ ρ} k {κ : Kont} → KOK k → d + height m ≤ n → Scope d ρ → Agree d σ ρ
-    → nonempty-env ρ → Con-env ρ → Ret d σ ρ k κ
+  lift-sem : ∀ {M}
+    → (m : Mon M)
+    → ∀ {n d σ ρ} k {κ : Kont}
+    → KOK k
+    → d + height m ≤ n
+    → Scope d ρ
+    → Agree d σ ρ
+    → nonempty-env ρ
+    → Con-env ρ
+    → Ret d σ ρ k κ
     → ⟦ lift n d m ⟧ᴷ[ T ] n σ κ ≃ K⟨ k ⟩ (⟦ M ⟧[ T' ] ρ)
   lift-sem (atom {M} a) k ok H O A NE cρ κ≃ = ret M ok cρ κ≃ A (atom-≃ a H O A)
   lift-sem (app {As} (a ∷ b ∷ c ∷ [])) k ok H O A NE cρ κ≃ = ret (C5.app C5.⦅ As ⦆) ok cρ κ≃ A
@@ -241,11 +285,15 @@ table-lift {N ∷ Ns} (m ∷ ms) k with k ≟ length (lift-defs ms) | k ≟ leng
 ... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-lift-defs ms)))
 ... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-lift-defs ms))))
 
-lift-locals-correct : ∀ (P : C5.Program) (mp : MonProgram P) → ⟦ lift-program P mp ⟧ᴷₚ ≃ ⟦ P ⟧ₚ
+lift-locals-correct : ∀ (P : C5.Program)
+  → (mp : MonProgram P)
+  → ⟦ lift-program P mp ⟧ᴷₚ ≃ ⟦ P ⟧ₚ
 lift-locals-correct (program ds M) ⟨ ms , m ⟩ =
   lift-sem (table-lift ms) (table-con ds) m nothing (up tt) ≤-refl (λ x _ → ≃-refl) (agree λ x ())
     (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ _ _ _ _ → ≃-refl)
 
 {- the compiler's programs -}
-lift-correct-compile : ∀ (M : ISWIM.AST) → Closed M → ⟦ compile-imp M ⟧ᴷₚ ≃ ⟦ compile-mon M ⟧ₚ
+lift-correct-compile : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ⟦ compile-imp M ⟧ᴷₚ ≃ ⟦ compile-mon M ⟧ₚ
 lift-correct-compile M _ = lift-locals-correct (compile-mon M) (rco-program-mon (compile M))

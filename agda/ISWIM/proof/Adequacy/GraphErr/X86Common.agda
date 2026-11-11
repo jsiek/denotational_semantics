@@ -80,7 +80,9 @@ run k bs σ' η m ⊕ σ = run k bs (σ' ++ˢ σ) η m
   ++halt (retK k bs φ σ) = cong (retK k bs φ) (++halt σ)
 
 {- a state that steps steps the same over another stack -}
-step-⊕ : ∀ s σ {s'} → step ds s ≡ next s' → step ds (s ⊕ σ) ≡ next (s' ⊕ σ)
+step-⊕ : ∀ s σ {s'}
+  → step ds s ≡ next s'
+  → step ds (s ⊕ σ) ≡ next (s' ⊕ σ)
 step-⊕ (run (movq a d ∷ k) bs σ₀ η m) σ refl = refl
 step-⊕ (run (subq a r e ∷ k) bs σ₀ η m) σ refl = refl
 step-⊕ (run (cmpq a₂ a₁ ∷ k) bs σ₀ η m) σ refl = refl
@@ -105,7 +107,9 @@ step-⊕ (run (je l₁ l₂) bs σ₀ η m) σ q with flag m
 step-⊕ (run (je l₁ l₂) bs σ₀ η m) σ q | false with q
 ... | refl = refl
 
-↠-⊕ : ∀ {s t} σ → s ↠ t → (s ⊕ σ) ↠ (t ⊕ σ)
+↠-⊕ : ∀ {s t} σ
+  → s ↠ t
+  → (s ⊕ σ) ↠ (t ⊕ σ)
 ↠-⊕ σ done = done
 ↠-⊕ σ (_∷↠_ {s} q τ) = step-⊕ s σ q ∷↠ ↠-⊕ σ τ
 
@@ -120,11 +124,15 @@ ret-η : ∀ {t v} → Returns t v → ℕ
 ret-η (rets {η = η} e) = η
 
 {- over a return frame, it continues the caller -}
-ret-next : ∀ {t v} (r : Returns t v) {n Bs Δ} (k : Seq Σ n Bs (returned Δ)) bs φ σ
+ret-next : ∀ {t v}
+  → (r : Returns t v)
+  → ∀ {n Bs Δ} (k : Seq Σ n Bs (returned Δ)) bs φ σ
   → step ds (t ⊕ retK k bs φ σ) ≡ next (run k bs σ (ret-η r) ⟨ rv v tt tt , φ , tt , tt ⟩)
 ret-next (rets e) k bs φ σ = refl
 
-ret-stop : ∀ {t v} → Returns t v → step ds t ≡ stop (obs v)
+ret-stop : ∀ {t v}
+  → Returns t v
+  → step ds t ≡ stop (obs v)
 ret-stop (rets e) = refl
 
 {- from s over any stack, the machine stops with an error -}
@@ -139,11 +147,17 @@ Rets s v = Σ[ t ∈ State Σ ] s ↠ t × Returns t v
 Res : Value → State Σ → (Val Σ Any → Set) → Set
 Res w s P = (w ≡ ω × Errs s) ⊎ Σ[ v ∈ Val Σ Any ] Rets s v × P v
 
-Res-pre : ∀ {s s' w P} → s ↠ s' → Res w s' P → Res w s P
+Res-pre : ∀ {s s' w P}
+  → s ↠ s'
+  → Res w s' P
+  → Res w s P
 Res-pre τ (inj₁ ⟨ e , er ⟩) = inj₁ ⟨ e , (λ σ → let ⟨ t , ⟨ τ' , q ⟩ ⟩ = er σ in ⟨ t , ⟨ ↠-⊕ σ τ ++↠ τ' , q ⟩ ⟩) ⟩
 Res-pre τ (inj₂ ⟨ v , ⟨ ⟨ t , ⟨ τ' , r ⟩ ⟩ , p ⟩ ⟩) = inj₂ ⟨ v , ⟨ ⟨ t , ⟨ τ ++↠ τ' , r ⟩ ⟩ , p ⟩ ⟩
 
-Res-step : ∀ {s s' w P} → step ds s ≡ next s' → Res w s' P → Res w s P
+Res-step : ∀ {s s' w P}
+  → step ds s ≡ next s'
+  → Res w s' P
+  → Res w s P
 Res-step q = Res-pre (q ∷↠ done)
 
 obs≢err : ∀ {A} (v : Val Σ A) → obs v ≢ o-error
@@ -155,17 +169,25 @@ obs≢err (tup ws) ()
 obs≢err (inl v) ()
 obs≢err (inr v) ()
 
-Rets-det : ∀ {s v₁ v₂} → Rets s v₁ → Rets s v₂ → v₁ ≡ v₂
+Rets-det : ∀ {s v₁ v₂}
+  → Rets s v₁
+  → Rets s v₂
+  → v₁ ≡ v₂
 Rets-det ⟨ t , ⟨ τ₁ , r₁ ⟩ ⟩ ⟨ t₂ , ⟨ τ₂ , r₂ ⟩ ⟩ with ↠-final-det τ₁ τ₂ (ret-stop r₁) (ret-stop r₂)
 Rets-det ⟨ _ , ⟨ _ , rets e ⟩ ⟩ ⟨ _ , ⟨ _ , rets .e ⟩ ⟩ | refl = refl
 
 {- a run does not both return and err -}
-Rets-Errs : ∀ {s v} → Rets s v → Errs s → ⊥
+Rets-Errs : ∀ {s v}
+  → Rets s v
+  → Errs s
+  → ⊥
 Rets-Errs {s} {v} ⟨ t , ⟨ τ , r ⟩ ⟩ er with er halt
 ... | ⟨ t' , ⟨ τ' , q ⟩ ⟩ with ↠-final-det τ (subst (_↠ t') (⊕-halt s) τ') (ret-stop r) q
 ... | refl = obs≢err v (stop-inj (trans (sym (ret-stop r)) q))
   where
-  stop-inj : ∀ {o o' : Obs} → stop {S = State Σ} o ≡ stop o' → o ≡ o'
+  stop-inj : ∀ {o o' : Obs}
+    → stop {S = State Σ} o ≡ stop o'
+    → o ≡ o'
   stop-inj refl = refl
 
 {- Values ----------------------------------------------------------------------------}
@@ -174,7 +196,9 @@ pack-η : ∀ (v : Val Σ ⟪ fun ⟫) → v ≡ pack (code-of v) (env-of v)
 pack-η (pack c e) = refl
 
 {- the kinds of flat types are distinct -}
-kindᶠ-inj : ∀ {G H} → kindᶠ G ≡ kindᶠ H → G ≡ H
+kindᶠ-inj : ∀ {G H}
+  → kindᶠ G ≡ kindᶠ H
+  → G ≡ H
 kindᶠ-inj {G} {H} e = trans (sym (inv G)) (trans (cong back e) (inv H))
   where
   back : Kind → Flat
@@ -233,18 +257,28 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
       op : Op (St.op ψ) (frame m) (opened m)
   open Rel public
 
-  cast-rel : ∀ {η mt τ} (e : mt ≡ just τ) {D} {v : MV Σ η mt} → PM mt D v → PR τ D (cast e v)
+  cast-rel : ∀ {η mt τ}
+    → (e : mt ≡ just τ)
+    → ∀ {D} {v : MV Σ η mt}
+    → PM mt D v
+    → PR τ D (cast e v)
   cast-rel refl h = h
 
   {- writing register r -}
-  reg-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} r {τ v D} → PR τ D v → Rel ρ R F m
+  reg-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} r {τ v D}
+    → PR τ D v
+    → Rel ρ R F m
     → Rel {ψ = st (Γ [ r ↦ just τ ]) Δ O F'} ρ (R [ r ≔ˢ D ]) F ⟨ regs m [ r ≔ v ] , frame m , opened m , flag m ⟩
   reg-rel rax h (mr f g l o) = mr f (λ { rax → h ; rdi → g rdi ; rsi → g rsi }) l o
   reg-rel rdi h (mr f g l o) = mr f (λ { rax → g rax ; rdi → h ; rsi → g rsi }) l o
   reg-rel rsi h (mr f g l o) = mr f (λ { rax → g rax ; rdi → g rdi ; rsi → h }) l o
 
   {- writing slot k, which pops the slots from k on and pushes the new value -}
-  slot-rel : ∀ {η Γ Δ Δ' O F' A} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (p : Δ' ⊑ Δ) {v : Val Σ A} {D} → PS D v → Rel ρ R F m
+  slot-rel : ∀ {η Γ Δ Δ' O F' A} {m : Mach Σ η (st Γ Δ O F')} {ρ R F}
+    → (p : Δ' ⊑ Δ)
+    → ∀ {v : Val Σ A} {D}
+    → PS D v
+    → Rel ρ R F m
     → Rel {ψ = st Γ (A ∷ Δ') nothing F'} (D • drop p ρ) R F ⟨ regs m , v ∷ pop p (frame m) , tt , flag m ⟩
   slot-rel {m = m} {ρ} p h (mr f g l o) = mr fr′ g l tt
     where
@@ -253,27 +287,35 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
     fr′ (S y) = subst₂ PS (sym (drop-idx p ρ y)) (sym (pop-! p (frame m) y)) (f (⊑-∋ p y))
 
   {- the flag, set -}
-  flag-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} b {G} → PS G (bit b) → Rel ρ R F m
+  flag-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} b {G}
+    → PS G (bit b)
+    → Rel ρ R F m
     → Rel {ψ = st Γ Δ O true} ρ R G ⟨ regs m , frame m , opened m , b ⟩
   flag-rel b h (mr f g l o) = mr f g h o
 
   {- the registers after a call or a return -}
-  ret-rel : ∀ {η Δ} {φ : Frame Σ Δ} {ρ C v} → (∀ {A} (x : Δ ∋ A) → PS (ρ (idx x)) (φ ! x)) → PS C v
+  ret-rel : ∀ {η Δ} {φ : Frame Σ Δ} {ρ C v}
+    → (∀ {A} (x : Δ ∋ A) → PS (ρ (idx x)) (φ ! x))
+    → PS C v
     → Rel {η} {returned Δ} ρ (called-regs C) init ⟨ rv v tt tt , φ , tt , tt ⟩
   ret-rel f h = mr f (λ { rax → h ; rdi → tt ; rsi → tt }) tt tt
 
   {- %rax and the flag, unset by chk -}
-  rax-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F G} → Rel ρ R F m
+  rax-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F G}
+    → Rel ρ R F m
     → Rel {ψ = st (Γ [ rax ↦ nothing ]) Δ O false} ρ (R [ rax ≔ˢ init ]) G ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩
   rax-rel (mr f g l o) = mr f (λ { rax → tt ; rdi → g rdi ; rsi → g rsi }) tt o
 
   {- opening the closure in slot x wipes the code and environment of the last one -}
-  wipe-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (x : Δ ∋ ⟪ fun ⟫) → Rel ρ R F m
+  wipe-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (x : Δ ∋ ⟪ fun ⟫)
+    → Rel ρ R F m
     → Rel {ψ = st (wipe Γ) Δ (just x) F'} ρ R F ⟨ wipeᵣ (regs m) , frame m , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩
   wipe-rel {Γ = Γ} {m = m} x (mr f g l o) =
     mr f (λ { rax → fg (Regs.ax Γ) (g rax) ; rdi → fg (Regs.di Γ) (g rdi) ; rsi → fg (Regs.si Γ) (g rsi) }) l (pack-η (frame m ! x))
     where
-    fg : ∀ {η η'} mt {D v} → PM {η} mt D v → PM {η'} (wipeα mt) D (wipeᵥ mt v)
+    fg : ∀ {η η'} mt {D v}
+      → PM {η} mt D v
+      → PM {η'} (wipeα mt) D (wipeᵥ mt v)
     fg (just (ty A)) h = h
     fg (just codeα) h = tt
     fg (just tupα) h = tt
@@ -299,12 +341,18 @@ cut p D T j with j <? p
 ... | yes _ = T j
 ... | no _ = D
 
-cut-below : ∀ {p D T j} → j < p → cut p D T j ≡ T j
+cut-below : ∀ {p D T j}
+  → j < p
+  → cut p D T j ≡ T j
 cut-below {p} {j = j} j< with j <? p
 ... | yes _ = refl
 ... | no ¬< = ⊥-elim (¬< j<)
 
-cut-good : ∀ {p D T} → Valᴰ D → Con D → Good T → Good (cut p D T)
+cut-good : ∀ {p D T}
+  → Valᴰ D
+  → Con D
+  → Good T
+  → Good (cut p D T)
 cut-good {p} vD cD gT j with j <? p
 ... | yes _ = gT j
 ... | no _ = ⟨ vD , cD ⟩
@@ -315,11 +363,15 @@ tbl-at : ∀ {n} (f : Σ ∋ n) → Σ[ T ∈ Table ] T⁺ (lvl f) ≡ codeₜ T
 tbl-at f = at ds f
   where
   c = codeₜ {Σ}
-  cons : ∀ {ns m j} (p : _) (ps : All (λ m → Body Σ (called m)) ns) → j ≢ length ns → tbl c {m ∷ ns} (p ∷ ps) j ≡ tbl c ps j
+  cons : ∀ {ns m j} (p : _) (ps : All (λ m → Body Σ (called m)) ns)
+    → j ≢ length ns
+    → tbl c {m ∷ ns} (p ∷ ps) j ≡ tbl c ps j
   cons {ns} {j = j} p ps ne with j ≟ length ns
   ... | yes e = ⊥-elim (ne e)
   ... | no _ = refl
-  out : ∀ {ns} (ps : All (λ m → Body Σ (called m)) ns) j → ¬ (j < length ns) → tbl c ps j ≡ errcode
+  out : ∀ {ns} (ps : All (λ m → Body Σ (called m)) ns) j
+    → ¬ (j < length ns)
+    → tbl c ps j ≡ errcode
   out [] j _ = refl
   out {_ ∷ ns} (p ∷ ps) j ¬< with j ≟ length ns
   ... | yes refl = ⊥-elim (¬< (n<1+n _))
@@ -353,7 +405,9 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) {n} (f : Σ ∋ n) where
     pw = proj₂ (proj₂ (tbl-at f))
     gT : Good T
     gT j = subst (λ D → Valᴰ D × Con D) (sym (pw j)) (cut-good {lvl f} ΛΛᵐ-val errcode-con gT⁺ j)
-    below : ∀ {D} j → j < lvl f → T j ≃ cut (lvl f) D T⁺ j
+    below : ∀ {D} j
+      → j < lvl f
+      → T j ≃ cut (lvl f) D T⁺ j
     below {D} j j< = ≃-reflexive (trans (pw j) (trans (cut-below {D = errcode} {T⁺} j<) (sym (cut-below {D = D} {T⁺} j<))))
 
   {- the code of f under the whole table is part of its entry -}

@@ -70,9 +70,18 @@ RB-arg n (L5.clear a) = RB-arg n a
 RB-args n L5.nil = ⊤
 RB-args n (L5.cons a args) = RB-arg n a × RB-args n args
 
-RB-mono : ∀ {n m} (M : L5.AST) → n ≤ m → RB n M → RB m M
-RB-arg-mono : ∀ {n m b} (a : L5.Arg b) → n ≤ m → RB-arg n a → RB-arg m a
-RB-args-mono : ∀ {n m bs} (args : L5.Args bs) → n ≤ m → RB-args n args → RB-args m args
+RB-mono : ∀ {n m} (M : L5.AST)
+  → n ≤ m
+  → RB n M
+  → RB m M
+RB-arg-mono : ∀ {n m b} (a : L5.Arg b)
+  → n ≤ m
+  → RB-arg n a
+  → RB-arg m a
+RB-args-mono : ∀ {n m bs} (args : L5.Args bs)
+  → n ≤ m
+  → RB-args n args
+  → RB-args m args
 
 RB-mono (L5.` x) n≤m tt = tt
 RB-mono (L5.fun-ref k L5.⦅ args ⦆) n≤m k<n = <-≤-trans k<n n≤m
@@ -101,14 +110,21 @@ RB-args-mono (L5.cons a args) n≤m ⟨ ra , rs ⟩ = ⟨ RB-arg-mono a n≤m ra
 Extends : Defs → Defs → Set
 Extends ds ds' = Σ[ more ∈ Defs ] ds' ≡ more ++ ds
 
-ext-trans : ∀ {ds₁ ds₂ ds₃} → Extends ds₁ ds₂ → Extends ds₂ ds₃ → Extends ds₁ ds₃
+ext-trans : ∀ {ds₁ ds₂ ds₃}
+  → Extends ds₁ ds₂
+  → Extends ds₂ ds₃
+  → Extends ds₁ ds₃
 ext-trans {ds₁} ⟨ m₁ , refl ⟩ ⟨ m₂ , refl ⟩ = ⟨ m₂ ++ m₁ , sym (Data.List.Properties.++-assoc m₂ m₁ ds₁) ⟩
 
-ext-length : ∀ {ds ds'} → Extends ds ds' → length ds ≤ length ds'
+ext-length : ∀ {ds ds'}
+  → Extends ds ds'
+  → length ds ≤ length ds'
 ext-length {ds} ⟨ more , refl ⟩ = subst (length ds ≤_) (sym (length-++ more)) (m≤n+m (length ds) (length more))
 
 {- the entries for the older definitions do not change -}
-table-ext : ∀ (more ds : Defs) k → k < length ds → table (more ++ ds) k ≡ table ds k
+table-ext : ∀ (more ds : Defs) k
+  → k < length ds
+  → table (more ++ ds) k ≡ table ds k
 table-ext [] ds k k< = refl
 table-ext (N ∷ more) ds k k< with k ≟ length (more ++ ds)
 ... | yes refl = ⊥-elim (<-irrefl refl (<-≤-trans k< (ext-length {ds} ⟨ more , refl ⟩)))
@@ -122,17 +138,28 @@ table-top N Ns with length Ns ≟ length Ns
 Agree : ℕ → Table → Table → Set
 Agree n T T' = ∀ k → k < n → T k ≃ T' k
 
-agree-ext : ∀ {ds ds'} → Extends ds ds' → Agree (length ds) (table ds) (table ds')
+agree-ext : ∀ {ds ds'}
+  → Extends ds ds'
+  → Agree (length ds) (table ds) (table ds')
 agree-ext {ds} ⟨ more , refl ⟩ k k< = ≃-reflexive (sym (table-ext more ds k k<))
 
 {- Stability: growing the table does not change older meanings ------------------}
 
-stab : ∀ n T T' (M : L5.AST) ρ ρ' → Agree n T T' → RB n M → EnvRel ρ ρ'
+stab : ∀ n T T' (M : L5.AST) ρ ρ'
+  → Agree n T T'
+  → RB n M
+  → EnvRel ρ ρ'
   → ⟦ M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ'
-stab-arg : ∀ n T T' {b} (a : L5.Arg b) ρ ρ' → Agree n T T' → RB-arg n a → EnvRel ρ ρ'
+stab-arg : ∀ n T T' {b} (a : L5.Arg b) ρ ρ'
+  → Agree n T T'
+  → RB-arg n a
+  → EnvRel ρ ρ'
   → RR b (⟦ a ⟧ₐ[ T ] ρ) (⟦ a ⟧ₐ[ T' ] ρ')
-stab-args : ∀ n T T' {bs} (args : L5.Args bs) ρ ρ' → Agree n T T' → RB-args n args
-  → EnvRel ρ ρ' → RRs bs (⟦ args ⟧₊[ T ] ρ) (⟦ args ⟧₊[ T' ] ρ')
+stab-args : ∀ n T T' {bs} (args : L5.Args bs) ρ ρ'
+  → Agree n T T'
+  → RB-args n args
+  → EnvRel ρ ρ'
+  → RRs bs (⟦ args ⟧₊[ T ] ρ) (⟦ args ⟧₊[ T' ] ρ')
 
 stab n T T' (L5.` x) ρ ρ' ag r rel = rel x
 stab n T T' (L5.fun-ref k L5.⦅ args ⦆) ρ ρ' ag k<n rel = ag k k<n
@@ -202,11 +229,14 @@ glob-shape-args (cons a args) ds =
 
 {- The main lemma -------------------------------------------------------------}
 
-glob-sem : ∀ (M : AST) ds ρ ρ' → EnvRel ρ ρ'
+glob-sem : ∀ (M : AST) ds ρ ρ'
+  → EnvRel ρ ρ'
   → ⟦ M ⟧ ρ ≃ ⟦ proj₁ (glob M ds) ⟧[ table (proj₂ (glob M ds)) ] ρ'
-glob-sem-arg : ∀ {b} (a : Arg b) ds ρ ρ' → EnvRel ρ ρ'
+glob-sem-arg : ∀ {b} (a : Arg b) ds ρ ρ'
+  → EnvRel ρ ρ'
   → RR b (⟦ a ⟧ₐ ρ) (⟦ proj₁ (glob-arg a ds) ⟧ₐ[ table (proj₂ (glob-arg a ds)) ] ρ')
-glob-sem-args : ∀ {bs} (args : Args bs) ds ρ ρ' → EnvRel ρ ρ'
+glob-sem-args : ∀ {bs} (args : Args bs) ds ρ ρ'
+  → EnvRel ρ ρ'
   → RRs bs (⟦ args ⟧₊ ρ) (⟦ proj₁ (glob-args args ds) ⟧₊[ table (proj₂ (glob-args args ds)) ] ρ')
 
 glob-sem (` x) ds ρ ρ' rel = rel x
@@ -248,5 +278,7 @@ hoist-correct : ∀ (M : AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ hoist M ⟧ₚ
 hoist-correct M = glob-sem M [] ρ₀ ρ₀ (λ x → ≃-refl)
 
 {- the compiler's Clos4 output -}
-hoist-correct-compile : ∀ (M : ISWIM.AST) → Closed M → ⟦ compile₄ M ⟧ ρ₀ ≃ ⟦ compile M ⟧ₚ
+hoist-correct-compile : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ⟦ compile₄ M ⟧ ρ₀ ≃ ⟦ compile M ⟧ₚ
 hoist-correct-compile M _ = hoist-correct (compile₄ M)

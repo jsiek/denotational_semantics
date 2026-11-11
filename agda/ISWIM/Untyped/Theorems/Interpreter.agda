@@ -85,17 +85,20 @@ import ISWIM.Untyped.proof.Correctness.Interp.CompilerFuel as CompilerFuel
    calls, so the simplified program needs no more clock than the original,
    which may need more (the proof relates the two at the same clock in one
    direction, and at some larger clock in the other) -}
-simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+simplify-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (ISWIMᵢ.sem (simplify M))
 simplify-correct = SimplifyFuel.simplify-correct
 
 {- capture, for closed programs -}
-capture-correct : ∀ (M : ISWIM.AST) → Closed M
+capture-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (Clos2ᵢ.sem (capture M))
 capture-correct = CaptureFuel.capture-correct
 
 {- prune, for well-scoped programs (which capture produces) -}
-prune-correct : ∀ (M : Clos2.AST) → WS 0 M
+prune-correct : ∀ (M : Clos2.AST)
+  → WS 0 M
   → Equivalent (Clos2ᵢ.sem M) (Clos2ᵢ.sem (prune-program M))
 prune-correct = PruneFuel.prune-correct
 
@@ -111,12 +114,14 @@ hoist-correct = HoistFuel.hoist-correct
 
 {- remove complex operands, for well-scoped programs (which the compiler
    produces) -}
-rco-correct : ∀ (P : Clos5.Program) → Scoped P
+rco-correct : ∀ (P : Clos5.Program)
+  → Scoped P
   → Equivalent (Clos5ᵢ.sem P) (Clos5ᵢ.sem (rco-program P))
 rco-correct = RCOFuel.rco-correct
 
 {- lift locals, for programs in monadic normal form (which rco produces) -}
-lift-locals-correct : ∀ (P : Clos5.Program) (mp : MonProgram P)
+lift-locals-correct : ∀ (P : Clos5.Program)
+  → (mp : MonProgram P)
   → Equivalent (Clos5ᵢ.sem P) (Impᵢ.sem (lift-program P mp))
 lift-locals-correct = LiftLocalsFuel.lift-correct
 
@@ -128,23 +133,28 @@ select-correct = SelectFuel.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
 
-compile-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (Clos5ᵢ.sem (compile M))
 compile-correct = CompilerFuel.compile-correct
 
-compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-mon-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (Clos5ᵢ.sem (compile-mon M))
 compile-mon-correct = RCOFuel.compile-mon-correct
 
-compile-imp-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-imp-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (Impᵢ.sem (compile-imp M))
 compile-imp-correct = LiftLocalsFuel.compile-imp-correct
 
-compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-cfg-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (CFGᵢ.sem (compile-cfg M))
 compile-cfg-correct = ExplicateFuel.compile-cfg-correct
 
-compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-x86-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (X86ᵢ.sem (compile-x86 M))
 compile-x86-correct = SelectFuel.compile-x86-correct
 
@@ -153,18 +163,23 @@ compile-x86-correct = SelectFuel.compile-x86-correct
    does, errors exactly when it does, and diverges exactly when it
    does -}
 
-compile-const : ∀ (M : ISWIM.AST) → Closed M → ∀ B k
+compile-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ B k
   → Terminates (ISWIMᵢ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵢ.sem (compile M)) (o-const B k)
 compile-const = CompilerFuel.compile-const
 
-compile-converges : ∀ (M : ISWIM.AST) → Closed M
+compile-converges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Converges (Terminates (ISWIMᵢ.sem M)) ⇔ Converges (Terminates (Clos5ᵢ.sem (compile M)))
 compile-converges = CompilerFuel.compile-converges
 
-compile-error : ∀ (M : ISWIM.AST) → Closed M
+compile-error : ∀ (M : ISWIM.AST)
+  → Closed M
   → Terminates (ISWIMᵢ.sem M) o-error ⇔ Terminates (Clos5ᵢ.sem (compile M)) o-error
 compile-error = CompilerFuel.compile-error
 
-compile-diverges : ∀ (M : ISWIM.AST) → Closed M
+compile-diverges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Diverges (ISWIMᵢ.sem M) ⇔ Diverges (Clos5ᵢ.sem (compile M))
 compile-diverges = CompilerFuel.compile-diverges

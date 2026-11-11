@@ -105,7 +105,10 @@ flags-ok u (M ∷ Ms) (suc i) = flags-ok (λ i → u (suc i)) Ms i
 
 {- the code uses only the argument and kept free variables -}
 covers : ∀ {k n fl} {N : Tm (suc n) Any} {Ms : Vec (Tm k Any) n}
-  → (∀ i → Fl (uses N (suc i)) (lookup fl i) (lookup Ms i)) → ∀ x → T (uses N x) → Kept fl x
+  → (∀ i → Fl (uses N (suc i)) (lookup fl i) (lookup Ms i))
+  → ∀ x
+  → T (uses N x)
+  → Kept fl x
 covers s zero _ = tt
 covers s (suc i) = used (s i)
   where used : ∀ {u b M} → Fl u b M → T u → T b

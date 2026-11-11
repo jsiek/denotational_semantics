@@ -88,9 +88,11 @@ blk-map (t ∷ bs) l with l ≟ length bs | l ≟ length (sels bs)
 ... | yes p | no q = ⊥-elim (q (trans p (sym (length-map select-tail bs))))
 ... | no p | yes q = ⊥-elim (p (trans q (length-map select-tail bs)))
 
-load-ok : ∀ v → (M.resume v M.fstK ≡ M.value (X.get-field L.fst v))
+load-ok : ∀ v
+  → (M.resume v M.fstK ≡ M.value (X.get-field L.fst v))
   × (M.resume v M.sndK ≡ M.value (X.get-field L.snd v))
-  × (∀ {n} (i : Fin n) → M.resume v (M.getK i) ≡ M.value (X.get-field (L.get i) v))
+  × (  ∀ {n} (i : Fin n)
+     → M.resume v (M.getK i) ≡ M.value (X.get-field (L.get i) v))
 load-ok (code _) = refl , refl , λ _ → refl
 load-ok (pair _ _) = refl , refl , λ _ → refl
 load-ok (const _ _) = refl , refl , λ _ → refl
@@ -175,68 +177,92 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
     fail : G.step ds s ≡ stop o-error → Run φ κ s nothing
     step : G.step ds s ≡ next s' → Run φ κ s' r → Run φ κ s r
 
-  ev : ∀ {ρ} a {k : X.Val → Maybe X.Val} → G.step ds s ≡ G.res ds (M.value (G.atom φ a)) φ κ'
-    → (∀ v → Run φ κ (G.ret v φ κ') (k v)) → Run φ κ s (X.arg φ ρ (select-atm a) >>= k)
+  ev : ∀ {ρ} a {k : X.Val → Maybe X.Val}
+    → G.step ds s ≡ G.res ds (M.value (G.atom φ a)) φ κ'
+    → (∀ v → Run φ κ (G.ret v φ κ') (k v))
+    → Run φ κ s (X.arg φ ρ (select-atm a) >>= k)
   ev {φ = φ} {ρ = ρ} a g c rewrite sel-ok {φ} {ρ} a with G.atom φ a
   ... | nothing = fail g
   ... | just v = step g (c v)
 
-  atm-run : ∀ {ρ} a → G.step ds s ≡ G.res ds (M.value (G.atom φ a)) φ κ → Run φ κ s (X.arg φ ρ (select-atm a))
+  atm-run : ∀ {ρ} a
+    → G.step ds s ≡ G.res ds (M.value (G.atom φ a)) φ κ
+    → Run φ κ s (X.arg φ ρ (select-atm a))
   atm-run {φ = φ} {ρ = ρ} a g rewrite sel-ok {φ} {ρ} a = last g
 
-  evs : ∀ {m} a → G.atom φ a ≡ m → G.step ds (G.eval a φ κ) ≡ G.res ds (M.value m) φ κ
+  evs : ∀ {m} a
+    → G.atom φ a ≡ m
+    → G.step ds (G.eval a φ κ) ≡ G.res ds (M.value m) φ κ
   evs {φ = φ} {κ = κ} a e = cong (λ m → G.res ds (M.value m) φ κ) e
 
   {- scripts -}
 
   {- the CFG assigns v to slot x and runs t, as the X86 does -}
-  write : X.step xds s₂ ≡ X.upd (φ [ x ]≔ v) ρ (X.run (ins t) (end t) (sels bs) σ f) → K ~ σ
+  write : X.step xds s₂ ≡ X.upd (φ [ x ]≔ v) ρ (X.run (ins t) (end t) (sels bs) σ f)
+    → K ~ σ
     → F (G.ret v φ (G.seqK x t bs K)) s₂
   write {φ = φ} {x = x} {v = v} {t = t} {bs = bs} {K = K} h k with φ [ x ]≔ v in e
   ... | nothing = lag-now (stop (cong (λ m → G.jump m (just (t , bs)) K) e) h)
   ... | just φ' = lag-now (go (cong (λ m → G.jump m (just (t , bs)) K) e) (plus h ε) (exec~ k))
 
-  jumpF : ∀ {mb} → G.step ds s₁ ≡ G.jump (just φ) mb K
-    → X.step xds s₂ ≡ X.goto (mmap selp mb) σ f φ ρ → K ~ σ → F s₁ s₂
+  jumpF : ∀ {mb}
+    → G.step ds s₁ ≡ G.jump (just φ) mb K
+    → X.step xds s₂ ≡ X.goto (mmap selp mb) σ f φ ρ
+    → K ~ σ
+    → F s₁ s₂
   jumpF {mb = nothing} g h k = lag-now (stop g h)
   jumpF {mb = just (t , bs)} g h k = lag-now (go g (plus h ε) (exec~ k))
 
   {- %rax holds v; the X86 moves it to d and continues as D -}
-  to-dest : ∀ {D d is j bs₂ σ f φ ρ v} → Dest D d is j bs₂ σ → ρ rax ≡ just v
+  to-dest : ∀ {D d is j bs₂ σ f φ ρ v}
+    → Dest D d is j bs₂ σ
+    → ρ rax ≡ just v
     → Reach L₂ Match (G.ret v φ D) (X.run (movq (loc (reg rax)) d ∷ is) j bs₂ σ f φ ρ)
   to-dest {φ = φ} {ρ} (seqD k) e = _ , ε , now (write (cong (λ m → X.put (var _) m φ ρ _) e) k)
   to-dest {φ = φ} {ρ} (retD k) e = _ , cong (λ m → X.put (reg rax) m φ ρ _) e ◅ ε , ret~ k refl
 
   {- the CFG errors, and the X86 has -}
-  doom : Run φ κ s₁ nothing → X.step xds s₂ ≡ stop o-error → F s₁ s₂
+  doom : Run φ κ s₁ nothing
+    → X.step xds s₂ ≡ stop o-error
+    → F s₁ s₂
   doom (last g) h = lag-now (stop g h)
   doom (fail g) h = lag-now (stop g h)
   doom (step g r) h = lag-step g (doom r h)
 
   {- the X86 stores r in %rax at the CFG step that produces it -}
-  stage : ∀ {k} → Run φ κ s₁ r → X.step xds s₂ ≡ X.put (reg rax) r φ ρ k
-    → (∀ v → Reach L₂ Match (G.ret v φ κ) (k φ (ρ [ rax ↦ just v ]))) → F s₁ s₂
+  stage : ∀ {k}
+    → Run φ κ s₁ r
+    → X.step xds s₂ ≡ X.put (reg rax) r φ ρ k
+    → (∀ v → Reach L₂ Match (G.ret v φ κ) (k φ (ρ [ rax ↦ just v ])))
+    → F s₁ s₂
   stage {r = nothing} r h c = doom r h
   stage {r = just v} {k = k} (step g r) h c = lag-step g (stage {k = k} r h c)
   stage {r = just v} (last g) h c with c v
   ... | _ , τ , m = lag-now (go g (plus h τ) m)
 
   {- the X86 stores r in d, a slot when the CFG assigns it -}
-  pend : Dest D d is j bs₂ σ → Run φ D s₁ r → X.step xds s₂ ≡ X.put d r φ ρ (X.run is j bs₂ σ f) → F s₁ s₂
+  pend : Dest D d is j bs₂ σ
+    → Run φ D s₁ r
+    → X.step xds s₂ ≡ X.put d r φ ρ (X.run is j bs₂ σ f)
+    → F s₁ s₂
   pend (retD k) r h = stage r h λ v → _ , ε , ret~ k refl
   pend {r = nothing} (seqD k) r h = doom r h
   pend {r = just v} (seqD k) (step g r) h = lag-step g (pend (seqD k) r h)
   pend {r = just v} (seqD k) (last g) h = lag-step g (write h k)
 
   {- eq: the X86 sets the flag at the CFG step that produces the value -}
-  cmpF : ∀ {mb} → Dest D d is j bs₂ σ → Run φ D s₁ (mmap X.bit mb)
-    → X.step xds s₂ ≡ X.test mb (λ f' → X.run (sete d ∷ is) j bs₂ σ f' φ ρ) → F s₁ s₂
+  cmpF : ∀ {mb}
+    → Dest D d is j bs₂ σ
+    → Run φ D s₁ (mmap X.bit mb)
+    → X.step xds s₂ ≡ X.test mb (λ f' → X.run (sete d ∷ is) j bs₂ σ f' φ ρ)
+    → F s₁ s₂
   cmpF {mb = nothing} dst r h = doom r h
   cmpF {mb = just b} dst (step g r) h = lag-step g (cmpF {mb = just b} dst r h)
   cmpF {mb = just b} (seqD k) (last g) h = lag-now (go g (plus h ε) (now (write refl k)))
   cmpF {mb = just b} (retD k) (last g) h = lag-now (go g (plus h (refl ◅ ε)) (ret~ k refl))
 
-  tup-run : ∀ {ρ} vs as → G.step ds s ≡ G.res ds (M.tuple-next vs as) φ D
+  tup-run : ∀ {ρ} vs as
+    → G.step ds s ≡ G.res ds (M.tuple-next vs as) φ D
     → Run φ D s (X.args φ ρ vs (map select-atm as) (X.build L.tuple))
   tup-run vs [] g = last g
   tup-run vs (a ∷ as) g = step g (ev a refl λ v → tup-run (v ∷ vs) as refl)
@@ -244,17 +270,21 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
   glob : ∀ k → X.global xds k ≡ mmap (select-body prologue) (G.global ds k)
   glob = reverse-map-‼ (select-body prologue) ds
 
-  callB : ∀ {ve va} mb → Dest D d is j bs₂ σ → G.step ds s₁ ≡ G.call mb ve va φ D
+  callB : ∀ {ve va} mb
+    → Dest D d is j bs₂ σ
+    → G.step ds s₁ ≡ G.call mb ve va φ D
     → X.step xds s₂ ≡ X.call (mmap (select-body prologue) mb) (X.retK (movq (loc (reg rax)) d ∷ is) j bs₂ φ σ)
-                              (just ve) (just va) → Sync s₁ s₂
+        (just ve) (just va)
+    → Sync s₁ s₂
   callB nothing dst g h = stop g h
   callB (just (C.body n bs t)) dst g h = go g (plus h (refl ◅ refl ◅ ε)) (exec~ (callK dst))
 
 
   {- the call, after its operands -}
-  callF : ∀ {ve va} vf → Dest D d is j bs₂ σ
+  callF : ∀ {ve va} vf
+    → Dest D d is j bs₂ σ
     → X.step xds s₂ ≡ X.callq? xds (just vf) (X.retK (movq (loc (reg rax)) d ∷ is) j bs₂ φ σ)
-                                   (ρ [ rdi ↦ just ve ] [ rsi ↦ just va ])
+        (ρ [ rdi ↦ just ve ] [ rsi ↦ just va ])
     → Sync (G.ret va φ (G.frm (M.appA vf ve) D)) s₂
   callF (code k) dst h = callB (G.global ds k) dst refl (trans h (cong (λ m → X.call m _ _ _) (glob k)))
   callF (pair _ _) dst h = stop refl h
@@ -263,7 +293,9 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
   callF (inl _) dst h = stop refl h
   callF (inr _) dst h = stop refl h
 
-  app-sc : ∀ {D d is j bs₂ σ f φ ρ s₁} fn e a → Dest D d is j bs₂ σ → G.step ds s₁ ≡ next (G.eval fn φ (G.frm (M.appF e a) D))
+  app-sc : ∀ {D d is j bs₂ σ f φ ρ s₁} fn e a
+    → Dest D d is j bs₂ σ
+    → G.step ds s₁ ≡ next (G.eval fn φ (G.frm (M.appF e a) D))
     → F s₁ (X.run (select-simple (app fn e a) d ++ is) j bs₂ σ f φ ρ)
   app-sc {D} {d} {is} {j} {bs₂} {σ} {f} {φ} {ρ} {s₁} fn e a dst g = sc _ _ _ refl refl refl
     where
@@ -273,7 +305,10 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
       cong (λ m → X.put (reg rdi) m φ ρ (X.run (movq (select-atm a) (reg rsi) ∷ is₁) j bs₂ σ f)) (trans (sel-ok {ρ = ρ} e) ee)
     xa = λ {m ρ} (ea : G.atom φ a ≡ m) → cong (λ m → X.put (reg rsi) m φ ρ (X.run is₁ j bs₂ σ f)) (trans (sel-ok {ρ = ρ} a) ea)
     xf = λ {m ρ} (ef : G.atom φ fn ≡ m) → cong (λ m → X.callq? xds m k ρ) (trans (sel-ok {ρ = ρ} fn) ef)
-    sc : ∀ mf me ma → G.atom φ fn ≡ mf → G.atom φ e ≡ me → G.atom φ a ≡ ma
+    sc : ∀ mf me ma
+      → G.atom φ fn ≡ mf
+      → G.atom φ e ≡ me
+      → G.atom φ a ≡ ma
       → F s₁ (X.run (select-simple (app fn e a) d ++ is) j bs₂ σ f φ ρ)
     sc nothing nothing _ ef ee ea = lag-step g (lag-now (stop (evs fn ef) (xe ee)))
     sc (just vf) nothing _ ef ee ea = lag-step g (lag-step (evs fn ef) (lag-step refl (lag-now (stop (evs e ee) (xe ee)))))
@@ -284,7 +319,9 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
     sc (just vf) (just ve) (just va) ef ee ea = lag-now (go g (plus (xe ee) (xa ea ◅ ε))
       (now (lag-step (evs fn ef) (lag-step refl (lag-step (evs e ee) (lag-step refl (lag-step (evs a ea) (lag-now (callF vf dst (xf ef))))))))))
 
-  simple : ∀ s → Dest D d is j bs₂ σ → G.step ds s₁ ≡ G.res ds (G.first φ s) φ D
+  simple : ∀ s
+    → Dest D d is j bs₂ σ
+    → G.step ds s₁ ≡ G.res ds (G.first φ s) φ D
     → F s₁ (X.run (select-simple s d ++ is) j bs₂ σ f φ ρ)
   simple (atm a) dst g = pend dst (atm-run a g) refl
   simple (app fn e a) dst g = app-sc fn e a dst g
@@ -305,23 +342,30 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
 
   {- case: the X86 tests and loads at the CFG step that evaluates a, and
      jumps at the next -}
-  branch : ∀ {mφ b} → G.step ds s₁ ≡ G.jump mφ (block bs l) K
+  branch : ∀ {mφ b}
+    → G.step ds s₁ ≡ G.jump mφ (block bs l) K
     → X.step xds s₂ ≡ X.upd mφ ρ (X.run [] (je l₁ l₂) (sels bs) σ (just b))
-    → (∀ φ' → X.step xds (X.run [] (je l₁ l₂) (sels bs) σ (just b) φ' ρ) ≡ X.goto (mmap selp (block bs l)) σ (just b) φ' ρ)
-    → K ~ σ → Reach L₂ Match s₁ s₂
+    → (  ∀ φ'
+       → X.step xds (X.run [] (je l₁ l₂) (sels bs) σ (just b) φ' ρ) ≡ X.goto (mmap selp (block bs l)) σ (just b) φ' ρ)
+    → K ~ σ
+    → Reach L₂ Match s₁ s₂
   branch {mφ = nothing} g h c k = _ , ε , now (lag-now (stop g h))
   branch {mφ = just φ'} g h c k = _ , h ◅ ε , now (jumpF g (c φ') k)
 
-  xt : ∀ {is j bs₂ σ f φ ρ m} a → G.atom φ a ≡ m
+  xt : ∀ {is j bs₂ σ f φ ρ m} a
+    → G.atom φ a ≡ m
     → X.step xds (X.run (L.testinl (select-atm a) ∷ is) j bs₂ σ f φ ρ) ≡ X.test (m >>= X.is-inl) (λ f' → X.run is j bs₂ σ f' φ ρ)
   xt a e = cong (λ m → X.test (m >>= X.is-inl) _) (trans (sel-ok a) e)
 
-  caseF : ∀ {φ a x l₁ l₂ bs K σ f ρ} mv → G.atom φ a ≡ mv → K ~ σ
+  caseF : ∀ {φ a x l₁ l₂ bs K σ f ρ} mv
+    → G.atom φ a ≡ mv
+    → K ~ σ
     → F (G.exec (case a x l₁ l₂) φ bs K) (X.run (ins (case a x l₁ l₂)) (end (case a x l₁ l₂)) (sels bs) σ f φ ρ)
   caseF {φ} {a} {x} {l₁} {l₂} {bs} {K} {σ} {f} {ρ} mv ea k = cs mv ea
     where
     xa = λ {m} → xt {L.load payload (select-atm a) (var x) ∷ []} {je l₁ l₂} {sels bs} {σ} {f} {φ} {ρ} {m} a
-    cs : ∀ mv → G.atom φ a ≡ mv
+    cs : ∀ mv
+      → G.atom φ a ≡ mv
       → F (G.exec (case a x l₁ l₂) φ bs K) (X.run (ins (case a x l₁ l₂)) (end (case a x l₁ l₂)) (sels bs) σ f φ ρ)
     cs nothing ea = lag-step refl (lag-now (stop (evs a ea) (xa ea)))
     cs (just (inl w)) ea with branch {bs = bs} {l = l₁} refl
@@ -338,7 +382,8 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
     cs (just (tup _)) ea = lag-step refl (lag-step (evs a ea) (lag-now (stop refl (xa ea))))
 
   {- the script from each synchronisation point -}
-  fate : Match s₁ s₂ → F s₁ s₂
+  fate : Match s₁ s₂
+    → F s₁ s₂
   fate (now fa) = fa
   fate (ret~ halt e) = lag-now (stop refl (cong X.halt? e))
   fate (ret~ {v = v} (callK dst) e) with to-dest {ρ = X.regs (just v) nothing nothing} dst refl
@@ -349,7 +394,8 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
   fate (exec~ {t = goto l} {bs = bs} k) = jumpF refl (cong (λ m → X.goto m _ _ _ _) (blk-map bs l)) k
   fate (exec~ {t = case a x l₁ l₂} k) = caseF _ refl k
 
-  sim : Sync s₁ s₂ → Answers≺ L₂ (Lag L₁ Sync) i (G.step ds s₁) s₂
+  sim : Sync s₁ s₂
+    → Answers≺ L₂ (Lag L₁ Sync) i (G.step ds s₁) s₂
   sim (stop g h) = answers-at g (stops h)
   sim (go g π m) = answers-at g (steps π (proj₂ (fate m)))
 

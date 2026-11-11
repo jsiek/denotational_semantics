@@ -97,13 +97,17 @@ concretize-correct = ConcretizeCorrect.concretize-correct-closed
 {- split preserves and reflects the constants a program produces, and
    whether it produces anything -}
 split-correct-const : ∀ (M : Clos3.AST) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ split M ⟧₄ ρ₀)
-  × (const c ∈ ⟦ split M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
+  → (  const c ∈ ⟦ M ⟧₃ ρ₀
+     → const c ∈ ⟦ split M ⟧₄ ρ₀)
+  × (  const c ∈ ⟦ split M ⟧₄ ρ₀
+     → const c ∈ ⟦ M ⟧₃ ρ₀)
 split-correct-const = SplitCorrect.split-correct-const
 
 split-correct-nonempty : ∀ (M : Clos3.AST)
-  → (nonempty (⟦ M ⟧₃ ρ₀) → nonempty (⟦ split M ⟧₄ ρ₀))
-  × (nonempty (⟦ split M ⟧₄ ρ₀) → nonempty (⟦ M ⟧₃ ρ₀))
+  → (  nonempty (⟦ M ⟧₃ ρ₀)
+     → nonempty (⟦ split M ⟧₄ ρ₀))
+  × (  nonempty (⟦ split M ⟧₄ ρ₀)
+     → nonempty (⟦ M ⟧₃ ρ₀))
 split-correct-nonempty = SplitCorrect.split-correct-nonempty
 
 hoist-correct : ∀ (M : Clos4.AST) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ hoist M ⟧₅
@@ -113,7 +117,9 @@ rco-correct : ∀ (P : Clos5.Program) → ⟦ rco-program P ⟧₅ ≃ ⟦ P ⟧
 rco-correct = RCOCorrect.rco-program-correct
 
 {- lift locals, for programs in monadic normal form (which rco produces) -}
-lift-locals-correct : ∀ (P : Clos5.Program) (mp : MonProgram P) → ⟦ lift-program P mp ⟧ᵢ ≃ ⟦ P ⟧₅
+lift-locals-correct : ∀ (P : Clos5.Program)
+  → (mp : MonProgram P)
+  → ⟦ lift-program P mp ⟧ᵢ ≃ ⟦ P ⟧₅
 lift-locals-correct = LiftLocalsCorrect.lift-program-correct
 
 explicate-correct : ∀ (P : Imp.Program) → ⟦ explicate P ⟧ᶜ ≃ ⟦ P ⟧ᵢ
@@ -121,7 +127,8 @@ explicate-correct = ExplicateCorrect.explicate-correct
 
 {- select instructions, when each global definition has at least 2 slots,
    for its parameters (the programs that the compiler produces do) -}
-select-correct : ∀ (P : CFG.Program) → All (λ b → 2 ≤ CFG.Body.locals b) (CFG.Program.defs P)
+select-correct : ∀ (P : CFG.Program)
+  → All (λ b → 2 ≤ CFG.Body.locals b) (CFG.Program.defs P)
   → ⟦ select P ⟧ₓ ≃ ⟦ P ⟧ᶜ
 select-correct = SelectCorrect.select-correct
 
@@ -133,51 +140,71 @@ select-correct = SelectCorrect.select-correct
    (compile-cfg) and X86 (compile-x86) -}
 
 compile-correct-const : ∀ (M : ISWIM.AST) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧₅)
-  × (const c ∈ ⟦ compile M ⟧₅ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile M ⟧₅)
+  × (  const c ∈ ⟦ compile M ⟧₅
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-correct-const = CompilerCorrect.compile-correct-const
 
 compile-correct-nonempty : ∀ (M : ISWIM.AST)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧₅)
-  × (nonempty ⟦ compile M ⟧₅ → nonempty (⟦ M ⟧ ρ₀))
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile M ⟧₅)
+  × (  nonempty ⟦ compile M ⟧₅
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-correct-nonempty = CompilerCorrect.compile-correct-nonempty
 
 compile-mon-correct-const : ∀ (M : ISWIM.AST) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-mon M ⟧₅)
-  × (const c ∈ ⟦ compile-mon M ⟧₅ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile-mon M ⟧₅)
+  × (  const c ∈ ⟦ compile-mon M ⟧₅
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-mon-correct-const = RCOCorrect.compile-mon-correct-const
 
 compile-mon-correct-nonempty : ∀ (M : ISWIM.AST)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-mon M ⟧₅)
-  × (nonempty ⟦ compile-mon M ⟧₅ → nonempty (⟦ M ⟧ ρ₀))
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile-mon M ⟧₅)
+  × (  nonempty ⟦ compile-mon M ⟧₅
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-mon-correct-nonempty = RCOCorrect.compile-mon-correct-nonempty
 
 compile-imp-correct-const : ∀ (M : ISWIM.AST) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-imp M ⟧ᵢ)
-  × (const c ∈ ⟦ compile-imp M ⟧ᵢ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile-imp M ⟧ᵢ)
+  × (  const c ∈ ⟦ compile-imp M ⟧ᵢ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-imp-correct-const = LiftLocalsCorrect.compile-imp-correct-const
 
 compile-imp-correct-nonempty : ∀ (M : ISWIM.AST)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-imp M ⟧ᵢ)
-  × (nonempty ⟦ compile-imp M ⟧ᵢ → nonempty (⟦ M ⟧ ρ₀))
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile-imp M ⟧ᵢ)
+  × (  nonempty ⟦ compile-imp M ⟧ᵢ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-imp-correct-nonempty = LiftLocalsCorrect.compile-imp-correct-nonempty
 
 compile-cfg-correct-const : ∀ (M : ISWIM.AST) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-cfg M ⟧ᶜ)
-  × (const c ∈ ⟦ compile-cfg M ⟧ᶜ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile-cfg M ⟧ᶜ)
+  × (  const c ∈ ⟦ compile-cfg M ⟧ᶜ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-cfg-correct-const = ExplicateCorrect.compile-cfg-correct-const
 
 compile-cfg-correct-nonempty : ∀ (M : ISWIM.AST)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-cfg M ⟧ᶜ)
-  × (nonempty ⟦ compile-cfg M ⟧ᶜ → nonempty (⟦ M ⟧ ρ₀))
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile-cfg M ⟧ᶜ)
+  × (  nonempty ⟦ compile-cfg M ⟧ᶜ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-cfg-correct-nonempty = ExplicateCorrect.compile-cfg-correct-nonempty
 
 compile-x86-correct-const : ∀ (M : ISWIM.AST) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₓ)
-  × (const c ∈ ⟦ compile-x86 M ⟧ₓ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile-x86 M ⟧ₓ)
+  × (  const c ∈ ⟦ compile-x86 M ⟧ₓ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-x86-correct-const = SelectCorrect.compile-x86-correct-const
 
 compile-x86-correct-nonempty : ∀ (M : ISWIM.AST)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₓ)
-  × (nonempty ⟦ compile-x86 M ⟧ₓ → nonempty (⟦ M ⟧ ρ₀))
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile-x86 M ⟧ₓ)
+  × (  nonempty ⟦ compile-x86 M ⟧ₓ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-x86-correct-nonempty = SelectCorrect.compile-x86-correct-nonempty

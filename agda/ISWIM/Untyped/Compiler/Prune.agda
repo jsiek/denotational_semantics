@@ -43,7 +43,9 @@ module ISWIM.Untyped.Compiler.Prune where
       index : ℕ → ℕ
   open Pruned public
 
-  keep : AST → Pruned → Pruned
+  keep : AST
+    → Pruned
+    → Pruned
   keep M (pruned m fvs idx) = pruned (suc m) (M ,, fvs) idx
 
   {- the positions past the free variables, after keeping or dropping the
@@ -60,8 +62,10 @@ module ISWIM.Untyped.Compiler.Prune where
   opt-args : ∀ {n} → (Var → Var) → Args (replicate n ■) → Args (replicate n ■)
   opt-body : (Var → Var) → ∀ k → Arg (ν-n k (ν ■)) → AST
   {- U j says whether the code uses the free variable at position j -}
-  prune-fvs : ∀ n (r : Var → Var) {U : ℕ → Set} → (∀ j → Dec (U j))
-    → Args (replicate n ■) → (ℕ → ℕ) → Pruned
+  prune-fvs : ∀ n (r : Var → Var) {U : ℕ → Set}
+    → (∀ j → Dec (U j))
+    → Args (replicate n ■) → (ℕ → ℕ)
+    → Pruned
 
   prune r (` x) = ` (r x)
   prune r (clos-op n ⦅ ! clear a ,, fvs ⦆) =

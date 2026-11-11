@@ -47,13 +47,21 @@ A ⇔ B = (A → B) × (B → A)
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D D' = (∀ {B} (c : base-rep B) → const c ∈ D ⇔ const c ∈ D') × (nonempty D ⇔ nonempty D')
 
-⇔-trans : ∀ {A B C} → A ⇔ B → B ⇔ C → A ⇔ C
+⇔-trans : ∀ {A B C}
+  → A ⇔ B
+  → B ⇔ C
+  → A ⇔ C
 ⇔-trans ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
-Same-trans : ∀ {D D' D''} → Same D D' → Same D' D'' → Same D D''
+Same-trans : ∀ {D D' D''}
+  → Same D D'
+  → Same D' D''
+  → Same D D''
 Same-trans ⟨ c₁ , n₁ ⟩ ⟨ c₂ , n₂ ⟩ = ⟨ (λ c → ⇔-trans (c₁ c) (c₂ c)) , ⇔-trans n₁ n₂ ⟩
 
-≃→Same : ∀ {D D'} → D ≃ D' → Same D D'
+≃→Same : ∀ {D D'}
+  → D ≃ D'
+  → Same D D'
 ≃→Same ⟨ D⊆ , D⊇ ⟩ = ⟨ (λ c → ⟨ D⊆ _ , D⊇ _ ⟩) , ⟨ ne D⊆ , ne D⊇ ⟩ ⟩
   where ne = λ {A B : 𝒫 Value} (A⊆ : A ⊆ B) (n : nonempty A) → ⟨ proj₁ n , A⊆ _ (proj₂ n) ⟩
 
@@ -70,11 +78,15 @@ compile-same M =
   M₃ = concretize-program M₂'
 
 compile-correct-const : ∀ (M : AST) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧ₚ)
-  × (const c ∈ ⟦ compile M ⟧ₚ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile M ⟧ₚ)
+  × (  const c ∈ ⟦ compile M ⟧ₚ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-correct-const M = proj₁ (compile-same M)
 
 compile-correct-nonempty : ∀ (M : AST)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧ₚ)
-  × (nonempty ⟦ compile M ⟧ₚ → nonempty (⟦ M ⟧ ρ₀))
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile M ⟧ₚ)
+  × (  nonempty ⟦ compile M ⟧ₚ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-correct-nonempty M = proj₂ (compile-same M)

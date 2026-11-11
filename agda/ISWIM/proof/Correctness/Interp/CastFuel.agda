@@ -65,12 +65,19 @@ data _≈_ where
 
 Env≈ {k} r ρ ρ' = ∀ x (lt : x < k) → M.Pointwise _≈_ (ρ ‼ x) (just (lookup ρ' (r (fromℕ< lt))))
 
-env-ext : ∀ {k k' ρ ρ' v v'} {r : Fin k → Fin k'} → v ≈ v' → Env≈ r ρ ρ' → Env≈ (ext r) (v ∷ ρ) (v' ∷ ρ')
+env-ext : ∀ {k k' ρ ρ' v v'} {r : Fin k → Fin k'}
+  → v ≈ v'
+  → Env≈ r ρ ρ'
+  → Env≈ (ext r) (v ∷ ρ) (v' ∷ ρ')
 env-ext r E zero _ = M.just r
 env-ext r E (suc x) (s≤s lt) = E x lt
 
-obs≈ : ∀ {v v'} → v ≈ v' → S.obs v ≡ T.obs v'
-obs≈-list : ∀ {n vs} {ws : Vec (T.Val Any) n} → Pointwise _≈_ vs (toList ws) → S.obs-list vs ≡ T.obs-vec ws
+obs≈ : ∀ {v v'}
+  → v ≈ v'
+  → S.obs v ≡ T.obs v'
+obs≈-list : ∀ {n vs} {ws : Vec (T.Val Any) n}
+  → Pointwise _≈_ vs (toList ws)
+  → S.obs-list vs ≡ T.obs-vec ws
 obs≈ (clo≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -86,7 +93,9 @@ out≈ eq n m with does (n Z.≟ m)
 ... | true = inl≈ (tup≈ [])
 ... | false = inr≈ (tup≈ [])
 
-prim≈ : ∀ p {v v' w w'} → v ≈ v' → w ≈ w'
+prim≈ : ∀ p {v v' w w'}
+  → v ≈ v'
+  → w ≈ w'
   → RelResult _≈_ (from-maybe (S.prim? p v w))
       ((T.project? tint v' >>= λ a → T.project? tint w' >>= λ b → ret (T.δ p a b)) >>= λ x → ret (T.dyn (out-flat p) x))
 prim≈ p (const≈ {Int}) (const≈ {Int}) = ret (out≈ p _ _)
@@ -115,12 +124,20 @@ prim≈ p (inr≈ _) s = error
 Args≈ : ∀ {n} → List (T.Val Any) → List S.Val → Vec (T.Val Any) n → Set
 Args≈ us xs ws = Pointwise _≈_ xs (toList ws ʳ++ us)
 
-run≈ : ∀ ck {k k'} M (w : WS k M) {r : Fin k → Fin k'} {ρ ρ'} → Env≈ r ρ ρ'
+run≈ : ∀ ck {k k'} M
+  → (w : WS k M)
+  → ∀ {r : Fin k → Fin k'} {ρ ρ'}
+  → Env≈ r ρ ρ'
   → RelResult _≈_ (S.eval ck ρ M) (T.eval ck ρ' (cast r M w))
-args≈ : ∀ ck {k k' n} (Ms : Args (replicate n ■)) (ws : WS-args k Ms) {r : Fin k → Fin k'} {ρ ρ' vs us}
-  → Env≈ r ρ ρ' → Pointwise _≈_ vs us
+args≈ : ∀ ck {k k' n} (Ms : Args (replicate n ■))
+  → (ws : WS-args k Ms)
+  → ∀ {r : Fin k → Fin k'} {ρ ρ' vs us}
+  → Env≈ r ρ ρ'
+  → Pointwise _≈_ vs us
   → RelResult (Args≈ {n} us) (S.eval-args ck ρ vs Ms) (T.evals ck ρ' (casts r Ms ws))
-call≈ : ∀ ck {k k' N w ρ ρ' v v'} {r : Fin k → Fin k'} → Env≈ r ρ ρ' → v ≈ v'
+call≈ : ∀ ck {k k' N w ρ ρ' v v'} {r : Fin k → Fin k'}
+  → Env≈ r ρ ρ'
+  → v ≈ v'
   → RelResult _≈_ (S.call ck N (v ∷ ρ)) (T.call ck (T.pack (T.code (cast (ext r) N w)) (T.tup ρ')) v')
 
 run≈ ck (` x) x<k E = from-maybe-rel (E x x<k)
@@ -133,7 +150,9 @@ run≈ ck (tuple n ⦅ Ms ⦆) ws E = bind-rel∘ (args≈ ck Ms ws E []) λ {xs
   ret (tup≈ (subst (Pointwise _≈_ (reverse xs)) (reverse-involutive (toList vs)) (reverse⁺ rs)))
 run≈ ck (get {suc n} i ⦅ M ,, Nil ⦆) (w , _) E = bind-rel∘ (run≈ ck M w E) get≈
   where
-  get≈ : ∀ {v v'} → v ≈ v' → RelResult _≈_ (S.project i v) (T.project? (ttup n i) v' >>= λ u → ret (T.nth i u))
+  get≈ : ∀ {v v'}
+    → v ≈ v'
+    → RelResult _≈_ (S.project i v) (T.project? (ttup n i) v' >>= λ u → ret (T.nth i u))
   get≈ (tup≈ {n = m} rs) with m N.≟ suc n
   ... | yes refl = from-maybe-rel (proj-pw i rs)
   ... | no ne rewrite proj-bad i ne rs = error
@@ -160,6 +179,8 @@ call≈ (suc ck) {N = N} {w} E r = run≈ ck N w (env-ext r E)
 
 {- The end theorem, for closed programs ----------------------------------------}
 
-cast-correct : ∀ (M : AST) → Closed M → Equivalent (S.sem M) (T.sem (cast-closed M))
+cast-correct : ∀ (M : AST)
+  → Closed M
+  → Equivalent (S.sem M) (T.sem (cast-closed M))
 cast-correct M c rewrite cast-closed-≡ M (closed-ws {M} c) =
   clocked _≈_ obs≈ λ ck → run≈ ck M (closed-ws {M} c) λ x ()

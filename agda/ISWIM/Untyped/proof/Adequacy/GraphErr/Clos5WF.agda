@@ -50,9 +50,18 @@ RB-arg n (L5.clear a) = RB-arg n a
 RB-args n L5.nil = ⊤
 RB-args n (L5.cons a args) = RB-arg n a × RB-args n args
 
-RB-mono : ∀ {n m} (M : L5.AST) → n ≤ m → RB n M → RB m M
-RB-arg-mono : ∀ {n m b} (a : L5.Arg b) → n ≤ m → RB-arg n a → RB-arg m a
-RB-args-mono : ∀ {n m bs} (args : L5.Args bs) → n ≤ m → RB-args n args → RB-args m args
+RB-mono : ∀ {n m} (M : L5.AST)
+  → n ≤ m
+  → RB n M
+  → RB m M
+RB-arg-mono : ∀ {n m b} (a : L5.Arg b)
+  → n ≤ m
+  → RB-arg n a
+  → RB-arg m a
+RB-args-mono : ∀ {n m bs} (args : L5.Args bs)
+  → n ≤ m
+  → RB-args n args
+  → RB-args m args
 
 RB-mono (L5.` x) n≤m tt = tt
 RB-mono (L5.fun-ref k L5.⦅ args ⦆) n≤m k<n = <-≤-trans k<n n≤m
@@ -89,10 +98,15 @@ WF (L5.program ds M) = DefsWF ds × RB (length ds) M
 Extends : Defs → Defs → Set
 Extends ds ds' = Σ[ more ∈ Defs ] ds' ≡ more ++ ds
 
-ext-trans : ∀ {ds₁ ds₂ ds₃} → Extends ds₁ ds₂ → Extends ds₂ ds₃ → Extends ds₁ ds₃
+ext-trans : ∀ {ds₁ ds₂ ds₃}
+  → Extends ds₁ ds₂
+  → Extends ds₂ ds₃
+  → Extends ds₁ ds₃
 ext-trans {ds₁} ⟨ m₁ , refl ⟩ ⟨ m₂ , refl ⟩ = ⟨ m₂ ++ m₁ , sym (++-assoc m₂ m₁ ds₁) ⟩
 
-ext-length : ∀ {ds ds'} → Extends ds ds' → length ds ≤ length ds'
+ext-length : ∀ {ds ds'}
+  → Extends ds ds'
+  → length ds ≤ length ds'
 ext-length {ds} ⟨ more , refl ⟩ = subst (length ds ≤_) (sym (length-++ more)) (m≤n+m (length ds) (length more))
 
 Shape : Defs → L5.AST × Defs → Set
@@ -135,9 +149,15 @@ glob-shape-args (cons a args) ds =
   ss = glob-shape-args args (proj₂ (glob-arg a ds))
 
 {- hoist adds definitions that refer only to older ones -}
-glob-wf : ∀ M ds → DefsWF ds → DefsWF (proj₂ (glob M ds))
-glob-wf-arg : ∀ {b} (a : Arg b) ds → DefsWF ds → DefsWF (proj₂ (glob-arg a ds))
-glob-wf-args : ∀ {bs} (args : Args bs) ds → DefsWF ds → DefsWF (proj₂ (glob-args args ds))
+glob-wf : ∀ M ds
+  → DefsWF ds
+  → DefsWF (proj₂ (glob M ds))
+glob-wf-arg : ∀ {b} (a : Arg b) ds
+  → DefsWF ds
+  → DefsWF (proj₂ (glob-arg a ds))
+glob-wf-args : ∀ {bs} (args : Args bs) ds
+  → DefsWF ds
+  → DefsWF (proj₂ (glob-args args ds))
 
 glob-wf (` x) ds d = d
 glob-wf (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds d =

@@ -105,11 +105,15 @@ block-e (bs ▷ k) (S l) with lvl l N.≟ length (eBlocks bs)
 
 {- Values, registers, the flag and the open closure -----------------------------}
 
-bind₁ : ∀ {A B : Set} {m : Maybe A} {v} (k : A → Maybe B) → m ≡ just v → (m >>= k) ≡ k v
+bind₁ : ∀ {A B : Set} {m : Maybe A} {v} (k : A → Maybe B)
+  → m ≡ just v
+  → (m >>= k) ≡ k v
 bind₁ k refl = refl
 
 {- r := w -}
-preg : ∀ {r mw w φ ρ} (K : X.Frame → X.Regs → X.State) → mw ≡ just w → X.put (L.reg r) mw φ ρ K ≡ next (K φ (ρ X.[ r ↦ just w ]))
+preg : ∀ {r mw w φ ρ} (K : X.Frame → X.Regs → X.State)
+  → mw ≡ just w
+  → X.put (L.reg r) mw φ ρ K ≡ next (K φ (ρ X.[ r ↦ just w ]))
 preg K refl = refl
 
 module _ {Σ : List ℕ} where
@@ -151,54 +155,75 @@ module _ {Σ : List ℕ} where
       fl : FlagAg (St.fl ψ) (T.flag m) f
       op : OpenAg (St.op ψ) (T.opened m) φ
 
-  reg-ag : ∀ {η Γ} {ρt : T.RegVals Σ η Γ} {ρ} → RegsAg ρt ρ → ∀ r → RAg (Γ ‹ r ›) (ρt T.⦅ r ⦆) (ρ r)
+  reg-ag : ∀ {η Γ} {ρt : T.RegVals Σ η Γ} {ρ}
+    → RegsAg ρt ρ
+    → ∀ r
+    → RAg (Γ ‹ r ›) (ρt T.⦅ r ⦆) (ρ r)
   reg-ag ag rax = RegsAg.ax ag
   reg-ag ag rdi = RegsAg.di ag
   reg-ag ag rsi = RegsAg.si ag
 
-  cast-ok : ∀ {η m τ} (e : m ≡ just τ) {v : T.MV Σ η m} {w} → RAg m v w → w ≡ just (er τ (T.cast e v))
+  cast-ok : ∀ {η m τ}
+    → (e : m ≡ just τ)
+    → ∀ {v : T.MV Σ η m} {w}
+    → RAg m v w
+    → w ≡ just (er τ (T.cast e v))
   cast-ok refl a = a
 
-  set-ag : ∀ {η Γ} {ρt : T.RegVals Σ η Γ} {ρ} r {τ} (v : T.RV Σ η τ) → RegsAg ρt ρ
+  set-ag : ∀ {η Γ} {ρt : T.RegVals Σ η Γ} {ρ} r {τ} (v : T.RV Σ η τ)
+    → RegsAg ρt ρ
     → RegsAg (T._[_≔_] {τ = just τ} ρt r v) (ρ X.[ r ↦ just (er τ v) ])
   set-ag rax v (ragree a d s) = ragree refl d s
   set-ag rdi v (ragree a d s) = ragree a refl s
   set-ag rsi v (ragree a d s) = ragree a d refl
 
   {- chk unsets %rax -}
-  clr : ∀ {η Γ} {ρt : T.RegVals Σ η Γ} {ρ ρ'} → RegsAg ρt ρ → ρ' rdi ≡ ρ rdi → ρ' rsi ≡ ρ rsi
+  clr : ∀ {η Γ} {ρt : T.RegVals Σ η Γ} {ρ ρ'}
+    → RegsAg ρt ρ
+    → ρ' rdi ≡ ρ rdi
+    → ρ' rsi ≡ ρ rsi
     → RegsAg (T._[_≔_] {τ = nothing} ρt rax tt) ρ'
   clr {Γ = Γ} (ragree a d s) e₁ e₂ = ragree tt (subst (RAg (Regs.di Γ) _) (sym e₁) d) (subst (RAg (Regs.si Γ) _) (sym e₂) s)
 
-  wipeᵥ-ag : ∀ {η η'} m {v : T.MV Σ η m} {w} → RAg m v w → RAg {η = η'} (wipeα m) (T.wipeᵥ m v) w
+  wipeᵥ-ag : ∀ {η η'} m {v : T.MV Σ η m} {w}
+    → RAg m v w
+    → RAg {η = η'} (wipeα m) (T.wipeᵥ m v) w
   wipeᵥ-ag (just (ty A)) a = a
   wipeᵥ-ag (just codeα) a = tt
   wipeᵥ-ag (just tupα) a = tt
   wipeᵥ-ag nothing a = tt
 
-  wipe-ag : ∀ {η η' Γ} {ρt : T.RegVals Σ η Γ} {ρ} → RegsAg ρt ρ → RegsAg (T.wipeᵣ {η' = η'} ρt) ρ
+  wipe-ag : ∀ {η η' Γ} {ρt : T.RegVals Σ η Γ} {ρ}
+    → RegsAg ρt ρ
+    → RegsAg (T.wipeᵣ {η' = η'} ρt) ρ
   wipe-ag {Γ = Γ} (ragree a d s) = ragree (wipeᵥ-ag (Regs.ax Γ) a) (wipeᵥ-ag (Regs.di Γ) d) (wipeᵥ-ag (Regs.si Γ) s)
 
-  arg-e : ∀ {n η ψ τ} (a : Arg Σ ψ τ) {m : T.Mach Σ η ψ} {f φ ρ} → MAg n m f φ ρ
+  arg-e : ∀ {n η ψ τ} (a : Arg Σ ψ τ) {m : T.Mach Σ η ψ} {f φ ρ}
+    → MAg n m f φ ρ
     → X.arg φ ρ (eArg a) ≡ just (er τ (T.arg a m))
   arg-e (atom a) ag = arg-ok (MAg.fr ag) a
   arg-e (reg r e) ag = cast-ok e (reg-ag (MAg.rg ag) r)
   arg-e (a ↑) ag = arg-e a ag
 
-  args-e : ∀ {n η ψ j} (as : Vec (Arg Σ ψ (ty Any)) j) {m : T.Mach Σ η ψ} {f φ ρ} → MAg n m f φ ρ
-    → ∀ vs (K : List X.Val → Maybe X.Val) → X.args φ ρ vs (toList (map eArg as)) K ≡ K (vs ʳ++ ⌊ T.args as m ⌋*)
+  args-e : ∀ {n η ψ j} (as : Vec (Arg Σ ψ (ty Any)) j) {m : T.Mach Σ η ψ} {f φ ρ}
+    → MAg n m f φ ρ
+    → ∀ vs (K : List X.Val → Maybe X.Val)
+    → X.args φ ρ vs (toList (map eArg as)) K ≡ K (vs ʳ++ ⌊ T.args as m ⌋*)
   args-e [] ag vs K = refl
   args-e (a ∷ as) {m} {φ = φ} {ρ} ag vs K =
     trans (bind₁ (λ v → X.args φ ρ (v ∷ vs) (toList (map eArg as)) K) (arg-e a ag)) (args-e as ag (⌊ T.arg a m ⌋ ∷ vs) K)
 
   {- d := v -}
-  put-reg : ∀ {n η Γ Δ O F} {m : T.Mach Σ η (st Γ Δ O F)} {f φ ρ} r {τ} (v : T.RV Σ η τ) → MAg n m f φ ρ
+  put-reg : ∀ {n η Γ Δ O F} {m : T.Mach Σ η (st Γ Δ O F)} {f φ ρ} r {τ} (v : T.RV Σ η τ)
+    → MAg n m f φ ρ
     → MAg n {ψ = st (Γ [ r ↦ just τ ]) Δ O F} T.⟨ T._[_≔_] {τ = just τ} (T.regs m) r v , T.frame m , T.opened m , T.flag m ⟩
-          f φ (ρ X.[ r ↦ just (er τ v) ])
+        f φ (ρ X.[ r ↦ just (er τ v) ])
   put-reg r v (mag fr len rg fl op) = mag fr len (set-ag r v rg) fl op
 
   put-ok : ∀ {n η ψ τ ψ'} (d : Dst n ψ τ ψ') (v : T.RV Σ η τ) {m : T.Mach Σ η ψ} {f φ ρ mw}
-    → mw ≡ just (er τ v) → MAg n m f φ ρ → (K : X.Frame → X.Regs → X.State)
+    → mw ≡ just (er τ v)
+    → MAg n m f φ ρ
+    → (K : X.Frame → X.Regs → X.State)
     → Σ[ φ' ∈ X.Frame ] Σ[ ρ' ∈ X.Regs ] X.put (eDst d) mw φ ρ K ≡ next (K φ' ρ') × MAg n (T.put d v m) f φ' ρ'
   put-ok (reg r) v refl ag K = _ , _ , refl , put-reg r v ag
   put-ok (slot {Δ' = Δ'} p lt) v refl ag K
@@ -246,12 +271,16 @@ module _ {Σ : List ℕ} where
       ≡ next (T.run (Body.start (ds ! def-of c)) (Body.blocks (ds ! def-of c)) σ η T.⟨ T.rv tt e w , [] , tt , tt ⟩)
   enter-ok ds (V.code f) e w σ = refl
 
-  proj-⌊⌋ : ∀ t (v : V.Val Σ Any) {u} → V.proj? t v ≡ just u → ⌊ v ⌋ ≡ ⌊ u ⌋
+  proj-⌊⌋ : ∀ t (v : V.Val Σ Any) {u}
+    → V.proj? t v ≡ just u
+    → ⌊ v ⌋ ≡ ⌊ u ⌋
   proj-⌊⌋ t (V.dyn H v) e with H ≟F flat t
   proj-⌊⌋ t (V.dyn H v) refl | yes refl = refl
   proj-⌊⌋ t (V.dyn H v) () | no _
 
-  obs-ok : ∀ {A} (v : V.Val Σ A) → V.obs v ≡ o-error → ⊥
+  obs-ok : ∀ {A} (v : V.Val Σ A)
+    → V.obs v ≡ o-error
+    → ⊥
   obs-ok (V.code f) ()
   obs-ok (V.pack c e) ()
   obs-ok (V.const c) ()
@@ -286,7 +315,11 @@ module Sim {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) (b₀ : B
 
   B = Both {L₁ = L₁} {L₂ = L₂} Match
 
-  one : ∀ {s₁ s₁' s₂ s₂'} → T.step ds s₁ ≡ next s₁' → X.step xds s₂ ≡ next s₂' → Match s₁' s₂' → B s₁ s₂
+  one : ∀ {s₁ s₁' s₂ s₂'}
+    → T.step ds s₁ ≡ next s₁'
+    → X.step xds s₂ ≡ next s₂'
+    → Match s₁' s₂'
+    → B s₁ s₂
   one e₁ e₂ m = move (step⁺ e₁) (step⁺ e₂) m
 
   {- how the erased check of chk t runs, up to its move K -}
@@ -301,23 +334,33 @@ module Sim {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) (b₀ : B
     K f' ρ' = X.run (L.movq a D ∷ is) j bs σ f' φ ρ'
 
     {- the instructions of a check -}
-    mv : ∀ {w is'} → X.arg φ ρ a ≡ just w
+    mv : ∀ {w is'}
+      → X.arg φ ρ a ≡ just w
       → X.step xds (X.run (L.movq a (L.reg rax) ∷ is') j bs σ f φ ρ) ≡ next (X.run is' j bs σ f φ (ρ X.[ rax ↦ just w ]))
     mv {is' = is'} e = preg (X.run is' j bs σ f) e
 
-    ld : ∀ {fl w v is'} → X.arg φ ρ a ≡ just v → X.get-field fl v ≡ just w
+    ld : ∀ {fl w v is'}
+      → X.arg φ ρ a ≡ just v
+      → X.get-field fl v ≡ just w
       → X.step xds (X.run (L.load fl a (L.reg rax) ∷ is') j bs σ f φ ρ) ≡ next (X.run is' j bs σ f φ (ρ X.[ rax ↦ just w ]))
     ld {fl} {is' = is'} e e' = preg (X.run is' j bs σ f) (trans (bind₁ (X.get-field fl) e) e')
 
-    ld-bad : ∀ {fl v is'} → X.arg φ ρ a ≡ just v → X.get-field fl v ≡ nothing
+    ld-bad : ∀ {fl v is'}
+      → X.arg φ ρ a ≡ just v
+      → X.get-field fl v ≡ nothing
       → Final L₂ (X.run (L.load fl a (L.reg rax) ∷ is') j bs σ f φ ρ) o-error
     ld-bad {fl} e e' = cong (λ m → X.put (L.reg rax) m φ ρ _) (trans (bind₁ (X.get-field fl) e) e')
 
-    ts : ∀ {v b is'} → X.arg φ ρ a ≡ just v → X.is-inl v ≡ just b
+    ts : ∀ {v b is'}
+      → X.arg φ ρ a ≡ just v
+      → X.is-inl v ≡ just b
       → X.step xds (X.run (L.testinl a ∷ is') j bs σ f φ ρ) ≡ next (X.run is' j bs σ (just b) φ ρ)
     ts e e' = cong (λ m → X.test m _) (trans (bind₁ X.is-inl e) e')
 
-    ts-bad : ∀ {v is'} → X.arg φ ρ a ≡ just v → X.is-inl v ≡ nothing → Final L₂ (X.run (L.testinl a ∷ is') j bs σ f φ ρ) o-error
+    ts-bad : ∀ {v is'}
+      → X.arg φ ρ a ≡ just v
+      → X.is-inl v ≡ nothing
+      → Final L₂ (X.run (L.testinl a ∷ is') j bs σ f φ ρ) o-error
     ts-bad e e' = cong (λ m → X.test m _) (trans (bind₁ X.is-inl e) e')
 
     rg₁ : ∀ {w} → RegsAg (T._[_≔_] {τ = nothing} ρt rax tt) (ρ X.[ rax ↦ w ])
@@ -326,7 +369,8 @@ module Sim {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) (b₀ : B
     rg₂ : ∀ {w w'} → RegsAg (T._[_≔_] {τ = nothing} ρt rax tt) ((ρ X.[ rax ↦ w ]) X.[ rax ↦ w' ])
     rg₂ = clr rg refl refl
 
-    ck-ok : ∀ t (v : V.Val Σ Any) → X.arg φ ρ a ≡ just ⌊ v ⌋
+    ck-ok : ∀ t (v : V.Val Σ Any)
+      → X.arg φ ρ a ≡ just ⌊ v ⌋
       → CkOut t ρt (X.run ((check t a ++ L.movq a D ∷ []) ++ is) j bs σ f φ ρ) K (V.proj? t v)
     ck-ok tint (V.dyn (base Int) (V.const n)) e = ok (mv e ◅ refl ◅ ε) rg₂
     ck-ok tint (V.dyn (base Nat) (V.const n)) e = bad (mv e ◅ ε) refl
@@ -356,7 +400,9 @@ module Sim {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) (b₀ : B
     ... | yes refl = ok (ld {fl = L.get i} e (proj-ok vs i) ◅ ε) rg₁
     ... | no ne = bad ε (ld-bad {fl = L.get i} e (proj-bad ⌊ vs ⌋* i (ne ∘ trans (sym (len-⌊⌋ vs)))))
 
-  sim : ∀ {s₁ s₂} → Match s₁ s₂ → B s₁ s₂
+  sim : ∀ {s₁ s₂}
+    → Match s₁ s₂
+    → B s₁ s₂
   sim (run~ {k = movq a d ∷ k} {bs} {σ} {η} {m} {σₓ} {f} ag sk)
     with put-ok d (T.arg a m) (arg-e a ag) ag (xrun k bs σₓ f)
   ... | _ , _ , e , ag' = one refl e (run~ ag' sk)
@@ -418,10 +464,11 @@ module Sim {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ) (b₀ : B
   sim (run~ {k = chk t x d ∷ k} {bs} {σ} {η} {m} {σₓ} {f} {φ} {ρ} (mag fr len rg fl op) sk) =
     chk~ (V.proj? t (T.frame m ! x)) refl (ck-ok rg t (T.frame m ! x) (Agree.at fr x))
     where
-    chk~ : ∀ r → V.proj? t (T.frame m ! x) ≡ r
+    chk~ : ∀ r
+      → V.proj? t (T.frame m ! x) ≡ r
       → CkOut t (T.regs m) (X.run ((check t (slot-of x) ++ L.movq (slot-of x) (eDst d) ∷ []) ++ L.Block.instrs (eSeq k))
-                                  (L.Block.jump (eSeq k)) (eBlocks bs) σₓ f φ ρ)
-                           (K {a = slot-of x} {eDst d} {L.Block.instrs (eSeq k)} {L.Block.jump (eSeq k)} {eBlocks bs} {σₓ} {f} {φ} rg) r
+                 (L.Block.jump (eSeq k)) (eBlocks bs) σₓ f φ ρ)
+          (K {a = slot-of x} {eDst d} {L.Block.instrs (eSeq k)} {L.Block.jump (eSeq k)} {eBlocks bs} {σₓ} {f} {φ} rg) r
       → B _ _
     chk~ (just u) eq (ok {f' = f'} τ rg')
       with put-ok d u (trans (Agree.at fr x) (cong just (proj-⌊⌋ t (T.frame m ! x) eq))) (mag fr len rg' tt op) (xrun k bs σₓ f')
@@ -448,9 +495,13 @@ erase-correct (program ds b) = equivalent (Sim.fsim ds b)
 {- The X86ᵀ machine errs only at a chk that fails: any property Q of such states
    holds of a state that stops with o-error -}
 only-chk : ∀ {Σ} (ds : All (λ m → Body Σ (called m)) Σ) (Q : T.State Σ → Set)
-  → (∀ {n Bs Γ Δ O F ψ'} {t} {x : Δ ∋ Any} {d : Dst n (st (Γ [ rax ↦ nothing ]) Δ O false) (ty ⟪ flat t ⟫) ψ'}
-       {k : Seq Σ n Bs ψ'} {bs σ η} {m : T.Mach Σ η (st Γ Δ O F)} → V.proj? t (T.frame m ! x) ≡ nothing → Q (T.run (chk t x d ∷ k) bs σ η m))
-  → ∀ s → T.step ds s ≡ stop o-error → Q s
+  → (  ∀ {n Bs Γ Δ O F ψ'} {t} {x : Δ ∋ Any} {d : Dst n (st (Γ [ rax ↦ nothing ]) Δ O false) (ty ⟪ flat t ⟫) ψ'}
+       {k : Seq Σ n Bs ψ'} {bs σ η} {m : T.Mach Σ η (st Γ Δ O F)}
+     → V.proj? t (T.frame m ! x) ≡ nothing
+     → Q (T.run (chk t x d ∷ k) bs σ η m))
+  → ∀ s
+  → T.step ds s ≡ stop o-error
+  → Q s
 only-chk ds Q q (T.run (movq a d ∷ k) bs σ η m) ()
 only-chk ds Q q (T.run (subq a r e ∷ k) bs σ η m) ()
 only-chk ds Q q (T.run (cmpq a₂ a₁ ∷ k) bs σ η m) ()
@@ -465,7 +516,10 @@ only-chk ds Q q (T.run (callq a e₁ e₂ ∷ k) bs σ η m) e
 ... | ()
 only-chk ds Q q (T.run (chk t x d ∷ k) bs σ η m) e = go (V.proj? t (T.frame m ! x)) refl e
   where
-  go : ∀ r → V.proj? t (T.frame m ! x) ≡ r → T.checked ds r d k bs σ _ ≡ stop o-error → Q (T.run (chk t x d ∷ k) bs σ η m)
+  go : ∀ r
+    → V.proj? t (T.frame m ! x) ≡ r
+    → T.checked ds r d k bs σ _ ≡ stop o-error
+    → Q (T.run (chk t x d ∷ k) bs σ η m)
   go (just u) eq ()
   go nothing eq _ = q eq
 only-chk ds Q q (T.run (retq e) bs T.halt η m) e' = ⊥-elim (obs-ok (T.cast e (T.regs m T.⦅ rax ⦆)) (cong unstop e'))

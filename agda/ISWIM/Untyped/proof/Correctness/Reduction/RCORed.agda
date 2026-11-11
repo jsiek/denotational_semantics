@@ -69,31 +69,39 @@ open import Relation.Nullary using (yes; no)
 
 {- The let chains of rco ---------------------------------------------------------}
 
-lift-keep : ∀ {n} (f : ℕ → Args (replicate (suc n) ■) → AST) M Ms → Atom M
+lift-keep : ∀ {n} (f : ℕ → Args (replicate (suc n) ■) → AST) M Ms
+  → Atom M
   → lift f (M ,, Ms) ≡ lift (λ k As → f k (rename (k +_) M ,, As)) Ms
 lift-keep f M Ms a with atom? M
 ... | yes _ = refl
 ... | no na = ⊥-elim (na a)
 
-lift-let : ∀ {n} (f : ℕ → Args (replicate (suc n) ■) → AST) M Ms → (Atom M → ⊥)
+lift-let : ∀ {n} (f : ℕ → Args (replicate (suc n) ■) → AST) M Ms
+  → (Atom M → ⊥)
   → lift f (M ,, Ms) ≡ let-op ⦅ M ,, ⟩ lift (λ k As → f (suc k) (` k ,, As)) (rename-args suc Ms) ,, Nil ⦆
 lift-let f M Ms na with atom? M
 ... | yes a = ⊥-elim (na a)
 ... | no _ = refl
 
-rco-atom : ∀ {M} → Atom M → rco M ≡ M
+rco-atom : ∀ {M}
+  → Atom M
+  → rco M ≡ M
 rco-atom (var x) = refl
 rco-atom (lit B n) = refl
 rco-atom (ref n) = refl
 
 {- rco makes an atom only of an atom -}
 lift-na : ∀ {n} g (f : ℕ → Args (replicate n ■) → AST) Ms
-  → (∀ k As → Atom (rename g (f k As)) → ⊥) → Atom (rename g (lift f Ms)) → ⊥
+  → (∀ k As → Atom (rename g (f k As)) → ⊥)
+  → Atom (rename g (lift f Ms))
+  → ⊥
 lift-na g f Ms na with binds (atomize Ms)
 ... | [] = na _ _
 ... | _ ∷ _ = λ ()
 
-atom-rco : ∀ M g → Atom (rename g (rco M)) → Atom M
+atom-rco : ∀ M g
+  → Atom (rename g (rco M))
+  → Atom M
 atom-rco (` x) g a = var x
 atom-rco (fun-ref n ⦅ Nil ⦆) g a = ref n
 atom-rco (lit B n ⦅ Nil ⦆) g a = lit B n
@@ -114,7 +122,9 @@ atom-rco (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) g ()
 global-map : ∀ ds k → global (map rco ds) k ≡ mmap rco (global ds k)
 global-map ds = reverse-map-‼ rco ds
 
-global-all : ∀ {P : AST → Set} {ds} → All P ds → ∀ k {N} → global ds k ≡ just N → P N
+global-all : ∀ {P : AST → Set} {ds} → All P ds → ∀ k {N}
+  → global ds k ≡ just N
+  → P N
 global-all {ds = ds} ps k eq = lookup ps (reverse⁻ (‼-any (reverse ds) k eq))
 
 {- the values of a primitive -}
@@ -155,7 +165,10 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
       → let-op ⦅ M ,, ⟩ sub (exts σ) N ,, Nil ⦆ ≈ let-op ⦅ M' ,, ⟩ sub (exts σ) (rco N) ,, Nil ⦆
 
   {- a target value is the source's -}
-  ≈-val : ∀ {M V} → Value V → M ≈ V → M ≡ V
+  ≈-val : ∀ {M V}
+    → Value V
+    → M ≈ V
+    → M ≡ V
   ≈-val v (val≈ _) = refl
 
   {- The fundamental lemma: code under a substitution of values -----------------}
@@ -163,25 +176,34 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   {- a construct h on the operands Ms after σ, and the target's chain for
      them, renamed by r, after ρ, which agrees with σ through r, with g
      on the atoms at the end -}
-  chain : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
-    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms) → ∀ r ρ (h : Args (replicate n ■) → AST) (g : ℕ → Args (replicate n ■) → AST)
-    → (∀ x → ρ (r x) ≡ σ x) → LR red₁ Value h
-    → (∀ j (Ws : Args (replicate j ■)) As → Values (sub-args (extend Ws ρ) As)
-         → h (sub-args (extend Ws ρ) As) ≈ sub (extend Ws ρ) (g j As))
+  chain : ∀ {n k} σ (Ms : Args (replicate n ■))
+    → Vals k σ
+    → WS-args k Ms
+    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms)
+    → ∀ r ρ (h : Args (replicate n ■) → AST) (g : ℕ → Args (replicate n ■) → AST)
+    → (∀ x → ρ (r x) ≡ σ x)
+    → LR red₁ Value h
+    → (  ∀ j (Ws : Args (replicate j ■)) As
+       → Values (sub-args (extend Ws ρ) As)
+       → h (sub-args (extend Ws ρ) As) ≈ sub (extend Ws ρ) (g j As))
     → h (sub-args σ Ms) ≈ sub ρ (lift g (rename-args r (rco-args Ms)))
   chain {zero} σ Nil vs ws fs r ρ h g eq lr fin = fin 0 Nil Nil T.[]
   chain {suc n} {k} σ (M ,, Ms) vs (w , ws) (f ∷ fs) r ρ h g eq lr fin with atom? M
   ... | yes a rewrite rco-atom a | lift-keep g (rename r M) (rename-args r (rco-args Ms)) (atom-rename r a) =
     chain σ Ms vs ws fs r ρ (λ As → h (sub σ M ,, As)) (λ j As → g j (rename (j +_) (rename r M) ,, As)) eq (proj₂ lr (atom-val a w)) fin'
     where
-    atom-val : ∀ {M} → Atom M → WS k M → Value (sub σ M)
+    atom-val : ∀ {M}
+      → Atom M
+      → WS k M
+      → Value (sub σ M)
     atom-val (var x) w = vs x w
     atom-val (lit B n) w = T.lit
     atom-val (ref n) w = T.fun
     same : ∀ j (Ws : Args (replicate j ■)) → sub (extend Ws ρ) (rename (j +_) (rename r M)) ≡ sub σ M
     same j Ws = trans (ren-sub _ _ (rename r M)) (trans (ren-sub _ r M)
                   (sub-cong (λ x → trans (extend-skip Ws ρ (r x)) (eq x)) M))
-    fin' : ∀ j (Ws : Args (replicate j ■)) As → Values (sub-args (extend Ws ρ) As)
+    fin' : ∀ j (Ws : Args (replicate j ■)) As
+      → Values (sub-args (extend Ws ρ) As)
       → h (sub σ M ,, sub-args (extend Ws ρ) As) ≈ sub (extend Ws ρ) (g j (rename (j +_) (rename r M) ,, As))
     fin' j Ws As vs' = subst (λ X → h (X ,, sub-args (extend Ws ρ) As) ≈ sub (extend Ws ρ) (g j (rename (j +_) (rename r M) ,, As))) (same j Ws)
                              (fin j Ws (rename (j +_) (rename r M) ,, As) (subst Value (sym (same j Ws)) (atom-val a w) T.∷ vs'))
@@ -196,17 +218,27 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
                                                            (subst Value (sym (extend-top Ws W ρ)) v T.∷ vs'))))
 
   {- the chain of a construct -}
-  chain₀ : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
-    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms) → (h : Args (replicate n ■) → AST) (g : ℕ → Args (replicate n ■) → AST) → LR red₁ Value h
-    → (∀ j (Ws : Args (replicate j ■)) As → Values (sub-args (extend Ws σ) As)
-         → h (sub-args (extend Ws σ) As) ≈ sub (extend Ws σ) (g j As))
+  chain₀ : ∀ {n k} σ (Ms : Args (replicate n ■))
+    → Vals k σ
+    → WS-args k Ms
+    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms)
+    → (h : Args (replicate n ■) → AST) (g : ℕ → Args (replicate n ■) → AST)
+    → LR red₁ Value h
+    → (  ∀ j (Ws : Args (replicate j ■)) As
+       → Values (sub-args (extend Ws σ) As)
+       → h (sub-args (extend Ws σ) As) ≈ sub (extend Ws σ) (g j As))
     → h (sub-args σ Ms) ≈ sub σ (lift g (rco-args Ms))
   chain₀ σ Ms vs ws fs h g lr fin =
     subst (λ X → h (sub-args σ Ms) ≈ sub σ (lift g X)) (rename-id-args (λ _ → refl) (rco-args Ms))
           (chain σ Ms vs ws fs (λ x → x) σ h g (λ _ → refl) lr fin)
 
-  rco≈ : ∀ {k} σ M → Vals k σ → WS k M → sub σ M ≈ sub σ (rco M)
-  rco≈s : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
+  rco≈ : ∀ {k} σ M
+    → Vals k σ
+    → WS k M
+    → sub σ M ≈ sub σ (rco M)
+  rco≈s : ∀ {n k} σ (Ms : Args (replicate n ■))
+    → Vals k σ
+    → WS-args k Ms
     → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms)
 
   rco≈ σ (` x) vs w = val≈ (vs x w)
@@ -268,11 +300,19 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   Ans′ = Ans red₂ Value _≈_
 
   {- once the operands of a call are values -}
-  call-step : ∀ {ds' F E W r} → Value F → Value E → Value W → T.call ds' F E W ≡ r
+  call-step : ∀ {ds' F E W r}
+    → Value F
+    → Value E
+    → Value W
+    → T.call ds' F E W ≡ r
     → T.red ds' (app ⦅ F ,, E ,, W ,, Nil ⦆) ≡ r
   call-step {ds'} f e w eq rewrite value-red {ds'} f | value-red {ds'} e | value-red {ds'} w = eq
 
-  call-sim : ∀ {F E W} → Value F → Value E → Value W → Ans′ (app ⦅ F ,, E ,, W ,, Nil ⦆) (T.call ds F E W) (app ⦅ F ,, E ,, W ,, Nil ⦆)
+  call-sim : ∀ {F E W}
+    → Value F
+    → Value E
+    → Value W
+    → Ans′ (app ⦅ F ,, E ,, W ,, Nil ⦆) (T.call ds F E W) (app ⦅ F ,, E ,, W ,, Nil ⦆)
   call-sim {fun-ref k ⦅ Nil ⦆} {E} {W} f e w with global ds k in eq
   ... | nothing = error ε (call-step f e w (cong (λ m → T.call? m E W) (trans (global-map ds k) (cong (mmap rco) eq))))
   ... | just N = to (one (call-step f e w (cong (λ m → T.call? m E W) (trans (global-map ds k) (cong (mmap rco) eq)))))
@@ -283,13 +323,18 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   call-sim f@(T.inl _) e w = error ε (call-step f e w refl)
   call-sim f@(T.inr _) e w = error ε (call-step f e w refl)
 
-  sim : ∀ {M M'} → M ≈ M' → Ans′ M (red₁ M) M'
+  sim : ∀ {M M'}
+    → M ≈ M'
+    → Ans′ M (red₁ M) M'
   sim (val≈ v) = subst (λ x → Ans′ _ x _) (sym (value-red v)) (val ε v (val≈ v))
   sim (letc≈ {h} {M} F r k) =
     subst (λ x → Ans′ (h M) x _) (sym (Frame.eq F M))
       (ans-in (frame _ (λ _ → refl)) (λ r' → letc≈ F r' k) (sim r) λ v r' → cont v r')
     where
-    cont : ∀ {V'} → Value V' → M ≈ V' → Ans′ (h M) (Frame.κ F M) (let-op ⦅ V' ,, ⟩ _ ,, Nil ⦆)
+    cont : ∀ {V'}
+      → Value V'
+      → M ≈ V'
+      → Ans′ (h M) (Frame.κ F M) (let-op ⦅ V' ,, ⟩ _ ,, Nil ⦆)
     cont v r' with ≈-val v r'
     ... | refl = ans-step (val-in (value-red v))
                    (subst (λ x → Ans′ (h M) x _) (trans (Frame.eq F M) (val-in (value-red v))) (sim (k M v)))
@@ -350,7 +395,9 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
 
 {- The end theorem: for well-scoped programs ---------------------------------}
 
-rco-correct : ∀ P → Scoped P → Equivalent (T.sem P) (T.sem (rco-program P))
+rco-correct : ∀ P
+  → Scoped P
+  → Equivalent (T.sem P) (T.sem (rco-program P))
 rco-correct (program ds M) (wds , wM) =
   red-equivalent value-red _≈_ sim (λ m _ v → cong T.obs (≈-val v m))
     (subst₂ _≈_ (sub-id M) (sub-id (rco M)) (rco≈ ids M (λ _ ()) wM))
@@ -358,5 +405,7 @@ rco-correct (program ds M) (wds , wM) =
 
 {- The whole compiler, into monadic normal form --------------------------------}
 
-compile-mon-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile-mon M))
+compile-mon-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (T.sem (compile-mon M))
 compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct (compile M) (compile-scoped M c))

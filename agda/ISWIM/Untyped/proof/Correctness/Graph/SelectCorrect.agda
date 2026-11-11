@@ -90,23 +90,32 @@ _⊆ₛ_ : Store → Store → Set
 
 module Mono (T : Table) (n : ℕ) where
 
-  ↦-mono : ∀ {σ σ' x X Y} → σ ⊆ₛ σ' → X ⊆ Y → σ [ x ↦ X ] ⊆ₛ σ' [ x ↦ Y ]
+  ↦-mono : ∀ {σ σ' x X Y}
+    → σ ⊆ₛ σ'
+    → X ⊆ Y
+    → σ [ x ↦ X ] ⊆ₛ σ' [ x ↦ Y ]
   ↦-mono {x = x} s X⊆ y with y ≟ x
   ... | yes _ = X⊆
   ... | no _ = s y
 
-  𝒜-mono : ∀ a {σ σ'} → σ ⊆ₛ σ' → 𝒜 T n σ a ⊆ 𝒜 T n σ' a
+  𝒜-mono : ∀ a {σ σ'}
+    → σ ⊆ₛ σ'
+    → 𝒜 T n σ a ⊆ 𝒜 T n σ' a
   𝒜-mono (var x) s with x <? n
   ... | yes _ = s x
   ... | no _ = λ _ z → z
   𝒜-mono (lit B k) s = λ _ z → z
   𝒜-mono (fun-ref k) s = λ _ z → z
 
-  𝒜s-mono : ∀ as {σ σ'} → σ ⊆ₛ σ' → results-rel-pres _⊆_ (replicate (length as) ■) (𝒜s T n σ as) (𝒜s T n σ' as)
+  𝒜s-mono : ∀ as {σ σ'}
+    → σ ⊆ₛ σ'
+    → results-rel-pres _⊆_ (replicate (length as) ■) (𝒜s T n σ as) (𝒜s T n σ' as)
   𝒜s-mono [] s = ptt
   𝒜s-mono (a ∷ as) s = ⟨ lift (𝒜-mono a s) , 𝒜s-mono as s ⟩
 
-  𝒮-mono : ∀ r {σ σ'} → σ ⊆ₛ σ' → 𝒮 T n σ r ⊆ 𝒮 T n σ' r
+  𝒮-mono : ∀ r {σ σ'}
+    → σ ⊆ₛ σ'
+    → 𝒮 T n σ r ⊆ 𝒮 T n σ' r
   𝒮-mono (atm a) s = 𝒜-mono a s
   𝒮-mono (app f e a) s = lower (⋆-mono _ _ ⟨ ⋆-mono _ _ ⟨ lift (𝒜-mono f s) , ⟨ lift (𝒜-mono e s) , ptt ⟩ ⟩
                                            , ⟨ lift (𝒜-mono a s) , ptt ⟩ ⟩)
@@ -119,7 +128,9 @@ module Mono (T : Table) (n : ℕ) where
   𝒮-mono (I.inr a) s = lower (inr-mono _ _ ⟨ lift (𝒜-mono a s) , ptt ⟩)
   𝒮-mono (prim p a b) s = lower (primD-mono p _ _ ⟨ lift (𝒜-mono a s) , ⟨ lift (𝒜-mono b s) , ptt ⟩ ⟩)
 
-  checked-mono : ∀ x {D D'} → D ⊆ D' → checked n x D ⊆ checked n x D'
+  checked-mono : ∀ x {D D'}
+    → D ⊆ D'
+    → checked n x D ⊆ checked n x D'
   checked-mono x D⊆ with x <? n
   ... | yes _ = D⊆
   ... | no _ = λ _ z → z
@@ -127,7 +138,11 @@ module Mono (T : Table) (n : ℕ) where
   MonoB : Blocksₜ → Set₁
   MonoB B = ∀ l {σ σ'} → σ ⊆ₛ σ' → B l σ ⊆ B l σ'
 
-  tail-mono : ∀ t {B} → MonoB B → ∀ {σ σ'} → σ ⊆ₛ σ' → ⟪ t ⟫[ T ] n B σ ⊆ ⟪ t ⟫[ T ] n B σ'
+  tail-mono : ∀ t {B}
+    → MonoB B
+    → ∀ {σ σ'}
+    → σ ⊆ₛ σ'
+    → ⟪ t ⟫[ T ] n B σ ⊆ ⟪ t ⟫[ T ] n B σ'
   tail-mono (C.return r) mB s = 𝒮-mono r s
   tail-mono (C.seq x r t) mB s = checked-mono x (lower (⋆-mono _ _
     ⟨ Λ-mono _ _ ⟨ (λ X Y X⊆ → lift (tail-mono t mB (↦-mono s X⊆))) , ptt ⟩ , ⟨ lift (𝒮-mono r s) , ptt ⟩ ⟩))
@@ -141,7 +156,9 @@ module Mono (T : Table) (n : ℕ) where
   ... | yes _ = tail-mono t (blocks-mono bs) s
   ... | no _ = blocks-mono bs l s
 
-prim-ne : ∀ p {D E} → nonempty (primD p ⟨ D , ⟨ E , ptt ⟩ ⟩) → nonempty D
+prim-ne : ∀ p {D E}
+  → nonempty (primD p ⟨ D , ⟨ E , ptt ⟩ ⟩)
+  → nonempty D
 prim-ne p ⟨ w , ⟨ k , ⟨ m , ⟨ k∈ , _ ⟩ ⟩ ⟩ ⟩ = ⟨ _ , k∈ ⟩
 
 checked-⊆ : ∀ n x {D} → checked n x D ⊆ D
@@ -164,7 +181,9 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
   atm-≃ : ∀ a {σ ρ} → 𝒪 T n σ ρ (select-atm a) ≃ 𝒜 T' n σ a
   atm-≃ a {σ} = ≃-trans (≃-reflexive (atm-≡ a)) (𝒜-≃ a σ)
 
-  tagged-atm : ∀ a {σ ρ} → Inv σ → Tagged (𝒪 T n σ ρ (select-atm a))
+  tagged-atm : ∀ a {σ ρ}
+    → Inv σ
+    → Tagged (𝒪 T n σ ρ (select-atm a))
   tagged-atm (var x) i with x <? n
   ... | yes _ = i x
   ... | no _ = λ ()
@@ -192,14 +211,20 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
   ≔-same rdi = refl
   ≔-same rsi = refl
 
-  put-≃ : ∀ d {κ K D D' σ ρ φ} → Fits d κ K → Inv σ → D ≃ D' → put n d D κ σ ρ φ ≃ after d K σ D'
+  put-≃ : ∀ d {κ K D D' σ ρ φ}
+    → Fits d κ K
+    → Inv σ
+    → D ≃ D'
+    → put n d D κ σ ρ φ ≃ after d K σ D'
   put-≃ (var x) {κ} {K} {σ = σ} {ρ} {φ} fits i D≃ =
     checked-≃ n {x} (⋆-≃ (Λ-≃ {λ X → κ (σ [ x ↦ X ]) ρ φ} {λ X → K (σ [ x ↦ X ])}
                             λ V _ c → fits _ (inv-↦ i (tagged-≈ c)) ρ φ) D≃)
   put-≃ (reg g) {D = D} {σ = σ} {ρ} {φ} fits i D≃ = strict-≃ (≃-trans e D≃) (λ w w∈ → ⟨ w , proj₁ e w w∈ ⟩)
     where e = ≃-trans (fits σ (ρ [ g ≔ D ]) φ) (≃-reflexive (≔-same g))
 
-  put-ne : ∀ d {D κ σ ρ φ} w → w ∈ put n d D κ σ ρ φ → nonempty D
+  put-ne : ∀ d {D κ σ ρ φ} w
+    → w ∈ put n d D κ σ ρ φ
+    → nonempty D
   put-ne (var x) w w∈ with checked-⊆ n x w w∈
   ... | ⟨ V , ⟨ _ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne V⊆
   put-ne (reg g) w w∈ = proj₁ w∈
@@ -211,16 +236,23 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
   ... | ⟨ V , ⟨ ⟨ inj₁ ⟨ v , ⟨ _ , ⟨ l , _ ⟩ ⟩ ⟩ , _ ⟩ , _ ⟩ ⟩ = ⟨ _ , l v (here refl) ⟩
   ... | ⟨ V , ⟨ ⟨ inj₂ ⟨ v , ⟨ _ , ⟨ r , _ ⟩ ⟩ ⟩ , _ ⟩ , _ ⟩ ⟩ = ⟨ _ , r v (here refl) ⟩
 
-  case-≃ : ∀ x {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 Value} → A ≃ A' → Tagged A
-    → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V)) → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
+  case-≃ : ∀ x {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 Value}
+    → A ≃ A'
+    → Tagged A
+    → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V))
+    → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
     → strict (isinl A) (checked n x (⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩
-                                      , ⟨ payloadD A , ptt ⟩ ⟩))
-      ≃ checked n x (𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩)
+                                        , ⟨ payloadD A , ptt ⟩ ⟩))
+        ≃ checked n x (𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩)
   case-≃ x {A} {A'} {F₁} {F₂} {G₁} {G₂} A≃ tg F₁≃ F₂≃ =
     strict-≃ (checked-≃ n {x} (case-core {A} {A'} {F₁} {F₂} {G₁} {G₂} A≃ tg F₁≃ F₂≃)) (case-ne x {F₁ = F₁} {F₂})
 
   {- the instructions of r into d, then is -}
-  sel : ∀ r d is {κ K} → Fits d (⟦ is ⟧ˢ T n κ) K → ∀ σ → Inv σ → ∀ ρ φ
+  sel : ∀ r d is {κ K}
+    → Fits d (⟦ is ⟧ˢ T n κ) K
+    → ∀ σ
+    → Inv σ
+    → ∀ ρ φ
     → ⟦ select-simple r d ++ is ⟧ˢ T n κ σ ρ φ ≃ after d K σ (𝒮 T' n σ r)
   sel (atm a) d is f σ i ρ φ = put-≃ d f i (atm-≃ a)
   sel (app g e a) d is f σ i ρ φ =
@@ -247,7 +279,12 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
   BR : Blocks → Blocksₜ → Set₁
   BR B B' = ∀ l σ → Inv σ → ∀ ρ φ → B l σ ρ φ ≃ B' l σ
 
-  tail : ∀ t {B B'} → BR B B' → ∀ σ → Inv σ → ∀ ρ φ → ⟦ select-tail t ⟧ᵇ T n B σ ρ φ ≃ ⟪ t ⟫[ T' ] n B' σ
+  tail : ∀ t {B B'}
+    → BR B B'
+    → ∀ σ
+    → Inv σ
+    → ∀ ρ φ
+    → ⟦ select-tail t ⟧ᵇ T n B σ ρ φ ≃ ⟪ t ⟫[ T' ] n B' σ
   tail (C.return r) {B} br σ i ρ φ =
     ≃-trans (≃-reflexive (cong (λ is → ⟦ is ⟧ˢ T n (⟦ retq ⟧ʲ B) σ ρ φ) (sym (++-identityʳ (select-simple r (reg rax))))))
             (sel r (reg rax) [] {K = λ _ → ∅} (λ σ ρ φ → ≃-refl) σ i ρ φ)
@@ -269,11 +306,18 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
   ... | no l≢ | yes l≡ = ⊥-elim (l≢ (trans l≡ (sym (length-map select-tail bs))))
 
   {- the prologue binds parts of the parameters; F is the rest of the start -}
-  frame-≃ : ∀ {F G : Store → 𝒫 Value} → (∀ σ → Inv σ → F σ ≃ G σ) → (∀ {σ σ'} → σ ⊆ₛ σ' → G σ ⊆ G σ')
-    → 2 ≤ n → ∀ {V U} → V ≈ V → U ≈ U → V ≢ [] → U ≢ []
+  frame-≃ : ∀ {F G : Store → 𝒫 Value}
+    → (∀ σ → Inv σ → F σ ≃ G σ)
+    → (∀ {σ σ'} → σ ⊆ₛ σ' → G σ ⊆ G σ')
+    → 2 ≤ n
+    → ∀ {V U}
+    → V ≈ V
+    → U ≈ U
+    → V ≢ []
+    → U ≢ []
     → checked n 0 (⋆ ⟨ Λ ⟨ (λ X → checked n 1 (⋆ ⟨ Λ ⟨ (λ Y → F (zeros [ 0 ↦ X ] [ 1 ↦ Y ])) , ptt ⟩ , ⟨ mem U , ptt ⟩ ⟩)) , ptt ⟩
-                         , ⟨ mem V , ptt ⟩ ⟩)
-      ≃ G (frame (mem V) (mem U))
+                           , ⟨ mem V , ptt ⟩ ⟩)
+        ≃ G (frame (mem V) (mem U))
   frame-≃ {F} {G} FG mono le {V} {U} cV cU neV neU with 0 <? n | 1 <? n
   ... | no ¬p | _ = ⊥-elim (¬p (≤-trans (s≤s z≤n) le))
   ... | yes _ | no ¬p = ⊥-elim (¬p le)
@@ -305,15 +349,24 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
       i (suc (suc y)) = λ ()
 
   {- the code of a global definition of at least 2 slots -}
-  start-≃ : ∀ {m} → m ≡ n → 2 ≤ n → ∀ bs t {V U} → V ≈ V → U ≈ U → V ≢ [] → U ≢ []
+  start-≃ : ∀ {m}
+    → m ≡ n
+    → 2 ≤ n
+    → ∀ bs t {V U}
+    → V ≈ V
+    → U ≈ U
+    → V ≢ []
+    → U ≢ []
     → run T m (select-body prologue (C.body n bs t)) zeros (args (mem V) (mem U)) ∅
-      ≃ ⟪ t ⟫[ T' ] n (blocksₜ T' n bs) (frame (mem V) (mem U))
+        ≃ ⟪ t ⟫[ T' ] n (blocksₜ T' n bs) (frame (mem V) (mem U))
   start-≃ refl le bs t {V} {U} =
     frame-≃ {λ σ → ⟦ select-tail t ⟧ᵇ T n (blocks T n (map select-tail bs)) σ (args (mem V) (mem U)) ∅}
       {⟪ t ⟫[ T' ] n (blocksₜ T' n bs)} (λ σ i → tail t (blocks-≃ bs) σ i _ ∅)
     (Mono.tail-mono T' n t (Mono.blocks-mono T' n bs)) le
 
-  code-≃ : ∀ bs t → 2 ≤ n → code T (select-body prologue (C.body n bs t)) ≃ ISWIM.Untyped.Semantics.Graph.CFG.code T' (C.body n bs t)
+  code-≃ : ∀ bs t
+    → 2 ≤ n
+    → code T (select-body prologue (C.body n bs t)) ≃ ISWIM.Untyped.Semantics.Graph.CFG.code T' (C.body n bs t)
   code-≃ bs t le = Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → start-≃ (m≤n⇒m⊔n≡n le) le bs t cV cU neV neU
 
 {- Programs -----------------------------------------------------------------------------}
@@ -348,11 +401,15 @@ compile-x86-same : ∀ (M : ISWIM.AST) → Same (⟦ M ⟧ᵢ ρ₀) ⟦ compile
 compile-x86-same M = Same-trans (compile-cfg-same M) (≃→Same (≃-sym (select-correct (compile-cfg M) (defs-2 _))))
 
 compile-x86-correct-const : ∀ (M : ISWIM.AST) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ᵢ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₚ)
-  × (const c ∈ ⟦ compile-x86 M ⟧ₚ → const c ∈ ⟦ M ⟧ᵢ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ᵢ ρ₀
+     → const c ∈ ⟦ compile-x86 M ⟧ₚ)
+  × (  const c ∈ ⟦ compile-x86 M ⟧ₚ
+     → const c ∈ ⟦ M ⟧ᵢ ρ₀)
 compile-x86-correct-const M = proj₁ (compile-x86-same M)
 
 compile-x86-correct-nonempty : ∀ (M : ISWIM.AST)
-  → (nonempty (⟦ M ⟧ᵢ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₚ)
-  × (nonempty ⟦ compile-x86 M ⟧ₚ → nonempty (⟦ M ⟧ᵢ ρ₀))
+  → (  nonempty (⟦ M ⟧ᵢ ρ₀)
+     → nonempty ⟦ compile-x86 M ⟧ₚ)
+  × (  nonempty ⟦ compile-x86 M ⟧ₚ
+     → nonempty (⟦ M ⟧ᵢ ρ₀))
 compile-x86-correct-nonempty M = proj₂ (compile-x86-same M)

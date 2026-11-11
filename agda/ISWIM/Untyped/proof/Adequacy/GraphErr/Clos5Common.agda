@@ -57,19 +57,28 @@ open Runs (step ds) public
 
 {- the definition that the machine finds at k sits on top of the k
    definitions older than it -}
-global-split : ∀ k {B} → global ds k ≡ just B → Σ[ Ns ∈ List AST ] (B ∷ Ns ⊑ ds) × length Ns ≡ k
+global-split : ∀ k {B}
+  → global ds k ≡ just B
+  → Σ[ Ns ∈ List AST ] (B ∷ Ns ⊑ ds) × length Ns ≡ k
 global-split k eq with reverse-‼-split ds k eq
 ... | ⟨ xs , ⟨ Ns , ⟨ e , len ⟩ ⟩ ⟩ = ⟨ Ns , ⟨ ⟨ xs , e ⟩ , len ⟩ ⟩
 
-DefsWF-⊑ : ∀ {Ns} → Ns ⊑ ds → DefsWF ds → DefsWF Ns
+DefsWF-⊑ : ∀ {Ns}
+  → Ns ⊑ ds
+  → DefsWF ds
+  → DefsWF Ns
 DefsWF-⊑ ⟨ xs , refl ⟩ = go xs
   where
-  go : ∀ xs {Ns} → DefsWF (xs ++ Ns) → DefsWF Ns
+  go : ∀ xs {Ns}
+    → DefsWF (xs ++ Ns)
+    → DefsWF Ns
   go [] w = w
   go (x ∷ xs) w = go xs (proj₂ w)
 
 {- the entries for the older definitions do not change -}
-table-ext : ∀ (more Ns : List AST) k → k < length Ns → table (more ++ Ns) k ≡ table Ns k
+table-ext : ∀ (more Ns : List AST) k
+  → k < length Ns
+  → table (more ++ Ns) k ≡ table Ns k
 table-ext [] Ns k k< = refl
 table-ext (N ∷ more) Ns k k< with k ≟ length (more ++ Ns)
 ... | yes refl = ⊥-elim (<-irrefl refl (<-≤-trans k< len≤))
@@ -84,27 +93,39 @@ table-top N Ns with length Ns ≟ length Ns
 ... | no neq = ⊥-elim (neq refl)
 
 {- the meaning of a definition, with the table of the older ones -}
-table-at : ∀ {B Ns} → B ∷ Ns ⊑ ds → table ds (length Ns) ≡ code (table Ns) B
+table-at : ∀ {B Ns}
+  → B ∷ Ns ⊑ ds
+  → table ds (length Ns) ≡ code (table Ns) B
 table-at {B} {Ns} ⟨ xs , refl ⟩ =
   trans (table-ext xs (B ∷ Ns) (length Ns) (n<1+n (length Ns))) (table-top B Ns)
 
 {- the older definitions mean the same in the whole table -}
-table-agree : ∀ {Ns} → Ns ⊑ ds → ∀ j → j < length Ns → table ds j ≡ table Ns j
+table-agree : ∀ {Ns}
+  → Ns ⊑ ds
+  → ∀ j
+  → j < length Ns
+  → table ds j ≡ table Ns j
 table-agree {Ns} ⟨ xs , refl ⟩ j j< = table-ext xs Ns j j<
 
 {- a reference past the table means errcode -}
-table-past : ∀ (Ns : List AST) k → length Ns ≤ k → table Ns k ≡ errcode
+table-past : ∀ (Ns : List AST) k
+  → length Ns ≤ k
+  → table Ns k ≡ errcode
 table-past [] k _ = refl
 table-past (N ∷ Ns) k len≤ with k ≟ length Ns
 ... | yes refl = ⊥-elim (<-irrefl refl len≤)
 ... | no _ = table-past Ns k (≤-trans (n≤1+n (length Ns)) len≤)
 
-‼-nothing : ∀ {A : Set} (xs : List A) k → xs ‼ k ≡ nothing → length xs ≤ k
+‼-nothing : ∀ {A : Set} (xs : List A) k
+  → xs ‼ k ≡ nothing
+  → length xs ≤ k
 ‼-nothing [] k _ = z≤n
 ‼-nothing (x ∷ xs) zero ()
 ‼-nothing (x ∷ xs) (suc k) eq = s≤s (‼-nothing xs k eq)
 
-global-nothing : ∀ k → global ds k ≡ nothing → table ds k ≡ errcode
+global-nothing : ∀ k
+  → global ds k ≡ nothing
+  → table ds k ≡ errcode
 global-nothing k eq =
   table-past ds k (subst (_≤ k) (length-reverse ds) (‼-nothing (reverse ds) k eq))
 
@@ -121,7 +142,9 @@ table-clean (N ∷ Ns) k with k ≟ length Ns
 ... | yes _ = proj₁ ΛΛᵐ-val
 ... | no _ = table-clean Ns k
 
-table-fun : ∀ (Ns : List AST) k d → d ∈ table Ns k → kind d ≡ fun
+table-fun : ∀ (Ns : List AST) k d
+  → d ∈ table Ns k
+  → kind d ≡ fun
 table-fun [] k = ΛΛᵐ-fun
 table-fun (N ∷ Ns) k with k ≟ length Ns
 ... | yes _ = ΛΛᵐ-fun
@@ -132,12 +155,21 @@ table-fun (N ∷ Ns) k with k ≟ length Ns
 Agree⊆ : ℕ → Table → Table → Set
 Agree⊆ n T T' = ∀ k → k < n → T k ⊆ T' k
 
-stab⊆ : ∀ n T T' (M : AST) {ρ ρ' : Env Value} → Agree⊆ n T T' → RB n M → (∀ x → ρ x ⊆ ρ' x)
+stab⊆ : ∀ n T T' (M : AST) {ρ ρ' : Env Value}
+  → Agree⊆ n T T'
+  → RB n M
+  → (∀ x → ρ x ⊆ ρ' x)
   → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T' ] ρ'
-stab⊆-arg : ∀ n T T' {b} (a : Arg b) {ρ ρ' : Env Value} → Agree⊆ n T T' → RB-arg n a
-  → (∀ x → ρ x ⊆ ρ' x) → result-rel-pres _⊆_ b (⟦ a ⟧ₐ[ T ] ρ) (⟦ a ⟧ₐ[ T' ] ρ')
-stab⊆-args : ∀ n T T' {bs} (args : Args bs) {ρ ρ' : Env Value} → Agree⊆ n T T' → RB-args n args
-  → (∀ x → ρ x ⊆ ρ' x) → results-rel-pres _⊆_ bs (⟦ args ⟧₊[ T ] ρ) (⟦ args ⟧₊[ T' ] ρ')
+stab⊆-arg : ∀ n T T' {b} (a : Arg b) {ρ ρ' : Env Value}
+  → Agree⊆ n T T'
+  → RB-arg n a
+  → (∀ x → ρ x ⊆ ρ' x)
+  → result-rel-pres _⊆_ b (⟦ a ⟧ₐ[ T ] ρ) (⟦ a ⟧ₐ[ T' ] ρ')
+stab⊆-args : ∀ n T T' {bs} (args : Args bs) {ρ ρ' : Env Value}
+  → Agree⊆ n T T'
+  → RB-args n args
+  → (∀ x → ρ x ⊆ ρ' x)
+  → results-rel-pres _⊆_ bs (⟦ args ⟧₊[ T ] ρ) (⟦ args ⟧₊[ T' ] ρ')
 
 stab⊆ n T T' (` x) ag r rel = rel x
 stab⊆ n T T' (fun-ref k ⦅ args ⦆) ag k<n rel = ag k k<n

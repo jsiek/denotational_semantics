@@ -75,9 +75,18 @@ RB-arg n (C5.clear a) = RB-arg n a
 RB-args n C5.nil = ⊤
 RB-args n (C5.cons a args) = RB-arg n a × RB-args n args
 
-RB-mono : ∀ {n m} (M : C5.AST) → n ≤ m → RB n M → RB m M
-RB-arg-mono : ∀ {n m b} (a : C5.Arg b) → n ≤ m → RB-arg n a → RB-arg m a
-RB-args-mono : ∀ {n m bs} (args : C5.Args bs) → n ≤ m → RB-args n args → RB-args m args
+RB-mono : ∀ {n m} (M : C5.AST)
+  → n ≤ m
+  → RB n M
+  → RB m M
+RB-arg-mono : ∀ {n m b} (a : C5.Arg b)
+  → n ≤ m
+  → RB-arg n a
+  → RB-arg m a
+RB-args-mono : ∀ {n m bs} (args : C5.Args bs)
+  → n ≤ m
+  → RB-args n args
+  → RB-args m args
 
 RB-mono (C5.` x) n≤m tt = tt
 RB-mono (C5.fun-ref k C5.⦅ args ⦆) n≤m k<n = <-≤-trans k<n n≤m
@@ -106,10 +115,15 @@ RB-args-mono (C5.cons a args) n≤m (ra , rs) = RB-arg-mono a n≤m ra , RB-args
 Extends : Defs → Defs → Set
 Extends ds ds' = Σ[ more ∈ Defs ] ds' ≡ more ++ ds
 
-ext-trans : ∀ {ds₁ ds₂ ds₃} → Extends ds₁ ds₂ → Extends ds₂ ds₃ → Extends ds₁ ds₃
+ext-trans : ∀ {ds₁ ds₂ ds₃}
+  → Extends ds₁ ds₂
+  → Extends ds₂ ds₃
+  → Extends ds₁ ds₃
 ext-trans {ds₁} (m₁ , refl) (m₂ , refl) = m₂ ++ m₁ , sym (++-assoc m₂ m₁ ds₁)
 
-ext-length : ∀ {ds ds'} → Extends ds ds' → length ds ≤ length ds'
+ext-length : ∀ {ds ds'}
+  → Extends ds ds'
+  → length ds ≤ length ds'
 ext-length {ds} (more , refl) = subst (length ds ≤_) (sym (length-++ more)) (m≤n+m (length ds) (length more))
 
 Shape′ : Defs → C5.AST × Defs → Set
@@ -155,9 +169,15 @@ DefsRB : List C5.AST → Set
 DefsRB [] = ⊤
 DefsRB (N ∷ Ns) = RB (length Ns) N × DefsRB Ns
 
-glob-rb : ∀ M ds → DefsRB ds → DefsRB (proj₂ (glob M ds))
-glob-rb-arg : ∀ {b} (a : C4.Arg b) ds → DefsRB ds → DefsRB (proj₂ (glob-arg a ds))
-glob-rb-args : ∀ {bs} (args : C4.Args bs) ds → DefsRB ds → DefsRB (proj₂ (glob-args args ds))
+glob-rb : ∀ M ds
+  → DefsRB ds
+  → DefsRB (proj₂ (glob M ds))
+glob-rb-arg : ∀ {b} (a : C4.Arg b) ds
+  → DefsRB ds
+  → DefsRB (proj₂ (glob-arg a ds))
+glob-rb-args : ∀ {bs} (args : C4.Args bs) ds
+  → DefsRB ds
+  → DefsRB (proj₂ (glob-args args ds))
 
 glob-rb (C4.` x) ds d = d
 glob-rb (C4.fun-op C4.⦅ C4.cons (C4.clear (C4.bind (C4.bind (C4.ast N)))) C4.nil ⦆) ds d =
@@ -186,9 +206,15 @@ glob-rb-args (C4.cons a args) ds d = glob-rb-args args (proj₂ (glob-arg a ds))
 
 module _ {K : ℕ} where
 
-  rb-rename : ∀ r M → RB K M → RB K (rename r M)
-  rb-rename-arg : ∀ {b} r (a : C5.Arg b) → RB-arg K a → RB-arg K (rename-arg r a)
-  rb-rename-args : ∀ {bs} r (as : C5.Args bs) → RB-args K as → RB-args K (rename-args r as)
+  rb-rename : ∀ r M
+    → RB K M
+    → RB K (rename r M)
+  rb-rename-arg : ∀ {b} r (a : C5.Arg b)
+    → RB-arg K a
+    → RB-arg K (rename-arg r a)
+  rb-rename-args : ∀ {bs} r (as : C5.Args bs)
+    → RB-args K as
+    → RB-args K (rename-args r as)
   rb-rename r (C5.` x) _ = tt
   rb-rename r (C5.fun-ref k C5.⦅ as ⦆) k< = k<
   rb-rename r (C5.app C5.⦅ as ⦆) rb = rb-rename-args r as rb
@@ -209,23 +235,33 @@ module _ {K : ℕ} where
   rb-rename-args r C5.nil _ = tt
   rb-rename-args r (C5.cons a as) (ra , rs) = rb-rename-arg r a ra , rb-rename-args r as rs
 
-  rb-lets : ∀ bs N → All (RB K) bs → RB K N → RB K (lets bs N)
+  rb-lets : ∀ bs N
+    → All (RB K) bs
+    → RB K N
+    → RB K (lets bs N)
   rb-lets [] N _ r = r
   rb-lets (M ∷ Ms) N (rM ∷ rs) r = rM , rb-lets Ms N rs r , tt
 
-  rb-atomize : ∀ {n} (Ms : C5.Args (replicate n ■)) → RB-args K Ms
+  rb-atomize : ∀ {n} (Ms : C5.Args (replicate n ■))
+    → RB-args K Ms
     → All (RB K) (binds (atomize Ms)) × RB-args K (atoms (atomize Ms))
   rb-atomize {zero} Nil _ = [] , tt
   rb-atomize {suc n} (M ,, Ms) (r , rs) with atom? M
   ... | yes _ = let (rl , ra) = rb-atomize Ms rs in rl , rb-rename _ M r , ra
   ... | no _ = let (rl , ra) = rb-atomize (rename-args suc Ms) (rb-rename-args suc Ms rs) in (r ∷ rl) , tt , ra
 
-  rb-lift : ∀ {n} (f : ℕ → C5.Args (replicate n ■) → C5.AST) Ms → RB-args K Ms
-    → (∀ j As → RB-args K As → RB K (f j As)) → RB K (lift f Ms)
+  rb-lift : ∀ {n} (f : ℕ → C5.Args (replicate n ■) → C5.AST) Ms
+    → RB-args K Ms
+    → (∀ j As → RB-args K As → RB K (f j As))
+    → RB K (lift f Ms)
   rb-lift f Ms r hf = let (rl , ra) = rb-atomize Ms r in rb-lets (binds (atomize Ms)) _ rl (hf _ _ ra)
 
-  rb-rco : ∀ M → RB K M → RB K (rco M)
-  rb-rco-args : ∀ {n} (Ms : C5.Args (replicate n ■)) → RB-args K Ms → RB-args K (rco-args Ms)
+  rb-rco : ∀ M
+    → RB K M
+    → RB K (rco M)
+  rb-rco-args : ∀ {n} (Ms : C5.Args (replicate n ■))
+    → RB-args K Ms
+    → RB-args K (rco-args Ms)
   rb-rco (C5.` x) r = r
   rb-rco (C5.fun-ref k C5.⦅ Nil ⦆) r = r
   rb-rco (C5.app C5.⦅ Ms ⦆) r = rb-lift (λ _ → C5.app C5.⦅_⦆) (rco-args Ms) (rb-rco-args Ms r) λ _ _ z → z
@@ -247,7 +283,10 @@ module _ {K : ℕ} where
 
 {- Lift locals, explicate control and select instructions keep the atoms ---------------}
 
-Code-++ : ∀ {L} xs {ys} → Code L xs → Code L ys → Code L (xs ++ ys)
+Code-++ : ∀ {L} xs {ys}
+  → Code L xs
+  → Code L ys
+  → Code L (xs ++ ys)
 Code-++ [] _ c = c
 Code-++ (i ∷ xs) (r , cs) c = r , Code-++ xs cs c
 
@@ -266,7 +305,10 @@ module _ (K : ℕ) where
   TailOK : G.Tail → Set
   TailOK t = Code (_< K) (Block.instrs (select-tail t))
 
-  ex-assign : ∀ e x k bs → ExpOK e → TailOK k → All TailOK bs
+  ex-assign : ∀ e x k bs
+    → ExpOK e
+    → TailOK k
+    → All TailOK bs
     → TailOK (proj₁ (explicate-assign e x k bs)) × All TailOK (proj₂ (explicate-assign e x k bs))
   ex-assign (I.simple s) x k bs ok tk ab = Code-++ (select-simple s (var x)) (ok (var x)) tk , ab
   ex-assign (I.assign y e₁ e₂) x k bs (o₁ , o₂) tk ab =
@@ -276,7 +318,10 @@ module _ (K : ℕ) where
         (t₂ , ab₄) = ex-assign e₂ x (G.goto _) (_ ∷ _) o₂ tt (t₁ ∷ ab₂) in
     (oa , oa , tt) , t₂ ∷ ab₄
 
-  ex-tail : ∀ e bs → ExpOK e → All TailOK bs → TailOK (proj₁ (explicate-tail e bs)) × All TailOK (proj₂ (explicate-tail e bs))
+  ex-tail : ∀ e bs
+    → ExpOK e
+    → All TailOK bs
+    → TailOK (proj₁ (explicate-tail e bs)) × All TailOK (proj₂ (explicate-tail e bs))
   ex-tail (I.simple s) bs ok ab = ok (reg rax) , ab
   ex-tail (I.assign x e₁ e₂) bs (o₁ , o₂) ab = let (t , ab₁) = ex-tail e₂ bs o₂ ab in ex-assign e₁ x _ _ o₁ t ab₁
   ex-tail (I.case a x e₁ e₂) bs (oa , o₁ , o₂) ab =
@@ -284,16 +329,25 @@ module _ (K : ℕ) where
         (t₂ , ab₃) = ex-tail e₂ (_ ∷ _) o₂ (t₁ ∷ ab₁) in
     (oa , oa , tt) , t₂ ∷ ab₃
 
-  atom-ok : ∀ {n d M} (a : Mo.Atom M) → RB K M → OK (_< K) (select-atm (lift-atom n d a))
+  atom-ok : ∀ {n d M}
+    → (a : Mo.Atom M)
+    → RB K M
+    → OK (_< K) (select-atm (lift-atom n d a))
   atom-ok (Mo.var x) _ = tt
   atom-ok (Mo.lit B k) _ = tt
   atom-ok (Mo.ref k) k< = k<
 
-  atoms-ok : ∀ {n d m Ms} (as : Mo.Atoms {m} Ms) → RB-args K Ms → All (OK (_< K)) (map select-atm (lift-atoms n d as))
+  atoms-ok : ∀ {n d m Ms}
+    → (as : Mo.Atoms {m} Ms)
+    → RB-args K Ms
+    → All (OK (_< K)) (map select-atm (lift-atoms n d as))
   atoms-ok Mo.[] _ = []
   atoms-ok (a Mo.∷ as) (r , rs) = atom-ok a r ∷ atoms-ok as rs
 
-  lift-ok : ∀ {n d M} (m : Mo.Mon M) → RB K M → ExpOK (liftL n d m)
+  lift-ok : ∀ {n d M}
+    → (m : Mo.Mon M)
+    → RB K M
+    → ExpOK (liftL n d m)
   lift-ok (Mo.atom a) r _ = atom-ok a r , tt
   lift-ok (Mo.app (a Mo.∷ (b Mo.∷ (c Mo.∷ Mo.[])))) (ra , rb , rc , _) _ = atom-ok b rb , atom-ok c rc , atom-ok a ra , tt , tt
   lift-ok (Mo.pair (a Mo.∷ (b Mo.∷ Mo.[]))) (ra , rb , _) _ = (atom-ok a ra ∷ atom-ok b rb ∷ []) , tt
@@ -309,7 +363,10 @@ module _ (K : ℕ) where
   lift-ok (Mo.let′ m₁ m₂) (r₁ , r₂ , _) = lift-ok m₁ r₁ , lift-ok m₂ r₂
 
 {- a body compiled at depth d₀, with the instructions pre first -}
-body-ok : ∀ {K} pre d₀ {M} (m : Mo.Mon M) → RB K M → (∀ {is} → Code (_< K) is → Code (_< K) (pre ++ is))
+body-ok : ∀ {K} pre d₀ {M}
+  → (m : Mo.Mon M)
+  → RB K M
+  → (∀ {is} → Code (_< K) is → Code (_< K) (pre ++ is))
   → BodyOK K (select-body pre (explicate-body (lift-body d₀ m)))
 body-ok {K} pre d₀ m r hp =
   let (t , ab) = ex-tail K _ _ (lift-ok K m r) [] in hp t ∷ map⁺ ab
@@ -320,7 +377,8 @@ length-lift [] = refl
 length-lift (m ∷ ms) = cong suc (length-lift ms)
 
 {- the definitions, newest first -}
-defs-ok : ∀ ds (ms : All Mo.Mon (map rco ds)) → DefsRB ds
+defs-ok : ∀ ds (ms : All Mo.Mon (map rco ds))
+  → DefsRB ds
   → DefsWF (map (select-body prologue) (map explicate-body (lift-defs ms)))
 defs-ok [] [] _ = tt
 defs-ok (N ∷ Ns) (m ∷ ms) (rb , wf) =
@@ -332,11 +390,15 @@ defs-ok (N ∷ Ns) (m ∷ ms) (rb , wf) =
           (trans (length-map _ (lift-defs ms)) (trans (length-lift ms) (length-map rco Ns)))
 
 {- the compiler produces well-formed programs -}
-compile-x86-wf : ∀ M → Closed M → WF (compile-x86 M)
+compile-x86-wf : ∀ M
+  → Closed M
+  → WF (compile-x86 M)
 compile-x86-wf M _ = wf (proj₂ (glob M₄ [])) (proj₁ (glob M₄ [])) (glob-rb M₄ [] tt) (proj₂ (glob-shape M₄ []))
   where
   M₄ = compile₄ M
-  wf : ∀ ds M → DefsRB ds → RB (length ds) M
+  wf : ∀ ds M
+    → DefsRB ds
+    → RB (length ds) M
     → WF (select (explicate (lift-program (rco-program (C5.program ds M)) (rco-program-mon (C5.program ds M)))))
   wf ds M wfd rb =
     defs-ok ds ms wfd
@@ -349,17 +411,23 @@ compile-x86-wf M _ = wf (proj₂ (glob M₄ [])) (proj₁ (glob M₄ [])) (glob-
 
 {- The programs of the compiler ---------------------------------------------------}
 
-x86-error-iff : ∀ M → Closed M → (ω ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) o-error
+x86-error-iff : ∀ M
+  → Closed M
+  → (ω ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) o-error
 x86-error-iff M c = error-iff (compile-x86 M) (compile-x86-wf M c)
 
-x86-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B}
+x86-const-iff : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
   → (dconst k ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
 x86-const-iff M c = const-iff (compile-x86 M) (compile-x86-wf M c)
 
-x86-converges-iff : ∀ M → Closed M
+x86-converges-iff : ∀ M
+  → Closed M
   → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₓ × d ≢ ω) ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
 x86-converges-iff M c = converges-iff (compile-x86 M) (compile-x86-wf M c)
 
-x86-diverges-iff : ∀ M → Closed M
+x86-diverges-iff : ∀ M
+  → Closed M
   → Diverges (X86ₘ.sem (compile-x86 M)) ⇔ (∀ d → ¬ (d ∈ ⟦ compile-x86 M ⟧ₓ))
 x86-diverges-iff M c = diverges-iff (compile-x86 M) (compile-x86-wf M c)

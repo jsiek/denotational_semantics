@@ -43,11 +43,16 @@ NE k ρ = ∀ (x : Fin k) → nonempty (ρ (toℕ x))
 Agree : ∀ {k k'} → (Fin k → Bool) → (Fin k → Fin k') → Env Value → Env Value → Set
 Agree u r ρ ρ' = ∀ x → T (u x) → ρ (toℕ x) ≃ ρ' (toℕ (r x))
 
-ext-agree : ∀ {k k' u r ρ ρ' X} → Agree {k} {k'} (λ x → u (suc x)) r ρ ρ' → Agree u (ext r) (X • ρ) (X • ρ')
+ext-agree : ∀ {k k' u r ρ ρ' X}
+  → Agree {k} {k'} (λ x → u (suc x)) r ρ ρ'
+  → Agree u (ext r) (X • ρ) (X • ρ')
 ext-agree ag zero _ = ≃-refl
 ext-agree ag (suc x) t = ag x t
 
-ext-ne : ∀ {k ρ X} → nonempty X → NE k ρ → NE (suc k) (X • ρ)
+ext-ne : ∀ {k ρ X}
+  → nonempty X
+  → NE k ρ
+  → NE (suc k) (X • ρ)
 ext-ne v V zero = v
 ext-ne v V (suc x) = V x
 
@@ -71,7 +76,9 @@ data Th : ∀ {n} (fl : Vec Bool n) → Vec (𝒫 Value) n → Vec (𝒫 Value) 
   keep : ∀ {n fl x y xs ys} → x ≃ y → Th {n} fl xs ys → Th (true ∷ fl) (x ∷ xs) (y ∷ ys)
   drop : ∀ {n fl x xs ys} → nonempty x → Th {n} fl xs ys → Th (false ∷ fl) (x ∷ xs) ys
 
-th-thin : ∀ {n fl xs ys} → Th {n} fl xs ys → Thin _≃_ fl xs ys
+th-thin : ∀ {n fl xs ys}
+  → Th {n} fl xs ys
+  → Thin _≃_ fl xs ys
 th-thin [] = []
 th-thin (keep e th) = keep e (th-thin th)
 th-thin (drop _ th) = drop (th-thin th)
@@ -79,29 +86,48 @@ th-thin (drop _ th) = drop (th-thin th)
 ANE : ∀ {n} → Vec (𝒫 Value) n → Set
 ANE xs = ∀ i → nonempty (lookup xs i)
 
-th-ne→ : ∀ {n fl xs ys} → Th {n} fl xs ys → ANE xs → ANE ys
+th-ne→ : ∀ {n fl xs ys}
+  → Th {n} fl xs ys
+  → ANE xs
+  → ANE ys
 th-ne→ (keep e th) ne zero = let ⟨ d , d∈ ⟩ = ne zero in ⟨ d , proj₁ e d d∈ ⟩
 th-ne→ (keep e th) ne (suc j) = th-ne→ th (λ i → ne (suc i)) j
 th-ne→ (drop _ th) ne j = th-ne→ th (λ i → ne (suc i)) j
 
-th-ne← : ∀ {n fl xs ys} → Th {n} fl xs ys → ANE ys → ANE xs
+th-ne← : ∀ {n fl xs ys}
+  → Th {n} fl xs ys
+  → ANE ys
+  → ANE xs
 th-ne← (keep e th) ne zero = let ⟨ d , d∈ ⟩ = ne zero in ⟨ d , proj₂ e d d∈ ⟩
 th-ne← (keep e th) ne (suc i) = th-ne← th (λ j → ne (suc j)) i
 th-ne← (drop x th) ne zero = x
 th-ne← (drop x th) ne (suc i) = th-ne← th ne i
 
 {- between nthD and the vector -}
-to-vec : ∀ n {Xs} → (∀ i → nonempty (nthD Xs i)) → ANE (vec n Xs)
+to-vec : ∀ n {Xs}
+  → (∀ i → nonempty (nthD Xs i))
+  → ANE (vec n Xs)
 to-vec n ne i = subst nonempty (sym (vec-nth n _ i)) (ne i)
 
-of-vec : ∀ n {Xs} → ANE (vec n Xs) → ∀ i → nonempty (nthD Xs i)
+of-vec : ∀ n {Xs}
+  → ANE (vec n Xs)
+  → ∀ i
+  → nonempty (nthD Xs i)
 of-vec n ne i = subst nonempty (vec-nth n _ i) (ne i)
 
-opt-ok : ∀ {k k' A} (M : Tm k A) {r : Fin k → Fin k'} {ρ ρ'} → NE k ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ opt r M ⟧ ρ'
-opts-ok : ∀ {k k' n} (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ ρ'} → NE k ρ → Agree (usesV Ms) r ρ ρ'
-  → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts r Ms ⟧s ρ') i
+opt-ok : ∀ {k k' A} (M : Tm k A) {r : Fin k → Fin k'} {ρ ρ'}
+  → NE k ρ
+  → Agree (uses M) r ρ ρ'
+  → ⟦ M ⟧ ρ ≃ ⟦ opt r M ⟧ ρ'
+opts-ok : ∀ {k k' n} (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ ρ'}
+  → NE k ρ
+  → Agree (usesV Ms) r ρ ρ'
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts r Ms ⟧s ρ') i
 th-ok : ∀ {k k' n} (fl : Vec Bool n) (Ms : Vec (Tm k Any) n) {u : Fin n → Bool} {r : Fin k → Fin k'} {ρ ρ'}
-  → (∀ i → Fl (u i) (lookup fl i) (lookup Ms i)) → NE k ρ → Agree (usesV Ms) r ρ ρ'
+  → (∀ i → Fl (u i) (lookup fl i) (lookup Ms i))
+  → NE k ρ
+  → Agree (usesV Ms) r ρ ρ'
   → Th fl (vec n (⟦ Ms ⟧s ρ)) (vec _ (⟦ select fl (opts r Ms) ⟧s ρ'))
 
 opt-ok (` x) V ag = ag x (fromWitness refl)

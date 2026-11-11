@@ -30,13 +30,20 @@ ds ⊑ ds' = Σ[ xs ∈ Defs ] ds' ≡ xs ++ ds
 ⊑-refl : ∀ {ds} → ds ⊑ ds
 ⊑-refl = [] , refl
 
-⊑-trans : ∀ {ds₁ ds₂ ds₃} → ds₁ ⊑ ds₂ → ds₂ ⊑ ds₃ → ds₁ ⊑ ds₃
+⊑-trans : ∀ {ds₁ ds₂ ds₃}
+  → ds₁ ⊑ ds₂
+  → ds₂ ⊑ ds₃
+  → ds₁ ⊑ ds₃
 ⊑-trans {ds₁} (xs , refl) (ys , refl) = ys ++ xs , sym (++-assoc ys xs ds₁)
 
-⊑-∷ : ∀ {d ds ds'} → ds ⊑ ds' → ds ⊑ d ∷ ds'
+⊑-∷ : ∀ {d ds ds'}
+  → ds ⊑ ds'
+  → ds ⊑ d ∷ ds'
 ⊑-∷ {d} (xs , refl) = d ∷ xs , refl
 
-∷-⊑ : ∀ {d ds ds'} → d ∷ ds ⊑ ds' → ds ⊑ ds'
+∷-⊑ : ∀ {d ds ds'}
+  → d ∷ ds ⊑ ds'
+  → ds ⊑ ds'
 ∷-⊑ {d} {ds} (xs , refl) = xs ++ [ d ] , sym (++-assoc xs [ d ] ds)
 
 {- the pass only adds definitions -}
@@ -68,7 +75,9 @@ glob-grows-args (cons a args) ds =
   ⊑-trans (glob-grows-arg a ds) (glob-grows-args args (proj₂ (glob-arg a ds)))
 
 {- a definition stays where it is as the table grows -}
-global-⊑ : ∀ {d ds ds'} → d ∷ ds ⊑ ds' → global ds' (length ds) ≡ just d
+global-⊑ : ∀ {d ds ds'}
+  → d ∷ ds ⊑ ds'
+  → global ds' (length ds) ≡ just d
 global-⊑ {d} {ds} (xs , refl) =
   trans (cong (_‼ length ds)
           (trans (reverse-++ xs (d ∷ ds))

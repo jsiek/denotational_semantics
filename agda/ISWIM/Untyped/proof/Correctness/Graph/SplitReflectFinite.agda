@@ -57,9 +57,9 @@ module ISWIM.Untyped.proof.Correctness.Graph.SplitReflectFinite where
 
 {- a target application V' ⊆ (car L' ● cdr L') ● N' is a batch of calls of
    a finite W ⊆ L' on a finite U ⊆ N' -}
-collect : ∀ (L' N' : 𝒫 Value) V' → mem V' ⊆ (L' ⊙ N')
-  → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ]
-      mem W ⊆ L' × mem U ⊆ N' × Calls W U V'
+collect : ∀ (L' N' : 𝒫 Value) V'
+  → mem V' ⊆ (L' ⊙ N')
+  → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ] mem W ⊆ L' × mem U ⊆ N' × Calls W U V'
 collect L' N' [] _ =
   ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
 collect L' N' (w ∷ V') V'⊆
@@ -89,14 +89,16 @@ collect L' N' (w ∷ V') V'⊆
   ent = car-entry FV t (here refl) neFV
           (λ d d∈ → let ⟨ u , i ⟩ = FV⊆C d d∈ in ⟨ u , there (∈-++⁺ˡ i) ⟩)
 
-  res : ∀ x → x ⋵ (w ∷ V') → Σ[ U₁ ∈ List Value ]
-          CarEntry (e ∷ (C ++ W)) U₁ x × U₁ ≢ [] × mem U₁ ⊆ mem (U₀ ++ U)
+  res : ∀ x
+    → x ⋵ (w ∷ V')
+    → Σ[ U₁ ∈ List Value ] CarEntry (e ∷ (C ++ W)) U₁ x × U₁ ≢ [] × mem U₁ ⊆ mem (U₀ ++ U)
   res _ (here refl) = ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ d → ∈-++⁺ˡ) ⟩ ⟩ ⟩
   res x (there x∈) = let ⟨ U₁ , ⟨ e₁ , ⟨ ne , U₁⊆ ⟩ ⟩ ⟩ = Calls.results cs x x∈
                      in ⟨ U₁ , ⟨ CarEntry-⊆ inW e₁ , ⟨ ne , (λ d d∈ → ∈-++⁺ʳ U₀ (U₁⊆ d d∈)) ⟩ ⟩ ⟩
 
-  arg : ∀ u → u ⋵ (U₀ ++ U) → Σ[ U₁ ∈ List Value ] Σ[ x ∈ Value ]
-          CarEntry (e ∷ (C ++ W)) U₁ x × u ⋵ U₁
+  arg : ∀ u
+    → u ⋵ (U₀ ++ U)
+    → Σ[ U₁ ∈ List Value ] Σ[ x ∈ Value ] CarEntry (e ∷ (C ++ W)) U₁ x × u ⋵ U₁
   arg u u∈ with ∈-++⁻ U₀ u∈
   ... | inj₁ u∈U₀ = ⟨ U₀ , ⟨ w , ⟨ ent , u∈U₀ ⟩ ⟩ ⟩
   ... | inj₂ u∈U = let ⟨ U₁ , ⟨ x , ⟨ e₁ , u∈₁ ⟩ ⟩ ⟩ = Calls.args cs u u∈U
@@ -113,43 +115,70 @@ record Envs (ρ' ρ : Env) : Set₁ where
     ρ'~ : Con-env ρ'
     ρ⊳ : ρ' ⊳ₑ ρ
 
-inl-ne : ∀ {D : 𝒫 Value} v → v ∈ inl ⟨ D , ptt ⟩ → nonempty D
+inl-ne : ∀ {D : 𝒫 Value} v
+  → v ∈ inl ⟨ D , ptt ⟩
+  → nonempty D
 inl-ne (left d) d∈ = ⟨ d , d∈ ⟩
 
-inr-ne : ∀ {D : 𝒫 Value} v → v ∈ inr ⟨ D , ptt ⟩ → nonempty D
+inr-ne : ∀ {D : 𝒫 Value} v
+  → v ∈ inr ⟨ D , ptt ⟩
+  → nonempty D
 inr-ne (right d) d∈ = ⟨ d , d∈ ⟩
 
-pair-ne : ∀ {A B : 𝒫 Value} v → v ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → nonempty B
+pair-ne : ∀ {A B : 𝒫 Value} v
+  → v ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩
+  → nonempty B
 pair-ne ⦅ u , v ⦆ ⟨ _ , v∈ ⟩ = ⟨ v , v∈ ⟩
 
-pair-tag : ∀ {A B : 𝒫 Value} t {d} → tag t d ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → Data.Empty.⊥
+pair-tag : ∀ {A B : 𝒫 Value} t {d}
+  → tag t d ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩
+  → Data.Empty.⊥
 pair-tag (tupT i) ()
 pair-tag leftT ()
 pair-tag rightT ()
 
-split-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ
-  → ∀ V' → mem V' ⊆ ⟦ split M ⟧' ρ' → R V' (⟦ M ⟧ ρ)
+split-reflect : ∀ (M : AST) {ρ' ρ}
+  → Envs ρ' ρ
+  → ∀ V'
+  → mem V' ⊆ ⟦ split M ⟧' ρ'
+  → R V' (⟦ M ⟧ ρ)
 
-reflect-nth : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
-  → (i : Fin n) → ∀ V' → mem V' ⊆ nthD (⟦ del-map-args args ⟧₊' ρ') i
+reflect-nth : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ}
+  → Envs ρ' ρ
+  → (i : Fin n) → ∀ V'
+  → mem V' ⊆ nthD (⟦ del-map-args args ⟧₊' ρ') i
   → R V' (nthD (⟦ args ⟧₊ ρ) i)
 
-reflect-𝒯 : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
-  → ∀ V' → mem V' ⊆ 𝒯 n (⟦ del-map-args args ⟧₊' ρ') → R V' (𝒯 n (⟦ args ⟧₊ ρ))
+reflect-𝒯 : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ}
+  → Envs ρ' ρ
+  → ∀ V'
+  → mem V' ⊆ 𝒯 n (⟦ del-map-args args ⟧₊' ρ')
+  → R V' (𝒯 n (⟦ args ⟧₊ ρ))
 
 {- a nonempty target set yields a nonempty source set -}
-ne-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → nonempty (⟦ split M ⟧' ρ') → nonempty (⟦ M ⟧ ρ)
+ne-reflect : ∀ (M : AST) {ρ' ρ}
+  → Envs ρ' ρ
+  → nonempty (⟦ split M ⟧' ρ')
+  → nonempty (⟦ M ⟧ ρ)
 
 {- the tagged parts of a reflected set are related -}
-tag-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → ∀ t W → mem W ⊆ Untag t (⟦ split M ⟧' ρ')
+tag-reflect : ∀ (M : AST) {ρ' ρ}
+  → Envs ρ' ρ
+  → ∀ t W
+  → mem W ⊆ Untag t (⟦ split M ⟧' ρ')
   → R W (Untag t (⟦ M ⟧ ρ))
 
 {- the cases for case-op: by consistency, all the target results come from
    the branch B on the side s of the scrutinee L -}
-reflect-branch : ∀ (s : Tag) (L B : AST) {ρ' ρ C} → Envs ρ' ρ
-  → ∀ v → tag s v ∈ ⟦ split L ⟧' ρ' → (∀ {a b} → tag s a ~ tag s b → a ~ b)
+reflect-branch : ∀ (s : Tag) (L B : AST) {ρ' ρ C}
+  → Envs ρ' ρ
+  → ∀ v
+  → tag s v ∈ ⟦ split L ⟧' ρ'
+  → (∀ {a b} → tag s a ~ tag s b → a ~ b)
   → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)
-  → ∀ V' → mem V' ⊆ ⟦ split B ⟧' (Untag s (⟦ split L ⟧' ρ') • ρ') → R V' C
+  → ∀ V'
+  → mem V' ⊆ ⟦ split B ⟧' (Untag s (⟦ split L ⟧' ρ') • ρ')
+  → R V' C
 
 split-reflect (` x) E = Envs.ρ⊳ E x
 
@@ -164,13 +193,17 @@ split-reflect (lit B c ⦅ Nil ⦆) E V' V'⊆ = R-flat V'⊆ (λ v v∈ → ℬ
 
 split-reflect (prim p ⦅ L ,, M ,, Nil ⦆) E V' V'⊆ = R-data V⊆ dt
   where
-  const-reflect : ∀ N {c : base-rep Int} → const c ∈ ⟦ split N ⟧' _ → const c ∈ ⟦ N ⟧ _
+  const-reflect : ∀ N {c : base-rep Int}
+    → const c ∈ ⟦ split N ⟧' _
+    → const c ∈ ⟦ N ⟧ _
   const-reflect N {c} c∈ = Obs.const-obs (unfold (split-reflect N E (const c ∷ []) (single⊆ c∈))) c (here refl)
   V⊆ : mem V' ⊆ ⟦ prim p ⦅ L ,, M ,, Nil ⦆ ⟧ _
   V⊆ v v∈ with V'⊆ v v∈
   ... | ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
     ⟨ n , ⟨ m , ⟨ const-reflect L n∈ , ⟨ const-reflect M m∈ , refl ⟩ ⟩ ⟩ ⟩
-  dt : ∀ v → v ⋵ V' → Data v
+  dt : ∀ v
+    → v ⋵ V'
+    → Data v
   dt v v∈ with V'⊆ v v∈
   ... | ⟨ n , ⟨ m , ⟨ _ , ⟨ _ , refl ⟩ ⟩ ⟩ ⟩ = out-data (δ p n m)
 
@@ -207,7 +240,8 @@ split-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V'
   reflect-branch leftT L M E v lv (λ a~b → a~b) M⊆ (w ∷ V') V'⊆F
   where
   lv = allL v (here refl)
-  M⊆ : nonempty (Lefts (⟦ L ⟧ ρ)) → ⟦ M ⟧ (Lefts (⟦ L ⟧ ρ) • ρ) ⊆ _
+  M⊆ : nonempty (Lefts (⟦ L ⟧ ρ))
+    → ⟦ M ⟧ (Lefts (⟦ L ⟧ ρ) • ρ) ⊆ _
   M⊆ ne = 𝒞-left {⟦ L ⟧ ρ} {λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ N ⟧ (X • ρ)} (S3.body-continuous M ρ (Envs.NE E) _ ne)
                   (Untag-con leftT (λ c → c) (Clos3-con L (Envs.ρ~ E)))
   V'⊆F : mem (w ∷ V') ⊆ ⟦ split M ⟧' (Lefts (⟦ split L ⟧' ρ') • ρ')
@@ -220,7 +254,8 @@ split-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V'
   reflect-branch rightT L N E v rv (λ a~b → a~b) N⊆ (w ∷ V') V'⊆G
   where
   rv = allR v (here refl)
-  N⊆ : nonempty (Rights (⟦ L ⟧ ρ)) → ⟦ N ⟧ (Rights (⟦ L ⟧ ρ) • ρ) ⊆ _
+  N⊆ : nonempty (Rights (⟦ L ⟧ ρ))
+    → ⟦ N ⟧ (Rights (⟦ L ⟧ ρ) • ρ) ⊆ _
   N⊆ ne = 𝒞-right {⟦ L ⟧ ρ} {λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ N ⟧ (X • ρ)} (S3.body-continuous N ρ (Envs.NE E) _ ne)
                    (Untag-con rightT (λ c → c) (Clos3-con L (Envs.ρ~ E)))
   V'⊆G : mem (w ∷ V') ⊆ ⟦ split N ⟧' (Rights (⟦ split L ⟧' ρ') • ρ')
@@ -258,14 +293,21 @@ split-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
   T = 𝒯 n (⟦ fvs ⟧₊ ρ)
   D = ⟦ clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆ ⟧ ρ
 
-  T-ne : nonempty T' → nonempty T
+  T-ne : nonempty T'
+    → nonempty T
   T-ne ⟨ t' , t'∈ ⟩ =
     Obs.nonempty-obs (unfold (reflect-𝒯 fvs E (t' ∷ []) (single⊆ t'∈))) (λ ())
 
   Cdrs⊆T' : Cdrs V' ⊆ T'
   Cdrs⊆T' fv ⟨ _ , e∈ ⟩ = proj₂ (V'⊆ _ e∈)
 
-  clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ E → Con E → Con (mem U') → R U' E → R W' (D ● E)
+  clos-app : ∀ {U' W'}
+    → Calls V' U' W'
+    → ∀ E
+    → Con E
+    → Con (mem U')
+    → R U' E
+    → R W' (D ● E)
   clos-app {W' = []} _ E _ U'~ rU = R-∅ (λ _ ())
   clos-app {U'} {w ∷ W'} cs Es cE U'~ rU =
     R-mono (S3.clos-β N (λ _ → ⟨ ω , refl ⟩) NE-T NE-E cT cE)
@@ -315,15 +357,19 @@ reflect-𝒯 {suc n} args {ρ'}{ρ} E V' V'⊆ = fold record
   Ds' = ⟦ del-map-args args ⟧₊' ρ'
   Ds = ⟦ args ⟧₊ ρ
 
-  comp-ne : ∀ j → nonempty (nthD Ds' j) → nonempty (nthD Ds j)
+  comp-ne : ∀ j
+    → nonempty (nthD Ds' j)
+    → nonempty (nthD Ds j)
   comp-ne j ⟨ d , d∈ ⟩ =
     Obs.nonempty-obs (unfold (reflect-nth args E j (d ∷ []) (single⊆ d∈))) (λ ())
 
-  tup-ne : nonempty (𝒯 (suc n) Ds') → nonempty (𝒯 (suc n) Ds)
+  tup-ne : nonempty (𝒯 (suc n) Ds')
+    → nonempty (𝒯 (suc n) Ds)
   tup-ne ⟨ tup[ i ] d , ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ ⟩ =
     let ⟨ d₀ , d₀∈ ⟩ = comp-ne i ⟨ d , d∈ ⟩ in ⟨ tup[ i ] d₀ , ⟨ refl , ⟨ d₀∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩ ⟩
 
-  nth-case : ∀ {m} (i : Fin m) W' → mem W' ⊆ Untag (tupT i) (mem V')
+  nth-case : ∀ {m} (i : Fin m) W'
+    → mem W' ⊆ Untag (tupT i) (mem V')
     → R W' (Untag (tupT i) (𝒯 (suc n) Ds))
   nth-case i [] _ = R-∅ (λ _ ())
   nth-case i (w ∷ W') W'⊆ with V'⊆ _ (W'⊆ w (here refl))
@@ -362,9 +408,12 @@ Envs₀ : Envs ρ₀ ρ₀
 Envs₀ = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ _ → Con-⌈⌉ ω) Init⊳Init
 
 reflect-const : ∀ (M : AST) {B} (c : base-rep B)
-  → const c ∈ ⟦ split M ⟧' ρ₀ → const c ∈ ⟦ M ⟧ ρ₀
+  → const c ∈ ⟦ split M ⟧' ρ₀
+  → const c ∈ ⟦ M ⟧ ρ₀
 reflect-const M c c∈ =
   Obs.const-obs (unfold (split-reflect M Envs₀ (const c ∷ []) (single⊆ c∈))) c (here refl)
 
-reflect-nonempty : ∀ (M : AST) → nonempty (⟦ split M ⟧' ρ₀) → nonempty (⟦ M ⟧ ρ₀)
+reflect-nonempty : ∀ (M : AST)
+  → nonempty (⟦ split M ⟧' ρ₀)
+  → nonempty (⟦ M ⟧ ρ₀)
 reflect-nonempty M = ne-reflect M Envs₀

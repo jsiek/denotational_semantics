@@ -76,11 +76,13 @@ prim-k p = mkK (λ { ⟨ X , ⟨ Y , _ ⟩ ⟩ → checked (base Int) X (checked
 
 {- Laws of the semantics of Clos5 ----------------------------------}
 
-rename-≃ : ∀ T M r (ρ ρ' : Env Value) → (∀ x → ρ (r x) ≃ ρ' x)
+rename-≃ : ∀ T M r (ρ ρ' : Env Value)
+  → (∀ x → ρ (r x) ≃ ρ' x)
   → ⟦ rename r M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ'
 rename-≃ T = RenameSem.rename-≃ {{Clos5ᵐ-Semantics T}}
 
-rename-args-≃ : ∀ T {n} (Ms : Args (replicate n ■)) r (ρ ρ' : Env Value) → (∀ x → ρ (r x) ≃ ρ' x)
+rename-args-≃ : ∀ T {n} (Ms : Args (replicate n ■)) r (ρ ρ' : Env Value)
+  → (∀ x → ρ (r x) ≃ ρ' x)
   → RRs (replicate n ■) (⟦ rename-args r Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T ] ρ')
 rename-args-≃ T {zero} Nil r ρ ρ' rel = ptt
 rename-args-≃ T {suc n} (M ,, Ms) r ρ ρ' rel =
@@ -90,10 +92,14 @@ rename-args-≃ T {suc n} (M ,, Ms) r ρ ρ' rel =
 Ext : ℕ → Env Value → Env Value → Set
 Ext k ρ' ρ = ∀ x → ρ' (k + x) ≃ ρ x
 
-ext-suc : ∀ {k ρ' ρ D} → Ext k ρ' (D • ρ) → Ext (suc k) ρ' ρ
+ext-suc : ∀ {k ρ' ρ D}
+  → Ext k ρ' (D • ρ)
+  → Ext (suc k) ρ' ρ
 ext-suc {k} {ρ'} {ρ} e x = subst (λ y → ρ' y ≃ ρ x) (+-suc k x) (e (suc x))
 
-ext-top : ∀ {k ρ' ρ D} → Ext k ρ' (D • ρ) → ρ' k ≃ D
+ext-top : ∀ {k ρ' ρ D}
+  → Ext k ρ' (D • ρ)
+  → ρ' k ≃ D
 ext-top {k} {ρ'} {ρ} {D} e = subst (λ y → ρ' y ≃ D) (+-identityʳ k) (e 0)
 
 {- f k, on atoms in an environment ρ' under k more bound variables than
@@ -106,7 +112,9 @@ AtomsOK : ∀ {n} → Table → Env Value → Args (replicate n ■) → Set
 AtomsOK {zero} T ρ Nil = ⊤
 AtomsOK {suc n} T ρ (M ,, Ms) = (Atom M → Val (⟦ M ⟧[ T ] ρ)) × AtomsOK T ρ Ms
 
-atom-unrename : ∀ r M → Atom (rename r M) → Atom M
+atom-unrename : ∀ r M
+  → Atom (rename r M)
+  → Atom M
 atom-unrename r (` x) _ = var x
 atom-unrename r (fun-ref k ⦅ Nil ⦆) _ = ref k
 atom-unrename r (lit B k ⦅ Nil ⦆) _ = lit B k
@@ -122,7 +130,9 @@ atom-unrename r (case-op ⦅ _ ⦆) ()
 atom-unrename r (prim p ⦅ _ ⦆) ()
 atom-unrename r (let-op ⦅ _ ⦆) ()
 
-AtomsOK-rename : ∀ T X ρ {n} (Ms : Args (replicate n ■)) → AtomsOK T ρ Ms → AtomsOK T (X • ρ) (rename-args suc Ms)
+AtomsOK-rename : ∀ T X ρ {n} (Ms : Args (replicate n ■))
+  → AtomsOK T ρ Ms
+  → AtomsOK T (X • ρ) (rename-args suc Ms)
 AtomsOK-rename T X ρ {zero} Nil _ = tt
 AtomsOK-rename T X ρ {suc n} (M ,, Ms) ⟨ h , hs ⟩ =
   ⟨ (λ a → Val-≃ (≃-sym (rename-≃ T M suc (X • ρ) ρ (λ x → ≃-refl))) (h (atom-unrename suc M a)))
@@ -131,8 +141,14 @@ AtomsOK-rename T X ρ {suc n} (M ,, Ms) ⟨ h , hs ⟩ =
 
 {- The let chain: binding the complex operands first, left to right,
    does not change the meaning of an operator that binds them -}
-lift-≃ : ∀ T (TC : ∀ k → Con (T k)) {n} f (Ms : Args (replicate n ■)) (O : Kernel n) ρ → nonempty-env ρ
-  → Con-env ρ → AtomsOK T ρ Ms → Denotes T f O ρ → ⟦ lift f Ms ⟧[ T ] ρ ≃ bindsₖ O (⟦ Ms ⟧₊[ T ] ρ)
+lift-≃ : ∀ T
+  → (TC : ∀ k → Con (T k))
+  → ∀ {n} f (Ms : Args (replicate n ■)) (O : Kernel n) ρ
+  → nonempty-env ρ
+  → Con-env ρ
+  → AtomsOK T ρ Ms
+  → Denotes T f O ρ
+  → ⟦ lift f Ms ⟧[ T ] ρ ≃ bindsₖ O (⟦ Ms ⟧₊[ T ] ρ)
 lift-≃ T TC {zero} f Nil O ρ NE C _ den = den 0 ρ Nil (λ x → ≃-refl)
 lift-≃ T TC {suc n} f (M ,, Ms) O ρ NE C ⟨ aM , aMs ⟩ den with atom? M
 ... | yes a =
@@ -157,7 +173,9 @@ lift-≃ T TC {suc n} f (M ,, Ms) O ρ NE C ⟨ aM , aMs ⟩ den with atom? M
   B = lift f' Ms'
 
   {- the rest, with a set of values X for the first operand -}
-  rest : ∀ X (vX : Val X) → Con X → ⟦ B ⟧[ T ] (X • ρ) ≃ bindsₖ (X ▷ O) Ds
+  rest : ∀ X (vX : Val X)
+    → Con X
+    → ⟦ B ⟧[ T ] (X • ρ) ≃ bindsₖ (X ▷ O) Ds
   rest X vX cX =
     ≃-trans (lift-≃ T TC f' Ms' (X ▷ O) (X • ρ)
                (extend-nonempty-env NE (proj₂ vX)) (Con-• cX C)
@@ -174,28 +192,44 @@ lift-≃ T TC {suc n} f (M ,, Ms) O ρ NE C ⟨ aM , aMs ⟩ den with atom? M
 Good : ℕ → Env Value → Set
 Good k ρ = ∀ x → x < k → Val (ρ x)
 
-Good-ext : ∀ {k ρ X} → Val X → Good k ρ → Good (suc k) (X • ρ)
+Good-ext : ∀ {k ρ X}
+  → Val X
+  → Good k ρ
+  → Good (suc k) (X • ρ)
 Good-ext vX G zero _ = vX
 Good-ext vX G (suc x) (s≤s x<k) = G x x<k
 
-atom-val : ∀ T ρ k A → (∀ j → Val (T j)) → Good k ρ → Atom A → WS k A → Val (⟦ A ⟧[ T ] ρ)
+atom-val : ∀ T ρ k A
+  → (∀ j → Val (T j))
+  → Good k ρ
+  → Atom A
+  → WS k A
+  → Val (⟦ A ⟧[ T ] ρ)
 atom-val T ρ k .(` x) TV G (var x) ws = G x ws
 atom-val T ρ k .(lit B c ⦅ nil ⦆) TV G (lit B c) ws = ⟨ (λ { .ω () refl }) , ⟨ const c , ⟨ refl , refl ⟩ ⟩ ⟩
 atom-val T ρ k .(fun-ref j ⦅ nil ⦆) TV G (ref j) ws = TV j
 
-let-noatom : ∀ {M N} → Atom (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) → ⊥
+let-noatom : ∀ {M N}
+  → Atom (let-op ⦅ M ,, ⟩ N ,, Nil ⦆)
+  → ⊥
 let-noatom ()
 
-no-atom-lets : ∀ {n} (f : ℕ → Args (replicate n ■) → AST) (B : Bound n) → (∀ k As → Atom (f k As) → ⊥)
-  → Atom (lets (bindsᵣ B) (f (length (bindsᵣ B)) (atoms B))) → ⊥
+no-atom-lets : ∀ {n} (f : ℕ → Args (replicate n ■) → AST) (B : Bound n)
+  → (∀ k As → Atom (f k As) → ⊥)
+  → Atom (lets (bindsᵣ B) (f (length (bindsᵣ B)) (atoms B)))
+  → ⊥
 no-atom-lets f (bound [] As) h a = h 0 As a
 no-atom-lets f (bound (M ∷ bs) As) h a = let-noatom a
 
-case-noatom : ∀ M N k (As : Args (■ ∷ [])) → Atom (case-on M N k As) → ⊥
+case-noatom : ∀ M N k (As : Args (■ ∷ []))
+  → Atom (case-on M N k As)
+  → ⊥
 case-noatom M N k (A ,, Nil) ()
 
 {- an operand that rco leaves an atom was that atom -}
-rco-atom : ∀ M → Atom (rco M) → rco M ≡ M
+rco-atom : ∀ M
+  → Atom (rco M)
+  → rco M ≡ M
 rco-atom (` x) _ = refl
 rco-atom (fun-ref k ⦅ Nil ⦆) _ = refl
 rco-atom (lit B k ⦅ Nil ⦆) _ = refl
@@ -212,7 +246,11 @@ rco-atom (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) a =
 rco-atom (prim p ⦅ Ms ⦆) a = ⊥-elim (no-atom-lets {2} (λ _ → prim p ⦅_⦆) (atomize (rco-args Ms)) (λ _ _ ()) a)
 rco-atom (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ()
 
-rco-atomsOK : ∀ T ρ k → (∀ j → Val (T j)) → Good k ρ → ∀ {n} (Ms : Args (replicate n ■)) → WS-args k Ms
+rco-atomsOK : ∀ T ρ k
+  → (∀ j → Val (T j))
+  → Good k ρ
+  → ∀ {n} (Ms : Args (replicate n ■))
+  → WS-args k Ms
   → AtomsOK T ρ (rco-args Ms)
 rco-atomsOK T ρ k TV G {zero} Nil _ = tt
 rco-atomsOK T ρ k TV G {suc n} (M ,, Ms) ⟨ wsM , wsMs ⟩ =
@@ -224,13 +262,24 @@ rco-atomsOK T ρ k TV G {suc n} (M ,, Ms) ⟨ wsM , wsMs ⟩ =
 
 module _ (T T' : Table) (TC : ∀ k → Con (T k)) (TT : ∀ k → T k ≃ T' k) (TV : ∀ k → Val (T k)) where
 
-  rco-sem : ∀ M k ρ → WS k M → nonempty-env ρ → Con-env ρ → Good k ρ
+  rco-sem : ∀ M k ρ
+    → WS k M
+    → nonempty-env ρ
+    → Con-env ρ
+    → Good k ρ
     → ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ
-  rco-args-sem : ∀ {n} (Ms : Args (replicate n ■)) k ρ → WS-args k Ms → nonempty-env ρ → Con-env ρ → Good k ρ
+  rco-args-sem : ∀ {n} (Ms : Args (replicate n ■)) k ρ
+    → WS-args k Ms
+    → nonempty-env ρ
+    → Con-env ρ
+    → Good k ρ
     → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
   {- a construct c whose operator is O, on operands under their lets -}
   rco-op : ∀ {n} (c : Args (replicate n ■) → AST) (O : Kernel n) (Ms : Args (replicate n ■)) k ρ
-    → WS-args k Ms → nonempty-env ρ → Con-env ρ → Good k ρ
+    → WS-args k Ms
+    → nonempty-env ρ
+    → Con-env ρ
+    → Good k ρ
     → (∀ T ρ As → ⟦ c As ⟧[ T ] ρ ≃ bindsₖ O (⟦ As ⟧₊[ T ] ρ))
     → ⟦ lift (λ _ → c) (rco-args Ms) ⟧[ T ] ρ ≃ ⟦ c Ms ⟧[ T' ] ρ
 
@@ -252,7 +301,14 @@ module _ (T T' : Table) (TC : ∀ k → Con (T k)) (TT : ∀ k → T k ≃ T' k)
             (bindsₖ-≃ O ⟨ up (rco-sem L k ρ wsL NE C G) , ptt ⟩)
     where
     O = case-k (λ X → ⟦ M ⟧[ T' ] (X • ρ)) (λ X → ⟦ N ⟧[ T' ] (X • ρ))
-    branch : ∀ j ρ' → Ext j ρ' ρ → ∀ B → WS (suc k) B → ∀ V → V ≢ [] → V ≈ V → NoErr V
+    branch : ∀ j ρ'
+      → Ext j ρ' ρ
+      → ∀ B
+      → WS (suc k) B
+      → ∀ V
+      → V ≢ []
+      → V ≈ V
+      → NoErr V
       → ⟦ rename (ext (j +_)) (rco B) ⟧[ T ] (mem V • ρ') ≃ ⟦ B ⟧[ T' ] (mem V • ρ)
     branch j ρ' e B wsB V ne c n =
       ≃-trans (rename-≃ T (rco B) (ext (j +_)) (mem V • ρ') (mem V • ρ)
@@ -286,7 +342,12 @@ table-vals (N ∷ Ns) k with k ≟ length Ns
 ... | yes _ = ΛΛᵐ-val
 ... | no _ = table-vals Ns k
 
-code-≃ : ∀ T T' (TC : ∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → (∀ k → Val (T k)) → ∀ N → WS 2 N
+code-≃ : ∀ T T'
+  → (TC : ∀ k → Con (T k))
+  → (∀ k → T k ≃ T' k)
+  → (∀ k → Val (T k))
+  → ∀ N
+  → WS 2 N
   → code T (rco N) ≃ code T' N
 code-≃ T T' TC TT TV N ws =
   ΛΛᵐ-≃′ λ V U neV cV nV neU cU nU →
@@ -296,7 +357,10 @@ code-≃ T T' TC TT TV N ws =
       (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω)))
       (Good-ext (noerr-val U neU nU) (Good-ext (noerr-val V neV nV) (λ x ())))
 
-table-rco : ∀ ds → All (WS 2) ds → ∀ k → table (map rco ds) k ≃ table ds k
+table-rco : ∀ ds
+  → All (WS 2) ds
+  → ∀ k
+  → table (map rco ds) k ≃ table ds k
 table-rco [] _ k = ≃-refl
 table-rco (N ∷ Ns) (ws ∷ wss) k with k ≟ length (map rco Ns) | k ≟ length Ns
 ... | yes _ | yes _ =
@@ -306,11 +370,15 @@ table-rco (N ∷ Ns) (ws ∷ wss) k with k ≟ length (map rco Ns) | k ≟ lengt
 ... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-map rco Ns))))
 
 {- rco preserves the meaning of a well-scoped program exactly -}
-rco-correct : ∀ (P : Program) → Scoped P → ⟦ rco-program P ⟧ₚ ≃ ⟦ P ⟧ₚ
+rco-correct : ∀ (P : Program)
+  → Scoped P
+  → ⟦ rco-program P ⟧ₚ ≃ ⟦ P ⟧ₚ
 rco-correct (program ds M) ⟨ wds , wM ⟩ =
   rco-sem (table (map rco ds)) (table ds) (table-con (map rco ds)) (table-rco ds wds) (table-vals (map rco ds))
     M 0 (λ _ → init) wM (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ x ())
 
 {- the compiler's output, in monadic normal form -}
-rco-correct-compile : ∀ (M : ISWIM.AST) → Closed M → ⟦ compile-mon M ⟧ₚ ≃ ⟦ compile M ⟧ₚ
+rco-correct-compile : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ⟦ compile-mon M ⟧ₚ ≃ ⟦ compile M ⟧ₚ
 rco-correct-compile M c = rco-correct (compile M) (compile-scoped M c)

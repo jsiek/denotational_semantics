@@ -51,7 +51,9 @@ open import Relation.Nullary using (Dec; yes; no; does)
 VM : ℕ → ℕ → Set
 VM k k' = Fin k → Maybe (Fin k')
 
-extρ : ∀ {k k'} → VM k k' → VM (suc k) (suc k')
+extρ : ∀ {k k'}
+  → VM k k'
+  → VM (suc k) (suc k')
 extρ ρ zero = just zero
 extρ ρ (suc x) = Mb.map suc (ρ x)
 
@@ -96,7 +98,9 @@ data Caps ρ where
 
 {- The fundamental lemma ----------------------------------------------------------}
 
-ρfl-kept : ∀ {n} (fl : Vec Bool n) x → Kept fl x → ρfl fl x ≡ just (squeeze fl x)
+ρfl-kept : ∀ {n} (fl : Vec Bool n) x
+  → Kept fl x
+  → ρfl fl x ≡ just (squeeze fl x)
 ρfl-kept fl zero _ = refl
 ρfl-kept (true ∷ fl) (suc zero) _ = refl
 ρfl-kept (true ∷ fl) (suc (suc i)) k = cong (Mb.map (ext suc)) (ρfl-kept fl (suc i) k)
@@ -105,13 +109,20 @@ data Caps ρ where
 Hyp : ∀ {k k'} → (Fin k → Bool) → VM k k' → (Fin k → Fin k') → Set
 Hyp u ρ r = ∀ x → T (u x) → ρ x ≡ just (r x)
 
-under : ∀ {k k' u} {ρ : VM k k'} {r} → Hyp (λ x → u (suc x)) ρ r → Hyp u (extρ ρ) (ext r)
+under : ∀ {k k' u} {ρ : VM k k'} {r}
+  → Hyp (λ x → u (suc x)) ρ r
+  → Hyp u (extρ ρ) (ext r)
 under h zero _ = refl
 under h (suc x) t rewrite h x t = refl
 
-opt≈ : ∀ {k k' A} {ρ : VM k k'} {r} (M : Tm k A) → Hyp (uses M) ρ r → ρ ⊢ M ≈ opt r M
-opts≈ : ∀ {k k' n} {ρ : VM k k'} {r} (Ms : Vec (Tm k Any) n) → Hyp (usesV Ms) ρ r → Pointwise (ρ ⊢_≈_) Ms (opts r Ms)
-caps≈ : ∀ {k k' n} {ρ : VM k k'} {r} (u : Fin n → Bool) (Ms : Vec (Tm k Any) n) → Hyp (usesV Ms) ρ r
+opt≈ : ∀ {k k' A} {ρ : VM k k'} {r} (M : Tm k A)
+  → Hyp (uses M) ρ r
+  → ρ ⊢ M ≈ opt r M
+opts≈ : ∀ {k k' n} {ρ : VM k k'} {r} (Ms : Vec (Tm k Any) n)
+  → Hyp (usesV Ms) ρ r
+  → Pointwise (ρ ⊢_≈_) Ms (opts r Ms)
+caps≈ : ∀ {k k' n} {ρ : VM k k'} {r} (u : Fin n → Bool) (Ms : Vec (Tm k Any) n)
+  → Hyp (usesV Ms) ρ r
   → Caps ρ (flags u Ms) Ms (select (flags u Ms) (opts r Ms))
 opt≈ (` x) h = var≈ (h x (lemma x))
   where lemma : ∀ {k} (x : Fin k) → T (uses (` x) x)
@@ -154,22 +165,35 @@ record KR (𝒦 : Kit) : Set where
 module Trav {𝒦} (K : KR 𝒦) where
   open KR K
 
-  ok-ext : ∀ {k k' j j'} {ρ : VM k k'} {ρ₂ : VM j j'} {σ τ} → OK 𝒦 ρ ρ₂ σ τ
+  ok-ext : ∀ {k k' j j'} {ρ : VM k k'} {ρ₂ : VM j j'} {σ τ}
+    → OK 𝒦 ρ ρ₂ σ τ
     → OK 𝒦 (extρ ρ) (extρ ρ₂) (T.exts 𝒦 σ) (T.exts 𝒦 τ)
   ok-ext ok zero refl = rel-vr
   ok-ext {ρ = ρ} ok (suc x) e with ρ x in eq | e
   ... | just y | refl = rel-wk (ok x eq)
 
-  vv-ext : ∀ {k j} {σ : T.Sub 𝒦 k j} → (∀ x → VV (Kit.tm 𝒦 (σ x))) → ∀ x → VV (Kit.tm 𝒦 (T.exts 𝒦 σ x))
+  vv-ext : ∀ {k j} {σ : T.Sub 𝒦 k j}
+    → (∀ x → VV (Kit.tm 𝒦 (σ x)))
+    → ∀ x
+    → VV (Kit.tm 𝒦 (T.exts 𝒦 σ x))
   vv-ext h zero = vv-vr
   vv-ext h (suc x) = vv-wk (h x)
 
-  ≈-trav : ∀ {k k' j j' A} {ρ : VM k k'} {ρ₂ : VM j j'} {σ τ} {M : Tm k A} {M'} → ρ ⊢ M ≈ M'
-    → OK 𝒦 ρ ρ₂ σ τ → (∀ x → VV (Kit.tm 𝒦 (σ x))) → ρ₂ ⊢ trav 𝒦 σ M ≈ trav 𝒦 τ M'
-  ≈-travs : ∀ {k k' j j' n} {ρ : VM k k'} {ρ₂ : VM j j'} {σ τ} {Ms : Vec (Tm k Any) n} {Ms'} → Pointwise (ρ ⊢_≈_) Ms Ms'
-    → OK 𝒦 ρ ρ₂ σ τ → (∀ x → VV (Kit.tm 𝒦 (σ x))) → Pointwise (ρ₂ ⊢_≈_) (travs 𝒦 σ Ms) (travs 𝒦 τ Ms')
-  caps-trav : ∀ {k k' j j' n} {ρ : VM k k'} {ρ₂ : VM j j'} {σ τ} {fl : Vec Bool n} {Ms Ms'} → Caps ρ fl Ms Ms'
-    → OK 𝒦 ρ ρ₂ σ τ → (∀ x → VV (Kit.tm 𝒦 (σ x))) → Caps ρ₂ fl (travs 𝒦 σ Ms) (travs 𝒦 τ Ms')
+  ≈-trav : ∀ {k k' j j' A} {ρ : VM k k'} {ρ₂ : VM j j'} {σ τ} {M : Tm k A} {M'}
+    → ρ ⊢ M ≈ M'
+    → OK 𝒦 ρ ρ₂ σ τ
+    → (∀ x → VV (Kit.tm 𝒦 (σ x)))
+    → ρ₂ ⊢ trav 𝒦 σ M ≈ trav 𝒦 τ M'
+  ≈-travs : ∀ {k k' j j' n} {ρ : VM k k'} {ρ₂ : VM j j'} {σ τ} {Ms : Vec (Tm k Any) n} {Ms'}
+    → Pointwise (ρ ⊢_≈_) Ms Ms'
+    → OK 𝒦 ρ ρ₂ σ τ
+    → (∀ x → VV (Kit.tm 𝒦 (σ x)))
+    → Pointwise (ρ₂ ⊢_≈_) (travs 𝒦 σ Ms) (travs 𝒦 τ Ms')
+  caps-trav : ∀ {k k' j j' n} {ρ : VM k k'} {ρ₂ : VM j j'} {σ τ} {fl : Vec Bool n} {Ms Ms'}
+    → Caps ρ fl Ms Ms'
+    → OK 𝒦 ρ ρ₂ σ τ
+    → (∀ x → VV (Kit.tm 𝒦 (σ x)))
+    → Caps ρ₂ fl (travs 𝒦 σ Ms) (travs 𝒦 τ Ms')
   ≈-trav (var≈ e) ok vv = ok _ e
   ≈-trav (clos≈ fl n cs) ok vv = clos≈ fl n (caps-trav cs ok vv)
   ≈-trav (app≈ r s) ok vv = app≈ (≈-trav r ok vv) (≈-trav s ok vv)
@@ -209,14 +233,25 @@ Ans′ : ∀ {A} → Tm 0 A → Red (Tm 0 A) → Tm 0 A → Set
 Ans′ = Ans T.red Value R
 
 {- a closed variable or value is a value -}
-vv-value : ∀ {V : Tm 0 Any} → VV V → Value V
+vv-value : ∀ {V : Tm 0 Any}
+  → VV V
+  → Value V
 vv-value (var ())
 vv-value (val v) = v
 
 {- the source of a value is a value -}
-≈-value : ∀ {A} {V V' : Tm 0 A} → R V V' → Value V' → Value V
-≈-values : ∀ {n} {Vs Vs' : Vec (Tm 0 Any) n} → Pointwise R Vs Vs' → All Value Vs' → All Value Vs
-caps-values : ∀ {n} {fl : Vec Bool n} {Vs Vs'} → Caps ρ₀ fl Vs Vs' → All Value Vs' → All Value Vs
+≈-value : ∀ {A} {V V' : Tm 0 A}
+  → R V V'
+  → Value V'
+  → Value V
+≈-values : ∀ {n} {Vs Vs' : Vec (Tm 0 Any) n}
+  → Pointwise R Vs Vs'
+  → All Value Vs'
+  → All Value Vs
+caps-values : ∀ {n} {fl : Vec Bool n} {Vs Vs'}
+  → Caps ρ₀ fl Vs Vs'
+  → All Value Vs'
+  → All Value Vs
 ≈-value (clos≈ fl n cs) (T.clos vs) = T.clos (caps-values cs vs)
 ≈-value lit≈ T.lit = T.lit
 ≈-value (tuple≈ rs) (T.tuple vs) = T.tuple (≈-values rs vs)
@@ -230,7 +265,9 @@ caps-values (keep r cs) (v ∷ vs) = ≈-value r v ∷ caps-values cs vs
 caps-values (drop vv cs) vs = vv-value vv ∷ caps-values cs vs
 
 {- the variables of the code of related closures, applied to related values -}
-caps-lookup : ∀ {n} {fl : Vec Bool n} {Vs Vs' W W'} → Caps ρ₀ fl Vs Vs' → R W W'
+caps-lookup : ∀ {n} {fl : Vec Bool n} {Vs Vs' W W'}
+  → Caps ρ₀ fl Vs Vs'
+  → R W W'
   → OK tmK (ρfl fl) ρ₀ (lookup (W ∷ Vs)) (lookup (W' ∷ Vs'))
 caps-lookup cs m zero refl = m
 caps-lookup (keep r cs) m (suc zero) refl = r
@@ -239,8 +276,12 @@ caps-lookup {fl = true ∷ fl} (keep r cs) m (suc (suc i)) e with ρfl fl (suc i
 ... | just (suc j) | refl = caps-lookup cs m (suc i) eq
 caps-lookup (drop vv cs) m (suc (suc i)) e = caps-lookup cs m (suc i) e
 
-obs≈ : ∀ {A} {V : Tm 0 A} {V'} → R V V' → T.obs V ≡ T.obs V'
-obss≈ : ∀ {n} {Vs : Vec (Tm 0 Any) n} {Vs'} → Pointwise R Vs Vs' → T.obss Vs ≡ T.obss Vs'
+obs≈ : ∀ {A} {V : Tm 0 A} {V'}
+  → R V V'
+  → T.obs V ≡ T.obs V'
+obss≈ : ∀ {n} {Vs : Vec (Tm 0 Any) n} {Vs'}
+  → Pointwise R Vs Vs'
+  → T.obss Vs ≡ T.obss Vs'
 obs≈ (clos≈ _ _ _) = refl
 obs≈ (app≈ _ _) = refl
 obs≈ lit≈ = refl
@@ -263,12 +304,22 @@ out≈ P.eq n m with does (n Z.≟ m)
 ... | false = inr≈ (inject≈ (tuple≈ []))
 
 {- substituting a value for the variable of a binder -}
-≈-[] : ∀ {A} {N N' : Tm 1 A} {V V'} → extρ ρ₀ ⊢ N ≈ N' → R V V' → Value V → R (N T.[ V ]) (N' T.[ V' ])
+≈-[] : ∀ {A} {N N' : Tm 1 A} {V V'}
+  → extρ ρ₀ ⊢ N ≈ N'
+  → R V V'
+  → Value V
+  → R (N T.[ V ]) (N' T.[ V' ])
 ≈-[] n m v = Trav.≈-trav tmKR n (λ { zero refl → m }) (λ _ → val v)
 
-sim : ∀ {A} {M M' : Tm 0 A} → R M M' → Ans′ M (T.red M) M'
-sims : ∀ {n} {Ms Ms' : Vec (Tm 0 Any) n} → Pointwise R Ms Ms' → Ans T.reds (All Value) (Pointwise R) Ms (T.reds Ms) Ms'
-caps-sim : ∀ {n} {fl : Vec Bool n} {Ms Ms'} → Caps ρ₀ fl Ms Ms' → Ans T.reds (All Value) (Caps ρ₀ fl) Ms (T.reds Ms) Ms'
+sim : ∀ {A} {M M' : Tm 0 A}
+  → R M M'
+  → Ans′ M (T.red M) M'
+sims : ∀ {n} {Ms Ms' : Vec (Tm 0 Any) n}
+  → Pointwise R Ms Ms'
+  → Ans T.reds (All Value) (Pointwise R) Ms (T.reds Ms) Ms'
+caps-sim : ∀ {n} {fl : Vec Bool n} {Ms Ms'}
+  → Caps ρ₀ fl Ms Ms'
+  → Ans T.reds (All Value) (Caps ρ₀ fl) Ms (T.reds Ms) Ms'
 sim (var≈ {x = ()} _)
 sim (clos≈ fl n cs) = ans-in (frame _ λ _ → refl) (clos≈ fl n) (caps-sim cs) λ vs ms → val ε (T.clos vs) (clos≈ fl n ms)
 sim (app≈ r s) =
@@ -276,7 +327,12 @@ sim (app≈ r s) =
     λ v m → ans-in (frame {g = app _} _ λ _ → val-in (value-red v)) (app≈ m) (sim s)
       λ { w m' → β-sim v m w m' }
   where
-  β-sim : ∀ {V V' W W'} → Value V' → R V V' → Value W' → R W W' → Ans′ (app V W) (T.β V W) (app V' W')
+  β-sim : ∀ {V V' W W'}
+    → Value V'
+    → R V V'
+    → Value W'
+    → R W W'
+    → Ans′ (app V W) (T.β V W) (app V' W')
   β-sim (T.clos vs) (clos≈ fl n cs) w m' =
     to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))
        (Trav.≈-trav tmKR n (caps-lookup cs m')
@@ -298,7 +354,10 @@ sim (let≈ r s) = ans-in (frame _ λ _ → refl) (λ m → let≈ m s) (sim r)
 sim (inject≈ r) = ans-in (frame _ λ _ → refl) inject≈ (sim r) λ v m → val ε (T.inject v) (inject≈ m)
 sim (project≈ {t = t} r) = ans-in (frame _ λ _ → refl) project≈ (sim r) λ { (T.inject v) (inject≈ m) → proj-sim v m }
   where
-  proj-sim : ∀ {G V V'} → Value V' → R V V' → Ans′ (project t (inject G V)) (T.project? t (inject G V)) (project t (inject G V'))
+  proj-sim : ∀ {G V V'}
+    → Value V'
+    → R V V'
+    → Ans′ (project t (inject G V)) (T.project? t (inject G V)) (project t (inject G V'))
   proj-sim {G} {V} {V'} v m = pd (G ≟F flat t) (val-in (value-red (T.inject v)))
     where pd : ∀ {H} (d : Dec (G ≡ H)) {X Y} → T.red X ≡ T.proj-dec d V' → Ans′ Y (T.proj-dec d V) X
           pd (yes refl) e = to (one e) m

@@ -143,8 +143,12 @@ data _~_ : S.State → T.State → Set where
   ret~ : ∀ {v w κ₂ κ₃} → v ≈ w → κ₂ ≈k κ₃ → S.ret v κ₂ ~ T.ret w κ₃
 
 {- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
+obs≈ : ∀ {v w}
+  → v ≈ w
+  → S.obs v ≡ T.obs w
+obs≈-list : ∀ {vs ws}
+  → Pointwise _≈_ vs ws
+  → S.obs-list vs ≡ T.obs-list ws
 obs≈ (clo≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -154,7 +158,10 @@ obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+  → v₁ ≈ w₁
+  → v₂ ≈ w₂
+  → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
 prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
@@ -163,26 +170,38 @@ prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p
 
 {- The free variables of a closure ---------------------------------------------}
 
-FV-length : ∀ {n vs ts} → FV n vs ts → length vs ≡ n
+FV-length : ∀ {n vs ts}
+  → FV n vs ts
+  → length vs ≡ n
 FV-length [] = refl
 FV-length (fv-snoc {vs = vs} {v = v} f r) = trans (length-snoc vs v) (cong suc (FV-length f))
 
-FV-has-length : ∀ {n vs ts} → FV n vs ts → has-length n ts ≡ true
+FV-has-length : ∀ {n vs ts}
+  → FV n vs ts
+  → has-length n ts ≡ true
 FV-has-length [] = refl
 FV-has-length (fv-snoc f r) = FV-has-length f
 
-FV-cons : ∀ {n vs ts v w} → FV n vs ts → v ≈ w → FV (suc n) (v ∷ vs) (ts ∷ʳ w)
+FV-cons : ∀ {n vs ts v w}
+  → FV n vs ts
+  → v ≈ w
+  → FV (suc n) (v ∷ vs) (ts ∷ʳ w)
 FV-cons [] r = fv-snoc [] r
 FV-cons (fv-snoc f r') r = fv-snoc (FV-cons f r) r'
 
 {- the machines collect the values in the same order, and the tuple is
    reversed -}
-pw→FV : ∀ {vs ws} → Pointwise _≈_ vs ws → FV (length vs) vs (reverse ws)
+pw→FV : ∀ {vs ws}
+  → Pointwise _≈_ vs ws
+  → FV (length vs) vs (reverse ws)
 pw→FV [] = []
 pw→FV {v ∷ vs} {w ∷ ws} (r ∷ rs) =
   subst (FV (suc (length vs)) (v ∷ vs)) (sym (unfold-reverse w ws)) (FV-cons (pw→FV rs) r)
 
-FV-lookup : ∀ {n vs ts} → FV n vs ts → ∀ k (k<n : k < n)
+FV-lookup : ∀ {n vs ts}
+  → FV n vs ts
+  → ∀ k
+  → (k<n : k < n)
   → M.Pointwise _≈_ (vs ‼ k) (proj (fv-index n k k<n) ts)
 FV-lookup (fv-snoc {n} {vs} {ts} {v} {t} f r) k k<sn with k <? n
 ... | yes k<n
@@ -193,7 +212,10 @@ FV-lookup (fv-snoc {n} {vs} {ts} {v} {t} f r) k k<sn with k <? n
 
 {- The environment relation ----------------------------------------------------}
 
-env-ext : ∀ {φ ρ₂ ρ₃ v w} → v ≈ w → EnvRel φ ρ₂ ρ₃ → EnvRel (ext-ref φ) (v ∷ ρ₂) (w ∷ ρ₃)
+env-ext : ∀ {φ ρ₂ ρ₃ v w}
+  → v ≈ w
+  → EnvRel φ ρ₂ ρ₃
+  → EnvRel (ext-ref φ) (v ∷ ρ₂) (w ∷ ρ₃)
 env-ext r er zero = M.just r
 env-ext {φ} r er (suc x) with φ x | er x
 ... | var y | p = p
@@ -201,7 +223,10 @@ env-ext {φ} r er (suc x) with φ x | er x
 
 {- the environment of a closure's code: its argument, then its free
    variables (Clos2) or the tuple of them (Clos3) -}
-env-clos : ∀ {n vs ts v w} → v ≈ w → FV n vs ts → EnvRel (fv-ref n) (v ∷ vs) (w ∷ T.tup ts ∷ [])
+env-clos : ∀ {n vs ts v w}
+  → v ≈ w
+  → FV n vs ts
+  → EnvRel (fv-ref n) (v ∷ vs) (w ∷ T.tup ts ∷ [])
 env-clos r f zero = M.just r
 env-clos {n} {vs} r f (suc k) with k <? n
 ... | yes k<n = _ , refl , FV-lookup f k k<n
@@ -221,7 +246,9 @@ module _ (P : C3.AST) where
 
   {- entering a term: a free variable of a closure's code reaches the
      tuple first -}
-  enter : ∀ M {φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
+  enter : ∀ M {φ ρ₂ ρ₃ κ₂ κ₃}
+    → EnvRel φ ρ₂ ρ₃
+    → κ₂ ≈k κ₃
     → Reach~ (S.eval M ρ₂ κ₂) (T.eval (concretize φ M) ρ₃ κ₃)
   enter (` x) {φ} {κ₃ = κ₃} er κ with φ x | er x
   ... | var y | p = _ , ε , var~ p κ refl
@@ -229,20 +256,28 @@ module _ (P : C3.AST) where
     _ , refl ◅ cong (λ mv → T.ret? mv (T.getK i κ₃)) eq ◅ ε , var~ p κ refl
   enter (op ⦅ args ⦆) er κ = _ , ε , eval~ tt er κ
 
-  tuple-next~ : ∀ {vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃} → Pointwise _≈_ vs ws → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
+  tuple-next~ : ∀ {vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃}
+    → Pointwise _≈_ vs ws
+    → EnvRel φ ρ₂ ρ₃
+    → κ₂ ≈k κ₃
     → Reach~ (S.tuple-next vs Ms ρ₂ κ₂) (T.tuple-next ws (map (concretize φ) Ms) ρ₃ κ₃)
   tuple-next~ {Ms = []} rs er κ = _ , ε , ret~ (tup≈ (reverse⁺ rs)) κ
   tuple-next~ {Ms = M ∷ Ms} rs er κ = enter M er (tupK rs er κ)
 
-  clos-next~ : ∀ {n N vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃} → Pointwise _≈_ vs ws → EnvRel φ ρ₂ ρ₃
-    → length Ms + length vs ≡ n → κ₂ ≈k κ₃
+  clos-next~ : ∀ {n N vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃}
+    → Pointwise _≈_ vs ws
+    → EnvRel φ ρ₂ ρ₃
+    → length Ms + length vs ≡ n
+    → κ₂ ≈k κ₃
     → Reach~ (S.clos-next N vs Ms ρ₂ κ₂)
-            (T.tuple-next ws (map (concretize φ) Ms) ρ₃ (T.closK (concretize (fv-ref n) N) κ₃))
+        (T.tuple-next ws (map (concretize φ) Ms) ρ₃ (T.closK (concretize (fv-ref n) N) κ₃))
   clos-next~ {Ms = []} rs er refl κ = _ , refl ◅ ε , ret~ (clo≈ (pw→FV rs)) κ
   clos-next~ {vs = vs} {Ms = M ∷ Ms} rs er len κ =
     enter M er (closK rs er (trans (+-suc (length Ms) (length vs)) len) κ)
 
-  sim : ∀ {s₂ s₃} → s₂ ~ s₃ → Answers L₃ _~_ (S.step s₂) s₃
+  sim : ∀ {s₂ s₃}
+    → s₂ ~ s₃
+    → Answers L₃ _~_ (S.step s₂) s₃
   sim (var~ p κ eq) = next?-answers p (λ r → ret~ r κ) eq
   sim (eval~ {M = ` x} () _ _)
   sim (eval~ {M = clos-op n ⦅ cons (clear a) fvs ⦆} {φ} {ρ₂} {ρ₃} {κ₂} {κ₃} _ er κ) =

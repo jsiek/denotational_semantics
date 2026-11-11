@@ -43,16 +43,23 @@ open import Level using (lift)
 open import Relation.Nullary using (yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong₂; sym; trans)
 
-callc-≃ : ∀ {L L' M M'} → L ≃ L' → M ≃ M' → binds 2 ⟨ L , ⟨ M , ptt ⟩ ⟩ callcᵈ ≃ binds 2 ⟨ L' , ⟨ M' , ptt ⟩ ⟩ callcᵈ
+callc-≃ : ∀ {L L' M M'}
+  → L ≃ L'
+  → M ≃ M'
+  → binds 2 ⟨ L , ⟨ M , ptt ⟩ ⟩ callcᵈ ≃ binds 2 ⟨ L' , ⟨ M' , ptt ⟩ ⟩ callcᵈ
 callc-≃ L≃ M≃ = mono-≃ (mono (binds-good {⊤} 2 callc-good)) ⟨ lift L≃ , ⟨ lift M≃ , ptt ⟩ ⟩
 
 {- Weakening -------------------------------------------------------------------}
 
 module _ {Σ Σ'} (r : ∀ {n} → Σ ∋ n → Σ' ∋ n) {T T' : Table} (TT : ∀ {n} (f : Σ ∋ n) → T (lvl (r f)) ≃ T' (lvl f)) where
 
-  wk-≃ : ∀ {Γ A} (M : Tm Σ Γ A) {ρ ρ'} → ρ ~ₑ[ _≃_ ] ρ' → ⟦ wk r M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ'
-  wks-≃ : ∀ {Γ n} (Ms : Vec (Tm Σ Γ Any) n) {ρ ρ'} → ρ ~ₑ[ _≃_ ] ρ'
-    → ∀ i → nthD (⟦ wks r Ms ⟧s[ T ] ρ) i ≃ nthD (⟦ Ms ⟧s[ T' ] ρ') i
+  wk-≃ : ∀ {Γ A} (M : Tm Σ Γ A) {ρ ρ'}
+    → ρ ~ₑ[ _≃_ ] ρ'
+    → ⟦ wk r M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ'
+  wks-≃ : ∀ {Γ n} (Ms : Vec (Tm Σ Γ Any) n) {ρ ρ'}
+    → ρ ~ₑ[ _≃_ ] ρ'
+    → ∀ i
+    → nthD (⟦ wks r Ms ⟧s[ T ] ρ) i ≃ nthD (⟦ Ms ⟧s[ T' ] ρ') i
 
   wk-≃ (` x) ρ~ = ρ~ (idx x)
   wk-≃ (fun-ref f) ρ~ = TT f
@@ -93,7 +100,10 @@ wks-id [] = refl
 wks-id (M ∷ Ms) = cong₂ _∷_ (wk-id M) (wks-id Ms)
 
 {- the same term under agreeing tables -}
-tm-≃ : ∀ {Σ Γ A} {T T' : Table} → (∀ k → T k ≃ T' k) → (M : Tm Σ Γ A) {ρ ρ' : Env Value} → ρ ~ₑ[ _≃_ ] ρ'
+tm-≃ : ∀ {Σ Γ A} {T T' : Table}
+  → (∀ k → T k ≃ T' k)
+  → (M : Tm Σ Γ A) {ρ ρ' : Env Value}
+  → ρ ~ₑ[ _≃_ ] ρ'
   → ⟦ M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ'
 tm-≃ {T = T} TT M {ρ} ρ~ = ≃-trans (≃-reflexive (cong (λ N → ⟦ N ⟧[ T ] ρ) (sym (wk-id M)))) (wk-≃ (λ f → f) (λ f → TT (lvl f)) M ρ~)
 
@@ -122,7 +132,9 @@ module _ {T : Table} (TC : ∀ k → Con (T k)) where
   oks [] = ptt
   oks (M ∷ Ms) = ⟨ ok M , oks Ms ⟩
 
-  con : ∀ {Σ Γ A} (M : Tm Σ Γ A) {ρ} → Con-env ρ → Con (⟦ M ⟧[ T ] ρ)
+  con : ∀ {Σ Γ A} (M : Tm Σ Γ A) {ρ}
+    → Con-env ρ
+    → Con (⟦ M ⟧[ T ] ρ)
   con M c = proj₂ (proj₂ (ok M)) c
 
   code₅-con : ∀ {Σ n} (N : Code Σ n) → Con (code₅ T N)
@@ -132,9 +144,15 @@ module _ {T : Table} (TC : ∀ k → Con (T k)) where
 
 {- under an invariant I of the source tables (iv) -}
 tbl-map : ∀ {P P' Q : ℕ → Set} {c : Table → ∀ {n} → P n → 𝒫 Value} {c' : Table → ∀ {n} → P' n → 𝒫 Value}
-  (I : Table → Set) (f : ∀ {n} → Q n → P n) (g : ∀ {n} → Q n → P' n) → (∀ {ns} (ds : All Q ns) → I (tbl c (All-map f ds)))
-  → (∀ {T T'} → (∀ k → T k ≃ T' k) → I T → ∀ {n} (d : Q n) → c T (f d) ≃ c' T' (g d))
-  → ∀ {ns} (ds : All Q ns) k → tbl c (All-map f ds) k ≃ tbl c' (All-map g ds) k
+    (I : Table → Set) (f : ∀ {n} → Q n → P n) (g : ∀ {n} → Q n → P' n)
+  → (∀ {ns} (ds : All Q ns) → I (tbl c (All-map f ds)))
+  → (  ∀ {T T'}
+     → (∀ k → T k ≃ T' k)
+     → I T
+     → ∀ {n} (d : Q n)
+     → c T (f d) ≃ c' T' (g d))
+  → ∀ {ns} (ds : All Q ns) k
+  → tbl c (All-map f ds) k ≃ tbl c' (All-map g ds) k
 tbl-map I f g iv h [] k = ≃-refl
 tbl-map I f g iv h {_ ∷ ns} (d ∷ ds) k with k ≟ length ns
 ... | yes _ = h (tbl-map I f g iv h ds) (iv ds) d
@@ -145,16 +163,20 @@ map-id [] = refl
 map-id (d ∷ ds) = cong (d ∷_) (map-id ds)
 
 {- the entries of a table of code are sets of values -}
-tbl-val : ∀ {P : ℕ → Set} {c : Table → ∀ {n} → P n → 𝒫 Value} → (∀ {T n} (d : P n) → Val (c T d))
-  → ∀ {ns} (ds : All P ns) k → Val (tbl c ds k)
+tbl-val : ∀ {P : ℕ → Set} {c : Table → ∀ {n} → P n → 𝒫 Value}
+  → (∀ {T n} (d : P n) → Val (c T d))
+  → ∀ {ns} (ds : All P ns) k
+  → Val (tbl c ds k)
 tbl-val h [] k = ΛΛᵐ-val
 tbl-val h {_ ∷ ns} (d ∷ ds) k with k ≟ length ns
 ... | yes _ = h d
 ... | no _ = tbl-val h ds k
 
 {- the tables of programs are consistent, when their codes are -}
-tbl-con : ∀ {P : ℕ → Set} {c : Table → ∀ {n} → P n → 𝒫 Value} → (∀ {T} → (∀ k → Con (T k)) → ∀ {n} (d : P n) → Con (c T d))
-  → ∀ {ns} (ds : All P ns) k → Con (tbl c ds k)
+tbl-con : ∀ {P : ℕ → Set} {c : Table → ∀ {n} → P n → 𝒫 Value}
+  → (∀ {T} → (∀ k → Con (T k)) → ∀ {n} (d : P n) → Con (c T d))
+  → ∀ {ns} (ds : All P ns) k
+  → Con (tbl c ds k)
 tbl-con h [] k = errcode-con
 tbl-con h {_ ∷ ns} (d ∷ ds) k with k ≟ length ns
 ... | yes _ = h (tbl-con h ds) d

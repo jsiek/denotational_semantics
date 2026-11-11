@@ -50,16 +50,24 @@ open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_�
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = (∀ {B} (c : base-rep B) → (dconst c ∈ D) ⇔ (dconst c ∈ E)) × (nonempty D ⇔ nonempty E)
 
-⇔∘ : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
+⇔∘ : ∀ {A B C : Set}
+  → A ⇔ B
+  → B ⇔ C
+  → A ⇔ C
 ⇔∘ ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
 {- Same D E, and E ≃ E' -}
-then : ∀ {D E E'} → Same D E → E ≃ E' → Same D E'
+then : ∀ {D E E'}
+  → Same D E
+  → E ≃ E'
+  → Same D E'
 then ⟨ c , n ⟩ ⟨ E⊆ , E'⊆ ⟩ =
   ⟨ (λ k → ⇔∘ (c k) ⟨ E⊆ _ , E'⊆ _ ⟩)
   , ⇔∘ n ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E'⊆ d d∈ ⟩ }) ⟩ ⟩
 
-compile-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
+compile-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
 compile-same M c with ≃-trans (simplify-correct M) (≃-trans (cast-correct (simplify M) (simplify-closed M c))
                        (≃-trans (capture-correct M₁) (≃-trans (prune-correct (capture M₁)) (concretize-correct M₂))))
   where
@@ -71,14 +79,22 @@ compile-same M c with ≃-trans (simplify-correct M) (≃-trans (cast-correct (s
        (hoist-correct (compile₄ M))
   where M₃ = concretize-program (prune-program (capture (cast-closed (simplify M))))
 
-compile-mon-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
+compile-mon-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
 compile-mon-same M c = then (compile-same M c) (rco-correct (compile M))
 
-compile-imp-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
+compile-imp-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
 compile-imp-same M c = then (compile-mon-same M c) (lift-locals-correct (compile-mon M))
 
-compile-cfg-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
+compile-cfg-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
 compile-cfg-same M c = then (compile-imp-same M c) (explicate-correct (compile-imp M))
 
-compile-x86-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
+compile-x86-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
 compile-x86-same M c = then (compile-cfg-same M c) (select-correct (compile-cfg M))

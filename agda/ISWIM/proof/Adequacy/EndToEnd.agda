@@ -36,39 +36,48 @@ open import ISWIM.proof.Correctness.Graph.CompilerCorrect using (compile-same; c
 
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
-compile-correct-machine-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
+compile-correct-machine-const : ∀ M
+  → Closed M
+  → ∀ {B} (k : base-rep B)
   → Terminates (I.sem M) (o-const B k) ⇔ (dconst k ∈ ⟦ compile M ⟧₅)
 compile-correct-machine-const M c k =
   ⟨ (λ t → proj₁ (proj₁ (compile-same M c) k) (AI.sound-const M t))
   , (λ k∈ → AI.adequacy-const M c (proj₂ (proj₁ (compile-same M c) k) k∈)) ⟩
 
-compile-correct-machine-converges : ∀ M → Closed M
+compile-correct-machine-converges : ∀ M
+  → Closed M
   → Converges (Terminates (I.sem M)) ⇔ nonempty ⟦ compile M ⟧₅
 compile-correct-machine-converges M c =
   ⟨ (λ t → proj₁ (proj₂ (compile-same M c)) (AI.sound-nonempty M t))
   , (λ ne → AI.adequacy-converges M c (proj₂ (proj₂ (compile-same M c)) ne)) ⟩
 
-end-to-end-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
+end-to-end-const : ∀ M
+  → Closed M
+  → ∀ {B} (k : base-rep B)
   → Terminates (I.sem M) (o-const B k) ⇔ Terminates (C5.sem (compile M)) (o-const B k)
 end-to-end-const M c k =
   ⟨ (λ t → proj₁ (A5.const-iff (compile M) od) (proj₁ (compile-correct-machine-const M c k) t))
   , (λ t → proj₂ (compile-correct-machine-const M c k) (proj₂ (A5.const-iff (compile M) od) t)) ⟩
   where od = hoist-older (compile₄ M)
 
-end-to-end-converges : ∀ M → Closed M
+end-to-end-converges : ∀ M
+  → Closed M
   → Converges (Terminates (I.sem M)) ⇔ Converges (Terminates (C5.sem (compile M)))
 end-to-end-converges M c =
   ⟨ (λ t → proj₁ (A5.nonempty-iff (compile M) od) (proj₁ (compile-correct-machine-converges M c) t))
   , (λ t → proj₂ (compile-correct-machine-converges M c) (proj₂ (A5.nonempty-iff (compile M) od) t)) ⟩
   where od = hoist-older (compile₄ M)
 
-end-to-end-x86-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
+end-to-end-x86-const : ∀ M
+  → Closed M
+  → ∀ {B} (k : base-rep B)
   → Terminates (I.sem M) (o-const B k) ⇔ Terminates (X.sem (compile-x86 M)) (o-const B k)
 end-to-end-x86-const M c k =
   ⟨ (λ t → proj₁ (AX.x86-const-iff M c) (proj₁ (proj₁ (compile-x86-same M c) k) (AI.sound-const M t)))
   , (λ t → AI.adequacy-const M c (proj₂ (proj₁ (compile-x86-same M c) k) (proj₂ (AX.x86-const-iff M c) t))) ⟩
 
-end-to-end-x86-converges : ∀ M → Closed M
+end-to-end-x86-converges : ∀ M
+  → Closed M
   → Converges (Terminates (I.sem M)) ⇔ Converges (Terminates (X.sem (compile-x86 M)))
 end-to-end-x86-converges M c =
   ⟨ (λ t → proj₁ (AX.x86-nonempty-iff M c) (proj₁ (proj₂ (compile-x86-same M c)) (AI.sound-nonempty M t)))

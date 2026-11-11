@@ -42,7 +42,9 @@ import ISWIM.proof.Adequacy.X86Soundness as S
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (sym; subst)
 
-adequacy : ∀ P {d} → d ∈ ⟦ P ⟧ₜ → Σ[ v ∈ Val (Program.table P) Any ] Terminates (sem P) (obs v) × LR.𝕍 (Program.defs P) d v
+adequacy : ∀ P {d}
+  → d ∈ ⟦ P ⟧ₜ
+  → Σ[ v ∈ Val (Program.table P) Any ] Terminates (sem P) (obs v) × LR.𝕍 (Program.defs P) d v
 adequacy (program ds b) = LR.adequacy ds b
 
 module _ (P : Program) (cT : ConT (tables codeₜ (Program.defs P))) (cl : Contains codeₜ (Program.defs P)) where
@@ -58,8 +60,13 @@ module _ (P : Program) (cT : ConT (tables codeₜ (Program.defs P))) (cl : Conta
                                          let ⟨ d , d∈ ⟩ = S.𝒱-ne (Program.defs P) cT cl v in ⟨ d , v⊆ d d∈ ⟩ }) ⟩
 
 {- the programs that the compiler produces -}
-x86-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B} → (dconst k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (sem (compile-x86 M)) (o-const B k)
+x86-const-iff : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
+  → (dconst k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (sem (compile-x86 M)) (o-const B k)
 x86-const-iff M _ = const-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))
 
-x86-nonempty-iff : ∀ M → Closed M → nonempty ⟦ compile-x86 M ⟧ₜ ⇔ Converges (Terminates (sem (compile-x86 M)))
+x86-nonempty-iff : ∀ M
+  → Closed M
+  → nonempty ⟦ compile-x86 M ⟧ₜ ⇔ Converges (Terminates (sem (compile-x86 M)))
 x86-nonempty-iff M _ = nonempty-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))

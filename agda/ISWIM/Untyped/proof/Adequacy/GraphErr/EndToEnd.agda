@@ -38,13 +38,17 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sub
 open import Relation.Nullary using (¬_)
 
 {- the ISWIM machine and the Clos5 machine on the compiled program -}
-end-to-end : ∀ M → Closed M → Agree (ISWIMₘ.sem M) (Clos5ₘ.sem (compile M))
+end-to-end : ∀ M
+  → Closed M
+  → Agree (ISWIMₘ.sem M) (Clos5ₘ.sem (compile M))
 end-to-end M c =
   agree (compile-same M c) (A.error-iff M c) (A5.clos5-error-iff M c) (A.const-iff M c) (A5.clos5-const-iff M c)
     (A.converges-iff M c) (A5.clos5-converges-iff M c) (A.diverges-iff M c) (A5.clos5-diverges-iff M c)
 
 {- the ISWIM machine and the X86 machine on the compiled program -}
-end-to-end-x86 : ∀ M → Closed M → Agree (ISWIMₘ.sem M) (X86ₘ.sem (compile-x86 M))
+end-to-end-x86 : ∀ M
+  → Closed M
+  → Agree (ISWIMₘ.sem M) (X86ₘ.sem (compile-x86 M))
 end-to-end-x86 M c =
   agree (compile-x86-same M c) (A.error-iff M c) (Aₓ.x86-error-iff M c) (A.const-iff M c) (Aₓ.x86-const-iff M c)
     (A.converges-iff M c) (Aₓ.x86-converges-iff M c) (A.diverges-iff M c) (Aₓ.x86-diverges-iff M c)

@@ -78,14 +78,26 @@ id⊆ : ∀ {D : 𝒫 Value} → D ⊆ D
 id⊆ d d∈ = d∈
 
 {- the operators, monotone in their operands -}
-call⊆ : ∀ {L L' M M' N N'} → L ⊆ L' → M ⊆ M' → N ⊆ N'
+call⊆ : ∀ {L L' M M' N N'}
+  → L ⊆ L'
+  → M ⊆ M'
+  → N ⊆ N'
   → callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ ⊆ callᵐ ⟨ L' , ⟨ M' , ⟨ N' , ptt ⟩ ⟩ ⟩
 call⊆ a b c = lower (mono (callᵐ-good {⊤}) _ _ ⟨ lift a , ⟨ lift b , ⟨ lift c , ptt ⟩ ⟩ ⟩)
 
-op2⊆ : ∀ {f} → Good ⊤ (■ ∷ ■ ∷ []) f → ∀ {D D' E E'} → D ⊆ D' → E ⊆ E' → f ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ f ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+op2⊆ : ∀ {f}
+  → Good ⊤ (■ ∷ ■ ∷ []) f
+  → ∀ {D D' E E'}
+  → D ⊆ D'
+  → E ⊆ E'
+  → f ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ f ⟨ D' , ⟨ E' , ptt ⟩ ⟩
 op2⊆ G a b = lower (mono G _ _ ⟨ lift a , ⟨ lift b , ptt ⟩ ⟩)
 
-op1⊆ : ∀ {f} → Good ⊤ (■ ∷ []) f → ∀ {D D'} → D ⊆ D' → f ⟨ D , ptt ⟩ ⊆ f ⟨ D' , ptt ⟩
+op1⊆ : ∀ {f}
+  → Good ⊤ (■ ∷ []) f
+  → ∀ {D D'}
+  → D ⊆ D'
+  → f ⟨ D , ptt ⟩ ⊆ f ⟨ D' , ptt ⟩
 op1⊆ G a = lower (mono G _ _ ⟨ lift a , ptt ⟩)
 
 {- the kind of a machine value -}
@@ -160,11 +172,15 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   {- Monotonicity of the continuations -----------------------------------------}
 
-  rev𝒱-mono : ∀ vs Ds Es → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
+  rev𝒱-mono : ∀ vs Ds Es
+    → Ds ⊆L Es
+    → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
   rev𝒱-mono [] Ds Es s = s
   rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es) ⟨ id⊆ , s ⟩
 
-  𝒦-mono : ∀ κ {D E} → D ⊆ E → 𝒦 κ D ⊆ 𝒦 κ E
+  𝒦-mono : ∀ κ {D E}
+    → D ⊆ E
+    → 𝒦 κ D ⊆ 𝒦 κ E
   𝒦-mono halt D⊆ = D⊆
   𝒦-mono (appF M N γ κ) D⊆ = 𝒦-mono κ (call⊆ D⊆ id⊆ id⊆)
   𝒦-mono (appE f N γ κ) D⊆ = 𝒦-mono κ (call⊆ id⊆ D⊆ id⊆)
@@ -228,7 +244,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒱-conv : ∀ v → Conv (𝒱 v)
   𝒱-conv v = Val⇒Conv (𝒱-val v)
 
-  𝒱-kind : ∀ v d → d ∈ ⌊ 𝒱 v ⌋ → kind d ≡ vkind v
+  𝒱-kind : ∀ v d
+    → d ∈ ⌊ 𝒱 v ⌋
+    → kind d ≡ vkind v
   𝒱-kind (code k) d ⟨ d∈ , _ ⟩ = table-fun ds k d d∈
   𝒱-kind (pair v w) d ⟨ inj₁ ⟨ refl , _ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
   𝒱-kind (pair v w) d ⟨ inj₂ ⟨ _ , inj₁ ⟨ refl , _ ⟩ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
@@ -242,7 +260,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒱-kind (T.inr v) (right d) ⟨ inj₂ _ , _ ⟩ = refl
 
   {- the check of a kind fails on a value of another kind -}
-  𝒱-bad : ∀ v {k} → vkind v ≢ k → Bad k ⌊ 𝒱 v ⌋
+  𝒱-bad : ∀ v {k}
+    → vkind v ≢ k
+    → Bad k ⌊ 𝒱 v ⌋
   𝒱-bad v ne with 𝒱-conv v
   ... | ⟨ d , d∈ ⟩ = ⟨ d , ⟨ d∈ , (λ eq → ne (trans (sym (𝒱-kind v d d∈)) eq)) ⟩ ⟩
 
@@ -264,12 +284,16 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝓔-nonempty (v ∷ γ) zero = proj₂ (𝒱-val v)
   𝓔-nonempty (v ∷ γ) (suc x) = 𝓔-nonempty γ x
 
-  𝓔-lookup : ∀ γ x {v} → γ ‼ x ≡ just v → 𝒱 v ⊆ 𝓔 γ x
+  𝓔-lookup : ∀ γ x {v}
+    → γ ‼ x ≡ just v
+    → 𝒱 v ⊆ 𝓔 γ x
   𝓔-lookup (v ∷ γ) zero refl d d∈ = d∈
   𝓔-lookup (v ∷ γ) (suc x) eq = 𝓔-lookup γ x eq
 
   {- an unbound variable means {ω} -}
-  𝓔-nothing : ∀ γ x → γ ‼ x ≡ nothing → ω ∈ 𝓔 γ x
+  𝓔-nothing : ∀ γ x
+    → γ ‼ x ≡ nothing
+    → ω ∈ 𝓔 γ x
   𝓔-nothing [] x _ = refl
   𝓔-nothing (v ∷ γ) (suc x) eq = 𝓔-nothing γ x eq
 
@@ -281,7 +305,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   {- β for the two parameters of code: calling code k, found in the table
      as B, on the environment e and the argument w -}
-  call-⊆ : ∀ k {B} w e → global ds k ≡ just B
+  call-⊆ : ∀ k {B} w e
+    → global ds k ≡ just B
     → ⟦ B ⟧ᵀ (𝓔 (w ∷ e ∷ [])) ⊆ callᵐ ⟨ Tb k , ⟨ 𝒱 e , ⟨ 𝒱 w , ptt ⟩ ⟩ ⟩
   call-⊆ k {B} w e g d d∈ with global-split k g
   ... | ⟨ Ns , ⟨ p , refl ⟩ ⟩ =
@@ -291,7 +316,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
          (⟦⟧[]-monotone (table Ns) B env⊆ d
             (stab⊆ (length Ns) Tb (table Ns) B ag (proj₁ (DefsWF-⊑ p wf)) (λ x → id⊆) d d∈)))
     where
-    ≡→⊆ : ∀ {D E : 𝒫 Value} → D ≡ E → D ⊆ E
+    ≡→⊆ : ∀ {D E : 𝒫 Value}
+      → D ≡ E
+      → D ⊆ E
     ≡→⊆ refl = id⊆
     ag : Agree⊆ (length Ns) Tb (table Ns)
     ag j j< = ≡→⊆ (table-agree (∷-⊑ p) j j<)
@@ -327,27 +354,43 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     Rel zero [] _ = ⊤
     Rel (suc m) (X ∷ Xs) ⟨ Y , Ys ⟩ = X ⊆ Y × Rel m Xs Ys
     Rel _ _ _ = ⊥
-    Rel-len : ∀ {m Xs Ys} → Rel m Xs Ys → length Xs ≡ m
+    Rel-len : ∀ {m Xs Ys}
+      → Rel m Xs Ys
+      → length Xs ≡ m
     Rel-len {zero} {[]} _ = refl
     Rel-len {suc m} {X ∷ Xs} ⟨ _ , r ⟩ = cong suc (Rel-len r)
-    Rel-At : ∀ {m Xs Ys} (i : Fin m) {d} → Rel m Xs Ys → At i Xs d → d ∈ nthD Ys i
+    Rel-At : ∀ {m Xs Ys} (i : Fin m) {d}
+      → Rel m Xs Ys
+      → At i Xs d
+      → d ∈ nthD Ys i
     Rel-At {suc m} {X ∷ Xs} zero ⟨ X⊆ , _ ⟩ ⟨ _ , d∈ ⟩ = X⊆ _ d∈
     Rel-At {suc m} {X ∷ Xs} (suc i) ⟨ _ , r ⟩ a = Rel-At i r a
-    Rel-ne : ∀ {m Xs Ys} → Rel m Xs Ys → AllNE Xs → ∀ j → nonempty (nthD Ys j)
+    Rel-ne : ∀ {m Xs Ys}
+      → Rel m Xs Ys
+      → AllNE Xs
+      → ∀ j
+      → nonempty (nthD Ys j)
     Rel-ne {suc m} {X ∷ Xs} ⟨ X⊆ , _ ⟩ ⟨ ⟨ d , d∈ ⟩ , _ ⟩ zero = ⟨ d , X⊆ d d∈ ⟩
     Rel-ne {suc m} {X ∷ Xs} ⟨ _ , r ⟩ ⟨ _ , ne ⟩ (suc j) = Rel-ne r ne j
-    tup⊆ : ∀ m {Xs Ys} → Rel m Xs Ys → 𝒯P Xs ⊆ 𝒯 m Ys
+    tup⊆ : ∀ m {Xs Ys}
+      → Rel m Xs Ys
+      → 𝒯P Xs ⊆ 𝒯 m Ys
     tup⊆ zero {[]} _ ⟨⟩ _ = tt
     tup⊆ zero {[]} _ (tup[ i ] d) ⟨ a , _ ⟩ = ⊥-elim (At-[] i a)
     tup⊆ (suc m) {X ∷ Xs} _ ⟨⟩ ()
     tup⊆ (suc m) {Xs} r (tup[ i ] d) ⟨ a , ne ⟩ with trans (sym (At-length i Xs d a)) (Rel-len r)
     ... | refl = ⟨ refl , ⟨ Rel-At i r a , Rel-ne r ne ⟩ ⟩
-    go : ∀ {m} (as : Args (replicate m ■)) {K K'} → (∀ {Xs Ys} → Rel m Xs Ys → K Xs ⊆ K' Ys)
+    go : ∀ {m} (as : Args (replicate m ■)) {K K'}
+      → (∀ {Xs Ys} → Rel m Xs Ys → K Xs ⊆ K' Ys)
       → bindL (⟦ args→list as ⟧* ρ) K ⊆ binds m (⟦ as ⟧₊[ Tb ] ρ) K'
     go {zero} Nil h = h tt
     go {suc m} (M ,, as) h = ≫=-mono (λ d z → z) (λ X⊆ → go as (λ r → h ⟨ X⊆ , r ⟩))
 
-  proj-𝒱s : ∀ {n} (i : Fin n) vs {v} → proj i vs ≡ just v → ∀ d → d ∈ 𝒱 v → At i (𝒱s vs) d
+  proj-𝒱s : ∀ {n} (i : Fin n) vs {v}
+    → proj i vs ≡ just v
+    → ∀ d
+    → d ∈ 𝒱 v
+    → At i (𝒱s vs) d
   proj-𝒱s {suc n} zero (v ∷ vs) eq d d∈ with has-length n vs in h
   proj-𝒱s {suc n} zero (v ∷ vs) refl d d∈ | true =
     ⟨ trans (length-𝒱s vs) (has-length→length n vs h) , d∈ ⟩
@@ -355,21 +398,29 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   proj-𝒱s (suc i) (v ∷ vs) eq d d∈ = proj-𝒱s i vs eq d d∈
 
   {- a projection succeeds on a tuple of the right size -}
-  proj-length : ∀ {n} (i : Fin n) vs → length vs ≡ n → Σ[ v ∈ Val ] proj i vs ≡ just v
+  proj-length : ∀ {n} (i : Fin n) vs
+    → length vs ≡ n
+    → Σ[ v ∈ Val ] proj i vs ≡ just v
   proj-length {suc n} zero (v ∷ vs) refl rewrite length→has-length n vs refl = ⟨ v , refl ⟩
   proj-length {suc n} (suc i) (v ∷ vs) refl = proj-length i vs refl
 
-  proj-nothing : ∀ {n} (i : Fin n) vs → proj i vs ≡ nothing → length vs ≢ n
+  proj-nothing : ∀ {n} (i : Fin n) vs
+    → proj i vs ≡ nothing
+    → length vs ≢ n
   proj-nothing i vs eq len with proj-length i vs len
   ... | ⟨ v , eq' ⟩ with trans (sym eq) eq'
   ... | ()
 
   {- Primitives -------------------------------------------------------------------}
 
-  int-in : ∀ v {n} → obs v ≡ o-const Int n → dconst {Int} n ∈ ⌊ 𝒱 v ⌋
+  int-in : ∀ v {n}
+    → obs v ≡ o-const Int n
+    → dconst {Int} n ∈ ⌊ 𝒱 v ⌋
   int-in (const B k) refl = ⟨ ⟨ refl , refl ⟩ , (λ ()) ⟩
 
-  𝒱-out : ∀ r d → d ∈ 𝒱 (out r) → d ≡ dout r
+  𝒱-out : ∀ r d
+    → d ∈ 𝒱 (out r)
+    → d ≡ dout r
   𝒱-out (int k) (dconst k') ⟨ refl , refl ⟩ = refl
   𝒱-out (bool true) d (inj₁ ⟨ refl , () ⟩)
   𝒱-out (bool true) (left ⟨⟩) (inj₂ _) = refl
@@ -378,16 +429,22 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒱-out (bool false) (right ⟨⟩) (inj₂ _) = refl
   𝒱-out (bool false) (right (tup[ i ] d)) (inj₂ ⟨ _ , ⟨ ⟨ a , _ ⟩ , _ ⟩ ⟩) = ⊥-elim (At-[] i a)
 
-  prim-⊆ : ∀ p v w r → δ? p (obs v) (obs w) ≡ just r → 𝒱 (out r) ⊆ primᵐ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
+  prim-⊆ : ∀ p v w r
+    → δ? p (obs v) (obs w) ≡ just r
+    → 𝒱 (out r) ⊆ primᵐ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
   prim-⊆ p v w r e d d∈ with δ?-inv p (obs v) (obs w) e
   ... | ⟨ n , ⟨ m , ⟨ ov , ⟨ ow , refl ⟩ ⟩ ⟩ ⟩ =
     inj₂ ⟨ 𝒱-conv v , inj₂ ⟨ 𝒱-conv w , inj₂ (inj₂ ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , 𝒱-out (δ p n m) d d∈ ⟩ ⟩ ⟩ ⟩) ⟩ ⟩
 
   {- a value whose observation is not an integer is not of the kind of one -}
-  notint-kind : ∀ v → (∀ n → obs v ≢ o-const Int n) → vkind v ≢ base Int
+  notint-kind : ∀ v
+    → (∀ n → obs v ≢ o-const Int n)
+    → vkind v ≢ base Int
   notint-kind (const .Int k) f refl = f k refl
 
-  prim-ω : ∀ p v w → δ? p (obs v) (obs w) ≡ nothing → ω ∈ primᵐ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
+  prim-ω : ∀ p v w
+    → δ? p (obs v) (obs w) ≡ nothing
+    → ω ∈ primᵐ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
   prim-ω p v w e with δ?-none p (obs v) (obs w) e
   ... | inj₁ ni = inj₂ ⟨ 𝒱-conv v , inj₂ ⟨ 𝒱-conv w , inj₁ ⟨ refl , 𝒱-bad v (notint-kind v ni) ⟩ ⟩ ⟩
   ... | inj₂ ni = inj₂ ⟨ 𝒱-conv v , inj₂ ⟨ 𝒱-conv w , inj₂ (inj₁ ⟨ refl , 𝒱-bad w (notint-kind w ni) ⟩) ⟩ ⟩
@@ -414,7 +471,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
              (body-continuous Tb N (𝓔 γ) (𝓔-nonempty γ) (𝒱 v) (proj₂ (𝒱-val v))) (𝒱-con v) (𝒱-val v))
           d (⟦⟧[]-monotone Tb N (𝓔-ext v γ) d d∈)
 
-  step-⊆ : ∀ s {s'} → step ds s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
+  step-⊆ : ∀ s {s'}
+    → step ds s ≡ next s'
+    → 𝒮 s' ⊆ 𝒮 s
   step-⊆ (eval (` x) γ κ) eq with γ ‼ x in look
   step-⊆ (eval (` x) γ κ) refl | just v = 𝒦-mono κ (𝓔-lookup γ x look)
   step-⊆ (eval (` x) γ κ) () | nothing
@@ -458,17 +517,23 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   step-⊆ (ret w (primR p v κ)) refl | just r = 𝒦-mono κ (prim-⊆ p v w r e)
   step-⊆ (ret w (primR p v κ)) () | nothing
 
-  ↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
+  ↠-⊆ : ∀ {s t}
+    → s ↠ t
+    → 𝒮 t ⊆ 𝒮 s
   ↠-⊆ done d d∈ = d∈
   ↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
 
   {- Errors: a continuation passes on ω -----------------------------------------}
 
-  errsL-rev : ∀ vs Ds → errsL Ds → errsL (rev𝒱 vs Ds)
+  errsL-rev : ∀ vs Ds
+    → errsL Ds
+    → errsL (rev𝒱 vs Ds)
   errsL-rev [] Ds e = e
   errsL-rev (v ∷ vs) Ds e = errsL-rev vs (𝒱 v ∷ Ds) (inj₂ ⟨ 𝒱-conv v , e ⟩)
 
-  𝒦-ω : ∀ κ {D} → ω ∈ D → ω ∈ 𝒦 κ D
+  𝒦-ω : ∀ κ {D}
+    → ω ∈ D
+    → ω ∈ 𝒦 κ D
   𝒦-ω halt ω∈ = ω∈
   𝒦-ω (appF M N γ κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
   𝒦-ω (appE f N γ κ) ω∈ = 𝒦-ω κ (callᵐ-ω (inj₂ (𝒱-conv f)) (inj₁ ω∈))
@@ -487,13 +552,17 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒦-ω (letK N γ κ) {D} ω∈ = 𝒦-ω κ (proj₂ (letᵐ-unfold {D}) ω (inj₁ ⟨ refl , ω∈ ⟩))
 
   {- the checks of the machine, on a value of another kind -}
-  call-bad : ∀ f e w κ → vkind f ≢ fun → ω ∈ 𝒦 κ (callᵐ ⟨ 𝒱 f , ⟨ 𝒱 e , ⟨ 𝒱 w , ptt ⟩ ⟩ ⟩)
+  call-bad : ∀ f e w κ
+    → vkind f ≢ fun
+    → ω ∈ 𝒦 κ (callᵐ ⟨ 𝒱 f , ⟨ 𝒱 e , ⟨ 𝒱 w , ptt ⟩ ⟩ ⟩)
   call-bad f e w κ nf = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv f , inj₂ ⟨ 𝒱-conv e , inj₂ ⟨ 𝒱-conv w , inj₁ ⟨ refl , 𝒱-bad f nf ⟩ ⟩ ⟩ ⟩)
 
   {- Final states ----------------------------------------------------------------}
 
   {- a state that stops with an error denotes a set that holds ω -}
-  final-err : ∀ s → step ds s ≡ stop o-error → ω ∈ 𝒮 s
+  final-err : ∀ s
+    → step ds s ≡ stop o-error
+    → ω ∈ 𝒮 s
   final-err (eval (` x) γ κ) eq with γ ‼ x in look
   final-err (eval (` x) γ κ) () | just v
   final-err (eval (` x) γ κ) refl | nothing = 𝒦-ω κ (𝓔-nothing γ x look)
@@ -553,7 +622,10 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   final-err (ret w (primR p v κ)) refl | nothing = 𝒦-ω κ (prim-ω p v w e)
 
   {- a state that stops with an answer returns a value to halt -}
-  final-shape : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
+  final-shape : ∀ s {o}
+    → step ds s ≡ stop o
+    → Answer o
+    → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
   final-shape (ret v halt) refl ans = 𝒱-shape v
   final-shape (eval (` x) γ κ) eq ans with γ ‼ x
   final-shape (eval (` x) γ κ) () ans | just v
@@ -609,7 +681,11 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
 {- a well-formed program that terminates with an answer o has an element
    of the shape of o in its denotation -}
-soundness : ∀ P → WF P → ∀ {o} → Terminates (sem P) o → Answer o
+soundness : ∀ P
+  → WF P
+  → ∀ {o}
+  → Terminates (sem P) o
+  → Answer o
   → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₚ × ShapeOf o d
 soundness (program ds M) ⟨ wfd , _ ⟩ ⟨ s , ⟨ σ , fin ⟩ ⟩ ans
     with final-shape ds wfd s fin ans
@@ -617,6 +693,9 @@ soundness (program ds M) ⟨ wfd , _ ⟩ ⟨ s , ⟨ σ , fin ⟩ ⟩ ans
   ⟨ d , ⟨ ⟦⟧[]-monotone (table ds) M (λ x → id⊆) d (↠-⊆ ds wfd (Common.star→↠ ds σ) d d∈) , sh ⟩ ⟩
 
 {- a well-formed program that stops with an error has ω in its denotation -}
-sound-error : ∀ P → WF P → Terminates (sem P) o-error → ω ∈ ⟦ P ⟧ₚ
+sound-error : ∀ P
+  → WF P
+  → Terminates (sem P) o-error
+  → ω ∈ ⟦ P ⟧ₚ
 sound-error (program ds M) ⟨ wfd , _ ⟩ ⟨ s , ⟨ σ , fin ⟩ ⟩ =
   ⟦⟧[]-monotone (table ds) M (λ x → id⊆) ω (↠-⊆ ds wfd (Common.star→↠ ds σ) ω (final-err ds wfd s fin))

@@ -57,10 +57,14 @@ D ● E = ⋆ᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩
 _⊙_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D ⊙ E = callᵐ ⟨ carᵐ ⟨ D , ptt ⟩ , ⟨ cdrᵐ ⟨ D , ptt ⟩ , ⟨ E , ptt ⟩ ⟩ ⟩
 
-●-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ● E) ⊆ (D₂ ● E)
+●-mono-l : ∀ {D₁ D₂ E}
+  → D₁ ⊆ D₂
+  → (D₁ ● E) ⊆ (D₂ ● E)
 ●-mono-l D⊆ = lower (mono (⋆ᵐ-good {⊤}) _ _ ⟨ lift D⊆ , ⟨ lift (λ d z → z) , ptt ⟩ ⟩)
 
-⊙-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
+⊙-mono-l : ∀ {D₁ D₂ E}
+  → D₁ ⊆ D₂
+  → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
 ⊙-mono-l D⊆ = lower (mono (callᵐ-good {⊤}) _ _
   ⟨ mono (carᵐ-good {⊤}) _ _ ⟨ lift D⊆ , ptt ⟩ , ⟨ mono (cdrᵐ-good {⊤}) _ _ ⟨ lift D⊆ , ptt ⟩ , ⟨ lift (λ d z → z) , ptt ⟩ ⟩ ⟩)
 
@@ -70,7 +74,11 @@ tgt : Kind → Kind
 tgt fun = prod
 tgt k = k
 
-tgt-inj : ∀ x k → x ≢ prod → k ≢ prod → tgt x ≡ tgt k → x ≡ k
+tgt-inj : ∀ x k
+  → x ≢ prod
+  → k ≢ prod
+  → tgt x ≡ tgt k
+  → x ≡ k
 tgt-inj fun fun _ _ _ = refl
 tgt-inj fun prod _ np _ = ⊥-elim (np refl)
 tgt-inj prod k np _ _ = ⊥-elim (np refl)
@@ -80,7 +88,9 @@ tgt-inj (tup m) (tup n) _ _ refl = refl
 tgt-inj (base B) (base C) _ _ refl = refl
 
 {- data correspond to themselves -}
-data-tgt : ∀ d → Data d → tgt (kind d) ≡ kind d
+data-tgt : ∀ d
+  → Data d
+  → tgt (kind d) ≡ kind d
 data-tgt (const k) _ = refl
 data-tgt ⟨⟩ _ = refl
 data-tgt (left x) _ = refl
@@ -105,14 +115,19 @@ dropω-⊆ (v ∷ V) d d∈ with ω? v
 dropω-⊆ (v ∷ V) d (here refl) | inj₂ _ = here refl
 dropω-⊆ (v ∷ V) d (there d∈) | inj₂ _ = there (dropω-⊆ V d d∈)
 
-dropω-keep : ∀ V w → w ⋵ V → w ≢ ω → w ⋵ dropω V
+dropω-keep : ∀ V w
+  → w ⋵ V
+  → w ≢ ω
+  → w ⋵ dropω V
 dropω-keep (v ∷ V) w w∈ w≢ with ω? v
 dropω-keep (v ∷ V) .v (here refl) w≢ | inj₁ eq = ⊥-elim (w≢ eq)
 dropω-keep (v ∷ V) w (there w∈) w≢ | inj₁ _ = dropω-keep V w w∈ w≢
 dropω-keep (v ∷ V) .v (here refl) w≢ | inj₂ _ = here refl
 dropω-keep (v ∷ V) w (there w∈) w≢ | inj₂ _ = there (dropω-keep V w w∈ w≢)
 
-dropω-noω : ∀ V w → w ⋵ dropω V → w ≢ ω
+dropω-noω : ∀ V w
+  → w ⋵ dropω V
+  → w ≢ ω
 dropω-noω (v ∷ V) w w∈ with ω? v
 ... | inj₁ _ = dropω-noω V w w∈
 dropω-noω (v ∷ V) .v (here refl) | inj₂ v≢ = v≢
@@ -141,11 +156,17 @@ record CarEntry (V' U₀ : List Value) (w : Value) : Set where
 Pairs⊆ : List Value → List Value → Set
 Pairs⊆ V₁ V₂ = ∀ u v → ⦅ u , v ⦆ ⋵ V₁ → ⦅ u , v ⦆ ⋵ V₂
 
-CarEntry-⊆ : ∀ {V₁ V₂ U₀ w} → Pairs⊆ V₁ V₂ → CarEntry V₁ U₀ w → CarEntry V₂ U₀ w
+CarEntry-⊆ : ∀ {V₁ V₂ U₀ w}
+  → Pairs⊆ V₁ V₂
+  → CarEntry V₁ U₀ w
+  → CarEntry V₂ U₀ w
 CarEntry-⊆ s (car-entry FV t e∈ neFV FV⊆) =
   car-entry FV t (s _ _ e∈) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , s _ _ i ⟩)
 
-Bnd-CarEntry : ∀ {k V' U₀ w} → Bnd (suc k) V' → CarEntry V' U₀ w → Bnd k U₀ × depth w < k
+Bnd-CarEntry : ∀ {k V' U₀ w}
+  → Bnd (suc k) V'
+  → CarEntry V' U₀ w
+  → Bnd k U₀ × depth w < k
 Bnd-CarEntry {U₀ = U₀}{w} bV (car-entry FV t e∈ _ _) =
   ⟨ (λ u u∈ → <-shrink (s≤s (≤-trans (depth-⋵ u∈) (≤-trans (m≤m⊔n _ (depth w)) up))) (bV _ e∈))
   , <-shrink (s≤s (≤-trans (m≤n⊔m (depths U₀) _) up)) (bV _ e∈) ⟩
@@ -159,21 +180,33 @@ record Calls (V U W : List Value) : Set where
     args : ∀ u → u ⋵ U → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] CarEntry V U₀ w × u ⋵ U₀
     noerr : NoErr U
 
-Calls-⊆ : ∀ {V₁ V₂ U W} → Pairs⊆ V₁ V₂ → Calls V₁ U W → Calls V₂ U W
+Calls-⊆ : ∀ {V₁ V₂ U W}
+  → Pairs⊆ V₁ V₂
+  → Calls V₁ U W
+  → Calls V₂ U W
 Calls-⊆ s cs = record
   { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = Calls.results cs w w∈ in ⟨ U₀ , ⟨ CarEntry-⊆ s e , r ⟩ ⟩
   ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = Calls.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ CarEntry-⊆ s e , r ⟩ ⟩ ⟩
   ; noerr = Calls.noerr cs
   }
 
-Calls-none : ∀ {V U W} → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥) → Calls V U W → mem W ⊆ ∅
+Calls-none : ∀ {V U W}
+  → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥)
+  → Calls V U W
+  → mem W ⊆ ∅
 Calls-none nop cs w w∈ = nop _ _ (CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w w∈))))
 
-Bnd-Calls-args : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k U
+Bnd-Calls-args : ∀ {k V U W}
+  → Bnd (suc k) V
+  → Calls V U W
+  → Bnd k U
 Bnd-Calls-args bV cs u u∈ =
   let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = Calls.args cs u u∈ in proj₁ (Bnd-CarEntry bV e) u u∈U₀
 
-Bnd-Calls-apps : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k W
+Bnd-Calls-apps : ∀ {k V U W}
+  → Bnd (suc k) V
+  → Calls V U W
+  → Bnd k W
 Bnd-Calls-apps bV cs w w∈ = proj₂ (Bnd-CarEntry bV (proj₁ (proj₂ (Calls.results cs w w∈))))
 
 {- The relation ---------------------------------------------------------------}
@@ -212,7 +245,9 @@ _⊳ₑ_ : Env → Env → Set₁
 ρ₁ ⊳ₑ ρ₂ = ∀ x V → mem V ⊆ ρ₁ x → R V (ρ₂ x)
 
 private
-  R′-∅ : ∀ k {V D} → mem V ⊆ ∅ → R′ k V D
+  R′-∅ : ∀ k {V D}
+    → mem V ⊆ ∅
+    → R′ k V D
   R′-∅ zero _ = ptt
   R′-∅ (suc k) {V} V⊆∅ = record
     { err-obs = λ ω∈ → ⊥-elim (V⊆∅ _ ω∈)
@@ -223,7 +258,10 @@ private
     ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
 
-  R′-data : ∀ k {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R′ k V D
+  R′-data : ∀ k {V D}
+    → mem V ⊆ D
+    → (∀ v → v ⋵ V → Data v)
+    → R′ k V D
   R′-data zero _ _ = ptt
   R′-data (suc k) {V} V⊆ fl = record
     { err-obs = λ ω∈ → V⊆ _ ω∈
@@ -237,7 +275,10 @@ private
     where noflat : ∀ {u v} → Data ⦅ u , v ⦆ → ⊥
           noflat ()
 
-  R′-mono : ∀ k {V D₁ D₂} → D₁ ⊆ D₂ → R′ k V D₁ → R′ k V D₂
+  R′-mono : ∀ k {V D₁ D₂}
+    → D₁ ⊆ D₂
+    → R′ k V D₁
+    → R′ k V D₂
   R′-mono zero _ _ = ptt
   R′-mono (suc k) D⊆ r = record
     { err-obs = λ ω∈ → D⊆ _ (err-obs ω∈)
@@ -249,7 +290,11 @@ private
     }
     where open Obs r
 
-  R′-irr : ∀ k j {V D} → Bnd k V → Bnd j V → R′ k V D → R′ j V D
+  R′-irr : ∀ k j {V D}
+    → Bnd k V
+    → Bnd j V
+    → R′ k V D
+    → R′ j V D
   R′-irr k zero _ _ _ = ptt
   R′-irr zero (suc j) bk _ _ = R′-∅ (suc j) (λ v v∈ → <0 (bk v v∈))
     where <0 : ∀ {n} → n < 0 → ⊥
@@ -264,17 +309,29 @@ fold : ∀ {V D} → Obs R V D → R V D
 fold {V} = Obs-map bV bV (λ _ b → R′-irr _ _ (Bnd-depths _) b) (λ b _ → R′-irr _ _ b (Bnd-depths _))
   where bV = Bnd-depths V
 
-R-∅ : ∀ {V D} → mem V ⊆ ∅ → R V D
+R-∅ : ∀ {V D}
+  → mem V ⊆ ∅
+  → R V D
 R-∅ = R′-∅ _
 
-R-data : ∀ {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R V D
+R-data : ∀ {V D}
+  → mem V ⊆ D
+  → (∀ v → v ⋵ V → Data v)
+  → R V D
 R-data = R′-data _
 
-R-mono : ∀ {V D₁ D₂} → D₁ ⊆ D₂ → R V D₁ → R V D₂
+R-mono : ∀ {V D₁ D₂}
+  → D₁ ⊆ D₂
+  → R V D₁
+  → R V D₂
 R-mono = R′-mono _
 
 {- the values of V₂ are in V₁, and its ω is in D -}
-R-sub : ∀ {V₁ V₂ D} → (∀ w → w ⋵ V₂ → w ≢ ω → w ⋵ V₁) → (ω ⋵ V₂ → ω ∈ D) → R V₁ D → R V₂ D
+R-sub : ∀ {V₁ V₂ D}
+  → (∀ w → w ⋵ V₂ → w ≢ ω → w ⋵ V₁)
+  → (ω ⋵ V₂ → ω ∈ D)
+  → R V₁ D
+  → R V₂ D
 R-sub {V₁} {V₂} sub err r = fold record
   { err-obs = err
   ; const-obs = λ c c∈ → const-obs c (sub _ c∈ (λ ()))
@@ -285,24 +342,38 @@ R-sub {V₁} {V₂} sub err r = fold record
   }
   where open Obs (unfold r)
 
-R-⊆ : ∀ {V₁ V₂ D} → mem V₁ ⊆ mem V₂ → R V₂ D → R V₁ D
+R-⊆ : ∀ {V₁ V₂ D}
+  → mem V₁ ⊆ mem V₂
+  → R V₂ D
+  → R V₁ D
 R-⊆ s r = R-sub (λ w w∈ _ → s w w∈) (λ ω∈ → Obs.err-obs (unfold r) (s ω ω∈)) r
 
 {- what a relation gives, for one target value -}
-R-err : ∀ {D} → R (ω ∷ []) D → ω ∈ D
+R-err : ∀ {D}
+  → R (ω ∷ []) D
+  → ω ∈ D
 R-err r = Obs.err-obs (unfold r) (here refl)
 
-R-kind : ∀ {d D} → R (d ∷ []) D → d ≢ ω → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × tgt (kind s) ≡ kind d
+R-kind : ∀ {d D}
+  → R (d ∷ []) D
+  → d ≢ ω
+  → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × tgt (kind s) ≡ kind d
 R-kind r d≢ = Obs.kind-obs (unfold r) _ (here refl) d≢
 
-R-conv : ∀ {d D} → R (d ∷ []) D → d ≢ ω → Conv D
+R-conv : ∀ {d D}
+  → R (d ∷ []) D
+  → d ≢ ω
+  → Conv D
 R-conv r d≢ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = R-kind r d≢ in ⟨ s , s∈ ⟩
 
 {- Reflecting errors through the monad -------------------------------------------}
 
 {- the values of V are in A, and its ω in D -}
-R-cases : ∀ {V A D} → (∀ w → w ⋵ V → w ≢ ω → w ∈ A) → (ω ⋵ V → ω ∈ D)
-  → (∀ W → mem W ⊆ A → R W D) → R V D
+R-cases : ∀ {V A D}
+  → (∀ w → w ⋵ V → w ≢ ω → w ∈ A)
+  → (ω ⋵ V → ω ∈ D)
+  → (∀ W → mem W ⊆ A → R W D)
+  → R V D
 R-cases {V} vA err h =
   R-sub (dropω-keep V) err (h (dropω V) (λ w w∈ → vA w (dropω-⊆ V w w∈) (dropω-noω V w w∈)))
 
@@ -312,55 +383,82 @@ Rel A' B = ∀ W → mem W ⊆ A' → R W B
 
 {- a target bind is related to D when its errors are errors of D and its
    continuation, on the values of its operand, is related to D -}
-R-bindₗ : ∀ {A' F' D} → (ω ∈ A' → ω ∈ D) → (Conv A' → Rel (F' ⌊ A' ⌋) D) → Rel (A' ≫= F') D
+R-bindₗ : ∀ {A' F' D}
+  → (ω ∈ A' → ω ∈ D)
+  → (Conv A' → Rel (F' ⌊ A' ⌋) D)
+  → Rel (A' ≫= F') D
 R-bindₗ {A'} {F'} {D} err hF V V⊆ = R-cases {A = λ w → Conv A' × w ∈ F' ⌊ A' ⌋} vals errs go
   where
-  vals : ∀ w → w ⋵ V → w ≢ ω → Conv A' × w ∈ F' ⌊ A' ⌋
+  vals : ∀ w
+    → w ⋵ V
+    → w ≢ ω
+    → Conv A' × w ∈ F' ⌊ A' ⌋
   vals w w∈ w≢ with V⊆ w w∈
   ... | inj₁ ⟨ refl , _ ⟩ = ⊥-elim (w≢ refl)
   ... | inj₂ r = r
-  errs : ω ⋵ V → ω ∈ D
+  errs : ω ⋵ V
+    → ω ∈ D
   errs ω∈ with V⊆ ω ω∈
   ... | inj₁ ⟨ _ , ω∈' ⟩ = err ω∈'
   ... | inj₂ ⟨ c , ω∈F ⟩ = R-err (hF c (ω ∷ []) (single⊆ ω∈F))
-  go : ∀ W → mem W ⊆ (λ w → Conv A' × w ∈ F' ⌊ A' ⌋) → R W D
+  go : ∀ W
+    → mem W ⊆ (λ w → Conv A' × w ∈ F' ⌊ A' ⌋)
+    → R W D
   go [] _ = R-∅ (λ _ ())
   go (w ∷ W) W⊆ = hF (proj₁ (W⊆ w (here refl))) (w ∷ W) (λ x x∈ → proj₂ (W⊆ x x∈))
 
 {- a target bind reflects to a source bind: the operand A' to A, and the
    continuation F' to F on their values -}
-R-bind : ∀ {A' A F' F} → Con A → Rel A' A
+R-bind : ∀ {A' A F' F}
+  → Con A
+  → Rel A' A
   → (Conv A' → Conv A → Rel ⌊ A' ⌋ ⌊ A ⌋ → Rel (F' ⌊ A' ⌋) (F ⌊ A ⌋))
   → Rel (A' ≫= F') (A ≫= F)
 R-bind {A'} {A} {F'} {F} cA hA hF =
   R-bindₗ {A'} {F'} {A ≫= F} (λ ω∈ → inj₁ ⟨ refl , R-err (hA (ω ∷ []) (single⊆ ω∈)) ⟩)
           (λ c W W⊆ → R-mono (λ x x∈ → inj₂ ⟨ cv c , x∈ ⟩) (hF c (cv c) (hX c) W W⊆))
   where
-  cv : Conv A' → Conv A
+  cv : Conv A'
+    → Conv A
   cv ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = R-conv (hA (d ∷ []) (single⊆ d∈)) d≢
   hX : ∀ c → Rel ⌊ A' ⌋ ⌊ A ⌋
   hX c W W⊆ = R-mono (⌊⌋-clean (con-clean cA (cv c))) (hA W (λ w w∈ → proj₁ (W⊆ w w∈)))
 
 {- a target check is related to D when its failure is an error of D -}
-R-checkₗ : ∀ {k' X' A' D} → (Bad k' X' → ω ∈ D) → Rel A' D → Rel (checked k' X' A') D
+R-checkₗ : ∀ {k' X' A' D}
+  → (Bad k' X' → ω ∈ D)
+  → Rel A' D
+  → Rel (checked k' X' A') D
 R-checkₗ {k'} {X'} {A'} {D} bad hA V V⊆ = R-cases {A = A'} vals err hA
   where
-  vals : ∀ w → w ⋵ V → w ≢ ω → w ∈ A'
+  vals : ∀ w
+    → w ⋵ V
+    → w ≢ ω
+    → w ∈ A'
   vals w w∈ w≢ with V⊆ w w∈
   ... | inj₁ ⟨ refl , _ ⟩ = ⊥-elim (w≢ refl)
   ... | inj₂ r = r
-  err : ω ⋵ V → ω ∈ D
+  err : ω ⋵ V
+    → ω ∈ D
   err ω∈ with V⊆ ω ω∈
   ... | inj₂ ω∈A' = R-err (hA _ (single⊆ ω∈A'))
   ... | inj₁ ⟨ _ , b ⟩ = bad b
 
 {- a target value of the wrong kind gives a source value of the wrong kind -}
-bad-reflect : ∀ {k X' X} → Clean X' → Rel X' X → Bad (tgt k) X' → Bad k X
+bad-reflect : ∀ {k X' X}
+  → Clean X'
+  → Rel X' X
+  → Bad (tgt k) X'
+  → Bad k X
 bad-reflect clX hX ⟨ d , ⟨ d∈ , dk ⟩ ⟩ with R-kind (hX _ (single⊆ d∈)) (clX d d∈)
 ... | ⟨ s , ⟨ s∈ , sk ⟩ ⟩ = ⟨ s , ⟨ proj₁ s∈ , (λ eq → dk (trans (sym sk) (cong tgt eq))) ⟩ ⟩
 
 {- the check of a target kernel reflects to the check of the source one -}
-R-check : ∀ {k X' X A' A} → Clean X' → Rel X' X → Rel A' A → Rel (checked (tgt k) X' A') (checked k X A)
+R-check : ∀ {k X' X A' A}
+  → Clean X'
+  → Rel X' X
+  → Rel A' A
+  → Rel (checked (tgt k) X' A') (checked k X A)
 R-check {k} {X'} {X} {A'} {A} clX hX hA = R-checkₗ {tgt k} {X'} {A'} {checked k X A} (λ b → inj₁ ⟨ refl , bad-reflect clX hX b ⟩) (λ W W⊆ → R-mono (λ x x∈ → inj₂ x∈) (hA W W⊆))
 
 {- relating the initial environment of a closed program to itself -}

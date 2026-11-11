@@ -29,21 +29,31 @@ open import Relation.Nullary using (¬_)
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst c ∈ D) ⇔ (dconst c ∈ E))) × (val∈ D ⇔ val∈ E)
 
-⇔-trans : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
+⇔-trans : ∀ {A B C : Set}
+  → A ⇔ B
+  → B ⇔ C
+  → A ⇔ C
 ⇔-trans ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
-⇔-sym : ∀ {A B : Set} → A ⇔ B → B ⇔ A
+⇔-sym : ∀ {A B : Set}
+  → A ⇔ B
+  → B ⇔ A
 ⇔-sym ⟨ f , g ⟩ = ⟨ g , f ⟩
 
 {- a set is empty exactly when it has neither ω nor another element -}
-empty-Same : ∀ {D E} → Same D E → (∀ d → ¬ (d ∈ D)) → (∀ d → ¬ (d ∈ E))
+empty-Same : ∀ {D E}
+  → Same D E
+  → (∀ d → ¬ (d ∈ D))
+  → (∀ d → ¬ (d ∈ E))
 empty-Same ⟨ ⟨ _ , ωE→ ⟩ , ⟨ _ , ⟨ _ , vE→ ⟩ ⟩ ⟩ empty d d∈ =
   let d≢ : d ≢ ω
       d≢ = λ { refl → empty ω (ωE→ d∈) }
       ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = vE→ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩
   in empty d' d'∈
 
-Same-sym : ∀ {D E} → Same D E → Same E D
+Same-sym : ∀ {D E}
+  → Same D E
+  → Same E D
 Same-sym ⟨ e , ⟨ c , v ⟩ ⟩ = ⟨ ⇔-sym e , ⟨ (λ k → ⇔-sym (c k)) , ⇔-sym v ⟩ ⟩
 
 {- the four outcomes of two machines agree, when each is characterized by
@@ -55,12 +65,16 @@ record Agree (L₁ L₂ : Machine) : Set where
     converges : Converges (Terminates L₁) ⇔ Converges (Terminates L₂)
     diverges : Diverges L₁ ⇔ Diverges L₂
 
-agree : ∀ {D E} {L₁ L₂ : Machine} → Same D E
-  → (ω ∈ D) ⇔ Terminates L₁ o-error → (ω ∈ E) ⇔ Terminates L₂ o-error
+agree : ∀ {D E} {L₁ L₂ : Machine}
+  → Same D E
+  → (ω ∈ D) ⇔ Terminates L₁ o-error
+  → (ω ∈ E) ⇔ Terminates L₂ o-error
   → (∀ {B} {k : base-rep B} → (dconst k ∈ D) ⇔ Terminates L₁ (o-const B k))
   → (∀ {B} {k : base-rep B} → (dconst k ∈ E) ⇔ Terminates L₂ (o-const B k))
-  → val∈ D ⇔ Converges (Terminates L₁) → val∈ E ⇔ Converges (Terminates L₂)
-  → Diverges L₁ ⇔ (∀ d → ¬ (d ∈ D)) → Diverges L₂ ⇔ (∀ d → ¬ (d ∈ E))
+  → val∈ D ⇔ Converges (Terminates L₁)
+  → val∈ E ⇔ Converges (Terminates L₂)
+  → Diverges L₁ ⇔ (∀ d → ¬ (d ∈ D))
+  → Diverges L₂ ⇔ (∀ d → ¬ (d ∈ E))
   → Agree L₁ L₂
 agree S@(⟨ e , ⟨ c , v ⟩ ⟩) e₁ e₂ c₁ c₂ v₁ v₂ d₁ d₂ = record
   { error = ⇔-trans (⇔-sym e₁) (⇔-trans e e₂)

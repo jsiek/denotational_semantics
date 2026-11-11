@@ -91,7 +91,9 @@ open import Data.Product using (_×_; proj₁; proj₂)
 simplify-correct : ∀ (M : ISWIM.AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
 simplify-correct = SimplifyCorrect.simplify-correct
 
-cast-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ cast-closed M ⟧ᵀ ρ₀
+cast-correct : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ⟦ M ⟧ ρ₀ ≃ ⟦ cast-closed M ⟧ᵀ ρ₀
 cast-correct = Cast.cast-correct
 
 capture-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → ⟦ M ⟧ᵀ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
@@ -106,13 +108,17 @@ concretize-correct = Concretize.concretize-correct
 {- split preserves and reflects the constants a program produces, and
    whether it produces anything -}
 split-correct-const : ∀ (M : Clos3ᵀ.Tm [] Any) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ split-program M ⟧₄ ρ₀)
-  × (const c ∈ ⟦ split-program M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
+  → (  const c ∈ ⟦ M ⟧₃ ρ₀
+     → const c ∈ ⟦ split-program M ⟧₄ ρ₀)
+  × (  const c ∈ ⟦ split-program M ⟧₄ ρ₀
+     → const c ∈ ⟦ M ⟧₃ ρ₀)
 split-correct-const = Split.split-correct-const
 
 split-correct-nonempty : ∀ (M : Clos3ᵀ.Tm [] Any)
-  → (nonempty (⟦ M ⟧₃ ρ₀) → nonempty (⟦ split-program M ⟧₄ ρ₀))
-  × (nonempty (⟦ split-program M ⟧₄ ρ₀) → nonempty (⟦ M ⟧₃ ρ₀))
+  → (  nonempty (⟦ M ⟧₃ ρ₀)
+     → nonempty (⟦ split-program M ⟧₄ ρ₀))
+  × (  nonempty (⟦ split-program M ⟧₄ ρ₀)
+     → nonempty (⟦ M ⟧₃ ρ₀))
 split-correct-nonempty = Split.split-correct-nonempty
 
 hoist-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ hoist M ⟧₅
@@ -139,52 +145,87 @@ select-correct = Select.select-correct
    (compile), Monᵀ (compile-mon), Impᵀ (compile-imp), CFGᵀ (compile-cfg)
    and X86ᵀ (compile-x86) -}
 
-compile-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧₅)
-  × (const c ∈ ⟦ compile M ⟧₅ → const c ∈ ⟦ M ⟧ ρ₀)
+compile-correct-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} (c : base-rep B)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile M ⟧₅)
+  × (  const c ∈ ⟦ compile M ⟧₅
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-correct-const M w = proj₁ (Compiler.compile-same M w)
 
-compile-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧₅)
-  × (nonempty ⟦ compile M ⟧₅ → nonempty (⟦ M ⟧ ρ₀))
+compile-correct-nonempty : ∀ (M : ISWIM.AST)
+  → Closed M
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile M ⟧₅)
+  × (  nonempty ⟦ compile M ⟧₅
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-correct-nonempty M w = proj₂ (Compiler.compile-same M w)
 
-compile-mon-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅)
-  × (const c ∈ ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅ → const c ∈ ⟦ M ⟧ ρ₀)
+compile-mon-correct-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} (c : base-rep B)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅)
+  × (  const c ∈ ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-mon-correct-const M w = proj₁ (Compiler.compile-mon-same M w)
 
-compile-mon-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅)
-  × (nonempty ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅ → nonempty (⟦ M ⟧ ρ₀))
+compile-mon-correct-nonempty : ∀ (M : ISWIM.AST)
+  → Closed M
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅)
+  × (  nonempty ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-mon-correct-nonempty M w = proj₂ (Compiler.compile-mon-same M w)
 
-compile-imp-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-imp M ⟧ᵢ)
-  × (const c ∈ ⟦ compile-imp M ⟧ᵢ → const c ∈ ⟦ M ⟧ ρ₀)
+compile-imp-correct-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} (c : base-rep B)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile-imp M ⟧ᵢ)
+  × (  const c ∈ ⟦ compile-imp M ⟧ᵢ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-imp-correct-const M w = proj₁ (Compiler.compile-imp-same M w)
 
-compile-imp-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-imp M ⟧ᵢ)
-  × (nonempty ⟦ compile-imp M ⟧ᵢ → nonempty (⟦ M ⟧ ρ₀))
+compile-imp-correct-nonempty : ∀ (M : ISWIM.AST)
+  → Closed M
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile-imp M ⟧ᵢ)
+  × (  nonempty ⟦ compile-imp M ⟧ᵢ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-imp-correct-nonempty M w = proj₂ (Compiler.compile-imp-same M w)
 
-compile-cfg-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-cfg M ⟧ᶜ)
-  × (const c ∈ ⟦ compile-cfg M ⟧ᶜ → const c ∈ ⟦ M ⟧ ρ₀)
+compile-cfg-correct-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} (c : base-rep B)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile-cfg M ⟧ᶜ)
+  × (  const c ∈ ⟦ compile-cfg M ⟧ᶜ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-cfg-correct-const M w = proj₁ (Compiler.compile-cfg-same M w)
 
-compile-cfg-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-cfg M ⟧ᶜ)
-  × (nonempty ⟦ compile-cfg M ⟧ᶜ → nonempty (⟦ M ⟧ ρ₀))
+compile-cfg-correct-nonempty : ∀ (M : ISWIM.AST)
+  → Closed M
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile-cfg M ⟧ᶜ)
+  × (  nonempty ⟦ compile-cfg M ⟧ᶜ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-cfg-correct-nonempty M w = proj₂ (Compiler.compile-cfg-same M w)
 
-compile-x86-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₜ)
-  × (const c ∈ ⟦ compile-x86 M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
+compile-x86-correct-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ {B} (c : base-rep B)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ compile-x86 M ⟧ₜ)
+  × (  const c ∈ ⟦ compile-x86 M ⟧ₜ
+     → const c ∈ ⟦ M ⟧ ρ₀)
 compile-x86-correct-const M w = proj₁ (Compiler.compile-x86-same M w)
 
-compile-x86-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₜ)
-  × (nonempty ⟦ compile-x86 M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
+compile-x86-correct-nonempty : ∀ (M : ISWIM.AST)
+  → Closed M
+  → (  nonempty (⟦ M ⟧ ρ₀)
+     → nonempty ⟦ compile-x86 M ⟧ₜ)
+  × (  nonempty ⟦ compile-x86 M ⟧ₜ
+     → nonempty (⟦ M ⟧ ρ₀))
 compile-x86-correct-nonempty M w = proj₂ (Compiler.compile-x86-same M w)

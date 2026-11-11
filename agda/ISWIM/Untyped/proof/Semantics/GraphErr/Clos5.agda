@@ -46,7 +46,9 @@ Clos5ᵐ-Semantics T = G.Sem T
 Clos5ᵐ-Continuous = G.Cont-Sem
 
 module _ (T : Table) where
-  ⟦⟧[]-monotone : ∀ (M : AST) {ρ ρ′} → ρ ⊆ₑ ρ′ → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T ] ρ′
+  ⟦⟧[]-monotone : ∀ (M : AST) {ρ ρ′}
+    → ρ ⊆ₑ ρ′
+    → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T ] ρ′
   ⟦⟧[]-monotone M = ⟦⟧-monotone {{Clos5ᵐ-Semantics T}} M
 
   open G T public using (term-continuous; body-mono; body-continuous; body2-continuous)

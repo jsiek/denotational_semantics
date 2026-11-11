@@ -36,15 +36,23 @@ open Rel Code (Same Code)
 Env≈ : ∀ {Γ} → S.Env Γ → T.Env Γ → Set
 Env≈ ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ ! x ≈ ρ₂ ! x
 
-env-ext : ∀ {Γ} {ρ₁ : S.Env Γ} {ρ₂ v w} → v ≈ w → Env≈ ρ₁ ρ₂ → Env≈ {Any ∷ Γ} (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext : ∀ {Γ} {ρ₁ : S.Env Γ} {ρ₂ v w}
+  → v ≈ w
+  → Env≈ ρ₁ ρ₂
+  → Env≈ {Any ∷ Γ} (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext v E Z = v
 env-ext v E (S x) = E x
 
-run≈ : ∀ ck {Γ A} (M : Tm Γ A) {ρ₁ ρ₂} → Env≈ ρ₁ ρ₂
+run≈ : ∀ ck {Γ A} (M : Tm Γ A) {ρ₁ ρ₂}
+  → Env≈ ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (split M))
-runs≈ : ∀ ck {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ₁ ρ₂} → Env≈ ρ₁ ρ₂
+runs≈ : ∀ ck {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ₁ ρ₂}
+  → Env≈ ρ₁ ρ₂
   → RelResult (Pointwise _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (splits Ms))
-call≈ : ∀ ck {f g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S.call ck f v) (T.call ck g w)
+call≈ : ∀ ck {f g v w}
+  → f ≈ g
+  → v ≈ w
+  → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
 run≈ ck (` x) E = ret (E x)
 run≈ ck (clos N Ms) {ρ₂ = ρ₂} E = subst (RelResult _≈_ _) (sym (bind-assoc (T.evals ck ρ₂ (splits Ms))))

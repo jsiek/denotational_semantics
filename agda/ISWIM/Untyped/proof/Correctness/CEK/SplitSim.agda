@@ -124,8 +124,12 @@ data _~_ : S.State → T.State → Set where
   ret~ : ∀ {v w κ₁ κ₂} (k : κ₁ ≈k κ₂) → v ≈ w → S.ret v κ₁ ~ retT w k
 
 {- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
+obs≈ : ∀ {v w}
+  → v ≈ w
+  → S.obs v ≡ T.obs w
+obs≈-list : ∀ {vs ws}
+  → Pointwise _≈_ vs ws
+  → S.obs-list vs ≡ T.obs-list ws
 obs≈ (clos≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -135,7 +139,10 @@ obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+  → v₁ ≈ w₁
+  → v₂ ≈ w₂
+  → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
 prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
@@ -145,7 +152,10 @@ prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p
 {- Related environments ------------------------------------------------------}
 
 {- the environment of a function body: the argument, then the closure's tuple -}
-env-body : ∀ {v w u e} → v ≈ w → u ≈ e → EnvRel (λ x → x) (v ∷ u ∷ []) (w ∷ e ∷ [])
+env-body : ∀ {v w u e}
+  → v ≈ w
+  → u ≈ e
+  → EnvRel (λ x → x) (v ∷ u ∷ []) (w ∷ e ∷ [])
 env-body r r' = env λ { zero → M.just r ; (suc zero) → M.just r' ; (suc (suc x)) → M.nothing }
 
 del-args : ∀ {n} r (as : Args (replicate n ■))
@@ -160,7 +170,9 @@ module _ (P : C4.AST) where
   L₂ = T.sem P
 
   {- the administrative steps of the let body, before checking for a pair -}
-  ret-reach : ∀ {w κ₁ κ₂} (k : κ₁ ≈k κ₂) → Star L₂ (T.ret w κ₂) (retT w k)
+  ret-reach : ∀ {w κ₁ κ₂}
+    → (k : κ₁ ≈k κ₂)
+    → Star L₂ (T.ret w κ₂) (retT w k)
   ret-reach halt = ε
   ret-reach (appL _ _) = refl ◅ refl ◅ refl ◅ refl ◅ ε
   ret-reach (appR _ _) = ε
@@ -175,16 +187,24 @@ module _ (P : C4.AST) where
   ret-reach (letK _ _) = ε
 
   {- returning a value: the target runs on to retT (ret-reach) -}
-  ret~' : ∀ {v w κ₁ κ₂} → v ≈ w → (k : κ₁ ≈k κ₂) → Reach L₂ _~_ (S.ret v κ₁) (T.ret w κ₂)
+  ret~' : ∀ {v w κ₁ κ₂}
+    → v ≈ w
+    → (k : κ₁ ≈k κ₂)
+    → Reach L₂ _~_ (S.ret v κ₁) (T.ret w κ₂)
   ret~' r k = _ , ret-reach k , ret~ k r
 
-  tuple-next~ : ∀ {r vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
-    → Pointwise (Del r) Ms Ms' → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+  tuple-next~ : ∀ {r vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂}
+    → Pointwise _≈_ vs ws
+    → Pointwise (Del r) Ms Ms'
+    → EnvRel r ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → Reach L₂ _~_ (S.tuple-next vs Ms ρ₁ κ₁) (T.tuple-next ws Ms' ρ₂ κ₂)
   tuple-next~ rs [] ρ k = ret~' (tup≈ (reverse⁺ rs)) k
   tuple-next~ rs (d ∷ ds) ρ k = _ , ε , eval~ d ρ (tupK rs ds ρ k)
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (S.step s₁) s₂
   sim (eval~ {M = ` x} refl ρ k) = next?-reach (look ρ x) (λ r → ret~' r k) refl
   sim (eval~ {r} {M = clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆} refl ρ k)
     with tuple-next~ [] (del-args r fvs) ρ (closK {N} k)

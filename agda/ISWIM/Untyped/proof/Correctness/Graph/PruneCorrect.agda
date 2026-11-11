@@ -51,7 +51,9 @@ unbind-bind zero N = refl
 unbind-bind (suc m) N = unbind-bind m N
 
 push-ne : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ
-  → (∀ i → nonempty (nthD Ds i)) → nonempty-env ρ → nonempty-env (push Ds ρ)
+  → (∀ i → nonempty (nthD Ds i))
+  → nonempty-env ρ
+  → nonempty-env (push Ds ρ)
 push-ne zero _ ρ _ NE = NE
 push-ne (suc n) ⟨ D , Ds ⟩ ρ ne NE =
   push-ne n Ds (D • ρ) (λ i → ne (suc i)) (extend-nonempty-env NE (ne zero))
@@ -81,32 +83,44 @@ keep-ok {n} {U} {M} {M'} {fvs} {P} {b} {ρ} {ρ'} M≃ ok = record
       PruneOK.push≃ ok (⟦ M ⟧ ρ • ρ₁) (⟦ M' ⟧ ρ' • ρ₂) (bse' ρ₁ ρ₂ bse) j u
   }
   where
-  bse' : ∀ ρ₁ ρ₂ → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
-    → ∀ k → U (n + k) → (⟦ M ⟧ ρ • ρ₁) k ≃ (⟦ M' ⟧ ρ' • ρ₂) (keep-base b k)
+  bse' : ∀ ρ₁ ρ₂
+    → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
+    → ∀ k
+    → U (n + k)
+    → (⟦ M ⟧ ρ • ρ₁) k ≃ (⟦ M' ⟧ ρ' • ρ₂) (keep-base b k)
   bse' ρ₁ ρ₂ bse zero _ = M≃
   bse' ρ₁ ρ₂ bse (suc k) uk = bse k (subst U (+-suc n k) uk)
 
 {- under a binder -}
-rel-ext : ∀ B {r} {ρ ρ' : Env} {X} → (∀ x → Uses (suc x) B → ρ x ≃ ρ' (r x))
-  → ∀ x → Uses x B → (X • ρ) x ≃ (X • ρ') (ext-var r x)
+rel-ext : ∀ B {r} {ρ ρ' : Env} {X}
+  → (∀ x → Uses (suc x) B → ρ x ≃ ρ' (r x))
+  → ∀ x
+  → Uses x B
+  → (X • ρ) x ≃ (X • ρ') (ext-var r x)
 rel-ext B rx zero _ = ≃-refl
 rel-ext B rx (suc x) u = rx x u
 
 {- The main lemma -------------------------------------------------------------}
 
-opt-correct : ∀ (M : AST) r ρ ρ' → nonempty-env ρ → (∀ x → Uses x M → ρ x ≃ ρ' (r x))
+opt-correct : ∀ (M : AST) r ρ ρ'
+  → nonempty-env ρ
+  → (∀ x → Uses x M → ρ x ≃ ρ' (r x))
   → ⟦ M ⟧ ρ ≃ ⟦ prune r M ⟧ ρ'
 
-opt-body-correct : ∀ r k (a : Arg (ν-n k (ν ■))) ρ ρ' → nonempty-env ρ
+opt-body-correct : ∀ r k (a : Arg (ν-n k (ν ■))) ρ ρ'
+  → nonempty-env ρ
   → (∀ x → Uses x (unbind-n k a) → ρ x ≃ ρ' (r x))
   → ⟦ unbind-n k a ⟧ ρ ≃ ⟦ opt-body r k a ⟧ ρ'
 
-opt-args-correct : ∀ {n} (args : Args (replicate n ■)) r ρ ρ' → nonempty-env ρ
+opt-args-correct : ∀ {n} (args : Args (replicate n ■)) r ρ ρ'
+  → nonempty-env ρ
   → (∀ x → UsesArgs x args → ρ x ≃ ρ' (r x))
-  → ∀ i → nthD (⟦ args ⟧₊ ρ) i ≃ nthD (⟦ opt-args r args ⟧₊ ρ') i
+  → ∀ i
+  → nthD (⟦ args ⟧₊ ρ) i ≃ nthD (⟦ opt-args r args ⟧₊ ρ') i
 
-prune-ok : ∀ n r {U : ℕ → Set} (dec : ∀ j → Dec (U j)) (fvs : Args (replicate n ■))
-  (b : ℕ → ℕ) ρ ρ' → nonempty-env ρ → (∀ x → UsesArgs x fvs → ρ x ≃ ρ' (r x))
+prune-ok : ∀ n r {U : ℕ → Set} (dec : ∀ j → Dec (U j)) (fvs : Args (replicate n ■)) (b : ℕ → ℕ) ρ ρ'
+  → nonempty-env ρ
+  → (∀ x → UsesArgs x fvs → ρ x ≃ ρ' (r x))
   → PruneOK n U fvs (prune-fvs n r dec fvs b) b ρ ρ'
 
 opt-correct (` x) r ρ ρ' NE rel = rel x refl
@@ -121,7 +135,9 @@ opt-correct (clos-op n ⦅ ! clear a ,, fvs ⦆) r ρ ρ' NE rel = ⟨ G , H ⟩
   N' = opt-body (ext-var (index P)) n a
 
   {- applying the closure to U runs the same body on the same free variables -}
-  body≃ : ∀ U → U ≢ [] → (∀ i → nonempty (nthD Ds i))
+  body≃ : ∀ U
+    → U ≢ []
+    → (∀ i → nonempty (nthD Ds i))
     → apply-n n (⟦ a ⟧ₐ init₀) Ds (mem U) ≃ apply-n m (⟦ bind-n-ast m N' ⟧ₐ init₀) Ds' (mem U)
   body≃ U neU ne
     rewrite apply-push n a init₀ Ds (mem U)
@@ -131,7 +147,9 @@ opt-correct (clos-op n ⦅ ! clear a ,, fvs ⦆) r ρ ρ' NE rel = ⟨ G , H ⟩
       (extend-nonempty-env (push-ne n Ds init₀ ne (λ _ → ⟨ ω , refl ⟩)) (E≢[]⇒nonempty-mem neU))
       rel₁
     where
-    rel₁ : ∀ x → Uses x N → (mem U • push Ds init₀) x ≃ (mem U • push Ds' init₀) (ext-var (index P) x)
+    rel₁ : ∀ x
+      → Uses x N
+      → (mem U • push Ds init₀) x ≃ (mem U • push Ds' init₀) (ext-var (index P) x)
     rel₁ zero _ = ≃-refl
     rel₁ (suc j) u = PruneOK.push≃ ok init₀ init₀ (λ k _ → ≃-refl) j u
 
@@ -193,8 +211,11 @@ prune-ok (suc n) r {U} dec ((` y) ,, fvs) b ρ ρ' NE rel with dec n
   }
   where
   ok = prune-ok n r dec fvs (drop-base b) ρ ρ' NE (λ x u → rel x (inj₂ u))
-  bse' : ∀ ρ₁ ρ₂ → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
-    → ∀ k → U (n + k) → (ρ y • ρ₁) k ≃ ρ₂ (drop-base b k)
+  bse' : ∀ ρ₁ ρ₂
+    → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
+    → ∀ k
+    → U (n + k)
+    → (ρ y • ρ₁) k ≃ ρ₂ (drop-base b k)
   bse' ρ₁ ρ₂ bse zero uk = ⊥-elim (¬u (subst U (+-identityʳ n) uk))
   bse' ρ₁ ρ₂ bse (suc k) uk = bse k (subst U (+-suc n k) uk)
 prune-ok (suc n) r dec ((op ⦅ args ⦆) ,, fvs) b ρ ρ' NE rel =

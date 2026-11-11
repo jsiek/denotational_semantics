@@ -42,21 +42,31 @@ deref (prj i x) ρ = T.nth i (ρ ! x)
 Env≈ : ∀ {k Γ} → (Fin k → Ref Γ) → S.Env k → T.Env Γ → Set
 Env≈ φ ρ₁ ρ₂ = ∀ x → V.lookup ρ₁ x ≈ deref (φ x) ρ₂
 
-env-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ v w} → v ≈ w → Env≈ φ ρ₁ ρ₂ → Env≈ (ext-ref φ) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ v w}
+  → v ≈ w
+  → Env≈ φ ρ₁ ρ₂
+  → Env≈ (ext-ref φ) (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext {φ = φ} r E zero = r
 env-ext {φ = φ} r E (suc x) with φ x | E x
 ... | var y | e = e
 ... | prj i y | e = e
 
-ref≈ : ∀ ck {Γ v} (a : Ref Γ) {ρ} → v ≈ deref a ρ → RelResult _≈_ (ret v) (T.eval ck ρ (ref-tm a))
+ref≈ : ∀ ck {Γ v} (a : Ref Γ) {ρ}
+  → v ≈ deref a ρ
+  → RelResult _≈_ (ret v) (T.eval ck ρ (ref-tm a))
 ref≈ ck (var x) r = ret r
 ref≈ ck (prj i x) r = ret r
 
-run≈ : ∀ ck {k Γ A} (M : Tm k A) {φ : Fin k → Ref Γ} {ρ₁ ρ₂} → Env≈ φ ρ₁ ρ₂
+run≈ : ∀ ck {k Γ A} (M : Tm k A) {φ : Fin k → Ref Γ} {ρ₁ ρ₂}
+  → Env≈ φ ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (concretize φ M))
-runs≈ : ∀ ck {k Γ n} (Ms : Vec (Tm k Any) n) {φ : Fin k → Ref Γ} {ρ₁ ρ₂} → Env≈ φ ρ₁ ρ₂
+runs≈ : ∀ ck {k Γ n} (Ms : Vec (Tm k Any) n) {φ : Fin k → Ref Γ} {ρ₁ ρ₂}
+  → Env≈ φ ρ₁ ρ₂
   → RelResult (Pointwise _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (concs φ Ms))
-call≈ : ∀ ck {f g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S.call ck f v) (T.call ck g w)
+call≈ : ∀ ck {f g v w}
+  → f ≈ g
+  → v ≈ w
+  → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
 run≈ ck (` x) {φ} E = ref≈ ck (φ x) (E x)
 run≈ ck (clos N Ms) E = bind-rel (runs≈ ck Ms E) λ vs → ret (pack≈ vs (same refl))

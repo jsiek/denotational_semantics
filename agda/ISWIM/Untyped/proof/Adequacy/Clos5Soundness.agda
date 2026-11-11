@@ -74,10 +74,15 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym
 VEnv : Set₁
 VEnv = proof.Framework.GraphModel.Env.Env Value
 
-≡→⊆ : ∀ {D E : 𝒫 Value} → D ≡ E → D ⊆ E
+≡→⊆ : ∀ {D E : 𝒫 Value}
+  → D ≡ E
+  → D ⊆ E
 ≡→⊆ refl d d∈ = d∈
 
-pair-⊆ : ∀ {D D' E E'} → D ⊆ D' → E ⊆ E' → dpair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ dpair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+pair-⊆ : ∀ {D D' E E'}
+  → D ⊆ D'
+  → E ⊆ E'
+  → dpair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ dpair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
 pair-⊆ {D} {D'} {E} {E'} D⊆ E⊆ =
   lower (pair-mono ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩)
 
@@ -95,7 +100,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   {- Denotations of values, environments, continuations and states ------------}
 
   {- every entry of T⁺ holds ν and is consistent -}
-  table-ν∈ : ∀ Ns k {x} → x ∈ table Ns k → ν ∈ table Ns k
+  table-ν∈ : ∀ Ns k {x}
+    → x ∈ table Ns k
+    → ν ∈ table Ns k
   table-ν∈ (N ∷ Ns) k x∈ with k ≟ length Ns
   ... | yes _ = tt
   ... | no _ = table-ν∈ Ns k x∈
@@ -146,11 +153,15 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   {- Basic properties ----------------------------------------------------------}
 
-  rev𝒱-mono : ∀ vs Ds Es → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
+  rev𝒱-mono : ∀ vs Ds Es
+    → Ds ⊆L Es
+    → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
   rev𝒱-mono [] Ds Es s = s
   rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es) ⟨ (λ d z → z) , s ⟩
 
-  𝒦-mono : ∀ κ {D E} → D ⊆ E → 𝒦 κ D ⊆ 𝒦 κ E
+  𝒦-mono : ∀ κ {D E}
+    → D ⊆ E
+    → 𝒦 κ D ⊆ 𝒦 κ E
   𝒦-mono halt D⊆ = D⊆
   𝒦-mono (appF M N γ κ) {D} {E} D⊆ = 𝒦-mono κ G
     where
@@ -202,12 +213,15 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝓔-nonempty (v ∷ γ) zero = 𝒱-nonempty v
   𝓔-nonempty (v ∷ γ) (suc x) = 𝓔-nonempty γ x
 
-  𝓔-lookup : ∀ γ x {v} → γ ‼ x ≡ just v → 𝒱 v ⊆ 𝓔 γ x
+  𝓔-lookup : ∀ γ x {v}
+    → γ ‼ x ≡ just v
+    → 𝒱 v ⊆ 𝓔 γ x
   𝓔-lookup (v ∷ γ) zero refl d d∈ = d∈
   𝓔-lookup (v ∷ γ) (suc x) eq = 𝓔-lookup γ x eq
 
   {- β for one parameter (case, let) -}
-  body-in : ∀ N γ v d → d ∈ ⟦ N ⟧⁺ (𝓔 (v ∷ γ))
+  body-in : ∀ N γ v d
+    → d ∈ ⟦ N ⟧⁺ (𝓔 (v ∷ γ))
     → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ 𝒱 v × d ∈ ⟦ N ⟧⁺ (mem V • 𝓔 γ)
   body-in N γ v d d∈ with term-continuous T⁺ N (𝓔 (v ∷ γ)) (𝓔-nonempty (v ∷ γ)) d d∈
   ... | ⟨ Vs , ⟨ ok , d∈′ ⟩ ⟩ =
@@ -219,7 +233,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   {- β for the two parameters of code: calling code k, found in the table
      as B, on the environment e and the argument w -}
-  call-⊆ : ∀ k {B} w e → global ds k ≡ just B
+  call-⊆ : ∀ k {B} w e
+    → global ds k ≡ just B
     → ⟦ B ⟧⁺ (𝓔 (w ∷ e ∷ [])) ⊆ ⋆ ⟨ ⋆ ⟨ T⁺ k , ⟨ 𝒱 e , ptt ⟩ ⟩ , ⟨ 𝒱 w , ptt ⟩ ⟩
   call-⊆ k {B} w e g d d∈ with global-split k g
   ... | ⟨ Ns , ⟨ p , refl ⟩ ⟩
@@ -258,12 +273,15 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   tuple-next-𝒮 vs (M ∷ Ms) γ κ d d∈ = d∈
 
   At-args : ∀ {n} (args : Args (replicate n ■)) ρ (i : Fin n) d
-    → At i (⟦ args→list args ⟧* ρ) d → d ∈ nthD (⟦ args ⟧₊[ T⁺ ] ρ) i
+    → At i (⟦ args→list args ⟧* ρ) d
+    → d ∈ nthD (⟦ args ⟧₊[ T⁺ ] ρ) i
   At-args {suc n} (M ,, args) ρ zero d ⟨ _ , d∈ ⟩ = d∈
   At-args {suc n} (M ,, args) ρ (suc i) d a = At-args args ρ i d a
 
   AllNE-args : ∀ {n} (args : Args (replicate n ■)) ρ
-    → AllNE (⟦ args→list args ⟧* ρ) → ∀ i → nonempty (nthD (⟦ args ⟧₊[ T⁺ ] ρ) i)
+    → AllNE (⟦ args→list args ⟧* ρ)
+    → ∀ i
+    → nonempty (nthD (⟦ args ⟧₊[ T⁺ ] ρ) i)
   AllNE-args {suc n} (M ,, args) ρ ⟨ ne , _ ⟩ zero = ne
   AllNE-args {suc n} (M ,, args) ρ ⟨ _ , nes ⟩ (suc i) = AllNE-args args ρ nes i
 
@@ -283,7 +301,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   {- Steps shrink the denotation of the state --------------------------------}
 
-  step-⊆ : ∀ s {s'} → step ds s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
+  step-⊆ : ∀ s {s'}
+    → step ds s ≡ next s'
+    → 𝒮 s' ⊆ 𝒮 s
   step-⊆ (eval (` x) γ κ) eq with γ ‼ x in look
   step-⊆ (eval (` x) γ κ) refl | just v = 𝒦-mono κ (𝓔-lookup γ x look)
   step-⊆ (eval (` x) γ κ) () | nothing
@@ -364,18 +384,26 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   step-⊆ (ret w (primR p v κ)) refl | just r = 𝒦-mono κ (prim-⊆ p v w r e)
   step-⊆ (ret w (primR p v κ)) () | nothing
 
-  ↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
+  ↠-⊆ : ∀ {s t}
+    → s ↠ t
+    → 𝒮 t ⊆ 𝒮 s
   ↠-⊆ done d d∈ = d∈
   ↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
 
   {- Final states ----------------------------------------------------------------}
 
   private
-    error : ∀ {o} → stop {State} o-error ≡ stop o → Answer o → ⊥
+    error : ∀ {o}
+      → stop {State} o-error ≡ stop o
+      → Answer o
+      → ⊥
     error refl ans = ans refl
 
   {- a state that stops with an answer returns a value to halt -}
-  halts : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ v ∈ Val ] s ≡ ret v halt × o ≡ obs v
+  halts : ∀ s {o}
+    → step ds s ≡ stop o
+    → Answer o
+    → Σ[ v ∈ Val ] s ≡ ret v halt × o ≡ obs v
   halts (eval (` x) γ κ) eq ans with γ ‼ x
   halts (eval (` x) γ κ) () ans | just v
   halts (eval (` x) γ κ) eq ans | nothing = ⊥-elim (error eq ans)
@@ -440,7 +468,10 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   halts (ret w (primR p v κ)) () ans | just r
   halts (ret w (primR p v κ)) eq ans | nothing = ⊥-elim (error eq ans)
 
-  final-shape : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
+  final-shape : ∀ s {o}
+    → step ds s ≡ stop o
+    → Answer o
+    → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
   final-shape s fin ans with halts s fin ans
   ... | ⟨ v , ⟨ refl , refl ⟩ ⟩ = 𝒱-shape v
 
@@ -448,7 +479,11 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
 {- a well-formed program that terminates with an answer o has an element
    of the shape of o in its denotation -}
-soundness : ∀ P → WF P → ∀ {o} → Terminates (sem P) o → Answer o
+soundness : ∀ P
+  → WF P
+  → ∀ {o}
+  → Terminates (sem P) o
+  → Answer o
   → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₚ × ShapeOf o d
 soundness (program ds M) ⟨ wfd , ⟨ rb , _ ⟩ ⟩ (⟨ s , ⟨ σ , fin ⟩ ⟩) ans
     with final-shape ds wfd s fin ans

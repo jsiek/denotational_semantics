@@ -64,49 +64,76 @@ open import Relation.Nullary using (¬_)
 
 {- Soundness -------------------------------------------------------------------}
 
-sound-const : ∀ M {B} {k : base-rep B} → Terminates (sem M) (o-const B k) → dconst k ∈ ⟦ M ⟧ ρ₀
+sound-const : ∀ M {B} {k : base-rep B}
+  → Terminates (sem M) (o-const B k)
+  → dconst k ∈ ⟦ M ⟧ ρ₀
 sound-const M t with soundness M t (λ ())
 ... | ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = d∈
 
-sound-nonempty : ∀ M → Converges (Terminates (sem M)) → nonempty (⟦ M ⟧ ρ₀)
+sound-nonempty : ∀ M
+  → Converges (Terminates (sem M))
+  → nonempty (⟦ M ⟧ ρ₀)
 sound-nonempty M ⟨ o , ⟨ ans , t ⟩ ⟩ with soundness M t ans
 ... | ⟨ d , ⟨ d∈ , _ ⟩ ⟩ = ⟨ d , d∈ ⟩
 
 {- Adequacy --------------------------------------------------------------------}
 
-closed-𝔾 : ∀ M → Closed M → 𝔾 (UsesP M) ρ₀ []
+closed-𝔾 : ∀ M
+  → Closed M
+  → 𝔾 (UsesP M) ρ₀ []
 closed-𝔾 M c x u = ⊥-elim (n≮0 (subst (x <_) c (uses-bound x M u)))
 
-adequacy : ∀ M → Closed M → ∀ {d} → d ∈ ⟦ M ⟧ ρ₀
+adequacy : ∀ M
+  → Closed M
+  → ∀ {d}
+  → d ∈ ⟦ M ⟧ ρ₀
   → Σ[ o ∈ Obs ] Terminates (sem M) o × ShapeOf o d
 adequacy M c {d} d∈ with adequate M (closed-𝔾 M c) d∈
 ... | ⟨ v , ⟨ e , r ⟩ ⟩ =
   ⟨ obs v , ⟨ ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩
             , 𝕍-shape d v r ⟩ ⟩
 
-adequacy-const : ∀ M → Closed M → ∀ {B} {k : base-rep B}
-  → dconst k ∈ ⟦ M ⟧ ρ₀ → Terminates (sem M) (o-const B k)
+adequacy-const : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
+  → dconst k ∈ ⟦ M ⟧ ρ₀
+  → Terminates (sem M) (o-const B k)
 adequacy-const M c k∈ with adequacy M c k∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = subst (Terminates (sem M)) (shape-const sh) t
 
-adequacy-converges : ∀ M → Closed M → nonempty (⟦ M ⟧ ρ₀) → Converges (Terminates (sem M))
+adequacy-converges : ∀ M
+  → Closed M
+  → nonempty (⟦ M ⟧ ρ₀)
+  → Converges (Terminates (sem M))
 adequacy-converges M c ⟨ d , d∈ ⟩ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
 
 {- Characterizations ------------------------------------------------------------}
 
-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B}
+const-iff : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
   → (dconst k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) (o-const B k)
 const-iff M c = ⟨ adequacy-const M c , sound-const M ⟩
 
-nonempty-iff : ∀ M → Closed M → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (sem M))
+nonempty-iff : ∀ M
+  → Closed M
+  → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (sem M))
 nonempty-iff M c = ⟨ adequacy-converges M c , sound-nonempty M ⟩
 
 {- a program that errors, or diverges, denotes the empty set -}
-error-empty : ∀ M → Closed M → Terminates (sem M) o-error → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
+error-empty : ∀ M
+  → Closed M
+  → Terminates (sem M) o-error
+  → ∀ d
+  → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 error-empty M c w d d∈ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det t w)
 
-diverges-empty : ∀ M → Closed M → Diverges (sem M) → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
+diverges-empty : ∀ M
+  → Closed M
+  → Diverges (sem M)
+  → ∀ d
+  → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 diverges-empty M c div d d∈ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t

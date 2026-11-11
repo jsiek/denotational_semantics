@@ -38,15 +38,25 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst
 
 {- a closed program is well scoped -}
 private
-  l : ∀ m n {o} → m ⊔ n ≤ o → m ≤ o
+  l : ∀ m n {o}
+    → m ⊔ n ≤ o
+    → m ≤ o
   l m n = m⊔n≤o⇒m≤o m n
-  r : ∀ m n {o} → m ⊔ n ≤ o → n ≤ o
+  r : ∀ m n {o}
+    → m ⊔ n ≤ o
+    → n ≤ o
   r m n = m⊔n≤o⇒n≤o m n
-  bind≤ : ∀ m {k} → m ∸ 1 ≤ k → m ≤ suc k
+  bind≤ : ∀ m {k}
+    → m ∸ 1 ≤ k
+    → m ≤ suc k
   bind≤ m le = ≤-trans (m≤n+m∸n m 1) (s≤s le)
 
-bound-ws : ∀ {k} M → bound M ≤ k → WS k M
-bound-ws-args : ∀ {k n} (as : Args (replicate n ■)) → bound-args as ≤ k → WS-args k as
+bound-ws : ∀ {k} M
+  → bound M ≤ k
+  → WS k M
+bound-ws-args : ∀ {k n} (as : Args (replicate n ■))
+  → bound-args as ≤ k
+  → WS-args k as
 bound-ws (` x) le = le
 bound-ws (lam ⦅ ⟩ N ,, Nil ⦆) le = bound-ws N (bind≤ (bound N) (l (bound N ∸ 1) 0 le)) , tt
 bound-ws (app ⦅ L ,, M ,, Nil ⦆) le =
@@ -69,7 +79,9 @@ bound-ws (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) le =
 bound-ws-args {n = zero} Nil le = tt
 bound-ws-args {n = suc n} (M ,, as) le = bound-ws M (l (bound M) (bound-args as) le) , bound-ws-args as (r (bound M) (bound-args as) le)
 
-closed-ws : ∀ {M} → Closed M → WS 0 M
+closed-ws : ∀ {M}
+  → Closed M
+  → WS 0 M
 closed-ws {M} c = bound-ws M (subst (_≤ 0) (sym c) z≤n)
 
 {- an Info is well scoped: its term, and what it is known to be -}
@@ -97,32 +109,51 @@ open Fits
 WSK j (val V) = WS j V
 WSK j (fun N E) = Σ[ k ∈ ℕ ] WS (suc k) N × Fits k j E
 
-wsi-self : ∀ {j V} → WS j V → WSI j (self V)
+wsi-self : ∀ {j V}
+  → WS j V
+  → WSI j (self V)
 wsi-self w = wsi w λ { refl → w }
 
-wsi-info : ∀ {j} M → WS j M → WSI j (info M)
+wsi-info : ∀ {j} M
+  → WS j M
+  → WSI j (info M)
 wsi-info M w with value M
 ... | true = wsi w λ { refl → w }
 ... | false = wsi w λ ()
 
-wsi-shift : ∀ {j} I → WSI j I → WSI (suc j) (shift-info I)
-wsk-shift : ∀ {j} K → WSK j K → WSK (suc j) (shift-known K)
+wsi-shift : ∀ {j} I
+  → WSI j I
+  → WSI (suc j) (shift-info I)
+wsk-shift : ∀ {j} K
+  → WSK j K
+  → WSK (suc j) (shift-known K)
 wsi-shift (T ∣ just K) (wsi w k) = wsi (ws-shift T w) λ { refl → wsk-shift K (k refl) }
 wsi-shift (T ∣ nothing) (wsi w k) = wsi (ws-shift T w) λ ()
 wsk-shift (val V) w = ws-shift V w
 wsk-shift (fun N E) (k , wN , fits f) = k , wN , fits (λ x x< → wsi-shift (E x) (f x x<))
 
-fits-under : ∀ {k j E} → Fits k j E → Fits (suc k) (suc j) (under E)
+fits-under : ∀ {k j E}
+  → Fits k j E
+  → Fits (suc k) (suc j) (under E)
 fits-under {E = E} f = fits λ { zero _ → wsi-self (s≤s z≤n) ; (suc x) (s≤s x<) → wsi-shift (E x) (at f x x<) }
 
-fits-known-as : ∀ {k j E I} → Fits k j E → WSI j I → Fits (suc k) (suc j) (known-as I E)
+fits-known-as : ∀ {k j E I}
+  → Fits k j E
+  → WSI j I
+  → Fits (suc k) (suc j) (known-as I E)
 fits-known-as {E = E} {I} f sI =
   fits λ { zero _ → wsi (s≤s z≤n) (kn (wsi-shift I sI)) ; (suc x) (s≤s x<) → wsi-shift (E x) (at f x x<) }
 
-fits-• : ∀ {k j E I} → Fits k j E → WSI j I → Fits (suc k) j (I • E)
+fits-• : ∀ {k j E I}
+  → Fits k j E
+  → WSI j I
+  → Fits (suc k) j (I • E)
 fits-• f sI = fits λ { zero _ → sI ; (suc x) (s≤s x<) → at f x x< }
 
-ws-proj : ∀ {j n m} (i : Fin n) (as : Args (replicate m ■)) {V} → WS-args j as → proj i (args→list as) ≡ just V → WS j V
+ws-proj : ∀ {j n m} (i : Fin n) (as : Args (replicate m ■)) {V}
+  → WS-args j as
+  → proj i (args→list as) ≡ just V
+  → WS j V
 ws-proj {n = suc n} {suc m} zero (K ,, as) (w , _) e with has-length n (args→list as)
 ws-proj {n = suc n} {suc m} zero (K ,, as) (w , _) refl | true = w
 ws-proj {m = suc m} (suc i) (K ,, as) (_ , ws) e = ws-proj i as ws e
@@ -132,11 +163,28 @@ ws-prim-term (int n) = tt
 ws-prim-term (bool true) = tt , tt
 ws-prim-term (bool false) = tt , tt
 
-simp-ws : ∀ fl M {k j E} → WS k M → Fits k j E → WSI j (simp fl E M)
-simp-ws-args : ∀ {n} fl (as : Args (replicate n ■)) {k j E} → WS-args k as → Fits k j E → WS-args j (simp-args fl E as)
-app-ws : ∀ fl L M {k j E I} → WS k L → WSI j I → Fits k j E → WSI j (simp-app fl E L I)
-let-ws : ∀ fl N {k j E I} → WS (suc k) N → WSI j I → Fits k j E → WSI j (simp-let fl E N I)
-call-ws : ∀ fl J I {j} → WSI j J → WSI j I → WSI j (simp-call fl J I)
+simp-ws : ∀ fl M {k j E}
+  → WS k M
+  → Fits k j E
+  → WSI j (simp fl E M)
+simp-ws-args : ∀ {n} fl (as : Args (replicate n ■)) {k j E}
+  → WS-args k as
+  → Fits k j E
+  → WS-args j (simp-args fl E as)
+app-ws : ∀ fl L M {k j E I}
+  → WS k L
+  → WSI j I
+  → Fits k j E
+  → WSI j (simp-app fl E L I)
+let-ws : ∀ fl N {k j E I}
+  → WS (suc k) N
+  → WSI j I
+  → Fits k j E
+  → WSI j (simp-let fl E N I)
+call-ws : ∀ fl J I {j}
+  → WSI j J
+  → WSI j I
+  → WSI j (simp-call fl J I)
 
 simp-ws fl (` x) w f = at f x w
 simp-ws fl (lam ⦅ ⟩ N ,, Nil ⦆) {k} (w , _) f = wsi (tm (simp-ws fl N w (fits-under f)) , tt) λ { refl → k , w , f }
@@ -184,5 +232,7 @@ call-ws (suc fl) (T ∣ nothing) I sJ sI = wsi (tm sJ , tm sI , tt) λ ()
 call-ws (suc fl) (T ∣ just (val K)) I sJ sI = wsi (tm sJ , tm sI , tt) λ ()
 
 {- simplify keeps programs closed -}
-simplify-closed : ∀ M → Closed M → Closed (simplify M)
+simplify-closed : ∀ M
+  → Closed M
+  → Closed (simplify M)
 simplify-closed M c = n≤0⇒n≡0 (ws-bound (simplify M) (tm (simp-ws inline-fuel M (closed-ws {M} c) (fits (λ x ())))))

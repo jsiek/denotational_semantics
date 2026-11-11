@@ -58,7 +58,8 @@ data FailedChk {Σ : List ℕ} : X86ᵀₘ.State Σ → Set where
 
 {- the erased program errs only when X86ᵀ reaches a chk that fails (and,
    by erase-correct, it errs whenever X86ᵀ does) -}
-erase-errors : ∀ (P : Program) → Terminates (X86ₘ.sem (erase P)) o-error
+erase-errors : ∀ (P : Program)
+  → Terminates (X86ₘ.sem (erase P)) o-error
   → Σ[ s ∈ State (X86ᵀₘ.sem P) ] Star (X86ᵀₘ.sem P) (start (X86ᵀₘ.sem P)) s × FailedChk s
 erase-errors P h with proj₂ (Equivalent.terminates (Proof.erase-correct P) o-error) h
 ... | s , τ , fin = s , τ , Proof.only-chk (Program.defs P) FailedChk failed s fin

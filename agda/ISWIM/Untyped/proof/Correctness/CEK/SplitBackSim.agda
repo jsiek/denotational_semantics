@@ -133,20 +133,28 @@ module _ (P : AST) where
   L₁ = S.sem P
 
   {- answering a lookup or a projection -}
-  ret?-reflects : ∀ {i s₁ mv mw κ₁ κ₂} → M.Pointwise _≈_ mv mw → κ₁ ≈k κ₂
-    → S.step s₁ ≡ S.ret? mv κ₁ → Reflects L₁ Match i s₁ (T.ret? mw κ₂)
+  ret?-reflects : ∀ {i s₁ mv mw κ₁ κ₂}
+    → M.Pointwise _≈_ mv mw
+    → κ₁ ≈k κ₂
+    → S.step s₁ ≡ S.ret? mv κ₁
+    → Reflects L₁ Match i s₁ (T.ret? mw κ₂)
   ret?-reflects (M.just r) k eq = steps (step⁺ eq) (ret~ k r)
   ret?-reflects M.nothing k eq = stops ε eq
 
-  tuple-next~ : ∀ {r vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
-    → Pointwise (Del r) Ms Ms' → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+  tuple-next~ : ∀ {r vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂}
+    → Pointwise _≈_ vs ws
+    → Pointwise (Del r) Ms Ms'
+    → EnvRel r ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → Σ[ n ∈ ℕ ] Match n (S.tuple-next vs Ms ρ₁ κ₁) (T.tuple-next ws Ms' ρ₂ κ₂)
   tuple-next~ rs [] ρ k = _ , ret~ k (tup≈ (reverse⁺ rs))
   tuple-next~ rs (d ∷ ds) ρ k = _ , eval~ d ρ (tupK rs ds ρ k)
 
   wait = ≤-refl
 
-  sim : ∀ {i s₁ s₂} → Match i s₁ s₂ → Reflects L₁ Match i s₁ (T.step s₂)
+  sim : ∀ {i s₁ s₂}
+    → Match i s₁ s₂
+    → Reflects L₁ Match i s₁ (T.step s₂)
   sim (eval~ {M = ` x} refl ρ k) = ret?-reflects (look ρ x) k refl
   sim (eval~ {M = clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆} refl ρ k) =
     waits wait (clos-fun~ ρ k)
@@ -209,8 +217,12 @@ split-bsim M =
     (_ , eval~ (sym (rename-id (split M))) (env (λ x → M.nothing)) halt)
     (sim M)
 
-split-back-terminates : ∀ M {o} → Terminates (T.sem (split M)) o → Terminates (S.sem M) o
+split-back-terminates : ∀ M {o}
+  → Terminates (T.sem (split M)) o
+  → Terminates (S.sem M) o
 split-back-terminates M = backward-terminates (split-bsim M)
 
-split-back-diverges : ∀ M → Diverges∞ (T.sem (split M)) → Diverges∞ (S.sem M)
+split-back-diverges : ∀ M
+  → Diverges∞ (T.sem (split M))
+  → Diverges∞ (S.sem M)
 split-back-diverges M = backward-diverges (split-bsim M)

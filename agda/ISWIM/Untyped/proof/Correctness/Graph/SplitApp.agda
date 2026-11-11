@@ -37,7 +37,9 @@ let-app L' N' =
   let-op ⦅ L' ,, ⟩ (app ⦅ (fst-op ⦅ (` 0) ,, Nil ⦆) ,, (snd-op ⦅ (` 0) ,, Nil ⦆) ,,
                           shift N' ,, Nil ⦆) ,, Nil ⦆
 
-let-app-≃ : ∀ (L' N' : AST) (ρ : Env) → Con (⟦ L' ⟧ ρ) → ⟦ let-app L' N' ⟧ ρ ≃ (⟦ L' ⟧ ρ ⊙ ⟦ N' ⟧ ρ)
+let-app-≃ : ∀ (L' N' : AST) (ρ : Env)
+  → Con (⟦ L' ⟧ ρ)
+  → ⟦ let-app L' N' ⟧ ρ ≃ (⟦ L' ⟧ ρ ⊙ ⟦ N' ⟧ ρ)
 let-app-≃ L' N' ρ cL = ⟨ G , H ⟩
   where
   L = ⟦ L' ⟧ ρ

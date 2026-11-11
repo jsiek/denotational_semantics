@@ -53,35 +53,52 @@ open import Relation.Nullary using (¬_)
 
 {- Adequacy --------------------------------------------------------------------}
 
-closed-𝔾 : ∀ M → Closed M → 𝔾 (UsesP M) ρ₀ []
+closed-𝔾 : ∀ M
+  → Closed M
+  → 𝔾 (UsesP M) ρ₀ []
 closed-𝔾 M c x u = ⊥-elim (n≮0 (subst (x <_) c (uses-bound x M u)))
 
 {- an element other than ω is witnessed by a run to an answer of its shape -}
-adequacy : ∀ M → Closed M → ∀ {d} → d ∈ ⟦ M ⟧ ρ₀ → d ≢ ω
+adequacy : ∀ M
+  → Closed M
+  → ∀ {d}
+  → d ∈ ⟦ M ⟧ ρ₀
+  → d ≢ ω
   → Σ[ o ∈ Obs ] Terminates (sem M) o × ShapeOf o d
 adequacy M c {d} d∈ d≢ with conv (adequate M (closed-𝔾 M c) d∈) d≢
 ... | ⟨ v , ⟨ e , r ⟩ ⟩ =
   ⟨ obs v , ⟨ ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩ , 𝕍-shape d v r ⟩ ⟩
 
 {- ω is witnessed by a run to an error -}
-adequacy-error : ∀ M → Closed M → ω ∈ ⟦ M ⟧ ρ₀ → Terminates (sem M) o-error
+adequacy-error : ∀ M
+  → Closed M
+  → ω ∈ ⟦ M ⟧ ρ₀
+  → Terminates (sem M) o-error
 adequacy-error M c ω∈ with err (adequate M (closed-𝔾 M c) ω∈) halt
 ... | ⟨ t , ⟨ τ , st ⟩ ⟩ = ⟨ t , ⟨ ↠→star τ , st ⟩ ⟩
 
 {- every element is witnessed by a run that terminates -}
-adequacy-terminates : ∀ M → Closed M → ∀ {d} → d ∈ ⟦ M ⟧ ρ₀ → Σ[ o ∈ Obs ] Terminates (sem M) o
+adequacy-terminates : ∀ M
+  → Closed M
+  → ∀ {d}
+  → d ∈ ⟦ M ⟧ ρ₀
+  → Σ[ o ∈ Obs ] Terminates (sem M) o
 adequacy-terminates M c {d} d∈ with adequate M (closed-𝔾 M c) d∈
 ... | inj₁ ⟨ refl , _ ⟩ = ⟨ o-error , adequacy-error M c d∈ ⟩
 ... | inj₂ ⟨ v , ⟨ e , _ ⟩ ⟩ = ⟨ obs v , ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩ ⟩
 
 {- Soundness, for every observation -------------------------------------------}
 
-sound-const : ∀ M {B} {k : base-rep B} → Terminates (sem M) (o-const B k) → dconst k ∈ ⟦ M ⟧ ρ₀
+sound-const : ∀ M {B} {k : base-rep B}
+  → Terminates (sem M) (o-const B k)
+  → dconst k ∈ ⟦ M ⟧ ρ₀
 sound-const M t with soundness M t (λ ())
 ... | ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = d∈
 
 {- a program that terminates has an element in its denotation -}
-sound-terminates : ∀ M {o} → Terminates (sem M) o → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀
+sound-terminates : ∀ M {o}
+  → Terminates (sem M) o
+  → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀
 sound-terminates M {o-error} t = ⟨ ω , sound-error M t ⟩
 sound-terminates M {o-const B k} t = ⟨ _ , proj₁ (proj₂ (soundness M t (λ ()))) ⟩
 sound-terminates M {o-fun} t = ⟨ _ , proj₁ (proj₂ (soundness M t (λ ()))) ⟩
@@ -92,33 +109,43 @@ sound-terminates M {o-inr o} t = ⟨ _ , proj₁ (proj₂ (soundness M t (λ ())
 {- Characterizations ------------------------------------------------------------}
 
 {- ω ∈ ⟦ M ⟧ ρ₀ exactly when the machine stops with an error -}
-error-iff : ∀ M → Closed M → (ω ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) o-error
+error-iff : ∀ M
+  → Closed M
+  → (ω ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) o-error
 error-iff M c = ⟨ adequacy-error M c , sound-error M ⟩
 
 {- ⟦ M ⟧ ρ₀ contains the constant k exactly when the machine stops with it -}
-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B}
+const-iff : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
   → (dconst k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) (o-const B k)
 const-iff M c {B} {k} = ⟨ A , sound-const M ⟩
   where
-  A : dconst k ∈ ⟦ M ⟧ ρ₀ → Terminates (sem M) (o-const B k)
+  A : dconst k ∈ ⟦ M ⟧ ρ₀
+    → Terminates (sem M) (o-const B k)
   A k∈ with adequacy M c k∈ (λ ())
   ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = subst (Terminates (sem M)) (shape-const sh) t
 
 {- ⟦ M ⟧ ρ₀ has an element other than ω exactly when the machine stops
    with an answer -}
-converges-iff : ∀ M → Closed M
+converges-iff : ∀ M
+  → Closed M
   → (Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω) ⇔ Converges (Terminates (sem M))
 converges-iff M c = ⟨ A , B ⟩
   where
-  A : (Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω) → Converges (Terminates (sem M))
+  A : (Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω)
+    → Converges (Terminates (sem M))
   A ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ with adequacy M c d∈ d≢
   ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
-  B : Converges (Terminates (sem M)) → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω
+  B : Converges (Terminates (sem M))
+    → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × d ≢ ω
   B ⟨ o , ⟨ ans , t ⟩ ⟩ with soundness M t ans
   ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ d , ⟨ d∈ , (λ { refl → shape-ω o sh }) ⟩ ⟩
 
 {- ⟦ M ⟧ ρ₀ is empty exactly when the machine diverges -}
-diverges-iff : ∀ M → Closed M → Diverges (sem M) ⇔ (∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀))
+diverges-iff : ∀ M
+  → Closed M
+  → Diverges (sem M) ⇔ (∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀))
 diverges-iff M c =
   ⟨ (λ div d d∈ → diverges-not-terminates div (proj₂ (adequacy-terminates M c d∈)))
   , (λ empty → never-final-diverges (λ σ fin → let ⟨ d , d∈ ⟩ = sound-terminates M ⟨ _ , ⟨ σ , fin ⟩ ⟩

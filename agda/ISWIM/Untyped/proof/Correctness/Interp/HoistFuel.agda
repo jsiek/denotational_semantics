@@ -62,8 +62,12 @@ module Rel (D : Defs) where
   _≈ρ_ = Pointwise _≈_
 
   {- Related values are observed alike -}
-  obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-  obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
+  obs≈ : ∀ {v w}
+    → v ≈ w
+    → S.obs v ≡ T.obs w
+  obs≈-list : ∀ {vs ws}
+    → Pointwise _≈_ vs ws
+    → S.obs-list vs ≡ T.obs-list ws
   obs≈ (fun≈ _) = refl
   obs≈ (pair≈ _ _) = refl
   obs≈ const≈ = refl
@@ -74,7 +78,10 @@ module Rel (D : Defs) where
   obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
   {- related operands give related results of a primitive -}
-  prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+  prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+    → v₁ ≈ w₁
+    → v₂ ≈ w₂
+    → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
   prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
   ... | nothing = M.nothing
   ... | just (int n) = M.just const≈
@@ -82,7 +89,9 @@ module Rel (D : Defs) where
   ... | just (bool false) = M.just (inr≈ (tup≈ []))
 
   {- the destructors, on related values -}
-  first≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.first v) (T.first w)
+  first≈ : ∀ {v w}
+    → v ≈ w
+    → RelResult _≈_ (S.first v) (T.first w)
   first≈ (pair≈ r _) = ret r
   first≈ (fun≈ _) = error
   first≈ const≈ = error
@@ -90,7 +99,9 @@ module Rel (D : Defs) where
   first≈ (inl≈ _) = error
   first≈ (inr≈ _) = error
 
-  second≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.second v) (T.second w)
+  second≈ : ∀ {v w}
+    → v ≈ w
+    → RelResult _≈_ (S.second v) (T.second w)
   second≈ (pair≈ _ r) = ret r
   second≈ (fun≈ _) = error
   second≈ const≈ = error
@@ -101,20 +112,32 @@ module Rel (D : Defs) where
   {- Clock for clock -------------------------------------------------------------}
 
   {- M, hoisted after the table ds, with the table it makes part of D -}
-  run≈ : ∀ ck {ρ₁ ρ₂} M ds → proj₂ (glob M ds) ⊑ D → ρ₁ ≈ρ ρ₂
+  run≈ : ∀ ck {ρ₁ ρ₂} M ds
+    → proj₂ (glob M ds) ⊑ D
+    → ρ₁ ≈ρ ρ₂
     → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval D ck ρ₂ (proj₁ (glob M ds)))
   args≈ : ∀ ck {n ρ₁ ρ₂ vs ws} (args : Args (replicate n ■)) ds
-    → proj₂ (glob-args args ds) ⊑ D → ρ₁ ≈ρ ρ₂ → Pointwise _≈_ vs ws
+    → proj₂ (glob-args args ds) ⊑ D
+    → ρ₁ ≈ρ ρ₂
+    → Pointwise _≈_ vs ws
     → RelResult (Pointwise _≈_) (S.eval-args ck ρ₁ vs args)
-                                (T.eval-args D ck ρ₂ ws (proj₁ (glob-args args ds)))
-  apply≈ : ∀ ck {ρ₁ ρ₂ f g} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
-    → f ≈ g → RelResult _≈_ (S.apply ck ρ₁ M N f)
-                (T.apply D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) g)
-  call≈ : ∀ ck {ρ₁ ρ₂ f g} → f ≈ g → ρ₁ ≈ρ ρ₂
+        (T.eval-args D ck ρ₂ ws (proj₁ (glob-args args ds)))
+  apply≈ : ∀ ck {ρ₁ ρ₂ f g} M N ds
+    → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D
+    → ρ₁ ≈ρ ρ₂
+    → f ≈ g
+    → RelResult _≈_ (S.apply ck ρ₁ M N f)
+        (T.apply D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) g)
+  call≈ : ∀ ck {ρ₁ ρ₂ f g}
+    → f ≈ g
+    → ρ₁ ≈ρ ρ₂
     → RelResult _≈_ (S.call f ck ρ₁) (T.call D ck (T.code? D g) ρ₂)
-  branch≈ : ∀ ck {ρ₁ ρ₂ v w} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
-    → v ≈ w → RelResult _≈_ (S.branch ck ρ₁ M N v)
-                (T.branch D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) w)
+  branch≈ : ∀ ck {ρ₁ ρ₂ v w} M N ds
+    → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D
+    → ρ₁ ≈ρ ρ₂
+    → v ≈ w
+    → RelResult _≈_ (S.branch ck ρ₁ M N v)
+        (T.branch D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) w)
 
   run≈ ck (` x) ds p ρ = from-maybe-rel (‼-pw ρ x)
   run≈ ck (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds p ρ = ret (fun≈ p)
@@ -130,7 +153,9 @@ module Rel (D : Defs) where
   run≈ ck (tuple n ⦅ args ⦆) ds p ρ = bind-rel (args≈ ck args ds p ρ []) (λ rs → ret (tup≈ (reverse⁺ rs)))
   run≈ ck (get i ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) get≈
     where
-    get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
+    get≈ : ∀ {v w}
+      → v ≈ w
+      → RelResult _≈_ (S.project i v) (T.project i w)
     get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
     get≈ (fun≈ _) = error
     get≈ (pair≈ _ _) = error

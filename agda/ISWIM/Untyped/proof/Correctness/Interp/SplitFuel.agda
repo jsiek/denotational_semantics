@@ -59,13 +59,20 @@ data _≈_ : S.Val → T.Val → Set where
 EnvRel : (ℕ → ℕ) → S.Env → T.Env → Set
 EnvRel r ρ₁ ρ₂ = ∀ x → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ r x)
 
-env-ext : ∀ {r ρ₁ ρ₂ v w} → v ≈ w → EnvRel r ρ₁ ρ₂ → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext : ∀ {r ρ₁ ρ₂ v w}
+  → v ≈ w
+  → EnvRel r ρ₁ ρ₂
+  → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext r ρ zero = M.just r
 env-ext r ρ (suc x) = ρ x
 
 {- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
+obs≈ : ∀ {v w}
+  → v ≈ w
+  → S.obs v ≡ T.obs w
+obs≈-list : ∀ {vs ws}
+  → Pointwise _≈_ vs ws
+  → S.obs-list vs ≡ T.obs-list ws
 obs≈ (clos≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -75,7 +82,10 @@ obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+  → v₁ ≈ w₁
+  → v₂ ≈ w₂
+  → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
 prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
@@ -88,22 +98,30 @@ prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p
 snd0 : C4.AST
 snd0 = C4.snd-op C4.⦅ C4.` 0 ,, Nil ⦆
 
-run≈ : ∀ ck r {ρ₁ ρ₂} M → EnvRel r ρ₁ ρ₂
+run≈ : ∀ ck r {ρ₁ ρ₂} M
+  → EnvRel r ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (rename r (split M)))
-args≈ : ∀ ck r {n ρ₁ ρ₂ vs ws} (args : Args (replicate n ■)) → EnvRel r ρ₁ ρ₂
+args≈ : ∀ ck r {n ρ₁ ρ₂ vs ws} (args : Args (replicate n ■))
+  → EnvRel r ρ₁ ρ₂
   → Pointwise _≈_ vs ws
   → RelResult (Pointwise _≈_) (S.eval-args ck ρ₁ vs args)
       (T.eval-args ck ρ₂ ws (rename-args r (del-map-args args)))
 {- the source checks for a closure; the target takes the first component -}
-apply≈ : ∀ ck r {ρ₁ ρ₂ f g} M → EnvRel r ρ₁ ρ₂ → f ≈ g
+apply≈ : ∀ ck r {ρ₁ ρ₂ f g} M
+  → EnvRel r ρ₁ ρ₂
+  → f ≈ g
   → RelResult _≈_ (S.apply ck ρ₁ M f)
       (T.first g >>= T.apply ck (g ∷ ρ₂) snd0 (rename (ext r) (shift (split M))))
-call≈ : ∀ ck {ρ₁ ρ₂} N → EnvRel (λ x → x) ρ₁ ρ₂
+call≈ : ∀ ck {ρ₁ ρ₂} N
+  → EnvRel (λ x → x) ρ₁ ρ₂
   → RelResult _≈_ (S.call ck N ρ₁) (T.call (T.fun (split N)) ck ρ₂)
 {- under the identity renaming -}
-run-id : ∀ ck {ρ₁ ρ₂} M → EnvRel (λ x → x) ρ₁ ρ₂
+run-id : ∀ ck {ρ₁ ρ₂} M
+  → EnvRel (λ x → x) ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (split M))
-branch≈ : ∀ ck r {ρ₁ ρ₂ v w} M N → EnvRel r ρ₁ ρ₂ → v ≈ w
+branch≈ : ∀ ck r {ρ₁ ρ₂ v w} M N
+  → EnvRel r ρ₁ ρ₂
+  → v ≈ w
   → RelResult _≈_ (S.branch ck ρ₁ M N v)
       (T.branch ck ρ₂ (rename (ext r) (split M)) (rename (ext r) (split N)) w)
 
@@ -115,7 +133,9 @@ run≈ ck r (lit B k ⦅ Nil ⦆) ρ = ret const≈
 run≈ ck r (tuple n ⦅ args ⦆) ρ = bind-rel (args≈ ck r args ρ []) (λ rs → ret (tup≈ (reverse⁺ rs)))
 run≈ ck r (get i ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) get≈
   where
-  get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
+  get≈ : ∀ {v w}
+    → v ≈ w
+    → RelResult _≈_ (S.project i v) (T.project i w)
   get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
   get≈ (clos≈ _) = error
   get≈ const≈ = error

@@ -28,14 +28,18 @@ open import Relation.Nullary using (yes; no)
 project-good : ∀ F t → Good ⊤ (■ ∷ []) (λ Ds → projectᵍ F t (proj₁ Ds))
 project-good F t = guardᵖ-good (accepts F t)
 
-project-≃ : ∀ F t {D D'} → D ≃ D' → projectᵍ F t D ≃ projectᵍ F t D'
+project-≃ : ∀ F t {D D'}
+  → D ≃ D'
+  → projectᵍ F t D ≃ projectᵍ F t D'
 project-≃ F t = guardᵖ-≃ (accepts F t)
 
 ConT : ∀ {Σ} → Table Σ → Set
 ConT {Σ} T = ∀ {n} (f : Σ ∋ n) → Con (T f)
 
 tables-con : ∀ {Σ} {D : ℕ → Set} {cd : Table Σ → ∀ {n} → D n → 𝒫 Value}
-  → (∀ {T : Table Σ} → ConT T → ∀ {n} (d : D n) → Con (cd T d)) → ∀ {ns} (ds : All D ns) → ConT (tables cd ds)
+  → (∀ {T : Table Σ} → ConT T → ∀ {n} (d : D n) → Con (cd T d))
+  → ∀ {ns} (ds : All D ns)
+  → ConT (tables cd ds)
 tables-con c [] f _ _ ()
 tables-con c {_ ∷ ns} (d ∷ ds) f with lvl f ≟ length ns
 ... | yes _ = c (tables-con c ds) d

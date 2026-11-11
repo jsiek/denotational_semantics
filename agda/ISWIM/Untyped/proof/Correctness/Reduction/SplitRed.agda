@@ -108,8 +108,14 @@ dels {suc n} (M ,, as) = del M ∷ dels as
 module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x)
   (pexts : ∀ {σ σ'} → P σ σ' → P (exts σ) (TS.exts σ')) where
 
-  ≈-sub : ∀ {σ σ' M M'} → P σ σ' → M ≈ M' → sub σ M ≈ TS.sub σ' M'
-  ≈-subs : ∀ {σ σ' n as as'} → P σ σ' → Pw _≈_ {n} as as' → Pw _≈_ (sub-args σ as) (TS.sub-args σ' as')
+  ≈-sub : ∀ {σ σ' M M'}
+    → P σ σ'
+    → M ≈ M'
+    → sub σ M ≈ TS.sub σ' M'
+  ≈-subs : ∀ {σ σ' n as as'}
+    → P σ σ'
+    → Pw _≈_ {n} as as'
+    → Pw _≈_ (sub-args σ as) (TS.sub-args σ' as')
   ≈-sub p var≈ = p≈ p _
   ≈-sub p (clos≈ r rs) = clos≈ r (≈-subs p rs)
   ≈-sub {σ} {σ'} p (app≈ {L} {L'} {M} {M'} r s) =
@@ -138,8 +144,14 @@ open SubstRel.Closure _≈_ var≈ (λ _ _ → ⊤) (λ _ → tt) (λ _ → tt) 
 Ans′ = Ans T.red T.Value _≈_
 
 {- a target value is related to a source value -}
-≈-value : ∀ {V V'} → T.Value V' → V ≈ V' → S.Value V
-≈-values : ∀ {n as as'} → T.Values as' → Pw _≈_ {n} as as' → S.Values as
+≈-value : ∀ {V V'}
+  → T.Value V'
+  → V ≈ V'
+  → S.Value V
+≈-values : ∀ {n as as'}
+  → T.Values as'
+  → Pw _≈_ {n} as as'
+  → S.Values as
 ≈-value T.fun ()
 ≈-value (T.pair _ (T.tuple vs)) (clos≈ r rs) = S.clos (≈-values vs rs)
 ≈-value T.lit lit≈ = S.lit
@@ -149,8 +161,12 @@ Ans′ = Ans T.red T.Value _≈_
 ≈-values T.[] [] = S.[]
 ≈-values (v T.∷ vs) (r ∷ rs) = ≈-value v r S.∷ ≈-values vs rs
 
-obs≈ : ∀ {M M'} → M ≈ M' → S.obs M ≡ T.obs M'
-obs≈s : ∀ {n as as'} → Pw _≈_ {n} as as' → S.obs-args as ≡ T.obs-args as'
+obs≈ : ∀ {M M'}
+  → M ≈ M'
+  → S.obs M ≡ T.obs M'
+obs≈s : ∀ {n as as'}
+  → Pw _≈_ {n} as as'
+  → S.obs-args as ≡ T.obs-args as'
 obs≈ var≈ = refl
 obs≈ (clos≈ _ _) = refl
 obs≈ (app≈ _ _) = refl
@@ -167,10 +183,11 @@ obs≈s [] = refl
 obs≈s (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈s rs)
 
 {- the let, fst and snd that take a closure apart -}
-let-fst-snd : ∀ {n N' as M'} → T.Values {n} as
+let-fst-snd : ∀ {n N' as M'}
+  → T.Values {n} as
   → let V = C.pair-op C.⦅ fun N' ,, C.tuple n C.⦅ as ⦆ ,, Nil ⦆ in
-    Star* T.red (C.let-op C.⦅ V ,, ⟩ app-body M' ,, Nil ⦆)
-                (C.app C.⦅ fun N' ,, C.tuple n C.⦅ as ⦆ ,, TS.sub (V TS.• TS.ids) (TR.rename suc M') ,, Nil ⦆)
+      Star* T.red (C.let-op C.⦅ V ,, ⟩ app-body M' ,, Nil ⦆)
+                  (C.app C.⦅ fun N' ,, C.tuple n C.⦅ as ⦆ ,, TS.sub (V TS.• TS.ids) (TR.rename suc M') ,, Nil ⦆)
 let-fst-snd {n} {N'} {as} {M'} vs = s₁ ◅ s₂ ◅ s₃ ◅ ε
   where
   V = C.pair-op C.⦅ fun N' ,, C.tuple n C.⦅ as ⦆ ,, Nil ⦆
@@ -186,17 +203,27 @@ let-fst-snd {n} {N'} {as} {M'} vs = s₁ ◅ s₂ ◅ s₃ ◅ ε
   s₃ rewrite T.values-red vs = refl
 
 {- fst of a value that is not a pair errors -}
-fst-error : ∀ {V' Y Z} → T.Value V' → T.fst? V' ≡ error
+fst-error : ∀ {V' Y Z}
+  → T.Value V'
+  → T.fst? V' ≡ error
   → T.red (C.app C.⦅ C.fst-op C.⦅ V' ,, Nil ⦆ ,, Y ,, Z ,, Nil ⦆) ≡ error
 fst-error v e rewrite T.value-red v | e = refl
 
-sim : ∀ {M M'} → M ≈ M' → Ans′ M (S.red M) M'
-sims : ∀ {n as as'} → Pw _≈_ {n} as as' → Ans T.red-args T.Values (Pw _≈_) as (S.red-args as) as'
+sim : ∀ {M M'}
+  → M ≈ M'
+  → Ans′ M (S.red M) M'
+sims : ∀ {n as as'}
+  → Pw _≈_ {n} as as'
+  → Ans T.red-args T.Values (Pw _≈_) as (S.red-args as) as'
 {- calling a closure: the operand, then the body -}
-call-ans : ∀ {n N N' Vs Vs' M M'} → N ≈ N' → Pw _≈_ {n} Vs Vs' → T.Values Vs' → M ≈ M'
+call-ans : ∀ {n N N' Vs Vs' M M'}
+  → N ≈ N'
+  → Pw _≈_ {n} Vs Vs'
+  → T.Values Vs'
+  → M ≈ M'
   → Ans′ (app ⦅ clos-op n ⦅ cons (clear (bind (bind (ast N)))) Vs ⦆ ,, M ,, Nil ⦆)
-         (S.app? (clos-op n ⦅ cons (clear (bind (bind (ast N)))) Vs ⦆) (S.red M) M)
-         (C.app C.⦅ fun N' ,, C.tuple n C.⦅ Vs' ⦆ ,, M' ,, Nil ⦆)
+      (S.app? (clos-op n ⦅ cons (clear (bind (bind (ast N)))) Vs ⦆) (S.red M) M)
+      (C.app C.⦅ fun N' ,, C.tuple n C.⦅ Vs' ⦆ ,, M' ,, Nil ⦆)
 
 sim var≈ = error ε refl
 sim (clos≈ {n} {N' = N'} r rs) =
@@ -207,7 +234,10 @@ sim (app≈ {M = M} {M' = M'} r s) =
   ans-in (frame _ (λ _ → refl)) (λ r' → app≈ r' s) (sim r) app-sim
   where
   {- the let, then fst and snd of a closure: anything else errors at fst -}
-  app-sim : ∀ {L V'} → T.Value V' → L ≈ V' → Ans′ (app ⦅ L ,, M ,, Nil ⦆) (S.app? L (S.red M) M) (C.let-op C.⦅ V' ,, ⟩ app-body M' ,, Nil ⦆)
+  app-sim : ∀ {L V'}
+    → T.Value V'
+    → L ≈ V'
+    → Ans′ (app ⦅ L ,, M ,, Nil ⦆) (S.app? L (S.red M) M) (C.let-op C.⦅ V' ,, ⟩ app-body M' ,, Nil ⦆)
   app-sim v@(T.pair T.fun (T.tuple vs)) (clos≈ r' rs) =
     ans-star (let-fst-snd vs) (subst (λ Z → Ans′ _ _ (C.app C.⦅ _ ,, _ ,, Z ,, Nil ⦆))
                                      (sym (trans (TS.sub-shift _ TS.ids M') (TS.sub-id M'))) (call-ans r' rs vs s))
@@ -221,7 +251,10 @@ sim lit≈ = val ε T.lit lit≈
 sim (tuple≈ rs) = ans-in (frame _ (λ _ → refl)) tuple≈ (sims rs) (λ vs rs' → val ε (T.tuple vs) (tuple≈ rs'))
 sim (get≈ {i = i} r) = ans-in (frame _ (λ _ → refl)) get≈ (sim r) get-sim
   where
-  get-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
+  get-sim : ∀ {M V'}
+    → T.Value V'
+    → M ≈ V'
+    → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
   get-sim v@(T.tuple _) (tuple≈ rs) = ret?-ans (proj-pw {R = _≈_} i (pw-list rs)) (val-in (T.value-red v))
   get-sim T.fun ()
   get-sim v@(T.pair _ _) (clos≈ _ _) = error ε (val-in (T.value-red v))
@@ -232,7 +265,9 @@ sim (inl≈ r) = ans-in (frame _ (λ _ → refl)) inl≈ (sim r) (λ v r' → va
 sim (inr≈ r) = ans-in (frame _ (λ _ → refl)) inr≈ (sim r) (λ v r' → val ε (T.inr v) (inr≈ r'))
 sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ r' → case≈ r' s t) (sim r) case-sim
   where
-  case-sim : ∀ {L V'} → T.Value V' → L ≈ V'
+  case-sim : ∀ {L V'}
+    → T.Value V'
+    → L ≈ V'
     → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
   case-sim v@(T.inl _) (inl≈ r') =
     to (one (val-in (T.value-red v))) (≈-[] tt r' s)
@@ -247,7 +282,9 @@ sim (prim≈ {p} r s) =
     λ v r' → ans-in (frame {g = λ X → C.prim p C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (T.value-red v))) (prim≈ r') (sim s)
       λ v' s' → ret?-ans (out≈ (obs≈ r') (obs≈ s')) (trans (val-in (T.value-red v)) (val-in (T.value-red v')))
   where
-  out≈ : ∀ {o₁ o₁' o₂ o₂'} → o₁ ≡ o₁' → o₂ ≡ o₂'
+  out≈ : ∀ {o₁ o₁' o₂ o₂'}
+    → o₁ ≡ o₁'
+    → o₂ ≡ o₂'
     → M.Pointwise _≈_ (map S.out (δ? p o₁ o₂)) (map T.out (δ? p o₁' o₂'))
   out≈ {o₁} {_} {o₂} refl refl with δ? p o₁ o₂
   ... | nothing = M.nothing

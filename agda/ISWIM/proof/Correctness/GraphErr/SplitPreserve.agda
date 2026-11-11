@@ -52,7 +52,11 @@ module ISWIM.proof.Correctness.GraphErr.SplitPreserve where
 ⋆⋆ : 𝒫 Value → 𝒫 Value → 𝒫 Value → 𝒫 Value
 ⋆⋆ C Y X = ⋆ ⟨ ⋆ ⟨ C , ⟨ Y , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
 
-⋆⋆-mono : ∀ {C C' Y Y' X X'} → C ⊆ C' → Y ⊆ Y' → X ⊆ X' → ⋆⋆ C Y X ⊆ ⋆⋆ C' Y' X'
+⋆⋆-mono : ∀ {C C' Y Y' X X'}
+  → C ⊆ C'
+  → Y ⊆ Y'
+  → X ⊆ X'
+  → ⋆⋆ C Y X ⊆ ⋆⋆ C' Y' X'
 ⋆⋆-mono {C} {C'} {Y} {Y'} {X} {X'} C⊆ Y⊆ X⊆ =
   lower (⋆₂-mono ⟨ C , ⟨ Y , ⟨ X , ptt ⟩ ⟩ ⟩ ⟨ C' , ⟨ Y' , ⟨ X' , ptt ⟩ ⟩ ⟩ ⟨ lift C⊆ , ⟨ lift Y⊆ , ⟨ lift X⊆ , ptt ⟩ ⟩ ⟩)
 
@@ -60,7 +64,9 @@ module ISWIM.proof.Correctness.GraphErr.SplitPreserve where
 _⊙_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 P ⊙ E' = ⋆⋆ (car ⟨ P , ptt ⟩) (cdr ⟨ P , ptt ⟩) E'
 
-⊙-mono : ∀ {D₁ D₂ E} → (∀ u v → ⦅ u , v ⦆ ∈ D₁ → ⦅ u , v ⦆ ∈ D₂) → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
+⊙-mono : ∀ {D₁ D₂ E}
+  → (∀ u v → ⦅ u , v ⦆ ∈ D₁ → ⦅ u , v ⦆ ∈ D₂)
+  → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
 ⊙-mono {D₁} {D₂} s = ⋆⋆-mono {car ⟨ D₁ , ptt ⟩} {car ⟨ D₂ , ptt ⟩} {cdr ⟨ D₁ , ptt ⟩} {cdr ⟨ D₂ , ptt ⟩} (λ { u ⟨ v , p ⟩ → ⟨ v , s u v p ⟩ }) (λ { v ⟨ u , p ⟩ → ⟨ u , s u v p ⟩ }) (λ d z → z)
 
 {- a closure: a pair -}
@@ -80,10 +86,16 @@ v ⊑ D' = Lift (lsuc lzero) (v ∈ D')
 [] ⊑* E' = pTrue
 (u ∷ U) ⊑* E' = u ⊑ E' × U ⊑* E'
 
-PairV-mono : ∀ {D₁ D₂} → (∀ u v → ⦅ u , v ⦆ ∈ D₁ → ⦅ u , v ⦆ ∈ D₂) → PairV D₁ → PairV D₂
+PairV-mono : ∀ {D₁ D₂}
+  → (∀ u v → ⦅ u , v ⦆ ∈ D₁ → ⦅ u , v ⦆ ∈ D₂)
+  → PairV D₁
+  → PairV D₂
 PairV-mono s ⟨ u , ⟨ t , p∈ ⟩ ⟩ = ⟨ u , ⟨ t , s u t p∈ ⟩ ⟩
 
-⊑-mono : ∀ v {D₁ D₂} → D₁ ⊆ D₂ → v ⊑ D₁ → v ⊑ D₂
+⊑-mono : ∀ v {D₁ D₂}
+  → D₁ ⊆ D₂
+  → v ⊑ D₁
+  → v ⊑ D₂
 ⊑-mono ν {D₁} {D₂} D⊆ (lift p) = lift (PairV-mono {D₁} {D₂} (λ u v → D⊆ _) p)
 ⊑-mono (U ↦ w) {D₁} {D₂} D⊆ ⟨ lift p , f ⟩ =
   ⟨ lift (PairV-mono {D₁} {D₂} (λ u v → D⊆ _) p) , (λ E' cE U⊑ → ⊑-mono w (⊙-mono {D₁} {D₂} (λ u v → D⊆ _)) (f E' cE U⊑)) ⟩
@@ -95,9 +107,14 @@ PairV-mono s ⟨ u , ⟨ t , p∈ ⟩ ⟩ = ⟨ u , ⟨ t , s u t p∈ ⟩ ⟩
 ⊑-mono ⦅ u , v ⦆ D⊆ (lift ())
 ⊑-mono ⟨⟩ D⊆ (lift v∈) = lift (D⊆ _ v∈)
 
-⊑-ne : ∀ v {D'} → v ⊑ D' → nonempty D'
+⊑-ne : ∀ v {D'}
+  → v ⊑ D'
+  → nonempty D'
 {- a source value other than ω is exhibited by a target value of its kind -}
-⊑-wit : ∀ v {D'} → v ⊑ D' → v ≢ ω → Σ[ d' ∈ Value ] d' ∈ ⌊ D' ⌋ × kind₄ (kind d') ≡ kind v
+⊑-wit : ∀ v {D'}
+  → v ⊑ D'
+  → v ≢ ω
+  → Σ[ d' ∈ Value ] d' ∈ ⌊ D' ⌋ × kind₄ (kind d') ≡ kind v
 ⊑-ne v {D'} v⊑ with ω? v
 ... | inj₁ refl = ⟨ ω , lower v⊑ ⟩
 ... | inj₂ v≢ = let ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = ⊑-wit v v⊑ v≢ in ⟨ d' , proj₁ d'∈ ⟩
@@ -111,14 +128,19 @@ PairV-mono s ⟨ u , ⟨ t , p∈ ⟩ ⟩ = ⟨ u , ⟨ t , s u t p∈ ⟩ ⟩
 ⊑-wit ⦅ u , v ⦆ (lift ())
 ⊑-wit ⟨⟩ (lift v∈) _ = ⟨ _ , ⟨ ⟨ v∈ , (λ ()) ⟩ , refl ⟩ ⟩
 
-⊑-val : ∀ {v D'} → v ≢ ω → v ⊑ D' → Conv D'
+⊑-val : ∀ {v D'}
+  → v ≢ ω
+  → v ⊑ D'
+  → Conv D'
 ⊑-val {v} v≢ v⊑ = let ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = ⊑-wit v v⊑ v≢ in ⟨ d' , d'∈ ⟩
 
 ⊑-lift : LiftRel _⊑_
 ⊑-lift = record { ω→ = lower ; →ω = lift ; S-mono = λ {d} → ⊑-mono d ; S-val = ⊑-val }
 
 {- project: the check, and the values of the right kind -}
-⊑-restrict : ∀ v {X'} → v ⊑ X' → v ⊑ (X' ⇂ λ d → kind₄ (kind d) ≡ kind v)
+⊑-restrict : ∀ v {X'}
+  → v ⊑ X'
+  → v ⊑ (X' ⇂ λ d → kind₄ (kind d) ≡ kind v)
 ⊑-restrict ν {X'} (lift p) = lift (PairV-mono {X'} {X' ⇂ λ d → kind₄ (kind d) ≡ fun} (λ u v p∈ → ⟨ p∈ , refl ⟩) p)
 ⊑-restrict (U ↦ w) {X'} ⟨ lift p , f ⟩ =
   ⟨ lift (PairV-mono {X'} {X' ⇂ λ d → kind₄ (kind d) ≡ fun} (λ u v p∈ → ⟨ p∈ , refl ⟩) p)
@@ -131,31 +153,45 @@ PairV-mono s ⟨ u , ⟨ t , p∈ ⟩ ⟩ = ⟨ u , ⟨ t , s u t p∈ ⟩ ⟩
 ⊑-restrict ⦅ u , v ⦆ (lift ())
 ⊑-restrict ⟨⟩ (lift v∈) = lift ⟨ v∈ , refl ⟩
 
-hit-⊑ : ∀ t {X X'} → Lifted _⊑_ X X' → hit t X → hit t X'
+hit-⊑ : ∀ t {X X'}
+  → Lifted _⊑_ X X'
+  → hit t X
+  → hit t X'
 hit-⊑ (ttup n i) h ⟨ e , e∈ ⟩ = ⊑-ne e (h _ e∈)
 hit-⊑ tfun h _ = tt
 hit-⊑ tsum h _ = tt
 hit-⊑ tint h _ = tt
 
-⊑-proj : ∀ t {X X'} → Clean X → Lifted _⊑_ X X' → let k = kindᶠ (flat t) in
-  Lifted _⊑_ (checked k X (keep (λ k → k) t X)) (checkedᵠ kind₄ k X' (keep kind₄ t X'))
+⊑-proj : ∀ t {X X'}
+  → Clean X
+  → Lifted _⊑_ X X'
+  → let k = kindᶠ (flat t) in
+      Lifted _⊑_ (checked k X (keep (λ k → k) t X)) (checkedᵠ kind₄ k X' (keep kind₄ t X'))
 ⊑-proj t clX h w (inj₁ ⟨ refl , ⟨ s , ⟨ s∈ , sk ⟩ ⟩ ⟩) with ⊑-wit s (h s s∈) (clX s s∈)
 ... | ⟨ d' , ⟨ d'∈ , dk ⟩ ⟩ = lift (inj₁ ⟨ refl , ⟨ d' , ⟨ proj₁ d'∈ , (λ e → sk (trans (sym dk) e)) ⟩ ⟩ ⟩)
 ⊑-proj t clX h w (inj₂ ⟨ w∈ , ⟨ ht , wk ⟩ ⟩) =
   ⊑-mono w (λ { d ⟨ d∈ , e ⟩ → inj₂ ⟨ d∈ , ⟨ hit-⊑ t h ht , trans e wk ⟩ ⟩ }) (⊑-restrict w (h w w∈))
 
-data-⊑ : ∀ v {D'} → Data v → v ∈ D' → v ⊑ D'
+data-⊑ : ∀ v {D'}
+  → Data v
+  → v ∈ D'
+  → v ⊑ D'
 data-⊑ (left d) dd v∈ = data-⊑ d dd v∈
 data-⊑ (right d) dd v∈ = data-⊑ d dd v∈
 data-⊑ (const k) _ v∈ = lift v∈
 data-⊑ ω _ v∈ = lift v∈
 data-⊑ ⟨⟩ _ v∈ = lift v∈
 
-⊑*-intro : ∀ U {D E'} → mem U ⊆ D → Lifted _⊑_ D E' → U ⊑* E'
+⊑*-intro : ∀ U {D E'}
+  → mem U ⊆ D
+  → Lifted _⊑_ D E'
+  → U ⊑* E'
 ⊑*-intro [] U⊆ f = ptt
 ⊑*-intro (u ∷ U) U⊆ f = ⟨ f u (U⊆ u (here refl)) , ⊑*-intro U (λ d d∈ → U⊆ d (there d∈)) f ⟩
 
-⊑*-elim : ∀ {U E'} → U ⊑* E' → Lifted _⊑_ (mem U) E'
+⊑*-elim : ∀ {U E'}
+  → U ⊑* E'
+  → Lifted _⊑_ (mem U) E'
 ⊑*-elim ⟨ u⊑ , _ ⟩ u (here refl) = u⊑
 ⊑*-elim ⟨ _ , U⊑ ⟩ u (there u∈) = ⊑*-elim U⊑ u u∈
 
@@ -168,21 +204,33 @@ record Envs (Γ : Ctx) (ρ ρ' : Env Value) : Set₁ where
     ρ'~ : Con-env ρ'
     ρ⊑ : ∀ {A} (x : Γ ∋ A) → Lifted _⊑_ (ρ (idx x)) (ρ' (idx x))
 
-ext-envs : ∀ {Γ} {ρ ρ' X X'} → Envs Γ ρ ρ' → nonempty X' → Con X' → Lifted _⊑_ X X'
+ext-envs : ∀ {Γ} {ρ ρ' X X'}
+  → Envs Γ ρ ρ'
+  → nonempty X'
+  → Con X'
+  → Lifted _⊑_ X X'
   → Envs (Any ∷ Γ) (X • ρ) (X' • ρ')
 ext-envs (envs NE' ρ'~ ρ⊑) ne c h = envs (extend-nonempty-env NE' ne) (Con-• c ρ'~) (λ { Z → h ; (S x) → ρ⊑ x })
 
-args-con' : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ} → Con-env ρ → ∀ i → Con (nthD (⟦ splits Ms ⟧s' ρ) i)
+args-con' : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ}
+  → Con-env ρ
+  → ∀ i
+  → Con (nthD (⟦ splits Ms ⟧s' ρ) i)
 args-con' (M ∷ Ms) c zero = S4.con (split M) c
 args-con' (M ∷ Ms) c (suc i) = args-con' Ms c i
 
 clean⌊⌋ : ∀ {D} → Clean ⌊ D ⌋
 clean⌊⌋ d d∈ = proj₂ d∈
 
-preserve : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'} → Envs Γ ρ ρ' → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split M ⟧' ρ')
-preserve-nth : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ ρ'} → Envs Γ ρ ρ'
-  → ∀ i → Lifted _⊑_ (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits Ms ⟧s' ρ') i)
-preserve-𝒯 : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ ρ'} → Envs Γ ρ ρ'
+preserve : ∀ {Γ A} (M : Tm Γ A) {ρ ρ'}
+  → Envs Γ ρ ρ'
+  → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split M ⟧' ρ')
+preserve-nth : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ ρ'}
+  → Envs Γ ρ ρ'
+  → ∀ i
+  → Lifted _⊑_ (nthD (⟦ Ms ⟧s ρ) i) (nthD (⟦ splits Ms ⟧s' ρ') i)
+preserve-𝒯 : ∀ {Γ n} (Ms : Vec (Tm Γ Any) n) {ρ ρ'}
+  → Envs Γ ρ ρ'
   → Lifted _⊑_ (𝒯ᵐ n (⟦ Ms ⟧s ρ)) (𝒯ᵐ n (⟦ splits Ms ⟧s' ρ'))
 
 preserve (` x) E = Envs.ρ⊑ E x
@@ -196,7 +244,10 @@ preserve (prim p L M) {ρ} {ρ'} E =
   where
   open Envs E
   K = λ X Y → primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩
-  kernel : ∀ {X X' Y Y'} → Lifted _⊑_ X X' → Lifted _⊑_ Y Y' → Lifted _⊑_ (K X Y) (K X' Y')
+  kernel : ∀ {X X' Y Y'}
+    → Lifted _⊑_ X X'
+    → Lifted _⊑_ Y Y'
+    → Lifted _⊑_ (K X Y) (K X' Y')
   kernel hX hY _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
     data-⊑ (out (δ p n m)) (out-data (δ p n m)) ⟨ n , ⟨ m , ⟨ lower (hX _ n∈) , ⟨ lower (hY _ m∈) , refl ⟩ ⟩ ⟩ ⟩
 
@@ -227,11 +278,18 @@ preserve {Γ} (case L M N) {ρ} {ρ'} E =
   cX' : Con X'
   cX' = Con-⊆ (S4.con (split L) ρ'~) (λ d d∈ → proj₁ (proj₁ d∈))
   {- the branch B on the side s of the scrutinee -}
-  branch : ∀ (s : Tag) (B : Tm (Any ∷ Γ) Any) {Cs} → (∀ {a b} → tag s a ~ tag s b → a ~ b)
+  branch : ∀ (s : Tag) (B : Tm (Any ∷ Γ) Any) {Cs}
+    → (∀ {a b} → tag s a ~ tag s b → a ~ b)
     → (∀ {y} → y ≢ ω → ValPayload (tag s y))
-    → (nonempty (Untag s X') → Con (Untag s X') → ⟦ split B ⟧' (Untag s X' • ρ') ⊆ Cs)
-    → ∀ u U → (∀ d → d ∈ mem (u ∷ U) → d ⊑ Untag s ⌊ ⟦ split L ⟧' ρ' ⌋) → NoErr (u ∷ U)
-    → ∀ v → v ∈ ⟦ B ⟧ (mem (u ∷ U) • ρ) → v ⊑ Cs
+    → (  nonempty (Untag s X')
+       → Con (Untag s X')
+       → ⟦ split B ⟧' (Untag s X' • ρ') ⊆ Cs)
+    → ∀ u U
+    → (∀ d → d ∈ mem (u ∷ U) → d ⊑ Untag s ⌊ ⟦ split L ⟧' ρ' ⌋)
+    → NoErr (u ∷ U)
+    → ∀ v
+    → v ∈ ⟦ B ⟧ (mem (u ∷ U) • ρ)
+    → v ⊑ Cs
   branch s B {Cs} s~ vp B⊆ u U u⊑ nU v v∈ = ⊑-mono v (B⊆ ne cS) (preserve B (ext-envs E ne cS u⊑') v v∈)
     where
     cS = Untag-con s s~ cX'
@@ -282,7 +340,9 @@ preserve (clos {n = n} N Ms) {ρ} {ρ'} E v v∈ =
   T = 𝒯ᵐ n (⟦ Ms ⟧s ρ)
   T' = 𝒯ᵐ n (⟦ splits Ms ⟧s' ρ')
   cT' = S4.con (T.tuple (splits Ms)) ρ'~
-  kernel : Conv T → Conv T' → Lifted _⊑_ ⌊ T ⌋ ⌊ T' ⌋
+  kernel : Conv T
+    → Conv T'
+    → Lifted _⊑_ ⌊ T ⌋ ⌊ T' ⌋
     → Lifted _⊑_ (⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ T ⌋ , ptt ⟩ ⟩) (pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩)
   kernel _ ⟨ t' , t'∈ ⟩ hT = G
     where
@@ -297,7 +357,10 @@ preserve (clos {n = n} N Ms) {ρ} {ρ'} E v v∈ =
     G ν _ = lift PV
     G (U ↦ w) ⟨ FV , ⟨ ⟨ ⟨ ⟨ w∈ , ⟨ neU , _ ⟩ ⟩ , _ ⟩ , ⟨ _ , nU ⟩ ⟩ , ⟨ FV⊆ , _ ⟩ ⟩ ⟩ = ⟨ lift PV , call ⟩
       where
-      call : ∀ E' → Con E' → U ⊑* E' → w ⊑ Pp ⊙ E'
+      call : ∀ E'
+        → Con E'
+        → U ⊑* E'
+        → w ⊑ Pp ⊙ E'
       call E' cE' U⊑ = ⊑-mono w β (preserve N Eb w w∈)
         where
         u₀ = proj₁ (ne-mem neU (λ d d∈ → d∈))
@@ -317,7 +380,9 @@ preserve-nth (M ∷ Ms) E (suc i) = preserve-nth Ms E i
 preserve-𝒯 {n = n} Ms E =
   binds-lift n ⊑-lift (args-con' Ms (Envs.ρ'~ E)) (preserve-nth Ms E) (kernel n)
   where
-  kernel : ∀ m {Xs Xs'} → (∀ i → Clean (nthD Xs i)) → (∀ i → Lifted _⊑_ (nthD Xs i) (nthD Xs' i))
+  kernel : ∀ m {Xs Xs'}
+    → (∀ i → Clean (nthD Xs i))
+    → (∀ i → Lifted _⊑_ (nthD Xs i) (nthD Xs' i))
     → Lifted _⊑_ (𝒯 m Xs) (𝒯 m Xs')
   kernel zero cl hs ⟨⟩ tt = lift tt
   kernel (suc m) cl hs (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =

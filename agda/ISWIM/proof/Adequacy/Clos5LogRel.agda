@@ -66,8 +66,11 @@ open Rel Run public
 {- Lemmas about runs -------------------------------------------------------------------}
 
 collect : ∀ {Γ A} {γ : Env Σ Γ} {M : Tm Σ Γ A} {v} (P : Value → Val Σ A → Set) V
-  → (∀ d → d ∈ mem V → Σ[ v' ∈ Val Σ A ] γ ⊢ M ⇓ v' × P d v') → γ ⊢ M ⇓ v
-  → ∀ d → d ∈ mem V → P d v
+  → (∀ d → d ∈ mem V → Σ[ v' ∈ Val Σ A ] γ ⊢ M ⇓ v' × P d v')
+  → γ ⊢ M ⇓ v
+  → ∀ d
+  → d ∈ mem V
+  → P d v
 collect P V all e d d∈ with all d d∈
 ... | ⟨ v' , ⟨ e' , r ⟩ ⟩ with ⇓-det e e'
 ... | refl = r
@@ -78,9 +81,14 @@ snd𝕍 u (pack c e) = 𝕍 u e
 
 {- The fundamental lemma -----------------------------------------------------------------}
 
-adequate : ∀ {Γ A} (M : Tm Σ Γ A) {T : Table Σ} {ρ} {γ : Env Σ Γ} {d} → 𝕋 T → 𝔾 ρ γ → d ∈ ⟦ M ⟧[ T ] ρ
+adequate : ∀ {Γ A} (M : Tm Σ Γ A) {T : Table Σ} {ρ} {γ : Env Σ Γ} {d}
+  → 𝕋 T
+  → 𝔾 ρ γ
+  → d ∈ ⟦ M ⟧[ T ] ρ
   → Σ[ v ∈ Val Σ A ] γ ⊢ M ⇓ v × 𝕍 d v
-adequate-args : ∀ {Γ n} (Ms : Vec (Tm Σ Γ Any) n) {T : Table Σ} {ρ} {γ : Env Σ Γ} → 𝕋 T → 𝔾 ρ γ
+adequate-args : ∀ {Γ n} (Ms : Vec (Tm Σ Γ Any) n) {T : Table Σ} {ρ} {γ : Env Σ Γ}
+  → 𝕋 T
+  → 𝔾 ρ γ
   → (∀ j → nonempty (nthD (⟦ Ms ⟧s[ T ] ρ) j))
   → Σ[ vs ∈ Vec (Val Σ Any) n ] Evals γ Ms vs × (∀ j d → d ∈ nthD (⟦ Ms ⟧s[ T ] ρ) j → 𝕍At j d (toList vs))
 
@@ -159,7 +167,9 @@ adequate-args [] 𝕋T G ne = ⟨ [] , ⟨ [] , (λ ()) ⟩ ⟩
 adequate-args (M ∷ Ms) 𝕋T G ne with adequate M 𝕋T G (proj₂ (ne zero)) | adequate-args Ms 𝕋T G (λ j → ne (suc j))
 ... | ⟨ v , ⟨ e , _ ⟩ ⟩ | ⟨ vs , ⟨ evs , rs ⟩ ⟩ = ⟨ v ∷ vs , ⟨ e ∷ evs , R ⟩ ⟩
   where
-  R : ∀ j d → d ∈ nthD (⟦ M ∷ Ms ⟧s[ _ ] _) j → 𝕍At j d (v ∷ toList vs)
+  R : ∀ j d
+    → d ∈ nthD (⟦ M ∷ Ms ⟧s[ _ ] _) j
+    → 𝕍At j d (v ∷ toList vs)
   R zero d d∈ = ⟨ length-toList vs , collect 𝕍 (d ∷ []) (λ { d' (here refl) → adequate M 𝕋T G d∈ }) e d (here refl) ⟩
   R (suc j) d d∈ = rs j d d∈
 

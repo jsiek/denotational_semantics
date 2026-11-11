@@ -27,15 +27,23 @@ open import Level using (lower)
 module ISWIM.proof.Correctness.GraphErr.SplitCorrect where
 
 split-correct-error : ∀ (M : Tm [] Any)
-  → (ω ∈ ⟦ M ⟧ ρ₀ → ω ∈ ⟦ split-program M ⟧₄ ρ₀) × (ω ∈ ⟦ split-program M ⟧₄ ρ₀ → ω ∈ ⟦ M ⟧ ρ₀)
+  → (  ω ∈ ⟦ M ⟧ ρ₀
+     → ω ∈ ⟦ split-program M ⟧₄ ρ₀)
+  × (  ω ∈ ⟦ split-program M ⟧₄ ρ₀
+     → ω ∈ ⟦ M ⟧ ρ₀)
 split-correct-error M = ⟨ (λ ω∈ → lower (preserve₀ M ω ω∈)) , reflect-error M ⟩
 
 split-correct-const : ∀ (M : Tm [] Any) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ split-program M ⟧₄ ρ₀)
-  × (const c ∈ ⟦ split-program M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ split-program M ⟧₄ ρ₀)
+  × (  const c ∈ ⟦ split-program M ⟧₄ ρ₀
+     → const c ∈ ⟦ M ⟧ ρ₀)
 split-correct-const M c = ⟨ (λ c∈ → lower (preserve₀ M (const c) c∈)) , reflect-const M c ⟩
 
 split-correct-val : ∀ (M : Tm [] Any)
-  → (val∈ (⟦ M ⟧ ρ₀) → val∈ (⟦ split-program M ⟧₄ ρ₀)) × (val∈ (⟦ split-program M ⟧₄ ρ₀) → val∈ (⟦ M ⟧ ρ₀))
+  → (  val∈ (⟦ M ⟧ ρ₀)
+     → val∈ (⟦ split-program M ⟧₄ ρ₀))
+  × (  val∈ (⟦ split-program M ⟧₄ ρ₀)
+     → val∈ (⟦ M ⟧ ρ₀))
 split-correct-val M =
   ⟨ (λ { ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩ → let ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⊑-val v≢ (preserve₀ M v v∈) in ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ }) , reflect-val M ⟩

@@ -66,11 +66,16 @@ data _⊑_ (bs : List Tail) : List Tail → Set where
   ⊑-refl : bs ⊑ bs
   ⊑-step : ∀ {t cs} → bs ⊑ cs → bs ⊑ (t ∷ cs)
 
-⊑-trans : ∀ {bs cs es} → bs ⊑ cs → cs ⊑ es → bs ⊑ es
+⊑-trans : ∀ {bs cs es}
+  → bs ⊑ cs
+  → cs ⊑ es
+  → bs ⊑ es
 ⊑-trans p ⊑-refl = p
 ⊑-trans p (⊑-step q) = ⊑-step (⊑-trans p q)
 
-⊑-length : ∀ {bs cs} → bs ⊑ cs → length bs ≤ length cs
+⊑-length : ∀ {bs cs}
+  → bs ⊑ cs
+  → length bs ≤ length cs
 ⊑-length ⊑-refl = ≤-refl
 ⊑-length (⊑-step p) = m≤n⇒m≤1+n (⊑-length p)
 
@@ -96,7 +101,9 @@ module _ (ds : List Imp.Body) where
     simple≡ φ (Imp.prim p a b) = refl
 
     {- block length bs, with the blocks older than it -}
-    jump-at : ∀ {t bs cs φ} → (t ∷ bs) ⊑ cs → G.jump ds' ck cs φ (length bs) ≡ G.tail ds' ck bs φ t
+    jump-at : ∀ {t bs cs φ}
+      → (t ∷ bs) ⊑ cs
+      → G.jump ds' ck cs φ (length bs) ≡ G.tail ds' ck bs φ t
     jump-at {bs = bs} ⊑-refl with length bs ≟ length bs
     ... | yes _ = refl
     ... | no ne = ⊥-elim (ne refl)
@@ -123,7 +130,8 @@ module _ (ds : List Imp.Body) where
             (sym (trans (bind-assoc (I.atom φ a)) (bind-cong (I.atom φ a) λ v → bind-assoc (I.inj? v))))
 
     {- the CPS lemma: x := e, then k -}
-    assign-ok : ∀ e x k bs {K} → Means bs k K
+    assign-ok : ∀ e x k bs {K}
+      → Means bs k K
       → Ok bs (explicate-assign e x k bs) (λ φ → I.eval ds ck φ e >>= λ p → set (proj₂ p) x (proj₁ p) K)
     assign-ok (simple s) x k bs M =
       ⊑-refl , λ p φ → trans (bind≡ (sym (simple≡ φ s)) λ v → bind-cong (from-maybe (φ [ x ]≔ v)) λ φ' → M p φ')
@@ -184,7 +192,10 @@ module _ (ds : List Imp.Body) where
   code-pw (inr _) = M.nothing
 
   calls≡ : ∀ ck f e w → I.call ds ck (I.code? ds f) e w ≡ G.call ds' ck (G.code? ds' f) e w
-  call-pw : ∀ ck {mb mb'} → M.Pointwise Def mb mb' → ∀ e w → I.call ds ck mb e w ≡ G.call ds' ck mb' e w
+  call-pw : ∀ ck {mb mb'}
+    → M.Pointwise Def mb mb'
+    → ∀ e w
+    → I.call ds ck mb e w ≡ G.call ds' ck mb' e w
 
   calls≡ ck f = call-pw ck (code-pw f)
 
@@ -200,5 +211,7 @@ explicate-correct (Imp.program ds (Imp.body n e)) = clocked-≡ λ ck →
 
 {- The whole compiler, into CFG ---------------------------------------------------}
 
-compile-cfg-correct : ∀ M → Closed M → Equivalent (ISWIM.sem M) (G.sem (compile-cfg M))
+compile-cfg-correct : ∀ M
+  → Closed M
+  → Equivalent (ISWIM.sem M) (G.sem (compile-cfg M))
 compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))

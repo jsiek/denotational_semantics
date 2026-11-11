@@ -42,7 +42,10 @@ open Rel (λ _ _ → ⊥) Opt
 Agree : ∀ {k k'} → (Fin k → Bool) → (Fin k → Fin k') → C.Env k → C.Env k' → Set
 Agree u r ρ₁ ρ₂ = ∀ x → T (u x) → V.lookup ρ₁ x ≈ V.lookup ρ₂ (r x)
 
-ext-agree : ∀ {k k' u r ρ₁ ρ₂ v w} → v ≈ w → Agree {k} {k'} (λ x → u (suc x)) r ρ₁ ρ₂ → Agree u (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
+ext-agree : ∀ {k k' u r ρ₁ ρ₂ v w}
+  → v ≈ w
+  → Agree {k} {k'} (λ x → u (suc x)) r ρ₁ ρ₂
+  → Agree u (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
 ext-agree vw ag zero _ = vw
 ext-agree vw ag (suc x) t = ag x t
 
@@ -50,19 +53,26 @@ ext-agree vw ag (suc x) t = ag x t
 Sel : ∀ {n} (fl : Vec Bool n) → Vec (C.Val Any) n → Vec (C.Val Any) (count fl) → Set
 Sel fl vs ws = Σ[ vs' ∈ _ ] Pointwise (_≈_ {Any}) vs vs' × select fl vs' ≡ ws
 
-pw-thin : ∀ {n} (fl : Vec Bool n) {vs vs'} → Pointwise (_≈_ {Any}) vs vs' → Thin _≈_ fl vs (select fl vs')
+pw-thin : ∀ {n} (fl : Vec Bool n) {vs vs'}
+  → Pointwise (_≈_ {Any}) vs vs'
+  → Thin _≈_ fl vs (select fl vs')
 pw-thin [] [] = []
 pw-thin (true ∷ fl) (r ∷ rs) = keep r (pw-thin fl rs)
 pw-thin (false ∷ fl) (r ∷ rs) = drop (pw-thin fl rs)
 
-run≈ : ∀ ck {k k' A} (M : Tm k A) {r : Fin k → Fin k'} {ρ₁ ρ₂} → Agree (uses M) r ρ₁ ρ₂
+run≈ : ∀ ck {k k' A} (M : Tm k A) {r : Fin k → Fin k'} {ρ₁ ρ₂}
+  → Agree (uses M) r ρ₁ ρ₂
   → RelResult _≈_ (C.eval ck ρ₁ M) (C.eval ck ρ₂ (opt r M))
-runs≈ : ∀ ck {k k' n} (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ₁ ρ₂} → Agree (usesV Ms) r ρ₁ ρ₂
+runs≈ : ∀ ck {k k' n} (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ₁ ρ₂}
+  → Agree (usesV Ms) r ρ₁ ρ₂
   → RelResult (Pointwise _≈_) (C.evals ck ρ₁ Ms) (C.evals ck ρ₂ (opts r Ms))
 sel≈ : ∀ ck {k k' n} (u : Fin n → Bool) (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ₁ ρ₂}
   → Agree (usesV Ms) r ρ₁ ρ₂
   → RelResult (Sel (flags u Ms)) (C.evals ck ρ₁ Ms) (C.evals ck ρ₂ (select (flags u Ms) (opts r Ms)))
-call≈ : ∀ ck {f g v w} → f ≈ g → v ≈ w → RelResult _≈_ (C.call ck f v) (C.call ck g w)
+call≈ : ∀ ck {f g v w}
+  → f ≈ g
+  → v ≈ w
+  → RelResult _≈_ (C.call ck f v) (C.call ck g w)
 
 run≈ ck (` x) ag = ret (ag x (fromWitness refl))
 run≈ ck (clos N Ms) ag =

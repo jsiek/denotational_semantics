@@ -95,9 +95,17 @@ private
   {- a Clos5ᵀ term that refers only to definitions below k means the same
      under tables that agree below k -}
   module _ {T T' : Table} {k} (TT : ∀ j → j < k → T j ≃ T' j) where
-    old-≃ : ∀ {Σ Γ A} (M : Tm Σ Γ A) → Older k M → ∀ {ρ ρ'} → ρ ~ₑ[ _≃_ ] ρ' → ⟦ M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ'
-    olds-≃ : ∀ {Σ Γ n} (Ms : Vec (Tm Σ Γ Any) n) → Olders k Ms → ∀ {ρ ρ'} → ρ ~ₑ[ _≃_ ] ρ'
-      → ∀ i → nthD (⟦ Ms ⟧s[ T ] ρ) i ≃ nthD (⟦ Ms ⟧s[ T' ] ρ') i
+    old-≃ : ∀ {Σ Γ A} (M : Tm Σ Γ A)
+      → Older k M
+      → ∀ {ρ ρ'}
+      → ρ ~ₑ[ _≃_ ] ρ'
+      → ⟦ M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ'
+    olds-≃ : ∀ {Σ Γ n} (Ms : Vec (Tm Σ Γ Any) n)
+      → Olders k Ms
+      → ∀ {ρ ρ'}
+      → ρ ~ₑ[ _≃_ ] ρ'
+      → ∀ i
+      → nthD (⟦ Ms ⟧s[ T ] ρ) i ≃ nthD (⟦ Ms ⟧s[ T' ] ρ') i
     old-≃ (` x) o ρ~ = ρ~ (idx x)
     old-≃ (fun-ref f) o ρ~ = TT _ o
     old-≃ (pack L M) ⟨ o , o' ⟩ ρ~ = pairᵐ-≃ (old-≃ L o ρ~) (old-≃ M o' ρ~)
@@ -117,14 +125,19 @@ private
     olds-≃ (M ∷ Ms) ⟨ _ , os ⟩ ρ~ (suc i) = olds-≃ Ms os ρ~ i
 
   {- what the compiler makes of a definition of compile M -}
-  pipe : ∀ {Σ n} → Code Σ n → _
+  pipe : ∀ {Σ n}
+    → Code Σ n
+    → _
   pipe D = def-body (explicate-body (lift (rco D (λ x → x))))
 
   {- its code is that of the definition, under a table of consistent sets of values -}
   Good : Table → Set
   Good T = ∀ k → Valᴰ (T k) × Con (T k)
 
-  x86-code : ∀ {Σ T n} → Good T → (D : Code Σ n) → code₅ T D ≃ codeₜ T (pipe D)
+  x86-code : ∀ {Σ T n}
+    → Good T
+    → (D : Code Σ n)
+    → code₅ T D ≃ codeₜ T (pipe D)
   x86-code {T = T} gT D =
     ≃-trans {D₂ = code₅ T Mon.⌜ e ⌝} (ΛΛᵐ-≃′ λ V U neV _ nV neU _ nU → rco-sem (λ _ → ≃-refl) (λ k → proj₁ (gT k)) D (λ x → x)
             (mkR λ { Z → ⟨ ≃-refl , noerr-val U neU nU ⟩ ; (S Z) → ⟨ ≃-refl , noerr-val V neV nV ⟩ }))
@@ -141,7 +154,10 @@ private
   pipe-! (d ∷ ds) Z = refl
   pipe-! (d ∷ ds) (S f) = pipe-! ds f
 
-  older-at : ∀ {Σ ns n} {ds : All (Code Σ) ns} → OlderDefs ds → (f : ns ∋ n) → Older (lvl f) (ds ! f)
+  older-at : ∀ {Σ ns n} {ds : All (Code Σ) ns}
+    → OlderDefs ds
+    → (f : ns ∋ n)
+    → Older (lvl f) (ds ! f)
   older-at {ds = d ∷ ds} ⟨ o , _ ⟩ Z = o
   older-at {ds = d ∷ ds} ⟨ _ , os ⟩ (S f) = older-at os f
 
@@ -157,41 +173,55 @@ compile-ok M = ⟨ (λ k → Con-⊆ (tbl-con (λ TC d → codeᶜ-con TC d) cds
 
 {- The X86ᵀ machine --------------------------------------------------------------------}
 
-x86-error-iff : ∀ M → Closed M → (ω ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) o-error
+x86-error-iff : ∀ M
+  → Closed M
+  → (ω ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) o-error
 x86-error-iff M c = X.error-iff (compile-x86 M) (compile-ok M)
 
-x86-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B}
+x86-const-iff : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
   → (dconst k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
 x86-const-iff M c = X.const-iff (compile-x86 M) (compile-ok M)
 
-x86-converges-iff : ∀ M → Closed M
+x86-converges-iff : ∀ M
+  → Closed M
   → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₜ × d ≢ ω) ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
 x86-converges-iff M c = X.converges-iff (compile-x86 M) (compile-ok M)
 
-x86-diverges-iff : ∀ M → Closed M
+x86-diverges-iff : ∀ M
+  → Closed M
   → Diverges (X86ᵀₘ.sem (compile-x86 M)) ⇔ (∀ d → ¬ (d ∈ ⟦ compile-x86 M ⟧ₜ))
 x86-diverges-iff M c = X.diverges-iff (compile-x86 M) (compile-ok M)
 
 {- The Clos5ᵀ machine ------------------------------------------------------------}
 
 private
-  Sm : ∀ M → Closed M → Same ⟦ compile M ⟧₅ (⟦ M ⟧ ρ₀)
+  Sm : ∀ M
+    → Closed M
+    → Same ⟦ compile M ⟧₅ (⟦ M ⟧ ρ₀)
   Sm M c = Same-sym (compile-same₅ M c)
 
-clos5-error-iff : ∀ M → Closed M → (ω ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) o-error
+clos5-error-iff : ∀ M
+  → Closed M
+  → (ω ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) o-error
 clos5-error-iff M c = ⇔-trans (proj₁ (Sm M c)) (⇔-trans (A.error-iff M c) (compile-error M c))
 
-clos5-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B}
+clos5-const-iff : ∀ M
+  → Closed M
+  → ∀ {B} {k : base-rep B}
   → (dconst k ∈ ⟦ compile M ⟧₅) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
 clos5-const-iff M c {B} {k} =
   ⇔-trans (proj₁ (proj₂ (Sm M c)) k) (⇔-trans (A.const-iff M c) (compile-const M c B k))
 
-clos5-converges-iff : ∀ M → Closed M
+clos5-converges-iff : ∀ M
+  → Closed M
   → (Σ[ d ∈ Value ] d ∈ ⟦ compile M ⟧₅ × d ≢ ω) ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
 clos5-converges-iff M c =
   ⇔-trans (proj₂ (proj₂ (Sm M c))) (⇔-trans (A.converges-iff M c) (compile-converges M c))
 
-clos5-diverges-iff : ∀ M → Closed M
+clos5-diverges-iff : ∀ M
+  → Closed M
   → Diverges (Clos5ᵀₘ.sem (compile M)) ⇔ (∀ d → ¬ (d ∈ ⟦ compile M ⟧₅))
 clos5-diverges-iff M c =
   ⇔-trans (⇔-sym (compile-diverges M c))
@@ -199,12 +229,16 @@ clos5-diverges-iff M c =
 
 {- The compiler, observed through the machines ------------------------------------}
 
-end-to-end : ∀ M → Closed M → Agree (ISWIMₘ.sem M) (Clos5ᵀₘ.sem (compile M))
+end-to-end : ∀ M
+  → Closed M
+  → Agree (ISWIMₘ.sem M) (Clos5ᵀₘ.sem (compile M))
 end-to-end M c =
   agree (compile-same₅ M c) (A.error-iff M c) (clos5-error-iff M c) (A.const-iff M c) (clos5-const-iff M c)
     (A.converges-iff M c) (clos5-converges-iff M c) (A.diverges-iff M c) (clos5-diverges-iff M c)
 
-end-to-end-x86 : ∀ M → Closed M → Agree (ISWIMₘ.sem M) (X86ᵀₘ.sem (compile-x86 M))
+end-to-end-x86 : ∀ M
+  → Closed M
+  → Agree (ISWIMₘ.sem M) (X86ᵀₘ.sem (compile-x86 M))
 end-to-end-x86 M c =
   agree (compile-x86-same M c) (A.error-iff M c) (x86-error-iff M c) (A.const-iff M c) (x86-const-iff M c)
     (A.converges-iff M c) (x86-converges-iff M c) (A.diverges-iff M c) (x86-diverges-iff M c)

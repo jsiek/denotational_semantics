@@ -85,8 +85,12 @@ data _~_ : Src.State → Tgt.State → Set where
   ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
 {- Related values are observed alike, and primitives give related values -}
-obs≈ : ∀ {A} {v : Src.Val A} {w} → v ≈ w → Src.obs v ≡ Tgt.obs w
-obs≈* : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Src.obs-vec vs ≡ Tgt.obs-vec ws
+obs≈ : ∀ {A} {v : Src.Val A} {w}
+  → v ≈ w
+  → Src.obs v ≡ Tgt.obs w
+obs≈* : ∀ {n} {vs : Vec _ n} {ws}
+  → V.Pointwise _≈_ vs ws
+  → Src.obs-vec vs ≡ Tgt.obs-vec ws
 obs≈ (clo≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)
@@ -103,7 +107,9 @@ obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 ... | false = inr≈ (dyn≈ (tup≈ []))
 
 {- the only error: both machines project, and fail, at the same time -}
-proj~ : ∀ {H G v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+proj~ : ∀ {H G v w κ₁ κ₂}
+  → v ≈ w
+  → κ₁ ≈k κ₂
   → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁))) (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
 proj~ {H} {G} r k with H ≟F flat G
 ... | yes refl = same-next (ret~ r k)
@@ -122,12 +128,16 @@ module _ (P : C2.Tm 0 Any) where
   capture-fvs (x ∷ xs) vs ρ κ = refl ◅ refl ◅ capture-fvs xs (lookup ρ x ∷ vs) ρ κ
 
   tuple-next~ : ∀ {k m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env k} {ρ₂} {κ₁ κ₂}
-    → V.Pointwise _≈_ vs ws → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
+    → V.Pointwise _≈_ vs ws
+    → ρ₁ ≈ρ ρ₂
+    → κ₁ ≈k κ₂
     → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (encs Ms) ρ₂ κ₂
   tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (Src.step s₁) s₂
   sim (eval~ {M = ` x} er k) = steps₁ refl (ret~ (V.lookup er x) k)
   sim (eval~ {n} {M = lam N} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) =
     steps (plus refl (subst (λ Ms → Star L₂ (Tgt.tuple-next [] Ms ρ₂ κ') (Tgt.ret (Tgt.tup (map (lookup ρ₂) (allFin n))) κ')) (sym (tabulate-allFin C2.`_))

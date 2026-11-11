@@ -56,11 +56,17 @@ record CarEntry (V' U₀ : List Value) (w : Value) : Set where
     FV≢[] : FV ≢ []
     FV⊆ : mem FV ⊆ Cdrs V'
 
-CarEntry-⊆ : ∀ {V₁ V₂ U₀ w} → mem V₁ ⊆ mem V₂ → CarEntry V₁ U₀ w → CarEntry V₂ U₀ w
+CarEntry-⊆ : ∀ {V₁ V₂ U₀ w}
+  → mem V₁ ⊆ mem V₂
+  → CarEntry V₁ U₀ w
+  → CarEntry V₂ U₀ w
 CarEntry-⊆ s (car-entry FV t e∈ neFV FV⊆) =
   car-entry FV t (s _ e∈) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , s _ i ⟩)
 
-Bnd-CarEntry : ∀ {k V' U₀ w} → Bnd (suc k) V' → CarEntry V' U₀ w → Bnd k U₀ × depth w < k
+Bnd-CarEntry : ∀ {k V' U₀ w}
+  → Bnd (suc k) V'
+  → CarEntry V' U₀ w
+  → Bnd k U₀ × depth w < k
 Bnd-CarEntry {U₀ = U₀}{w} bV (car-entry FV t e∈ _ _) =
   ⟨ (λ u u∈ → <-shrink (s≤s (≤-trans (depth-⋵ u∈) (≤-trans (m≤m⊔n _ (depth w)) up))) (bV _ e∈))
   , <-shrink (s≤s (≤-trans (m≤n⊔m (depths U₀) _) up)) (bV _ e∈) ⟩
@@ -76,21 +82,33 @@ record Calls (V U W : List Value) : Set where
     results : ∀ w → w ⋵ W → Σ[ U₀ ∈ List Value ] CarEntry V U₀ w × U₀ ≢ [] × mem U₀ ⊆ mem U
     args : ∀ u → u ⋵ U → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] CarEntry V U₀ w × u ⋵ U₀
 
-Calls-⊆ : ∀ {V₁ V₂ U W} → mem V₁ ⊆ mem V₂ → Calls V₁ U W → Calls V₂ U W
+Calls-⊆ : ∀ {V₁ V₂ U W}
+  → mem V₁ ⊆ mem V₂
+  → Calls V₁ U W
+  → Calls V₂ U W
 Calls-⊆ s cs = record
   { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = Calls.results cs w w∈ in ⟨ U₀ , ⟨ CarEntry-⊆ s e , r ⟩ ⟩
   ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = Calls.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ CarEntry-⊆ s e , r ⟩ ⟩ ⟩
   }
 
 {- a list without pairs makes no calls -}
-Calls-none : ∀ {V U W} → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥) → Calls V U W → mem W ⊆ ∅
+Calls-none : ∀ {V U W}
+  → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥)
+  → Calls V U W
+  → mem W ⊆ ∅
 Calls-none no cs w w∈ = no _ _ (CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w w∈))))
 
-Bnd-Calls-args : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k U
+Bnd-Calls-args : ∀ {k V U W}
+  → Bnd (suc k) V
+  → Calls V U W
+  → Bnd k U
 Bnd-Calls-args bV cs u u∈ =
   let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = Calls.args cs u u∈ in proj₁ (Bnd-CarEntry bV e) u u∈U₀
 
-Bnd-Calls-apps : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k W
+Bnd-Calls-apps : ∀ {k V U W}
+  → Bnd (suc k) V
+  → Calls V U W
+  → Bnd k W
 Bnd-Calls-apps bV cs w w∈ = proj₂ (Bnd-CarEntry bV (proj₁ (proj₂ (Calls.results cs w w∈))))
 
 {- The relation ---------------------------------------------------------------}
@@ -131,7 +149,9 @@ _⊳ₑ_ : Env → Env → Set₁
 ρ₁ ⊳ₑ ρ₂ = ∀ x V → mem V ⊆ ρ₁ x → R V (ρ₂ x)
 
 private
-  R′-∅ : ∀ k {V D} → mem V ⊆ ∅ → R′ k V D
+  R′-∅ : ∀ k {V D}
+    → mem V ⊆ ∅
+    → R′ k V D
   R′-∅ zero _ = ptt
   R′-∅ (suc k) {V} V⊆∅ = record
     { const-obs = λ c c∈ → ⊥-elim (V⊆∅ _ c∈)
@@ -140,7 +160,10 @@ private
     ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
 
-  R′-data : ∀ k {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R′ k V D
+  R′-data : ∀ k {V D}
+    → mem V ⊆ D
+    → (∀ v → v ⋵ V → Data v)
+    → R′ k V D
   R′-data zero _ _ = ptt
   R′-data (suc k) {V} V⊆ fl = record
     { const-obs = λ c c∈ → V⊆ _ c∈
@@ -152,7 +175,10 @@ private
     where noflat : ∀ {u v} → Data ⦅ u , v ⦆ → ⊥
           noflat ()
 
-  R′-mono : ∀ k {V D₁ D₂} → D₁ ⊆ D₂ → R′ k V D₁ → R′ k V D₂
+  R′-mono : ∀ k {V D₁ D₂}
+    → D₁ ⊆ D₂
+    → R′ k V D₁
+    → R′ k V D₂
   R′-mono zero _ _ = ptt
   R′-mono (suc k) D⊆ r = record
     { const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
@@ -163,7 +189,11 @@ private
     where open Obs r
 
   {- the fuel is irrelevant once it bounds the depth of the observations -}
-  R′-irr : ∀ k j {V D} → Bnd k V → Bnd j V → R′ k V D → R′ j V D
+  R′-irr : ∀ k j {V D}
+    → Bnd k V
+    → Bnd j V
+    → R′ k V D
+    → R′ j V D
   R′-irr k zero _ _ _ = ptt
   R′-irr zero (suc j) bk _ _ = R′-∅ (suc j) (λ v v∈ → <0 (bk v v∈))
     where <0 : ∀ {n} → n < 0 → ⊥
@@ -179,21 +209,35 @@ fold : ∀ {V D} → Obs R V D → R V D
 fold {V} = Obs-map bV bV (λ _ b → R′-irr _ _ (Bnd-depths _) b) (λ b _ → R′-irr _ _ b (Bnd-depths _))
   where bV = Bnd-depths V
 
-R-∅ : ∀ {V D} → mem V ⊆ ∅ → R V D
+R-∅ : ∀ {V D}
+  → mem V ⊆ ∅
+  → R V D
 R-∅ = R′-∅ _
 
-R-flat : ∀ {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Flat v) → R V D
+R-flat : ∀ {V D}
+  → mem V ⊆ D
+  → (∀ v → v ⋵ V → Flat v)
+  → R V D
 R-flat V⊆ fl = R′-data _ V⊆ (λ v v∈ → flat-data (fl v v∈))
 
-R-data : ∀ {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R V D
+R-data : ∀ {V D}
+  → mem V ⊆ D
+  → (∀ v → v ⋵ V → Data v)
+  → R V D
 R-data = R′-data _
 
 {- monotone in the set on the other side -}
-R-mono : ∀ {V D₁ D₂} → D₁ ⊆ D₂ → R V D₁ → R V D₂
+R-mono : ∀ {V D₁ D₂}
+  → D₁ ⊆ D₂
+  → R V D₁
+  → R V D₂
 R-mono = R′-mono _
 
 {- antitone in the list of observations -}
-R-⊆ : ∀ {V₁ V₂ D} → mem V₁ ⊆ mem V₂ → R V₂ D → R V₁ D
+R-⊆ : ∀ {V₁ V₂ D}
+  → mem V₁ ⊆ mem V₂
+  → R V₂ D
+  → R V₁ D
 R-⊆ V₁⊆V₂ r = fold record
   { const-obs = λ c c∈ → const-obs c (V₁⊆V₂ _ c∈)
   ; nonempty-obs = λ ne → nonempty-obs (ne-⊆ V₁⊆V₂ ne)

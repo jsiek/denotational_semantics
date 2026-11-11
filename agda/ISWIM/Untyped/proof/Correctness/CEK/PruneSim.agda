@@ -65,7 +65,9 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 {- Well-scoped terms (Framework.Syntax.Scope) ------------------------------------}
 
 {- the code of a closure with n free variables -}
-ws-body : ∀ n k (a : Arg (ν-n n (ν ■))) → WS-arg k a → WS (suc (n + k)) (T.body n a)
+ws-body : ∀ n k (a : Arg (ν-n n (ν ■)))
+  → WS-arg k a
+  → WS (suc (n + k)) (T.body n a)
 ws-body zero k (bind (ast N)) w = w
 ws-body (suc n) k (bind a) w =
   subst (λ x → WS (suc x) (T.body n a)) (+-suc n k) (ws-body n (suc k) a w)
@@ -151,8 +153,12 @@ data _~_ : T.State → T.State → Set where
   ret~ : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → T.ret v κ₁ ~ T.ret w κ₂
 
 {- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → T.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → T.obs-list vs ≡ T.obs-list ws
+obs≈ : ∀ {v w}
+  → v ≈ w
+  → T.obs v ≡ T.obs w
+obs≈-list : ∀ {vs ws}
+  → Pointwise _≈_ vs ws
+  → T.obs-list vs ≡ T.obs-list ws
 obs≈ (clo≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -162,7 +168,10 @@ obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (T.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+  → v₁ ≈ w₁
+  → v₂ ≈ w₂
+  → M.Pointwise _≈_ (T.prim? p v₁ v₂) (T.prim? p w₁ w₂)
 prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
@@ -171,43 +180,61 @@ prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p
 
 {- Agreement of environments ---------------------------------------------------}
 
-agree-ext : ∀ {M r ρ₁ ρ₂ v w} → v ≈ w → Agree M 1 r ρ₁ ρ₂
+agree-ext : ∀ {M r ρ₁ ρ₂ v w}
+  → v ≈ w
+  → Agree M 1 r ρ₁ ρ₂
   → Agree M 0 (ext-var r) (v ∷ ρ₁) (w ∷ ρ₂)
 agree-ext {M} {r} {ρ₁} {ρ₂} {v} {w} vw (agree sc look) = agree sc look'
   where
-  look' : ∀ x → Uses x M → Lookup (v ∷ ρ₁) x (w ∷ ρ₂) (ext-var r x)
+  look' : ∀ x
+    → Uses x M
+    → Lookup (v ∷ ρ₁) x (w ∷ ρ₂) (ext-var r x)
   look' zero _ = v , w , refl , refl , vw
   look' (suc x) u = look x u
 
 {- a subterm M' of M, under k binders -}
-agree-sub : ∀ {k M M' r ρ₁ ρ₂} → (∀ {j} → WS j M → WS (k + j) M')
-  → (∀ x → Uses (k + x) M' → Uses x M) → Agree M 0 r ρ₁ ρ₂ → Agree M' k r ρ₁ ρ₂
+agree-sub : ∀ {k M M' r ρ₁ ρ₂}
+  → (∀ {j} → WS j M → WS (k + j) M')
+  → (∀ x → Uses (k + x) M' → Uses x M)
+  → Agree M 0 r ρ₁ ρ₂
+  → Agree M' k r ρ₁ ρ₂
 agree-sub sc sub (agree w look) = agree (sc w) (λ x u → look x (sub x u))
 
-agree-all : ∀ {n j r ρ₁ ρ₂} (args : Args (replicate n ■)) → WS-args j args
+agree-all : ∀ {n j r ρ₁ ρ₂} (args : Args (replicate n ■))
+  → WS-args j args
   → (∀ x → UsesArgs x args → Lookup ρ₁ x ρ₂ (r x))
   → All (λ M → Agree M 0 r ρ₁ ρ₂) (args→list args)
 agree-all {zero} Nil _ look = []
 agree-all {suc n} (M ,, args) (w , ws) look =
   agree w (λ x u → look x (inj₁ u)) ∷ agree-all args ws (λ x u → look x (inj₂ u))
 
-lookup-pw : ∀ ρ₁ x ρ₂ y → Lookup ρ₁ x ρ₂ y → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ y)
+lookup-pw : ∀ ρ₁ x ρ₂ y
+  → Lookup ρ₁ x ρ₂ y
+  → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ y)
 lookup-pw ρ₁ x ρ₂ y (v , w , e₁ , e₂ , vw) rewrite e₁ | e₂ = M.just vw
 
 {- after a kept or a dropped free variable -}
-keep-building : ∀ {N U m b vs ws v w} → v ≈ w → Building N U (suc m) b vs ws
+keep-building : ∀ {N U m b vs ws v w}
+  → v ≈ w
+  → Building N U (suc m) b vs ws
   → Building N U m (keep-base b) (v ∷ vs) (w ∷ ws)
 keep-building {N} {U} {m} {b} {vs} {ws} {v} {w} vw (building sc us col) = building sc us col'
   where
-  col' : ∀ k → U (m + k) → Lookup (v ∷ vs) k (w ∷ ws) (keep-base b k)
+  col' : ∀ k
+    → U (m + k)
+    → Lookup (v ∷ vs) k (w ∷ ws) (keep-base b k)
   col' zero _ = v , w , refl , refl , vw
   col' (suc k) u = col k (subst U (+-suc m k) u)
 
-drop-building : ∀ {N U m b vs ws v} → ¬ U m → Building N U (suc m) b vs ws
+drop-building : ∀ {N U m b vs ws v}
+  → ¬ U m
+  → Building N U (suc m) b vs ws
   → Building N U m (drop-base b) (v ∷ vs) ws
 drop-building {N} {U} {m} {b} {vs} {ws} {v} nu (building sc us col) = building sc us col'
   where
-  col' : ∀ k → U (m + k) → Lookup (v ∷ vs) k ws (drop-base b k)
+  col' : ∀ k
+    → U (m + k)
+    → Lookup (v ∷ vs) k ws (drop-base b k)
   col' zero u = ⊥-elim (nu (subst U (+-identityʳ m) u))
   col' (suc k) u = col k (subst U (+-suc m k) u)
 
@@ -228,11 +255,16 @@ module _ (M₀ : AST) where
   L₂ = T.sem (prune-program M₀)
   Match = Lag L₁ _~_
 
-  step~ : ∀ {i s t' t} → T.step s ≡ next t → t' ~ t → Answers≺ L₂ Match i (next t') s
+  step~ : ∀ {i s t' t}
+    → T.step s ≡ next t
+    → t' ~ t
+    → Answers≺ L₂ Match i (next t') s
   step~ e m = steps₁≺ e (lag₀ m)
 
-  tuple-next~ : ∀ {vs ws Ms r ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
-    → All (λ M → Agree M 0 r ρ₁ ρ₂) Ms → κ₁ ≈k κ₂
+  tuple-next~ : ∀ {vs ws Ms r ρ₁ ρ₂ κ₁ κ₂}
+    → Pointwise _≈_ vs ws
+    → All (λ M → Agree M 0 r ρ₁ ρ₂) Ms
+    → κ₁ ≈k κ₂
     → T.tuple-next vs Ms ρ₁ κ₁ ~ T.tuple-next ws (map (prune r) Ms) ρ₂ κ₂
   tuple-next~ rs [] κ = ret~ (tup≈ (reverse⁺ rs)) κ
   tuple-next~ rs (ag ∷ ags) κ = eval~ ag (tupK rs ags κ)
@@ -240,7 +272,9 @@ module _ (M₀ : AST) where
   {- the next free variable of a closure: kept (eval~), dropped (the
      source evaluates it, and lags), or none left (ret~ of the closure) -}
   clos-next~ : ∀ {N m b vs ws r ρ₁ ρ₂ κ₁ κ₂} (N₀ : AST) (fvs : Args (replicate m ■))
-    → Building N (Used N₀) m b vs ws → AgreeArgs fvs r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Building N (Used N₀) m b vs ws
+    → AgreeArgs fvs r ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → Σ[ i ∈ ℕ ] Match i (T.clos-next N vs (args→list fvs) ρ₁ κ₁)
         (T.clos-next (prune (ext-var (index (prune-fvs m r (used? N₀) fvs b))) N) ws
                      (args→list (kept (prune-fvs m r (used? N₀) fvs b))) ρ₂ κ₂)
@@ -258,7 +292,8 @@ module _ (M₀ : AST) where
 
   {- evaluating a closure: start building it -}
   closure~ : ∀ {n r ρ₁ ρ₂ κ₁ κ₂ i} (a : Arg (ν-n n (ν ■))) (fvs : Args (replicate n ■))
-    → Agree (clos-op n ⦅ ! clear a ,, fvs ⦆) 0 r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Agree (clos-op n ⦅ ! clear a ,, fvs ⦆) 0 r ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → Answers≺ L₂ Match i (T.step (T.eval (clos-op n ⦅ ! clear a ,, fvs ⦆) ρ₁ κ₁))
         (T.eval (prune r (clos-op n ⦅ ! clear a ,, fvs ⦆)) ρ₂ κ₂)
   closure~ {n} {r} {ρ₁} {ρ₂} {κ₁} {κ₂} a fvs (agree (wa , wfvs) look) κ
@@ -281,7 +316,9 @@ module _ (M₀ : AST) where
     eq : T.body (count Q) (bind-n-ast (count Q) N') ≡ prune (ext-var (index Q)) (T.body n a)
     eq = trans (E.body-bind (count Q) N') (opt-body-body (ext-var (index Q)) n a)
 
-  sim : ∀ {i s₁ s₂} → s₁ ~ s₂ → Answers≺ L₂ Match i (T.step s₁) s₂
+  sim : ∀ {i s₁ s₂}
+    → s₁ ~ s₂
+    → Answers≺ L₂ Match i (T.step s₁) s₂
   sim (eval~ {M = ` x} {r} {ρ₁} {ρ₂} (agree _ look) κ) =
     answers≺ (next?-answers (lookup-pw ρ₁ x ρ₂ (r x) (look x refl)) (λ r → lag₀ (ret~ r κ)) refl)
   sim (eval~ {M = clos-op n ⦅ cons (clear a) fvs ⦆} ag κ) = closure~ a fvs ag κ
@@ -343,9 +380,13 @@ module _ (M₀ : AST) where
 
 {- The end theorem -------------------------------------------------------------}
 
-prune-fsim : ∀ M → WS 0 M → FSim (T.sem M) (T.sem (prune-program M))
+prune-fsim : ∀ M
+  → WS 0 M
+  → FSim (T.sem M) (T.sem (prune-program M))
 prune-fsim M c =
   lag-fsim (lag-now (eval~ {r = λ x → x} (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))) halt)) (sim M)
 
-prune-correct : ∀ M → WS 0 M → Equivalent (T.sem M) (T.sem (prune-program M))
+prune-correct : ∀ M
+  → WS 0 M
+  → Equivalent (T.sem M) (T.sem (prune-program M))
 prune-correct M c = equivalent (prune-fsim M c)

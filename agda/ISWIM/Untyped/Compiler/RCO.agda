@@ -65,11 +65,15 @@ record Bound (n : ℕ) : Set where
 open Bound public
 
 {- an atom A for the first operand, in front of the atoms of the rest -}
-keep : ∀ {n} → AST → Bound n → Bound (suc n)
+keep : ∀ {n} → AST
+  → Bound n
+  → Bound (suc n)
 keep A (bound bs As) = bound bs (rename (length bs +_) A ,, As)
 
 {- a let for the complex first operand M, in front of the lets of the rest -}
-bind-let : ∀ {n} → AST → Bound n → Bound (suc n)
+bind-let : ∀ {n} → AST
+  → Bound n
+  → Bound (suc n)
 bind-let M (bound bs As) = bound (M ∷ bs) (` length bs ,, As)
 
 atomize : ∀ {n} → Args (replicate n ■) → Bound n
@@ -119,7 +123,9 @@ Mons : ∀ {n} → Args (replicate n ■) → Set
 Mons {zero} Nil = ⊤
 Mons {suc n} (M ,, Ms) = Mon M × Mons Ms
 
-mons-rename : ∀ r {n} (Ms : Args (replicate n ■)) → Mons Ms → Mons (rename-args r Ms)
+mons-rename : ∀ r {n} (Ms : Args (replicate n ■))
+  → Mons Ms
+  → Mons (rename-args r Ms)
 mons-rename r {zero} Nil tt = tt
 mons-rename r {suc n} (M ,, Ms) ⟨ m , ms ⟩ = ⟨ mon-rename r m , mons-rename r Ms ms ⟩
 
@@ -127,7 +133,9 @@ mons-rename r {suc n} (M ,, Ms) ⟨ m , ms ⟩ = ⟨ mon-rename r m , mons-renam
 Good : ∀ {n} → Bound n → Set
 Good B = All Mon (binds B) × Atoms (atoms B)
 
-atomize-mon : ∀ {n} (Ms : Args (replicate n ■)) → Mons Ms → Good (atomize Ms)
+atomize-mon : ∀ {n} (Ms : Args (replicate n ■))
+  → Mons Ms
+  → Good (atomize Ms)
 atomize-mon {zero} Nil tt = ⟨ [] , [] ⟩
 atomize-mon {suc n} (M ,, Ms) ⟨ m , ms ⟩ with atom? M
 ... | yes a = keep-good (atomize-mon Ms ms)
@@ -137,17 +145,26 @@ atomize-mon {suc n} (M ,, Ms) ⟨ m , ms ⟩ with atom? M
   where let-good : ∀ {B : Bound n} → Good B → Good (bind-let M B)
         let-good ⟨ bs , as ⟩ = ⟨ m ∷ bs , var _ ∷ as ⟩
 
-lets-mon : ∀ {bs N} → All Mon bs → Mon N → Mon (lets bs N)
+lets-mon : ∀ {bs N}
+  → All Mon bs
+  → Mon N
+  → Mon (lets bs N)
 lets-mon [] n = n
 lets-mon (m ∷ ms) n = let′ m (lets-mon ms n)
 
 lift-mon : ∀ {n} {f : ℕ → Args (replicate n ■) → AST}
   → (∀ k {As} → Atoms As → Mon (f k As))
-  → (Ms : Args (replicate n ■)) → Mons Ms → Mon (lift f Ms)
+  → (Ms : Args (replicate n ■))
+  → Mons Ms
+  → Mon (lift f Ms)
 lift-mon mf Ms ms with atomize-mon Ms ms
 ... | ⟨ bs , as ⟩ = lets-mon bs (mf _ as)
 
-case-on-mon : ∀ {M N} k {As} → Mon M → Mon N → Atoms As → Mon (case-on M N k As)
+case-on-mon : ∀ {M N} k {As}
+  → Mon M
+  → Mon N
+  → Atoms As
+  → Mon (case-on M N k As)
 case-on-mon k m n (a ∷ []) = case a (mon-rename _ m) (mon-rename _ n)
 
 rco-mon : ∀ M → Mon (rco M)

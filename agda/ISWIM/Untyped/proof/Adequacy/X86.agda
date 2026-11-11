@@ -42,24 +42,42 @@ import ISWIM.Untyped.proof.Adequacy.X86LogRel as LR
 open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (refl; cong; subst)
 
-sound-const : ∀ P → WF P → ∀ {B} {k : base-rep B} → Terminates (sem P) (o-const B k) → dconst k ∈ ⟦ P ⟧ₚ
+sound-const : ∀ P
+  → WF P
+  → ∀ {B} {k : base-rep B}
+  → Terminates (sem P) (o-const B k)
+  → dconst k ∈ ⟦ P ⟧ₚ
 sound-const P wf t with soundness P wf t (λ ())
 ... | ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = d∈
 
-sound-nonempty : ∀ P → WF P → Converges (Terminates (sem P)) → nonempty ⟦ P ⟧ₚ
+sound-nonempty : ∀ P
+  → WF P
+  → Converges (Terminates (sem P))
+  → nonempty ⟦ P ⟧ₚ
 sound-nonempty P wf ⟨ o , ⟨ ans , t ⟩ ⟩ with soundness P wf t ans
 ... | ⟨ d , ⟨ d∈ , _ ⟩ ⟩ = ⟨ d , d∈ ⟩
 
-adequacy : ∀ P → WF P → ∀ {d} → d ∈ ⟦ P ⟧ₚ → Σ[ o ∈ Obs ] Terminates (sem P) o × ShapeOf o d
+adequacy : ∀ P
+  → WF P
+  → ∀ {d}
+  → d ∈ ⟦ P ⟧ₚ
+  → Σ[ o ∈ Obs ] Terminates (sem P) o × ShapeOf o d
 adequacy (program ds (body n bs b)) ⟨ wfd , ⟨ ok , _ ⟩ ⟩ {d} d∈ with LR.adequate-main ds wfd ok d∈
 ... | ⟨ v , ⟨ r , rv ⟩ ⟩ with r halt
 ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ , e ⟩ ⟩ ⟩ ⟩ ⟩ =
   ⟨ obs v , ⟨ ⟨ _ , ⟨ C.↠→star ds τ , cong halt? e ⟩ ⟩ , LR.𝕍-shape ds d v rv ⟩ ⟩
 
-adequacy-const : ∀ P → WF P → ∀ {B} {k : base-rep B} → dconst k ∈ ⟦ P ⟧ₚ → Terminates (sem P) (o-const B k)
+adequacy-const : ∀ P
+  → WF P
+  → ∀ {B} {k : base-rep B}
+  → dconst k ∈ ⟦ P ⟧ₚ
+  → Terminates (sem P) (o-const B k)
 adequacy-const P wf k∈ with adequacy P wf k∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = subst (Terminates (sem P)) (shape-const sh) t
 
-adequacy-converges : ∀ P → WF P → nonempty ⟦ P ⟧ₚ → Converges (Terminates (sem P))
+adequacy-converges : ∀ P
+  → WF P
+  → nonempty ⟦ P ⟧ₚ
+  → Converges (Terminates (sem P))
 adequacy-converges P wf ⟨ d , d∈ ⟩ with adequacy P wf d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩

@@ -32,11 +32,15 @@ open import Relation.Binary.PropositionalEquality using (_≡_; sym; subst)
 module Captured where
   open I using (`_; _⦅_⦆; lam; app; lit; tuple; get; inl-op; inr-op; case-op; prim; let-op)
 
-  bind-n-ws : ∀ m k N → WS (suc (m + k)) N → WS-arg k (bind-n-ast m N)
+  bind-n-ws : ∀ m k N
+    → WS (suc (m + k)) N
+    → WS-arg k (bind-n-ast m N)
   bind-n-ws zero k N w = w
   bind-n-ws (suc m) k N w = bind-n-ws m (suc k) N (subst (λ x → WS (suc x) N) (sym (+-suc m k)) w)
 
-  fv-vars-ws : ∀ m {k} → m ≤ k → WS-args k (fv-vars m)
+  fv-vars-ws : ∀ m {k}
+    → m ≤ k
+    → WS-args k (fv-vars m)
   fv-vars-ws zero _ = tt
   fv-vars-ws (suc m) le = le , fv-vars-ws m (≤-trans (n≤1+n m) le)
 
@@ -44,11 +48,16 @@ module Captured where
   ⊔ʳ = m⊔n≤o⇒n≤o
 
   {- under one binder -}
-  ∸1 : ∀ {k} b → b ∸ 1 ≤ k → b ≤ suc k
+  ∸1 : ∀ {k} b
+    → b ∸ 1 ≤ k
+    → b ≤ suc k
   ∸1 b le = ≤-trans (m≤n+m∸n b 1) (s≤s le)
 
-  capture-ws : ∀ {k} (M : I.AST) → bound M ≤ k → WS k (capture M)
-  enc-args-ws : ∀ {n k} (args : I.Args (replicate n ■)) → bound-args args ≤ k
+  capture-ws : ∀ {k} (M : I.AST)
+    → bound M ≤ k
+    → WS k (capture M)
+  enc-args-ws : ∀ {n k} (args : I.Args (replicate n ■))
+    → bound-args args ≤ k
     → WS-args k (enc-args args)
 
   capture-ws (` x) b = b
@@ -76,5 +85,7 @@ module Captured where
   enc-args-ws {zero} Nil b = tt
   enc-args-ws {suc n} (M ,, args) b = capture-ws M (⊔ˡ _ _ b) , enc-args-ws args (⊔ʳ (bound M) _ b)
 
-capture-closed : ∀ M → Closed M → WS 0 (capture M)
+capture-closed : ∀ M
+  → Closed M
+  → WS 0 (capture M)
 capture-closed M c = Captured.capture-ws M (subst (_≤ 0) (sym c) z≤n)

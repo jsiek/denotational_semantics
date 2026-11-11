@@ -41,7 +41,9 @@ data Ext {Σ} : ∀ {Bs Bs'} → Blocks Σ Bs → Bs ⊑ Bs' → Blocks Σ Bs' �
   more : ∀ {Bs Bs' Δ} {bs : Blocks Σ Bs} {g} {bs' : Blocks Σ Bs'} {t : Tail Σ Bs' Δ} → Ext bs g bs' → Ext bs (there⊑ g) (bs' ▷ t)
 
 ext-trans : ∀ {Σ Bs₀ Bs₁ Bs₂} {bs₀ : Blocks Σ Bs₀} {bs₁ : Blocks Σ Bs₁} {bs₂ : Blocks Σ Bs₂} {g₁ g₂}
-  → Ext bs₀ g₁ bs₁ → Ext bs₁ g₂ bs₂ → Ext bs₀ (⊑-trans g₁ g₂) bs₂
+  → Ext bs₀ g₁ bs₁
+  → Ext bs₁ g₂ bs₂
+  → Ext bs₀ (⊑-trans g₁ g₂) bs₂
 ext-trans e₁ same = e₁
 ext-trans e₁ (more e₂) = more (ext-trans e₁ e₂)
 
@@ -64,7 +66,8 @@ module _ {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫ �
     simple≡ φ (Imp.project t a) = refl
 
     jump-at : ∀ {Bs Bs' Δ} {bs : Blocks Σ Bs} {g} {bs' : Blocks Σ Bs'} (l : Bs ∋ Δ) φ
-      → Ext bs g bs' → G.jump ds' ck bs l φ ≡ G.jump ds' ck bs' (⊑-∋ g l) φ
+      → Ext bs g bs'
+      → G.jump ds' ck bs l φ ≡ G.jump ds' ck bs' (⊑-∋ g l) φ
     jump-at l φ same = refl
     jump-at l φ (more e) = jump-at l φ e
 
@@ -76,7 +79,9 @@ module _ {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫ �
         means : ∀ φ → K φ ≡ G.tail ds' ck (Out.made o) φ (Out.tail o)
 
     after-ok : ∀ {Bs Bs₁ Δ} {bs : Blocks Σ Bs} {bs₁ : Blocks Σ Bs₁} {g} (o : Out Σ Bs₁ Δ) {K}
-      → Ext bs g bs₁ → Ok bs₁ K o → Ok bs K (after g o)
+      → Ext bs g bs₁
+      → Ok bs₁ K o
+      → Ok bs K (after g o)
     after-ok (out g' bs' t) e (ok e' m) = ok (ext-trans e e') m
 
     either-bind : ∀ {B} (u : Val ⟪ sum ⟫) {f g : Val Any → Result (Val B)} {h : Val B → Result (Val Any)}
@@ -84,7 +89,9 @@ module _ {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫ �
     either-bind (inl v) = refl
     either-bind (inr v) = refl
 
-    assign-ok : ∀ {Bs Δ Δ' A} (e : Imp.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ Bs (A ∷ Δ')) (bs : Blocks Σ Bs) {K : Env (A ∷ Δ') → Result (Val Any)}
+    assign-ok : ∀ {Bs Δ Δ' A} (e : Imp.Exp Σ Δ A)
+      → (p : Δ' ⊑ Δ)
+      → (k : Tail Σ Bs (A ∷ Δ')) (bs : Blocks Σ Bs) {K : Env (A ∷ Δ') → Result (Val Any)}
       → (∀ φ → K φ ≡ G.tail ds' ck bs φ k)
       → Ok bs (λ φ → I.eval ds ck φ e >>= λ v → K (v ∷ pop p φ)) (explicate-assign e p k bs)
     assign-ok (Imp.simple s) p k bs h = ok same λ φ → bind≡ (simple≡ φ s) λ v → h (v ∷ pop p φ)

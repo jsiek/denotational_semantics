@@ -45,7 +45,9 @@ open import ISWIM.proof.Correctness.Interp.SelectFuel using (select-correct)
 
 open import Data.Product using (_,_; proj₁; proj₂)
 
-compile₄-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (Clos4ᵀᵢ.sem (compile₄ M))
+compile₄-correct : ∀ M
+  → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (Clos4ᵀᵢ.sem (compile₄ M))
 compile₄-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (cast-correct (simplify M) (simplify-closed M c))
     (equiv-trans (capture-correct M₁) (equiv-trans (prune-correct M₂)
@@ -54,37 +56,53 @@ compile₄-correct M c =
         M₂ = capture M₁
         M₃ = prune-program M₂
 
-compile-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem (compile M))
+compile-correct : ∀ M
+  → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem (compile M))
 compile-correct M c = equiv-trans (compile₄-correct M c) (hoist-correct (compile₄ M))
 
-compile-mon-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem ⌜ compile-mon M ⌝ₚ)
+compile-mon-correct : ∀ M
+  → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem ⌜ compile-mon M ⌝ₚ)
 compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct (compile M))
 
-compile-imp-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (Impᵀᵢ.sem (compile-imp M))
+compile-imp-correct : ∀ M
+  → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (Impᵀᵢ.sem (compile-imp M))
 compile-imp-correct M c = equiv-trans (compile-mon-correct M c) (lift-locals-correct (compile-mon M))
 
-compile-cfg-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (CFGᵀᵢ.sem (compile-cfg M))
+compile-cfg-correct : ∀ M
+  → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (CFGᵀᵢ.sem (compile-cfg M))
 compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))
 
-compile-x86-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (X86ᵀᵢ.sem (compile-x86 M))
+compile-x86-correct : ∀ M
+  → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (X86ᵀᵢ.sem (compile-x86 M))
 compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct (compile-cfg M))
 
 {- in particular -}
 
-compile-const : ∀ M → Closed M → ∀ B k
+compile-const : ∀ M
+  → Closed M
+  → ∀ B k
   → Terminates (ISWIMᵢ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵀᵢ.sem (compile M)) (o-const B k)
 compile-const M c B k = Equivalent.terminates (compile-correct M c) (o-const B k)
 
-compile-converges : ∀ M → Closed M
+compile-converges : ∀ M
+  → Closed M
   → Converges (Terminates (ISWIMᵢ.sem M)) ⇔ Converges (Terminates (Clos5ᵀᵢ.sem (compile M)))
 compile-converges M c =
     (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
   , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
   where E = compile-correct M c
 
-compile-error : ∀ M → Closed M
+compile-error : ∀ M
+  → Closed M
   → Terminates (ISWIMᵢ.sem M) o-error ⇔ Terminates (Clos5ᵀᵢ.sem (compile M)) o-error
 compile-error M c = Equivalent.terminates (compile-correct M c) o-error
 
-compile-diverges : ∀ M → Closed M → Diverges (ISWIMᵢ.sem M) ⇔ Diverges (Clos5ᵀᵢ.sem (compile M))
+compile-diverges : ∀ M
+  → Closed M
+  → Diverges (ISWIMᵢ.sem M) ⇔ Diverges (Clos5ᵀᵢ.sem (compile M))
 compile-diverges M c = Equivalent.diverges (compile-correct M c)

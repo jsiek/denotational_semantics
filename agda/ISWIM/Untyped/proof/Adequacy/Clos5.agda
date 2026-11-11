@@ -53,18 +53,27 @@ open import Relation.Nullary using (¬_)
 
 {- Soundness -------------------------------------------------------------------}
 
-sound-const : ∀ P → WF P → ∀ {B} {k : base-rep B}
-  → Terminates (sem P) (o-const B k) → dconst k ∈ ⟦ P ⟧ₚ
+sound-const : ∀ P
+  → WF P
+  → ∀ {B} {k : base-rep B}
+  → Terminates (sem P) (o-const B k)
+  → dconst k ∈ ⟦ P ⟧ₚ
 sound-const P wf t with soundness P wf t (λ ())
 ... | ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = d∈
 
-sound-nonempty : ∀ P → WF P → Converges (Terminates (sem P)) → nonempty ⟦ P ⟧ₚ
+sound-nonempty : ∀ P
+  → WF P
+  → Converges (Terminates (sem P))
+  → nonempty ⟦ P ⟧ₚ
 sound-nonempty P wf ⟨ o , ⟨ ans , t ⟩ ⟩ with soundness P wf t ans
 ... | ⟨ d , ⟨ d∈ , _ ⟩ ⟩ = ⟨ d , d∈ ⟩
 
 {- Adequacy --------------------------------------------------------------------}
 
-adequacy : ∀ P → WF P → ∀ {d} → d ∈ ⟦ P ⟧ₚ
+adequacy : ∀ P
+  → WF P
+  → ∀ {d}
+  → d ∈ ⟦ P ⟧ₚ
   → Σ[ o ∈ Obs ] Terminates (sem P) o × ShapeOf o d
 adequacy (program ds M) ⟨ wfd , ⟨ _ , ws ⟩ ⟩ {d} d∈
     with LR.adequate ds M (LR.tab ds ds ⊑-refl wfd) ws (λ x ()) d∈
@@ -72,29 +81,47 @@ adequacy (program ds M) ⟨ wfd , ⟨ _ , ws ⟩ ⟩ {d} d∈
   ⟨ obs v , ⟨ ⟨ ret v halt , ⟨ C.↠→star ds (e halt) , refl ⟩ ⟩
             , LR.𝕍-shape ds d v r ⟩ ⟩
 
-adequacy-const : ∀ P → WF P → ∀ {B} {k : base-rep B}
-  → dconst k ∈ ⟦ P ⟧ₚ → Terminates (sem P) (o-const B k)
+adequacy-const : ∀ P
+  → WF P
+  → ∀ {B} {k : base-rep B}
+  → dconst k ∈ ⟦ P ⟧ₚ
+  → Terminates (sem P) (o-const B k)
 adequacy-const P wf k∈ with adequacy P wf k∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = subst (Terminates (sem P)) (shape-const sh) t
 
-adequacy-converges : ∀ P → WF P → nonempty ⟦ P ⟧ₚ → Converges (Terminates (sem P))
+adequacy-converges : ∀ P
+  → WF P
+  → nonempty ⟦ P ⟧ₚ
+  → Converges (Terminates (sem P))
 adequacy-converges P wf ⟨ d , d∈ ⟩ with adequacy P wf d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
 
 {- Characterizations ------------------------------------------------------------}
 
-const-iff : ∀ P → WF P → ∀ {B} {k : base-rep B}
+const-iff : ∀ P
+  → WF P
+  → ∀ {B} {k : base-rep B}
   → (dconst k ∈ ⟦ P ⟧ₚ) ⇔ Terminates (sem P) (o-const B k)
 const-iff P wf = ⟨ adequacy-const P wf , sound-const P wf ⟩
 
-nonempty-iff : ∀ P → WF P → nonempty ⟦ P ⟧ₚ ⇔ Converges (Terminates (sem P))
+nonempty-iff : ∀ P
+  → WF P
+  → nonempty ⟦ P ⟧ₚ ⇔ Converges (Terminates (sem P))
 nonempty-iff P wf = ⟨ adequacy-converges P wf , sound-nonempty P wf ⟩
 
 {- a program that errors, or diverges, denotes the empty set -}
-error-empty : ∀ P → WF P → Terminates (sem P) o-error → ∀ d → ¬ (d ∈ ⟦ P ⟧ₚ)
+error-empty : ∀ P
+  → WF P
+  → Terminates (sem P) o-error
+  → ∀ d
+  → ¬ (d ∈ ⟦ P ⟧ₚ)
 error-empty P wf w d d∈ with adequacy P wf d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det t w)
 
-diverges-empty : ∀ P → WF P → Diverges (sem P) → ∀ d → ¬ (d ∈ ⟦ P ⟧ₚ)
+diverges-empty : ∀ P
+  → WF P
+  → Diverges (sem P)
+  → ∀ d
+  → ¬ (d ∈ ⟦ P ⟧ₚ)
 diverges-empty P wf div d d∈ with adequacy P wf d∈
 ... | ⟨ o , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t

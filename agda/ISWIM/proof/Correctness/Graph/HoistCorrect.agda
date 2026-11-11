@@ -46,10 +46,16 @@ open import Level using (lift)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
 open import Relation.Nullary using (yes; no)
 
-pair-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+pair-≃ : ∀ {D D' E E'}
+  → D ≃ D'
+  → E ≃ E'
+  → pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
 pair-≃ a b = mono-≃ pair-mono ⟨ lift a , ⟨ lift b , ptt ⟩ ⟩
 
-callc-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → callcᵈ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ callcᵈ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+callc-≃ : ∀ {D D' E E'}
+  → D ≃ D'
+  → E ≃ E'
+  → callcᵈ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ callcᵈ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
 callc-≃ a b = mono-≃ (mono (callc-good {⊤})) ⟨ lift a , ⟨ lift b , ptt ⟩ ⟩
 
 {- Changing the table -----------------------------------------------------------------}
@@ -88,13 +94,22 @@ record Ext {Σ Σ'} (s : Σ ⊑ Σ') (D : Made Σ) (D' : Made Σ') : Set₁ wher
   field at : ∀ {n} (f : Σ ∋ n) → made D' (⊑-∋ s f) ≡ made D f
 open Ext
 
-ext-trans : ∀ {Σ₀ Σ₁ Σ₂} {s₁ : Σ₀ ⊑ Σ₁} {s₂ : Σ₁ ⊑ Σ₂} {D₀ D₁ D₂}
-  → Ext s₁ D₀ D₁ → Ext s₂ D₁ D₂ → Ext (⊑-trans s₁ s₂) D₀ D₂
+ext-trans : ∀ {Σ₀ Σ₁ Σ₂}
+  → {s₁ : Σ₀ ⊑ Σ₁}
+  → {s₂ : Σ₁ ⊑ Σ₂}
+  → ∀ {D₀ D₁ D₂}
+  → Ext s₁ D₀ D₁
+  → Ext s₂ D₁ D₂
+  → Ext (⊑-trans s₁ s₂) D₀ D₂
 ext-trans {s₁ = s₁} {s₂} {D₂ = D₂} e₁ e₂ = ext λ f →
   trans (cong (made D₂) (⊑-∋-trans s₁ s₂ f)) (trans (at e₂ _) (at e₁ f))
 
 {- a term made before more definitions, weakened to them -}
-wk-made : ∀ {Σ Σ' Γ A} {s : Σ ⊑ Σ'} {D D'} → Ext s D D' → (M : Tm Σ Γ A) → ∀ ρ
+wk-made : ∀ {Σ Σ' Γ A}
+  → {s : Σ ⊑ Σ'}
+  → ∀ {D D'}
+  → Ext s D D'
+  → (M : Tm Σ Γ A) → ∀ ρ
   → ⟦ M ⟧[ made D ] ρ ≃ ⟦ wk (⊑-∋ s) M ⟧[ made D' ] ρ
 wk-made e = wk-sem _ (λ f → ≃-reflexive (sym (at e f)))
 
@@ -116,9 +131,12 @@ Cong₂ f L M M₄ = ∀ {Σ'} {T : Table Σ'} {L' M'} → (∀ ρ → ⟦ L ⟧
 
 glob-ok : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → OK M D (glob M D)
 globs-ok : ∀ {Σ Γ n} (Ms : Vec (S.Tm Γ Any) n) (D : Made Σ) → OKs Ms D (globs Ms D)
-glob₁-ok : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (D : Made Σ) {M₄ : S.Tm Γ B} → Cong₁ f M M₄ → OK M₄ D (glob₁ f M D)
+glob₁-ok : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (D : Made Σ) {M₄ : S.Tm Γ B}
+  → Cong₁ f M M₄
+  → OK M₄ D (glob₁ f M D)
 glob₂-ok : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B) (D : Made Σ) {M₄ : S.Tm Γ C}
-  → Cong₂ f L M M₄ → OK M₄ D (glob₂ f L M D)
+  → Cong₂ f L M M₄
+  → OK M₄ D (glob₂ f L M D)
 
 glob-ok (S.` x) D = ⟨ ext (λ f → refl) , (λ ρ → ≃-refl) ⟩
 glob-ok (S.code N) D with glob N D | glob-ok N D
@@ -160,7 +178,10 @@ glob₂-ok f L M D c with glob L D | glob-ok L D
 
 {- The table of the program ------------------------------------------------------------}
 
-table-close : ∀ {Σ Σ'} (D : Made Σ') (s : Σ' ⊑ Σ) {n} (f : Σ' ∋ n) → made D f ≃ tables code′ (close D s) (⊑-∋ s f)
+table-close : ∀ {Σ Σ'} (D : Made Σ')
+  → (s : Σ' ⊑ Σ)
+  → ∀ {n} (f : Σ' ∋ n)
+  → made D f ≃ tables code′ (close D s) (⊑-∋ s f)
 table-close {Σ} (_▷_ {Σ''} D N) s f with lvl (⊑-∋ s f) ≟ length Σ'' | lvl-⊑ s f
 table-close (D ▷ N) s Z | yes _ | _ =
   ΛΛ-≃ λ X Y → wk-sem _ (table-close D (⊑-trans (there⊑ here⊑) s)) N _

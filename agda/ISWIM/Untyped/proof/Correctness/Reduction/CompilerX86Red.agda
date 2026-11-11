@@ -21,8 +21,12 @@ import ISWIM.Semantics.Reduction.ISWIM as S
 import ISWIM.Untyped.Semantics.CEK.CFG as G
 import ISWIM.Semantics.CEK.X86 as X
 
-compile-cfg-correct : ∀ M → Closed M → Equivalent (S.sem M) (G.sem (compile-cfg M))
+compile-cfg-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (G.sem (compile-cfg M))
 compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))
 
-compile-x86-correct : ∀ M → Closed M → Equivalent (S.sem M) (X.sem (compile-x86 M))
+compile-x86-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (X.sem (compile-x86 M))
 compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct (compile-cfg M))

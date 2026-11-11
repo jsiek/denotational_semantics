@@ -39,11 +39,16 @@ evals-vars : ∀ ck {k n} (f : Fin n → Fin k) (ρ : T.Env k)
 evals-vars ck {n = zero} f ρ = refl
 evals-vars ck {n = suc n} f ρ rewrite evals-vars ck (λ i → f (suc i)) ρ = refl
 
-run≈ : ∀ ck {k A} (M : Tm k A) {ρ₁ ρ₂} → Pointwise _≈_ ρ₁ ρ₂
+run≈ : ∀ ck {k A} (M : Tm k A) {ρ₁ ρ₂}
+  → Pointwise _≈_ ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (capture M))
-runs≈ : ∀ ck {k n} (Ms : Vec (Tm k Any) n) {ρ₁ ρ₂} → Pointwise _≈_ ρ₁ ρ₂
+runs≈ : ∀ ck {k n} (Ms : Vec (Tm k Any) n) {ρ₁ ρ₂}
+  → Pointwise _≈_ ρ₁ ρ₂
   → RelResult (Pointwise _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (encs Ms))
-call≈ : ∀ ck {f g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S.call ck f v) (T.call ck g w)
+call≈ : ∀ ck {f g v w}
+  → f ≈ g
+  → v ≈ w
+  → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
 run≈ ck (` x) ρ = ret (lookup ρ x)
 run≈ ck (lam N) {ρ₂ = ρ₂} ρ rewrite evals-vars ck (λ i → i) ρ₂ | tabulate∘lookup ρ₂ = ret (pack≈ ρ (same refl))

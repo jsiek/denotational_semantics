@@ -58,7 +58,11 @@ open import Relation.Nullary using (¬_)
 {- Adequacy --------------------------------------------------------------------}
 
 {- an element other than ω is witnessed by a run to an answer of its shape -}
-adequacy : ∀ P → WF P → ∀ {d} → d ∈ ⟦ P ⟧ₓ → d ≢ ω
+adequacy : ∀ P
+  → WF P
+  → ∀ {d}
+  → d ∈ ⟦ P ⟧ₓ
+  → d ≢ ω
   → Σ[ o ∈ Obs ] Terminates (X86ₘ.sem P) o × ShapeOf o d
 adequacy (program ds (body n bs b)) ⟨ wfd , ok ⟩ {d} d∈ d≢ with LR.adequate-main ds wfd ok d∈
 ... | inj₁ ⟨ e , _ ⟩ = ⊥-elim (d≢ e)
@@ -67,14 +71,21 @@ adequacy (program ds (body n bs b)) ⟨ wfd , ok ⟩ {d} d∈ d≢ with LR.adequ
   ⟨ obs v , ⟨ ⟨ _ , ⟨ C.↠→star ds τ , cong halt? e ⟩ ⟩ , LR.𝕍-shape ds d v rv ⟩ ⟩
 
 {- ω is witnessed by a run to an error -}
-adequacy-error : ∀ P → WF P → ω ∈ ⟦ P ⟧ₓ → Terminates (X86ₘ.sem P) o-error
+adequacy-error : ∀ P
+  → WF P
+  → ω ∈ ⟦ P ⟧ₓ
+  → Terminates (X86ₘ.sem P) o-error
 adequacy-error (program ds (body n bs b)) ⟨ wfd , ok ⟩ ω∈ with LR.adequate-main ds wfd ok ω∈
 ... | inj₁ ⟨ _ , er ⟩ with er halt
 ... | ⟨ t , ⟨ τ , st ⟩ ⟩ = ⟨ t , ⟨ C.↠→star ds τ , st ⟩ ⟩
 adequacy-error (program ds (body n bs b)) ⟨ wfd , ok ⟩ ω∈ | inj₂ ⟨ v , ⟨ _ , rv ⟩ ⟩ = ⊥-elim (LR.𝕍-ω ds {v} rv)
 
 {- every element is witnessed by a run that terminates -}
-adequacy-terminates : ∀ P → WF P → ∀ {d} → d ∈ ⟦ P ⟧ₓ → Σ[ o ∈ Obs ] Terminates (X86ₘ.sem P) o
+adequacy-terminates : ∀ P
+  → WF P
+  → ∀ {d}
+  → d ∈ ⟦ P ⟧ₓ
+  → Σ[ o ∈ Obs ] Terminates (X86ₘ.sem P) o
 adequacy-terminates (program ds (body n bs b)) wf@(⟨ wfd , ok ⟩) {d} d∈ with LR.adequate-main ds wfd ok d∈
 ... | inj₁ ⟨ refl , _ ⟩ = ⟨ o-error , adequacy-error (program ds (body n bs b)) wf d∈ ⟩
 ... | inj₂ ⟨ v , ⟨ r , _ ⟩ ⟩ with r halt
@@ -82,13 +93,20 @@ adequacy-terminates (program ds (body n bs b)) wf@(⟨ wfd , ok ⟩) {d} d∈ wi
 
 {- Soundness, for every observation -------------------------------------------}
 
-sound-const : ∀ P → WF P → ∀ {B} {k : base-rep B}
-  → Terminates (X86ₘ.sem P) (o-const B k) → dconst k ∈ ⟦ P ⟧ₓ
+sound-const : ∀ P
+  → WF P
+  → ∀ {B} {k : base-rep B}
+  → Terminates (X86ₘ.sem P) (o-const B k)
+  → dconst k ∈ ⟦ P ⟧ₓ
 sound-const P wf t with soundness P wf t (λ ())
 ... | ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = d∈
 
 {- a program that terminates has an element in its denotation -}
-sound-terminates : ∀ P → WF P → ∀ {o} → Terminates (X86ₘ.sem P) o → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₓ
+sound-terminates : ∀ P
+  → WF P
+  → ∀ {o}
+  → Terminates (X86ₘ.sem P) o
+  → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₓ
 sound-terminates P wf {o-error} t = ⟨ ω , sound-error P wf t ⟩
 sound-terminates P wf {o-const B k} t = ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
 sound-terminates P wf {o-fun} t = ⟨ _ , proj₁ (proj₂ (soundness P wf t (λ ()))) ⟩
@@ -99,33 +117,43 @@ sound-terminates P wf {o-inr o} t = ⟨ _ , proj₁ (proj₂ (soundness P wf t (
 {- Characterizations, for well-formed programs ----------------------------------}
 
 {- ω ∈ ⟦ P ⟧ₓ exactly when the machine stops with an error -}
-error-iff : ∀ P → WF P → (ω ∈ ⟦ P ⟧ₓ) ⇔ Terminates (X86ₘ.sem P) o-error
+error-iff : ∀ P
+  → WF P
+  → (ω ∈ ⟦ P ⟧ₓ) ⇔ Terminates (X86ₘ.sem P) o-error
 error-iff P wf = ⟨ adequacy-error P wf , sound-error P wf ⟩
 
 {- ⟦ P ⟧ₓ contains the constant k exactly when the machine stops with it -}
-const-iff : ∀ P → WF P → ∀ {B} {k : base-rep B}
+const-iff : ∀ P
+  → WF P
+  → ∀ {B} {k : base-rep B}
   → (dconst k ∈ ⟦ P ⟧ₓ) ⇔ Terminates (X86ₘ.sem P) (o-const B k)
 const-iff P wf {B} {k} = ⟨ A , sound-const P wf ⟩
   where
-  A : dconst k ∈ ⟦ P ⟧ₓ → Terminates (X86ₘ.sem P) (o-const B k)
+  A : dconst k ∈ ⟦ P ⟧ₓ
+    → Terminates (X86ₘ.sem P) (o-const B k)
   A k∈ with adequacy P wf k∈ (λ ())
   ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = subst (Terminates (X86ₘ.sem P)) (shape-const sh) t
 
 {- ⟦ P ⟧ₓ has an element other than ω exactly when the machine stops
    with an answer -}
-converges-iff : ∀ P → WF P
+converges-iff : ∀ P
+  → WF P
   → (Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₓ × d ≢ ω) ⇔ Converges (Terminates (X86ₘ.sem P))
 converges-iff P wf = ⟨ A , B ⟩
   where
-  A : (Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₓ × d ≢ ω) → Converges (Terminates (X86ₘ.sem P))
+  A : (Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₓ × d ≢ ω)
+    → Converges (Terminates (X86ₘ.sem P))
   A ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ with adequacy P wf d∈ d≢
   ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
-  B : Converges (Terminates (X86ₘ.sem P)) → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₓ × d ≢ ω
+  B : Converges (Terminates (X86ₘ.sem P))
+    → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₓ × d ≢ ω
   B ⟨ o , ⟨ ans , t ⟩ ⟩ with soundness P wf t ans
   ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ d , ⟨ d∈ , (λ { refl → shape-ω o sh }) ⟩ ⟩
 
 {- ⟦ P ⟧ₓ is empty exactly when the machine diverges -}
-diverges-iff : ∀ P → WF P → Diverges (X86ₘ.sem P) ⇔ (∀ d → ¬ (d ∈ ⟦ P ⟧ₓ))
+diverges-iff : ∀ P
+  → WF P
+  → Diverges (X86ₘ.sem P) ⇔ (∀ d → ¬ (d ∈ ⟦ P ⟧ₓ))
 diverges-iff P wf =
   ⟨ (λ div d d∈ → diverges-not-terminates div (proj₂ (adequacy-terminates P wf d∈)))
   , (λ empty → never-final-diverges (λ σ fin → let ⟨ d , d∈ ⟩ = sound-terminates P wf ⟨ _ , ⟨ σ , fin ⟩ ⟩

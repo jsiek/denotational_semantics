@@ -67,11 +67,13 @@ open import proof.Framework.GraphModel.Strict
 
 {- Laws of the semantics -------------------------------------------------------}
 
-rename-≃ : ∀ T M r (ρ ρ' : Env Value) → (∀ x → ρ (r x) ≃ ρ' x)
+rename-≃ : ∀ T M r (ρ ρ' : Env Value)
+  → (∀ x → ρ (r x) ≃ ρ' x)
   → ⟦ rename r M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ'
 rename-≃ T = RenameSem.rename-≃ {{Clos5-Semantics T}}
 
-rename-args-≃ : ∀ T {n} (Ms : Args (replicate n ■)) r (ρ ρ' : Env Value) → (∀ x → ρ (r x) ≃ ρ' x)
+rename-args-≃ : ∀ T {n} (Ms : Args (replicate n ■)) r (ρ ρ' : Env Value)
+  → (∀ x → ρ (r x) ≃ ρ' x)
   → RRs (replicate n ■) (⟦ rename-args r Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T ] ρ')
 rename-args-≃ T {zero} Nil r ρ ρ' rel = ptt
 rename-args-≃ T {suc n} (M ,, Ms) r ρ ρ' rel =
@@ -80,17 +82,23 @@ rename-args-≃ T {suc n} (M ,, Ms) r ρ ρ' rel =
 LET : AST → AST → AST
 LET M N = let-op ⦅ M ,, ⟩ N ,, Nil ⦆
 
-let-strict : ∀ T M N ρ w → w ∈ ⟦ LET M N ⟧[ T ] ρ → nonempty (⟦ M ⟧[ T ] ρ)
+let-strict : ∀ T M N ρ w
+  → w ∈ ⟦ LET M N ⟧[ T ] ρ
+  → nonempty (⟦ M ⟧[ T ] ρ)
 let-strict T M N ρ w ⟨ V , ⟨ _ , ⟨ V⊆ , V≢[] ⟩ ⟩ ⟩ = ne-mem V≢[] V⊆
 
 {- ρ' is ρ under k more bound variables -}
 Ext : ℕ → Env Value → Env Value → Set
 Ext k ρ' ρ = ∀ x → ρ' (k + x) ≃ ρ x
 
-ext-suc : ∀ {k ρ' ρ D} → Ext k ρ' (D • ρ) → Ext (suc k) ρ' ρ
+ext-suc : ∀ {k ρ' ρ D}
+  → Ext k ρ' (D • ρ)
+  → Ext (suc k) ρ' ρ
 ext-suc {k} {ρ'} {ρ} e x = subst (λ y → ρ' y ≃ ρ x) (+-suc k x) (e (suc x))
 
-ext-top : ∀ {k ρ' ρ D} → Ext k ρ' (D • ρ) → ρ' k ≃ D
+ext-top : ∀ {k ρ' ρ D}
+  → Ext k ρ' (D • ρ)
+  → ρ' k ≃ D
 ext-top {k} {ρ'} {ρ} {D} e = subst (λ y → ρ' y ≃ D) (+-identityʳ k) (e 0)
 
 {- f k, on atoms in an environment ρ under k more bound variables, means O -}
@@ -99,8 +107,13 @@ Denotes T f O ρ = ∀ k ρ' As → Ext k ρ' ρ → ⟦ f k As ⟧[ T ] ρ' ≃
 
 {- The let chain: binding the complex operands first does not change the
    meaning of a strict operator on them -}
-lift-≃ : ∀ T (TC : ∀ k → Con (T k)) {n} f (Ms : Args (replicate n ■)) (O : Strict n) ρ → nonempty-env ρ
-  → Con-env ρ → Denotes T f O ρ → ⟦ lift f Ms ⟧[ T ] ρ ≃ op O (⟦ Ms ⟧₊[ T ] ρ)
+lift-≃ : ∀ T
+  → (TC : ∀ k → Con (T k))
+  → ∀ {n} f (Ms : Args (replicate n ■)) (O : Strict n) ρ
+  → nonempty-env ρ
+  → Con-env ρ
+  → Denotes T f O ρ
+  → ⟦ lift f Ms ⟧[ T ] ρ ≃ op O (⟦ Ms ⟧₊[ T ] ρ)
 lift-≃ T TC {zero} f Nil O ρ NE C den = den 0 ρ Nil (λ x → ≃-refl)
 lift-≃ T TC {suc n} f (M ,, Ms) O ρ NE C den with atom? M
 ... | yes _ = lift-≃ T TC (λ k As → f k (rename (k +_) M ,, As)) Ms (⟦ M ⟧[ T ] ρ ▷ O) ρ NE C
@@ -124,8 +137,12 @@ prim-op p = record { op = primD p ; cong = mono-≃ (primD-mono p)
 {- The pass preserves denotations ---------------------------------------------}
 
 {- a construct c whose operator is O: its operands, under their lets -}
-rco-op : ∀ T T' (TC : ∀ k → Con (T k)) {n} (c : Args (replicate n ■) → AST) (O : Strict n)
-  (Ms : Args (replicate n ■)) ρ → nonempty-env ρ → Con-env ρ → (∀ T ρ As → ⟦ c As ⟧[ T ] ρ ≃ op O (⟦ As ⟧₊[ T ] ρ))
+rco-op : ∀ T T'
+  → (TC : ∀ k → Con (T k))
+  → ∀ {n} (c : Args (replicate n ■) → AST) (O : Strict n) (Ms : Args (replicate n ■)) ρ
+  → nonempty-env ρ
+  → Con-env ρ
+  → (∀ T ρ As → ⟦ c As ⟧[ T ] ρ ≃ op O (⟦ As ⟧₊[ T ] ρ))
   → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
   → ⟦ lift (λ _ → c) (rco-args Ms) ⟧[ T ] ρ ≃ ⟦ c Ms ⟧[ T' ] ρ
 rco-op T T' TC c O Ms ρ NE C den IH =
@@ -133,10 +150,20 @@ rco-op T T' TC c O Ms ρ NE C den IH =
           (≃-trans (cong O IH) (≃-sym (den T' ρ Ms)))
 
 {- with the same meanings in the tables T and T' -}
-rco-sem : ∀ T T' → (∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → ∀ M ρ → nonempty-env ρ → Con-env ρ
+rco-sem : ∀ T T'
+  → (∀ k → Con (T k))
+  → (∀ k → T k ≃ T' k)
+  → ∀ M ρ
+  → nonempty-env ρ
+  → Con-env ρ
   → ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ
-rco-args-sem : ∀ T T' → (∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → ∀ {n} (Ms : Args (replicate n ■)) ρ
-  → nonempty-env ρ → Con-env ρ → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
+rco-args-sem : ∀ T T'
+  → (∀ k → Con (T k))
+  → (∀ k → T k ≃ T' k)
+  → ∀ {n} (Ms : Args (replicate n ■)) ρ
+  → nonempty-env ρ
+  → Con-env ρ
+  → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
 
 rco-sem T T' TC TT (` x) ρ NE C = ≃-refl
 rco-sem T T' TC TT (fun-ref k ⦅ Nil ⦆) ρ NE C = TT k
@@ -155,7 +182,10 @@ rco-sem T T' TC TT (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ NE C =
           (cong O ⟨ up (rco-sem T T' TC TT L ρ NE C) , ptt ⟩)
   where
   O = case-op′ (λ X → ⟦ M ⟧[ T' ] (X • ρ)) (λ X → ⟦ N ⟧[ T' ] (X • ρ))
-  branch : ∀ k ρ' → Ext k ρ' ρ → ∀ B v V → (v ∷ V) ≈ (v ∷ V)
+  branch : ∀ k ρ'
+    → Ext k ρ' ρ
+    → ∀ B v V
+    → (v ∷ V) ≈ (v ∷ V)
     → ⟦ rename (ext (k +_)) (rco B) ⟧[ T ] (mem (v ∷ V) • ρ') ≃ ⟦ B ⟧[ T' ] (mem (v ∷ V) • ρ)
   branch k ρ' e B v V c =
     ≃-trans (rename-≃ T (rco B) (ext (k +_)) (mem (v ∷ V) • ρ') (mem (v ∷ V) • ρ)
@@ -175,13 +205,21 @@ rco-args-sem T T' TC TT {zero} Nil ρ NE C = ptt
 rco-args-sem T T' TC TT {suc n} (M ,, Ms) ρ NE C =
   ⟨ up (rco-sem T T' TC TT M ρ NE C) , rco-args-sem T T' TC TT Ms ρ NE C ⟩
 
-rco-correct : ∀ T → (∀ k → Con (T k)) → ∀ M ρ → nonempty-env ρ → Con-env ρ
+rco-correct : ∀ T
+  → (∀ k → Con (T k))
+  → ∀ M ρ
+  → nonempty-env ρ
+  → Con-env ρ
   → ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ
 rco-correct T TC = rco-sem T T TC (λ k → ≃-refl)
 
 {- Programs ---------------------------------------------------------------------}
 
-code-≃ : ∀ {T T'} → (∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → ∀ N → code T (rco N) ≃ code T' N
+code-≃ : ∀ {T T'}
+  → (∀ k → Con (T k))
+  → (∀ k → T k ≃ T' k)
+  → ∀ N
+  → code T (rco N) ≃ code T' N
 code-≃ {T} {T'} TC TT N =
   Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → rco-sem T T' TC TT N _
     (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) (E≢[]⇒nonempty-mem neV))
@@ -212,11 +250,15 @@ compile-mon-same M =
   Same-trans (compile-same M) (≃→Same (≃-sym (rco-program-correct (compile M))))
 
 compile-mon-correct-const : ∀ (M : ISWIM.AST) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ᵢ ρ₀ → const c ∈ ⟦ compile-mon M ⟧ₚ)
-  × (const c ∈ ⟦ compile-mon M ⟧ₚ → const c ∈ ⟦ M ⟧ᵢ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ᵢ ρ₀
+     → const c ∈ ⟦ compile-mon M ⟧ₚ)
+  × (  const c ∈ ⟦ compile-mon M ⟧ₚ
+     → const c ∈ ⟦ M ⟧ᵢ ρ₀)
 compile-mon-correct-const M = proj₁ (compile-mon-same M)
 
 compile-mon-correct-nonempty : ∀ (M : ISWIM.AST)
-  → (nonempty (⟦ M ⟧ᵢ ρ₀) → nonempty ⟦ compile-mon M ⟧ₚ)
-  × (nonempty ⟦ compile-mon M ⟧ₚ → nonempty (⟦ M ⟧ᵢ ρ₀))
+  → (  nonempty (⟦ M ⟧ᵢ ρ₀)
+     → nonempty ⟦ compile-mon M ⟧ₚ)
+  × (  nonempty ⟦ compile-mon M ⟧ₚ
+     → nonempty (⟦ M ⟧ᵢ ρ₀))
 compile-mon-correct-nonempty M = proj₂ (compile-mon-same M)

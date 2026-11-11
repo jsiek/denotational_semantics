@@ -78,7 +78,10 @@ infix 4 _⊢_⇓_
 _⊢_⇓_ : Env → AST → Val → Set
 γ ⊢ M ⇓ v = ∀ κ → eval M γ κ ↠ ret v κ
 
-⇓-det : ∀ {γ M v₁ v₂} → γ ⊢ M ⇓ v₁ → γ ⊢ M ⇓ v₂ → v₁ ≡ v₂
+⇓-det : ∀ {γ M v₁ v₂}
+  → γ ⊢ M ⇓ v₁
+  → γ ⊢ M ⇓ v₂
+  → v₁ ≡ v₂
 ⇓-det {v₁ = v₁} {v₂} e₁ e₂ with ↠-final-det (e₁ halt) (e₂ halt) refl refl
 ... | refl = refl
 
@@ -95,7 +98,10 @@ open Rel Run public
 𝔾 : ℕ → VEnv → Env → Set
 𝔾 k ρ γ = ∀ x → x < k → ∀ d → d ∈ ρ x → Σ[ v ∈ Val ] γ ‼ x ≡ just v × 𝕍 d v
 
-𝔾-ext : ∀ {k ρ γ} V v → 𝔾 k ρ γ → 𝕍s V v → 𝔾 (suc k) (mem V • ρ) (v ∷ γ)
+𝔾-ext : ∀ {k ρ γ} V v
+  → 𝔾 k ρ γ
+  → 𝕍s V v
+  → 𝔾 (suc k) (mem V • ρ) (v ∷ γ)
 𝔾-ext V v G Vv zero _ d d∈ = ⟨ v , ⟨ refl , 𝕍s-∈ V Vv d∈ ⟩ ⟩
 𝔾-ext V v G Vv (suc x) (s≤s x<) d d∈ = G x x< d d∈
 
@@ -106,8 +112,11 @@ open Rel Run public
 {- Lemmas about runs -------------------------------------------------------------}
 
 collect : ∀ {γ M v} (P : Value → Val → Set) V
-  → (∀ d → d ∈ mem V → Σ[ v' ∈ Val ] γ ⊢ M ⇓ v' × P d v') → γ ⊢ M ⇓ v
-  → ∀ d → d ∈ mem V → P d v
+  → (∀ d → d ∈ mem V → Σ[ v' ∈ Val ] γ ⊢ M ⇓ v' × P d v')
+  → γ ⊢ M ⇓ v
+  → ∀ d
+  → d ∈ mem V
+  → P d v
 collect P V all e d d∈ with all d d∈
 ... | ⟨ v' , ⟨ e' , r ⟩ ⟩ with ⇓-det e e'
 ... | refl = r
@@ -115,7 +124,8 @@ collect P V all e d d∈ with all d d∈
 Evals : Env → List AST → List Val → Set
 Evals γ = Pointwise (λ M v → γ ⊢ M ⇓ v)
 
-tuple-run : ∀ {γ κ} acc Ms vs → Evals γ Ms vs
+tuple-run : ∀ {γ κ} acc Ms vs
+  → Evals γ Ms vs
   → tuple-next acc Ms γ κ ↠ ret (tup (reverse (reverseAcc acc vs))) κ
 tuple-run acc [] [] [] = done
 tuple-run {γ} {κ} acc (M ∷ Ms) (v ∷ vs) (e ∷ es) =
@@ -123,10 +133,17 @@ tuple-run {γ} {κ} acc (M ∷ Ms) (v ∷ vs) (e ∷ es) =
 
 {- The fundamental lemma ----------------------------------------------------------}
 
-adequate : ∀ M {T k ρ γ d} → 𝕋 T → WS k M → 𝔾 k ρ γ → d ∈ ⟦ M ⟧[ T ] ρ
+adequate : ∀ M {T k ρ γ d}
+  → 𝕋 T
+  → WS k M
+  → 𝔾 k ρ γ
+  → d ∈ ⟦ M ⟧[ T ] ρ
   → Σ[ v ∈ Val ] γ ⊢ M ⇓ v × 𝕍 d v
-adequate-args : ∀ {n} (args : Args (replicate n ■)) {T k ρ γ} → 𝕋 T → WS-args k args
-  → 𝔾 k ρ γ → (∀ j → nonempty (nthD (⟦ args ⟧₊[ T ] ρ) j))
+adequate-args : ∀ {n} (args : Args (replicate n ■)) {T k ρ γ}
+  → 𝕋 T
+  → WS-args k args
+  → 𝔾 k ρ γ
+  → (∀ j → nonempty (nthD (⟦ args ⟧₊[ T ] ρ) j))
   → Σ[ vs ∈ List Val ] Evals γ (args→list args) vs × length vs ≡ n
       × (∀ j d → d ∈ nthD (⟦ args ⟧₊[ T ] ρ) j → 𝕍At j d vs)
 
@@ -277,13 +294,18 @@ adequate-args {suc n} (M ,, args) 𝕋T ⟨ wM , ws ⟩ G ne
 ... | ⟨ v , ⟨ e , _ ⟩ ⟩ | ⟨ vs , ⟨ es , ⟨ len , rs ⟩ ⟩ ⟩ =
   ⟨ v ∷ vs , ⟨ e ∷ es , ⟨ cong suc len , R ⟩ ⟩ ⟩
   where
-  R : ∀ j d → d ∈ nthD (⟦ M ,, args ⟧₊[ _ ] _) j → 𝕍At j d (v ∷ vs)
+  R : ∀ j d
+    → d ∈ nthD (⟦ M ,, args ⟧₊[ _ ] _) j
+    → 𝕍At j d (v ∷ vs)
   R zero d d∈ = ⟨ len , collect 𝕍 (d ∷ []) (λ { d' (here refl) → adequate M 𝕋T wM G d∈ }) e d (here refl) ⟩
   R (suc j) d d∈ = rs j d d∈
 
 {- The table of the program --------------------------------------------------------}
 
-tab : ∀ Ns → Ns ⊑ ds → DefsWF Ns → 𝕋 (table Ns)
+tab : ∀ Ns
+  → Ns ⊑ ds
+  → DefsWF Ns
+  → 𝕋 (table Ns)
 tab (N ∷ Ns) p wf k d d∈ with k ≟ length Ns
 tab (N ∷ Ns) p wf k d d∈ | no _ = tab Ns (∷-⊑ p) (proj₂ wf) k d d∈
 tab (N ∷ Ns) p wf .(length Ns) ν d∈ | yes refl = tt

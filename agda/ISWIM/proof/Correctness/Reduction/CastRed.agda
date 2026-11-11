@@ -69,7 +69,9 @@ open import Relation.Nullary using (yes; no; does)
 VM : ℕ → Set
 VM k = Fin k → Maybe ℕ
 
-extρ skip : ∀ {k} → VM k → VM (suc k)
+extρ skip : ∀ {k}
+  → VM k
+  → VM (suc k)
 extρ ρ zero = just 0
 extρ ρ (suc y) = Mb.map suc (ρ y)
 skip ρ zero = nothing
@@ -112,15 +114,24 @@ data _⊢_≈*_ {k} ρ where
 {- The fundamental lemma ----------------------------------------------------}
 
 private
-  ext-ok : ∀ {k k'} {r : Fin k → Fin k'} {ρ : VM k'} → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
-    → ∀ x (lt : x < suc k) → extρ ρ (ext r (fromℕ< lt)) ≡ just x
+  ext-ok : ∀ {k k'} {r : Fin k → Fin k'} {ρ : VM k'}
+    → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
+    → ∀ x
+    → (lt : x < suc k)
+    → extρ ρ (ext r (fromℕ< lt)) ≡ just x
   ext-ok h zero (s≤s z≤n) = refl
   ext-ok h (suc x) (s≤s lt) rewrite h x lt = refl
 
-cast≈ : ∀ {k k'} {r : Fin k → Fin k'} {ρ : VM k'} → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
-  → ∀ M (w : WS k M) → ρ ⊢ M ≈ cast r M w
-casts≈ : ∀ {k k' n} {r : Fin k → Fin k'} {ρ : VM k'} → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
-  → (Ms : Args (replicate n ■)) (ws : WS-args k Ms) → ρ ⊢ Ms ≈* casts r Ms ws
+cast≈ : ∀ {k k'} {r : Fin k → Fin k'} {ρ : VM k'}
+  → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
+  → ∀ M
+  → (w : WS k M)
+  → ρ ⊢ M ≈ cast r M w
+casts≈ : ∀ {k k' n} {r : Fin k → Fin k'} {ρ : VM k'}
+  → (∀ x (lt : x < k) → ρ (r (fromℕ< lt)) ≡ just x)
+  → (Ms : Args (replicate n ■))
+  → (ws : WS-args k Ms)
+  → ρ ⊢ Ms ≈* casts r Ms ws
 
 cast≈ h (` x) lt = var≈ (h x lt)
 cast≈ h (lam ⦅ ⟩ N ,, Nil ⦆) (w , _) = lam≈ (cast≈ (ext-ok h) N w)
@@ -154,8 +165,13 @@ module Trav {𝒦} (K : KR 𝒦) where
   open KR K
   open T.Laws laws
 
-  ≈-trav : ∀ {k j ρ ρ₂ σ} {τ : T.Sub 𝒦 k j} {M M'} → ρ ⊢ M ≈ M' → OK 𝒦 ρ ρ₂ σ τ → ρ₂ ⊢ sub σ M ≈ trav 𝒦 τ M'
-  ≈*-trav : ∀ {k j ρ ρ₂ σ n} {τ : T.Sub 𝒦 k j} {Ms : Args (replicate n ■)} {Ms'} → ρ ⊢ Ms ≈* Ms' → OK 𝒦 ρ ρ₂ σ τ
+  ≈-trav : ∀ {k j ρ ρ₂ σ} {τ : T.Sub 𝒦 k j} {M M'}
+    → ρ ⊢ M ≈ M'
+    → OK 𝒦 ρ ρ₂ σ τ
+    → ρ₂ ⊢ sub σ M ≈ trav 𝒦 τ M'
+  ≈*-trav : ∀ {k j ρ ρ₂ σ n} {τ : T.Sub 𝒦 k j} {Ms : Args (replicate n ■)} {Ms'}
+    → ρ ⊢ Ms ≈* Ms'
+    → OK 𝒦 ρ ρ₂ σ τ
     → ρ₂ ⊢ IS.sub-args σ Ms ≈* T.travs 𝒦 τ Ms'
   ≈-trav (var≈ e) ok = ok _ e
   ≈-trav (lam≈ n) ok = lam≈ (≈-trav n (ok-ext ok))
@@ -177,30 +193,40 @@ module Trav {𝒦} (K : KR 𝒦) where
   ≈*-trav [] ok = []
   ≈*-trav (r ∷ rs) ok = ≈-trav r ok ∷ ≈*-trav rs ok
 
-inv-var : ∀ {k} {ρ : VM k} {M y} → ρ ⊢ M ≈ I.` y → Σ[ x ∈ ℕ ] M ≡ ` x × ρ y ≡ just x
+inv-var : ∀ {k} {ρ : VM k} {M y}
+  → ρ ⊢ M ≈ I.` y
+  → Σ[ x ∈ ℕ ] M ≡ ` x × ρ y ≡ just x
 inv-var (var≈ e) = _ , refl , e
 
 varKR : KR varK
 varKR = record { laws = T.varL ; ok-ext = ex ; ok-skip = sk ; pbody-trav = refl }
   where
-  ex : ∀ {k j ρ ρ₂ σ} {τ : T.Sub varK k j} → OK varK ρ ρ₂ σ τ → OK varK (extρ ρ) (extρ ρ₂) (exts σ) (T.exts varK τ)
+  ex : ∀ {k j ρ ρ₂ σ} {τ : T.Sub varK k j}
+    → OK varK ρ ρ₂ σ τ
+    → OK varK (extρ ρ) (extρ ρ₂) (exts σ) (T.exts varK τ)
   ex ok zero refl = var≈ refl
   ex {ρ = ρ} ok (suc y) e with ρ y in eq | e
   ... | just x | refl with inv-var (ok y eq)
   ...   | _ , e' , e'' rewrite e' = var≈ (cong (Mb.map suc) e'')
-  sk : ∀ {k j ρ ρ₂ σ} {τ : T.Sub varK k j} → OK varK ρ ρ₂ σ τ → OK varK (skip ρ) (skip ρ₂) σ (T.exts varK τ)
+  sk : ∀ {k j ρ ρ₂ σ} {τ : T.Sub varK k j}
+    → OK varK ρ ρ₂ σ τ
+    → OK varK (skip ρ) (skip ρ₂) σ (T.exts varK τ)
   sk ok (suc y) e with inv-var (ok y e)
   ... | _ , e' , e'' rewrite e' = var≈ e''
 
 tmKR : KR tmK
 tmKR = record { laws = T.tmL ; ok-ext = ex ; ok-skip = sk ; pbody-trav = refl }
   where
-  ex : ∀ {k j ρ ρ₂ σ} {τ : T.Sub tmK k j} → OK tmK ρ ρ₂ σ τ → OK tmK (extρ ρ) (extρ ρ₂) (exts σ) (T.exts tmK τ)
+  ex : ∀ {k j ρ ρ₂ σ} {τ : T.Sub tmK k j}
+    → OK tmK ρ ρ₂ σ τ
+    → OK tmK (extρ ρ) (extρ ρ₂) (exts σ) (T.exts tmK τ)
   ex ok zero refl = var≈ refl
   ex {ρ = ρ} {σ = σ} ok (suc y) e with ρ y in eq | e
   ... | just x | refl = subst (λ X → _ ⊢ X ≈ _) (sym (IS.rename-sub suc (σ x)))
                           (Trav.≈-trav varKR (ok y eq) λ _ e' → var≈ (cong (Mb.map suc) e'))
-  sk : ∀ {k j ρ ρ₂ σ} {τ : T.Sub tmK k j} → OK tmK ρ ρ₂ σ τ → OK tmK (skip ρ) (skip ρ₂) σ (T.exts tmK τ)
+  sk : ∀ {k j ρ ρ₂ σ} {τ : T.Sub tmK k j}
+    → OK tmK ρ ρ₂ σ τ
+    → OK tmK (skip ρ) (skip ρ₂) σ (T.exts tmK τ)
   sk {σ = σ} ok (suc y) {x} e = subst (λ X → _ ⊢ X ≈ _) (IS.sub-id (σ x)) (Trav.≈-trav varKR (ok y e) λ _ e' → var≈ e')
 
 {- The simulation -----------------------------------------------------------}
@@ -214,16 +240,27 @@ R = ρ₀ ⊢_≈_
 Ans′ = Ans T.red Value R
 
 {- substituting a value for the variable of a binder -}
-≈-[] : ∀ {N N' V V'} → extρ ρ₀ ⊢ N ≈ N' → R V V' → R (N IS.[ V ]) (N' T.[ V' ])
+≈-[] : ∀ {N N' V V'}
+  → extρ ρ₀ ⊢ N ≈ N'
+  → R V V'
+  → R (N IS.[ V ]) (N' T.[ V' ])
 ≈-[] n m = Trav.≈-trav tmKR n λ { zero refl → m ; (suc ()) _ }
 
 {- a closed operand, after the let of a first operand -}
-≈-skip : ∀ {M M' V'} → skip ρ₀ ⊢ M ≈ M' → R M (M' T.[ V' ])
+≈-skip : ∀ {M M' V'}
+  → skip ρ₀ ⊢ M ≈ M'
+  → R M (M' T.[ V' ])
 ≈-skip {M} s = subst (λ X → R X _) (IS.sub-id M) (Trav.≈-trav tmKR s λ { zero () ; (suc ()) _ })
 
 {- a source term related to a value reduces to val -}
-≈-val : ∀ {V V'} → Value V' → R V V' → S.red V ≡ val
-≈*-val : ∀ {n} {Vs : Args (replicate n ■)} {Vs'} → All Value Vs' → ρ₀ ⊢ Vs ≈* Vs' → S.red-args Vs ≡ val
+≈-val : ∀ {V V'}
+  → Value V'
+  → R V V'
+  → S.red V ≡ val
+≈*-val : ∀ {n} {Vs : Args (replicate n ■)} {Vs'}
+  → All Value Vs'
+  → ρ₀ ⊢ Vs ≈* Vs'
+  → S.red-args Vs ≡ val
 ≈-val _ (lam≈ _) = refl
 ≈-val _ lit≈ = refl
 ≈-val (T.inject (T.tuple vs)) (tuple≈ rs) rewrite ≈*-val vs rs = refl
@@ -232,8 +269,12 @@ Ans′ = Ans T.red Value R
 ≈*-val [] [] = refl
 ≈*-val (v ∷ vs) (r ∷ rs) rewrite ≈-val v r | ≈*-val vs rs = refl
 
-obs≈ : ∀ {V V'} → R V V' → S.obs V ≡ T.obs V'
-obs≈* : ∀ {n} {Vs : Args (replicate n ■)} {Vs'} → ρ₀ ⊢ Vs ≈* Vs' → S.obs-args Vs ≡ T.obss Vs'
+obs≈ : ∀ {V V'}
+  → R V V'
+  → S.obs V ≡ T.obs V'
+obs≈* : ∀ {n} {Vs : Args (replicate n ■)} {Vs'}
+  → ρ₀ ⊢ Vs ≈* Vs'
+  → S.obs-args Vs ≡ T.obss Vs'
 obs≈ (lam≈ _) = refl
 obs≈ lit≈ = refl
 obs≈ (tuple≈ rs) = cong o-tuple (obs≈* rs)
@@ -251,11 +292,14 @@ obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 
 {- one layer of context, and two -}
 fr : ∀ {A B} {g : I.Tm 0 A → I.Tm 0 B} {κ : I.Tm 0 A → Red (I.Tm 0 B)}
-  → (∀ X → T.red (g X) ≡ step-in g (T.red X) (κ X)) → Frame T.red T.red g
+  → (∀ X → T.red (g X) ≡ step-in g (T.red X) (κ X))
+  → Frame T.red T.red g
 fr = frame _
 
 {- a project of a value, in a context -}
-proj-in : ∀ {A t V'} {g : I.Tm 0 ⟪ flat t ⟫ → I.Tm 0 A} → Value V' → (F : Frame T.red T.red g)
+proj-in : ∀ {A t V'} {g : I.Tm 0 ⟪ flat t ⟫ → I.Tm 0 A}
+  → Value V'
+  → (F : Frame T.red T.red g)
   → T.red (g (I.project t V')) ≡ step-in g (T.project? t V') (Frame.κ F (I.project t V'))
 proj-in {t = t} {V'} {g} v F = trans (Frame.eq F _) (cong (λ r → step-in g r (Frame.κ F (I.project t V'))) (val-in (value-red v)))
 
@@ -264,25 +308,32 @@ project-ok t X with flat t ≟F flat t
 ... | yes refl = refl
 ... | no ne = ⊥-elim (ne refl)
 
-project-bad : ∀ {H t} (X : I.Tm 0 ⟪ H ⟫) → H ≢ flat t → T.project? t (I.inject H X) ≡ error
+project-bad : ∀ {H t} (X : I.Tm 0 ⟪ H ⟫)
+  → H ≢ flat t
+  → T.project? t (I.inject H X) ≡ error
 project-bad {H} {t} X ne with H ≟F flat t
 ... | yes e = ⊥-elim (ne e)
 ... | no _ = refl
 
 {- a component of a tuple, of the right length or not -}
-has-length-no : ∀ {m n} (Ms : Args (replicate m ■)) → m ≢ n → has-length n (args→list Ms) ≡ false
+has-length-no : ∀ {m n} (Ms : Args (replicate m ■))
+  → m ≢ n
+  → has-length n (args→list Ms) ≡ false
 has-length-no {zero} {zero} Nil ne = ⊥-elim (ne refl)
 has-length-no {zero} {suc n} Nil ne = refl
 has-length-no {suc m} {zero} (M ,, Ms) ne = refl
 has-length-no {suc m} {suc n} (M ,, Ms) ne = has-length-no Ms (λ e → ne (cong suc e))
 
-proj-no : ∀ {m n} (i : Fin n) (Ms : Args (replicate m ■)) → m ≢ n → proj i (args→list Ms) ≡ nothing
+proj-no : ∀ {m n} (i : Fin n) (Ms : Args (replicate m ■))
+  → m ≢ n
+  → proj i (args→list Ms) ≡ nothing
 proj-no {zero} zero Nil ne = refl
 proj-no {zero} (suc i) Nil ne = refl
 proj-no {suc m} {suc n} zero (M ,, Ms) ne rewrite has-length-no Ms (λ e → ne (cong suc e)) = refl
 proj-no {suc m} (suc i) (M ,, Ms) ne = proj-no i Ms (λ e → ne (cong suc e))
 
-proj-ok : ∀ {n} (i : Fin n) {Ms : Args (replicate n ■)} {Ms'} → ρ₀ ⊢ Ms ≈* Ms'
+proj-ok : ∀ {n} (i : Fin n) {Ms : Args (replicate n ■)} {Ms'}
+  → ρ₀ ⊢ Ms ≈* Ms'
   → Σ[ V ∈ AST ] proj i (args→list Ms) ≡ just V × R V (lookup Ms' i)
 proj-ok {suc n} zero {M ,, Ms} (r ∷ rs) rewrite has-length-args {n = n} Ms = M , refl , r
 proj-ok (suc i) (r ∷ rs) = proj-ok i rs
@@ -293,7 +344,10 @@ data IntView : AST → I.Tm 0 Any → Set where
   other : ∀ {V V'} → T.project? tint V' ≡ error → (∀ p o → δ? p (S.obs V) o ≡ nothing)
     → (∀ p n → δ? p (o-const Int n) (S.obs V) ≡ nothing) → IntView V V'
 
-int? : ∀ {V V'} → Value V' → R V V' → IntView V V'
+int? : ∀ {V V'}
+  → Value V'
+  → R V V'
+  → IntView V V'
 int? (T.inject T.lam) (lam≈ _) = other refl (λ _ _ → refl) (λ _ _ → refl)
 int? (T.inject T.lit) (lit≈ {Nat}) = other refl (λ _ _ → refl) (λ _ _ → refl)
 int? (T.inject T.lit) (lit≈ {Int}) = int
@@ -312,33 +366,55 @@ out≈ P.eq n m with does (n Z.≟ m)
 ... | true = inl≈ (tuple≈ [])
 ... | false = inr≈ (tuple≈ [])
 
-proj-in-to : ∀ {A t V' X} {g : I.Tm 0 ⟪ flat t ⟫ → I.Tm 0 A} → Value V' → (F : Frame T.red T.red g)
-  → T.project? t V' ≡ to X → T.red (g (I.project t V')) ≡ to (g X)
+proj-in-to : ∀ {A t V' X} {g : I.Tm 0 ⟪ flat t ⟫ → I.Tm 0 A}
+  → Value V'
+  → (F : Frame T.red T.red g)
+  → T.project? t V' ≡ to X
+  → T.red (g (I.project t V')) ≡ to (g X)
 proj-in-to {t = t} {V'} {g = g} v F e = trans (proj-in v F) (cong (λ r → step-in g r (Frame.κ F (I.project t V'))) e)
 
-proj-in-err : ∀ {A t V'} {g : I.Tm 0 ⟪ flat t ⟫ → I.Tm 0 A} → Value V' → (F : Frame T.red T.red g)
-  → T.project? t V' ≡ error → T.red (g (I.project t V')) ≡ error
+proj-in-err : ∀ {A t V'} {g : I.Tm 0 ⟪ flat t ⟫ → I.Tm 0 A}
+  → Value V'
+  → (F : Frame T.red T.red g)
+  → T.project? t V' ≡ error
+  → T.red (g (I.project t V')) ≡ error
 proj-in-err {t = t} {V'} {g = g} v F e = trans (proj-in v F) (cong (λ r → step-in g r (Frame.κ F (I.project t V'))) e)
 
 {- a primitive whose first, or second, operand is no integer -}
-prim-err₁ : ∀ {p V' Y} → Value V' → T.project? tint V' ≡ error
+prim-err₁ : ∀ {p V' Y}
+  → Value V'
+  → T.project? tint V' ≡ error
   → T.red (I.inject (out-flat p) (I.prim p (I.project tint V') Y)) ≡ error
 prim-err₁ v e rewrite value-red v | e = refl
 
-prim-err₂ : ∀ {p n W'} → Value W' → T.project? tint W' ≡ error
+prim-err₂ : ∀ {p n W'}
+  → Value W'
+  → T.project? tint W' ≡ error
   → T.red (I.inject (out-flat p) (I.prim p (I.lit Int n) (I.project tint W'))) ≡ error
 prim-err₂ v e rewrite value-red v | e = refl
 
 {- the lets of a primitive, once both operands are values -}
-prim-β : ∀ {p V' W'} → Value W' → T.red (I.let′ W' (pbodyR p V'))
-  ≡ to (I.inject (out-flat p) (I.prim p (I.project tint V') (I.project tint W')))
+prim-β : ∀ {p V' W'}
+  → Value W'
+  → T.red (I.let′ W' (pbodyR p V'))
+      ≡ to (I.inject (out-flat p) (I.prim p (I.project tint V') (I.project tint W')))
 prim-β {p} {V'} {W'} w = trans (val-in (value-red w)) (cong (λ X → to (I.inject (out-flat p) (I.prim p (I.project tint X) (I.project tint W')))) (T.wk-[] V' W'))
 
-sim : ∀ M {M'} → R M M' → Ans′ M (S.red M) M'
-sims : ∀ {n} (Ms : Args (replicate n ■)) {Ms'} → ρ₀ ⊢ Ms ≈* Ms' → Ans T.reds (All Value) (ρ₀ ⊢_≈*_) Ms (S.red-args Ms) Ms'
-appᵥ-sim : ∀ {N N'} M {M'} → extρ ρ₀ ⊢ N ≈ N' → R M M'
+sim : ∀ M {M'}
+  → R M M'
+  → Ans′ M (S.red M) M'
+sims : ∀ {n} (Ms : Args (replicate n ■)) {Ms'}
+  → ρ₀ ⊢ Ms ≈* Ms'
+  → Ans T.reds (All Value) (ρ₀ ⊢_≈*_) Ms (S.red-args Ms) Ms'
+appᵥ-sim : ∀ {N N'} M {M'}
+  → extρ ρ₀ ⊢ N ≈ N'
+  → R M M'
   → Ans′ (app ⦅ lam ⦅ ⟩ N ,, Nil ⦆ ,, M ,, Nil ⦆) (S.app? (lam ⦅ ⟩ N ,, Nil ⦆) (S.red M) M) (I.app (I.lam N') M')
-primR-sim : ∀ {p V V'} → Value V' → R V V' → ∀ M {M'} → R M M'
+primR-sim : ∀ {p V V'}
+  → Value V'
+  → R V V'
+  → ∀ M {M'}
+  → R M M'
   → Ans′ (prim p ⦅ V ,, M ,, Nil ⦆) (step-in (λ X → prim p ⦅ V ,, X ,, Nil ⦆) (S.red M) (S.prim? p V M)) (I.let′ M' (pbodyR p V'))
 
 sim (` x) (var≈ {y = ()} _)
@@ -358,7 +434,10 @@ sim (app ⦅ L ,, M ,, Nil ⦆) (app≈ {M' = M'} r s) =
   where
   F : Frame T.red T.red (λ X → I.app X M')
   F = frame _ λ _ → refl
-  app-sim : ∀ {V V'} → Value V' → R V V' → Ans′ (app ⦅ V ,, M ,, Nil ⦆) (S.app? V (S.red M) M) (I.app (I.project tfun V') M')
+  app-sim : ∀ {V V'}
+    → Value V'
+    → R V V'
+    → Ans′ (app ⦅ V ,, M ,, Nil ⦆) (S.app? V (S.red M) M) (I.app (I.project tfun V') M')
   app-sim v@(T.inject T.lam) (lam≈ n) = ans-step (proj-in v F) (appᵥ-sim M n s)
   app-sim v@(T.inject T.lit) lit≈ = error ε (proj-in v F)
   app-sim v@(T.inject (T.tuple _)) (tuple≈ _) = error ε (proj-in v F)
@@ -370,7 +449,10 @@ sim (get i ⦅ M ,, Nil ⦆) (get≈ {n} r) =
   where
   F : Frame T.red T.red (I.get i)
   F = frame _ λ _ → refl
-  get-sim : ∀ {V V'} → Value V' → R V V' → Ans′ (get i ⦅ V ,, Nil ⦆) (S.get? i V) (I.get i (I.project (ttup n i) V'))
+  get-sim : ∀ {V V'}
+    → Value V'
+    → R V V'
+    → Ans′ (get i ⦅ V ,, Nil ⦆) (S.get? i V) (I.get i (I.project (ttup n i) V'))
   get-sim v@(T.inject (T.tuple vs)) (tuple≈ {m} {Ms} {Ms'} rs) with m N.≟ suc n
   ... | yes refl with proj-ok i rs
   ...   | V , e , r' rewrite e =
@@ -387,7 +469,9 @@ sim (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (case≈ {M' = M'} {N' = N'} r 
   where
   F : Frame T.red T.red (λ X → I.case X M' N')
   F = frame _ λ _ → refl
-  case-sim : ∀ {V V'} → Value V' → R V V'
+  case-sim : ∀ {V V'}
+    → Value V'
+    → R V V'
     → Ans′ (case-op ⦅ V ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? V M N) (I.case (I.project tsum V') M' N')
   case-sim v@(T.inject (T.inl w)) (inl≈ m) = to (plus (proj-in-to v F refl) (val-in (value-red (T.inl w)) ◅ ε)) (≈-[] s m)
   case-sim v@(T.inject (T.inr w)) (inr≈ m) = to (plus (proj-in-to v F refl) (val-in (value-red (T.inr w)) ◅ ε)) (≈-[] t m)
@@ -411,7 +495,10 @@ appᵥ-sim M n s = ans-in (frame _ λ _ → refl) (appᵥ≈ n) (sim M s) λ v m
 
 primR-sim {p} {V} {V'} v m M s = ans-in (frame _ λ _ → refl) (primR≈ v m) (sim M s) final
   where
-  final : ∀ {W W'} → Value W' → R W W' → Ans′ (prim p ⦅ V ,, W ,, Nil ⦆) (S.prim? p V W) (I.let′ W' (pbodyR p V'))
+  final : ∀ {W W'}
+    → Value W'
+    → R W W'
+    → Ans′ (prim p ⦅ V ,, W ,, Nil ⦆) (S.prim? p V W) (I.let′ W' (pbodyR p V'))
   final {W} {W'} w m' with int? v m | int? w m'
   ... | int {n₁} | int {n₂} = to (plus (prim-β {V' = V'} w) (refl ◅ refl ◅ refl ◅ ε)) (out≈ p n₁ n₂)
   ... | other e d d' | _ rewrite d p (S.obs W) =
@@ -423,8 +510,12 @@ primR-sim {p} {V} {V'} v m M s = ans-in (frame _ λ _ → refl) (primR≈ v m) (
 
 {- The end theorem ----------------------------------------------------------}
 
-cast-program-correct : ∀ M (w : WS 0 M) → Equivalent (S.sem M) (T.sem (cast-program M w))
+cast-program-correct : ∀ M
+  → (w : WS 0 M)
+  → Equivalent (S.sem M) (T.sem (cast-program M w))
 cast-program-correct M w = red-equivalent value-red R (λ {M} m → sim M m) (λ m _ _ → obs≈ m) (cast≈ (λ _ ()) M w)
 
-cast-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (cast-closed M))
+cast-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (T.sem (cast-closed M))
 cast-correct M c rewrite cast-closed-≡ M (closed-ws {M} c) = cast-program-correct M (closed-ws {M} c)

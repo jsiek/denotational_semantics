@@ -48,9 +48,13 @@ open import Relation.Nullary using (Dec; yes; no; does)
 
 {- weakening the table twice -}
 wk-wk : ∀ {Σ Σ' Σ'' Γ A} {e : ∀ {n} → Σ' ∋ n → Σ'' ∋ n} {e' : ∀ {n} → Σ ∋ n → Σ' ∋ n} {e'' : ∀ {n} → Σ ∋ n → Σ'' ∋ n}
-  → (∀ {n} (x : Σ ∋ n) → e (e' x) ≡ e'' x) → (M : C.Tm Σ Γ A) → C.wk e (C.wk e' M) ≡ C.wk e'' M
+  → (∀ {n} (x : Σ ∋ n) → e (e' x) ≡ e'' x)
+  → (M : C.Tm Σ Γ A)
+  → C.wk e (C.wk e' M) ≡ C.wk e'' M
 wks-wk : ∀ {Σ Σ' Σ'' Γ n} {e : ∀ {n} → Σ' ∋ n → Σ'' ∋ n} {e' : ∀ {n} → Σ ∋ n → Σ' ∋ n} {e'' : ∀ {n} → Σ ∋ n → Σ'' ∋ n}
-  → (∀ {n} (x : Σ ∋ n) → e (e' x) ≡ e'' x) → (Ms : Vec (C.Tm Σ Γ Any) n) → C.wks e (C.wks e' Ms) ≡ C.wks e'' Ms
+  → (∀ {n} (x : Σ ∋ n) → e (e' x) ≡ e'' x)
+  → (Ms : Vec (C.Tm Σ Γ Any) n)
+  → C.wks e (C.wks e' Ms) ≡ C.wks e'' Ms
 wk-wk h (C.` x) = refl
 wk-wk h (C.fun-ref f) = cong C.fun-ref (h f)
 wk-wk h (C.pack L M) = cong₂ C.pack (wk-wk h L) (wk-wk h M)
@@ -96,7 +100,9 @@ module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
   Agree [] s = ⊤
   Agree (D ▷ N) s = ds ! ⊑-∋ s Z ≡ C.wk (⊑-∋ (⊑-trans (there⊑ here⊑) s)) N × Agree D (⊑-trans (there⊑ here⊑) s)
 
-  agree-irr : ∀ {Σ} {D : Made Σ} {s s'} → Agree D s → Agree D s'
+  agree-irr : ∀ {Σ} {D : Made Σ} {s s'}
+    → Agree D s
+    → Agree D s'
   agree-irr {s = s} {s'} a rewrite ⊑-irr s s' = a
 
   {- the source is related to the output, weakened, and the definitions made before agree too -}
@@ -107,18 +113,28 @@ module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
   Globs Ms D (out g D' Ms') = ∀ s → Agree D' s → Pointwise _≈_ Ms (C.wks (⊑-∋ s) Ms') × Agree D (⊑-trans g s)
 
   {- one operand, and then another, under the weakening of the first -}
-  wk≈ : ∀ {Σ Σ' Γ A} {M : Tm Γ A} {M' : C.Tm Σ Γ A} {g : Σ ⊑ Σ'} {s : Σ' ⊑ Σf}
-    → M ≈ C.wk (⊑-∋ (⊑-trans g s)) M' → M ≈ C.wk (⊑-∋ s) (C.wk (⊑-∋ g) M')
+  wk≈ : ∀ {Σ Σ' Γ A} {M : Tm Γ A} {M' : C.Tm Σ Γ A}
+    → {g : Σ ⊑ Σ'}
+    → {s : Σ' ⊑ Σf}
+    → M ≈ C.wk (⊑-∋ (⊑-trans g s)) M'
+    → M ≈ C.wk (⊑-∋ s) (C.wk (⊑-∋ g) M')
   wk≈ {M' = M'} {g} {s} r = subst (_ ≈_) (sym (wk-wk (λ x → sym (⊑-∋-trans g s x)) M')) r
 
   glob≈ : ∀ {Σ Γ A} (M : Tm Γ A) (D : Made Σ) → Glob M D (glob M D)
   globs≈ : ∀ {Σ Γ n} (Ms : Vec (Tm Γ Any) n) (D : Made Σ) → Globs Ms D (globs Ms D)
   glob₁≈ : ∀ {Σ Γ Γ₁ A B} {f : ∀ {Σ'} → C.Tm Σ' Γ₁ A → C.Tm Σ' Γ B} {h : Tm Γ₁ A → Tm Γ B}
-    → (∀ {Σ'} {e : ∀ {n} → Σ' ∋ n → Σf ∋ n} {X X'} → X ≈ C.wk e X' → h X ≈ C.wk e (f X'))
-    → (M : Tm Γ₁ A) (D : Made Σ) → Glob (h M) D (glob₁ f M D)
+    → (  ∀ {Σ'} {e : ∀ {n} → Σ' ∋ n → Σf ∋ n} {X X'}
+       → X ≈ C.wk e X'
+       → h X ≈ C.wk e (f X'))
+    → (M : Tm Γ₁ A) (D : Made Σ)
+    → Glob (h M) D (glob₁ f M D)
   glob₂≈ : ∀ {Σ Γ Γ₁ Γ₂ A B Cc} {f : ∀ {Σ'} → C.Tm Σ' Γ₁ A → C.Tm Σ' Γ₂ B → C.Tm Σ' Γ Cc} {h : Tm Γ₁ A → Tm Γ₂ B → Tm Γ Cc}
-    → (∀ {Σ'} {e : ∀ {n} → Σ' ∋ n → Σf ∋ n} {X X' Y Y'} → X ≈ C.wk e X' → Y ≈ C.wk e Y' → h X Y ≈ C.wk e (f X' Y'))
-    → (L : Tm Γ₁ A) (M : Tm Γ₂ B) (D : Made Σ) → Glob (h L M) D (glob₂ f L M D)
+    → (  ∀ {Σ'} {e : ∀ {n} → Σ' ∋ n → Σf ∋ n} {X X' Y Y'}
+       → X ≈ C.wk e X'
+       → Y ≈ C.wk e Y'
+       → h X Y ≈ C.wk e (f X' Y'))
+    → (L : Tm Γ₁ A) (M : Tm Γ₂ B) (D : Made Σ)
+    → Glob (h L M) D (glob₂ f L M D)
 
   glob≈ (` x) D s a = var≈ , agree-irr a
   glob≈ (code N) D with glob N D | glob≈ N D
@@ -158,7 +174,10 @@ module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
     let (r₂ , a₁) = ih₂ s a ; (r₁ , a₀) = ih₁ _ a₁ in c (wk≈ r₁) r₂ , agree-irr a₀
 
   {- the definitions of the whole program agree with ds -}
-  agree-close : ∀ {Σ} (D : Made Σ) (s : Σ ⊑ Σf) → (∀ {n} (f : Σ ∋ n) → ds ! ⊑-∋ s f ≡ close D s ! f) → Agree D s
+  agree-close : ∀ {Σ} (D : Made Σ)
+    → (s : Σ ⊑ Σf)
+    → (∀ {n} (f : Σ ∋ n) → ds ! ⊑-∋ s f ≡ close D s ! f)
+    → Agree D s
   agree-close [] s h = tt
   agree-close (D ▷ N) s h =
     h Z , agree-close D _ λ f → trans (cong (ds !_) (⊑-∋-trans (there⊑ here⊑) s f)) (h (S f))
@@ -177,14 +196,20 @@ module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
     OK : ∀ {Γ Δ} → S.Sub 𝒦₁ Γ Δ → T.Sub 𝒦₂ Γ Δ → Set
     OK σ τ = ∀ {A} (x : _ ∋ A) → S.Kit.tm 𝒦₁ (σ x) ≈ T.Kit.tm 𝒦₂ (τ x)
 
-    ok-ext : ∀ {Γ Δ B} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} → OK σ τ → OK (S.exts 𝒦₁ {B = B} σ) (T.exts 𝒦₂ τ)
+    ok-ext : ∀ {Γ Δ B} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ}
+      → OK σ τ
+      → OK (S.exts 𝒦₁ {B = B} σ) (T.exts 𝒦₂ τ)
     ok-ext ok Z = rel-vr
     ok-ext ok (S x) = rel-wk (ok x)
 
-    ≈-trav : ∀ {Γ Δ A} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {M : Tm Γ A} {M'} → M ≈ M' → OK σ τ
+    ≈-trav : ∀ {Γ Δ A} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {M : Tm Γ A} {M'}
+      → M ≈ M'
+      → OK σ τ
       → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
     ≈-travs : ∀ {Γ Δ n} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {Ms : Vec (Tm Γ Any) n} {Ms' : Vec (C.Tm Σf Γ Any) n}
-      → Pointwise _≈_ Ms Ms' → OK σ τ → Pointwise _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
+      → Pointwise _≈_ Ms Ms'
+      → OK σ τ
+      → Pointwise _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
     ≈-trav var≈ ok = ok _
     ≈-trav (code≈ r) ok = code≈ r
     ≈-trav (pack≈ r s) ok = pack≈ (≈-trav r ok) (≈-trav s ok)
@@ -213,8 +238,12 @@ module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
   Ans′ : ∀ {A} → Tm [] A → Red (Tm [] A) → C.Tm Σf [] A → Set
   Ans′ = Ans (T.red ds) Value _≈_
 
-  obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → S.obs V ≡ T.obs V'
-  obss≈ : ∀ {n} {Vs : Vec (Tm [] Any) n} {Vs'} → Pointwise _≈_ Vs Vs' → S.obss Vs ≡ T.obss Vs'
+  obs≈ : ∀ {A} {V : Tm [] A} {V'}
+    → V ≈ V'
+    → S.obs V ≡ T.obs V'
+  obss≈ : ∀ {n} {Vs : Vec (Tm [] Any) n} {Vs'}
+    → Pointwise _≈_ Vs Vs'
+    → S.obss Vs ≡ T.obss Vs'
   obs≈ (var≈ {x = ()})
   obs≈ (code≈ _) = refl
   obs≈ (pack≈ _ _) = refl
@@ -238,11 +267,18 @@ module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
   ... | true = inl≈ (inject≈ (tuple≈ []))
   ... | false = inr≈ (inject≈ (tuple≈ []))
 
-  ≈-[] : ∀ {A} {N : Tm (Any ∷ []) A} {N' V V'} → N ≈ N' → V ≈ V' → (N S.[ V ]) ≈ (N' T.[ V' ])
+  ≈-[] : ∀ {A} {N : Tm (Any ∷ []) A} {N' V V'}
+    → N ≈ N'
+    → V ≈ V'
+    → (N S.[ V ]) ≈ (N' T.[ V' ])
   ≈-[] n m = Trav.≈-trav tmKR n λ { Z → m ; (S ()) }
 
-  sim : ∀ {A} {M : Tm [] A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
-  sims : ∀ {n} {Ms : Vec (Tm [] Any) n} {Ms'} → Pointwise _≈_ Ms Ms' → Ans (T.reds ds) (Allᵥ Value) (Pointwise _≈_) Ms (S.reds Ms) Ms'
+  sim : ∀ {A} {M : Tm [] A} {M'}
+    → M ≈ M'
+    → Ans′ M (S.red M) M'
+  sims : ∀ {n} {Ms : Vec (Tm [] Any) n} {Ms'}
+    → Pointwise _≈_ Ms Ms'
+    → Ans (T.reds ds) (Allᵥ Value) (Pointwise _≈_) Ms (S.reds Ms) Ms'
   sim (var≈ {x = ()})
   sim (code≈ r) = val ε T.fun-ref (code≈ r)
   sim (pack≈ r s) =
@@ -252,7 +288,12 @@ module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
     ans-in (frame _ λ _ → refl) (λ m → callc≈ m s) (sim r)
       λ v m → ans-in (frame {g = C.callc _} _ λ _ → val-in (value-red v)) (callc≈ m) (sim s) λ w m' → call-sim v m w m'
     where
-    call-sim : ∀ {V V' W W'} → Value V' → V ≈ V' → Value W' → W ≈ W' → Ans′ (callc V W) (S.call V W) (C.callc V' W')
+    call-sim : ∀ {V V' W W'}
+      → Value V'
+      → V ≈ V'
+      → Value W'
+      → W ≈ W'
+      → Ans′ (callc V W) (S.call V W) (C.callc V' W')
     call-sim (T.pack T.fun-ref e) (pack≈ (code≈ n) m) w m' =
       to (one (trans (val-in (value-red (T.pack T.fun-ref e))) (val-in (value-red w))))
          (Trav.≈-trav tmKR n λ { Z → m' ; (S Z) → m })
@@ -273,7 +314,10 @@ module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
   sim (inject≈ r) = ans-in (frame _ λ _ → refl) inject≈ (sim r) λ v m → val ε (T.inject v) (inject≈ m)
   sim (project≈ {t = t} r) = ans-in (frame _ λ _ → refl) project≈ (sim r) λ { (T.inject v) (inject≈ m) → proj-sim v m }
     where
-    proj-sim : ∀ {G V V'} → Value V' → V ≈ V' → Ans′ (project t (inject G V)) (S.project? t (inject G V)) (C.project t (C.inject G V'))
+    proj-sim : ∀ {G V V'}
+      → Value V'
+      → V ≈ V'
+      → Ans′ (project t (inject G V)) (S.project? t (inject G V)) (C.project t (C.inject G V'))
     proj-sim {G} {V} {V'} v m = pd (G ≟F flat t) (val-in (value-red (T.inject v)))
       where pd : ∀ {H} (d : Dec (G ≡ H)) {X Y} → T.red ds X ≡ T.proj-dec d V' → Ans′ Y (S.proj-dec d V) X
             pd (yes refl) e = to (one e) m
@@ -282,8 +326,14 @@ module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
   sims (r ∷ rs) = ans-∷ (T.reds ds) (λ _ _ → refl) value-red rs (sim r) (sims rs)
 
 {- weakening along the identity -}
-wk-id : ∀ {Σ Γ A} {e : ∀ {n} → Σ ∋ n → Σ ∋ n} → (∀ {n} (x : Σ ∋ n) → e x ≡ x) → (M : C.Tm Σ Γ A) → C.wk e M ≡ M
-wks-id : ∀ {Σ Γ n} {e : ∀ {n} → Σ ∋ n → Σ ∋ n} → (∀ {n} (x : Σ ∋ n) → e x ≡ x) → (Ms : Vec (C.Tm Σ Γ Any) n) → C.wks e Ms ≡ Ms
+wk-id : ∀ {Σ Γ A} {e : ∀ {n} → Σ ∋ n → Σ ∋ n}
+  → (∀ {n} (x : Σ ∋ n) → e x ≡ x)
+  → (M : C.Tm Σ Γ A)
+  → C.wk e M ≡ M
+wks-id : ∀ {Σ Γ n} {e : ∀ {n} → Σ ∋ n → Σ ∋ n}
+  → (∀ {n} (x : Σ ∋ n) → e x ≡ x)
+  → (Ms : Vec (C.Tm Σ Γ Any) n)
+  → C.wks e Ms ≡ Ms
 wk-id h (C.` x) = refl
 wk-id h (C.fun-ref f) = cong C.fun-ref (h f)
 wk-id h (C.pack L M) = cong₂ C.pack (wk-id h L) (wk-id h M)

@@ -61,7 +61,9 @@ module W3 = proof.Framework.Syntax.ScopeRename C3.Op C3.sig
 module W4 = proof.Framework.Syntax.ScopeRename C4.Op C4.sig
 module W5 = proof.Framework.Syntax.Scope C5.Op C5.sig
 
-split< : ∀ {j m} → j < suc m → j < m ⊎ j ≡ m
+split< : ∀ {j m}
+  → j < suc m
+  → j < m ⊎ j ≡ m
 split< (s≤s le) = m≤n⇒m<n∨m≡n le
 
 {- prune ----------------------------------------------------------------------}
@@ -100,7 +102,9 @@ module Opt where
       where P = prune-fvs m r dec fvs (keep-base b)
 
     {- a used free variable is kept, below the count of kept ones -}
-    prune-used : ∀ m (fvs : Args (replicate m ■)) b j → j < m → U j
+    prune-used : ∀ m (fvs : Args (replicate m ■)) b j
+      → j < m
+      → U j
       → index (prune-fvs m r dec fvs b) j < count (prune-fvs m r dec fvs b)
     prune-used (suc m) ((` y) ,, fvs) b j j< u with dec m | split< j<
     ... | yes _ | inj₁ lt = m<n⇒m<1+n (prune-used m fvs (keep-base b) j lt u)
@@ -111,18 +115,29 @@ module Opt where
     ... | inj₁ lt = m<n⇒m<1+n (prune-used m fvs (keep-base b) j lt u)
     ... | inj₂ refl = kept-top m fvs b
 
-  ws-unbind : ∀ n {k} (a : Arg (ν-n n (ν ■))) → WS-arg k a → WS (suc (n + k)) (unbind-n n a)
+  ws-unbind : ∀ n {k} (a : Arg (ν-n n (ν ■)))
+    → WS-arg k a
+    → WS (suc (n + k)) (unbind-n n a)
   ws-unbind zero (bind (ast N)) w = w
   ws-unbind (suc n) {k} (bind a) w =
     subst (λ x → WS (suc x) (unbind-n n a)) (+-suc n k) (ws-unbind n a w)
 
-  prune-ws : ∀ r {j k} M → WS j M → (∀ x → Uses x M → r x < k) → WS k (prune r M)
-  opt-args-ws : ∀ r {n j k} (args : Args (replicate n ■)) → WS-args j args
-    → (∀ x → UsesArgs x args → r x < k) → WS-args k (opt-args r args)
-  opt-body-ws : ∀ r {k k'} n (a : Arg (ν-n n (ν ■))) → WS-arg k a
-    → (∀ x → Uses x (unbind-n n a) → r x < k') → WS k' (opt-body r n a)
+  prune-ws : ∀ r {j k} M
+    → WS j M
+    → (∀ x → Uses x M → r x < k)
+    → WS k (prune r M)
+  opt-args-ws : ∀ r {n j k} (args : Args (replicate n ■))
+    → WS-args j args
+    → (∀ x → UsesArgs x args → r x < k)
+    → WS-args k (opt-args r args)
+  opt-body-ws : ∀ r {k k'} n (a : Arg (ν-n n (ν ■)))
+    → WS-arg k a
+    → (∀ x → Uses x (unbind-n n a) → r x < k')
+    → WS k' (opt-body r n a)
   kept-ws : ∀ r {U : ℕ → Set} (dec : ∀ j → Dec (U j)) m {j k} (fvs : Args (replicate m ■)) b
-    → WS-args j fvs → (∀ x → UsesArgs x fvs → r x < k) → WS-args k (kept (prune-fvs m r dec fvs b))
+    → WS-args j fvs
+    → (∀ x → UsesArgs x fvs → r x < k)
+    → WS-args k (kept (prune-fvs m r dec fvs b))
 
   prune-ws r (` x) w h = h x refl
   prune-ws r (clos-op n ⦅ ! clear a ,, fvs ⦆) (wa , ws) h =
@@ -135,7 +150,9 @@ module Opt where
     P = prune-fvs n r dec fvs (λ k → k)
     c = count P
     body' = opt-body (ext-var (index P)) n a
-    h' : ∀ x → Uses x (unbind-n n a) → ext-var (index P) x < suc c
+    h' : ∀ x
+      → Uses x (unbind-n n a)
+      → ext-var (index P) x < suc c
     h' zero _ = s≤s z≤n
     h' (suc x) u =
       s≤s (prune-used r dec n fvs (λ k → k) x
@@ -154,10 +171,14 @@ module Opt where
     , prune-ws (ext-var r) N wN hN
     , tt
     where
-    hM : ∀ x → Uses x M → ext-var r x < suc _
+    hM : ∀ x
+      → Uses x M
+      → ext-var r x < suc _
     hM zero _ = s≤s z≤n
     hM (suc x) u = s≤s (h x (inj₂ (inj₁ u)))
-    hN : ∀ x → Uses x N → ext-var r x < suc _
+    hN : ∀ x
+      → Uses x N
+      → ext-var r x < suc _
     hN zero _ = s≤s z≤n
     hN (suc x) u = s≤s (h x (inj₂ (inj₂ (inj₁ u))))
   prune-ws r (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) h =
@@ -165,7 +186,9 @@ module Opt where
   prune-ws r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) (wM , wN , _) h =
     prune-ws r M wM (λ x u → h x (inj₁ u)) , prune-ws (ext-var r) N wN hN , tt
     where
-    hN : ∀ x → Uses x N → ext-var r x < suc _
+    hN : ∀ x
+      → Uses x N
+      → ext-var r x < suc _
     hN zero _ = s≤s z≤n
     hN (suc x) u = s≤s (h x (inj₂ (inj₁ u)))
 
@@ -184,7 +207,9 @@ module Opt where
     prune-ws r (op ⦅ args ⦆) w (λ x u → h x (inj₁ u))
     , kept-ws r dec m fvs (keep-base b) ws (λ x u → h x (inj₂ u))
 
-  prune-closed : ∀ M → WS 0 M → WS 0 (prune-program M)
+  prune-closed : ∀ M
+    → WS 0 M
+    → WS 0 (prune-program M)
   prune-closed M w = prune-ws (λ x → x) M w (λ x u → ws-uses M w u)
 
 {- concretize ----------------------------------------------------------------------}
@@ -198,14 +223,18 @@ module Conc where
   RefOK k (var x) = x < k
   RefOK k (prj i x) = x < k
 
-  ref-ws : ∀ {k} ρ → RefOK k ρ → W3.WS k (ref-ast ρ)
+  ref-ws : ∀ {k} ρ
+    → RefOK k ρ
+    → W3.WS k (ref-ast ρ)
   ref-ws (var x) ok = ok
   ref-ws (prj i x) ok = ok , tt
 
   Fits : ℕ → ℕ → (Var → Ref) → Set
   Fits k k' φ = ∀ x → x < k → RefOK k' (φ x)
 
-  fits-ext : ∀ {k k' φ} → Fits k k' φ → Fits (suc k) (suc k') (ext-ref φ)
+  fits-ext : ∀ {k k' φ}
+    → Fits k k' φ
+    → Fits (suc k) (suc k') (ext-ref φ)
   fits-ext h zero _ = s≤s z≤n
   fits-ext {φ = φ} h (suc x) (s≤s x<) with φ x | h x x<
   ... | var y | ok = s≤s ok
@@ -219,10 +248,17 @@ module Conc where
   ... | yes _ = s≤s (s≤s z≤n)
   ... | no ¬k< = ⊥-elim (¬k< k<n)
 
-  conc-ws : ∀ φ {k k'} M → WS k M → Fits k k' φ → W3.WS k' (concretize φ M)
-  conc-body-ws : ∀ n m {k} (a : Arg (ν-n m (ν ■))) → WS-arg k a
-    → Fits (suc (m + k)) 2 (fv-ref n) → W3.WS 2 (conc-body n m a)
-  conc-args-ws : ∀ φ {n k k'} (args : Args (replicate n ■)) → WS-args k args → Fits k k' φ
+  conc-ws : ∀ φ {k k'} M
+    → WS k M
+    → Fits k k' φ
+    → W3.WS k' (concretize φ M)
+  conc-body-ws : ∀ n m {k} (a : Arg (ν-n m (ν ■)))
+    → WS-arg k a
+    → Fits (suc (m + k)) 2 (fv-ref n)
+    → W3.WS 2 (conc-body n m a)
+  conc-args-ws : ∀ φ {n k k'} (args : Args (replicate n ■))
+    → WS-args k args
+    → Fits k k' φ
     → W3.WS-args k' (conc-args φ args)
 
   conc-ws φ (` x) w h = ref-ws (φ x) (h x w)
@@ -247,7 +283,9 @@ module Conc where
   conc-args-ws φ {zero} Nil w h = tt
   conc-args-ws φ {suc n} (M ,, args) (w , ws) h = conc-ws φ M w h , conc-args-ws φ args ws h
 
-  concretize-closed : ∀ M → WS 0 M → W3.WS 0 (concretize-program M)
+  concretize-closed : ∀ M
+    → WS 0 M
+    → W3.WS 0 (concretize-program M)
   concretize-closed M w = conc-ws var M w (λ x ())
 
 {- split ---------------------------------------------------------------------------}
@@ -257,8 +295,11 @@ module Del where
   open import ISWIM.Untyped.Compiler.Split
   open W3
 
-  split-ws : ∀ {k} M → WS k M → W4.WS k (split M)
-  del-args-ws : ∀ {n k} (args : Args (replicate n ■)) → WS-args k args
+  split-ws : ∀ {k} M
+    → WS k M
+    → W4.WS k (split M)
+  del-args-ws : ∀ {n k} (args : Args (replicate n ■))
+    → WS-args k args
     → W4.WS-args k (del-map-args args)
 
   split-ws (` x) w = w
@@ -287,11 +328,17 @@ module Glob where
   open import ISWIM.Untyped.Compiler.Hoist
   open W4
 
-  glob-ws : ∀ {k} M ds → WS k M → All (W5.WS 2) ds
+  glob-ws : ∀ {k} M ds
+    → WS k M
+    → All (W5.WS 2) ds
     → W5.WS k (proj₁ (glob M ds)) × All (W5.WS 2) (proj₂ (glob M ds))
-  glob-ws-arg : ∀ {k b} (a : Arg b) ds → WS-arg k a → All (W5.WS 2) ds
+  glob-ws-arg : ∀ {k b} (a : Arg b) ds
+    → WS-arg k a
+    → All (W5.WS 2) ds
     → W5.WS-arg k (proj₁ (glob-arg a ds)) × All (W5.WS 2) (proj₂ (glob-arg a ds))
-  glob-ws-args : ∀ {k bs} (args : Args bs) ds → WS-args k args → All (W5.WS 2) ds
+  glob-ws-args : ∀ {k bs} (args : Args bs) ds
+    → WS-args k args
+    → All (W5.WS 2) ds
     → W5.WS-args k (proj₁ (glob-args args ds)) × All (W5.WS 2) (proj₂ (glob-args args ds))
 
   glob-ws (` x) ds w d = w , d
@@ -325,7 +372,9 @@ module Glob where
 {- The compiler ----------------------------------------------------------------------}
 
 {- the Clos4 program before hoist is closed -}
-compile₄-closed : ∀ M → Closed M → W4.WS 0 (compile₄ M)
+compile₄-closed : ∀ M
+  → Closed M
+  → W4.WS 0 (compile₄ M)
 compile₄-closed M c =
   Del.split-ws M₃ (Conc.concretize-closed M₂' (Opt.prune-closed M₂ (ES.capture-closed (simplify M) (simplify-closed M c))))
   where
@@ -333,6 +382,8 @@ compile₄-closed M c =
   M₂' = ISWIM.Untyped.Compiler.Prune.prune-program M₂
   M₃ = ISWIM.Untyped.Compiler.Concretize.concretize-program M₂'
 
-compile-scoped : ∀ M → Closed M → Scoped (compile M)
+compile-scoped : ∀ M
+  → Closed M
+  → Scoped (compile M)
 compile-scoped M c = proj₂ G , proj₁ G
   where G = Glob.glob-ws (compile₄ M) [] (compile₄-closed M c) []

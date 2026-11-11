@@ -103,15 +103,20 @@ record KR (𝒦₁ : S.Kit) (𝒦₂ : T.Kit) : Set where
 module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
   open KR K
 
-  ok-ext : ∀ {k Γ j Δ} {φ : Fin k → Ref Γ} {φ₂ : Fin j → Ref Δ} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ Γ Δ} → OK 𝒦₁ 𝒦₂ φ φ₂ σ τ
+  ok-ext : ∀ {k Γ j Δ} {φ : Fin k → Ref Γ} {φ₂ : Fin j → Ref Δ} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ Γ Δ}
+    → OK 𝒦₁ 𝒦₂ φ φ₂ σ τ
     → OK 𝒦₁ 𝒦₂ (ext-ref φ) (ext-ref φ₂) (S.exts 𝒦₁ σ) (T.exts 𝒦₂ τ)
   ok-ext ok zero = rel-vr
   ok-ext {φ = φ} ok (suc x) = subst (_ ⊢ _ ≈_) (sym (shift-trav (φ x))) (rel-wk (ok x))
 
-  ≈-trav : ∀ {k Γ j Δ A} {φ : Fin k → Ref Γ} {φ₂ : Fin j → Ref Δ} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ Γ Δ} {M : Tm k A} {M'} → φ ⊢ M ≈ M'
-    → OK 𝒦₁ 𝒦₂ φ φ₂ σ τ → φ₂ ⊢ S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
+  ≈-trav : ∀ {k Γ j Δ A} {φ : Fin k → Ref Γ} {φ₂ : Fin j → Ref Δ} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ Γ Δ} {M : Tm k A} {M'}
+    → φ ⊢ M ≈ M'
+    → OK 𝒦₁ 𝒦₂ φ φ₂ σ τ
+    → φ₂ ⊢ S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
   ≈-travs : ∀ {k Γ j Δ n} {φ : Fin k → Ref Γ} {φ₂ : Fin j → Ref Δ} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ Γ Δ} {Ms : Vec (Tm k Any) n} {Ms' : Vec (C.Tm Γ Any) n}
-    → Pointwise (φ ⊢_≈_) Ms Ms' → OK 𝒦₁ 𝒦₂ φ φ₂ σ τ → Pointwise (φ₂ ⊢_≈_) (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
+    → Pointwise (φ ⊢_≈_) Ms Ms'
+    → OK 𝒦₁ 𝒦₂ φ φ₂ σ τ
+    → Pointwise (φ₂ ⊢_≈_) (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
   ≈-trav var≈ ok = ok _
   ≈-trav {τ = τ} (get≈ {Vs' = Vs'} {i} v r vs) ok =
     get≈ (S.value-trav v) (subst (_ ⊢ _ ≈_) (sym (T.lookup-travs τ Vs' i)) (≈-trav r ok)) (T.values-trav vs)
@@ -149,8 +154,14 @@ module _ {φ₀ : Fin 0 → Ref []} where
  Ans′ = Ans T.red Value R
 
  {- the source of a value is a value -}
- ≈-value : ∀ {A} {V V'} → R {A} V V' → Value V' → S.Value V
- ≈-values : ∀ {n} {Vs : Vec _ n} {Vs'} → Pointwise R Vs Vs' → All Value Vs' → All S.Value Vs
+ ≈-value : ∀ {A} {V V'}
+   → R {A} V V'
+   → Value V'
+   → S.Value V
+ ≈-values : ∀ {n} {Vs : Vec _ n} {Vs'}
+   → Pointwise R Vs Vs'
+   → All Value Vs'
+   → All S.Value Vs
  ≈-value (clos≈ n rs) (T.clos vs) = S.clos (≈-values rs vs)
  ≈-value lit≈ T.lit = S.lit
  ≈-value (tuple≈ rs) (T.tuple vs) = S.tuple (≈-values rs vs)
@@ -160,8 +171,14 @@ module _ {φ₀ : Fin 0 → Ref []} where
  ≈-values [] [] = []
  ≈-values (r ∷ rs) (v ∷ vs) = ≈-value r v ∷ ≈-values rs vs
 
- obs≈ : ∀ {A} {V V'} → R {A} V V' → Value V' → S.obs V ≡ T.obs V'
- obss≈ : ∀ {n} {Vs : Vec _ n} {Vs'} → Pointwise R Vs Vs' → All Value Vs' → S.obss Vs ≡ T.obss Vs'
+ obs≈ : ∀ {A} {V V'}
+   → R {A} V V'
+   → Value V'
+   → S.obs V ≡ T.obs V'
+ obss≈ : ∀ {n} {Vs : Vec _ n} {Vs'}
+   → Pointwise R Vs Vs'
+   → All Value Vs'
+   → S.obss Vs ≡ T.obss Vs'
  obs≈ (clos≈ _ _) _ = refl
  obs≈ lit≈ _ = refl
  obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
@@ -177,11 +194,18 @@ module _ {φ₀ : Fin 0 → Ref []} where
  ... | true = inl≈ (inject≈ (tuple≈ []))
  ... | false = inr≈ (inject≈ (tuple≈ []))
 
- ≈-[] : ∀ {A} {N : Tm 1 A} {N' V V'} → ext-ref φ₀ ⊢ N ≈ N' → R V V' → R (N S.[ V ]) (N' T.[ V' ])
+ ≈-[] : ∀ {A} {N : Tm 1 A} {N' V V'}
+   → ext-ref φ₀ ⊢ N ≈ N'
+   → R V V'
+   → R (N S.[ V ]) (N' T.[ V' ])
  ≈-[] n m = Trav.≈-trav tmKR n λ { zero → m }
 
- sim : ∀ {A} {M M'} → R {A} M M' → Ans′ M (S.red M) M'
- sims : ∀ {n} {Ms : Vec _ n} {Ms'} → Pointwise R Ms Ms' → Ans T.reds (All Value) (Pointwise R) Ms (S.reds Ms) Ms'
+ sim : ∀ {A} {M M'}
+   → R {A} M M'
+   → Ans′ M (S.red M) M'
+ sims : ∀ {n} {Ms : Vec _ n} {Ms'}
+   → Pointwise R Ms Ms'
+   → Ans T.reds (All Value) (Pointwise R) Ms (S.reds Ms) Ms'
  sim (var≈ {x = ()})
  sim (get≈ {V = V} {Vs'} {i} v r vs) =
    subst (λ x → Ans′ V x (C.get i (C.tuple Vs'))) (sym (S.value-red v))
@@ -191,7 +215,12 @@ module _ {φ₀ : Fin 0 → Ref []} where
    ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
      λ v m → ans-in (frame {g = C.app _} _ λ _ → val-in (value-red v)) (app≈ m) (sim s) λ w m' → β-sim v m w m'
    where
-   β-sim : ∀ {V V' W W'} → Value V' → R V V' → Value W' → R W W' → Ans′ (app V W) (S.β V W) (C.app V' W')
+   β-sim : ∀ {V V' W W'}
+     → Value V'
+     → R V V'
+     → Value W'
+     → R W W'
+     → Ans′ (app V W) (S.β V W) (C.app V' W')
    β-sim (T.clos vs) (clos≈ n ms) w m' =
      to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))
         (Trav.≈-trav tmKR n λ { zero → m' ; (suc i) → get≈ (all-lookup (≈-values ms vs) i) (PW.lookup ms i) vs })
@@ -212,7 +241,10 @@ module _ {φ₀ : Fin 0 → Ref []} where
  sim (inject≈ r) = ans-in (frame _ λ _ → refl) inject≈ (sim r) λ v m → val ε (T.inject v) (inject≈ m)
  sim (project≈ {t = t} r) = ans-in (frame _ λ _ → refl) project≈ (sim r) λ { (T.inject v) (inject≈ m) → proj-sim v m }
    where
-   proj-sim : ∀ {G V V'} → Value V' → R V V' → Ans′ (project t (inject G V)) (S.project? t (inject G V)) (C.project t (C.inject G V'))
+   proj-sim : ∀ {G V V'}
+     → Value V'
+     → R V V'
+     → Ans′ (project t (inject G V)) (S.project? t (inject G V)) (C.project t (C.inject G V'))
    proj-sim {G} {V} {V'} v m = pd (G ≟F flat t) (val-in (value-red (T.inject v)))
      where pd : ∀ {H} (d : Dec (G ≡ H)) {X Y} → T.red X ≡ T.proj-dec d V' → Ans′ Y (S.proj-dec d V) X
            pd (yes refl) e = to (one e) m

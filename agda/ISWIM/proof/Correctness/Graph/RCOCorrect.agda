@@ -62,7 +62,10 @@ project-op t = record { op = λ Ds → projectᵍ fun₄ t (proj₁ Ds) ; cong =
   ; ne-of = λ _ w w∈ → ⟨ ⟨ w , proj₂ w∈ ⟩ , tt ⟩ }
 
 {- the operator O with its operands after the first fixed to Es -}
-first : ∀ {n} → Strict (suc n) → Results (𝒫 Value) (Data.List.replicate n ■) → Strict 1
+first : ∀ {n}
+  → Strict (suc n)
+  → Results (𝒫 Value) (Data.List.replicate n ■)
+  → Strict 1
 first O Es = record { op = λ Ds → op O ⟨ proj₁ Ds , Es ⟩ ; cong = λ eq → cong O ⟨ proj₁ eq , RRs-refl Es ⟩
   ; ne-of = λ Ds w w∈ → ⟨ proj₁ (ne-of O _ w w∈) , tt ⟩ }
 
@@ -72,7 +75,9 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {n} (f : Σ ∋ n) → 
   Ag : ∀ {Γ Δ} → Ren Γ Δ → Env Value → Env Value → Set
   Ag ρ γ σ = ∀ {A} x → γ (idx x) ≃ σ (idx (ρ {A} x))
 
-  ren-atm : ∀ {Δ Δ' A σ σ'} (r : Ren Δ Δ') (a : Atm Σ Δ A) → Ag r σ σ' → ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ ≃ ⟦ ⌜ ren r a ⌝ᵃ ⟧[ T' ] σ'
+  ren-atm : ∀ {Δ Δ' A σ σ'} (r : Ren Δ Δ') (a : Atm Σ Δ A)
+    → Ag r σ σ'
+    → ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ ≃ ⟦ ⌜ ren r a ⌝ᵃ ⟧[ T' ] σ'
   ren-atm r (var x) ag = ag x
   ren-atm r (lit B c) ag = ≃-refl
   ren-atm r (ref f) ag = ≃-refl
@@ -86,30 +91,54 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {n} (f : Σ ∋ n) → 
   open Ext
 
   {- under a binder -}
-  ag-ext : ∀ {Γ Δ B} {ρ : Ren Γ Δ} {γ σ X} → Ag ρ γ σ → Ag (ext {B = B} ρ) (X • γ) (X • σ)
+  ag-ext : ∀ {Γ Δ B} {ρ : Ren Γ Δ} {γ σ X}
+    → Ag ρ γ σ
+    → Ag (ext {B = B} ρ) (X • γ) (X • σ)
   ag-ext ag Z = ≃-refl
   ag-ext ag (S x) = ag x
 
-  rco-sem : ∀ {Γ Δ A} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) γ σ → nonempty-env σ → Con-env σ → Ag ρ γ σ
+  rco-sem : ∀ {Γ Δ A} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) γ σ
+    → nonempty-env σ
+    → Con-env σ
+    → Ag ρ γ σ
     → ⟦ N ⟧[ T ] γ ≃ ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] σ
-  atomize-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) γ σ → nonempty-env σ → Con-env σ
-    → Ag ρ γ σ → (O : Strict 1)
-    → (∀ {Δ'} (r : Ren Δ Δ') σ' a → Ext r σ σ' → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
+  atomize-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) γ σ
+    → nonempty-env σ
+    → Con-env σ
+    → Ag ρ γ σ
+    → (O : Strict 1)
+    → (  ∀ {Δ'} (r : Ren Δ Δ') σ' a
+       → Ext r σ σ'
+       → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
     → op O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ≃ ⟦ ⌜ atomize N ρ k ⌝ ⟧[ T' ] σ
   {- a complex operand, bound by a let -}
-  let-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) γ σ → nonempty-env σ → Con-env σ
-    → Ag ρ γ σ → (O : Strict 1)
-    → (∀ {Δ'} (r : Ren Δ Δ') σ' a → Ext r σ σ' → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
+  let-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) γ σ
+    → nonempty-env σ
+    → Con-env σ
+    → Ag ρ γ σ
+    → (O : Strict 1)
+    → (  ∀ {Δ'} (r : Ren Δ Δ') σ' a
+       → Ext r σ σ'
+       → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
     → op O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ≃ ⟦ ⌜ M.let′ (rco N ρ) (k S (var Z)) ⌝ ⟧[ T' ] σ
   atomizes-sem : ∀ {Γ Δ n B} (Ns : Vec (Tm Σ Γ Any) n) (ρ : Ren Γ Δ)
-    (k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) n → Exp Σ Δ' B) γ σ → nonempty-env σ → Con-env σ
-    → Ag ρ γ σ → (O : Strict n)
-    → (∀ {Δ'} (r : Ren Δ Δ') σ' as → Ext r σ σ' → op O (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] σ') ≃ ⟦ ⌜ k r as ⌝ ⟧[ T' ] σ')
+      (k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) n → Exp Σ Δ' B) γ σ
+    → nonempty-env σ
+    → Con-env σ
+    → Ag ρ γ σ
+    → (O : Strict n)
+    → (  ∀ {Δ'} (r : Ren Δ Δ') σ' as
+       → Ext r σ σ'
+       → op O (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] σ') ≃ ⟦ ⌜ k r as ⌝ ⟧[ T' ] σ')
     → op O (⟦ Ns ⟧s[ T ] γ) ≃ ⟦ ⌜ atomizes Ns ρ k ⌝ ⟧[ T' ] σ
   atomize₂-sem : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) (ρ : Ren Γ Δ)
-    (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) γ σ → nonempty-env σ → Con-env σ
-    → Ag ρ γ σ → (O : Strict 2)
-    → (∀ {Δ'} σ' (a : Atm Σ Δ' A₁) b → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ⟨ ⟦ ⌜ b ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ⟩ ≃ ⟦ ⌜ k a b ⌝ ⟧[ T' ] σ')
+      (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) γ σ
+    → nonempty-env σ
+    → Con-env σ
+    → Ag ρ γ σ
+    → (O : Strict 2)
+    → (  ∀ {Δ'} σ' (a : Atm Σ Δ' A₁) b
+       → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ⟨ ⟦ ⌜ b ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ⟩ ≃ ⟦ ⌜ k a b ⌝ ⟧[ T' ] σ')
     → op O ⟨ ⟦ L ⟧[ T ] γ , ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ⟩ ≃ ⟦ ⌜ atomize₂ L N ρ k ⌝ ⟧[ T' ] σ
 
   rco-sem (` x) ρ γ σ NE C ag = ag x
@@ -125,7 +154,9 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {n} (f : Σ ∋ n) → 
     atomize-sem L ρ _ γ σ NE C ag (case-op′ (λ X → ⟦ N₁ ⟧[ T ] (X • γ)) (λ X → ⟦ N₂ ⟧[ T ] (X • γ)))
       λ r σ' a e →
         let ag₁ = λ {A} (x : _ ∋ A) → ≃-trans (ag x) (agr e (ρ x))
-            br : ∀ (N' : Tm Σ _ Any) v V → (v ∷ V) ≈ (v ∷ V) → _
+            br : ∀ (N' : Tm Σ _ Any) v V
+              → (v ∷ V) ≈ (v ∷ V)
+              → _
             br N' v V c = rco-sem N' _ (mem (v ∷ V) • γ) (mem (v ∷ V) • σ')
                             (extend-nonempty-env (ne e) ⟨ v , here refl ⟩) (Con-• (≈⇒Con c) (cn e)) (ag-ext ag₁)
         in 𝒞-≃ {D = ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ'} {⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ'} {λ X → ⟦ N₁ ⟧[ T ] (X • γ)} {λ X → ⟦ ⌜ rco N₁ (ext λ x → r (ρ x)) ⌝ ⟧[ T' ] (X • σ')}

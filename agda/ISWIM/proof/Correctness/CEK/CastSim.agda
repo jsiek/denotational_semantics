@@ -102,8 +102,12 @@ data _~_ : S.State → T.State → Set where
 
 {- Lemmas ----------------------------------------------------------------------}
 
-obs≈ : ∀ {v v'} → v ≈ v' → S.obs v ≡ T.obs v'
-obs≈-list : ∀ {n vs} {ws : Vec (T.Val Any) n} → Pointwise _≈_ vs (toList ws) → S.obs-list vs ≡ T.obs-vec ws
+obs≈ : ∀ {v v'}
+  → v ≈ v'
+  → S.obs v ≡ T.obs v'
+obs≈-list : ∀ {n vs} {ws : Vec (T.Val Any) n}
+  → Pointwise _≈_ vs (toList ws)
+  → S.obs-list vs ≡ T.obs-vec ws
 obs≈ (clo≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -112,17 +116,23 @@ obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list {ws = []} [] = refl
 obs≈-list {ws = _ ∷ _} (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
-env-ext : ∀ {k k' ρ ρ' v v'} {r : Fin k → Fin k'} → Env≈ r ρ ρ' → v ≈ v' → Env≈ (ext r) (v ∷ ρ) (v' ∷ ρ')
+env-ext : ∀ {k k' ρ ρ' v v'} {r : Fin k → Fin k'}
+  → Env≈ r ρ ρ'
+  → v ≈ v'
+  → Env≈ (ext r) (v ∷ ρ) (v' ∷ ρ')
 env-ext E r zero _ = _ , refl , r
 env-ext E r (suc x) (s≤s lt) = E x lt
 
 {- the values so far (newest first), reversed in front of the rest -}
-rev≈ : ∀ {m n vs us} {vs' : Vec _ m} {us' : Vec _ n} → Pointwise _≈_ vs (toList vs') → Pointwise _≈_ us (toList us')
+rev≈ : ∀ {m n vs us} {vs' : Vec _ m} {us' : Vec _ n}
+  → Pointwise _≈_ vs (toList vs')
+  → Pointwise _≈_ us (toList us')
   → Pointwise _≈_ (reverseAcc us vs) (toList (vs' <>< us'))
 rev≈ {vs' = []} [] rs' = rs'
 rev≈ {vs' = _ ∷ _} (r ∷ rs) rs' = rev≈ rs (r ∷ rs')
 
-proj≈ : ∀ {n} (i : Fin n) {vs} {ws : Vec (T.Val Any) n} → Pointwise _≈_ vs (toList ws)
+proj≈ : ∀ {n} (i : Fin n) {vs} {ws : Vec (T.Val Any) n}
+  → Pointwise _≈_ vs (toList ws)
   → Σ[ v ∈ S.Val ] proj i vs ≡ just v × v ≈ lookup ws i
 proj≈ (fs i) {ws = _ ∷ _} (_ ∷ rs) = proj≈ i rs
 proj≈ {suc n} fz {v ∷ vs} {_ ∷ ws} (r ∷ rs)
@@ -134,19 +144,28 @@ project-ok t x κ with flat t ≟F flat t
 ... | yes refl = refl
 ... | no ne = ⊥-elim (ne refl)
 
-project-bad : ∀ {H t} → H ≢ flat t → (x : T.Val ⟪ H ⟫) (κ : T.Cont ⟪ flat t ⟫) → T.step (T.ret (T.dyn H x) (T.projK t κ)) ≡ stop o-error
+project-bad : ∀ {H t}
+  → H ≢ flat t
+  → (x : T.Val ⟪ H ⟫) (κ : T.Cont ⟪ flat t ⟫)
+  → T.step (T.ret (T.dyn H x) (T.projK t κ)) ≡ stop o-error
 project-bad {H} {t} ne x κ with H ≟F flat t
 ... | yes e = ⊥-elim (ne e)
 ... | no _ = refl
 
 {- the kind errors of ISWIM, where the typed machine's project fails -}
-proj-bad : ∀ {m n} (i : Fin n) {vs} {ws : Vec (T.Val Any) m} → m ≢ n → Pointwise _≈_ vs (toList ws)
+proj-bad : ∀ {m n} (i : Fin n) {vs} {ws : Vec (T.Val Any) m}
+  → m ≢ n
+  → Pointwise _≈_ vs (toList ws)
   → proj i vs ≡ nothing
 proj-bad i {vs} {ws} ne rs with proj i vs in e
 ... | nothing = refl
 ... | just _ = ⊥-elim (ne (trans (sym (trans (Pointwise-length rs) (length-toList ws))) (proj-just-length i vs e)))
 
-notint : ∀ {v H} {x : T.Val ⟪ H ⟫} → v ≈ T.dyn H x → H ≢ base Int → ∀ n → S.obs v ≢ o-const Int n
+notint : ∀ {v H} {x : T.Val ⟪ H ⟫}
+  → v ≈ T.dyn H x
+  → H ≢ base Int
+  → ∀ n
+  → S.obs v ≢ o-const Int n
 notint const≈ ne n refl = ne refl
 
 prim≈ : ∀ p n m → S.out (δ p n m) ≈ T.dyn (out-flat p) (T.δᵀ p n m)
@@ -165,22 +184,35 @@ module _ (P : I.Tm 0 Any) where
   R _ = _~_
 
   infixr 5 _▷_
-  _▷_ : ∀ {s₁ s s'} → Step L₂ s s' → Reach L₂ _~_ s₁ s' → Reach L₂ _~_ s₁ s
+  _▷_ : ∀ {s₁ s s'}
+    → Step L₂ s s'
+    → Reach L₂ _~_ s₁ s'
+    → Reach L₂ _~_ s₁ s
   st ▷ (t , σ , m) = t , st ◅ σ , m
 
-  done : ∀ {s₁ s} → s₁ ~ s → Reach L₂ _~_ s₁ s
+  done : ∀ {s₁ s}
+    → s₁ ~ s
+    → Reach L₂ _~_ s₁ s
   done m = _ , ε , m
 
-  go : ∀ {i s₁ s s'} → Step L₂ s s' → Reach L₂ _~_ s₁ s' → Answers≺ L₂ R i (next s₁) s
+  go : ∀ {i s₁ s s'}
+    → Step L₂ s s'
+    → Reach L₂ _~_ s₁ s'
+    → Answers≺ L₂ R i (next s₁) s
   go = after≺ {j = 0}
 
-  tuple-next~ : ∀ {k k' m j vs ρ ρ' κ κ'} {vs' : Vec _ m} {r : Fin k → Fin k'} (Ms : Args (replicate j ■)) (ws : WS-args k Ms)
-    → Pointwise _≈_ vs (toList vs') → Env≈ r ρ ρ' → κ ≈k κ'
+  tuple-next~ : ∀ {k k' m j vs ρ ρ' κ κ'} {vs' : Vec _ m} {r : Fin k → Fin k'} (Ms : Args (replicate j ■))
+    → (ws : WS-args k Ms)
+    → Pointwise _≈_ vs (toList vs')
+    → Env≈ r ρ ρ'
+    → κ ≈k κ'
     → Reach L₂ _~_ (S.tuple-next vs (args→list Ms) ρ κ) (T.tuple-next vs' (casts r Ms ws) ρ' (T.injK _ κ'))
   tuple-next~ {j = zero} Nil _ rs E κ = refl ▷ done (ret~ (tup≈ (rev≈ rs [])) κ)
   tuple-next~ {j = suc j} (M ,, Ms) (w , ws) rs E κ = done (eval~ w E (tupK Ms rs E κ))
 
-  sim : ∀ {i s₁ s₂} → s₁ ~ s₂ → Answers≺ L₂ R i (S.step s₁) s₂
+  sim : ∀ {i s₁ s₂}
+    → s₁ ~ s₂
+    → Answers≺ L₂ R i (S.step s₁) s₂
   sim (eval~ {M = ` x} w E κ) with E x w
   ... | v , e , r = answers-at (cong (λ m → S.ret? m _) e) (go refl (done (ret~ r κ)))
   sim (eval~ {M = lam ⦅ ⟩ N ,, Nil ⦆} (w , _) E κ) = go refl (refl ▷ refl ▷ done (ret~ (clo≈ E) κ))
@@ -230,6 +262,8 @@ module _ (P : I.Tm 0 Any) where
 
 {- The end theorem -------------------------------------------------------------}
 
-cast-correct : ∀ (M : AST) (w : WS 0 M) → Equivalent (S.sem M) (T.sem (cast-program M w))
+cast-correct : ∀ (M : AST)
+  → (w : WS 0 M)
+  → Equivalent (S.sem M) (T.sem (cast-program M w))
 cast-correct M w = equivalent (record { match = R P ; init = 0 , eval~ w (λ _ ()) halt ; sim = sim P })
   where P = cast-program M w

@@ -75,17 +75,31 @@ Tagged D = ∀ {u v} → left u ∈ D → right v ∈ D → ⊥
 Atom : 𝒫 Value → Set
 Atom D = Tagged D × Val D
 
-atom-≈ : ∀ {V} → V ≢ [] → V ≈ V → NoErr V → Atom (mem V)
+atom-≈ : ∀ {V}
+  → V ≢ []
+  → V ≈ V
+  → NoErr V
+  → Atom (mem V)
 atom-≈ {V} ne c n = ⟨ (λ l r → ≈⇒Every V V c _ _ l r) , noerr-val V ne n ⟩
 
 {- the binders of the code of a definition, on finite sets of values -}
 ΛΛᵐ-⊆ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value}
-  → (∀ V W → V ≢ [] → V ≈ V → NoErr V → W ≢ [] → W ≈ W → NoErr W → F (mem V) (mem W) ⊆ F' (mem V) (mem W))
+  → (  ∀ V W
+     → V ≢ []
+     → V ≈ V
+     → NoErr V
+     → W ≢ []
+     → W ≈ W
+     → NoErr W
+     → F (mem V) (mem W) ⊆ F' (mem V) (mem W))
   → ΛΛᵐ ⟨ F , ptt ⟩ ⊆ ΛΛᵐ ⟨ F' , ptt ⟩
 ΛΛᵐ-⊆ h ν r = r
 ΛΛᵐ-⊆ {F} {F'} h (V ↦ e) ⟨ ⟨ e∈ , ⟨ ne , c ⟩ ⟩ , ⟨ nV , ve ⟩ ⟩ = ⟨ ⟨ inner e e∈ ve , ⟨ ne , c ⟩ ⟩ , ⟨ nV , ve ⟩ ⟩
   where
-  inner : ∀ e → e ∈ Λ ⟨ F (mem V) , ptt ⟩ → ValEntry e → e ∈ Λ ⟨ F' (mem V) , ptt ⟩
+  inner : ∀ e
+    → e ∈ Λ ⟨ F (mem V) , ptt ⟩
+    → ValEntry e
+    → e ∈ Λ ⟨ F' (mem V) , ptt ⟩
   inner ν r _ = r
   inner (W ↦ w) ⟨ w∈ , ⟨ neW , cW ⟩ ⟩ nW = ⟨ h V W ne c nV neW cW nW w w∈ , ⟨ neW , cW ⟩ ⟩
   inner (const k) () _
@@ -97,7 +111,12 @@ atom-≈ {V} ne c n = ⟨ (λ l r → ≈⇒Every V V c _ _ l r) , noerr-val V n
   inner ⟨⟩ () _
 
 {- G (mem V) is let x = mem V in G x -}
-let-fin-β : ∀ {G V} → Mono₁ G → V ≢ [] → V ≈ V → NoErr V → G (mem V) ≃ letᵗ (mem V) G
+let-fin-β : ∀ {G V}
+  → Mono₁ G
+  → V ≢ []
+  → V ≈ V
+  → NoErr V
+  → G (mem V) ≃ letᵗ (mem V) G
 let-fin-β {G} {V} m ne c nv =
   ≃-trans (≃-sym (letᵐ-β m (λ w w∈ → ⟨ V , ⟨ ne , ⟨ (λ d d∈ → d∈) , w∈ ⟩ ⟩ ⟩) (≈⇒Con c) (noerr-val V ne nv))) (letᵐ-unfold {mem V} {G})
 
@@ -110,21 +129,28 @@ strict-≫= = ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → inj₁ ⟨ refl , ω
 H : 𝒫 Value → 𝒫 Value → 𝒫 Value
 H P X = ⋆ ⟨ ⋆ ⟨ car ⟨ P , ptt ⟩ , ⟨ cdr ⟨ P , ptt ⟩ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
 
-H-mono : ∀ {P P' X X'} → P ⊆ P' → X ⊆ X' → H P X ⊆ H P' X'
+H-mono : ∀ {P P' X X'}
+  → P ⊆ P'
+  → X ⊆ X'
+  → H P X ⊆ H P' X'
 H-mono P⊆ X⊆ w ⟨ V , ⟨ ⟨ U , ⟨ ⟨ v , pv ⟩ , ⟨ U⊆ , U≢ ⟩ ⟩ ⟩ , ⟨ V⊆ , V≢ ⟩ ⟩ ⟩ =
   ⟨ V , ⟨ ⟨ U , ⟨ ⟨ v , P⊆ _ pv ⟩ , ⟨ (λ d d∈ → ⟨ proj₁ (U⊆ d d∈) , P⊆ _ (proj₂ (U⊆ d d∈)) ⟩) , U≢ ⟩ ⟩ ⟩
       , ⟨ (λ d d∈ → X⊆ d (V⊆ d d∈)) , V≢ ⟩ ⟩ ⟩
 
-callc-≃ : ∀ {P A} → Val P → Val A → (P ≫= λ P' → A ≫= λ X → H P' X) ≃ H P A
+callc-≃ : ∀ {P A}
+  → Val P
+  → Val A
+  → (P ≫= λ P' → A ≫= λ X → H P' X) ≃ H P A
 callc-≃ {P} {A} vP vA =
   ≃-trans (≫=-val-β {P} {λ P' → A ≫= λ X → H P' X} vP)
     (≃-trans (≫=-val-β {A} {H ⌊ P ⌋} vA)
       ⟨ H-mono (⌊⌋-⊆ {P}) (⌊⌋-⊆ {A}) , H-mono (⌊⌋-clean {P} (proj₁ vP)) (⌊⌋-clean {A} (proj₁ vA)) ⟩)
 
 {- case: test, bind the payload, and branch on the flag -}
-case-coreᵗ : ∀ {A : 𝒫 Value} {F₁ F₂ : 𝒫 Value → 𝒫 Value} → Atom A
+case-coreᵗ : ∀ {A : 𝒫 Value} {F₁ F₂ : 𝒫 Value → 𝒫 Value}
+  → Atom A
   → caseᵗ A F₁ F₂
-    ≃ letᵗ (A ≫= λ X → payloadD (X ⇂ ValPayload)) (λ X → caseᵗ (A ≫= isinlD) (λ _ → F₁ X) (λ _ → F₂ X))
+      ≃ letᵗ (A ≫= λ X → payloadD (X ⇂ ValPayload)) (λ X → caseᵗ (A ≫= isinlD) (λ _ → F₁ X) (λ _ → F₂ X))
 case-coreᵗ {A} {F₁} {F₂} ⟨ tg , ⟨ cl , ne ⟩ ⟩ = ⟨ bwd , fwd ⟩
   where
   P = A ≫= λ X → payloadD (X ⇂ ValPayload)
@@ -134,18 +160,31 @@ case-coreᵗ {A} {F₁} {F₂} ⟨ tg , ⟨ cl , ne ⟩ ⟩ = ⟨ bwd , fwd ⟩
   noω : ¬ (ω ∈ A)
   noω ω∈ = cl ω ω∈ refl
 
-  lefts : ∀ {a} V → left a ∈ A → mem V ⊆ ⌊ P ⌋ → ∀ d → d ∈ mem V → (⌊ A ⌋ ⇂ ValPayload) (left d)
+  lefts : ∀ {a} V
+    → left a ∈ A
+    → mem V ⊆ ⌊ P ⌋
+    → ∀ d
+    → d ∈ mem V
+    → (⌊ A ⌋ ⇂ ValPayload) (left d)
   lefts V la V⊆ d d∈ with V⊆ d d∈
   ... | ⟨ inj₁ ⟨ refl , _ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
   ... | ⟨ inj₂ ⟨ _ , inj₁ l ⟩ , _ ⟩ = l
   ... | ⟨ inj₂ ⟨ _ , inj₂ ⟨ ⟨ r , _ ⟩ , _ ⟩ ⟩ , _ ⟩ = ⊥-elim (tg la r)
-  rights : ∀ {a} V → right a ∈ A → mem V ⊆ ⌊ P ⌋ → ∀ d → d ∈ mem V → (⌊ A ⌋ ⇂ ValPayload) (right d)
+  rights : ∀ {a} V
+    → right a ∈ A
+    → mem V ⊆ ⌊ P ⌋
+    → ∀ d
+    → d ∈ mem V
+    → (⌊ A ⌋ ⇂ ValPayload) (right d)
   rights V ra V⊆ d d∈ with V⊆ d d∈
   ... | ⟨ inj₁ ⟨ refl , _ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
   ... | ⟨ inj₂ ⟨ _ , inj₁ ⟨ ⟨ l , _ ⟩ , _ ⟩ ⟩ , _ ⟩ = ⊥-elim (tg l ra)
   ... | ⟨ inj₂ ⟨ _ , inj₂ r ⟩ , _ ⟩ = r
 
-  branch : ∀ V → V ≢ [] → V ≈ V → mem V ⊆ ⌊ P ⌋
+  branch : ∀ V
+    → V ≢ []
+    → V ≈ V
+    → mem V ⊆ ⌊ P ⌋
     → caseᵗ I (λ _ → F₁ (mem V)) (λ _ → F₂ (mem V)) ⊆ caseᵗ A F₁ F₂
   branch V V≢ c V⊆ w (inj₁ ⟨ refl , inj₁ ⟨ _ , ω∈ ⟩ ⟩) = ⊥-elim (noω ω∈)
   branch V V≢ c V⊆ w (inj₁ ⟨ refl , inj₂ ⟨ _ , inj₁ ⟨ _ , ⟨ _ , () ⟩ ⟩ ⟩ ⟩)
@@ -173,7 +212,9 @@ case-coreᵗ {A} {F₁} {F₂} ⟨ tg , ⟨ cl , ne ⟩ ⟩ = ⟨ bwd , fwd ⟩
   bwd w (inj₂ ⟨ _ , inj₁ ⟨ v , ⟨ V , ⟨ ls , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩ ⟩) =
     inj₂ ⟨ ⟨ v , pv (here refl) ⟩ , ⟨ v ∷ V , ⟨ ⟨ ⟨ g , ⟨ (λ ()) , c ⟩ ⟩ , nV ⟩ , ⟨ (λ d d∈ → pv d∈) , (λ ()) ⟩ ⟩ ⟩ ⟩
     where
-    pv : ∀ {d} → d ∈ mem (v ∷ V) → d ∈ ⌊ P ⌋
+    pv : ∀ {d}
+      → d ∈ mem (v ∷ V)
+      → d ∈ ⌊ P ⌋
     pv d∈ = ⟨ inj₂ ⟨ cA , inj₁ (ls _ d∈) ⟩ , proj₂ (ls _ d∈) ⟩
     nV : NoErr (v ∷ V)
     nV ω∈ = proj₂ (ls ω ω∈) refl
@@ -185,7 +226,9 @@ case-coreᵗ {A} {F₁} {F₂} ⟨ tg , ⟨ cl , ne ⟩ ⟩ = ⟨ bwd , fwd ⟩
   bwd w (inj₂ ⟨ _ , inj₂ ⟨ v , ⟨ V , ⟨ rs , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩ ⟩) =
     inj₂ ⟨ ⟨ v , pv (here refl) ⟩ , ⟨ v ∷ V , ⟨ ⟨ ⟨ g , ⟨ (λ ()) , c ⟩ ⟩ , nV ⟩ , ⟨ (λ d d∈ → pv d∈) , (λ ()) ⟩ ⟩ ⟩ ⟩
     where
-    pv : ∀ {d} → d ∈ mem (v ∷ V) → d ∈ ⌊ P ⌋
+    pv : ∀ {d}
+      → d ∈ mem (v ∷ V)
+      → d ∈ ⌊ P ⌋
     pv d∈ = ⟨ inj₂ ⟨ cA , inj₂ (rs _ d∈) ⟩ , proj₂ (rs _ d∈) ⟩
     nV : NoErr (v ∷ V)
     nV ω∈ = proj₂ (rs ω ω∈) refl
@@ -197,7 +240,10 @@ case-coreᵗ {A} {F₁} {F₂} ⟨ tg , ⟨ cl , ne ⟩ ⟩ = ⟨ bwd , fwd ⟩
 
 {- Frames ---------------------------------------------------------------------}
 
-drop-idx : ∀ {Δ' Δ A} (p : Δ' ⊑ Δ) (ρ : Env Value) (y : Δ' ∋ A) → drop p ρ (idx y) ≡ ρ (idx (⊑-∋ p y))
+drop-idx : ∀ {Δ' Δ A}
+  → (p : Δ' ⊑ Δ)
+  → (ρ : Env Value) (y : Δ' ∋ A)
+  → drop p ρ (idx y) ≡ ρ (idx (⊑-∋ p y))
 drop-idx here⊑ ρ y = refl
 drop-idx (there⊑ p) ρ y = drop-idx p (λ i → ρ (suc i)) y
 
@@ -205,7 +251,11 @@ drop-idx (there⊑ p) ρ y = drop-idx p (λ i → ρ (suc i)) y
 Inv : Ctx → Env Value → Set
 Inv Δ ρ = ∀ {A} (x : Δ ∋ A) → Atom (ρ (idx x))
 
-inv-• : ∀ {Δ' Δ A ρ X} (p : Δ' ⊑ Δ) → Inv Δ ρ → Atom X → Inv (A ∷ Δ') (X • drop p ρ)
+inv-• : ∀ {Δ' Δ A ρ X}
+  → (p : Δ' ⊑ Δ)
+  → Inv Δ ρ
+  → Atom X
+  → Inv (A ∷ Δ') (X • drop p ρ)
 inv-• p i aX Z = aX
 inv-• {ρ = ρ} p i aX (S y) = subst Atom (sym (drop-idx p ρ y)) (i (⊑-∋ p y))
 
@@ -216,7 +266,9 @@ then : ∀ {n Δ A Δ''} → Out n Δ A Δ'' → (𝒫 Value → 𝒫 Value) →
 then ret K D = D
 then (to p _) K D = letᵗ D K
 
-then-≃ : ∀ {n Δ A Δ''} (o : Out n Δ A Δ'') {K D D'} → D ≃ D' → then o K D ≃ then o K D'
+then-≃ : ∀ {n Δ A Δ''} (o : Out n Δ A Δ'') {K D D'}
+  → D ≃ D'
+  → then o K D ≃ then o K D'
 then-≃ ret D≃ = D≃
 then-≃ (to p _) {K} D≃ = letᵗ-≃ {F = K} {K} D≃ (λ _ _ _ _ → ≃-refl)
 
@@ -241,14 +293,18 @@ module _ {Σ : List ℕ} {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
     Fits ret K k ρ = ∀ {Γ O F} ρ' R F' → R rax ≃ GX.⟦_⟧ˢ T' (k {Γ} {O} {F}) B ρ' R F'
     Fits (to p _) K k ρ = ∀ {Γ O F} X → Atom X → ∀ R F' → K X ≃ GX.⟦_⟧ˢ T' (k {Γ} {O} {F}) B (X • drop p ρ) R F'
 
-    put-≃ : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') {K : 𝒫 Value → 𝒫 Value} {k : ∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)} {ρ : Env Value} {D D' : 𝒫 Value} {Γ : Regs} {O : Maybe (Δ ∋ ⟪ fun ⟫)} {F : Bool} {R : RegsD} {F' : 𝒫 Value} → Fits o K k ρ → D ≃ D'
+    put-≃ : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') {K : 𝒫 Value → 𝒫 Value} {k : ∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)} {ρ : Env Value} {D D' : 𝒫 Value} {Γ : Regs} {O : Maybe (Δ ∋ ⟪ fun ⟫)} {F : Bool} {R : RegsD} {F' : 𝒫 Value}
+      → Fits o K k ρ
+      → D ≃ D'
       → then o K D ≃ GX.put {Σ} T' (dst o {Γ} {O} {F}) D' (GX.⟦_⟧ˢ T' (k {Γ} {O} {F}) B) ρ R F'
     put-≃ ret {K} {k} {ρ} {D} {D'} {Γ} {O} {F} {R} {F'} f D≃ = ≃-trans D≃ (f {Γ} {O} {F} ρ (R [ rax ≔ D' ]) F')
     put-≃ (to p _) {K} {k} {ρ} {Γ = Γ} {O} {F} {R} {F'} f D≃ =
       letᵗ-≃ {F = K} {λ X → GX.⟦_⟧ˢ T' (k {Γ} {O} {F}) B (X • drop p ρ) R F'} D≃
         (λ V ne c nv → f {Γ} {O} {F} (mem V) (atom-≈ ne c nv) R F')
 
-    putˢ-≃ : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') {K : 𝒫 Value → 𝒫 Value} {k : ∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)} {ρ : Env Value} {D D' : 𝒫 Value} {Γ : Regs} {O : Maybe (Δ ∋ ⟪ fun ⟫)} {F : Bool} {R : RegsD} {F' : 𝒫 Value} → Fits o K k ρ → D ≃ D'
+    putˢ-≃ : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') {K : 𝒫 Value → 𝒫 Value} {k : ∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)} {ρ : Env Value} {D D' : 𝒫 Value} {Γ : Regs} {O : Maybe (Δ ∋ ⟪ fun ⟫)} {F : Bool} {R : RegsD} {F' : 𝒫 Value}
+      → Fits o K k ρ
+      → D ≃ D'
       → then o K D ≃ GX.putˢ {Σ} T' (dst o {Γ} {O} {F}) D' (GX.⟦_⟧ˢ T' (k {Γ} {O} {F}) B) ρ R F'
     putˢ-≃ ret {K} {k} {ρ} {D} {D'} {Γ} {O} {F} {R} {F'} f D≃ =
       ≃-trans (≃-sym (strictᵐ-self {D} {D} ≃-refl)) (strictᵐ-≃ {D} {D'} {D} {E} D≃ (put-≃ ret {K} {k = λ {Γ₀} {O₀} {F₀} → k {Γ₀} {O₀} {F₀}} {ρ} {D} {D'} {Γ} {O} {F} {R} {F'} f D≃))
@@ -256,7 +312,9 @@ module _ {Σ : List ℕ} {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
     putˢ-≃ (to p lt) {K} {k} {ρ} {D} {D'} {Γ} {O} {F} {R} {F'} f D≃ = put-≃ (to p lt) {K} {λ {Γ₀} {O₀} {F₀} → k {Γ₀} {O₀} {F₀}} {ρ} {D} {D'} {Γ} {O} {F} {R} {F'} f D≃
 
     {- the code selected for s into o, then k -}
-    sel-≃ : ∀ {Δ A Δ''} (s : I.Simple Σ Δ A) (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)} {ρ Γ O F R F'} → Fits o K k ρ → Inv Δ ρ
+    sel-≃ : ∀ {Δ A Δ''} (s : I.Simple Σ Δ A) (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)} {ρ Γ O F R F'}
+      → Fits o K k ρ
+      → Inv Δ ρ
       → then o K (𝒮 s T' ρ) ≃ GX.⟦_⟧ˢ T' (sel s o k {Γ} {O} {F}) B ρ R F'
     sel-≃ (I.atm a) o f i = put-≃ o f ≃-refl
     sel-≃ (I.pack c e) o f i = put-≃ o f ≃-refl
@@ -277,8 +335,14 @@ module _ {Σ : List ℕ} {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
   BR : ∀ {Bs} → BEnv Bs → BEnv Bs → Set₁
   BR {Bs} B B' = ∀ {Δ} (l : Bs ∋ Δ) ρ → Inv Δ ρ → B l ρ ≃ B' l ρ
 
-  tail-≃ : ∀ {n Bs Δ} (t : Tail Σ Bs Δ) .(le : depth t ≤ n) {B B' : BEnv Bs} → BR B B' → ∀ ρ → Inv Δ ρ
-    → ∀ {Γ O F} R F' → GC.⟦ t ⟧ᵗ T B ρ ≃ GX.⟦_⟧ˢ T' (tail t le {Γ} {O} {F}) B' ρ R F'
+  tail-≃ : ∀ {n Bs Δ} (t : Tail Σ Bs Δ)
+    → .(le : depth t ≤ n)
+    → {B B' : BEnv Bs}
+    → BR B B'
+    → ∀ ρ
+    → Inv Δ ρ
+    → ∀ {Γ O F} R F'
+    → GC.⟦ t ⟧ᵗ T B ρ ≃ GX.⟦_⟧ˢ T' (tail t le {Γ} {O} {F}) B' ρ R F'
   tail-≃ (return s) le {B' = B'} br ρ i R F' = ≃-trans (𝒮-≃ s ρ) (sel-≃ B' s ret {K = λ X → X} (λ _ R _ → ≃-refl) i)
   tail-≃ (seq p s t) le {B} {B'} br ρ i R F' =
     ≃-trans (letᵗ-≃ {F = K} {K} (𝒮-≃ s ρ) (λ _ _ _ _ → ≃-refl))
@@ -294,18 +358,28 @@ module _ {Σ : List ℕ} {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
           F₁' = λ X → B' l₁ (X • drop p ρ)
           F₂' = λ X → B' l₂ (X • drop p ρ)
 
-  blocks-≃ : ∀ {n Bs} (bs : C.Blocks Σ Bs) .(le : blocks-depth bs ≤ n) → BR (GC.blocks bs T) (GX.blocks T' (blocks bs le))
+  blocks-≃ : ∀ {n Bs} (bs : C.Blocks Σ Bs)
+    → .(le : blocks-depth bs ≤ n)
+    → BR (GC.blocks bs T) (GX.blocks T' (blocks bs le))
   blocks-≃ (bs ▷ t) le Z ρ i = tail-≃ t _ (blocks-≃ bs _) ρ i _ _
   blocks-≃ (bs ▷ t) le (S l) = blocks-≃ bs _ l
 
   {- the code of a definition: its start binds %rdi and %rsi to slots 0 and 1 -}
-  code-≃ : (∀ k → Con (T k)) → ∀ {m} (b : C.Body Σ (Any ∷ ⟪ tup m ⟫ ∷ [])) → GC.codeᶜ T b ≃ GX.codeₜ T' (def-body b)
+  code-≃ : (∀ k → Con (T k))
+    → ∀ {m} (b : C.Body Σ (Any ∷ ⟪ tup m ⟫ ∷ []))
+    → GC.codeᶜ T b ≃ GX.codeₜ T' (def-body b)
   code-≃ TC {m} b@(C.body bs t) = ⟨ ΛΛᵐ-⊆ (λ V W a₁ a₂ a₃ a₄ a₅ a₆ → proj₁ (body≃ V W a₁ a₂ a₃ a₄ a₅ a₆))
                                , ΛΛᵐ-⊆ (λ V W a₁ a₂ a₃ a₄ a₅ a₆ → proj₂ (body≃ V W a₁ a₂ a₃ a₄ a₅ a₆)) ⟩
     where
     E = GC.run b T
     mE = proj₁ (run-ok TC b)
-    body≃ : ∀ V W → V ≢ [] → V ≈ V → NoErr V → W ≢ [] → W ≈ W → NoErr W
+    body≃ : ∀ V W
+      → V ≢ []
+      → V ≈ V
+      → NoErr V
+      → W ≢ []
+      → W ≈ W
+      → NoErr W
       → E (mem W • mem V • λ _ → init) ≃ GX.run T' (def-body b) (λ _ → init) (args (mem V) (mem W)) init
     body≃ V W neV cV nV neW cW nW =
       ≃-trans (let-fin-β {G = λ X' → E (Y • X' • ι)}

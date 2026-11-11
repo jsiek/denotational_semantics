@@ -58,7 +58,9 @@ madeT-top {Σ} D N with length Σ ≟ length Σ
 ... | yes _ = ≃-refl
 ... | no ne = ⊥-elim (ne refl)
 
-madeT-old : ∀ {Σ n} (D : Made Σ) (N : Code Σ n) k → k < length Σ → madeT (D ▷ N) k ≃ madeT D k
+madeT-old : ∀ {Σ n} (D : Made Σ) (N : Code Σ n) k
+  → k < length Σ
+  → madeT (D ▷ N) k ≃ madeT D k
 madeT-old {Σ} D N k k< with k ≟ length Σ
 ... | yes refl = ⊥-elim (<-irrefl refl k<)
 ... | no _ = ≃-refl
@@ -73,14 +75,25 @@ record Ext {Σ Σ'} (D : Made Σ) (D' : Made Σ') : Set where
   constructor ext
   field at : ∀ k → k < length Σ → madeT D' k ≃ madeT D k
 
-agr-ext : ∀ {Σ Σ' T} {D : Made Σ} {D' : Made Σ'} → Σ ⊑ Σ' → Ext D D' → Agr T D' → Agr T D
+agr-ext : ∀ {Σ Σ' T} {D : Made Σ} {D' : Made Σ'}
+  → Σ ⊑ Σ'
+  → Ext D D'
+  → Agr T D'
+  → Agr T D
 agr-ext s e a = agr λ k k< → ≃-trans (Agr.at a k (<-≤-trans k< (⊑-len s))) (Ext.at e k k<)
 
-ext-trans : ∀ {Σ₁ Σ₂ Σ₃} {D₁ : Made Σ₁} {D₂ : Made Σ₂} {D₃ : Made Σ₃} → Σ₁ ⊑ Σ₂ → Ext D₁ D₂ → Ext D₂ D₃ → Ext D₁ D₃
+ext-trans : ∀ {Σ₁ Σ₂ Σ₃} {D₁ : Made Σ₁} {D₂ : Made Σ₂} {D₃ : Made Σ₃}
+  → Σ₁ ⊑ Σ₂
+  → Ext D₁ D₂
+  → Ext D₂ D₃
+  → Ext D₁ D₃
 ext-trans s e₁ e₂ = ext λ k k< → ≃-trans (Ext.at e₂ k (<-≤-trans k< (⊑-len s))) (Ext.at e₁ k k<)
 
 {- a weakened term means the same -}
-wk-same : ∀ {Σ Σ' Γ A} (s : Σ ⊑ Σ') (M : Tm Σ Γ A) {T ρ} → ⟦ wk (⊑-∋ s) M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ
+wk-same : ∀ {Σ Σ' Γ A}
+  → (s : Σ ⊑ Σ')
+  → ∀ (M : Tm Σ Γ A) {T ρ}
+  → ⟦ wk (⊑-∋ s) M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ
 wk-same s M {T} = wk-≃ (⊑-∋ s) (λ f → ≃-reflexive (cong T (lvl-⊑ s f))) M (λ _ → ≃-refl)
 
 {- The pass ------------------------------------------------------------------------}
@@ -102,14 +115,19 @@ gl : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → GL M D
 gls : ∀ {Σ Γ n} (Ms : Vec (S.Tm Γ Any) n) (D : Made Σ) → let o = globs Ms D in
   Ext D (Out.made o) × (∀ T → Agr T (Out.made o) → ∀ {ρ ρ'} → EnvR ρ ρ'
     → ∀ i → nthD (⟦ Ms ⟧s₄ ρ) i ≃ nthD (⟦ Out.res o ⟧s[ T ] ρ') i)
-gl₁ : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (F : Sem → Sem) → Cong₁ F
+gl₁ : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (F : Sem → Sem)
+  → Cong₁ F
   → (∀ {Σ'} (L : Tm Σ' Γ₁ A) {T ρ} → ⟦ f L ⟧[ T ] ρ ≡ F ⟦ L ⟧[ T ] ρ)
-  → (L : S.Tm Γ₁ A) (D : Made Σ) → let o = glob₁ f L D in
-  Ext D (Out.made o) × (∀ T → Agr T (Out.made o) → ∀ {ρ ρ'} → EnvR ρ ρ' → F ⟦ L ⟧₄ ρ ≃ ⟦ Out.res o ⟧[ T ] ρ')
-gl₂ : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (F : Sem → Sem → Sem) → Cong₂ F
-  → (∀ {Σ'} (L : Tm Σ' Γ₁ A) (M : Tm Σ' Γ₂ B) {T ρ} → ⟦ f L M ⟧[ T ] ρ ≡ F ⟦ L ⟧[ T ] ⟦ M ⟧[ T ] ρ)
-  → (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B) (D : Made Σ) → let o = glob₂ f L M D in
-  Ext D (Out.made o) × (∀ T → Agr T (Out.made o) → ∀ {ρ ρ'} → EnvR ρ ρ' → F ⟦ L ⟧₄ ⟦ M ⟧₄ ρ ≃ ⟦ Out.res o ⟧[ T ] ρ')
+  → (L : S.Tm Γ₁ A) (D : Made Σ)
+  → let o = glob₁ f L D in
+      Ext D (Out.made o) × (∀ T → Agr T (Out.made o) → ∀ {ρ ρ'} → EnvR ρ ρ' → F ⟦ L ⟧₄ ρ ≃ ⟦ Out.res o ⟧[ T ] ρ')
+gl₂ : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (F : Sem → Sem → Sem)
+  → Cong₂ F
+  → (  ∀ {Σ'} (L : Tm Σ' Γ₁ A) (M : Tm Σ' Γ₂ B) {T ρ}
+     → ⟦ f L M ⟧[ T ] ρ ≡ F ⟦ L ⟧[ T ] ⟦ M ⟧[ T ] ρ)
+  → (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B) (D : Made Σ)
+  → let o = glob₂ f L M D in
+      Ext D (Out.made o) × (∀ T → Agr T (Out.made o) → ∀ {ρ ρ'} → EnvR ρ ρ' → F ⟦ L ⟧₄ ⟦ M ⟧₄ ρ ≃ ⟦ Out.res o ⟧[ T ] ρ')
 
 gl (S.` x) D = ⟨ ext (λ _ _ → ≃-refl) , (λ T a ρ~ → ρ~ (idx x)) ⟩
 gl {Σ} (S.code N) D with glob N D | gl N D
@@ -163,7 +181,10 @@ gl₂ f F cF hf L M D with glob L D | gl L D
 
 {- The program ----------------------------------------------------------------------}
 
-close-tbl : ∀ {Σ Σ'} (D : Made Σ') (s : Σ' ⊑ Σ) k → tbl code₅ (close D s) k ≃ madeT D k
+close-tbl : ∀ {Σ Σ'} (D : Made Σ')
+  → (s : Σ' ⊑ Σ)
+  → ∀ k
+  → tbl code₅ (close D s) k ≃ madeT D k
 close-tbl [] s k = ≃-refl
 close-tbl (_▷_ {Σ'} D N) s k with k ≟ length Σ'
 ... | yes _ = ΛΛᵐ-≃ λ X Y → wk-≃ (⊑-∋ s') (λ f → ≃-trans (≃-reflexive (cong (tbl code₅ (close D s')) (lvl-⊑ s' f)))

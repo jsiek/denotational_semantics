@@ -62,7 +62,9 @@ unbind-bind zero N = refl
 unbind-bind (suc m) N = unbind-bind m N
 
 {- binding ` (n - 1) , ... , ` 0 one at a time puts ρ k at position k -}
-push-vars : ∀ n (ρ σ : Env Value) k → k < n → push (⟦ fv-vars n ⟧₊₂ ρ) σ k ≡ ρ k
+push-vars : ∀ n (ρ σ : Env Value) k
+  → k < n
+  → push (⟦ fv-vars n ⟧₊₂ ρ) σ k ≡ ρ k
 push-vars (suc n) ρ σ k k<sn with k <? n
 ... | yes k<n = push-vars n ρ (ρ n • σ) k k<n
 ... | no ¬k<n =
@@ -73,49 +75,70 @@ push-vars (suc n) ρ σ k k<sn with k <? n
   k≡n = ≤-antisym (≤-pred k<sn) (≮⇒≥ ¬k<n)
 
 {- the captured free variables have values, and no errors -}
-fv-vars-vals : ∀ m (ρ : Env Value) → (∀ k → k < m → Val (ρ k)) → AllVal m (⟦ fv-vars m ⟧₊₂ ρ)
+fv-vars-vals : ∀ m (ρ : Env Value)
+  → (∀ k → k < m → Val (ρ k))
+  → AllVal m (⟦ fv-vars m ⟧₊₂ ρ)
 fv-vars-vals (suc m) ρ V zero = V m (n<1+n m)
 fv-vars-vals (suc m) ρ V (suc i) = fv-vars-vals m ρ (λ k k< → V k (<-trans k< (n<1+n m))) i
 
 {- under a binder -}
-rel-ext : ∀ B {ρ₁ ρ₂ : Env Value} {X} → (∀ x → Uses (suc x) B → ρ₁ x ≃ ρ₂ x)
-  → ∀ x → Uses x B → (X • ρ₁) x ≃ (X • ρ₂) x
+rel-ext : ∀ B {ρ₁ ρ₂ : Env Value} {X}
+  → (∀ x → Uses (suc x) B → ρ₁ x ≃ ρ₂ x)
+  → ∀ x
+  → Uses x B
+  → (X • ρ₁) x ≃ (X • ρ₂) x
 rel-ext B r zero _ = ≃-refl
 rel-ext B r (suc x) u = r x u
 
-vals-ext : ∀ B {ρ₂ : Env Value} {X} → Val X → (∀ x → x < bound B ∸ 1 → Val (ρ₂ x))
-  → ∀ x → x < bound B → Val ((X • ρ₂) x)
+vals-ext : ∀ B {ρ₂ : Env Value} {X}
+  → Val X
+  → (∀ x → x < bound B ∸ 1 → Val (ρ₂ x))
+  → ∀ x
+  → x < bound B
+  → Val ((X • ρ₂) x)
 vals-ext B VX V zero _ = VX
 vals-ext B VX V (suc x) x< = V x (<-∸1 x<)
 
 {- The main lemma -------------------------------------------------------------}
 
-enc-correct : ∀ (M : AST) ρ₁ ρ₂ → (∀ x → x < bound M → Val (ρ₂ x)) → (∀ x → Uses x M → ρ₁ x ≃ ρ₂ x)
+enc-correct : ∀ (M : AST) ρ₁ ρ₂
+  → (∀ x → x < bound M → Val (ρ₂ x))
+  → (∀ x → Uses x M → ρ₁ x ≃ ρ₂ x)
   → ⟦ M ⟧ ρ₁ ≃ ⟦ capture M ⟧₂ ρ₂
 
 enc-args-correct : ∀ {n} (args : Args (replicate n ■)) ρ₁ ρ₂
-  → (∀ x → x < bound-args args → Val (ρ₂ x)) → (∀ x → UsesArgs x args → ρ₁ x ≃ ρ₂ x)
-  → ∀ i → nthD (⟦ args ⟧₊ ρ₁) i ≃ nthD (⟦ enc-args args ⟧₊₂ ρ₂) i
+  → (∀ x → x < bound-args args → Val (ρ₂ x))
+  → (∀ x → UsesArgs x args → ρ₁ x ≃ ρ₂ x)
+  → ∀ i
+  → nthD (⟦ args ⟧₊ ρ₁) i ≃ nthD (⟦ enc-args args ⟧₊₂ ρ₂) i
 
 enc-correct (` x) ρ₁ ρ₂ V rel = rel x refl
 enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel = G
   where
   m = bound N ∸ 1
   Ds = ⟦ fv-vars m ⟧₊₂ ρ₂
-  Vm : ∀ k → k < m → Val (ρ₂ k)
+  Vm : ∀ k
+    → k < m
+    → Val (ρ₂ k)
   Vm k k< = V k (<-⊔ˡ 0 k<)
 
   {- the body finds its free variables where it found them before -}
-  body≃ : ∀ U → U ≢ [] → NoErr U → ⟦ N ⟧ (mem U • ρ₁)
-              ≃ apply-n m (⟦ bind-n-ast m (capture N) ⟧ₐ₂ init₀) Ds (mem U)
+  body≃ : ∀ U
+    → U ≢ []
+    → NoErr U
+    → ⟦ N ⟧ (mem U • ρ₁) ≃ apply-n m (⟦ bind-n-ast m (capture N) ⟧ₐ₂ init₀) Ds (mem U)
   body≃ U neU nU rewrite apply-push m (bind-n-ast m (capture N)) init₀ Ds (mem U)
                       | unbind-bind m (capture N) =
     enc-correct N (mem U • ρ₁) (mem U • push Ds init₀) V' rel'
     where
-    V' : ∀ x → x < bound N → Val ((mem U • push Ds init₀) x)
+    V' : ∀ x
+      → x < bound N
+      → Val ((mem U • push Ds init₀) x)
     V' zero _ = noerr-val U neU nU
     V' (suc k) k< = subst Val (sym (push-vars m ρ₂ init₀ k (<-∸1 k<))) (Vm k (<-∸1 k<))
-    rel' : ∀ x → Uses x N → (mem U • ρ₁) x ≃ (mem U • push Ds init₀) x
+    rel' : ∀ x
+      → Uses x N
+      → (mem U • ρ₁) x ≃ (mem U • push Ds init₀) x
     rel' zero _ = ≃-refl
     rel' (suc k) u =
       ≃-trans (rel k (inj₁ u))
@@ -161,5 +184,7 @@ enc-args-correct {suc n} (M ,, args) ρ₁ ρ₂ V rel (suc i) =
 
 {- The end theorem: closed programs ----------------------------------------------}
 
-capture-correct : ∀ (M : AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
+capture-correct : ∀ (M : AST)
+  → Closed M
+  → ⟦ M ⟧ ρ₀ ≃ ⟦ capture M ⟧₂ ρ₀
 capture-correct M c = enc-correct M ρ₀ ρ₀ (λ x x< → ⊥-elim (n≮0 (subst (x <_) c x<))) (λ x _ → ≃-refl)

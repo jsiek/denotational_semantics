@@ -20,13 +20,21 @@ open import Data.Maybe using (nothing; just)
 open import Data.Product using (proj₁) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
-letᵗ-≃ : ∀ {D D' F F'} → D ≃ D' → BodyEq F F' → letᵗ D F ≃ letᵗ D' F'
+letᵗ-≃ : ∀ {D D' F F'}
+  → D ≃ D'
+  → BodyEq F F'
+  → letᵗ D F ≃ letᵗ D' F'
 letᵗ-≃ {D} {D'} {F} {F'} D≃ F≃ = ≃-trans (≃-sym (letᵐ-unfold {D} {F})) (≃-trans (letᵐ-≃ D≃ F≃) (letᵐ-unfold {D'} {F'}))
 
 letᵗ-≫= : ∀ {D G} → Mono₁ G → Con D → (Conv D → Finitary G ⌊ D ⌋) → letᵗ D G ≃ (D ≫= G)
 letᵗ-≫= {D} {G} m c f = ≃-trans (≃-sym (letᵐ-unfold {D} {G})) (letᵐ-≫= m c f)
 
-case-lawᵗ : ∀ k → KOK k → ∀ {A F₁ F₂} → Con A → Mono₁ F₁ → Mono₁ F₂
+case-lawᵗ : ∀ k
+  → KOK k
+  → ∀ {A F₁ F₂}
+  → Con A
+  → Mono₁ F₁
+  → Mono₁ F₂
   → K⟨ k ⟩ (caseᵗ A F₁ F₂) ≃ caseᵗ A (λ X → K⟨ k ⟩ (F₁ X)) (λ X → K⟨ k ⟩ (F₂ X))
 case-lawᵗ nothing _ cA m₁ m₂ = ≃-refl
 case-lawᵗ (just G) ⟨ mG , fG ⟩ {A} {F₁} {F₂} cA m₁ m₂ =

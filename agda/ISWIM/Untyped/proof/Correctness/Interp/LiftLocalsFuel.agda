@@ -65,7 +65,9 @@ Out : ℕ → List Val → Val → Val × Frame → Set
 Out n ρ v p = v ≡ proj₁ p × Fr n ρ (proj₂ p)
 
 {- variable x is slot length ρ ∸ suc x -}
-rev‼ : ∀ (ρ τ : List Val) x → x < length ρ → (ρ ʳ++ τ) ‼ (length ρ ∸ suc x) ≡ ρ ‼ x
+rev‼ : ∀ (ρ τ : List Val) x
+  → x < length ρ
+  → (ρ ʳ++ τ) ‼ (length ρ ∸ suc x) ≡ ρ ‼ x
 rev‼ (u ∷ ρ) τ zero _ =
   trans (cong (_‼ length ρ) (ʳ++-defn ρ))
         (subst (λ k → (reverse ρ ++ u ∷ τ) ‼ k ≡ just u) (length-reverse ρ) (‼-++ (reverse ρ)))
@@ -79,29 +81,46 @@ set-++ (w ∷ ws) {t} {τ} {v} rewrite set-++ ws {t} {τ} {v} = refl
 set-ʳ++ : ∀ (ρ : List Val) {t τ v} → (ρ ʳ++ (t ∷ τ)) [ length ρ ]≔ v ≡ just (ρ ʳ++ (v ∷ τ))
 set-ʳ++ ρ {t} {τ} {v} rewrite ʳ++-defn ρ {t ∷ τ} | ʳ++-defn ρ {v ∷ τ} | sym (length-reverse ρ) = set-++ (reverse ρ)
 
-var≈ : ∀ {n ρ φ} → Fr n ρ φ → ∀ x → ρ ‼ x ≡ φ ‼ slot n (length ρ) x
+var≈ : ∀ {n ρ φ}
+  → Fr n ρ φ
+  → ∀ x
+  → ρ ‼ x ≡ φ ‼ slot n (length ρ) x
 var≈ {n} {ρ} (fr τ len) x with x <? length ρ
 ... | yes x< = sym (rev‼ ρ τ x x<)
 ... | no x≮ = trans (‼-≥ ρ x (≮⇒≥ x≮)) (sym (‼-≥ (ρ ʳ++ τ) n (≤-reflexive len)))
 
-atom≈ : ∀ {ds ck n ρ φ M} (a : Atom M) → Fr n ρ φ → C.eval ds ck ρ M ≡ I.atom φ (lift-atom n (length ρ) a)
+atom≈ : ∀ {ds ck n ρ φ M}
+  → (a : Atom M)
+  → Fr n ρ φ
+  → C.eval ds ck ρ M ≡ I.atom φ (lift-atom n (length ρ) a)
 atom≈ (var x) ok = cong from-maybe (var≈ ok x)
 atom≈ (lit B k) ok = refl
 atom≈ (ref k) ok = refl
 
-atoms≈ : ∀ {ds ck n ρ φ k Ms} (as : Atoms {k} Ms) vs → Fr n ρ φ
+atoms≈ : ∀ {ds ck n ρ φ k Ms}
+  → (as : Atoms {k} Ms)
+  → ∀ vs
+  → Fr n ρ φ
   → C.eval-args ds ck ρ vs Ms ≡ I.atoms φ vs (lift-atoms n (length ρ) as)
 atoms≈ [] vs ok = refl
 atoms≈ (a ∷ as) vs ok = bind≡ (atom≈ a ok) λ v → atoms≈ as (v ∷ vs) ok
 
-here-rel : ∀ {n ρ φ r r'} → Fr n ρ φ → RelResult _≡_ r r' → RelResult (Out n ρ) r (here φ r')
+here-rel : ∀ {n ρ φ r r'}
+  → Fr n ρ φ
+  → RelResult _≡_ r r'
+  → RelResult (Out n ρ) r (here φ r')
 here-rel ok = rel-map λ e → e , ok
 
 {- the heights of the subterms -}
-sub : ∀ d {a b n} → a ≤ b → d + b ≤ n → d + a ≤ n
+sub : ∀ d {a b n}
+  → a ≤ b
+  → d + b ≤ n
+  → d + a ≤ n
 sub d a≤b = ≤-trans (+-monoʳ-≤ d a≤b)
 
-up : ∀ d {a n} → d + suc a ≤ n → suc d + a ≤ n
+up : ∀ d {a n}
+  → d + suc a ≤ n
+  → suc d + a ≤ n
 up d {a} {n} = subst (_≤ n) (+-suc d a)
 
 {- The table ------------------------------------------------------------------------}
@@ -121,13 +140,21 @@ module _ (ds : List AST) (ms : All Mon ds) where
   private ds' = lift-defs ms
 
   {- m at depth length ρ, in a frame of n slots -}
-  sim : ∀ ck n ρ φ {M} (m : Mon M) → length ρ + height m ≤ n → Fr n ρ φ
+  sim : ∀ ck n ρ φ {M}
+    → (m : Mon M)
+    → length ρ + height m ≤ n
+    → Fr n ρ φ
     → RelResult (Out n ρ) (C.eval ds ck ρ M) (I.eval ds' ck φ (lift n (length ρ) m))
   {- v := slot length ρ, then m -}
-  under : ∀ ck n ρ φ v {M} (m : Mon M) → suc (length ρ) + height m ≤ n → Fr n ρ φ
+  under : ∀ ck n ρ φ v {M}
+    → (m : Mon M)
+    → suc (length ρ) + height m ≤ n
+    → Fr n ρ φ
     → RelResult (Out n ρ) (C.eval ds ck (v ∷ ρ) M) (I.put ds' ck φ (length ρ) v (lift n (suc (length ρ)) m))
   call≈ : ∀ ck f e w → RelResult _≡_ (C.call ds ck (C.code? ds f) (w ∷ e ∷ [])) (I.call ds' ck (I.code? ds' f) e w)
-  call-pw : ∀ ck {mN mb} → M.Pointwise Def mN mb → ∀ e w
+  call-pw : ∀ ck {mN mb}
+    → M.Pointwise Def mN mb
+    → ∀ e w
     → RelResult _≡_ (C.call ds ck mN (w ∷ e ∷ [])) (I.call ds' ck mb e w)
 
   sim ck n ρ φ (atom a) h ok = here-rel ok (≡→rel (atom≈ a ok))
@@ -180,11 +207,15 @@ module _ (ds : List AST) (ms : All Mon ds) where
 
 {- The end theorem: for every monadic Clos5 program ------------------------------------}
 
-lift-correct : ∀ P (mp : MonProgram P) → Equivalent (C.sem P) (I.sem (lift-program P mp))
+lift-correct : ∀ P
+  → (mp : MonProgram P)
+  → Equivalent (C.sem P) (I.sem (lift-program P mp))
 lift-correct (program ds M) (ms , m) = clocked _≡_ (cong obs) λ ck →
   rel-map proj₁ (sim ds ms ck (height m) [] _ m ≤-refl (fr (replicate (height m) zero-val) (length-replicate _)))
 
 {- The whole compiler, into Imp --------------------------------------------------------}
 
-compile-imp-correct : ∀ M → Closed M → Equivalent (ISWIM.sem M) (I.sem (compile-imp M))
+compile-imp-correct : ∀ M
+  → Closed M
+  → Equivalent (ISWIM.sem M) (I.sem (compile-imp M))
 compile-imp-correct M c = equiv-trans (compile-mon-correct M c) (lift-correct (compile-mon M) (rco-program-mon (compile M)))

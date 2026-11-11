@@ -52,21 +52,34 @@ module _ {Σ Δ} {T T' : Table Σ} {σ σ'} (h : ∀ {A} (a : Atm Σ Δ A) → �
   𝒮-⊆ (project t a) = lower (mono (project-good fun₄ t) _ _ ⟨ lift (h a) , ptt ⟩)
 
 {- in the table -}
-𝒜-T⊆ : ∀ {Σ Δ A} {T T' : Table Σ} → (∀ {n} (f : Σ ∋ n) → T f ⊆ T' f) → ∀ (a : Atm Σ Δ A) {σ} → 𝒜 a T σ ⊆ 𝒜 a T' σ
+𝒜-T⊆ : ∀ {Σ Δ A} {T T' : Table Σ}
+  → (∀ {n} (f : Σ ∋ n) → T f ⊆ T' f)
+  → ∀ (a : Atm Σ Δ A) {σ}
+  → 𝒜 a T σ ⊆ 𝒜 a T' σ
 𝒜-T⊆ h (var x) = λ _ z → z
 𝒜-T⊆ h (lit B c) = λ _ z → z
 𝒜-T⊆ h (ref f) = h f
 
-𝒮-≃ : ∀ {Σ Δ A} {T T' : Table Σ} → (∀ {n} (f : Σ ∋ n) → T f ≃ T' f) → ∀ (s : Simple Σ Δ A) σ → 𝒮 s T σ ≃ 𝒮 s T' σ
+𝒮-≃ : ∀ {Σ Δ A} {T T' : Table Σ}
+  → (∀ {n} (f : Σ ∋ n) → T f ≃ T' f)
+  → ∀ (s : Simple Σ Δ A) σ
+  → 𝒮 s T σ ≃ 𝒮 s T' σ
 𝒮-≃ TT s σ = ⟨ 𝒮-⊆ (λ a → 𝒜-T⊆ (λ f → proj₁ (TT f)) a) s , 𝒮-⊆ (λ a → 𝒜-T⊆ (λ f → proj₂ (TT f)) a) s ⟩
 
 {- in the frame -}
-𝒜-mono : ∀ {Σ Δ A} {T : Table Σ} {σ σ'} → σ ⊆ₑ σ' → ∀ (a : Atm Σ Δ A) → 𝒜 a T σ ⊆ 𝒜 a T σ'
+𝒜-mono : ∀ {Σ Δ A} {T : Table Σ} {σ σ'}
+  → σ ⊆ₑ σ'
+  → ∀ (a : Atm Σ Δ A)
+  → 𝒜 a T σ ⊆ 𝒜 a T σ'
 𝒜-mono s (var x) = s (idx x)
 𝒜-mono s (lit B c) = λ _ z → z
 𝒜-mono s (ref f) = λ _ z → z
 
-drop-mono : ∀ {Δ' Δ : Ctx} (p : Δ' ⊑ Δ) {σ σ'} → σ ⊆ₑ σ' → drop p σ ⊆ₑ drop p σ'
+drop-mono : ∀ {Δ' Δ : Ctx}
+  → (p : Δ' ⊑ Δ)
+  → ∀ {σ σ'}
+  → σ ⊆ₑ σ'
+  → drop p σ ⊆ₑ drop p σ'
 drop-mono here⊑ s = s
 drop-mono (there⊑ p) s = drop-mono p (λ i → s (suc i))
 
@@ -75,7 +88,10 @@ module _ {Σ} {T : Table Σ} where
   MonoB : ∀ {Bs} → Meanings Bs → Set₁
   MonoB B = ∀ {Δ} (l : _ ∋ Δ) {σ σ'} → σ ⊆ₑ σ' → B l σ ⊆ B l σ'
 
-  tail-mono : ∀ {Bs Δ} (t : Tail Σ Bs Δ) {B : Meanings Bs} → MonoB B → ∀ {σ σ'} → σ ⊆ₑ σ'
+  tail-mono : ∀ {Bs Δ} (t : Tail Σ Bs Δ) {B : Meanings Bs}
+    → MonoB B
+    → ∀ {σ σ'}
+    → σ ⊆ₑ σ'
     → ⟦ t ⟧ᵗ T B σ ⊆ ⟦ t ⟧ᵗ T B σ'
   tail-mono (return s) mB σ⊆ = 𝒮-⊆ (𝒜-mono σ⊆) s
   tail-mono (seq p s t) mB σ⊆ = lower (⋆-mono _ _

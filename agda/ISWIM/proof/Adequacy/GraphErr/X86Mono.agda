@@ -56,42 +56,61 @@ record Le (ψ : St) (ρ ρ' : Env Value) (R R' : RegsD) (F F' : 𝒫 Value) : Se
 open Le public
 
 {- writes, and the registers and flag after a call, a check or a jump -}
-le-reg : ∀ {Γ Δ O F₀ ρ ρ' R R' F F' D D'} r {τ} → Le (st Γ Δ O F₀) ρ ρ' R R' F F' → D ⊆ D'
+le-reg : ∀ {Γ Δ O F₀ ρ ρ' R R' F F' D D'} r {τ}
+  → Le (st Γ Δ O F₀) ρ ρ' R R' F F'
+  → D ⊆ D'
   → Le (st (Γ [ r ↦ just τ ]) Δ O F₀) ρ ρ' (R [ r ≔ D ]) (R' [ r ≔ D' ]) F F'
 le-reg rax (le f g l) D⊆ = le f (λ { rax _ → D⊆ ; rdi → g rdi ; rsi → g rsi }) l
 le-reg rdi (le f g l) D⊆ = le f (λ { rax → g rax ; rdi _ → D⊆ ; rsi → g rsi }) l
 le-reg rsi (le f g l) D⊆ = le f (λ { rax → g rax ; rdi → g rdi ; rsi _ → D⊆ }) l
 
-le-slot : ∀ {Γ Δ Δ' O F₀ A ρ ρ' R R' F F' X X'} (p : Δ' ⊑ Δ) → Le (st Γ Δ O F₀) ρ ρ' R R' F F' → X ⊆ X'
+le-slot : ∀ {Γ Δ Δ' O F₀ A ρ ρ' R R' F F' X X'}
+  → (p : Δ' ⊑ Δ)
+  → Le (st Γ Δ O F₀) ρ ρ' R R' F F'
+  → X ⊆ X'
   → Le (st Γ (A ∷ Δ') nothing F₀) (X • drop p ρ) (X' • drop p ρ') R R' F F'
 le-slot {ρ = ρ} {ρ'} p (le f g l) X⊆ =
   le (λ { Z → X⊆ ; (S y) → subst₂ _⊆_ (sym (drop-idx p ρ y)) (sym (drop-idx p ρ' y)) (f (⊑-∋ p y)) }) g l
 
-le-flag : ∀ {Γ Δ O F₀ ρ ρ' R R' F F' G G'} → Le (st Γ Δ O F₀) ρ ρ' R R' F F' → G ⊆ G' → Le (st Γ Δ O true) ρ ρ' R R' G G'
+le-flag : ∀ {Γ Δ O F₀ ρ ρ' R R' F F' G G'}
+  → Le (st Γ Δ O F₀) ρ ρ' R R' F F'
+  → G ⊆ G'
+  → Le (st Γ Δ O true) ρ ρ' R R' G G'
 le-flag (le f g l) G⊆ = le f g (λ _ → G⊆)
 
-le-wipe : ∀ {Γ Δ O F₀ ρ ρ' R R' F F'} {x : Δ ∋ ⟪ fun ⟫} → Le (st Γ Δ O F₀) ρ ρ' R R' F F'
+le-wipe : ∀ {Γ Δ O F₀ ρ ρ' R R' F F'} {x : Δ ∋ ⟪ fun ⟫}
+  → Le (st Γ Δ O F₀) ρ ρ' R R' F F'
   → Le (st (wipe Γ) Δ (just x) F₀) ρ ρ' R R' F F'
 le-wipe {Γ} (le f g l) = le f (λ { rax e → g rax (fj (Regs.ax Γ) e) ; rdi e → g rdi (fj (Regs.di Γ) e) ; rsi e → g rsi (fj (Regs.si Γ) e) }) l
   where
-  fj : ∀ m {τ} → wipeα m ≡ just τ → m ≡ just τ
+  fj : ∀ m {τ}
+    → wipeα m ≡ just τ
+    → m ≡ just τ
   fj (just (ty A)) e = e
   fj (just codeα) ()
   fj (just tupα) ()
   fj nothing ()
 
-le-rax : ∀ {Γ Δ O F₀ ρ ρ' R R' F F'} → Le (st Γ Δ O F₀) ρ ρ' R R' F F'
+le-rax : ∀ {Γ Δ O F₀ ρ ρ' R R' F F'}
+  → Le (st Γ Δ O F₀) ρ ρ' R R' F F'
   → Le (st (Γ [ rax ↦ nothing ]) Δ O false) ρ ρ' (R [ rax ≔ init ]) (R' [ rax ≔ init ]) init init
 le-rax (le f g l) = le f (λ { rax () ; rdi → g rdi ; rsi → g rsi }) (λ ())
 
-le-ret : ∀ {Δ ρ ρ' C C'} → (∀ {A} (x : Δ ∋ A) → ρ (idx x) ⊆ ρ' (idx x)) → C ⊆ C'
+le-ret : ∀ {Δ ρ ρ' C C'}
+  → (∀ {A} (x : Δ ∋ A) → ρ (idx x) ⊆ ρ' (idx x))
+  → C ⊆ C'
   → Le (returned Δ) ρ ρ' (called-regs C) (called-regs C') init init
 le-ret f C⊆ = le f (λ { rax _ → C⊆ ; rdi () ; rsi () }) (λ ())
 
-le-entry : ∀ {Δ ρ ρ'} → (∀ {A} (x : Δ ∋ A) → ρ (idx x) ⊆ ρ' (idx x)) → Le (entry Δ) ρ ρ' (λ _ → init) (λ _ → init) init init
+le-entry : ∀ {Δ ρ ρ'}
+  → (∀ {A} (x : Δ ∋ A) → ρ (idx x) ⊆ ρ' (idx x))
+  → Le (entry Δ) ρ ρ' (λ _ → init) (λ _ → init) init init
 le-entry f = le f (λ { rax () ; rdi () ; rsi () }) (λ ())
 
-let-mono : ∀ {D D' F F'} → D ⊆ D' → (∀ X → F X ⊆ F' X) → letᵗ D F ⊆ letᵗ D' F'
+let-mono : ∀ {D D' F F'}
+  → D ⊆ D'
+  → (∀ X → F X ⊆ F' X)
+  → letᵗ D F ⊆ letᵗ D' F'
 let-mono {F = F} {F'} D⊆ F⊆ = ≫=-mono {F = λ X → ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} {λ X → ⋆ ⟨ Λᵐ ⟨ F' , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} D⊆ λ X⊆ w → λ { ⟨ V , ⟨ ⟨ ⟨ w∈ , r ⟩ , n ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ →
   ⟨ V , ⟨ ⟨ ⟨ F⊆ _ w w∈ , r ⟩ , n ⟩ , ⟨ (λ d d∈ → X⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩ }
 
@@ -103,40 +122,58 @@ module _ {Σ : List ℕ} (T : Table) where
   BLe : ∀ {Bs} → BEnv Bs → BEnv Bs → Set₁
   BLe B B' = ∀ {Δ} (l : _ ∋ Δ) {ρ ρ'} → (∀ {A} (x : Δ ∋ A) → ρ (idx x) ⊆ ρ' (idx x)) → B l ρ ⊆ B' l ρ'
 
-  𝒪-mono : ∀ {ψ τ} (a : Arg Σ ψ τ) {ρ ρ' R R' F F'} → Le ψ ρ ρ' R R' F F' → 𝒪 T a ρ R ⊆ 𝒪 T a ρ' R'
+  𝒪-mono : ∀ {ψ τ} (a : Arg Σ ψ τ) {ρ ρ' R R' F F'}
+    → Le ψ ρ ρ' R R' F F'
+    → 𝒪 T a ρ R ⊆ 𝒪 T a ρ' R'
   𝒪-mono (atom (var x)) l = fr l x
   𝒪-mono (atom (lit B c)) l = λ _ z → z
   𝒪-mono (atom (ref f)) l = λ _ z → z
   𝒪-mono (reg r e) l = rg l r e
   𝒪-mono (a ↑) l = 𝒪-mono a l
 
-  𝒪s-mono : ∀ {ψ j} (as : Vec (Arg Σ ψ (ty Any)) j) {ρ ρ' R R' F F'} → Le ψ ρ ρ' R R' F F'
+  𝒪s-mono : ∀ {ψ j} (as : Vec (Arg Σ ψ (ty Any)) j) {ρ ρ' R R' F F'}
+    → Le ψ ρ ρ' R R' F F'
     → results-rel-pres _⊆_ (replicate j ■) (𝒪s T as ρ R) (𝒪s T as ρ' R')
   𝒪s-mono [] l = ptt
   𝒪s-mono (a ∷ᵛ as) l = ⟨ lift (𝒪-mono a l) , 𝒪s-mono as l ⟩
 
-  object-mono : ∀ {ψ A} (o : Obj Σ ψ A) {ρ ρ' R R' F F'} → Le ψ ρ ρ' R R' F F' → object T o ρ R ⊆ object T o ρ' R'
+  object-mono : ∀ {ψ A} (o : Obj Σ ψ A) {ρ ρ' R R' F F'}
+    → Le ψ ρ ρ' R R' F F'
+    → object T o ρ R ⊆ object T o ρ' R'
   object-mono (pair c e) l = binds-mono 2 ⟨ lift (𝒪-mono c l) , ⟨ lift (𝒪-mono e l) , ptt ⟩ ⟩ (λ Xs⊆ → lower (mono (pair-good {⊤}) _ _ Xs⊆))
   object-mono (tuple {m = m} as) l = binds-mono m {K = 𝒯 m} {𝒯 m} (𝒪s-mono as l) (λ Xs⊆ → lower (mono (𝒯-good {⊤} _) _ _ Xs⊆))
   object-mono (inl a) l = ≫=-mono {F = λ X → inlD ⟨ X , ptt ⟩} {λ X → inlD ⟨ X , ptt ⟩} (𝒪-mono a l) (λ X⊆ → lower (mono (inl-good {⊤}) _ _ ⟨ lift X⊆ , ptt ⟩))
   object-mono (inr a) l = ≫=-mono {F = λ X → inrD ⟨ X , ptt ⟩} {λ X → inrD ⟨ X , ptt ⟩} (𝒪-mono a l) (λ X⊆ → lower (mono (inr-good {⊤}) _ _ ⟨ lift X⊆ , ptt ⟩))
 
-  field-mono : ∀ {A B} (f : Field A B) {D D'} → D ⊆ D' → field′ {Σ} T f D ⊆ field′ {Σ} T f D'
+  field-mono : ∀ {A B} (f : Field A B) {D D'}
+    → D ⊆ D'
+    → field′ {Σ} T f D ⊆ field′ {Σ} T f D'
   field-mono (get i) D⊆ = ≫=-mono {F = λ X → projD i ⟨ X , ptt ⟩} {λ X → projD i ⟨ X , ptt ⟩} D⊆ (λ X⊆ d → X⊆ _)
   field-mono payload D⊆ = ≫=-mono {F = λ X → payloadD (X ⇂ ValPayload)} {λ X → payloadD (X ⇂ ValPayload)} D⊆ (λ X⊆ d → λ { (inj₁ l) → inj₁ (⇂-mono {P = ValPayload} X⊆ _ l) ; (inj₂ r) → inj₂ (⇂-mono {P = ValPayload} X⊆ _ r) })
 
-  put-mono : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {κ κ' : Kont} → (∀ {ρ ρ' R R' F F'} → Le ψ' ρ ρ' R R' F F' → κ ρ R F ⊆ κ' ρ' R' F')
-    → ∀ {ρ ρ' R R' F F' D D'} → Le ψ ρ ρ' R R' F F' → D ⊆ D' → put {Σ} T d D κ ρ R F ⊆ put {Σ} T d D' κ' ρ' R' F'
+  put-mono : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {κ κ' : Kont}
+    → (∀ {ρ ρ' R R' F F'} → Le ψ' ρ ρ' R R' F F' → κ ρ R F ⊆ κ' ρ' R' F')
+    → ∀ {ρ ρ' R R' F F' D D'}
+    → Le ψ ρ ρ' R R' F F'
+    → D ⊆ D'
+    → put {Σ} T d D κ ρ R F ⊆ put {Σ} T d D' κ' ρ' R' F'
   put-mono (reg r) k l D⊆ = k (le-reg r l D⊆)
   put-mono (slot p _) k l D⊆ = let-mono D⊆ (λ X → k (le-slot {X = X} {X} p l (λ _ z → z)))
 
-  putˢ-mono : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {κ κ' : Kont} → (∀ {ρ ρ' R R' F F'} → Le ψ' ρ ρ' R R' F F' → κ ρ R F ⊆ κ' ρ' R' F')
-    → ∀ {ρ ρ' R R' F F' D D'} → Le ψ ρ ρ' R R' F F' → D ⊆ D' → putˢ {Σ} T d D κ ρ R F ⊆ putˢ {Σ} T d D' κ' ρ' R' F'
+  putˢ-mono : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {κ κ' : Kont}
+    → (∀ {ρ ρ' R R' F F'} → Le ψ' ρ ρ' R R' F F' → κ ρ R F ⊆ κ' ρ' R' F')
+    → ∀ {ρ ρ' R R' F F' D D'}
+    → Le ψ ρ ρ' R R' F F'
+    → D ⊆ D'
+    → putˢ {Σ} T d D κ ρ R F ⊆ putˢ {Σ} T d D' κ' ρ' R' F'
   putˢ-mono (reg r) {κ} {κ'} k {ρ} {ρ'} {R} {R'} {F} {F'} {D} {D'} l D⊆ =
     ≫=-mono {F = λ _ → κ ρ (R [ r ≔ D ]) F} {λ _ → κ' ρ' (R' [ r ≔ D' ]) F'} D⊆ (λ _ → k (le-reg r l D⊆))
   putˢ-mono (slot p lt) = put-mono (slot p lt)
 
-  mono-seq : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {B B' : BEnv Bs} → BLe B B' → ∀ {ρ ρ' R R' F F'} → Le ψ ρ ρ' R R' F F'
+  mono-seq : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {B B' : BEnv Bs}
+    → BLe B B'
+    → ∀ {ρ ρ' R R' F F'}
+    → Le ψ ρ ρ' R R' F F'
     → ⟦_⟧ˢ T k B ρ R F ⊆ ⟦_⟧ˢ T k B' ρ' R' F'
   mono-seq (movq a d ∷ k) b l = put-mono d (mono-seq k b) l (𝒪-mono a l)
   mono-seq (subq a r e ∷ k) b l = mono-seq k b (le-reg r l (lower (mono (prim-good _) _ _ ⟨ lift (rg l r e) , ⟨ lift (𝒪-mono a l) , ptt ⟩ ⟩)))

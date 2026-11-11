@@ -57,7 +57,10 @@ bs ≼ bs' = Σ[ more ∈ List C.Tail ] bs' ≡ more ++ bs
 ≼-refl : ∀ {bs} → bs ≼ bs
 ≼-refl = ⟨ [] , refl ⟩
 
-≼-trans : ∀ {bs₁ bs₂ bs₃} → bs₁ ≼ bs₂ → bs₂ ≼ bs₃ → bs₁ ≼ bs₃
+≼-trans : ∀ {bs₁ bs₂ bs₃}
+  → bs₁ ≼ bs₂
+  → bs₂ ≼ bs₃
+  → bs₁ ≼ bs₃
 ≼-trans {bs₁} ⟨ m₁ , refl ⟩ ⟨ m₂ , refl ⟩ = ⟨ m₂ ++ m₁ , sym (++-assoc m₂ m₁ bs₁) ⟩
 
 ≼-∷ : ∀ {t bs} → bs ≼ t ∷ bs
@@ -79,14 +82,18 @@ grows-tail (case a x e₁ e₂) bs =
 module _ (T : Table) (n : ℕ) where
 
   {- the blocks of bs keep their labels among newer blocks -}
-  blocks-≼ : ∀ more bs l → l < length bs → blocks T n (more ++ bs) l ≡ blocks T n bs l
+  blocks-≼ : ∀ more bs l
+    → l < length bs
+    → blocks T n (more ++ bs) l ≡ blocks T n bs l
   blocks-≼ [] bs l l< = refl
   blocks-≼ (t ∷ more) bs l l< with l ≟ length (more ++ bs)
   ... | yes refl = ⊥-elim (<-irrefl refl (<-≤-trans l< (subst (length bs ≤_) (sym (length-++ more))
                                                              (m≤n+m (length bs) (length more)))))
   ... | no _ = blocks-≼ more bs l l<
 
-  blocks-at : ∀ {t bs bs''} → t ∷ bs ≼ bs'' → blocks T n bs'' (length bs) ≡ ⟪ t ⟫[ T ] n (blocks T n bs)
+  blocks-at : ∀ {t bs bs''}
+    → t ∷ bs ≼ bs''
+    → blocks T n bs'' (length bs) ≡ ⟪ t ⟫[ T ] n (blocks T n bs)
   blocks-at {t} {bs} ⟨ more , refl ⟩ = trans (blocks-≼ more (t ∷ bs) (length bs) (n<1+n _)) top
     where
     top : blocks T n (t ∷ bs) (length bs) ≡ ⟪ t ⟫[ T ] n (blocks T n bs)
@@ -94,11 +101,16 @@ module _ (T : Table) (n : ℕ) where
     ... | yes _ = refl
     ... | no ne = ⊥-elim (ne refl)
 
-at-σ : ∀ {F G : Store → 𝒫 Value} → F ≡ G → ∀ σ → F σ ≃ G σ
+at-σ : ∀ {F G : Store → 𝒫 Value}
+  → F ≡ G
+  → ∀ σ
+  → F σ ≃ G σ
 at-σ eq σ = ≃-reflexive (cong (λ f → f σ) eq)
 
 {- CFG and Imp check the slots alike -}
-checked-≃ : ∀ n {x D D'} → D ≃ D' → checked n x D ≃ checked n x D'
+checked-≃ : ∀ n {x D D'}
+  → D ≃ D'
+  → checked n x D ≃ checked n x D'
 checked-≃ n {x} eq with x <? n
 ... | yes _ = eq
 ... | no _ = ≃-refl
@@ -133,7 +145,10 @@ module Agreeing {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
   𝒮-≃ (prim p a b) σ = primD-≃ p (𝒜-≃ a σ) (𝒜-≃ b σ)
 
   {- a jump to the block that holds k means the same with newer blocks -}
-  goto-≃ : ∀ {k bs bs₁ bs''} → k ∷ bs ≼ bs₁ → bs₁ ≼ bs'' → ∀ σ
+  goto-≃ : ∀ {k bs bs₁ bs''}
+    → k ∷ bs ≼ bs₁
+    → bs₁ ≼ bs''
+    → ∀ σ
     → ⟪ C.goto (length bs) ⟫[ T ] n (B bs'') σ ≃ ⟪ C.goto (length bs) ⟫[ T ] n (B bs₁) σ
   goto-≃ e₁ e = at-σ (trans (blocks-at T n (≼-trans e₁ e)) (sym (blocks-at T n e₁)))
 
@@ -152,11 +167,15 @@ module Into (ℐ : I.Program → 𝒫 Value)
   compile-cfg-same M = Same-trans (compile-imp-same M) (≃→Same (≃-sym (explicate-correct (compile-imp M))))
 
   compile-cfg-correct-const : ∀ (M : ISWIM.AST) → ∀ {B} (c : base-rep B)
-    → (const c ∈ ⟦ M ⟧ᵢ ρ₀ → const c ∈ ⟦ compile-cfg M ⟧ₚ)
-    × (const c ∈ ⟦ compile-cfg M ⟧ₚ → const c ∈ ⟦ M ⟧ᵢ ρ₀)
+    → (  const c ∈ ⟦ M ⟧ᵢ ρ₀
+       → const c ∈ ⟦ compile-cfg M ⟧ₚ)
+    × (  const c ∈ ⟦ compile-cfg M ⟧ₚ
+       → const c ∈ ⟦ M ⟧ᵢ ρ₀)
   compile-cfg-correct-const M = proj₁ (compile-cfg-same M)
 
   compile-cfg-correct-nonempty : ∀ (M : ISWIM.AST)
-    → (nonempty (⟦ M ⟧ᵢ ρ₀) → nonempty ⟦ compile-cfg M ⟧ₚ)
-    × (nonempty ⟦ compile-cfg M ⟧ₚ → nonempty (⟦ M ⟧ᵢ ρ₀))
+    → (  nonempty (⟦ M ⟧ᵢ ρ₀)
+       → nonempty ⟦ compile-cfg M ⟧ₚ)
+    × (  nonempty ⟦ compile-cfg M ⟧ₚ
+       → nonempty (⟦ M ⟧ᵢ ρ₀))
   compile-cfg-correct-nonempty M = proj₂ (compile-cfg-same M)

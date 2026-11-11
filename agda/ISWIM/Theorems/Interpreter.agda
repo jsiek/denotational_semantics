@@ -86,11 +86,14 @@ import ISWIM.proof.Correctness.Interp.CompilerFuel as CompilerFuel
 {- Each pass ------------------------------------------------------------------}
 
 {- simplify, for closed programs (clock-monotone) -}
-simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+simplify-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (ISWIMᵢ.sem (simplify M))
 simplify-correct = SimplifyFuel.simplify-correct
 
-cast-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMᵢ.sem M) (ISWIMᵀᵢ.sem (cast-closed M))
+cast-correct : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (ISWIMᵀᵢ.sem (cast-closed M))
 cast-correct = CastFuel.cast-correct
 
 capture-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀᵢ.sem M) (Clos2ᵀᵢ.sem (capture M))
@@ -124,23 +127,28 @@ select-correct = SelectFuel.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
 
-compile-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem (compile M))
 compile-correct = CompilerFuel.compile-correct
 
-compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-mon-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem ⌜ compile-mon M ⌝ₚ)
 compile-mon-correct = CompilerFuel.compile-mon-correct
 
-compile-imp-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-imp-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (Impᵀᵢ.sem (compile-imp M))
 compile-imp-correct = CompilerFuel.compile-imp-correct
 
-compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-cfg-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (CFGᵀᵢ.sem (compile-cfg M))
 compile-cfg-correct = CompilerFuel.compile-cfg-correct
 
-compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-x86-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵢ.sem M) (X86ᵀᵢ.sem (compile-x86 M))
 compile-x86-correct = CompilerFuel.compile-x86-correct
 
@@ -149,18 +157,23 @@ compile-x86-correct = CompilerFuel.compile-x86-correct
    does, errors exactly when it does, and diverges exactly when it
    does -}
 
-compile-const : ∀ (M : ISWIM.AST) → Closed M → ∀ B k
+compile-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ B k
   → Terminates (ISWIMᵢ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵀᵢ.sem (compile M)) (o-const B k)
 compile-const = CompilerFuel.compile-const
 
-compile-converges : ∀ (M : ISWIM.AST) → Closed M
+compile-converges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Converges (Terminates (ISWIMᵢ.sem M)) ⇔ Converges (Terminates (Clos5ᵀᵢ.sem (compile M)))
 compile-converges = CompilerFuel.compile-converges
 
-compile-error : ∀ (M : ISWIM.AST) → Closed M
+compile-error : ∀ (M : ISWIM.AST)
+  → Closed M
   → Terminates (ISWIMᵢ.sem M) o-error ⇔ Terminates (Clos5ᵀᵢ.sem (compile M)) o-error
 compile-error = CompilerFuel.compile-error
 
-compile-diverges : ∀ (M : ISWIM.AST) → Closed M
+compile-diverges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Diverges (ISWIMᵢ.sem M) ⇔ Diverges (Clos5ᵀᵢ.sem (compile M))
 compile-diverges = CompilerFuel.compile-diverges

@@ -60,16 +60,23 @@ data _≼_ (bs : List Tail) : List Tail → Set where
   here : bs ≼ bs
   there : ∀ {t bs'} → bs ≼ bs' → bs ≼ t ∷ bs'
 
-≼-trans : ∀ {as bs cs} → as ≼ bs → bs ≼ cs → as ≼ cs
+≼-trans : ∀ {as bs cs}
+  → as ≼ bs
+  → bs ≼ cs
+  → as ≼ cs
 ≼-trans p here = p
 ≼-trans p (there q) = there (≼-trans p q)
 
-≼-len : ∀ {bs bs'} → bs ≼ bs' → length bs ≤ length bs'
+≼-len : ∀ {bs bs'}
+  → bs ≼ bs'
+  → length bs ≤ length bs'
 ≼-len here = ≤-refl
 ≼-len (there p) = m≤n⇒m≤1+n (≼-len p)
 
 {- a block keeps its label, and its older blocks, among newer blocks -}
-block-≼ : ∀ {t bs bs'} → t ∷ bs ≼ bs' → block bs' (length bs) ≡ just (t , bs)
+block-≼ : ∀ {t bs bs'}
+  → t ∷ bs ≼ bs'
+  → block bs' (length bs) ≡ just (t , bs)
 block-≼ {bs = bs} here with length bs ≟ length bs
 ... | yes _ = refl
 ... | no ne = ⊥-elim (ne refl)
@@ -154,39 +161,49 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
 
   {- the tail k, run after the assignment to x, runs the rest of the
      assignment, after the jumps to join points -}
-  join : Ctl bs κ₁ (asgM x k) κ₂ → bs ≼ bs'
+  join : Ctl bs κ₁ (asgM x k) κ₂
+    → bs ≼ bs'
     → Σ[ e ∈ Exp ] Σ[ κ ∈ I.Cont ] κ₁ ≡ I.assignK x e κ
-       × (∀ φ → Reach L₂ (Match (depth e)) (I.eval e φ κ) (G.exec k φ bs' κ₂))
+        × (∀ φ → Reach L₂ (Match (depth e)) (I.eval e φ κ) (G.exec k φ bs' κ₂))
   join (asg c p) q = _ , _ , refl , λ φ → _ , ε , exec~ c (≼-trans p q)
   join (jmp c p) q with join c here
   ... | e , κ , refl , j = e , κ , refl , λ φ → let (s₂ , σ , m) = j φ in
     s₂ , cong (λ b → G.jump (just φ) b _) (block-≼ (≼-trans p q)) ◅ σ , m
 
-  branch : ∀ {mφ bs} → G.step ds₂ s₂ ≡ G.jump mφ (just (k , bs)) κ₂
+  branch : ∀ {mφ bs}
+    → G.step ds₂ s₂ ≡ G.jump mφ (just (k , bs)) κ₂
     → (∀ φ → Reach L₂ (Match (depth e)) (I.eval e φ κ₁) (G.exec k φ bs κ₂))
     → Ans i (I.goto mφ e κ₁) s₂
   branch {mφ = nothing} st j = stops st
   branch {mφ = just φ} st j = after≺ st (j φ)
 
-  branch-br : ∀ {mφ l} → Br κ₁ e κ₂ bs l → G.step ds₂ s₂ ≡ G.jump mφ (block bs l) κ₂
+  branch-br : ∀ {mφ l}
+    → Br κ₁ e κ₂ bs l
+    → G.step ds₂ s₂ ≡ G.jump mφ (block bs l) κ₂
     → Ans i (I.goto mφ e κ₁) s₂
   branch-br (br c eq) st = branch (trans st (cong (λ b → G.jump _ b _) eq)) λ φ → _ , ε , exec~ c here
 
   glob : ∀ n → G.global ds₂ n ≡ mmap explicate-body (Imp.global ds n)
   glob = reverse-map-‼ explicate-body ds
 
-  call-ans : ∀ mb {u w} → κ₁ ≈ κ₂ → G.step ds₂ s₂ ≡ G.call (mmap explicate-body mb) u w φ κ₂
+  call-ans : ∀ mb {u w}
+    → κ₁ ≈ κ₂
+    → G.step ds₂ s₂ ≡ G.call (mmap explicate-body mb) u w φ κ₂
     → Ans i (I.call mb u w φ κ₁) s₂
   call-ans nothing r st = stops st
   call-ans (just (body n e)) r st = steps₁≺ st (exec~ {m = tailM} (tl (callK r)) here)
 
-  res-ans : κ₁ ≈ κ₂ → ∀ r → G.step ds₂ s₂ ≡ G.res ds₂ r φ κ₂ → Ans i (I.res ds r φ κ₁) s₂
+  res-ans : κ₁ ≈ κ₂
+    → ∀ r
+    → G.step ds₂ s₂ ≡ G.res ds₂ r φ κ₂
+    → Ans i (I.res ds r φ κ₁) s₂
   res-ans r (I.operand a f) st = steps₁≺ st (eval~ (frm f r))
   res-ans r (I.value (just v)) st = steps₁≺ st (ret~ r)
   res-ans r (I.value nothing) st = stops st
   res-ans r (I.apply n u w) st = call-ans (Imp.global ds n) r (trans st (cong (λ mb → G.call mb u w _ _) (glob n)))
 
-  sim : Match i s₁ s₂ → Ans i (I.step ds s₁) s₂
+  sim : Match i s₁ s₂
+    → Ans i (I.step ds s₁) s₂
   sim (exec~ {e = simple s} (tl r) p) = res-ans r (I.first _ s) refl
   sim (exec~ {m = asgM x k} {e = simple s} c p) = res-ans (seqK c p) (I.first _ s) refl
   sim (exec~ {m = tailM} {e = assign y e₁ e₂} c p) = stutters ≤-refl (exec~ (asg c here) p)

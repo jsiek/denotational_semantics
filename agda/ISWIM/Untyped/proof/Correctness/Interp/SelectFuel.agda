@@ -60,7 +60,8 @@ eq-bool : ∀ o₁ o₂ {n} → δ? eq o₁ o₂ ≢ just (int n)
 eq-bool (o-const Int n) (o-const Int m) ()
 
 {- prim? eq, then k; cmpq, then g -}
-cmp-ok : ∀ v w {k : Val → Result A} {g} → (∀ b → k (out (bool b)) ≡ g b)
+cmp-ok : ∀ v w {k : Val → Result A} {g}
+  → (∀ b → k (out (bool b)) ≡ g b)
   → (from-maybe (prim? eq v w) >>= k) ≡ (from-maybe (δ? eq (obs v) (obs w)) >>= λ o → bool? o >>= g)
 cmp-ok v w h with δ? eq (obs v) (obs w) in e
 ... | nothing = refl
@@ -68,7 +69,8 @@ cmp-ok v w h with δ? eq (obs v) (obs w) in e
 ... | just (int n) = ⊥-elim (eq-bool _ _ e)
 
 {- atom a, then f and k in CFG, and g in X86 -}
-atm-ok : ∀ a φ ρ {f : Val → Result Val} {k : Val → Result A} {g} → (∀ v → (f v >>= k) ≡ g v)
+atm-ok : ∀ a φ ρ {f : Val → Result Val} {k : Val → Result A} {g}
+  → (∀ v → (f v >>= k) ≡ g v)
   → ((atom φ a >>= f) >>= k) ≡ (arg (φ , ρ) (select-atm a) >>= g)
 atm-ok (var x) φ ρ h with φ ‼ x
 ... | just v = h v
@@ -76,7 +78,9 @@ atm-ok (var x) φ ρ h with φ ‼ x
 atm-ok (lit B k) φ ρ h = h _
 atm-ok (fun-ref k) φ ρ h = h _
 
-error-ok : ∀ a φ ρ {g : Val → Result A} → (∀ v → g v ≡ error) → (arg (φ , ρ) (select-atm a) >>= g) ≡ error
+error-ok : ∀ a φ ρ {g : Val → Result A}
+  → (∀ v → g v ≡ error)
+  → (arg (φ , ρ) (select-atm a) >>= g) ≡ error
 error-ok (var x) φ ρ h with φ ‼ x
 ... | just v = h v
 ... | nothing = refl
@@ -84,7 +88,8 @@ error-ok (lit B k) φ ρ h = h _
 error-ok (fun-ref k) φ ρ h = h _
 
 {- the atoms as, onto us -}
-atoms-ok : ∀ as φ ρ us {k : Val → Result A} {g} → (∀ vs → k (tup (reverse vs)) ≡ g vs)
+atoms-ok : ∀ as φ ρ us {k : Val → Result A} {g}
+  → (∀ vs → k (tup (reverse vs)) ≡ g vs)
   → ((atoms φ us as >>= λ vs → ret (tup (reverse vs))) >>= k) ≡ args (φ , ρ) us (map select-atm as) g
 atoms-ok [] φ ρ us h = h us
 atoms-ok (var x ∷ as) φ ρ us h with φ ‼ x
@@ -172,7 +177,10 @@ module _ (ds : List CFG.Body) where
   code-pw (inr _) = M.nothing
 
   calls≡ : ∀ ck f e w → G.call ds ck (G.code? ds f) e w ≡ X.call ds' ck (X.code? ds' f) e w
-  call-pw : ∀ ck {mb mb'} → M.Pointwise Def mb mb' → ∀ e w → G.call ds ck mb e w ≡ X.call ds' ck mb' e w
+  call-pw : ∀ ck {mb mb'}
+    → M.Pointwise Def mb mb'
+    → ∀ e w
+    → G.call ds ck mb e w ≡ X.call ds' ck mb' e w
 
   calls≡ ck f = call-pw ck (code-pw f)
 
@@ -188,5 +196,7 @@ select-correct (CFG.program ds (CFG.body n bs t)) = clocked-≡ λ ck →
 
 {- The whole compiler, into X86 ---------------------------------------------------}
 
-compile-x86-correct : ∀ M → Closed M → Equivalent (ISWIM.sem M) (X.sem (compile-x86 M))
+compile-x86-correct : ∀ M
+  → Closed M
+  → Equivalent (ISWIM.sem M) (X.sem (compile-x86 M))
 compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct (compile-cfg M))

@@ -47,13 +47,17 @@ atms-e : ∀ {Σ Δ m Γ O F} (as : Vec (Atm Σ Δ Any) m)
 atms-e [] = refl
 atms-e (a ∷ as) = cong (U.select-atm a ∷_) (atms-e as)
 
-block≡ : ∀ {xs ys : List L.Instr} {b b' : L.Block} → xs ≡ ys → b ≡ b'
+block≡ : ∀ {xs ys : List L.Instr} {b b' : L.Block}
+  → xs ≡ ys
+  → b ≡ b'
   → L.block (xs ++ L.Block.instrs b) (L.Block.jump b) ≡ L.block (ys ++ L.Block.instrs b') (L.Block.jump b')
 block≡ refl refl = refl
 
 sel-e : ∀ {Σ n Bs Δ A Δ''} (s : I.Simple Σ Δ A) (o : Out n Δ A Δ'') (k : ∀ {Γ O F} → Seq Σ n Bs (T.after o Γ O F))
-  (b : L.Block) → (∀ {Γ O F} → eSeq (k {Γ} {O} {F}) ≡ b)
-  → ∀ {Γ O F} → eSeq (T.sel s o k {Γ} {O} {F}) ≡ L.block (U.select-simple s (out o) ++ L.Block.instrs b) (L.Block.jump b)
+    (b : L.Block)
+  → (∀ {Γ O F} → eSeq (k {Γ} {O} {F}) ≡ b)
+  → ∀ {Γ O F}
+  → eSeq (T.sel s o k {Γ} {O} {F}) ≡ L.block (U.select-simple s (out o) ++ L.Block.instrs b) (L.Block.jump b)
 sel-e (I.atm a) o k b hk = block≡ (cong (λ d → L.movq (U.select-atm a) d ∷ []) (dst-e o)) hk
 sel-e (I.pack c e) o k b hk = block≡ (cong (λ d → L.alloc L.pair (U.select-atm c ∷ U.select-atm e ∷ []) d ∷ []) (dst-e o)) hk
 sel-e {Δ = Δ} (I.callc (I.var x) a) o k b hk =
@@ -84,18 +88,27 @@ bdepth-e : ∀ {Σ Bs} (bs : C.Blocks Σ Bs) → T.blocks-depth bs ≡ U.blocks-
 bdepth-e C.[] = refl
 bdepth-e (bs ▷ t) = cong₂ _⊔_ (depth-e t) (bdepth-e bs)
 
-tail-e : ∀ {Σ n Bs Δ} (t : Tail Σ Bs Δ) .(le : T.depth t Data.Nat.≤ n) {Γ O F} → eSeq (T.tail t le {Γ} {O} {F}) ≡ U.select-tail t
+tail-e : ∀ {Σ n Bs Δ} (t : Tail Σ Bs Δ)
+  → .(le : T.depth t Data.Nat.≤ n)
+  → ∀ {Γ O F}
+  → eSeq (T.tail t le {Γ} {O} {F}) ≡ U.select-tail t
 tail-e (return s) le =
   trans (sel-e s ret (retq refl) (L.block [] L.retq) refl) (cong (λ is → L.block is L.retq) (++-identityʳ _))
 tail-e (seq p s t) le = sel-e s (to p _) (T.tail t _) (U.select-tail t) (tail-e t _)
 tail-e (goto l) le = refl
 tail-e (case a p l₁ l₂) le = refl
 
-blocks-e : ∀ {Σ n Bs} (bs : C.Blocks Σ Bs) .(le : T.blocks-depth bs Data.Nat.≤ n) → eBlocks (T.blocks bs le) ≡ U.select-blocks bs
+blocks-e : ∀ {Σ n Bs} (bs : C.Blocks Σ Bs)
+  → .(le : T.blocks-depth bs Data.Nat.≤ n)
+  → eBlocks (T.blocks bs le) ≡ U.select-blocks bs
 blocks-e C.[] le = refl
 blocks-e (bs ▷ t) le = cong₂ _∷_ (tail-e t _) (blocks-e bs _)
 
-body≡ : ∀ {n n' bs bs'} {b b' : L.Block} → n ≡ n' → bs ≡ bs' → b ≡ b' → L.body n bs b ≡ L.body n' bs' b'
+body≡ : ∀ {n n' bs bs'} {b b' : L.Block}
+  → n ≡ n'
+  → bs ≡ bs'
+  → b ≡ b'
+  → L.body n bs b ≡ L.body n' bs' b'
 body≡ refl refl refl = refl
 
 main-e : ∀ {Σ} (b : C.Body Σ []) → eBody (T.main-body b) ≡ U.select-body [] b

@@ -64,7 +64,9 @@ module ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCorrect where
 Out : ℕ → Env Value → 𝒫 Value × Store → Set
 Out d ρ r = nonempty (proj₁ r) → Agree d (proj₂ r) ρ
 
-out-case : ∀ {d ρ A E₁ E₂} → (∀ X → Out d ρ (E₁ X)) → (∀ X → Out d ρ (E₂ X))
+out-case : ∀ {d ρ A E₁ E₂}
+  → (∀ X → Out d ρ (E₁ X))
+  → (∀ X → Out d ρ (E₂ X))
   → Out d ρ (caseₛ A E₁ E₂)
 out-case R₁ R₂ ne = agree λ x x<d → ⟨
     (λ { u (inj₁ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ ⟨ u∈ , ne' ⟩ , _ ⟩ ⟩ ⟩ ⟩) → proj₁ (at (R₁ _ ne') x x<d) u u∈
@@ -74,7 +76,9 @@ out-case R₁ R₂ ne = agree λ x x<d → ⟨
           ; ⟨ w , inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩ ⟩ u u∈ →
             inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ ⟨ proj₂ (at (R₂ _ ⟨ w , w∈ ⟩) x x<d) u u∈ , ⟨ w , w∈ ⟩ ⟩ , c ⟩ ⟩ ⟩ ⟩ }) ⟩
 
-out-let : ∀ {d ρ D E} → (nonempty D → ∀ X → Out d ρ (E X)) → Out d ρ (letₛ D E)
+out-let : ∀ {d ρ D E}
+  → (nonempty D → ∀ X → Out d ρ (E X))
+  → Out d ρ (letₛ D E)
 out-let R ⟨ w , ⟨ V , ⟨ ⟨ w∈ , V≢ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ ⟩ = agree λ x x<d →
   ⟨ (λ { u ⟨ U , ⟨ ⟨ ⟨ u∈ , ne' ⟩ , _ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ →
          proj₁ (at (R (ne-mem neU U⊆) (mem U) ne') x x<d) u u∈ })
@@ -82,7 +86,11 @@ out-let R ⟨ w , ⟨ V , ⟨ ⟨ w∈ , V≢ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ �
                     , ⟨ V⊆ , ne ⟩ ⟩ ⟩) ⟩
 
 {- ⋆ ⟨ F , D ⟩ has a value only if D does -}
-⋆-strict : ∀ {F D E} → D ⊆ E → ∀ w → w ∈ ⋆ ⟨ F , ⟨ D , ptt ⟩ ⟩ → nonempty E
+⋆-strict : ∀ {F D E}
+  → D ⊆ E
+  → ∀ w
+  → w ∈ ⋆ ⟨ F , ⟨ D , ptt ⟩ ⟩
+  → nonempty E
 ⋆-strict D⊆ w ⟨ V , ⟨ _ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne (λ u u∈ → D⊆ u (V⊆ u u∈))
 
 {- The pass preserves meanings ----------------------------------------------------}
@@ -92,7 +100,12 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
   open AtomsSame TT
 
   {- lift at depth d: the meaning, and a store that still agrees with ρ -}
-  lift-sem : ∀ {M} (m : Mon M) {n d σ ρ} → d + height m ≤ n → Scope d ρ → Agree d σ ρ
+  lift-sem : ∀ {M}
+    → (m : Mon M)
+    → ∀ {n d σ ρ}
+    → d + height m ≤ n
+    → Scope d ρ
+    → Agree d σ ρ
     → proj₁ (ℐ⟦ lift n d m ⟧[ T ] n σ) ≃ ⟦ M ⟧[ T' ] ρ × Out d ρ (ℐ⟦ lift n d m ⟧[ T ] n σ)
   lift-sem (atom a) H O A = ⟨ atom-≃ a H O A , (λ _ → A) ⟩
   lift-sem (app (a ∷ b ∷ c ∷ [])) H O A =
@@ -148,7 +161,9 @@ table-lift {N ∷ Ns} (m ∷ ms) k with k ≟ length (lift-defs ms) | k ≟ leng
 ... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-lift-defs ms)))
 ... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-lift-defs ms))))
 
-lift-program-correct : ∀ P (mp : MonProgram P) → ℐ⟦ lift-program P mp ⟧ₚ ≃ ⟦ P ⟧ₚ
+lift-program-correct : ∀ P
+  → (mp : MonProgram P)
+  → ℐ⟦ lift-program P mp ⟧ₚ ≃ ⟦ P ⟧ₚ
 lift-program-correct (program ds M) ⟨ ms , m ⟩ =
   proj₁ (lift-sem (table-lift ms) m ≤-refl (λ x _ → ≃-refl) (agree λ x ()))
 

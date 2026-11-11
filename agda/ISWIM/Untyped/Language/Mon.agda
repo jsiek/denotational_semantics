@@ -51,17 +51,22 @@ MonProgram : Program → Set
 MonProgram (program ds M) = All Mon ds × Mon M
 
 {- renaming variables preserves monadic normal form -}
-atom-rename : ∀ r {M} → Atom M → Atom (rename r M)
+atom-rename : ∀ r {M}
+  → Atom M
+  → Atom (rename r M)
 atom-rename r (var x) = var (r x)
 atom-rename r (lit B k) = lit B k
 atom-rename r (ref k) = ref k
 
-atoms-rename : ∀ r {n} {Ms : Args (replicate n ■)} → Atoms Ms
+atoms-rename : ∀ r {n} {Ms : Args (replicate n ■)}
+  → Atoms Ms
   → Atoms (rename-args r Ms)
 atoms-rename r [] = []
 atoms-rename r (a ∷ as) = atom-rename r a ∷ atoms-rename r as
 
-mon-rename : ∀ r {M} → Mon M → Mon (rename r M)
+mon-rename : ∀ r {M}
+  → Mon M
+  → Mon (rename r M)
 mon-rename r (atom a) = atom (atom-rename r a)
 mon-rename r (app as) = app (atoms-rename r as)
 mon-rename r (pair as) = pair (atoms-rename r as)

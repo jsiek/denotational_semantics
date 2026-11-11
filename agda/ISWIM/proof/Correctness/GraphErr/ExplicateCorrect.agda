@@ -45,11 +45,21 @@ data Ext {Σ} : ∀ {Bs Bs'} → Bs ⊑ Bs' → Blocks Σ Bs → Blocks Σ Bs' �
   ext-here : ∀ {Bs} {bs : Blocks Σ Bs} → Ext here⊑ bs bs
   ext-there : ∀ {Bs Bs' Δ} {g : Bs ⊑ Bs'} {bs bs'} {t : Tail Σ Bs' Δ} → Ext g bs bs' → Ext (there⊑ g) bs (bs' ▷ t)
 
-ext-trans : ∀ {Σ B₁ B₂ B₃} {g : B₁ ⊑ B₂} {g' : B₂ ⊑ B₃} {b₁ : Blocks Σ B₁} {b₂ b₃} → Ext g b₁ b₂ → Ext g' b₂ b₃ → Ext (⊑-trans g g') b₁ b₃
+ext-trans : ∀ {Σ B₁ B₂ B₃}
+  → {g : B₁ ⊑ B₂}
+  → {g' : B₂ ⊑ B₃}
+  → ∀ {b₁ : Blocks Σ B₁} {b₂ b₃}
+  → Ext g b₁ b₂
+  → Ext g' b₂ b₃
+  → Ext (⊑-trans g g') b₁ b₃
 ext-trans e ext-here = e
 ext-trans e (ext-there e') = ext-there (ext-trans e e')
 
-blocks-ext : ∀ {Σ Bs Bs'} {g : Bs ⊑ Bs'} {bs : Blocks Σ Bs} {bs'} → Ext g bs bs' → ∀ {Δ} (l : Bs ∋ Δ) T ρ
+blocks-ext : ∀ {Σ Bs Bs'}
+  → {g : Bs ⊑ Bs'}
+  → ∀ {bs : Blocks Σ Bs} {bs'}
+  → Ext g bs bs'
+  → ∀ {Δ} (l : Bs ∋ Δ) T ρ
   → blocks bs' T (⊑-∋ g l) ρ ≡ blocks bs T l ρ
 blocks-ext ext-here l T ρ = refl
 blocks-ext (ext-there e) l T ρ = blocks-ext e l T ρ
@@ -75,7 +85,10 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
   TAIL e bs = let o = explicate-tail e bs in
     Ext (Out.grows o) bs (Out.made o) × (∀ ρ → ⟦ e ⟧ᴷ T ρ (λ D → D) ≃ ⟦ Out.tail o ⟧ᵗ T' (blocks (Out.made o) T') ρ)
 
-  cps : ∀ {Σ Bs Δ Δ' A} (e : I.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ Bs (A ∷ Δ')) bs → CPS e p k bs
+  cps : ∀ {Σ Bs Δ Δ' A} (e : I.Exp Σ Δ A)
+    → (p : Δ' ⊑ Δ)
+    → ∀ (k : Tail Σ Bs (A ∷ Δ')) bs
+    → CPS e p k bs
   cps (I.simple s) p k bs = ⟨ ext-here , (λ ρ κ h → ≃-trans (h _) (letᵗ-≃ {F = λ X → ⟦ k ⟧ᵗ T' (blocks bs T') (X • drop p ρ)} {λ X → ⟦ k ⟧ᵗ T' (blocks bs T') (X • drop p ρ)}
                                               (𝒮-≃ s ρ) (λ _ _ _ _ → ≃-refl))) ⟩
   cps (I.assign e₁ e₂) p k bs with explicate-assign e₂ (there⊑ p) k bs | cps e₂ (there⊑ p) k bs

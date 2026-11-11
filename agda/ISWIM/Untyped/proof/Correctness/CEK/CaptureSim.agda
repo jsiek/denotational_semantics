@@ -99,8 +99,12 @@ data _~_ : S.State → T.State → Set where
   ret~ : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.ret v κ₁ ~ T.ret w κ₂
 
 {- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
+obs≈ : ∀ {v w}
+  → v ≈ w
+  → S.obs v ≡ T.obs w
+obs≈-list : ∀ {vs ws}
+  → Pointwise _≈_ vs ws
+  → S.obs-list vs ≡ T.obs-list ws
 obs≈ (clo≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -110,7 +114,10 @@ obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+  → v₁ ≈ w₁
+  → v₂ ≈ w₂
+  → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
 prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
@@ -119,19 +126,31 @@ prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p
 
 {- Agreement of environments ---------------------------------------------------}
 
-lookup : ∀ {M k ρ₁ ρ₂} → Agree M k ρ₁ ρ₂ → ∀ x → Uses (k + x) M → Lookup x ρ₁ ρ₂
+lookup : ∀ {M k ρ₁ ρ₂}
+  → Agree M k ρ₁ ρ₂
+  → ∀ x
+  → Uses (k + x) M
+  → Lookup x ρ₁ ρ₂
 lookup (agree look _) = look
 
-agree-ext : ∀ {M ρ₁ ρ₂ v w} → v ≈ w → Agree M 1 ρ₁ ρ₂ → Agree M 0 (v ∷ ρ₁) (w ∷ ρ₂)
+agree-ext : ∀ {M ρ₁ ρ₂ v w}
+  → v ≈ w
+  → Agree M 1 ρ₁ ρ₂
+  → Agree M 0 (v ∷ ρ₁) (w ∷ ρ₂)
 agree-ext {M} {ρ₁} {ρ₂} {v} {w} r (agree look b) = agree look' b
   where
-  look' : ∀ x → Uses x M → Lookup x (v ∷ ρ₁) (w ∷ ρ₂)
+  look' : ∀ x
+    → Uses x M
+    → Lookup x (v ∷ ρ₁) (w ∷ ρ₂)
   look' zero _ = v , w , refl , refl , r
   look' (suc x) u = look x u
 
 {- a subterm M' of M, under k binders -}
-agree-sub : ∀ {k M M' ρ₁ ρ₂} → (∀ x → Uses (k + x) M' → Uses x M)
-  → bound M' ≤ k + bound M → Agree M 0 ρ₁ ρ₂ → Agree M' k ρ₁ ρ₂
+agree-sub : ∀ {k M M' ρ₁ ρ₂}
+  → (∀ x → Uses (k + x) M' → Uses x M)
+  → bound M' ≤ k + bound M
+  → Agree M 0 ρ₁ ρ₂
+  → Agree M' k ρ₁ ρ₂
 agree-sub {k} sub b (agree look b₀) = agree (λ x u → look x (sub x u)) (≤-trans b (+-monoʳ-≤ k b₀))
 
 ⊔-left : ∀ {m n} → m ≤ m ⊔ n
@@ -142,7 +161,8 @@ agree-sub {k} sub b (agree look b₀) = agree (λ x u → look x (sub x u)) (≤
 
 
 agree-args : ∀ {n ρ₁ ρ₂} (args : Args (replicate n ■))
-  → (∀ x → UsesArgs x args → Lookup x ρ₁ ρ₂) → bound-args args ≤ length ρ₂
+  → (∀ x → UsesArgs x args → Lookup x ρ₁ ρ₂)
+  → bound-args args ≤ length ρ₂
   → All (λ M → Agree M 0 ρ₁ ρ₂) (args→list args)
 agree-args {zero} Nil look b = []
 agree-args {suc n} (M ,, args) look b =
@@ -159,17 +179,22 @@ module _ (P : C.AST) where
 
   L₂ = T.sem P
 
-  lookup-pw : ∀ x ρ₁ ρ₂ → Lookup x ρ₁ ρ₂ → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ x)
+  lookup-pw : ∀ x ρ₁ ρ₂
+    → Lookup x ρ₁ ρ₂
+    → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ x)
   lookup-pw x ρ₁ ρ₂ (v , w , e₁ , e₂ , r) rewrite e₁ | e₂ = M.just r
 
-  tuple-next~ : ∀ {vs ws Ms ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
-    → All (λ M → Agree M 0 ρ₁ ρ₂) Ms → κ₁ ≈k κ₂
+  tuple-next~ : ∀ {vs ws Ms ρ₁ ρ₂ κ₁ κ₂}
+    → Pointwise _≈_ vs ws
+    → All (λ M → Agree M 0 ρ₁ ρ₂) Ms
+    → κ₁ ≈k κ₂
     → S.tuple-next vs Ms ρ₁ κ₁ ~ T.tuple-next ws (map capture Ms) ρ₂ κ₂
   tuple-next~ rs [] κ = ret~ (tup≈ (reverse⁺ rs)) κ
   tuple-next~ rs (ag ∷ ags) κ = eval~ ag (tupK rs ags κ)
 
   {- evaluating the captured variables ` (j - 1) , ... , ` 0 -}
-  capture-fvs : ∀ j {N vs ρ κ} → j ≤ length ρ
+  capture-fvs : ∀ j {N vs ρ κ}
+    → j ≤ length ρ
     → Σ[ vs' ∈ List T.Val ]
         Star L₂ (T.clos-next N vs (args→list (fv-vars j)) ρ κ) (T.ret (T.clos N vs') κ)
         × length vs' ≡ j + length vs
@@ -182,7 +207,9 @@ module _ (P : C.AST) where
     vs' , cong (λ mv → T.ret? mv (T.closK N vs (args→list (fv-vars j)) ρ κ)) eq ◅ refl ◅ σ , trans len (+-suc j _) , pre' , suf'
     where
 
-    pre' : ∀ x → x < suc j → vs' ‼ x ≡ ρ ‼ x
+    pre' : ∀ x
+      → x < suc j
+      → vs' ‼ x ≡ ρ ‼ x
     pre' x x< with m≤n⇒m<n∨m≡n (≤-pred x<)
     ... | inj₁ x<j = pre x x<j
     ... | inj₂ refl = trans (subst (λ y → vs' ‼ y ≡ just v) (+-identityʳ x) (suf 0)) (sym eq)
@@ -190,7 +217,9 @@ module _ (P : C.AST) where
     suf' : ∀ x → vs' ‼ (suc j + x) ≡ vs ‼ x
     suf' x = trans (cong (vs' ‼_) (sym (+-suc j x))) (suf (suc x))
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (S.step s₁) s₂
   sim (eval~ {M = ` x} {ρ₁} {ρ₂} ag κ) = next?-answers (lookup-pw x ρ₁ ρ₂ (lookup ag x refl)) (λ r → ret~ r κ) refl
   sim (eval~ {M = lam ⦅ ⟩ N ,, Nil ⦆} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree look b) κ)
     with capture-fvs (bound N ∸ 1) {T.body m (bind-n-ast m (capture N))} {[]} {ρ₂} {κ₂}
@@ -202,7 +231,9 @@ module _ (P : C.AST) where
                  (sym (body-bind (bound N ∸ 1) (capture N)))
                  (ret~ (clo≈ (agree look' b')) κ))
     where
-    look' : ∀ x → Uses (suc x) N → Lookup x ρ₁ vs'
+    look' : ∀ x
+      → Uses (suc x) N
+      → Lookup x ρ₁ vs'
     look' x u with look x (inj₁ u)
     ... | v , w , e₁ , e₂ , r =
       v , w , e₁ , trans (pre x (<-∸1 (uses-bound (suc x) N u))) e₂ , r
@@ -270,14 +301,20 @@ module _ (P : C.AST) where
 
 {- The end theorem -------------------------------------------------------------}
 
-agree-closed : ∀ M → Closed M → Agree M 0 [] []
+agree-closed : ∀ M
+  → Closed M
+  → Agree M 0 [] []
 agree-closed M c = agree (λ x u → ⊥-elim (x<0 (subst (x <_) c (uses-bound x M u)))) (subst (_≤ 0) (sym c) z≤n)
   where x<0 : ∀ {x} → x < 0 → ⊥
         x<0 ()
 
-capture-fsim : ∀ M → Closed M → FSim (S.sem M) (T.sem (capture M))
+capture-fsim : ∀ M
+  → Closed M
+  → FSim (S.sem M) (T.sem (capture M))
 capture-fsim M c =
   plus-simulation _~_ (eval~ (agree-closed M c) halt) (sim (capture M))
 
-capture-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (capture M))
+capture-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (T.sem (capture M))
 capture-correct M c = equivalent (capture-fsim M c)

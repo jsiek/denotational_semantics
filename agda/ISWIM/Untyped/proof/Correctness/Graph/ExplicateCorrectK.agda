@@ -61,7 +61,10 @@ module _ (n : ℕ) where
   assignK : ℕ → (Store → 𝒫 Value) → Kont
   assignK x K D σ = checked n x (⋆ ⟨ Λ ⟨ (λ X → K (σ [ x ↦ X ])) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
 
-  assignK-≃ : ∀ {x} {K K' : Store → 𝒫 Value} {D D' σ} → (∀ σ' → K σ' ≃ K' σ') → D ≃ D' → assignK x K D σ ≃ assignK x K' D' σ
+  assignK-≃ : ∀ {x} {K K' : Store → 𝒫 Value} {D D' σ}
+    → (∀ σ' → K σ' ≃ K' σ')
+    → D ≃ D'
+    → assignK x K D σ ≃ assignK x K' D' σ
   assignK-≃ {x} {K} {K'} {σ = σ} K≃ D≃ =
     checked-≃ n {x} (⋆-≃ (Λ-≃ {λ X → K (σ [ x ↦ X ])} {λ X → K' (σ [ x ↦ X ])} λ V _ _ → K≃ _) D≃)
 
@@ -77,11 +80,17 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
   Stable bs k = ∀ bs'' → bs ≼ bs'' → ∀ σ → ⟪ k ⟫[ T ] n (B bs'') σ ≃ ⟪ k ⟫[ T ] n (B bs) σ
 
   {- a jump to the block that holds k -}
-  goto-stable : ∀ {k bs bs₁} → k ∷ bs ≼ bs₁ → Stable bs₁ (C.goto (length bs))
+  goto-stable : ∀ {k bs bs₁}
+    → k ∷ bs ≼ bs₁
+    → Stable bs₁ (C.goto (length bs))
   goto-stable e₁ bs'' e = goto-≃ e₁ e
 
   {- explicate-assign e x k: e, then assign x and run k -}
-  cps : ∀ e x k bs → Stable bs k → ∀ bs'' → proj₂ (explicate-assign e x k bs) ≼ bs'' → ∀ σ {κ : Kont}
+  cps : ∀ e x k bs
+    → Stable bs k
+    → ∀ bs''
+    → proj₂ (explicate-assign e x k bs) ≼ bs''
+    → ∀ σ {κ : Kont}
     → (∀ D σ' → κ D σ' ≃ assignK n x (⟪ k ⟫[ T ] n (B bs)) D σ')
     → ⟪ proj₁ (explicate-assign e x k bs) ⟫[ T ] n (B bs'') σ ≃ ⟦ e ⟧ᴷ[ T' ] n σ κ
   cps (simple s) x k bs st bs'' ext σ κ≃ =
@@ -111,11 +120,16 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
     e₁₃ : bs₁ ≼ bs₃
     e₁₃ = ≼-trans (grows-assign e₁ x (C.goto l) bs₁) ≼-∷
     {- the join point: a jump to the block that holds k -}
-    κ≃' : ∀ {bs'} → bs₁ ≼ bs' → ∀ D σ' → κ D σ' ≃ assignK n x (⟪ C.goto l ⟫[ T ] n (B bs')) D σ'
+    κ≃' : ∀ {bs'}
+      → bs₁ ≼ bs'
+      → ∀ D σ'
+      → κ D σ' ≃ assignK n x (⟪ C.goto l ⟫[ T ] n (B bs')) D σ'
     κ≃' e D σ' = ≃-trans (κ≃ D σ') (≃-reflexive (cong (λ K → assignK n x K D σ') (sym (blocks-at T n e))))
 
   {- explicate-tail e: e, then halt -}
-  tail : ∀ e bs bs'' → proj₂ (explicate-tail e bs) ≼ bs'' → ∀ σ
+  tail : ∀ e bs bs''
+    → proj₂ (explicate-tail e bs) ≼ bs''
+    → ∀ σ
     → ⟪ proj₁ (explicate-tail e bs) ⟫[ T ] n (B bs'') σ ≃ ⟦ e ⟧ᴷ[ T' ] n σ halt
   tail (simple s) bs bs'' ext σ = 𝒮-≃ s σ
   tail (assign x e₁ e₂) bs bs'' ext σ =

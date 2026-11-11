@@ -33,10 +33,15 @@ record Out (Σ : List ℕ) (Bs : List Ctx) (Δ : Ctx) : Set where
     made : Blocks Σ Bs'
     tail : Tail Σ Bs' Δ
 
-after : ∀ {Σ Bs Bs₁ Δ} → Bs ⊑ Bs₁ → Out Σ Bs₁ Δ → Out Σ Bs Δ
+after : ∀ {Σ Bs Bs₁ Δ}
+  → Bs ⊑ Bs₁
+  → Out Σ Bs₁ Δ
+  → Out Σ Bs Δ
 after g (out g' bs t) = out (⊑-trans g g') bs t
 
-explicate-assign : ∀ {Σ Bs Δ Δ' A} → I.Exp Σ Δ A → Δ' ⊑ Δ → Tail Σ Bs (A ∷ Δ') → Blocks Σ Bs
+explicate-assign : ∀ {Σ Bs Δ Δ' A} → I.Exp Σ Δ A
+  → Δ' ⊑ Δ
+  → Tail Σ Bs (A ∷ Δ') → Blocks Σ Bs
   → Out Σ Bs Δ
 explicate-assign (I.simple s) p k bs = out here⊑ bs (seq p s k)
 explicate-assign (I.assign e₁ e₂) p k bs with explicate-assign e₂ (there⊑ p) k bs

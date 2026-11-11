@@ -119,8 +119,12 @@ open Ok
 
 {- Related values are observed alike -------------------------------------------}
 
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ S.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ S.obs-list ws
+obs≈ : ∀ {v w}
+  → v ≈ w
+  → S.obs v ≡ S.obs w
+obs≈-list : ∀ {vs ws}
+  → Pointwise _≈_ vs ws
+  → S.obs-list vs ≡ S.obs-list ws
 obs≈ (clo≈ _ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -129,7 +133,10 @@ obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (S.prim? p w₁ w₂)
+prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+  → v₁ ≈ w₁
+  → v₂ ≈ w₂
+  → M.Pointwise _≈_ (S.prim? p v₁ v₂) (S.prim? p w₁ w₂)
 prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (S.obs w₁) (S.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
@@ -138,8 +145,12 @@ prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p
 
 {- Describing values --------------------------------------------------------------}
 
-strong-den : ∀ T {ρ' v} → Strong v T ρ' → Den v T ρ'
-strongs-den : ∀ {n} (as : Args (replicate n ■)) {ρ' vs} → Strongs vs as ρ' → Dens vs as ρ'
+strong-den : ∀ T {ρ' v}
+  → Strong v T ρ'
+  → Den v T ρ'
+strongs-den : ∀ {n} (as : Args (replicate n ■)) {ρ' vs}
+  → Strongs vs as ρ'
+  → Dens vs as ρ'
 strong-den (` y) d = d
 strong-den (lam ⦅ ⟩ N ,, Nil ⦆) d = tt
 strong-den (lit B k ⦅ Nil ⦆) d = d
@@ -150,32 +161,46 @@ strongs-den {zero} Nil e = e
 strongs-den {suc n} (M ,, as) (v , vs , e , d , ds) = v , vs , e , strong-den M d , strongs-den as ds
 
 {- a small value has no functions -}
-atom-strong : ∀ T {ρ' v} → atom T ≡ true → Den v T ρ' → Strong v T ρ'
+atom-strong : ∀ T {ρ' v}
+  → atom T ≡ true
+  → Den v T ρ'
+  → Strong v T ρ'
 atom-strong (` y) _ d = d
 atom-strong (lit B k ⦅ Nil ⦆) _ d = d
 atom-strong (tuple zero ⦅ Nil ⦆) _ d = d
 
-small-strong : ∀ T {ρ' v} → small T ≡ true → Den v T ρ' → Strong v T ρ'
+small-strong : ∀ T {ρ' v}
+  → small T ≡ true
+  → Den v T ρ'
+  → Strong v T ρ'
 small-strong (inl-op ⦅ M ,, Nil ⦆) s (v , e , d) = v , e , atom-strong M s d
 small-strong (inr-op ⦅ M ,, Nil ⦆) s (v , e , d) = v , e , atom-strong M s d
 small-strong (` y) s d = d
 small-strong (lit B k ⦅ Nil ⦆) s d = d
 small-strong (tuple zero ⦅ Nil ⦆) s d = d
 
-atom-shift : ∀ T → atom T ≡ true → atom (shift T) ≡ true
+atom-shift : ∀ T
+  → atom T ≡ true
+  → atom (shift T) ≡ true
 atom-shift (` y) s = refl
 atom-shift (lit B k ⦅ Nil ⦆) s = refl
 atom-shift (tuple zero ⦅ Nil ⦆) s = refl
 
-small-shift : ∀ T → small T ≡ true → small (shift T) ≡ true
+small-shift : ∀ T
+  → small T ≡ true
+  → small (shift T) ≡ true
 small-shift (inl-op ⦅ M ,, Nil ⦆) s = atom-shift M s
 small-shift (inr-op ⦅ M ,, Nil ⦆) s = atom-shift M s
 small-shift (` y) s = refl
 small-shift (lit B k ⦅ Nil ⦆) s = refl
 small-shift (tuple zero ⦅ Nil ⦆) s = refl
 
-den-shift : ∀ K {ρ' v w} → Den v K ρ' → Den v (shift K) (w ∷ ρ')
-dens-shift : ∀ {n} (as : Args (replicate n ■)) {ρ' vs w} → Dens vs as ρ' → Dens vs (rename-args suc as) (w ∷ ρ')
+den-shift : ∀ K {ρ' v w}
+  → Den v K ρ'
+  → Den v (shift K) (w ∷ ρ')
+dens-shift : ∀ {n} (as : Args (replicate n ■)) {ρ' vs w}
+  → Dens vs as ρ'
+  → Dens vs (rename-args suc as) (w ∷ ρ')
 den-shift (` y) d = d
 den-shift (lam ⦅ ⟩ N ,, Nil ⦆) d = tt
 den-shift (lit B k ⦅ Nil ⦆) d = d
@@ -186,7 +211,10 @@ dens-shift {zero} Nil e = e
 dens-shift {suc n} (M ,, as) (v , vs , e , d , ds) = v , vs , e , den-shift M d , dens-shift as ds
 
 {- under one more variable, in the target -}
-strong-shift : ∀ T {ρ' v w} → small T ≡ true → Strong v T ρ' → Strong v (shift T) (w ∷ ρ')
+strong-shift : ∀ T {ρ' v w}
+  → small T ≡ true
+  → Strong v T ρ'
+  → Strong v (shift T) (w ∷ ρ')
 strong-shift T s d = small-strong (shift T) (small-shift T s) (den-shift T (strong-den T d))
 
 {- the result of a primitive -}
@@ -196,11 +224,15 @@ prim-strong (bool true) = S.tup [] , refl , [] , refl , refl
 prim-strong (bool false) = S.tup [] , refl , [] , refl , refl
 
 {- a component of a described tuple -}
-dens-pw : ∀ {n} (Ks : Args (replicate n ■)) {ρ' vs} → Dens vs Ks ρ' → Pointwise (λ v K → Den v K ρ') vs (args→list Ks)
+dens-pw : ∀ {n} (Ks : Args (replicate n ■)) {ρ' vs}
+  → Dens vs Ks ρ'
+  → Pointwise (λ v K → Den v K ρ') vs (args→list Ks)
 dens-pw {zero} Nil refl = []
 dens-pw {suc n} (K ,, Ks) (v , vs , refl , d , ds) = d ∷ dens-pw Ks ds
 
-dens-proj : ∀ {n m} (i : Fin n) (Ks : Args (replicate m ■)) {ρ' vs K} → Dens vs Ks ρ' → proj i (args→list Ks) ≡ just K
+dens-proj : ∀ {n m} (i : Fin n) (Ks : Args (replicate m ■)) {ρ' vs K}
+  → Dens vs Ks ρ'
+  → proj i (args→list Ks) ≡ just K
   → Σ[ v ∈ S.Val ] proj i vs ≡ just v × Den v K ρ'
 dens-proj i Ks {vs = vs} ds p with proj-pw i (dens-pw Ks ds)
 ... | pw rewrite p with proj i vs | pw
@@ -208,14 +240,23 @@ dens-proj i Ks {vs = vs} ds p with proj-pw i (dens-pw Ks ds)
 
 {- Facts --------------------------------------------------------------------------}
 
-lookup-ws : ∀ {x} (ρ : S.Env) → x < length ρ → Σ[ v ∈ S.Val ] ρ ‼ x ≡ just v
+lookup-ws : ∀ {x} (ρ : S.Env)
+  → x < length ρ
+  → Σ[ v ∈ S.Val ] ρ ‼ x ≡ just v
 lookup-ws ρ x< = ‼-< ρ _ x<
 
 {- under one more variable, in the target only -}
-ok-weak : ∀ {E ρ ρ' w} → Ok E ρ ρ' → Ok (λ x → shift-info (E x)) ρ (w ∷ ρ')
-kden-shift : ∀ K {ρ' v w} → KDen v K ρ' → KDen v (shift-known K) (w ∷ ρ')
-knw-shift : ∀ I {ρ' v w} → (∀ {K} → known I ≡ just K → KDen v K ρ')
-  → ∀ {K} → known (shift-info I) ≡ just K → KDen v K (w ∷ ρ')
+ok-weak : ∀ {E ρ ρ' w}
+  → Ok E ρ ρ'
+  → Ok (λ x → shift-info (E x)) ρ (w ∷ ρ')
+kden-shift : ∀ K {ρ' v w}
+  → KDen v K ρ'
+  → KDen v (shift-known K) (w ∷ ρ')
+knw-shift : ∀ I {ρ' v w}
+  → (∀ {K} → known I ≡ just K → KDen v K ρ')
+  → ∀ {K}
+  → known (shift-info I) ≡ just K
+  → KDen v K (w ∷ ρ')
 ok-weak {E} ok = mk-ok (λ x e → strong-shift (term (E x)) (sml ok x) (trm ok x e)) (λ x e → knw-shift (E x) (knw ok x e))
   (λ x → small-shift (term (E x)) (sml ok x))
 kden-shift (val K) d = den-shift K d
@@ -224,38 +265,70 @@ knw-shift (T ∣ just K) h refl = kden-shift K (h refl)
 knw-shift (T ∣ nothing) h ()
 
 {- variable 0 bound in both environments, known by k -}
-ok-bind : ∀ {E ρ ρ' w v k} → Ok E ρ ρ' → v ≈ w → (∀ {K} → k ≡ just K → KDen v K (w ∷ ρ'))
+ok-bind : ∀ {E ρ ρ' w v k}
+  → Ok E ρ ρ'
+  → v ≈ w
+  → (∀ {K} → k ≡ just K → KDen v K (w ∷ ρ'))
   → Ok (((` 0) ∣ k) • (λ x → shift-info (E x))) (v ∷ ρ) (w ∷ ρ')
 ok-bind ok r d = mk-ok (λ { zero refl → _ , refl , r ; (suc x) e → trm ok' x e })
   (λ { zero refl k → d k ; (suc x) e k → knw ok' x e k }) (λ { zero → refl ; (suc x) → sml ok' x })
   where ok' = ok-weak ok
 
 {- under a binder that stays -}
-ok-under : ∀ {E ρ ρ' v' v} → Ok E ρ ρ' → v ≈ v' → Ok (under E) (v ∷ ρ) (v' ∷ ρ')
+ok-under : ∀ {E ρ ρ' v' v}
+  → Ok E ρ ρ'
+  → v ≈ v'
+  → Ok (under E) (v ∷ ρ) (v' ∷ ρ')
 ok-under ok r = ok-bind ok r (λ { refl → _ , refl , r })
 
 {- a value that stays bound to variable 0, known as I is -}
-ok-let : ∀ {E ρ ρ' I w v} → Ok E ρ ρ' → v ≈ w → (∀ {K} → known I ≡ just K → KDen v K ρ')
+ok-let : ∀ {E ρ ρ' I w v}
+  → Ok E ρ ρ'
+  → v ≈ w
+  → (∀ {K} → known I ≡ just K → KDen v K ρ')
   → Ok (known-as I E) (v ∷ ρ) (w ∷ ρ')
 ok-let {I = I} ok r h = ok-bind ok r (knw-shift I h)
 
 {- a small value I for variable 0, in the source only -}
-ok-cons : ∀ {E ρ ρ' I v} → Ok E ρ ρ' → small (term I) ≡ true → Strong v (term I) ρ'
-  → (∀ {K} → known I ≡ just K → KDen v K ρ') → Ok (I • E) (v ∷ ρ) ρ'
+ok-cons : ∀ {E ρ ρ' I v}
+  → Ok E ρ ρ'
+  → small (term I) ≡ true
+  → Strong v (term I) ρ'
+  → (∀ {K} → known I ≡ just K → KDen v K ρ')
+  → Ok (I • E) (v ∷ ρ) ρ'
 ok-cons ok s d h = mk-ok (λ { zero refl → d ; (suc x) e → trm ok x e })
   (λ { zero refl k → h k ; (suc x) e k → knw ok x e k }) (λ { zero → s ; (suc x) → sml ok x })
 
-ok-self : ∀ {E ρ ρ' T v} → Ok E ρ ρ' → small T ≡ true → Strong v T ρ' → Ok (self T • E) (v ∷ ρ) ρ'
+ok-self : ∀ {E ρ ρ' T v}
+  → Ok E ρ ρ'
+  → small T ≡ true
+  → Strong v T ρ'
+  → Ok (self T • E) (v ∷ ρ) ρ'
 ok-self {T = T} ok s d = ok-cons ok s d (λ { refl → strong-den T d })
 
 
 {- The interpreter is monotone in the clock --------------------------------------}
 
-mono : ∀ {ck ck'} → ck ≤ ck' → ∀ ρ M → S.eval ck ρ M ⊑ᵣ S.eval ck' ρ M
-mono-args : ∀ {ck ck' n} → ck ≤ ck' → ∀ ρ vs (as : Args (replicate n ■)) → S.eval-args ck ρ vs as ⊑ᵣ S.eval-args ck' ρ vs as
-mono-apply : ∀ {ck ck'} → ck ≤ ck' → ∀ ρ M v → S.apply ck ρ M v ⊑ᵣ S.apply ck' ρ M v
-mono-call : ∀ {ck ck'} → ck ≤ ck' → ∀ N ρ → S.call ck N ρ ⊑ᵣ S.call ck' N ρ
-mono-branch : ∀ {ck ck'} → ck ≤ ck' → ∀ ρ M N v → S.branch ck ρ M N v ⊑ᵣ S.branch ck' ρ M N v
+mono : ∀ {ck ck'}
+  → ck ≤ ck'
+  → ∀ ρ M
+  → S.eval ck ρ M ⊑ᵣ S.eval ck' ρ M
+mono-args : ∀ {ck ck' n}
+  → ck ≤ ck'
+  → ∀ ρ vs (as : Args (replicate n ■))
+  → S.eval-args ck ρ vs as ⊑ᵣ S.eval-args ck' ρ vs as
+mono-apply : ∀ {ck ck'}
+  → ck ≤ ck'
+  → ∀ ρ M v
+  → S.apply ck ρ M v ⊑ᵣ S.apply ck' ρ M v
+mono-call : ∀ {ck ck'}
+  → ck ≤ ck'
+  → ∀ N ρ
+  → S.call ck N ρ ⊑ᵣ S.call ck' N ρ
+mono-branch : ∀ {ck ck'}
+  → ck ≤ ck'
+  → ∀ ρ M N v
+  → S.branch ck ρ M N v ⊑ᵣ S.branch ck' ρ M N v
 mono le ρ (` x) = same
 mono le ρ (lam ⦅ ⟩ N ,, Nil ⦆) = same
 mono le ρ (app ⦅ L ,, M ,, Nil ⦆) = ⊑-bind (mono le ρ L) (mono-apply le ρ M)
@@ -287,7 +360,9 @@ mono-at ρ M le = mono le ρ M
 
 {- Stable results of the source ------------------------------------------------}
 
-st-call : ∀ {N ρ r} → Stable (λ ck → S.eval ck ρ N) r → Stable (λ ck → S.call ck N ρ) r
+st-call : ∀ {N ρ r}
+  → Stable (λ ck → S.eval ck ρ N) r
+  → Stable (λ ck → S.call ck N ρ) r
 st-call (c , e) = suc c , λ { (suc ck) (s≤s le) → e ck le }
 
 Run : AST → S.Env → S.Val → Set
@@ -302,19 +377,25 @@ Body false ck N ρ = S.eval ck ρ N
 Bound : Bool → AST → AST → S.Env → S.Env → ℕ → Result S.Val
 Bound t M N ρf ρ ck = S.eval ck ρ M >>= λ v → Body t ck N (v ∷ ρf)
 
-st-body : ∀ t {N ρ r} → Stable (λ ck → S.eval ck ρ N) r → Stable (λ ck → Body t ck N ρ) r
+st-body : ∀ t {N ρ r}
+  → Stable (λ ck → S.eval ck ρ N) r
+  → Stable (λ ck → Body t ck N ρ) r
 st-body true = st-call
 st-body false σ = σ
 
 {- an application whose operator runs to a closure of N -}
-via : ∀ {L M N ρf ρ} {P : S.Val → Set} → Run L ρ (S.clo N ρf)
+via : ∀ {L M N ρf ρ} {P : S.Val → Set}
+  → Run L ρ (S.clo N ρf)
   → Σ[ v ∈ S.Val ] Stable (Bound true M N ρf ρ) (ret v) × P v → Σ[ v ∈ S.Val ] Run (app ⦅ L ,, M ,, Nil ⦆) ρ v × P v
 via σL (v , τ , d) = v , st-bind σL τ , d
 
 {- The target evaluates value terms, at any clock ---------------------------------}
 
-teval : ∀ T {ρ' v} → Strong v T ρ' → Σ[ w ∈ S.Val ] (∀ ck → S.eval ck ρ' T ≡ ret w) × v ≈ w
-tevals : ∀ {n} (as : Args (replicate n ■)) {ρ' vs} → Strongs vs as ρ'
+teval : ∀ T {ρ' v}
+  → Strong v T ρ'
+  → Σ[ w ∈ S.Val ] (∀ ck → S.eval ck ρ' T ≡ ret w) × v ≈ w
+tevals : ∀ {n} (as : Args (replicate n ■)) {ρ' vs}
+  → Strongs vs as ρ'
   → Σ[ ws ∈ List S.Val ] (∀ ck acc → S.eval-args ck ρ' acc as ≡ ret (reverseAcc acc ws)) × Pointwise _≈_ vs ws
 teval (` y) (w , e , r) = w , (λ ck → cong from-maybe e) , r
 teval (lam ⦅ ⟩ N ,, Nil ⦆) r = _ , (λ ck → refl) , r
@@ -350,7 +431,9 @@ record Opd (M : AST) (ρ : S.Env) (I : Info) (ρ' : S.Env) : Set where
 open Opd
 
 {- the value of a value operand, described by its term and what it is known to be -}
-opd-val : ∀ {I M ρ' ρ} → Opd M ρ I ρ' → value (term I) ≡ true
+opd-val : ∀ {I M ρ' ρ}
+  → Opd M ρ I ρ'
+  → value (term I) ≡ true
   → Σ[ v ∈ S.Val ] Run M ρ v × Strong v (term I) ρ' × (∀ {K} → known I ≡ just K → KDen v K ρ')
 opd-val {I} {M} {ρ'} {ρ} o e with o-term o e
 ... | v , σ , d = v , σ , d , λ {K} k → G {K} (o-known o k)
@@ -358,37 +441,77 @@ opd-val {I} {M} {ρ'} {ρ} o e with o-term o e
         G (v' , σ' , d') with stable-unique σ' σ
         ... | refl = d'
 
-run-term : ∀ fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → value (term (simp fl E M)) ≡ true
+run-term : ∀ fl M {E ρ ρ'}
+  → Ok E ρ ρ'
+  → WS (length ρ) M
+  → value (term (simp fl E M)) ≡ true
   → Σ[ v ∈ S.Val ] Run M ρ v × Strong v (term (simp fl E M)) ρ'
-run-terms : ∀ fl {n} (as : Args (replicate n ■)) {E ρ ρ'} → Ok E ρ ρ' → WS-args (length ρ) as
+run-terms : ∀ fl {n} (as : Args (replicate n ■)) {E ρ ρ'}
+  → Ok E ρ ρ'
+  → WS-args (length ρ) as
   → values (simp-args fl E as) ≡ true
   → Σ[ vs ∈ List S.Val ] (∀ acc → Stable (λ ck → S.eval-args ck ρ acc as) (ret (reverseAcc acc vs)))
       × Strongs vs (simp-args fl E as) ρ'
-run-get : ∀ fl {n} (i : Fin n) L {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) L → component i (known (simp fl E L)) ≡ just K
+run-get : ∀ fl {n} (i : Fin n) L {E ρ ρ' K}
+  → Ok E ρ ρ'
+  → WS (length ρ) L
+  → component i (known (simp fl E L)) ≡ just K
   → Σ[ v ∈ S.Val ] Run (get i ⦅ L ,, Nil ⦆) ρ v × Den v K ρ'
-run-inl : ∀ fl L {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) L → branch (known (simp fl E L)) ≡ just (true , K)
+run-inl : ∀ fl L {E ρ ρ' K}
+  → Ok E ρ ρ'
+  → WS (length ρ) L
+  → branch (known (simp fl E L)) ≡ just (true , K)
   → Σ[ v ∈ S.Val ] Run L ρ (S.inl v) × Strong v K ρ'
-run-inr : ∀ fl L {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) L → branch (known (simp fl E L)) ≡ just (false , K)
+run-inr : ∀ fl L {E ρ ρ' K}
+  → Ok E ρ ρ'
+  → WS (length ρ) L
+  → branch (known (simp fl E L)) ≡ just (false , K)
   → Σ[ v ∈ S.Val ] Run L ρ (S.inr v) × Strong v K ρ'
-run-int : ∀ fl L {E ρ ρ' n} → Ok E ρ ρ' → WS (length ρ) L → int-of (known (simp fl E L)) ≡ just n → Run L ρ (S.const Int n)
-run-known : ∀ fl M {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) M → known (simp fl E M) ≡ just K
+run-int : ∀ fl L {E ρ ρ' n}
+  → Ok E ρ ρ'
+  → WS (length ρ) L
+  → int-of (known (simp fl E L)) ≡ just n
+  → Run L ρ (S.const Int n)
+run-known : ∀ fl M {E ρ ρ' K}
+  → Ok E ρ ρ'
+  → WS (length ρ) M
+  → known (simp fl E M) ≡ just K
   → Σ[ v ∈ S.Val ] Run M ρ v × KDen v K ρ'
 {- a let, or a call: the source runs the operand, then N (run-let), or
    the target calls (run-call) -}
-run-let : ∀ t fl N {Ef ρf ρ' I M ρ} → Ok Ef ρf ρ' → WS (suc (length ρf)) N → Opd M ρ I ρ'
+run-let : ∀ t fl N {Ef ρf ρ' I M ρ}
+  → Ok Ef ρf ρ'
+  → WS (suc (length ρf)) N
+  → Opd M ρ I ρ'
   → value (term (simp-let fl Ef N I)) ≡ true
   → Σ[ v ∈ S.Val ] Stable (Bound t M N ρf ρ) (ret v) × Strong v (term (simp-let fl Ef N I)) ρ'
-known-let : ∀ t fl N {Ef ρf ρ' I M ρ K} → Ok Ef ρf ρ' → WS (suc (length ρf)) N → Opd M ρ I ρ'
-  → known (simp-let fl Ef N I) ≡ just K → Σ[ v ∈ S.Val ] Stable (Bound t M N ρf ρ) (ret v) × KDen v K ρ'
-run-call : ∀ fl J I {L M ρ' ρ} → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ') → Opd M ρ I ρ'
+known-let : ∀ t fl N {Ef ρf ρ' I M ρ K}
+  → Ok Ef ρf ρ'
+  → WS (suc (length ρf)) N
+  → Opd M ρ I ρ'
+  → known (simp-let fl Ef N I) ≡ just K
+  → Σ[ v ∈ S.Val ] Stable (Bound t M N ρf ρ) (ret v) × KDen v K ρ'
+run-call : ∀ fl J I {L M ρ' ρ}
+  → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ')
+  → Opd M ρ I ρ'
   → value (term (simp-call fl J I)) ≡ true
   → Σ[ v ∈ S.Val ] Run (app ⦅ L ,, M ,, Nil ⦆) ρ v × Strong v (term (simp-call fl J I)) ρ'
-known-call : ∀ fl J I {L M ρ' ρ K} → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ') → Opd M ρ I ρ'
-  → known (simp-call fl J I) ≡ just K → Σ[ v ∈ S.Val ] Run (app ⦅ L ,, M ,, Nil ⦆) ρ v × KDen v K ρ'
-run-opd : ∀ fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → Opd M ρ (simp fl E M) ρ'
+known-call : ∀ fl J I {L M ρ' ρ K}
+  → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ')
+  → Opd M ρ I ρ'
+  → known (simp-call fl J I) ≡ just K
+  → Σ[ v ∈ S.Val ] Run (app ⦅ L ,, M ,, Nil ⦆) ρ v × KDen v K ρ'
+run-opd : ∀ fl M {E ρ ρ'}
+  → Ok E ρ ρ'
+  → WS (length ρ) M
+  → Opd M ρ (simp fl E M) ρ'
 {- a primitive on known integers -}
-run-prim : ∀ fl p L M {E ρ ρ' n m} → Ok E ρ ρ' → WS (length ρ) L → WS (length ρ) M
-  → int-of (known (simp fl E L)) ≡ just n → int-of (known (simp fl E M)) ≡ just m
+run-prim : ∀ fl p L M {E ρ ρ' n m}
+  → Ok E ρ ρ'
+  → WS (length ρ) L
+  → WS (length ρ) M
+  → int-of (known (simp fl E L)) ≡ just n
+  → int-of (known (simp fl E M)) ≡ just m
   → Run (prim p ⦅ L ,, M ,, Nil ⦆) ρ (S.out (δ p n m))
 
 run-term fl (` x) {ρ = ρ} ok w e with lookup-ws ρ w
@@ -511,32 +634,61 @@ run-prim fl p L M ok wL wM e₁ e₂ = st-bind (run-int fl L ok wL e₁) (st-bin
 {- Forward, at the same clock ------------------------------------------------------}
 
 {- the source runs M to a value that the target's value term T describes -}
-known-le : ∀ ck M ρ {v T ρ'} → Run M ρ v → Strong v T ρ' → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' T)
+known-le : ∀ ck M ρ {v T ρ'}
+  → Run M ρ v
+  → Strong v T ρ'
+  → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' T)
 known-le ck M ρ σ d with teval _ d
 ... | w , et , r rewrite et ck = subst (λ x → LeResult _≈_ x _) (bind-ret (S.eval ck ρ M)) (le-stable ck (mono-at ρ M) σ (ret r))
 
-project≈ : ∀ {n} (i : Fin n) {v v'} → v ≈ v' → LeResult _≈_ (S.project i v) (S.project i v')
+project≈ : ∀ {n} (i : Fin n) {v v'}
+  → v ≈ v'
+  → LeResult _≈_ (S.project i v) (S.project i v')
 project≈ i (tup≈ rs) = from-maybe-le (proj-pw i rs)
 project≈ i (clo≈ _ _) = error
 project≈ i const≈ = error
 project≈ i (inl≈ _) = error
 project≈ i (inr≈ _) = error
 
-run≈ : ∀ ck fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' (term (simp fl E M)))
-args≈ : ∀ ck fl {n} (as : Args (replicate n ■)) {E ρ ρ' acc acc'} → Ok E ρ ρ' → WS-args (length ρ) as → Pointwise _≈_ acc acc'
+run≈ : ∀ ck fl M {E ρ ρ'}
+  → Ok E ρ ρ'
+  → WS (length ρ) M
+  → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' (term (simp fl E M)))
+args≈ : ∀ ck fl {n} (as : Args (replicate n ■)) {E ρ ρ' acc acc'}
+  → Ok E ρ ρ'
+  → WS-args (length ρ) as
+  → Pointwise _≈_ acc acc'
   → LeResult (Pointwise _≈_) (S.eval-args ck ρ acc as) (S.eval-args ck ρ' acc' (simp-args fl E as))
-apply≈ : ∀ ck {M M' ρ ρ' v v'} → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' M') → v ≈ v'
+apply≈ : ∀ ck {M M' ρ ρ' v v'}
+  → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' M')
+  → v ≈ v'
   → LeResult _≈_ (S.apply ck ρ M v) (S.apply ck ρ' M' v')
-call≈ : ∀ ck fl N {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) N → LeResult _≈_ (S.call ck N ρ) (S.call ck (term (simp fl E N)) ρ')
-branch≈ : ∀ ck fl M N {E ρ ρ' v v'} → Ok E ρ ρ' → WS (suc (length ρ)) M → WS (suc (length ρ)) N → v ≈ v'
+call≈ : ∀ ck fl N {E ρ ρ'}
+  → Ok E ρ ρ'
+  → WS (length ρ) N
+  → LeResult _≈_ (S.call ck N ρ) (S.call ck (term (simp fl E N)) ρ')
+branch≈ : ∀ ck fl M N {E ρ ρ' v v'}
+  → Ok E ρ ρ'
+  → WS (suc (length ρ)) M
+  → WS (suc (length ρ)) N
+  → v ≈ v'
   → LeResult _≈_ (S.branch ck ρ M N v) (S.branch ck ρ' (term (simp fl (under E) M)) (term (simp fl (under E) N)) v')
 {- a let or a call, as in run-let and run-call -}
-body-le : ∀ t ck fl N {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) N → LeResult _≈_ (Body t ck N ρ) (S.eval ck ρ' (term (simp fl E N)))
-let≈ : ∀ t ck fl N {Ef ρf ρ' I M ρ} → Ok Ef ρf ρ' → WS (suc (length ρf)) N → Opd M ρ I ρ'
+body-le : ∀ t ck fl N {E ρ ρ'}
+  → Ok E ρ ρ'
+  → WS (length ρ) N
+  → LeResult _≈_ (Body t ck N ρ) (S.eval ck ρ' (term (simp fl E N)))
+let≈ : ∀ t ck fl N {Ef ρf ρ' I M ρ}
+  → Ok Ef ρf ρ'
+  → WS (suc (length ρf)) N
+  → Opd M ρ I ρ'
   → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' (term I))
   → LeResult _≈_ (Bound t M N ρf ρ ck) (S.eval ck ρ' (term (simp-let fl Ef N I)))
-call-le : ∀ ck fl J I {L M ρ' ρ} → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ')
-  → LeResult _≈_ (S.eval ck ρ L) (S.eval ck ρ' (term J)) → Opd M ρ I ρ' → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' (term I))
+call-le : ∀ ck fl J I {L M ρ' ρ}
+  → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ')
+  → LeResult _≈_ (S.eval ck ρ L) (S.eval ck ρ' (term J))
+  → Opd M ρ I ρ'
+  → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' (term I))
   → LeResult _≈_ (S.eval ck ρ (app ⦅ L ,, M ,, Nil ⦆)) (S.eval ck ρ' (term (simp-call fl J I)))
 
 run≈ ck fl (` x) {ρ = ρ} ok w with lookup-ws ρ w
@@ -596,7 +748,10 @@ let≈ t ck fl N {I = I} {M} {ρ} okf wN o hM with small (term I) in s | value (
 let≈ t ck fl N {Ef} {ρf} {ρ'} {I} {M} {ρ} okf wN o hM | false | true with opd-val o isv
 ... | v₀ , σ , d , h = bind-le hM λ e r → G (stable-ret (mono-at ρ M) σ e) r
   where
-  G : ∀ {v w} → v ≡ v₀ → v ≈ w → LeResult _≈_ (Body t ck N (v ∷ ρf)) (S.eval ck (w ∷ ρ') (term (simp fl (known-as I Ef) N)))
+  G : ∀ {v w}
+    → v ≡ v₀
+    → v ≈ w
+    → LeResult _≈_ (Body t ck N (v ∷ ρf)) (S.eval ck (w ∷ ρ') (term (simp fl (known-as I Ef) N)))
   G refl r = body-le t ck fl N (ok-let {I = I} okf r h) wN
 let≈ t ck fl N okf wN o hM | false | false = bind-le hM λ _ r → body-le t ck fl N (ok-under okf r) wN
 
@@ -611,33 +766,62 @@ call-le ck (suc fl) (T ∣ just (val K)) I hJ hL o hM = bind-le hL (λ _ r → a
 {- Backward: the source catches up -------------------------------------------------}
 
 {- the source runs M to a value that the target's value term T describes -}
-known-back : ∀ ck M ρ {v T ρ'} → Run M ρ v → Strong v T ρ' → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' T)
+known-back : ∀ ck M ρ {v T ρ'}
+  → Run M ρ v
+  → Strong v T ρ'
+  → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' T)
 known-back ck M ρ σ d _ with teval _ d
 ... | w , et , r rewrite et ck = _ , σ , ret r
 
-back-project : ∀ {n} (i : Fin n) {v v'} → v ≈ v' → Back _≈_ (λ _ → S.project i v) (S.project i v')
+back-project : ∀ {n} (i : Fin n) {v v'}
+  → v ≈ v'
+  → Back _≈_ (λ _ → S.project i v) (S.project i v')
 back-project i (tup≈ rs) = back-maybe (proj-pw i rs)
 back-project i (clo≈ _ _) = back-error (λ _ → refl)
 back-project i const≈ = back-error (λ _ → refl)
 back-project i (inl≈ _) = back-error (λ _ → refl)
 back-project i (inr≈ _) = back-error (λ _ → refl)
 
-back : ∀ ck fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' (term (simp fl E M)))
-back-args : ∀ ck fl {n} (as : Args (replicate n ■)) {E ρ ρ' acc acc'} → Ok E ρ ρ' → WS-args (length ρ) as → Pointwise _≈_ acc acc'
+back : ∀ ck fl M {E ρ ρ'}
+  → Ok E ρ ρ'
+  → WS (length ρ) M
+  → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' (term (simp fl E M)))
+back-args : ∀ ck fl {n} (as : Args (replicate n ■)) {E ρ ρ' acc acc'}
+  → Ok E ρ ρ'
+  → WS-args (length ρ) as
+  → Pointwise _≈_ acc acc'
   → Back (Pointwise _≈_) (λ ck → S.eval-args ck ρ acc as) (S.eval-args ck ρ' acc' (simp-args fl E as))
-back-apply : ∀ ck {M M' ρ ρ' v v'} → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' M') → v ≈ v'
+back-apply : ∀ ck {M M' ρ ρ' v v'}
+  → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' M')
+  → v ≈ v'
   → Back _≈_ (λ ck → S.apply ck ρ M v) (S.apply ck ρ' M' v')
-back-call : ∀ ck fl N {E ρ ρ' N'} → N' ≡ term (simp fl E N) → Ok E ρ ρ' → WS (length ρ) N
+back-call : ∀ ck fl N {E ρ ρ' N'}
+  → N' ≡ term (simp fl E N)
+  → Ok E ρ ρ'
+  → WS (length ρ) N
   → Back _≈_ (λ ck → S.call ck N ρ) (S.call ck N' ρ')
-back-branch : ∀ ck fl M N {E ρ ρ' v v'} → Ok E ρ ρ' → WS (suc (length ρ)) M → WS (suc (length ρ)) N → v ≈ v'
+back-branch : ∀ ck fl M N {E ρ ρ' v v'}
+  → Ok E ρ ρ'
+  → WS (suc (length ρ)) M
+  → WS (suc (length ρ)) N
+  → v ≈ v'
   → Back _≈_ (λ ck → S.branch ck ρ M N v) (S.branch ck ρ' (term (simp fl (under E) M)) (term (simp fl (under E) N)) v')
 {- a let or a call, as in run-let and run-call -}
-body-back : ∀ t ck fl N {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) N → Back _≈_ (λ ck → Body t ck N ρ) (S.eval ck ρ' (term (simp fl E N)))
-back-let : ∀ t ck fl N {Ef ρf ρ' I M ρ} → Ok Ef ρf ρ' → WS (suc (length ρf)) N → Opd M ρ I ρ'
+body-back : ∀ t ck fl N {E ρ ρ'}
+  → Ok E ρ ρ'
+  → WS (length ρ) N
+  → Back _≈_ (λ ck → Body t ck N ρ) (S.eval ck ρ' (term (simp fl E N)))
+back-let : ∀ t ck fl N {Ef ρf ρ' I M ρ}
+  → Ok Ef ρf ρ'
+  → WS (suc (length ρf)) N
+  → Opd M ρ I ρ'
   → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' (term I))
   → Back _≈_ (Bound t M N ρf ρ) (S.eval ck ρ' (term (simp-let fl Ef N I)))
-back-call' : ∀ ck fl J I {L M ρ' ρ} → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ')
-  → Back _≈_ (λ ck → S.eval ck ρ L) (S.eval ck ρ' (term J)) → Opd M ρ I ρ' → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' (term I))
+back-call' : ∀ ck fl J I {L M ρ' ρ}
+  → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ')
+  → Back _≈_ (λ ck → S.eval ck ρ L) (S.eval ck ρ' (term J))
+  → Opd M ρ I ρ'
+  → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' (term I))
   → Back _≈_ (λ ck → S.eval ck ρ (app ⦅ L ,, M ,, Nil ⦆)) (S.eval ck ρ' (term (simp-call fl J I)))
 
 back ck fl (` x) {ρ = ρ} ok w with lookup-ws ρ w
@@ -716,7 +900,9 @@ back-call' ck (suc fl) (T ∣ just (val K)) I hJ hL o hM = back-bind hL (λ _ r 
 ok₀ : Ok (λ x → self (` x)) [] []
 ok₀ = mk-ok (λ x ()) (λ x ()) (λ x → refl)
 
-simplify-correct : ∀ M → Closed M → Equivalent (S.sem M) (S.sem (simplify M))
+simplify-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (S.sem (simplify M))
 simplify-correct M c =
   clocked-back _≈_ obs≈ (mono-at [] (simplify M))
     (λ ck → run≈ ck inline-fuel M ok₀ (closed-ws {M} c)) (λ ck → back ck inline-fuel M ok₀ (closed-ws {M} c))

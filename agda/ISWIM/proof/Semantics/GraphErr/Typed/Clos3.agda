@@ -52,7 +52,9 @@ ok (project G M) = ok-op (project-good (λ k → k) _) ⟨ ok M , ptt ⟩
 oks [] = ptt
 oks (M ∷ Ms) = ⟨ ok M , oks Ms ⟩
 
-con : ∀ {Γ A} (M : Tm Γ A) {ρ} → Con-env ρ → Con (⟦ M ⟧ ρ)
+con : ∀ {Γ A} (M : Tm Γ A) {ρ}
+  → Con-env ρ
+  → Con (⟦ M ⟧ ρ)
 con M c = proj₂ (proj₂ (ok M)) c
 
 {- the code of a closure uses a finite part of the tuple of its free variables -}

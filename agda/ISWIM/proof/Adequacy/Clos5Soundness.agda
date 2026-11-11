@@ -72,23 +72,47 @@ open import Relation.Nullary using (yes; no; does)
 
 {- monotonicity of an operator in its operands -}
 private
-  m1 : ∀ {g} → Good ⊤ (■ ∷ []) g → ∀ {D E} → D ⊆ E → g ⟨ D , ptt ⟩ ⊆ g ⟨ E , ptt ⟩
+  m1 : ∀ {g}
+    → Good ⊤ (■ ∷ []) g
+    → ∀ {D E}
+    → D ⊆ E
+    → g ⟨ D , ptt ⟩ ⊆ g ⟨ E , ptt ⟩
   m1 G D⊆ = lower (mono G _ _ ⟨ lift D⊆ , ptt ⟩)
-  m2 : ∀ {g} → Good ⊤ (■ ∷ ■ ∷ []) g → ∀ {D D' E E'} → D ⊆ D' → E ⊆ E' → g ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ g ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+  m2 : ∀ {g}
+    → Good ⊤ (■ ∷ ■ ∷ []) g
+    → ∀ {D D' E E'}
+    → D ⊆ D'
+    → E ⊆ E'
+    → g ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ g ⟨ D' , ⟨ E' , ptt ⟩ ⟩
   m2 G D⊆ E⊆ = lower (mono G _ _ ⟨ lift D⊆ , ⟨ lift E⊆ , ptt ⟩ ⟩)
-  m2l : ∀ {g} → Good ⊤ (■ ∷ ■ ∷ []) g → ∀ X {D E} → D ⊆ E → g ⟨ D , ⟨ X , ptt ⟩ ⟩ ⊆ g ⟨ E , ⟨ X , ptt ⟩ ⟩
+  m2l : ∀ {g}
+    → Good ⊤ (■ ∷ ■ ∷ []) g
+    → ∀ X {D E}
+    → D ⊆ E
+    → g ⟨ D , ⟨ X , ptt ⟩ ⟩ ⊆ g ⟨ E , ⟨ X , ptt ⟩ ⟩
   m2l G X D⊆ = lower (mono G _ _ ⟨ lift D⊆ , ⟨ lift (λ _ z → z) , ptt ⟩ ⟩)
-  m2r : ∀ {g} → Good ⊤ (■ ∷ ■ ∷ []) g → ∀ X {D E} → D ⊆ E → g ⟨ X , ⟨ D , ptt ⟩ ⟩ ⊆ g ⟨ X , ⟨ E , ptt ⟩ ⟩
+  m2r : ∀ {g}
+    → Good ⊤ (■ ∷ ■ ∷ []) g
+    → ∀ X {D E}
+    → D ⊆ E
+    → g ⟨ X , ⟨ D , ptt ⟩ ⟩ ⊆ g ⟨ X , ⟨ E , ptt ⟩ ⟩
   m2r G X D⊆ = lower (mono G _ _ ⟨ lift (λ _ z → z) , ⟨ lift D⊆ , ptt ⟩ ⟩)
   ⊆r : ∀ {D : 𝒫 Value} → D ⊆ D
   ⊆r _ z = z
 
 {- The semantics in the table depends only on the references a term makes ---------}
 
-tbl-mono : ∀ {Γ A} {T T' : Table Σ} {k} (M : Tm Σ Γ A) → ConT T → Older k M
-  → (∀ {m} (g : Σ ∋ m) → lvl g < k → T g ⊆ T' g) → ∀ ρ → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T' ] ρ
-tbl-monos : ∀ {Γ n} {T T' : Table Σ} {k} (Ms : Vec (Tm Σ Γ Any) n) → ConT T → Olders k Ms
-  → (∀ {m} (g : Σ ∋ m) → lvl g < k → T g ⊆ T' g) → ∀ ρ
+tbl-mono : ∀ {Γ A} {T T' : Table Σ} {k} (M : Tm Σ Γ A)
+  → ConT T
+  → Older k M
+  → (∀ {m} (g : Σ ∋ m) → lvl g < k → T g ⊆ T' g)
+  → ∀ ρ
+  → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T' ] ρ
+tbl-monos : ∀ {Γ n} {T T' : Table Σ} {k} (Ms : Vec (Tm Σ Γ Any) n)
+  → ConT T
+  → Olders k Ms
+  → (∀ {m} (g : Σ ∋ m) → lvl g < k → T g ⊆ T' g)
+  → ∀ ρ
   → results-rel-pres _⊆_ (replicate n ■) (⟦ Ms ⟧s[ T ] ρ) (⟦ Ms ⟧s[ T' ] ρ)
 tbl-mono (` x) cT o h ρ = ⊆r
 tbl-mono (fun-ref f) cT o h ρ = h f o
@@ -113,7 +137,10 @@ tbl-mono (project t M) cT o h ρ = m1 (project-good fun₄ t) (tbl-mono M cT o h
 tbl-monos [] cT o h ρ = ptt
 tbl-monos (M ∷ Ms) cT ⟨ o , os ⟩ h ρ = ⟨ lift (tbl-mono M cT o h ρ) , tbl-monos Ms cT os h ρ ⟩
 
-olderAt : ∀ {ns n} {ps : All (Code Σ) ns} → OlderDefs ps → (f : ns ∋ n) → Older (length (older f)) (ps ! f)
+olderAt : ∀ {ns n} {ps : All (Code Σ) ns}
+  → OlderDefs ps
+  → (f : ns ∋ n)
+  → Older (length (older f)) (ps ! f)
 olderAt {ps = p ∷ ps} ⟨ o , _ ⟩ Z = o
 olderAt {ps = p ∷ ps} ⟨ _ , os ⟩ (S f) = olderAt os f
 
@@ -163,7 +190,9 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 𝒮 (eval M γ κ) = 𝒦 κ (⟦ M ⟧⁺ (𝓔 γ))
 𝒮 (ret v κ) = 𝒦 κ (𝒱 v)
 
-𝒦-mono : ∀ {A} (κ : Cont Σ A) {D E} → D ⊆ E → 𝒦 κ D ⊆ 𝒦 κ E
+𝒦-mono : ∀ {A} (κ : Cont Σ A) {D E}
+  → D ⊆ E
+  → 𝒦 κ D ⊆ 𝒦 κ E
 𝒦-mono halt D⊆ = D⊆
 𝒦-mono (callL M γ κ) D⊆ = 𝒦-mono κ (m2l callc-good (⟦ M ⟧⁺ (𝓔 γ)) D⊆)
 𝒦-mono (callR f κ) D⊆ = 𝒦-mono κ (m2r callc-good (𝒱 f) D⊆)
@@ -171,7 +200,9 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 𝒦-mono (packR c κ) D⊆ = 𝒦-mono κ (m2r pair-good (𝒱 c) D⊆)
 𝒦-mono (tupK vs Ms γ κ) {D} {E} D⊆ = 𝒦-mono κ (𝒯L-mono _ _ (rev-mono vs ⟨ D⊆ , ⊆L-refl _ ⟩))
   where
-  rev-mono : ∀ {m} (vs : Vec _ m) {Ds Es} → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
+  rev-mono : ∀ {m} (vs : Vec _ m) {Ds Es}
+    → Ds ⊆L Es
+    → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
   rev-mono [] s = s
   rev-mono (v ∷ vs) s = rev-mono vs ⟨ ⊆r , s ⟩
 𝒦-mono (getK i κ) D⊆ = 𝒦-mono κ (m1 (proj-good i) D⊆)
@@ -210,7 +241,8 @@ call-⊆ f e a d d∈ =
   cdr⊆ x x∈ = ⟨ ν , ⟨ T-ν f , x∈ ⟩ ⟩
 
 {- one parameter (case, let): the body uses a finite part of the value -}
-body-in : ∀ {Γ A B} (N : Tm Σ (A ∷ Γ) B) (γ : Env Σ Γ) (v : Val Σ A) d → d ∈ ⟦ N ⟧⁺ (𝓔 (v ∷ γ))
+body-in : ∀ {Γ A B} (N : Tm Σ (A ∷ Γ) B) (γ : Env Σ Γ) (v : Val Σ A) d
+  → d ∈ ⟦ N ⟧⁺ (𝓔 (v ∷ γ))
   → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ 𝒱 v × d ∈ ⟦ N ⟧⁺ (mem V • 𝓔 γ)
 body-in N γ v d d∈ = fin₁ (ok cT N) (𝓔-ne γ) (𝒱-ne v) d d∈
 
@@ -237,14 +269,21 @@ tuple-next-𝒮 vs (M ∷ Ms) γ κ d d∈ = d∈
   len (N ∷ Ns) = cong suc (len Ns)
 ... | refl = go (M ∷ Ms) i a ne
   where
-  go : ∀ {j} (Ns : Vec (Tm Σ Γ Any) (suc j)) (i : Fin (suc j)) → At i (⟦ Ns ⟧* ρ) d → AllNE (⟦ Ns ⟧* ρ)
+  go : ∀ {j} (Ns : Vec (Tm Σ Γ Any) (suc j)) (i : Fin (suc j))
+    → At i (⟦ Ns ⟧* ρ) d
+    → AllNE (⟦ Ns ⟧* ρ)
     → tup[ i ] d ∈ 𝒯 (suc j) (⟦ Ns ⟧s[ T ] ρ)
   go Ns i a ne = ⟨ refl , ⟨ at Ns i a , all Ns ne ⟩ ⟩
     where
-    at : ∀ {j} (Ns : Vec (Tm Σ Γ Any) j) (i : Fin j) → At i (⟦ Ns ⟧* ρ) d → d ∈ nthD (⟦ Ns ⟧s[ T ] ρ) i
+    at : ∀ {j} (Ns : Vec (Tm Σ Γ Any) j) (i : Fin j)
+      → At i (⟦ Ns ⟧* ρ) d
+      → d ∈ nthD (⟦ Ns ⟧s[ T ] ρ) i
     at (N ∷ Ns) zero ⟨ _ , d∈ ⟩ = d∈
     at (N ∷ Ns) (suc i) a = at Ns i a
-    all : ∀ {j} (Ns : Vec (Tm Σ Γ Any) j) → AllNE (⟦ Ns ⟧* ρ) → ∀ i → nonempty (nthD (⟦ Ns ⟧s[ T ] ρ) i)
+    all : ∀ {j} (Ns : Vec (Tm Σ Γ Any) j)
+      → AllNE (⟦ Ns ⟧* ρ)
+      → ∀ i
+      → nonempty (nthD (⟦ Ns ⟧s[ T ] ρ) i)
     all (N ∷ Ns) ⟨ ne , _ ⟩ zero = ne
     all (N ∷ Ns) ⟨ _ , nes ⟩ (suc i) = all Ns nes i
 𝒯L-args Ms ρ (dconst k) ()
@@ -273,7 +312,9 @@ begin-⊆ (let′ M N) γ κ = λ d d∈ → d∈
 begin-⊆ (inject G M) γ κ = λ d d∈ → d∈
 begin-⊆ (project t M) γ κ = λ d d∈ → d∈
 
-step-⊆ : ∀ s {s'} → step ds s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
+step-⊆ : ∀ s {s'}
+  → step ds s ≡ next s'
+  → 𝒮 s' ⊆ 𝒮 s
 step-⊆ (eval M γ κ) refl = begin-⊆ M γ κ
 step-⊆ (ret v halt) ()
 step-⊆ (ret v (callL M γ κ)) refl = λ d d∈ → d∈
@@ -308,7 +349,9 @@ step-⊆ (ret (dyn H u) (projK t κ)) e with H ≟F flat t
 step-⊆ (ret (dyn H u) (projK t κ)) refl | yes refl = 𝒦-mono κ λ d d∈ → ⟨ acc-𝒱 t u , d∈ ⟩
 step-⊆ (ret (dyn H u) (projK t κ)) () | no _
 
-↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
+↠-⊆ : ∀ {s t}
+  → s ↠ t
+  → 𝒮 t ⊆ 𝒮 s
 ↠-⊆ done = ⊆r
 ↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
 
@@ -317,7 +360,10 @@ step-⊆ (ret (dyn H u) (projK t κ)) () | no _
 open import Semantics.Observation using (Obs; o-error; o-const; Answer)
 
 {- a state that stops with an answer returns a value to halt -}
-halts : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ v ∈ Val Σ Any ] s ≡ ret v halt × o ≡ obs v
+halts : ∀ s {o}
+  → step ds s ≡ stop o
+  → Answer o
+  → Σ[ v ∈ Val Σ Any ] s ≡ ret v halt × o ≡ obs v
 halts (eval M γ κ) () ans
 halts (ret v halt) refl ans = ⟨ v , ⟨ refl , refl ⟩ ⟩
 halts (ret v (projK t κ)) e ans with proj? t v
@@ -338,7 +384,10 @@ halts (ret v (letK N γ κ)) () ans
 halts (ret v (injK G κ)) () ans
 
 {- what the machine stops with, from main -}
-final : ∀ {M : Tm Σ [] Any} {s o} → Star (machine (State Σ) (step ds) (eval M [] halt)) (eval M [] halt) s
-  → step ds s ≡ stop o → Answer o → Σ[ v ∈ Val Σ Any ] o ≡ obs v × 𝒱 v ⊆ ⟦ M ⟧⁺ (λ _ → init)
+final : ∀ {M : Tm Σ [] Any} {s o}
+  → Star (machine (State Σ) (step ds) (eval M [] halt)) (eval M [] halt) s
+  → step ds s ≡ stop o
+  → Answer o
+  → Σ[ v ∈ Val Σ Any ] o ≡ obs v × 𝒱 v ⊆ ⟦ M ⟧⁺ (λ _ → init)
 final {s = s} σ fin ans with halts s fin ans
 ... | ⟨ v , ⟨ refl , refl ⟩ ⟩ = ⟨ v , ⟨ refl , ↠-⊆ (star→↠ σ) ⟩ ⟩

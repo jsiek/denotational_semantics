@@ -52,17 +52,23 @@ module ISWIM.proof.Correctness.GraphErr.SplitRel where
 _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D ● E = E ≫= λ X → ⋆ ⟨ D , ⟨ X , ptt ⟩ ⟩
 
-●-mono-e : ∀ {D₁ D₂ E} → (∀ V w → (V ↦ w) ∈ D₁ → (V ↦ w) ∈ D₂) → (D₁ ● E) ⊆ (D₂ ● E)
+●-mono-e : ∀ {D₁ D₂ E}
+  → (∀ V w → (V ↦ w) ∈ D₁ → (V ↦ w) ∈ D₂)
+  → (D₁ ● E) ⊆ (D₂ ● E)
 ●-mono-e {D₁} {D₂} f = ≫=-mono {F = λ X → ⋆ ⟨ D₁ , ⟨ X , ptt ⟩ ⟩} {F' = λ X → ⋆ ⟨ D₂ , ⟨ X , ptt ⟩ ⟩} (λ d z → z)
   λ X⊆ → λ { w ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ → ⟨ V , ⟨ f V w e∈ , ⟨ (λ d d∈ → X⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩ }
 
-●-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ● E) ⊆ (D₂ ● E)
+●-mono-l : ∀ {D₁ D₂ E}
+  → D₁ ⊆ D₂
+  → (D₁ ● E) ⊆ (D₂ ● E)
 ●-mono-l {D₁} {D₂} D⊆ = ●-mono-e {D₁} {D₂} (λ V w → D⊆ (V ↦ w))
 
 {- Kinds ----------------------------------------------------------------------}
 
 {- data have their kind in Clos4ᵀ -}
-data-kind : ∀ d → Data d → kind d ≡ kind₄ (kind d)
+data-kind : ∀ d
+  → Data d
+  → kind d ≡ kind₄ (kind d)
 data-kind (const k) _ = refl
 data-kind ⟨⟩ _ = refl
 data-kind (left x) _ = refl
@@ -87,14 +93,19 @@ dropω-⊆ (v ∷ V) d d∈ with ω? v
 dropω-⊆ (v ∷ V) d (here refl) | inj₂ _ = here refl
 dropω-⊆ (v ∷ V) d (there d∈) | inj₂ _ = there (dropω-⊆ V d d∈)
 
-dropω-keep : ∀ V w → w ⋵ V → w ≢ ω → w ⋵ dropω V
+dropω-keep : ∀ V w
+  → w ⋵ V
+  → w ≢ ω
+  → w ⋵ dropω V
 dropω-keep (v ∷ V) w w∈ w≢ with ω? v
 dropω-keep (v ∷ V) .v (here refl) w≢ | inj₁ eq = ⊥-elim (w≢ eq)
 dropω-keep (v ∷ V) w (there w∈) w≢ | inj₁ _ = dropω-keep V w w∈ w≢
 dropω-keep (v ∷ V) .v (here refl) w≢ | inj₂ _ = here refl
 dropω-keep (v ∷ V) w (there w∈) w≢ | inj₂ _ = there (dropω-keep V w w∈ w≢)
 
-dropω-noω : ∀ V w → w ⋵ dropω V → w ≢ ω
+dropω-noω : ∀ V w
+  → w ⋵ dropω V
+  → w ≢ ω
 dropω-noω (v ∷ V) w w∈ with ω? v
 ... | inj₁ _ = dropω-noω V w w∈
 dropω-noω (v ∷ V) .v (here refl) | inj₂ v≢ = v≢
@@ -123,11 +134,17 @@ record CarEntry (V' U₀ : List Value) (w : Value) : Set where
 Pairs⊆ : List Value → List Value → Set
 Pairs⊆ V₁ V₂ = ∀ u v → ⦅ u , v ⦆ ⋵ V₁ → ⦅ u , v ⦆ ⋵ V₂
 
-CarEntry-⊆ : ∀ {V₁ V₂ U₀ w} → Pairs⊆ V₁ V₂ → CarEntry V₁ U₀ w → CarEntry V₂ U₀ w
+CarEntry-⊆ : ∀ {V₁ V₂ U₀ w}
+  → Pairs⊆ V₁ V₂
+  → CarEntry V₁ U₀ w
+  → CarEntry V₂ U₀ w
 CarEntry-⊆ s (car-entry FV t e∈ neFV FV⊆) =
   car-entry FV t (s _ _ e∈) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , s _ _ i ⟩)
 
-Bnd-CarEntry : ∀ {k V' U₀ w} → Bnd (suc k) V' → CarEntry V' U₀ w → Bnd k U₀ × depth w < k
+Bnd-CarEntry : ∀ {k V' U₀ w}
+  → Bnd (suc k) V'
+  → CarEntry V' U₀ w
+  → Bnd k U₀ × depth w < k
 Bnd-CarEntry {U₀ = U₀}{w} bV (car-entry FV t e∈ _ _) =
   ⟨ (λ u u∈ → <-shrink (s≤s (≤-trans (depth-⋵ u∈) (≤-trans (m≤m⊔n _ (depth w)) up))) (bV _ e∈))
   , <-shrink (s≤s (≤-trans (m≤n⊔m (depths U₀) _) up)) (bV _ e∈) ⟩
@@ -141,21 +158,33 @@ record Calls (V U W : List Value) : Set where
     args : ∀ u → u ⋵ U → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] CarEntry V U₀ w × u ⋵ U₀
     noerr : NoErr U
 
-Calls-⊆ : ∀ {V₁ V₂ U W} → Pairs⊆ V₁ V₂ → Calls V₁ U W → Calls V₂ U W
+Calls-⊆ : ∀ {V₁ V₂ U W}
+  → Pairs⊆ V₁ V₂
+  → Calls V₁ U W
+  → Calls V₂ U W
 Calls-⊆ s cs = record
   { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = Calls.results cs w w∈ in ⟨ U₀ , ⟨ CarEntry-⊆ s e , r ⟩ ⟩
   ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = Calls.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ CarEntry-⊆ s e , r ⟩ ⟩ ⟩
   ; noerr = Calls.noerr cs
   }
 
-Calls-none : ∀ {V U W} → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥) → Calls V U W → mem W ⊆ ∅
+Calls-none : ∀ {V U W}
+  → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥)
+  → Calls V U W
+  → mem W ⊆ ∅
 Calls-none nop cs w w∈ = nop _ _ (CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w w∈))))
 
-Bnd-Calls-args : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k U
+Bnd-Calls-args : ∀ {k V U W}
+  → Bnd (suc k) V
+  → Calls V U W
+  → Bnd k U
 Bnd-Calls-args bV cs u u∈ =
   let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = Calls.args cs u u∈ in proj₁ (Bnd-CarEntry bV e) u u∈U₀
 
-Bnd-Calls-apps : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k W
+Bnd-Calls-apps : ∀ {k V U W}
+  → Bnd (suc k) V
+  → Calls V U W
+  → Bnd k W
 Bnd-Calls-apps bV cs w w∈ = proj₂ (Bnd-CarEntry bV (proj₁ (proj₂ (Calls.results cs w w∈))))
 
 {- The approximant logical relation -------------------------------------------}
@@ -168,10 +197,13 @@ record ApproxLRLayer (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value)
     app-obs : ∀ {U W} → Calls V U W → ∀ E → Con E → Con (mem U) → Q E U → Q (D ● E) W
     tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q (Untag t D) W
 
-ApproxLRLayer-map : ∀ {k j Q₁ Q₂ D V} → Bnd (suc k) V → Bnd (suc j) V
+ApproxLRLayer-map : ∀ {k j Q₁ Q₂ D V}
+  → Bnd (suc k) V
+  → Bnd (suc j) V
   → (∀ {E W} → Bnd k W → Bnd j W → Q₁ E W → Q₂ E W)
   → (∀ {E W} → Bnd j W → Bnd k W → Q₂ E W → Q₁ E W)
-  → ApproxLRLayer Q₁ D V → ApproxLRLayer Q₂ D V
+  → ApproxLRLayer Q₁ D V
+  → ApproxLRLayer Q₂ D V
 ApproxLRLayer-map bk bj to from o = record
   { err-obs = err-obs ; const-obs = const-obs ; kind-obs = kind-obs
   ; app-obs = λ cs E cE gU rU → to (Bnd-Calls-apps bk cs) (Bnd-Calls-apps bj cs)
@@ -189,7 +221,9 @@ ApproxLR : 𝒫 Value → List Value → Set₁
 ApproxLR D V = ApproxLR≤ (suc (depths V)) D V
 
 private
-  ApproxLR≤-∅ : ∀ k {D V} → mem V ⊆ ∅ → ApproxLR≤ k D V
+  ApproxLR≤-∅ : ∀ k {D V}
+    → mem V ⊆ ∅
+    → ApproxLR≤ k D V
   ApproxLR≤-∅ zero _ = ptt
   ApproxLR≤-∅ (suc k) {V = V} V⊆∅ = record
     { err-obs = λ ω∈ → ⊥-elim (V⊆∅ _ ω∈)
@@ -199,7 +233,10 @@ private
     ; tag-obs = λ t W W⊆ → ApproxLR≤-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
 
-  ApproxLR≤-data : ∀ k {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → ApproxLR≤ k D V
+  ApproxLR≤-data : ∀ k {D V}
+    → mem V ⊆ D
+    → (∀ v → v ⋵ V → Data v)
+    → ApproxLR≤ k D V
   ApproxLR≤-data zero _ _ = ptt
   ApproxLR≤-data (suc k) {V = V} V⊆ fl = record
     { err-obs = λ ω∈ → V⊆ _ ω∈
@@ -212,7 +249,10 @@ private
     where noflat : ∀ {u v} → Data ⦅ u , v ⦆ → ⊥
           noflat ()
 
-  ApproxLR≤-mono : ∀ k {D₁ D₂ V} → D₁ ⊆ D₂ → ApproxLR≤ k D₁ V → ApproxLR≤ k D₂ V
+  ApproxLR≤-mono : ∀ k {D₁ D₂ V}
+    → D₁ ⊆ D₂
+    → ApproxLR≤ k D₁ V
+    → ApproxLR≤ k D₂ V
   ApproxLR≤-mono zero _ _ = ptt
   ApproxLR≤-mono (suc k) D⊆ r = record
     { err-obs = λ ω∈ → D⊆ _ (err-obs ω∈)
@@ -224,32 +264,52 @@ private
     }
     where open ApproxLRLayer r
 
-  ApproxLR-depth-irrelevant : ∀ k j {D V} → Bnd k V → Bnd j V → ApproxLR≤ k D V → ApproxLR≤ j D V
+  ApproxLR-depth-irrelevant : ∀ k j {D V}
+    → Bnd k V
+    → Bnd j V
+    → ApproxLR≤ k D V
+    → ApproxLR≤ j D V
   ApproxLR-depth-irrelevant k zero _ _ _ = ptt
   ApproxLR-depth-irrelevant zero (suc j) bk _ _ = ApproxLR≤-∅ (suc j) (λ v v∈ → <0 (bk v v∈))
     where <0 : ∀ {n} → n < 0 → ⊥
           <0 ()
   ApproxLR-depth-irrelevant (suc k) (suc j) bk bj = ApproxLRLayer-map bk bj (ApproxLR-depth-irrelevant k j) (ApproxLR-depth-irrelevant j k)
 
-unfold : ∀ {D V} → ApproxLR D V → ApproxLRLayer ApproxLR D V
+unfold : ∀ {D V}
+  → ApproxLR D V
+  → ApproxLRLayer ApproxLR D V
 unfold {V = V} = ApproxLRLayer-map bV bV (λ b _ → ApproxLR-depth-irrelevant _ _ b (Bnd-depths _)) (λ _ b → ApproxLR-depth-irrelevant _ _ (Bnd-depths _) b)
   where bV = Bnd-depths V
 
-fold : ∀ {D V} → ApproxLRLayer ApproxLR D V → ApproxLR D V
+fold : ∀ {D V}
+  → ApproxLRLayer ApproxLR D V
+  → ApproxLR D V
 fold {V = V} = ApproxLRLayer-map bV bV (λ _ b → ApproxLR-depth-irrelevant _ _ (Bnd-depths _) b) (λ b _ → ApproxLR-depth-irrelevant _ _ b (Bnd-depths _))
   where bV = Bnd-depths V
 
-ApproxLR-∅ : ∀ {D V} → mem V ⊆ ∅ → ApproxLR D V
+ApproxLR-∅ : ∀ {D V}
+  → mem V ⊆ ∅
+  → ApproxLR D V
 ApproxLR-∅ = ApproxLR≤-∅ _
 
-ApproxLR-data : ∀ {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → ApproxLR D V
+ApproxLR-data : ∀ {D V}
+  → mem V ⊆ D
+  → (∀ v → v ⋵ V → Data v)
+  → ApproxLR D V
 ApproxLR-data = ApproxLR≤-data _
 
-ApproxLR-mono : ∀ {D₁ D₂ V} → D₁ ⊆ D₂ → ApproxLR D₁ V → ApproxLR D₂ V
+ApproxLR-mono : ∀ {D₁ D₂ V}
+  → D₁ ⊆ D₂
+  → ApproxLR D₁ V
+  → ApproxLR D₂ V
 ApproxLR-mono = ApproxLR≤-mono _
 
 {- the values of V₂ are in V₁, and its ω is in D -}
-ApproxLR-sub : ∀ {D V₁ V₂} → (∀ w → w ⋵ V₂ → w ≢ ω → w ⋵ V₁) → (ω ⋵ V₂ → ω ∈ D) → ApproxLR D V₁ → ApproxLR D V₂
+ApproxLR-sub : ∀ {D V₁ V₂}
+  → (∀ w → w ⋵ V₂ → w ≢ ω → w ⋵ V₁)
+  → (ω ⋵ V₂ → ω ∈ D)
+  → ApproxLR D V₁
+  → ApproxLR D V₂
 ApproxLR-sub {D} {V₁} {V₂} sub err r = fold record
   { err-obs = err
   ; const-obs = λ c c∈ → const-obs c (sub _ c∈ (λ ()))
@@ -259,21 +319,32 @@ ApproxLR-sub {D} {V₁} {V₂} sub err r = fold record
   }
   where open ApproxLRLayer (unfold r)
 
-ApproxLR-⊆ : ∀ {D V₁ V₂} → mem V₁ ⊆ mem V₂ → ApproxLR D V₂ → ApproxLR D V₁
+ApproxLR-⊆ : ∀ {D V₁ V₂}
+  → mem V₁ ⊆ mem V₂
+  → ApproxLR D V₂
+  → ApproxLR D V₁
 ApproxLR-⊆ s r = ApproxLR-sub (λ w w∈ _ → s w w∈) (λ ω∈ → ApproxLRLayer.err-obs (unfold r) (s ω ω∈)) r
 
 {- what a relation gives, for one target value -}
-ApproxLR-err : ∀ {D} → ApproxLR D (ω ∷ []) → ω ∈ D
+ApproxLR-err : ∀ {D}
+  → ApproxLR D (ω ∷ [])
+  → ω ∈ D
 ApproxLR-err r = ApproxLRLayer.err-obs (unfold r) (here refl)
 
-ApproxLR-conv : ∀ {D d} → ApproxLR D (d ∷ []) → d ≢ ω → Conv D
+ApproxLR-conv : ∀ {D d}
+  → ApproxLR D (d ∷ [])
+  → d ≢ ω
+  → Conv D
 ApproxLR-conv r d≢ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = ApproxLRLayer.kind-obs (unfold r) _ (here refl) d≢ in ⟨ s , s∈ ⟩
 
 {- Reflecting errors through the monad -------------------------------------------}
 
 {- the values of V are in A, and its ω in D -}
-ApproxLR-cases : ∀ {D V A} → (∀ w → w ⋵ V → w ≢ ω → w ∈ A) → (ω ⋵ V → ω ∈ D)
-  → (∀ W → mem W ⊆ A → ApproxLR D W) → ApproxLR D V
+ApproxLR-cases : ∀ {D V A}
+  → (∀ w → w ⋵ V → w ≢ ω → w ∈ A)
+  → (ω ⋵ V → ω ∈ D)
+  → (∀ W → mem W ⊆ A → ApproxLR D W)
+  → ApproxLR D V
 ApproxLR-cases {V = V} vA err h =
   ApproxLR-sub (dropω-keep V) err (h (dropω V) (λ w w∈ → vA w (dropω-⊆ V w w∈) (dropω-noω V w w∈)))
 
@@ -283,31 +354,43 @@ Rel B A' = ∀ W → mem W ⊆ A' → ApproxLR B W
 
 {- D is related to a target bind when its errors are errors of D and its
    continuation, on the values of its operand, is related to D -}
-ApproxLR-bindᵣ : ∀ {D A' F'} → (ω ∈ A' → ω ∈ D) → (Conv A' → Rel D (F' ⌊ A' ⌋)) → Rel D (A' ≫= F')
+ApproxLR-bindᵣ : ∀ {D A' F'}
+  → (ω ∈ A' → ω ∈ D)
+  → (Conv A' → Rel D (F' ⌊ A' ⌋))
+  → Rel D (A' ≫= F')
 ApproxLR-bindᵣ {D} {A'} {F'} err hF V V⊆ = ApproxLR-cases {A = λ w → Conv A' × w ∈ F' ⌊ A' ⌋} vals errs go
   where
-  vals : ∀ w → w ⋵ V → w ≢ ω → Conv A' × w ∈ F' ⌊ A' ⌋
+  vals : ∀ w
+    → w ⋵ V
+    → w ≢ ω
+    → Conv A' × w ∈ F' ⌊ A' ⌋
   vals w w∈ w≢ with V⊆ w w∈
   ... | inj₁ ⟨ refl , _ ⟩ = ⊥-elim (w≢ refl)
   ... | inj₂ r = r
-  errs : ω ⋵ V → ω ∈ D
+  errs : ω ⋵ V
+    → ω ∈ D
   errs ω∈ with V⊆ ω ω∈
   ... | inj₁ ⟨ _ , ω∈' ⟩ = err ω∈'
   ... | inj₂ ⟨ c , ω∈F ⟩ = ApproxLR-err (hF c (ω ∷ []) (single⊆ ω∈F))
-  go : ∀ W → mem W ⊆ (λ w → Conv A' × w ∈ F' ⌊ A' ⌋) → ApproxLR D W
+  go : ∀ W
+    → mem W ⊆ (λ w → Conv A' × w ∈ F' ⌊ A' ⌋)
+    → ApproxLR D W
   go [] _ = ApproxLR-∅ (λ _ ())
   go (w ∷ W) W⊆ = hF (proj₁ (W⊆ w (here refl))) (w ∷ W) (λ x x∈ → proj₂ (W⊆ x x∈))
 
 {- a target bind reflects to a source bind: the operand A' to A, and the
    continuation F' to F on their values -}
-ApproxLR-bind : ∀ {A A' F F'} → Con A → Rel A A'
+ApproxLR-bind : ∀ {A A' F F'}
+  → Con A
+  → Rel A A'
   → (Conv A → Conv A' → Rel ⌊ A ⌋ ⌊ A' ⌋ → Rel (F ⌊ A ⌋) (F' ⌊ A' ⌋))
   → Rel (A ≫= F) (A' ≫= F')
 ApproxLR-bind {A} {A'} {F} {F'} cA hA hF =
   ApproxLR-bindᵣ {A ≫= F} {A'} {F'} (λ ω∈ → inj₁ ⟨ refl , ApproxLR-err (hA (ω ∷ []) (single⊆ ω∈)) ⟩)
           (λ c W W⊆ → ApproxLR-mono (λ x x∈ → inj₂ ⟨ cv c , x∈ ⟩) (hF (cv c) c (hX c) W W⊆))
   where
-  cv : Conv A' → Conv A
+  cv : Conv A'
+    → Conv A
   cv ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ApproxLR-conv (hA (d ∷ []) (single⊆ d∈)) d≢
   hX : ∀ c → Rel ⌊ A ⌋ ⌊ A' ⌋
   hX c W W⊆ = ApproxLR-mono (⌊⌋-clean (con-clean cA (cv c))) (hA W (λ w w∈ → proj₁ (W⊆ w w∈)))
@@ -315,20 +398,30 @@ ApproxLR-bind {A} {A'} {F} {F'} cA hA hF =
 {- Project ---------------------------------------------------------------------}
 
 {- D is related to a target check when its failure is an error of D -}
-ApproxLR-checkᵣ : ∀ {D k' X' A'} → (Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k' → ω ∈ D) → Rel D A' → Rel D (checkedᵠ kind₄ k' X' A')
+ApproxLR-checkᵣ : ∀ {D k' X' A'}
+  → (Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k' → ω ∈ D)
+  → Rel D A'
+  → Rel D (checkedᵠ kind₄ k' X' A')
 ApproxLR-checkᵣ {D} {k'} {X'} {A'} bad hA V V⊆ = ApproxLR-cases {A = A'} vals err hA
   where
-  vals : ∀ w → w ⋵ V → w ≢ ω → w ∈ A'
+  vals : ∀ w
+    → w ⋵ V
+    → w ≢ ω
+    → w ∈ A'
   vals w w∈ w≢ with V⊆ w w∈
   ... | inj₁ ⟨ refl , _ ⟩ = ⊥-elim (w≢ refl)
   ... | inj₂ r = r
-  err : ω ⋵ V → ω ∈ D
+  err : ω ⋵ V
+    → ω ∈ D
   err ω∈ with V⊆ ω ω∈
   ... | inj₂ ω∈A' = ApproxLR-err (hA _ (single⊆ ω∈A'))
   ... | inj₁ ⟨ _ , b ⟩ = bad b
 
 {- a target value of the wrong kind gives a source value of the wrong kind -}
-bad-reflect : ∀ {k X X'} → Clean X' → Rel X X' → Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k → Bad k X
+bad-reflect : ∀ {k X X'}
+  → Clean X'
+  → Rel X X'
+  → Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k → Bad k X
 bad-reflect clX hX ⟨ d , ⟨ d∈ , dk ⟩ ⟩ with ApproxLRLayer.kind-obs (unfold (hX _ (single⊆ d∈))) _ (here refl) (clX d d∈)
 ... | ⟨ s , ⟨ s∈ , sk ⟩ ⟩ = ⟨ s , ⟨ proj₁ s∈ , (λ eq → dk (trans (sym sk) eq)) ⟩ ⟩
 
@@ -338,7 +431,10 @@ tag-kind leftT = refl
 tag-kind rightT = refl
 
 {- a target tuple entry for a component gives a source one -}
-hit-reflect : ∀ t {X X'} → Rel X X' → hit t X' → hit t X
+hit-reflect : ∀ t {X X'}
+  → Rel X X'
+  → hit t X'
+  → hit t X
 hit-reflect (ttup n i) h ⟨ e , e∈ ⟩ with ω? e
 ... | inj₁ refl = ⟨ ω , ApproxLR-err (ApproxLRLayer.tag-obs (unfold (h _ (single⊆ e∈))) (tupT i) (ω ∷ []) (λ { _ (here refl) → here refl })) ⟩
 ... | inj₂ e≢ = let ⟨ s , s∈ ⟩ = ApproxLR-conv (ApproxLRLayer.tag-obs (unfold (h _ (single⊆ e∈))) (tupT i) (e ∷ []) (λ { _ (here refl) → here refl })) e≢
@@ -348,7 +444,9 @@ hit-reflect tsum h _ = tt
 hit-reflect tint h _ = tt
 
 {- the source values that project keeps are related to the target ones -}
-ApproxLR-restrict : ∀ t {X X'} → Rel X X' → Rel (keep (λ k → k) t X) (keep kind₄ t X')
+ApproxLR-restrict : ∀ t {X X'}
+  → Rel X X'
+  → Rel (keep (λ k → k) t X) (keep kind₄ t X')
 ApproxLR-restrict t {X} {X'} h W W⊆ = fold record
   { err-obs = λ ω∈ → ⟨ err-obs ω∈ , ⟨ hitX ω∈ , proj₂ (proj₂ (W⊆ ω ω∈)) ⟩ ⟩
   ; const-obs = λ c c∈ → ⟨ const-obs c c∈ , ⟨ hitX c∈ , proj₂ (proj₂ (W⊆ _ c∈)) ⟩ ⟩
@@ -359,19 +457,31 @@ ApproxLR-restrict t {X} {X'} h W W⊆ = fold record
   where
   open ApproxLRLayer (unfold (h W (λ d d∈ → proj₁ (W⊆ d d∈))))
   k = kindᶠ (flat t)
-  hitX : ∀ {d} → d ⋵ W → hit t X
+  hitX : ∀ {d}
+    → d ⋵ W
+    → hit t X
   hitX d∈ = hit-reflect t h (proj₁ (proj₂ (W⊆ _ d∈)))
-  app : ∀ {U W₂} → Calls W U W₂ → ∀ E → Con E → Con (mem U) → ApproxLR E U → ApproxLR (keep (λ k → k) t X ● E) W₂
+  app : ∀ {U W₂}
+    → Calls W U W₂
+    → ∀ E
+    → Con E
+    → Con (mem U)
+    → ApproxLR E U
+    → ApproxLR (keep (λ k → k) t X ● E) W₂
   app {W₂ = []} _ _ _ _ _ = ApproxLR-∅ (λ _ ())
   app {W₂ = w ∷ W₂} cs E cE cU rU =
     ApproxLR-mono (●-mono-e {X} {keep (λ k → k) t X} (λ V x e∈ → ⟨ e∈ , ⟨ hitX c∈ , proj₂ (proj₂ (W⊆ _ c∈)) ⟩ ⟩))
       (app-obs cs E cE cU rU)
     where c∈ = CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w (here refl))))
-  tg : ∀ t' W' → mem W' ⊆ Untag t' (mem W) → ApproxLR (Untag t' (keep (λ k → k) t X)) W'
+  tg : ∀ t' W'
+    → mem W' ⊆ Untag t' (mem W)
+    → ApproxLR (Untag t' (keep (λ k → k) t X)) W'
   tg t' [] _ = ApproxLR-∅ (λ _ ())
   tg t' (w ∷ W') W'⊆ =
     ApproxLR-mono (λ d d∈ → ⟨ d∈ , ⟨ hitX (W'⊆ w (here refl)) , trans (tag-kind t') (proj₂ (proj₂ (W⊆ _ (W'⊆ w (here refl))))) ⟩ ⟩) (tag-obs t' (w ∷ W') W'⊆)
 
 {- the initial environment of a closed program -}
-Init-ApproxLR : ∀ {V} → mem V ⊆ ⌈ ω ⌉ → ApproxLR ⌈ ω ⌉ V
+Init-ApproxLR : ∀ {V}
+  → mem V ⊆ ⌈ ω ⌉
+  → ApproxLR ⌈ ω ⌉ V
 Init-ApproxLR V⊆ = ApproxLR-data V⊆ (λ v v∈ → flat-data (Init-flat (V⊆ v v∈)))

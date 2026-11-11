@@ -106,7 +106,9 @@ KOK _ d = ⊤
 
 open Locs 𝕍
 
-𝕍-ω : ∀ {A} (v : Val Σ A) → 𝕍 ω v → ⊥
+𝕍-ω : ∀ {A} (v : Val Σ A)
+  → 𝕍 ω v
+  → ⊥
 𝕍-ω (dyn G v) ⟨ _ , r ⟩ = 𝕍-ω v r
 𝕍-ω (code f) ⟨ _ , () ⟩
 𝕍-ω (pack c e) ⟨ _ , () ⟩
@@ -117,7 +119,9 @@ open Locs 𝕍
 𝕍-ω (inr v) ⟨ _ , () ⟩
 
 {- the observation of a value related to a constant is that constant -}
-𝕍-const : ∀ {A B} {k : base-rep B} (v : Val Σ A) → 𝕍 (dconst k) v → obs v ≡ o-const B k
+𝕍-const : ∀ {A B} {k : base-rep B} (v : Val Σ A)
+  → 𝕍 (dconst k) v
+  → obs v ≡ o-const B k
 𝕍-const (dyn G v) ⟨ _ , r ⟩ = 𝕍-const v r
 𝕍-const (const k) ⟨ _ , refl ⟩ = refl
 𝕍-const (code f) ⟨ _ , () ⟩
@@ -127,31 +131,48 @@ open Locs 𝕍
 𝕍-const (inl v) ⟨ _ , () ⟩
 𝕍-const (inr v) ⟨ _ , () ⟩
 
-no-ω : ∀ {A D} {v : Val Σ A} → PS D v → ω ∈ D → ⊥
+no-ω : ∀ {A D} {v : Val Σ A}
+  → PS D v
+  → ω ∈ D
+  → ⊥
 no-ω {v = v} h ω∈ = 𝕍-ω v (h ω ω∈)
 
-all→𝕍s : ∀ {A} V {v : Val Σ A} {D} → mem V ⊆ D → PS D v → 𝕍s V v
+all→𝕍s : ∀ {A} V {v : Val Σ A} {D}
+  → mem V ⊆ D
+  → PS D v
+  → 𝕍s V v
 all→𝕍s [] V⊆ h = tt
 all→𝕍s (d ∷ V) V⊆ h = ⟨ h d (V⊆ d (here refl)) , all→𝕍s V (λ d' d'∈ → V⊆ d' (there d'∈)) h ⟩
 
-𝕍s-∈ : ∀ {A} V {v : Val Σ A} → 𝕍s V v → PS (mem V) v
+𝕍s-∈ : ∀ {A} V {v : Val Σ A}
+  → 𝕍s V v
+  → PS (mem V) v
 𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ _ (here refl) = r
 𝕍s-∈ (d ∷ V) ⟨ _ , rs ⟩ d' (there d∈) = 𝕍s-∈ V rs d' d∈
 
 {- a bind on an operand all of whose elements are related: never ω -}
-bind-rel : ∀ {A D} {v : Val Σ A} (F : 𝒫 Value → 𝒫 Value) {Q : Value → Set} → PS D v
-  → (∀ w → w ∈ F ⌊ D ⌋ → Q w) → ∀ w → w ∈ (D ≫= F) → Q w
+bind-rel : ∀ {A D} {v : Val Σ A} (F : 𝒫 Value → 𝒫 Value) {Q : Value → Set}
+  → PS D v
+  → (∀ w → w ∈ F ⌊ D ⌋ → Q w)
+  → ∀ w
+  → w ∈ (D ≫= F)
+  → Q w
 bind-rel {v = v} F h k w (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (no-ω {v = v} h ω∈)
 bind-rel F h k w (inj₂ ⟨ _ , w∈ ⟩) = k w w∈
 
 {- an operand that holds only errors -}
-bind-ω : ∀ {D w} {X : Set} → (∀ d → d ∈ D → d ≡ ω) → (w ≡ ω × ω ∈ D) ⊎ (Conv D × X) → w ≡ ω
+bind-ω : ∀ {D w} {X : Set}
+  → (∀ d → d ∈ D → d ≡ ω)
+  → (w ≡ ω × ω ∈ D) ⊎ (Conv D × X)
+  → w ≡ ω
 bind-ω all (inj₁ ⟨ refl , _ ⟩) = refl
 bind-ω all (inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , _ ⟩) = ⊥-elim (d≢ (all d d∈))
 
 {- Inversions of the operators whose elements have one shape -------------------------}
 
-ℬ-inv : ∀ {B} {k : base-rep B} d → d ∈ ℬ B k ptt → d ≡ dconst k
+ℬ-inv : ∀ {B} {k : base-rep B} d
+  → d ∈ ℬ B k ptt
+  → d ≡ dconst k
 ℬ-inv (dconst k) ⟨ refl , refl ⟩ = refl
 ℬ-inv (V ↦ w) ()
 ℬ-inv ν ()
@@ -162,7 +183,9 @@ bind-ω all (inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , _ ⟩) = ⊥-elim (d�
 ℬ-inv (right d) ()
 ℬ-inv ⟨⟩ ()
 
-pair-inv : ∀ {D E} d → d ∈ pairD ⟨ D , ⟨ E , ptt ⟩ ⟩ → Σ[ u ∈ Value ] Σ[ u' ∈ Value ] d ≡ ⦅ u , u' ⦆ × u ∈ D × u' ∈ E
+pair-inv : ∀ {D E} d
+  → d ∈ pairD ⟨ D , ⟨ E , ptt ⟩ ⟩
+  → Σ[ u ∈ Value ] Σ[ u' ∈ Value ] d ≡ ⦅ u , u' ⦆ × u ∈ D × u' ∈ E
 pair-inv ⦅ u , u' ⦆ ⟨ u∈ , u'∈ ⟩ = ⟨ u , ⟨ u' , ⟨ refl , ⟨ u∈ , u'∈ ⟩ ⟩ ⟩ ⟩
 pair-inv (dconst k) ()
 pair-inv (V ↦ w) ()
@@ -173,7 +196,9 @@ pair-inv (left d) ()
 pair-inv (right d) ()
 pair-inv ⟨⟩ ()
 
-inl-rel : ∀ {D} {v : Val Σ Any} → PS D v → PS (inlD ⟨ D , ptt ⟩) (inl v)
+inl-rel : ∀ {D} {v : Val Σ Any}
+  → PS D v
+  → PS (inlD ⟨ D , ptt ⟩) (inl v)
 inl-rel h (left u) u∈ = ⟨ refl , h u u∈ ⟩
 inl-rel h (dconst k) ()
 inl-rel h (V ↦ w) ()
@@ -184,7 +209,9 @@ inl-rel h (tup[ i ] d) ()
 inl-rel h (right d) ()
 inl-rel h ⟨⟩ ()
 
-inr-rel : ∀ {D} {v : Val Σ Any} → PS D v → PS (inrD ⟨ D , ptt ⟩) (inr v)
+inr-rel : ∀ {D} {v : Val Σ Any}
+  → PS D v
+  → PS (inrD ⟨ D , ptt ⟩) (inr v)
 inr-rel h (right u) u∈ = ⟨ refl , h u u∈ ⟩
 inr-rel h (dconst k) ()
 inr-rel h (V ↦ w) ()
@@ -196,7 +223,9 @@ inr-rel h (left d) ()
 inr-rel h ⟨⟩ ()
 
 {- the elements of a tuple of sets of related elements -}
-𝒯-rel : ∀ {j} (vs : Vec (Val Σ Any) j) Xs → (∀ i → PS (nthD Xs i) (lookup vs i)) → PS (𝒯 j Xs) (tup vs)
+𝒯-rel : ∀ {j} (vs : Vec (Val Σ Any) j) Xs
+  → (∀ i → PS (nthD Xs i) (lookup vs i))
+  → PS (𝒯 j Xs) (tup vs)
 𝒯-rel [] Xs h ⟨⟩ _ = ⟨ refl , tt ⟩
 𝒯-rel (v ∷ vs) Xs h (tup[ i ] d) ⟨ refl , ⟨ d∈ , _ ⟩ ⟩ = ⟨ refl , ⟨ refl , h i d d∈ ⟩ ⟩
 𝒯-rel [] Xs h (tup[ i ] d) ()
@@ -220,9 +249,10 @@ inr-rel h ⟨⟩ ()
 
 {- the check of chk: the kinds of the elements related to a value of type Any
    are those of its flat type -}
-proj-adeq : ∀ t (u : Val Σ Any) {X} → PS X u
+proj-adeq : ∀ t (u : Val Σ Any) {X}
+  → PS X u
   → (proj? t u ≡ nothing × (∀ w → w ∈ projectᵠ kind₄ t X → w ≡ ω))
-    ⊎ Σ[ v ∈ Val Σ ⟪ flat t ⟫ ] proj? t u ≡ just v × PS (projectᵠ kind₄ t X) v
+      ⊎ Σ[ v ∈ Val Σ ⟪ flat t ⟫ ] proj? t u ≡ just v × PS (projectᵠ kind₄ t X) v
 proj-adeq t (dyn H v) h with H ≟F flat t
 ... | yes refl = inj₂ ⟨ v , ⟨ refl , bind-rel {v = dyn H v} (λ X → checkedᵠ kind₄ (kindᶠ (flat t)) X (keep kind₄ t X)) h
   (λ { w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , bad ⟩ ⟩ ⟩) → ⊥-elim (bad (proj₁ (proj₂ (h d (proj₁ d∈)))))
@@ -231,10 +261,14 @@ proj-adeq t (dyn H v) h with H ≟F flat t
   ; w (inj₂ ⟨ _ , inj₂ ⟨ ⟨ w∈ , _ ⟩ , ⟨ _ , wk ⟩ ⟩ ⟩) → ⊥-elim (ne (kindᶠ-inj (trans (sym (proj₁ (proj₂ (h w w∈)))) wk))) }) ⟩
 
 {- the fields of tuples and injections -}
-field-adeq : ∀ {T A B} (f : Field A B) {D} (v : Val Σ A) → PS D v → PS (fieldᴰ {Σ} T f D) (field′ f v)
+field-adeq : ∀ {T A B} (f : Field A B) {D} (v : Val Σ A)
+  → PS D v
+  → PS (fieldᴰ {Σ} T f D) (field′ f v)
 field-adeq (get i) (tup ws) h = bind-rel {v = tup ws} (λ X → projD i ⟨ X , ptt ⟩) h (λ d d∈ → gt (h _ (proj₁ d∈)))
   where
-  gt : ∀ {d} → 𝕍 (tup[ i ] d) (tup ws) → 𝕍 d (lookup ws i)
+  gt : ∀ {d}
+    → 𝕍 (tup[ i ] d) (tup ws)
+    → 𝕍 d (lookup ws i)
   gt ⟨ _ , ⟨ refl , r ⟩ ⟩ = r
 field-adeq payload (inl u) h = bind-rel {v = inl u} (λ X → payloadD (X ⇂ ValPayload)) h
   (λ { d (inj₁ l) → proj₂ (h _ (proj₁ (proj₁ l))) ; d (inj₂ r) → ⊥-elim (proj₂ (h _ (proj₁ (proj₁ r)))) })
@@ -242,28 +276,41 @@ field-adeq payload (inr u) h = bind-rel {v = inr u} (λ X → payloadD (X ⇂ Va
   (λ { d (inj₁ l) → ⊥-elim (proj₂ (h _ (proj₁ (proj₁ l)))) ; d (inj₂ r) → proj₂ (h _ (proj₁ (proj₁ r))) })
 
 {- primitives, on integers -}
-prim-adeq : ∀ p {D E} (u u' : Val Σ ⟪ base Int ⟫) → PS D u → PS E u' → PS (primᵗ p D E) (δᵀ p (int u) (int u'))
+prim-adeq : ∀ p {D E} (u u' : Val Σ ⟪ base Int ⟫)
+  → PS D u
+  → PS E u'
+  → PS (primᵗ p D E) (δᵀ p (int u) (int u'))
 prim-adeq p {D} {E} (const k) (const k') hD hE = bind-rel {v = const k} (λ X → E ≫= λ Y → primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩) hD (bind-rel {v = const k'} (λ Y → primD p ⟨ ⌊ D ⌋ , ⟨ Y , ptt ⟩ ⟩) hE
   λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ → out p (hD _ (proj₁ n∈)) (hE _ (proj₁ m∈)) })
   where
-  out : ∀ p {n m} → 𝕍 (dconst n) (const {Σ} {Int} k) → 𝕍 (dconst m) (const {Σ} {Int} k') → 𝕍 (dout (δ p n m)) (δᵀ {Σ} p k k')
+  out : ∀ p {n m}
+    → 𝕍 (dconst n) (const {Σ} {Int} k)
+    → 𝕍 (dconst m) (const {Σ} {Int} k')
+    → 𝕍 (dout (δ p n m)) (δᵀ {Σ} p k k')
   out sub ⟨ _ , refl ⟩ ⟨ _ , refl ⟩ = ⟨ refl , refl ⟩
   out eq ⟨ _ , refl ⟩ ⟨ _ , refl ⟩ with does (k ≟ℤ k')
   ... | true = ⟨ refl , ⟨ tt , ⟨ refl , tt ⟩ ⟩ ⟩
   ... | false = ⟨ refl , ⟨ tt , ⟨ refl , tt ⟩ ⟩ ⟩
 
 {- the flag that testinl sets -}
-isinl-adeq : ∀ {D} (v : Val Σ ⟪ sum ⟫) → PS D v → PS (D ≫= isinlD) (bit (is-inl v))
+isinl-adeq : ∀ {D} (v : Val Σ ⟪ sum ⟫)
+  → PS D v
+  → PS (D ≫= isinlD) (bit (is-inl v))
 isinl-adeq (inl v) h = bind-rel {v = inl v} isinlD h λ { w (inj₁ ⟨ u , ⟨ _ , refl ⟩ ⟩) → ⟨ refl , ⟨ tt , ⟨ refl , tt ⟩ ⟩ ⟩
                                                 ; w (inj₂ ⟨ u , ⟨ r , refl ⟩ ⟩) → ⊥-elim (proj₂ (h _ (proj₁ r))) }
 isinl-adeq (inr v) h = bind-rel {v = inr v} isinlD h λ { w (inj₁ ⟨ u , ⟨ l , refl ⟩ ⟩) → ⊥-elim (proj₂ (h _ (proj₁ l)))
                                                 ; w (inj₂ ⟨ u , ⟨ _ , refl ⟩ ⟩) → ⟨ refl , ⟨ tt , ⟨ refl , tt ⟩ ⟩ ⟩ }
 
 {- the code and environment of a closure -}
-car-rel : ∀ (v : Val Σ ⟪ fun ⟫) {D} → PS D v → PS (car ⟨ D , ptt ⟩) (code-of v)
+car-rel : ∀ (v : Val Σ ⟪ fun ⟫) {D}
+  → PS D v
+  → PS (car ⟨ D , ptt ⟩) (code-of v)
 car-rel (pack c e) h u ⟨ u' , p∈ ⟩ = proj₁ (proj₂ (h _ p∈))
 
-cdr-rel : ∀ {η} {v : Val Σ ⟪ fun ⟫} {c : Val Σ (code η)} {e D} → v ≡ pack c e → PS D v → PS (cdr ⟨ D , ptt ⟩) e
+cdr-rel : ∀ {η} {v : Val Σ ⟪ fun ⟫} {c : Val Σ (code η)} {e D}
+  → v ≡ pack c e
+  → PS D v
+  → PS (cdr ⟨ D , ptt ⟩) e
 cdr-rel refl h u' ⟨ u , p∈ ⟩ = proj₂ (proj₂ (h _ p∈))
 
 {- Calls ---------------------------------------------------------------------------------}
@@ -275,13 +322,21 @@ enter-eq : ∀ {η} (v : Val Σ (code η)) e a σ → enter ds v e a σ ≡ next
 enter-eq (code f) e a σ = refl
 
 {- an element of a call of code related to v, on related operands -}
-call-res : ∀ {η} (v : Val Σ (code η)) {e a Fn Di Si} → PS Fn v → PS Di e → PS Si a
-  → ∀ c → c ∈ ⋆ ⟨ ⋆ ⟨ Fn , ⟨ Di , ptt ⟩ ⟩ , ⟨ Si , ptt ⟩ ⟩ → Res c (callee′ v e a) (𝕍 c)
+call-res : ∀ {η} (v : Val Σ (code η)) {e a Fn Di Si}
+  → PS Fn v
+  → PS Di e
+  → PS Si a
+  → ∀ c
+  → c ∈ ⋆ ⟨ ⋆ ⟨ Fn , ⟨ Di , ptt ⟩ ⟩ , ⟨ Si , ptt ⟩ ⟩
+  → Res c (callee′ v e a) (𝕍 c)
 call-res (code f) hF hD hS c ⟨ V , ⟨ ⟨ U , ⟨ e∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ =
   proj₂ (hF _ e∈) _ _ (all→𝕍s U U⊆ hD) (all→𝕍s V V⊆ hS)
 
 {- a result with a value: all of its elements are related to the one value returned -}
-collect : ∀ {s C} → (∀ c → c ∈ C → Res c s (𝕍 c)) → Conv C → Σ[ v ∈ Val Σ Any ] Rets s v × PS C v
+collect : ∀ {s C}
+  → (∀ c → c ∈ C → Res c s (𝕍 c))
+  → Conv C
+  → Σ[ v ∈ Val Σ Any ] Rets s v × PS C v
 collect res ⟨ c₀ , ⟨ c₀∈ , c₀≢ ⟩ ⟩ with res c₀ c₀∈
 ... | inj₁ ⟨ e , _ ⟩ = ⊥-elim (c₀≢ e)
 ... | inj₂ ⟨ v , ⟨ ok , _ ⟩ ⟩ = ⟨ v , ⟨ ok , all ⟩ ⟩
@@ -295,7 +350,9 @@ collect res ⟨ c₀ , ⟨ c₀∈ , c₀≢ ⟩ ⟩ with res c₀ c₀∈
 
 module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f)) where
 
-  𝒪-adeq : ∀ {η ψ τ} (a : Arg Σ ψ τ) {m : Mach Σ η ψ} {ρ R F} → Rel ρ R F m → PR τ (𝒪 T a ρ R) (arg a m)
+  𝒪-adeq : ∀ {η ψ τ} (a : Arg Σ ψ τ) {m : Mach Σ η ψ} {ρ R F}
+    → Rel ρ R F m
+    → PR τ (𝒪 T a ρ R) (arg a m)
   𝒪-adeq (atom (var x)) q = fr q x
   𝒪-adeq (atom (lit B c)) q d d∈ with ℬ-inv d d∈
   ... | refl = ⟨ refl , refl ⟩
@@ -304,19 +361,30 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
   𝒪-adeq (a ↑) q d d∈ = ⟨ tt , 𝒪-adeq a q d d∈ ⟩
 
   {- the operands of a tuple, bound left to right -}
-  args-adeq : ∀ {η ψ j} (as : Vec (Arg Σ ψ (ty Any)) j) {m : Mach Σ η ψ} {ρ R F} → Rel ρ R F m
+  args-adeq : ∀ {η ψ j} (as : Vec (Arg Σ ψ (ty Any)) j) {m : Mach Σ η ψ} {ρ R F}
+    → Rel ρ R F m
     → ∀ {K : Results (𝒫 Value) (replicate j ■) → 𝒫 Value} {Q : Value → Set}
-    → (∀ Xs → (∀ i → PS (nthD Xs i) (lookup (args as m) i)) → ∀ w → w ∈ K Xs → Q w)
-    → ∀ w → w ∈ binds j (𝒪s T as ρ R) K → Q w
+    → (  ∀ Xs
+       → (∀ i → PS (nthD Xs i) (lookup (args as m) i))
+       → ∀ w
+       → w ∈ K Xs
+       → Q w)
+    → ∀ w
+    → w ∈ binds j (𝒪s T as ρ R) K
+    → Q w
   args-adeq [] q k = k ptt (λ ())
   args-adeq (a ∷ as) {m} {ρ} {R} q {K} k = bind-rel {v = arg a m} (λ X → binds _ (𝒪s T as ρ R) (λ Xs → K ⟨ X , Xs ⟩)) (𝒪-adeq a q)
     (args-adeq as q (λ Xs hs → k ⟨ _ , Xs ⟩ (λ { zero d d∈ → 𝒪-adeq a q d (proj₁ d∈) ; (suc i) → hs i })))
 
-  obj-adeq : ∀ {η ψ A} (o : Obj Σ ψ A) {m : Mach Σ η ψ} {ρ R F} → Rel ρ R F m → PS (object T o ρ R) (obj o m)
+  obj-adeq : ∀ {η ψ A} (o : Obj Σ ψ A) {m : Mach Σ η ψ} {ρ R F}
+    → Rel ρ R F m
+    → PS (object T o ρ R) (obj o m)
   obj-adeq (pair c e) {m} {ρ} {R} q = bind-rel {v = arg c m} (λ X → 𝒪 T e ρ R ≫= λ Y → pairD ⟨ X , ⟨ Y , ptt ⟩ ⟩) (𝒪-adeq c q)
     (bind-rel {v = arg e m} (λ Y → pairD ⟨ ⌊ 𝒪 T c ρ R ⌋ , ⟨ Y , ptt ⟩ ⟩) (𝒪-adeq e q) P)
     where
-    P : ∀ w → w ∈ pairD ⟨ _ , ⟨ _ , ptt ⟩ ⟩ → 𝕍 w (pack (arg c m) (arg e m))
+    P : ∀ w
+      → w ∈ pairD ⟨ _ , ⟨ _ , ptt ⟩ ⟩
+      → 𝕍 w (pack (arg c m) (arg e m))
     P w w∈ with pair-inv w w∈
     ... | ⟨ u , ⟨ u' , ⟨ refl , ⟨ u∈ , u'∈ ⟩ ⟩ ⟩ ⟩ = ⟨ refl , ⟨ 𝒪-adeq c q u (proj₁ u∈) , 𝒪-adeq e q u' (proj₁ u'∈) ⟩ ⟩
   obj-adeq (tuple as) {m} q = args-adeq as q (λ Xs hs → 𝒯-rel (args as m) Xs hs)
@@ -328,17 +396,35 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
   BR B bs = ∀ {Δ} (l : _ ∋ Δ) η (φ : Frame Σ Δ) ρ → (∀ {A} (x : Δ ∋ A) → PS (ρ (idx x)) (φ ! x))
     → ∀ w → w ∈ B l ρ → Res w (go ds (block bs l) halt η φ) (𝕍 w)
 
-  putˢ-ω : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {D κ ρ R F w} → (∀ d → d ∈ D → d ≡ ω) → w ∈ putˢᴰ {Σ} T d D κ ρ R F → w ≡ ω
+  putˢ-ω : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {D κ ρ R F w}
+    → (∀ d → d ∈ D → d ≡ ω)
+    → w ∈ putˢᴰ {Σ} T d D κ ρ R F
+    → w ≡ ω
   putˢ-ω (reg r) all = bind-ω all
   putˢ-ω (slot p _) all = bind-ω all
 
-  adequate : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {bs : Blocks Σ n Bs} {B : BEnv Bs} → BR B bs → ∀ {η} (m : Mach Σ η ψ) {ρ R F}
-    → Rel ρ R F m → ∀ w → w ∈ ⟦_⟧ˢ T k B ρ R F → Res w (run k bs halt η m) (𝕍 w)
+  adequate : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {bs : Blocks Σ n Bs} {B : BEnv Bs}
+    → BR B bs
+    → ∀ {η} (m : Mach Σ η ψ) {ρ R F}
+    → Rel ρ R F m
+    → ∀ w
+    → w ∈ ⟦_⟧ˢ T k B ρ R F
+    → Res w (run k bs halt η m) (𝕍 w)
   put-adeq : ∀ {n Bs ψ τ ψ' η} (d : Dst n ψ τ ψ') (k : Seq Σ n Bs ψ') {bs} {B : BEnv Bs} {m : Mach Σ η ψ} {ρ R F v D}
-    → BR B bs → Rel ρ R F m → PR τ D v → ∀ w → w ∈ putᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res w (run k bs halt η (put d v m)) (𝕍 w)
+    → BR B bs
+    → Rel ρ R F m
+    → PR τ D v
+    → ∀ w
+    → w ∈ putᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F
+    → Res w (run k bs halt η (put d v m)) (𝕍 w)
   {- chk's strict write -}
   putˢ-adeq : ∀ {n Bs ψ A ψ' η} (d : Dst n ψ (ty A) ψ') (k : Seq Σ n Bs ψ') {bs} {B : BEnv Bs} {m : Mach Σ η ψ} {ρ R F v D}
-    → BR B bs → Rel ρ R F m → PS D v → ∀ w → w ∈ putˢᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res w (run k bs halt η (put d v m)) (𝕍 w)
+    → BR B bs
+    → Rel ρ R F m
+    → PS D v
+    → ∀ w
+    → w ∈ putˢᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F
+    → Res w (run k bs halt η (put d v m)) (𝕍 w)
 
   adequate (movq a d ∷ k) br m q w w∈ = Res-step refl (put-adeq d k br q (𝒪-adeq a q) w w∈)
   adequate (subq a r e ∷ k) br m q w w∈ =
@@ -358,7 +444,9 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
     pre : ∀ σ → step ds (run (callq a e₁ e₂ ∷ k) bs σ _ m) ≡ next (callee′ (arg a m) _ _ ⊕ retK k bs (frame m) σ)
     pre σ = enter-eq (arg a m) _ _ (retK k bs (frame m) σ)
     C = ⋆ ⟨ ⋆ ⟨ 𝒪 T a ρ R , ⟨ R rdi , ptt ⟩ ⟩ , ⟨ R rsi , ptt ⟩ ⟩
-    CALL : ∀ w → w ∈ (C ≫= λ _ → ⟦_⟧ˢ T k B ρ (called-regs C) init) → Res w (run (callq a e₁ e₂ ∷ k) bs halt _ m) (𝕍 w)
+    CALL : ∀ w
+      → w ∈ (C ≫= λ _ → ⟦_⟧ˢ T k B ρ (called-regs C) init)
+      → Res w (run (callq a e₁ e₂ ∷ k) bs halt _ m) (𝕍 w)
     CALL w (inj₁ ⟨ refl , ω∈ ⟩) with res ω ω∈
     ... | inj₁ ⟨ _ , er ⟩ = inj₁ ⟨ refl , (λ σ → let ⟨ t , ⟨ τ , q' ⟩ ⟩ = er (retK k bs (frame m) σ) in ⟨ t , ⟨ pre σ ∷↠ τ , q' ⟩ ⟩) ⟩
     ... | inj₂ ⟨ v , ⟨ _ , r ⟩ ⟩ = ⊥-elim (𝕍-ω v r)
@@ -376,13 +464,19 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
     where
     nx : Bool → _
     nx b = next (if b then go ds (block bs l₁) halt _ (frame m) else go ds (block bs l₂) halt _ (frame m))
-    l : ∀ b {u} → 𝕍 (left u) (bit {Σ} b) → b ≡ true
+    l : ∀ b {u}
+      → 𝕍 (left u) (bit {Σ} b)
+      → b ≡ true
     l true _ = refl
     l false ⟨ _ , () ⟩
-    r : ∀ b {u} → 𝕍 (right u) (bit {Σ} b) → b ≡ false
+    r : ∀ b {u}
+      → 𝕍 (right u) (bit {Σ} b)
+      → b ≡ false
     r false _ = refl
     r true ⟨ _ , () ⟩
-    J : ∀ w → w ∈ 𝒞 ⟨ ⌊ F ⌋ ⇂ ValPayload , ⟨ (λ _ → B l₁ ρ) , ⟨ (λ _ → B l₂ ρ) , ptt ⟩ ⟩ ⟩ → Res w (run (je l₁ l₂) bs halt _ m) (𝕍 w)
+    J : ∀ w
+      → w ∈ 𝒞 ⟨ ⌊ F ⌋ ⇂ ValPayload , ⟨ (λ _ → B l₁ ρ) , ⟨ (λ _ → B l₂ ρ) , ptt ⟩ ⟩ ⟩
+      → Res w (run (je l₁ l₂) bs halt _ m) (𝕍 w)
     J w (inj₁ ⟨ u , ⟨ U , ⟨ ls , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
       Res-step (cong nx (l _ (fl q _ (proj₁ (proj₁ (ls u (here refl))))))) (br l₁ _ (frame m) _ (fr q) w w∈)
     J w (inj₂ ⟨ u , ⟨ U , ⟨ rs , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
@@ -401,14 +495,19 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
   blocks-adeq (bs ▷ k) Z η φ ρ f = adequate k (blocks-adeq bs) _ (mr f (λ { rax → tt ; rdi → tt ; rsi → tt }) tt tt)
   blocks-adeq (bs ▷ k) (S l) = blocks-adeq bs l
 
-  run-adeq : ∀ {ψ} (b : Body Σ ψ) {η} (m : Mach Σ η ψ) {ρ R F} → Rel ρ R F m
-    → ∀ w → w ∈ runᴰ T b ρ R F → Res w (run (Body.start b) (Body.blocks b) halt η m) (𝕍 w)
+  run-adeq : ∀ {ψ} (b : Body Σ ψ) {η} (m : Mach Σ η ψ) {ρ R F}
+    → Rel ρ R F m
+    → ∀ w
+    → w ∈ runᴰ T b ρ R F
+    → Res w (run (Body.start b) (Body.blocks b) halt η m) (𝕍 w)
   run-adeq (body n bs k) = adequate k (blocks-adeq bs)
 
 {- The table ------------------------------------------------------------------------}
 
 {- the code of definition f, under a table related to the code pointers -}
-code-rel : ∀ {n} (f : Σ ∋ n) {T} → (∀ {n} (g : Σ ∋ n) → PS (T (lvl g)) (code g)) → PS (codeₜ T (ds ! f)) (code f)
+code-rel : ∀ {n} (f : Σ ∋ n) {T}
+  → (∀ {n} (g : Σ ∋ n) → PS (T (lvl g)) (code g))
+  → PS (codeₜ T (ds ! f)) (code f)
 code-rel f 𝕋 ν _ = ⟨ tt , tt ⟩
 code-rel f 𝕋 (X ↦ ν) _ = ⟨ tt , tt ⟩
 code-rel f {T} 𝕋 (X ↦ (Y ↦ w)) ⟨ ⟨ ⟨ w∈ , _ ⟩ , _ ⟩ , _ ⟩ = ⟨ tt , (λ e a Xe Ya →
@@ -434,7 +533,9 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   tbl-rel : ∀ {n} (f : Σ ∋ n) → PS (T⁺ (lvl f)) (code f)
   tbl-rel f = below (suc (lvl f)) f (s≤s ≤-refl)
     where
-    below : ∀ p {n} (f : Σ ∋ n) → lvl f < p → PS (T⁺ (lvl f)) (code f)
+    below : ∀ p {n} (f : Σ ∋ n)
+      → lvl f < p
+      → PS (T⁺ (lvl f)) (code f)
     below (suc p) f (s≤s f≤) d d∈ = code-rel f 𝕋cut d (fix-C TC ind f d d∈)
       where
       𝕋cut : ∀ {n} (g : Σ ∋ n) → PS (cut (lvl f) ⌈ ν ⌉ T⁺ (lvl g)) (code g)
@@ -443,6 +544,7 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
       ... | no _ = λ { _ refl → ⟨ tt , tt ⟩ }
 
   {- the main sequence, from the start -}
-  main-adeq : ∀ (b : Body Σ (entry [])) w → w ∈ runᴰ T⁺ b (λ _ → init) (λ _ → init) init
+  main-adeq : ∀ (b : Body Σ (entry [])) w
+    → w ∈ runᴰ T⁺ b (λ _ → init) (λ _ → init) init
     → Res w (run (Body.start b) (Body.blocks b) halt 0 ⟨ rv tt tt tt , [] , tt , tt ⟩) (𝕍 w)
   main-adeq b = run-adeq T⁺ tbl-rel b _ (mr (λ ()) (λ { rax → tt ; rdi → tt ; rsi → tt }) tt tt)

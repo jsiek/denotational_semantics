@@ -86,12 +86,14 @@ import ISWIM.proof.Correctness.CEK.PipelineSim as PipelineSim
 {- Each pass ------------------------------------------------------------------}
 
 {- simplify, for closed programs -}
-simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+simplify-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMₘ.sem M) (ISWIMₘ.sem (simplify M))
 simplify-correct = SimplifySim.simplify-correct
 
 {- cast insertion, for closed programs -}
-cast-correct : ∀ (M : ISWIM.AST) → Closed M
+cast-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMₘ.sem M) (ISWIMᵀₘ.sem (cast-closed M))
 cast-correct = PipelineSim.cast-correct
 
@@ -125,19 +127,29 @@ select-correct = SelectSim.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
 
-compile-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMₘ.sem M) (Clos5ᵀₘ.sem (compile M))
+compile-correct : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Equivalent (ISWIMₘ.sem M) (Clos5ᵀₘ.sem (compile M))
 compile-correct = PipelineSim.compile-correct
 
-compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMₘ.sem M) (Clos5ᵀₘ.sem ⌜ compile-mon M ⌝ₚ)
+compile-mon-correct : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Equivalent (ISWIMₘ.sem M) (Clos5ᵀₘ.sem ⌜ compile-mon M ⌝ₚ)
 compile-mon-correct = PipelineSim.compile-mon-correct
 
-compile-imp-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMₘ.sem M) (Impᵀₘ.sem (compile-imp M))
+compile-imp-correct : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Equivalent (ISWIMₘ.sem M) (Impᵀₘ.sem (compile-imp M))
 compile-imp-correct = PipelineSim.compile-imp-correct
 
-compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMₘ.sem M) (CFGᵀₘ.sem (compile-cfg M))
+compile-cfg-correct : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Equivalent (ISWIMₘ.sem M) (CFGᵀₘ.sem (compile-cfg M))
 compile-cfg-correct = PipelineSim.compile-cfg-correct
 
-compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMₘ.sem M) (X86ᵀₘ.sem (compile-x86 M))
+compile-x86-correct : ∀ (M : ISWIM.AST)
+  → Closed M
+  → Equivalent (ISWIMₘ.sem M) (X86ᵀₘ.sem (compile-x86 M))
 compile-x86-correct = PipelineSim.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the
@@ -145,18 +157,23 @@ compile-x86-correct = PipelineSim.compile-x86-correct
    does, errors exactly when it does, and diverges exactly when it
    does -}
 
-compile-const : ∀ (M : ISWIM.AST) → Closed M → ∀ B k
+compile-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ B k
   → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) (o-const B k)
 compile-const = PipelineSim.compile-const
 
-compile-converges : ∀ (M : ISWIM.AST) → Closed M
+compile-converges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (Clos5ᵀₘ.sem (compile M)))
 compile-converges = PipelineSim.compile-converges
 
-compile-error : ∀ (M : ISWIM.AST) → Closed M
+compile-error : ∀ (M : ISWIM.AST)
+  → Closed M
   → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (Clos5ᵀₘ.sem (compile M)) o-error
 compile-error = PipelineSim.compile-error
 
-compile-diverges : ∀ (M : ISWIM.AST) → Closed M
+compile-diverges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Diverges (ISWIMₘ.sem M) ⇔ Diverges (Clos5ᵀₘ.sem (compile M))
 compile-diverges = PipelineSim.compile-diverges

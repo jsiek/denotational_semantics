@@ -41,11 +41,17 @@ Agree : ∀ {k k'} → (Fin k → Bool) → (Fin k → Fin k') → Env Value →
 Agree u r ρ ρ' = ∀ x → T (u x) → ρ (toℕ x) ≃ ρ' (toℕ (r x))
 
 {- under a binder -}
-ext-agree : ∀ {k k' u r ρ ρ' X X'} → X ≃ X' → Agree {k} {k'} (λ x → u (suc x)) r ρ ρ' → Agree u (ext r) (X • ρ) (X' • ρ')
+ext-agree : ∀ {k k' u r ρ ρ' X X'}
+  → X ≃ X'
+  → Agree {k} {k'} (λ x → u (suc x)) r ρ ρ'
+  → Agree u (ext r) (X • ρ) (X' • ρ')
 ext-agree X≃ ag zero _ = X≃
 ext-agree X≃ ag (suc x) t = ag x t
 
-ext-vals : ∀ {k ρ X} → Val X → Vals k ρ → Vals (suc k) (X • ρ)
+ext-vals : ∀ {k ρ X}
+  → Val X
+  → Vals k ρ
+  → Vals (suc k) (X • ρ)
 ext-vals v V zero = v
 ext-vals v V (suc x) = V x
 
@@ -59,12 +65,20 @@ code-env n Xs Y zero = refl
 code-env (suc n) ⟨ X , Xs ⟩ Y (suc zero) = refl
 code-env (suc n) ⟨ X , Xs ⟩ Y (suc (suc i)) = code-env n Xs X (suc i)
 
-opt-ok : ∀ {k k' A} (M : Tm k A) {r : Fin k → Fin k'} {ρ ρ'} → Vals k ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ opt r M ⟧ ρ'
-opts-ok : ∀ {k k' n} (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ ρ'} → Vals k ρ → Agree (usesV Ms) r ρ ρ'
-  → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts r Ms ⟧s ρ') i
+opt-ok : ∀ {k k' A} (M : Tm k A) {r : Fin k → Fin k'} {ρ ρ'}
+  → Vals k ρ
+  → Agree (uses M) r ρ ρ'
+  → ⟦ M ⟧ ρ ≃ ⟦ opt r M ⟧ ρ'
+opts-ok : ∀ {k k' n} (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ ρ'}
+  → Vals k ρ
+  → Agree (usesV Ms) r ρ ρ'
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts r Ms ⟧s ρ') i
 {- binding the free variables and binding the kept ones -}
 binds-ok : ∀ {k k' n} (fl : Vec Bool n) (Ms : Vec (Tm k Any) n) {u : Fin n → Bool} {r : Fin k → Fin k'} {ρ ρ' K K'}
-  → (∀ i → Fl (u i) (lookup fl i) (lookup Ms i)) → Vals k ρ → Agree (usesV Ms) r ρ ρ'
+  → (∀ i → Fl (u i) (lookup fl i) (lookup Ms i))
+  → Vals k ρ
+  → Agree (usesV Ms) r ρ ρ'
   → (∀ {Xs Ys} → AllVal n Xs → Thin _≃_ fl (vec n Xs) (vec _ Ys) → K Xs ≃ K' Ys)
   → binds n (⟦ Ms ⟧s ρ) K ≃ binds (count fl) (⟦ select fl (opts r Ms) ⟧s ρ') K'
 

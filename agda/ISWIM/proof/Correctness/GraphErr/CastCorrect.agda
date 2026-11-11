@@ -59,10 +59,14 @@ open import Relation.Nullary.Decidable using (map′)
 
 {- Checks and projects ----------------------------------------------------------}
 
-⌊⌋-≃ : ∀ {D D'} → D ≃ D' → ⌊ D ⌋ ≃ ⌊ D' ⌋
+⌊⌋-≃ : ∀ {D D'}
+  → D ≃ D'
+  → ⌊ D ⌋ ≃ ⌊ D' ⌋
 ⌊⌋-≃ e = ⟨ ⌊⌋-mono (proj₁ e) , ⌊⌋-mono (proj₂ e) ⟩
 
-chk-≃ : ∀ {k X A A'} → A ≃ A' → checked k X A ≃ checked k X A'
+chk-≃ : ∀ {k X A A'}
+  → A ≃ A'
+  → checked k X A ≃ checked k X A'
 chk-≃ e = ⟨ checked-mono (λ _ z → z) (proj₁ e) , checked-mono (λ _ z → z) (proj₂ e) ⟩
 
 {- the kinds of the flat types are decidable -}
@@ -73,7 +77,9 @@ flat (tup n) = just (tup n)
 flat (base B) = just (base B)
 flat _ = nothing
 
-from-flat : ∀ k G → flat k ≡ just G → k ≡ kindᶠ G
+from-flat : ∀ k G
+  → flat k ≡ just G
+  → k ≡ kindᶠ G
 from-flat fun _ refl = refl
 from-flat inj _ refl = refl
 from-flat (tup n) _ refl = refl
@@ -118,18 +124,28 @@ proj-val : ∀ t {X} K → let k = kindᶠ (flatT t) in Mono₁ K → (∀ {X} �
 proj-val t K m nd hk c ⟨ cl , ne ⟩ =
   ≃-trans (proj-≫= t K m nd hk c) (≫=-β {F = λ X → checked (kindᶠ (flatT t)) X (K X)} (λ X⊆ → checked-mono X⊆ (m X⊆)) cl ne)
 
-pmono : ∀ p {X X' Y Y'} → X ⊆ X' → Y ⊆ Y' → primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩ ⊆ primD p ⟨ X' , ⟨ Y' , ptt ⟩ ⟩
+pmono : ∀ p {X X' Y Y'}
+  → X ⊆ X'
+  → Y ⊆ Y'
+  → primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩ ⊆ primD p ⟨ X' , ⟨ Y' , ptt ⟩ ⟩
 pmono p X⊆ Y⊆ = lower (primD-mono p _ _ ⟨ lift X⊆ , ⟨ lift Y⊆ , ptt ⟩ ⟩)
 
 {- the kernel of primᵐ -}
 Pk : Prim → 𝒫 Value → 𝒫 Value → 𝒫 Value
 Pk p X Y = checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩))
 
-Pk-≃ : ∀ p {X X' Y Y'} → X ≃ X' → Y ≃ Y' → Pk p X Y ≃ Pk p X' Y'
+Pk-≃ : ∀ p {X X' Y Y'}
+  → X ≃ X'
+  → Y ≃ Y'
+  → Pk p X Y ≃ Pk p X' Y'
 Pk-≃ p e f = ⟨ checked-mono (proj₁ e) (checked-mono (proj₁ f) (pmono p (proj₁ e) (proj₁ f)))
              , checked-mono (proj₂ e) (checked-mono (proj₂ f) (pmono p (proj₂ e) (proj₂ f))) ⟩
 
-prim-proj : ∀ p {X Y} → Con X → Con Y → Val X → Val Y
+prim-proj : ∀ p {X Y}
+  → Con X
+  → Con Y
+  → Val X
+  → Val Y
   → primᵗ p (projectᵗ tint X) (projectᵗ tint Y) ≃ Pk p X Y
 prim-proj p {X} {Y} cX cY vX vY =
   ≃-trans (proj-val tint (λ A → projectᵗ tint Y ≫= λ B → primD p ⟨ A , ⟨ B , ptt ⟩ ⟩)
@@ -140,17 +156,23 @@ prim-proj p {X} {Y} cX cY vX vY =
                     (λ { _ ⟨ _ , ⟨ m , ⟨ _ , ⟨ m∈ , _ ⟩ ⟩ ⟩ ⟩ → inj₂ ⟨ const m , ⟨ m∈ , refl ⟩ ⟩ }) (λ _ _ → tt) cY vY))
 
 {- the typed operators on a projected operand are the checked untyped ones -}
-app-proj : ∀ {D} E → Con D → appᵗ (projectᵗ tfun D) E ≃ ⋆ᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩
+app-proj : ∀ {D} E
+  → Con D
+  → appᵗ (projectᵗ tfun D) E ≃ ⋆ᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩
 app-proj E = proj-≫= tfun (λ F → E ≫= λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩)
   (λ {F} {F'} F⊆ → ≫=-mono {F = λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩} {λ X → ⋆ ⟨ F' , ⟨ X , ptt ⟩ ⟩} (λ _ z → z)
                      λ X⊆ → lower (⋆-mono _ _ ⟨ lift F⊆ , ⟨ lift X⊆ , ptt ⟩ ⟩))
   (λ {F} → ≫=-needs {D = E} {λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩} λ {X} → ⋆-needs {F} {X}) (λ _ _ → tt)
 
-get-proj : ∀ {n} (i : Fin (suc n)) {D} → Con D → getᵗ i (projectᵗ (ttup n i) D) ≃ projᵐ i ⟨ D , ptt ⟩
+get-proj : ∀ {n} (i : Fin (suc n)) {D}
+  → Con D
+  → getᵗ i (projectᵗ (ttup n i) D) ≃ projᵐ i ⟨ D , ptt ⟩
 get-proj i = proj-≫= (ttup _ i) (λ X → proj i ⟨ X , ptt ⟩) (λ X⊆ → lower (proj-mono i _ _ ⟨ lift X⊆ , ptt ⟩))
   (λ _ d∈ → inj₂ ⟨ _ , ⟨ d∈ , refl ⟩ ⟩) (λ w w∈ → ⟨ w , w∈ ⟩)
 
-case-proj : ∀ {D} F G → Con D → caseᵗ (projectᵗ tsum D) F G ≃ 𝒞ᵐ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
+case-proj : ∀ {D} F G
+  → Con D
+  → caseᵗ (projectᵗ tsum D) F G ≃ 𝒞ᵐ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
 case-proj F G = proj-≫= tsum (λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩)
   (λ X⊆ → 𝒞⇂-⊆ {A = F} {F} {G} {G} X⊆ (λ _ _ _ _ _ z → z) (λ _ _ _ _ _ z → z)) (λ {X} → 𝒞-needs {X} {ValPayload} {F} {G}) (λ _ _ → tt)
 
@@ -159,26 +181,57 @@ case-proj F G = proj-≫= tsum (λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F , ⟨
 Wf : Env Value → Set
 Wf ρ = nonempty-env ρ × Con-env ρ
 
-wf-• : ∀ {X ρ} → Wf ρ → nonempty X → Con X → Wf (X • ρ)
+wf-• : ∀ {X ρ}
+  → Wf ρ
+  → nonempty X
+  → Con X
+  → Wf (X • ρ)
 wf-• ⟨ ne , c ⟩ neX cX = ⟨ extend-nonempty-env ne neX , Con-• cX c ⟩
 
 Agree : ∀ {k k'} → (Fin k → Fin k') → Env Value → Env Value → Set
 Agree r ρ σ = ∀ x → ρ (toℕ x) ≃ σ (toℕ (r x))
 
-agree-• : ∀ {k k'} {r : Fin k → Fin k'} {ρ σ X X'} → Agree r ρ σ → X ≃ X' → Agree (ext r) (X • ρ) (X' • σ)
+agree-• : ∀ {k k'} {r : Fin k → Fin k'} {ρ σ X X'}
+  → Agree r ρ σ
+  → X ≃ X'
+  → Agree (ext r) (X • ρ) (X' • σ)
 agree-• R e zero = e
 agree-• R e (suc x) = R x
 
 {- The main lemma --------------------------------------------------------------------}
 
-cc : ∀ {k k'} (r : Fin k → Fin k') M (w : WS k M) {ρ σ} → Wf ρ → Agree r ρ σ → ⟦ M ⟧ ρ ≃ T.⟦ cast r M w ⟧ σ
-ccs : ∀ {k k' n} (r : Fin k → Fin k') (Ms : Args (replicate n ■)) (ws : WS-args k Ms) {ρ σ} → Wf ρ → Agree r ρ σ
-  → ∀ i → nthD (⟦ Ms ⟧₊ ρ) i ≃ nthD (T.⟦ casts r Ms ws ⟧s σ) i
+cc : ∀ {k k'} (r : Fin k → Fin k') M
+  → (w : WS k M)
+  → ∀ {ρ σ}
+  → Wf ρ
+  → Agree r ρ σ
+  → ⟦ M ⟧ ρ ≃ T.⟦ cast r M w ⟧ σ
+ccs : ∀ {k k' n} (r : Fin k → Fin k') (Ms : Args (replicate n ■))
+  → (ws : WS-args k Ms)
+  → ∀ {ρ σ}
+  → Wf ρ
+  → Agree r ρ σ
+  → ∀ i
+  → nthD (⟦ Ms ⟧₊ ρ) i ≃ nthD (T.⟦ casts r Ms ws ⟧s σ) i
 {- the typed meaning is consistent, as the untyped one is -}
-con : ∀ {k k'} {r : Fin k → Fin k'} M (w : WS k M) {ρ σ} → Wf ρ → Agree r ρ σ → Con (T.⟦ cast r M w ⟧ σ)
-⌊con⌋ : ∀ {k k'} {r : Fin k → Fin k'} M (w : WS k M) {ρ σ} → Wf ρ → Agree r ρ σ → Con ⌊ T.⟦ cast r M w ⟧ σ ⌋
+con : ∀ {k k'} {r : Fin k → Fin k'} M
+  → (w : WS k M)
+  → ∀ {ρ σ}
+  → Wf ρ
+  → Agree r ρ σ
+  → Con (T.⟦ cast r M w ⟧ σ)
+⌊con⌋ : ∀ {k k'} {r : Fin k → Fin k'} M
+  → (w : WS k M)
+  → ∀ {ρ σ}
+  → Wf ρ
+  → Agree r ρ σ
+  → Con ⌊ T.⟦ cast r M w ⟧ σ ⌋
 {- a binder: the body on a finite consistent set of values -}
-body : ∀ {k k'} (r : Fin k → Fin k') N (w : WS (suc k) N) {ρ σ} → Wf ρ → Agree r ρ σ
+body : ∀ {k k'} (r : Fin k → Fin k') N
+  → (w : WS (suc k) N)
+  → ∀ {ρ σ}
+  → Wf ρ
+  → Agree r ρ σ
   → BodyEq (λ X → ⟦ N ⟧ (X • ρ)) (λ X → T.⟦ cast (ext r) N w ⟧ (X • σ))
 
 cc r (` x) x<k {ρ} wf R = ≃-trans (≃-reflexive (cong ρ (sym (toℕ-fromℕ< x<k)))) (R _)
@@ -223,5 +276,7 @@ body r N w wf R V ne c n = cc (ext r) N w (wf-• wf (proj₂ (noerr-val V ne n)
 
 {- The end theorem: closed programs ----------------------------------------------}
 
-cast-correct : ∀ (M : AST) (w : WS 0 M) → ⟦ M ⟧ ρ₀ ≃ T.⟦ cast-program M w ⟧ ρ₀
+cast-correct : ∀ (M : AST)
+  → (w : WS 0 M)
+  → ⟦ M ⟧ ρ₀ ≃ T.⟦ cast-program M w ⟧ ρ₀
 cast-correct M w = cc (λ x → x) M w ⟨ (λ _ → ⟨ ω , refl ⟩) , (λ _ → Con-⌈⌉ ω) ⟩ (λ ())

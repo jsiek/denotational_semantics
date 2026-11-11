@@ -27,8 +27,12 @@ data Value {k} : ∀ {A} → Tm k A → Set where
   inr : ∀ {V} → Value V → Value (inr V)
   inject : ∀ {G V} → Value V → Value (inject G V)
 
-value-red : ∀ {A} {V : Tm 0 A} → Value V → red V ≡ val
-values-red : ∀ {n} {Vs : Vec (Tm 0 Any) n} → All Value Vs → reds Vs ≡ val
+value-red : ∀ {A} {V : Tm 0 A}
+  → Value V
+  → red V ≡ val
+values-red : ∀ {n} {Vs : Vec (Tm 0 Any) n}
+  → All Value Vs
+  → reds Vs ≡ val
 value-red (clos vs) rewrite values-red vs = refl
 value-red lit = refl
 value-red (tuple vs) rewrite values-red vs = refl
@@ -38,8 +42,12 @@ value-red (inject v) rewrite value-red v = refl
 values-red [] = refl
 values-red (v ∷ vs) rewrite value-red v | values-red vs = refl
 
-value-trav : ∀ {𝒦 k j A} {σ : Sub 𝒦 k j} {V : Tm k A} → Value V → Value (trav 𝒦 σ V)
-values-trav : ∀ {𝒦 k j n} {σ : Sub 𝒦 k j} {Vs : Vec (Tm k Any) n} → All Value Vs → All Value (travs 𝒦 σ Vs)
+value-trav : ∀ {𝒦 k j A} {σ : Sub 𝒦 k j} {V : Tm k A}
+  → Value V
+  → Value (trav 𝒦 σ V)
+values-trav : ∀ {𝒦 k j n} {σ : Sub 𝒦 k j} {Vs : Vec (Tm k Any) n}
+  → All Value Vs
+  → All Value (travs 𝒦 σ Vs)
 value-trav (clos vs) = clos (values-trav vs)
 value-trav lit = lit
 value-trav (tuple vs) = tuple (values-trav vs)

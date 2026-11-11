@@ -74,14 +74,20 @@ Ret : (Stack → State) → Val → Set
 Ret S v = ∀ stk → Σ[ bs ∈ List Block ] Σ[ f ∈ Maybe Bool ] Σ[ φ ∈ Frame ] Σ[ ρ ∈ MRegs ]
   (S stk ↠ run [] retq bs stk f φ ρ) × ρ rax ≡ just v
 
-Ret-det : ∀ {S v₁ v₂} → Ret S v₁ → Ret S v₂ → v₁ ≡ v₂
+Ret-det : ∀ {S v₁ v₂}
+  → Ret S v₁
+  → Ret S v₂
+  → v₁ ≡ v₂
 Ret-det r₁ r₂ with r₁ halt | r₂ halt
 ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ₁ , e₁ ⟩ ⟩ ⟩ ⟩ ⟩ | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ₂ , e₂ ⟩ ⟩ ⟩ ⟩ ⟩
     with ↠-final-det τ₁ τ₂ (cong halt? e₁) (cong halt? e₂)
 ... | refl with trans (sym e₁) e₂
 ... | refl = refl
 
-Ret-step : ∀ {S S' v} → (∀ stk → step ds (S stk) ≡ next (S' stk)) → Ret S' v → Ret S v
+Ret-step : ∀ {S S' v}
+  → (∀ stk → step ds (S stk) ≡ next (S' stk))
+  → Ret S' v
+  → Ret S v
 Ret-step st r stk with r stk
 ... | ⟨ bs , ⟨ f , ⟨ φ , ⟨ ρ , ⟨ τ , e ⟩ ⟩ ⟩ ⟩ ⟩ = ⟨ bs , ⟨ f , ⟨ φ , ⟨ ρ , ⟨ st stk ∷↠ τ , e ⟩ ⟩ ⟩ ⟩ ⟩
 
@@ -119,12 +125,17 @@ Fl F f = ∀ d → d ∈ F → Σ[ b ∈ Bool ] f ≡ just b × 𝕍 d (bit b)
 ℬ-𝕄 : ∀ B k → 𝕄 (ℬ B k ptt) (just (const B k))
 ℬ-𝕄 B k (dconst k') ⟨ refl , refl ⟩ = ⟨ const B k , ⟨ refl , refl ⟩ ⟩
 
-prim-𝕄 : ∀ p {Dd Da md ma} → 𝕄 Dd md → 𝕄 Da ma
+prim-𝕄 : ∀ p {Dd Da md ma}
+  → 𝕄 Dd md
+  → 𝕄 Da ma
   → 𝕄 (primD p ⟨ Dd , ⟨ Da , ptt ⟩ ⟩) (ma >>= λ w → md >>= λ u → prim? p u w)
 prim-𝕄 p hd ha x ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ with hd (dconst n) n∈ | ha (dconst m) m∈
 ... | ⟨ _ , ⟨ refl , refl ⟩ ⟩ | ⟨ _ , ⟨ refl , refl ⟩ ⟩ = ⟨ out (δ p n m) , ⟨ refl , 𝕍-out (δ p n m) ⟩ ⟩
 
-cmp-Fl : ∀ {D₁ D₂ m₁ m₂} → 𝕄 D₁ m₁ → 𝕄 D₂ m₂ → nonempty (primD eq ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩)
+cmp-Fl : ∀ {D₁ D₂ m₁ m₂}
+  → 𝕄 D₁ m₁
+  → 𝕄 D₂ m₂
+  → nonempty (primD eq ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩)
   → Σ[ b ∈ Bool ] (m₁ >>= λ v → m₂ >>= λ w → cmp v w) ≡ just b × Fl (primD eq ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩) (just b)
 cmp-Fl {D₁} {D₂} h₁ h₂ ⟨ _ , ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , _ ⟩ ⟩ ⟩ ⟩ ⟩ with h₁ (dconst n) n∈ | h₂ (dconst m) m∈
 ... | ⟨ _ , ⟨ refl , refl ⟩ ⟩ | ⟨ _ , ⟨ refl , refl ⟩ ⟩ = ⟨ _ , ⟨ refl , F ⟩ ⟩
@@ -135,7 +146,10 @@ cmp-Fl {D₁} {D₂} h₁ h₂ ⟨ _ , ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , _ �
   ... | refl | refl with r₁ | r₂
   ... | refl | refl = ⟨ _ , ⟨ refl , 𝕍-out (δ eq n m) ⟩ ⟩
 
-isinl-Fl : ∀ {D m} → 𝕄 D m → nonempty (isinl D) → Σ[ b ∈ Bool ] (m >>= is-inl) ≡ just b × Fl (isinl D) (just b)
+isinl-Fl : ∀ {D m}
+  → 𝕄 D m
+  → nonempty (isinl D)
+  → Σ[ b ∈ Bool ] (m >>= is-inl) ≡ just b × Fl (isinl D) (just b)
 isinl-Fl {D} h ⟨ _ , inj₁ ⟨ u , ⟨ u∈ , _ ⟩ ⟩ ⟩ with h (left u) u∈
 ... | ⟨ T.inl v , ⟨ refl , _ ⟩ ⟩ = ⟨ true , ⟨ refl , F ⟩ ⟩
   where
@@ -151,7 +165,9 @@ isinl-Fl {D} h ⟨ _ , inj₂ ⟨ u , ⟨ u∈ , _ ⟩ ⟩ ⟩ with h (right u) 
   F _ (inj₁ ⟨ u' , ⟨ u'∈ , refl ⟩ ⟩) with h (left u') u'∈
   ... | ⟨ _ , ⟨ refl , () ⟩ ⟩
 
-field-𝕄 : ∀ f {D m} → 𝕄 D m → 𝕄 (field′ f D) (m >>= get-field f)
+field-𝕄 : ∀ f {D m}
+  → 𝕄 D m
+  → 𝕄 (field′ f D) (m >>= get-field f)
 field-𝕄 fstₛ h x ⟨ y , xy∈ ⟩ with h ⦅ x , y ⦆ xy∈
 ... | ⟨ pair v w , ⟨ refl , ⟨ r , _ ⟩ ⟩ ⟩ = ⟨ v , ⟨ refl , r ⟩ ⟩
 field-𝕄 sndₛ h y ⟨ x , xy∈ ⟩ with h ⦅ x , y ⦆ xy∈
@@ -168,7 +184,12 @@ field-𝕄 payload h x (inj₂ x∈) with h (right x) x∈
 
 module _ {T : Table} (𝕋T : 𝕋 T) where
 
-  𝒪-𝕄 : ∀ {L n σ ρs φ ρm} a → OK L (_< n) a → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → 𝕄 (𝒪 T n σ ρs a) (arg φ ρm a)
+  𝒪-𝕄 : ∀ {L n σ ρs φ ρm} a
+    → OK L (_< n) a
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → 𝕄 (𝒪 T n σ ρs a) (arg φ ρm a)
   𝒪-𝕄 {n = n} (loc (var x)) x< refl F G with x <? n
   ... | yes _ = F x x<
   ... | no ¬x< = ⊥-elim (¬x< x<)
@@ -177,10 +198,14 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
   𝒪-𝕄 (label k) _ _ F G d d∈ = ⟨ code k , ⟨ refl , 𝕋T k d d∈ ⟩ ⟩
 
   {- the operands of alloc -}
-  args-run : ∀ {L n σ ρs φ ρm} as acc (k : List Val → Maybe Val) → All (OK L (_< n)) as → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm
+  args-run : ∀ {L n σ ρs φ ρm} as acc (k : List Val → Maybe Val)
+    → All (OK L (_< n)) as
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
     → (∀ j → nonempty (nthD (𝒪s T n σ ρs as) j))
     → Σ[ vs ∈ List Val ] args φ ρm acc as k ≡ k (reverse acc ++ vs) × length vs ≡ length as
-       × (∀ j x → x ∈ nthD (𝒪s T n σ ρs as) j → 𝕍At j x vs)
+        × (∀ j x → x ∈ nthD (𝒪s T n σ ρs as) j → 𝕍At j x vs)
   args-run [] acc k _ _ _ _ _ = ⟨ [] , ⟨ cong k (sym (++-identityʳ (reverse acc))) , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
   args-run {φ = φ} {ρm} (a ∷ as) acc k (o ∷ os) nφ F G ne with ne zero
   ... | ⟨ x₀ , x₀∈ ⟩ with 𝒪-𝕄 a o nφ F G x₀ x₀∈
@@ -189,18 +214,28 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
     ⟨ v ∷ vs , ⟨ trans (args-cons ea) (trans e (cong k (trans (cong (_++ vs) (unfold-reverse v acc)) (++-assoc (reverse acc) [ v ] vs))))
               , ⟨ cong suc len , G' ⟩ ⟩ ⟩
     where
-    args-cons : ∀ {m} → m ≡ just v → (m >>= λ u → args φ ρm (u ∷ acc) as k) ≡ args φ ρm (v ∷ acc) as k
+    args-cons : ∀ {m}
+      → m ≡ just v
+      → (m >>= λ u → args φ ρm (u ∷ acc) as k) ≡ args φ ρm (v ∷ acc) as k
     args-cons refl = refl
-    G' : ∀ j x → x ∈ nthD (𝒪s T _ _ _ (a ∷ as)) j → 𝕍At j x (v ∷ vs)
+    G' : ∀ j x
+      → x ∈ nthD (𝒪s T _ _ _ (a ∷ as)) j
+      → 𝕍At j x (v ∷ vs)
     G' zero x x∈ with 𝒪-𝕄 a o nφ F G x x∈
     ... | ⟨ _ , ⟨ e' , r ⟩ ⟩ with trans (sym ea) e'
     ... | refl = ⟨ len , r ⟩
     G' (suc j) x x∈ = rs j x x∈
 
-  bind≡ : ∀ {A B : Set} {m : Maybe A} {x} {f : A → Maybe B} → m ≡ just x → (m >>= f) ≡ f x
+  bind≡ : ∀ {A B : Set} {m : Maybe A} {x} {f : A → Maybe B}
+    → m ≡ just x
+    → (m >>= f) ≡ f x
   bind≡ refl = refl
 
-  object-𝕄 : ∀ {L n σ ρs φ ρm} sh as → All (OK L (_< n)) as → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm
+  object-𝕄 : ∀ {L n σ ρs φ ρm} sh as
+    → All (OK L (_< n)) as
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
     → 𝕄 (object T n σ ρs sh as) (args φ ρm [] as (build sh))
   object-𝕄 pairₛ (a ∷ b ∷ []) (oa ∷ ob ∷ []) nφ F G ⦅ u , w ⦆ ⟨ u∈ , w∈ ⟩
       with 𝒪-𝕄 a oa nφ F G u u∈ | 𝒪-𝕄 b ob nφ F G w w∈
@@ -213,16 +248,23 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
   object-𝕄 inrₛ (a ∷ []) (oa ∷ []) nφ F G (right u) u∈ with 𝒪-𝕄 a oa nφ F G u u∈
   ... | ⟨ v , ⟨ e , r ⟩ ⟩ = ⟨ T.inr v , ⟨ bind≡ e , r ⟩ ⟩
 
-  put-ne : ∀ {n} d {D κ σ ρ F w} → w ∈ putD n d D κ σ ρ F → nonempty D
+  put-ne : ∀ {n} d {D κ σ ρ F w}
+    → w ∈ putD n d D κ σ ρ F
+    → nonempty D
   put-ne {n} (var x) w∈ with x <? n
   put-ne (var x) ⟨ V , ⟨ _ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ | yes _ with E≢[]⇒nonempty-mem neV
   ... | ⟨ d , d∈ ⟩ = ⟨ d , V⊆ d d∈ ⟩
   put-ne (reg g) ⟨ ne , _ ⟩ = ne
 
   {- d := D, in the semantics and the machine -}
-  put-𝕄 : ∀ {n} d {D m κ σ ρs F φ ρm w} → length φ ≡ n → 𝕄 D m → 𝔽 σ φ → ℝ ρs ρm → w ∈ putD n d D κ σ ρs F
+  put-𝕄 : ∀ {n} d {D m κ σ ρs F φ ρm w}
+    → length φ ≡ n
+    → 𝕄 D m
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → w ∈ putD n d D κ σ ρs F
     → Σ[ φ' ∈ Frame ] Σ[ ρm' ∈ MRegs ] (∀ K → putM d m φ ρm K ≡ next (K φ' ρm')) × length φ' ≡ n
-       × Σ[ σ' ∈ Store ] Σ[ ρs' ∈ SRegs ] 𝔽 σ' φ' × ℝ ρs' ρm' × w ∈ κ σ' ρs' F
+        × Σ[ σ' ∈ Store ] Σ[ ρs' ∈ SRegs ] 𝔽 σ' φ' × ℝ ρs' ρm' × w ∈ κ σ' ρs' F
   put-𝕄 (var x) {σ = σ} {ρs} {φ = φ} {ρm} refl h F G w∈ with x <? length φ
   put-𝕄 (var x) {σ = σ} {ρs} {φ = φ} {ρm} refl h F G ⟨ V , ⟨ ⟨ w∈ , ⟨ neV , _ ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ | yes x<
       with E≢[]⇒nonempty-mem neV
@@ -250,7 +292,12 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
     ... | no ne rewrite ≔-other ρs g D g' ne | ↦ₘ-other ρm g (just v) g' ne = G g'
 
   {- the related values of a set that holds some -}
-  𝕄→𝕍s : ∀ {D m} → 𝕄 D m → ∀ V → mem V ⊆ D → V ≢ [] → Σ[ v ∈ Val ] m ≡ just v × 𝕍s V v
+  𝕄→𝕍s : ∀ {D m}
+    → 𝕄 D m
+    → ∀ V
+    → mem V ⊆ D
+    → V ≢ []
+    → Σ[ v ∈ Val ] m ≡ just v × 𝕍s V v
   𝕄→𝕍s h V V⊆ ne with E≢[]⇒nonempty-mem ne
   ... | ⟨ d₀ , d₀∈ ⟩ with h d₀ (V⊆ d₀ d₀∈)
   ... | ⟨ v , ⟨ refl , _ ⟩ ⟩ = ⟨ v , ⟨ refl , all→𝕍s V (λ d d∈ → G d (h d (V⊆ d d∈))) ⟩ ⟩
@@ -275,15 +322,24 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
       ret : R (Block.instrs bst) (Block.jump bst) bbs nothing (zeros (2 + (m ∸ 2))) (regs nothing (just e₁) (just e₂)) v
       rel : 𝕍 w v
 
-  call-𝕄 : ∀ {L n σ ρs φ ρm} a → OK L (_< n) a → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → ∀ w
-    → w ∈ ⋆ ⟨ ⋆ ⟨ 𝒪 T n σ ρs a , ⟨ ρs rdi , ptt ⟩ ⟩ , ⟨ ρs rsi , ptt ⟩ ⟩ → Calls φ ρm a w
+  call-𝕄 : ∀ {L n σ ρs φ ρm} a
+    → OK L (_< n) a
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → ∀ w
+    → w ∈ ⋆ ⟨ ⋆ ⟨ 𝒪 T n σ ρs a , ⟨ ρs rdi , ptt ⟩ ⟩ , ⟨ ρs rsi , ptt ⟩ ⟩
+    → Calls φ ρm a w
   call-𝕄 a oa nφ F G w ⟨ Y , ⟨ ⟨ X , ⟨ e∈ , ⟨ X⊆ , neX ⟩ ⟩ ⟩ , ⟨ Y⊆ , neY ⟩ ⟩ ⟩
       with 𝒪-𝕄 a oa nφ F G _ e∈ | 𝕄→𝕍s (G rdi) X X⊆ neX | 𝕄→𝕍s (G rsi) Y Y⊆ neY
   ... | ⟨ code k , ⟨ ea , r ⟩ ⟩ | ⟨ e₁ , ⟨ er₁ , X𝕍 ⟩ ⟩ | ⟨ e₂ , ⟨ er₂ , Y𝕍 ⟩ ⟩ with r e₁ X𝕍 e₂ Y𝕍
   ... | ⟨ m , ⟨ bbs , ⟨ bst , ⟨ eg , ⟨ v , ⟨ ret , rv ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ = calls k e₁ e₂ m bbs bst v ea er₁ er₂ eg ret rv
 
   {- the same call returns the same value -}
-  calls-det : ∀ {φ ρm a w w'} (c : Calls φ ρm a w) (c' : Calls φ ρm a w') → 𝕍 w' (Calls.v c)
+  calls-det : ∀ {φ ρm a w w'}
+    → (c : Calls φ ρm a w)
+    → (c' : Calls φ ρm a w')
+    → 𝕍 w' (Calls.v c)
   calls-det (calls k e₁ e₂ m bbs bst v ea er₁ er₂ eg ret rel) (calls k' e₁' e₂' m' bbs' bst' v' ea' er₁' er₂' eg' ret' rel')
       with trans (sym ea) ea' | trans (sym er₁) er₁' | trans (sym er₂) er₂'
   ... | refl | refl | refl with trans (sym eg) eg'
@@ -298,18 +354,38 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
     → Σ[ v ∈ Val ] (Σ[ b ∈ Block ] Σ[ bs' ∈ List Block ] block-at bs l ≡ just ⟨ b , bs' ⟩
                      × R (Block.instrs b) (Block.jump b) bs' f φ ρm v) × 𝕍 w v
 
-  adequate : ∀ {L n} is j bs {σ ρs F φ ρm f w} → Code L (_< n) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → Fl F f
-    → w ∈ ⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs)) σ ρs F → Σ[ v ∈ Val ] R is j bs f φ ρm v × 𝕍 w v
+  adequate : ∀ {L n} is j bs {σ ρs F φ ρm f w}
+    → Code L (_< n) is
+    → AdeqB n bs
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → Fl F f
+    → w ∈ ⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs)) σ ρs F
+    → Σ[ v ∈ Val ] R is j bs f φ ρm v × 𝕍 w v
   {- a write to d, then the rest -}
   put-case : ∀ {L n} d {D m} is j bs {σ ρs F φ ρm f w} {S : Stack → State}
-    → (∀ stk → step ds (S stk) ≡ putM d m φ ρm (run is j bs stk f)) → 𝕄 D m
-    → Code L (_< n) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → Fl F f
-    → w ∈ putD n d D (⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs))) σ ρs F → Σ[ v ∈ Val ] Ret S v × 𝕍 w v
+    → (∀ stk → step ds (S stk) ≡ putM d m φ ρm (run is j bs stk f))
+    → 𝕄 D m
+    → Code L (_< n) is
+    → AdeqB n bs
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → Fl F f
+    → w ∈ putD n d D (⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs))) σ ρs F
+    → Σ[ v ∈ Val ] Ret S v × 𝕍 w v
   {- a test that sets the flag, then the rest -}
   flag-case : ∀ {L n} is j bs {σ ρs F φ ρm b w} {S : Stack → State}
-    → (∀ stk → step ds (S stk) ≡ next (run is j bs stk (just b) φ ρm)) → Fl F (just b)
-    → Code L (_< n) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm
-    → w ∈ ⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs)) σ ρs F → Σ[ v ∈ Val ] Ret S v × 𝕍 w v
+    → (∀ stk → step ds (S stk) ≡ next (run is j bs stk (just b) φ ρm))
+    → Fl F (just b)
+    → Code L (_< n) is
+    → AdeqB n bs
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → w ∈ ⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs)) σ ρs F
+    → Σ[ v ∈ Val ] Ret S v × 𝕍 w v
 
   adequate (movq a d ∷ is) j bs ⟨ oa , c ⟩ AB nφ F G Fl' w∈ =
     put-case d is j bs (λ _ → refl) (𝒪-𝕄 a oa nφ F G) c AB nφ F G Fl' w∈
@@ -375,7 +451,9 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
   flag-case is j bs st Fl' c AB nφ F G w∈ with adequate is j bs c AB nφ F G Fl' w∈
   ... | ⟨ v , ⟨ r , rv ⟩ ⟩ = ⟨ v , ⟨ Ret-step st r , rv ⟩ ⟩
 
-  blocks-adeq : ∀ {L n} bs → All (λ b → Code L (_< n) (Block.instrs b)) bs → AdeqB n bs
+  blocks-adeq : ∀ {L n} bs
+    → All (λ b → Code L (_< n) (Block.instrs b)) bs
+    → AdeqB n bs
   blocks-adeq (b ∷ bs) (c ∷ cs) l nφ F G Fl' w∈ with l ≟ length bs
   ... | no _ = blocks-adeq bs cs l nφ F G Fl' w∈
   ... | yes _ with adequate (Block.instrs b) (Block.jump b) bs c (blocks-adeq bs cs) nφ F G Fl' w∈
@@ -387,7 +465,10 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
 zeros-𝔽 : ∀ m → 𝔽 zerosD (zeros m)
 zeros-𝔽 m x x< rewrite replicate-‼ m {const Int 0ℤ} x (subst (x <_) (length-replicate m) x<) = ℬ-𝕄 Int _
 
-tab : ∀ Ns xs → ds ≡ xs ++ Ns → DefsWF Ns → 𝕋 (table Ns)
+tab : ∀ Ns xs
+  → ds ≡ xs ++ Ns
+  → DefsWF Ns
+  → 𝕋 (table Ns)
 tab (b ∷ Ns) xs e ⟨ ok , wf ⟩ k d d∈ with k ≟ length Ns
 ... | no _ = tab Ns (xs ++ [ b ]) (trans e (sym (++-assoc xs [ b ] Ns))) wf k d d∈
 tab (body m bbs bst ∷ Ns) xs e ⟨ c ∷ cs , wf ⟩ .(length Ns) ν d∈ | yes refl = tt
@@ -407,7 +488,9 @@ tab (body m bbs bst ∷ Ns) xs e ⟨ c ∷ cs , wf ⟩ .(length Ns) (X ↦ (Y �
 
 {- Adequacy -----------------------------------------------------------------------}
 
-adequate-main : ∀ {n bs b w} → DefsWF ds → BodyOK (length ds) n (body n bs b)
+adequate-main : ∀ {n bs b w}
+  → DefsWF ds
+  → BodyOK (length ds) n (body n bs b)
   → w ∈ ⟦ program ds (body n bs b) ⟧ₚ
   → Σ[ v ∈ Val ] R (Block.instrs b) (Block.jump b) bs nothing (zeros n) (regs (just (const Int _)) nothing nothing) v × 𝕍 w v
 adequate-main {n} {bs} {b} wf (c ∷ cs) w∈ =

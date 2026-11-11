@@ -65,7 +65,9 @@ clean⌊⌋ d d∈ = proj₂ d∈
 
 {- a target call V' ⊆ (car X' ● cdr X') ● N' is a batch of calls of a
    finite W ⊆ X' on a finite U ⊆ N' -}
-collect : ∀ (X' N' : 𝒫 Value) → Clean N' → ∀ V'
+collect : ∀ (X' N' : 𝒫 Value)
+  → Clean N'
+  → ∀ V'
   → mem V' ⊆ ⋆ ⟨ ⋆ ⟨ car ⟨ X' , ptt ⟩ , ⟨ cdr ⟨ X' , ptt ⟩ , ptt ⟩ ⟩ , ⟨ N' , ptt ⟩ ⟩
   → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ] mem W ⊆ X' × mem U ⊆ N' × Calls W U V'
 collect X' N' clN [] _ =
@@ -92,11 +94,15 @@ collect X' N' clN (w ∷ V') V'⊆
   ... | inj₂ d∈U = U⊆ d d∈U
   ent : CarEntry (e ∷ (C ++ W)) U₀ w
   ent = car-entry FV t (here refl) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆C d d∈ in ⟨ u , there (∈-++⁺ˡ i) ⟩)
-  res : ∀ x → x ⋵ (w ∷ V') → Σ[ U₁ ∈ List Value ] CarEntry (e ∷ (C ++ W)) U₁ x × U₁ ≢ [] × mem U₁ ⊆ mem (U₀ ++ U)
+  res : ∀ x
+    → x ⋵ (w ∷ V')
+    → Σ[ U₁ ∈ List Value ] CarEntry (e ∷ (C ++ W)) U₁ x × U₁ ≢ [] × mem U₁ ⊆ mem (U₀ ++ U)
   res _ (here refl) = ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ d → ∈-++⁺ˡ) ⟩ ⟩ ⟩
   res x (there x∈) = let ⟨ U₁ , ⟨ e₁ , ⟨ ne , U₁⊆ ⟩ ⟩ ⟩ = Calls.results cs x x∈
                      in ⟨ U₁ , ⟨ CarEntry-⊆ inW e₁ , ⟨ ne , (λ d d∈ → ∈-++⁺ʳ U₀ (U₁⊆ d d∈)) ⟩ ⟩ ⟩
-  arg : ∀ u → u ⋵ (U₀ ++ U) → Σ[ U₁ ∈ List Value ] Σ[ x ∈ Value ] CarEntry (e ∷ (C ++ W)) U₁ x × u ⋵ U₁
+  arg : ∀ u
+    → u ⋵ (U₀ ++ U)
+    → Σ[ U₁ ∈ List Value ] Σ[ x ∈ Value ] CarEntry (e ∷ (C ++ W)) U₁ x × u ⋵ U₁
   arg u u∈ with ∈-++⁻ U₀ u∈
   ... | inj₁ u∈U₀ = ⟨ U₀ , ⟨ w , ⟨ ent , u∈U₀ ⟩ ⟩ ⟩
   ... | inj₂ u∈U = let ⟨ U₁ , ⟨ x , ⟨ e₁ , u∈₁ ⟩ ⟩ ⟩ = Calls.args cs u u∈U
@@ -104,14 +110,20 @@ collect X' N' clN (w ∷ V') V'⊆
 
 {- Kernels, on related sets of values -------------------------------------------}
 
-tag-R : ∀ {X' X} → Rel X' X → ∀ t → Rel (Untag t X') (Untag t X)
+tag-R : ∀ {X' X}
+  → Rel X' X
+  → ∀ t
+  → Rel (Untag t X') (Untag t X)
 tag-R h t W W⊆ = Obs.tag-obs (unfold (h (lmap (tag t) W) mW)) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
   where
   mW : mem (lmap (tag t) W) ⊆ _
   mW d d∈ with ∈-map⁻ (tag t) d∈
   ... | ⟨ x , ⟨ x∈ , refl ⟩ ⟩ = W⊆ x x∈
 
-inl-R : ∀ {X' X} → Clean X' → Rel X' X → Rel (inl ⟨ X' , ptt ⟩) (inl ⟨ X , ptt ⟩)
+inl-R : ∀ {X' X}
+  → Clean X'
+  → Rel X' X
+  → Rel (inl ⟨ X' , ptt ⟩) (inl ⟨ X , ptt ⟩)
 inl-R {X'} {X} cl h V V⊆ = fold record
   { err-obs = λ ω∈ → ⊥-elim (V⊆ ω ω∈)
   ; const-obs = λ c c∈ → ⊥-elim (V⊆ _ c∈)
@@ -122,10 +134,15 @@ inl-R {X'} {X} cl h V V⊆ = fold record
                 ; rightT W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈))
                 ; (tupT i) W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈)) } }
   where
-  kd : ∀ d → d ∈ inl ⟨ X' , ptt ⟩ → Σ[ s ∈ Value ] s ∈ ⌊ inl ⟨ X , ptt ⟩ ⌋ × tgt (kind s) ≡ kind d
+  kd : ∀ d
+    → d ∈ inl ⟨ X' , ptt ⟩
+    → Σ[ s ∈ Value ] s ∈ ⌊ inl ⟨ X , ptt ⟩ ⌋ × tgt (kind s) ≡ kind d
   kd (left d) d∈ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = R-kind (h _ (single⊆ d∈)) (cl d d∈) in ⟨ left s , ⟨ ⟨ proj₁ s∈ , (λ ()) ⟩ , refl ⟩ ⟩
 
-inr-R : ∀ {X' X} → Clean X' → Rel X' X → Rel (inr ⟨ X' , ptt ⟩) (inr ⟨ X , ptt ⟩)
+inr-R : ∀ {X' X}
+  → Clean X'
+  → Rel X' X
+  → Rel (inr ⟨ X' , ptt ⟩) (inr ⟨ X , ptt ⟩)
 inr-R {X'} {X} cl h V V⊆ = fold record
   { err-obs = λ ω∈ → ⊥-elim (V⊆ ω ω∈)
   ; const-obs = λ c c∈ → ⊥-elim (V⊆ _ c∈)
@@ -136,23 +153,35 @@ inr-R {X'} {X} cl h V V⊆ = fold record
                 ; leftT W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈))
                 ; (tupT i) W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈)) } }
   where
-  kd : ∀ d → d ∈ inr ⟨ X' , ptt ⟩ → Σ[ s ∈ Value ] s ∈ ⌊ inr ⟨ X , ptt ⟩ ⌋ × tgt (kind s) ≡ kind d
+  kd : ∀ d
+    → d ∈ inr ⟨ X' , ptt ⟩
+    → Σ[ s ∈ Value ] s ∈ ⌊ inr ⟨ X , ptt ⟩ ⌋ × tgt (kind s) ≡ kind d
   kd (right d) d∈ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = R-kind (h _ (single⊆ d∈)) (cl d d∈) in ⟨ right s , ⟨ ⟨ proj₁ s∈ , (λ ()) ⟩ , refl ⟩ ⟩
 
-primD-R : ∀ {p X' X Y' Y} → Rel X' X → Rel Y' Y
+primD-R : ∀ {p X' X Y' Y}
+  → Rel X' X
+  → Rel Y' Y
   → Rel (primD p ⟨ X' , ⟨ Y' , ptt ⟩ ⟩) (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩)
 primD-R {p} {X'} {X} {Y'} {Y} hX hY V V⊆ = R-data V⊆' dt
   where
-  cst : ∀ {A' A} {c : base-rep Int} → Rel A' A → const c ∈ A' → const c ∈ A
+  cst : ∀ {A' A} {c : base-rep Int}
+    → Rel A' A
+    → const c ∈ A'
+    → const c ∈ A
   cst {c = c} h c∈ = Obs.const-obs (unfold (h (const c ∷ []) (single⊆ c∈))) c (here refl)
   V⊆' : mem V ⊆ primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩
   V⊆' v v∈ with V⊆ v v∈
   ... | ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ = ⟨ n , ⟨ m , ⟨ cst hX n∈ , ⟨ cst hY m∈ , refl ⟩ ⟩ ⟩ ⟩
-  dt : ∀ v → v ⋵ V → Data v
+  dt : ∀ v
+    → v ⋵ V
+    → Data v
   dt v v∈ with V⊆ v v∈
   ... | ⟨ n , ⟨ m , ⟨ _ , ⟨ _ , refl ⟩ ⟩ ⟩ ⟩ = out-data (δ p n m)
 
-𝒯-R : ∀ n {Xs' Xs} → (∀ i → Clean (nthD Xs' i)) → (∀ i → Rel (nthD Xs' i) (nthD Xs i)) → Rel (𝒯 n Xs') (𝒯 n Xs)
+𝒯-R : ∀ n {Xs' Xs}
+  → (∀ i → Clean (nthD Xs' i))
+  → (∀ i → Rel (nthD Xs' i) (nthD Xs i))
+  → Rel (𝒯 n Xs') (𝒯 n Xs)
 𝒯-R zero cl hs V V⊆ =
   R-data (λ v v∈ → proj₁ (𝒯0-flat v (V⊆ v v∈))) (λ v v∈ → flat-data (proj₂ (𝒯0-flat v (V⊆ v v∈))))
 𝒯-R (suc n) {Xs'} {Xs} cl hs V V⊆ = fold record
@@ -165,13 +194,19 @@ primD-R {p} {X'} {X} {Y'} {Y} hX hY V V⊆ = R-data V⊆' dt
                 ; leftT W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈))
                 ; rightT W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈)) } }
   where
-  comp-ne : ∀ j → nonempty (nthD Xs' j) → nonempty (nthD Xs j)
+  comp-ne : ∀ j
+    → nonempty (nthD Xs' j)
+    → nonempty (nthD Xs j)
   comp-ne j ⟨ d , d∈ ⟩ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = R-kind (hs j _ (single⊆ d∈)) (cl j d d∈) in ⟨ s , proj₁ s∈ ⟩
-  kd : ∀ d → d ∈ 𝒯 (suc n) Xs' → Σ[ s ∈ Value ] s ∈ ⌊ 𝒯 (suc n) Xs ⌋ × tgt (kind s) ≡ kind d
+  kd : ∀ d
+    → d ∈ 𝒯 (suc n) Xs'
+    → Σ[ s ∈ Value ] s ∈ ⌊ 𝒯 (suc n) Xs ⌋ × tgt (kind s) ≡ kind d
   kd (tup[ i ] x) ⟨ refl , ⟨ x∈ , ne ⟩ ⟩ =
     let ⟨ y , y∈ ⟩ = comp-ne i ⟨ x , x∈ ⟩
     in ⟨ tup[ i ] y , ⟨ ⟨ ⟨ refl , ⟨ y∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩ , (λ ()) ⟩ , refl ⟩ ⟩
-  nth-case : ∀ {m} (i : Fin m) W' → mem W' ⊆ Untag (tupT i) (mem V) → R W' (Untag (tupT i) (𝒯 (suc n) Xs))
+  nth-case : ∀ {m} (i : Fin m) W'
+    → mem W' ⊆ Untag (tupT i) (mem V)
+    → R W' (Untag (tupT i) (𝒯 (suc n) Xs))
   nth-case i [] _ = R-∅ (λ _ ())
   nth-case i (w ∷ W') W'⊆ with V⊆ _ (W'⊆ w (here refl))
   ... | ⟨ refl , ⟨ _ , ne ⟩ ⟩ = R-mono (λ d d∈ → ⟨ refl , ⟨ d∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩) (hs i (w ∷ W') sub)
@@ -182,8 +217,12 @@ primD-R {p} {X'} {X} {Y'} {Y} hX hY V V⊆ = R-data V⊆' dt
 
 {- n binds reflect to n binds -}
 R-binds : ∀ n {Ds' Ds : Results (𝒫 Value) (replicate n ■)} {K' K}
-  → (∀ i → Rel (nthD Ds' i) (nthD Ds i)) → (∀ i → Con (nthD Ds i))
-  → (∀ {Xs' Xs} → (∀ i → Clean (nthD Xs' i)) → (∀ i → Rel (nthD Xs' i) (nthD Xs i)) → Rel (K' Xs') (K Xs))
+  → (∀ i → Rel (nthD Ds' i) (nthD Ds i))
+  → (∀ i → Con (nthD Ds i))
+  → (  ∀ {Xs' Xs}
+     → (∀ i → Clean (nthD Xs' i))
+     → (∀ i → Rel (nthD Xs' i) (nthD Xs i))
+     → Rel (K' Xs') (K Xs))
   → Rel (binds n Ds' K') (binds n Ds K)
 R-binds zero h c hK = hK (λ ()) (λ ())
 R-binds (suc n) {⟨ D' , Ds' ⟩} {⟨ D , Ds ⟩} {K'} {K} h c hK =
@@ -202,14 +241,22 @@ record Envs (ρ' ρ : Env) : Set₁ where
     ρ'~ : Con-env ρ'
     ρ⊳ : ρ' ⊳ₑ ρ
 
-args-con : ∀ {n} (args : L3.Args (replicate n ■)) {ρ} → Con-env ρ → ∀ i → Con (nthD (⟦ args ⟧₊ ρ) i)
+args-con : ∀ {n} (args : L3.Args (replicate n ■)) {ρ}
+  → Con-env ρ
+  → ∀ i
+  → Con (nthD (⟦ args ⟧₊ ρ) i)
 args-con {suc n} (M ,, args) c zero = Clos3ᵐ-con M c
 args-con {suc n} (M ,, args) c (suc i) = args-con args c i
 
-split-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → Rel (⟦ split M ⟧' ρ') (⟦ M ⟧ ρ)
-reflect-nth : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
-  → (i : Fin n) → Rel (nthD (⟦ del-map-args args ⟧₊' ρ') i) (nthD (⟦ args ⟧₊ ρ) i)
-reflect-𝒯 : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
+split-reflect : ∀ (M : AST) {ρ' ρ}
+  → Envs ρ' ρ
+  → Rel (⟦ split M ⟧' ρ') (⟦ M ⟧ ρ)
+reflect-nth : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ}
+  → Envs ρ' ρ
+  → (i : Fin n)
+  → Rel (nthD (⟦ del-map-args args ⟧₊' ρ') i) (nthD (⟦ args ⟧₊ ρ) i)
+reflect-𝒯 : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ}
+  → Envs ρ' ρ
   → Rel (𝒯ᵐ n (⟦ del-map-args args ⟧₊' ρ')) (𝒯ᵐ n (⟦ args ⟧₊ ρ))
 
 split-reflect (` x) E = Envs.ρ⊳ E x
@@ -251,10 +298,13 @@ split-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'} {ρ} E =
   F₁' = λ Y → ⟦ split M ⟧' (Y • ρ')
   F₂' = λ Y → ⟦ split N ⟧' (Y • ρ')
   {- the branch B, on the side s of the scrutinee -}
-  branch : ∀ (s : Tag) (B : AST) {C} → Rel ⌊ ⟦ split L ⟧' ρ' ⌋ ⌊ ⟦ L ⟧ ρ ⌋
-    → (∀ {y} → y ≢ ω → ValPayload (tag s y)) → (∀ {y} → ValPayload (tag s y) → y ≢ ω)
+  branch : ∀ (s : Tag) (B : AST) {C}
+    → Rel ⌊ ⟦ split L ⟧' ρ' ⌋ ⌊ ⟦ L ⟧ ρ ⌋
+    → (∀ {y} → y ≢ ω → ValPayload (tag s y))
+    → (∀ {y} → ValPayload (tag s y) → y ≢ ω)
     → (∀ {a b} → tag s a ~ tag s b → a ~ b)
-    → ∀ v → tag s v ∈ X'
+    → ∀ v
+    → tag s v ∈ X'
     → (nonempty (Untag s X) → ⟦ B ⟧ (Untag s X • ρ) ⊆ C)
     → Rel (⟦ split B ⟧' (Untag s X' • ρ')) C
   branch s B {C} hX vp vp⁻ s~ v sv B⊆ V' V'⊆ =
@@ -275,7 +325,7 @@ split-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'} {ρ} E =
     ρ⊳' (suc x) = ρ⊳ x
   K : Rel ⌊ ⟦ split L ⟧' ρ' ⌋ ⌊ ⟦ L ⟧ ρ ⌋
     → Rel (𝒞 ⟨ X' , ⟨ (λ Y → ⟦ split M ⟧' (Y • ρ')) , ⟨ (λ Y → ⟦ split N ⟧' (Y • ρ')) , ptt ⟩ ⟩ ⟩)
-          (𝒞 ⟨ X , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)
+        (𝒞 ⟨ X , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)
   K hX [] _ = R-∅ (λ _ ())
   K hX (w ∷ V') V'⊆ with V'⊆ w (here refl)
   ... | inj₁ ⟨ v , ⟨ _ , ⟨ allL , _ ⟩ ⟩ ⟩ =
@@ -305,7 +355,9 @@ split-reflect (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ'} {ρ} E V V⊆ =
   open Envs E
   F = λ Y → ⟦ N ⟧ (Y • ρ)
   F' = λ Y → ⟦ split N ⟧' (Y • ρ')
-  K : Conv (⟦ split M ⟧' ρ') → Conv (⟦ M ⟧ ρ) → Rel ⌊ ⟦ split M ⟧' ρ' ⌋ ⌊ ⟦ M ⟧ ρ ⌋
+  K : Conv (⟦ split M ⟧' ρ')
+    → Conv (⟦ M ⟧ ρ)
+    → Rel ⌊ ⟦ split M ⟧' ρ' ⌋ ⌊ ⟦ M ⟧ ρ ⌋
     → Rel (⋆ ⟨ Λᵐ ⟨ F' , ptt ⟩ , ⟨ ⌊ ⟦ split M ⟧' ρ' ⌋ , ptt ⟩ ⟩) (⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ ⟦ M ⟧ ρ ⌋ , ptt ⟩ ⟩)
   K _ ⟨ m , m∈ ⟩ hX [] _ = R-∅ (λ _ ())
   K _ ⟨ m , m∈ ⟩ hX (w ∷ W) W⊆ with W⊆ w (here refl)
@@ -333,7 +385,9 @@ split-reflect (app ⦅ L ,, N ,, Nil ⦆) {ρ'} {ρ} E V V⊆ =
   open Envs E
   N' = ⟦ split N ⟧' ρ'
   Nₛ = ⟦ N ⟧ ρ
-  APP : Conv (⟦ split L ⟧' ρ') → Conv (⟦ L ⟧ ρ) → Rel ⌊ ⟦ split L ⟧' ρ' ⌋ ⌊ ⟦ L ⟧ ρ ⌋
+  APP : Conv (⟦ split L ⟧' ρ')
+    → Conv (⟦ L ⟧ ρ)
+    → Rel ⌊ ⟦ split L ⟧' ρ' ⌋ ⌊ ⟦ L ⟧ ρ ⌋
     → Rel (⌊ ⟦ split L ⟧' ρ' ⌋ ⊙ N') (checked fun ⌊ ⟦ L ⟧ ρ ⌋ (Nₛ ≫= λ Y → ⋆ ⟨ ⌊ ⟦ L ⟧ ρ ⌋ , ⟨ Y , ptt ⟩ ⟩))
   APP _ ⟨ l , l∈ ⟩ hX =
     R-bindₗ {Car} {λ C → Cdr ≫= λ T → N' ≫= λ Y → K C T Y} {Src} car-err λ _ →
@@ -347,20 +401,26 @@ split-reflect (app ⦅ L ,, N ,, Nil ⦆) {ρ'} {ρ} E V V⊆ =
     K = λ C T Y → checked fun C (⋆ ⟨ ⋆ ⟨ C , ⟨ T , ptt ⟩ ⟩ , ⟨ Y , ptt ⟩ ⟩)
     Xs = ⌊ ⟦ L ⟧ ρ ⌋
     Src = checked fun Xs (Nₛ ≫= λ Y → ⋆ ⟨ Xs , ⟨ Y , ptt ⟩ ⟩)
-    pairs : ∀ {c t} → ⦅ c , t ⦆ ∈ X' → kind c ≡ fun × t ≢ ω
+    pairs : ∀ {c t}
+      → ⦅ c , t ⦆ ∈ X'
+      → kind c ≡ fun × t ≢ ω
     pairs ct∈ = Obs.pair-obs (unfold (hX _ (single⊆ ct∈))) _ _ (here refl)
-    bad : Bad prod ⌊ X' ⌋ → ω ∈ Src
+    bad : Bad prod ⌊ X' ⌋
+      → ω ∈ Src
     bad ⟨ d , ⟨ d∈ , dk ⟩ ⟩ = inj₁ ⟨ refl , bad-reflect {fun} clean⌊⌋ hX ⟨ d , ⟨ proj₁ d∈ , dk ⟩ ⟩ ⟩
-    car-err : ω ∈ carᵐ ⟨ X' , ptt ⟩ → ω ∈ Src
+    car-err : ω ∈ carᵐ ⟨ X' , ptt ⟩
+      → ω ∈ Src
     car-err (inj₁ ⟨ _ , ω∈ ⟩) = ⊥-elim (proj₂ ω∈ refl)
     car-err (inj₂ ⟨ _ , inj₁ ⟨ _ , b ⟩ ⟩) = bad b
     car-err (inj₂ ⟨ _ , inj₂ ⟨ t , ct∈ ⟩ ⟩) with proj₁ (pairs (proj₁ ct∈))
     ... | ()
-    cdr-err : ω ∈ cdrᵐ ⟨ X' , ptt ⟩ → ω ∈ Src
+    cdr-err : ω ∈ cdrᵐ ⟨ X' , ptt ⟩
+      → ω ∈ Src
     cdr-err (inj₁ ⟨ _ , ω∈ ⟩) = ⊥-elim (proj₂ ω∈ refl)
     cdr-err (inj₂ ⟨ _ , inj₁ ⟨ _ , b ⟩ ⟩) = bad b
     cdr-err (inj₂ ⟨ _ , inj₂ ⟨ c , ct∈ ⟩ ⟩) = ⊥-elim (proj₂ (pairs (proj₁ ct∈)) refl)
-    arg-err : ω ∈ N' → ω ∈ Src
+    arg-err : ω ∈ N'
+      → ω ∈ Src
     arg-err ω∈ = inj₂ (inj₁ ⟨ refl , R-err (split-reflect N E _ (single⊆ ω∈)) ⟩)
     car⊆ : ⌊ carᵐ ⟨ X' , ptt ⟩ ⌋ ⊆ car ⟨ X' , ptt ⟩
     car⊆ c c∈ = let ⟨ t , ct∈ ⟩ = ⌊checked⌋ {prod} {⌊ X' ⌋} {car ⟨ ⌊ X' ⌋ , ptt ⟩} c
@@ -368,7 +428,8 @@ split-reflect (app ⦅ L ,, N ,, Nil ⦆) {ρ'} {ρ} E V V⊆ =
     cdr⊆ : ⌊ cdrᵐ ⟨ X' , ptt ⟩ ⌋ ⊆ cdr ⟨ X' , ptt ⟩
     cdr⊆ t t∈ = let ⟨ c , ct∈ ⟩ = ⌊checked⌋ {prod} {⌊ X' ⌋} {cdr ⟨ ⌊ X' ⌋ , ptt ⟩} t
                                 ⟨ ⌊≫=⌋ {X'} {λ P → checked prod P (cdr ⟨ P , ptt ⟩)} t t∈ , proj₂ t∈ ⟩ in ⟨ c , proj₁ ct∈ ⟩
-    late : Bad fun ⌊ carᵐ ⟨ X' , ptt ⟩ ⌋ → ω ∈ Src
+    late : Bad fun ⌊ carᵐ ⟨ X' , ptt ⟩ ⌋
+      → ω ∈ Src
     late ⟨ c , ⟨ c∈ , ck ⟩ ⟩ = ⊥-elim (ck (proj₁ (pairs (proj₂ (car⊆ c c∈)))))
     kernel : Rel (⋆ ⟨ ⋆ ⟨ ⌊ carᵐ ⟨ X' , ptt ⟩ ⌋ , ⟨ ⌊ cdrᵐ ⟨ X' , ptt ⟩ ⌋ , ptt ⟩ ⟩ , ⟨ ⌊ N' ⌋ , ptt ⟩ ⟩) Src
     kernel W W⊆ with collect X' ⌊ N' ⌋ clean⌊⌋ W
@@ -393,10 +454,14 @@ split-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'} {ρ
   F' = λ X Y → ⟦ split N ⟧' (Y • X • (λ _ → ⌈ ω ⌉))
   T = 𝒯ᵐ n (⟦ fvs ⟧₊ ρ)
   T' = 𝒯ᵐ n (⟦ del-map-args fvs ⟧₊' ρ')
-  ΛΛ-fun : ∀ {G} d → d ∈ ΛΛᵐ ⟨ G , ptt ⟩ → kind d ≡ fun
+  ΛΛ-fun : ∀ {G} d
+    → d ∈ ΛΛᵐ ⟨ G , ptt ⟩
+    → kind d ≡ fun
   ΛΛ-fun (V ↦ w) _ = refl
   ΛΛ-fun ν _ = refl
-  K : Conv T' → Conv T → Rel ⌊ T' ⌋ ⌊ T ⌋
+  K : Conv T'
+    → Conv T
+    → Rel ⌊ T' ⌋ ⌊ T ⌋
     → Rel (pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩) (⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ T ⌋ , ptt ⟩ ⟩)
   K _ ⟨ t₀ , t₀∈ ⟩ hT V' V'⊆ = fold record
     { err-obs = λ ω∈ → ⊥-elim (V'⊆ ω ω∈)
@@ -408,19 +473,29 @@ split-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'} {ρ
     }
     where
     D = ⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ T ⌋ , ptt ⟩ ⟩
-    pair-tag : ∀ t {d} → tag t d ∈ pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩ → ⊥
+    pair-tag : ∀ t {d}
+      → tag t d ∈ pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩
+      → ⊥
     pair-tag (tupT i) ()
     pair-tag leftT ()
     pair-tag rightT ()
     ν∈ : ν ∈ ⌊ D ⌋
     ν∈ = ⟨ ⟨ t₀ ∷ [] , ⟨ ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ { (here eq) → proj₂ t₀∈ (sym eq) }) , tt ⟩ ⟩
                        , ⟨ single⊆ t₀∈ , (λ ()) ⟩ ⟩ ⟩ , (λ ()) ⟩
-    kd : ∀ d → d ∈ pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩ → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × tgt (kind s) ≡ kind d
+    kd : ∀ d
+      → d ∈ pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩
+      → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × tgt (kind s) ≡ kind d
     kd ⦅ c , t ⦆ _ = ⟨ ν , ⟨ ν∈ , refl ⟩ ⟩
     Cdrs⊆T' : Cdrs V' ⊆ ⌊ T' ⌋
     Cdrs⊆T' fv ⟨ _ , e∈ ⟩ = proj₂ (V'⊆ _ e∈)
     cT = Con-⊆ (Clos3ᵐ-con (tuple n ⦅ fvs ⦆) ρ~) ⌊⌋-⊆
-    clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ Es → Con Es → Con (mem U') → R U' Es → R W' (D ● Es)
+    clos-app : ∀ {U' W'}
+      → Calls V' U' W'
+      → ∀ Es
+      → Con Es
+      → Con (mem U')
+      → R U' Es
+      → R W' (D ● Es)
     clos-app {W' = []} _ Es _ _ _ = R-∅ (λ _ ())
     clos-app {U'} {w ∷ W'} cs Es cE U'~ rU =
       R-mono (ΛΛᵐ-β {F} cT cE clean⌊⌋ clE ⟨ t₀ , t₀∈ ⟩ NE-E
@@ -464,11 +539,17 @@ reflect-𝒯 {n} args E = R-binds n (reflect-nth args E) (args-con args (Envs.ρ
 Envs₀ : Envs ρ₀ ρ₀
 Envs₀ = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ _ → Con-⌈⌉ ω) Init⊳Init
 
-reflect-error : ∀ (M : AST) → ω ∈ ⟦ split M ⟧' ρ₀ → ω ∈ ⟦ M ⟧ ρ₀
+reflect-error : ∀ (M : AST)
+  → ω ∈ ⟦ split M ⟧' ρ₀
+  → ω ∈ ⟦ M ⟧ ρ₀
 reflect-error M ω∈ = R-err (split-reflect M Envs₀ _ (single⊆ ω∈))
 
-reflect-const : ∀ (M : AST) {B} (c : base-rep B) → const c ∈ ⟦ split M ⟧' ρ₀ → const c ∈ ⟦ M ⟧ ρ₀
+reflect-const : ∀ (M : AST) {B} (c : base-rep B)
+  → const c ∈ ⟦ split M ⟧' ρ₀
+  → const c ∈ ⟦ M ⟧ ρ₀
 reflect-const M c c∈ = Obs.const-obs (unfold (split-reflect M Envs₀ _ (single⊆ c∈))) c (here refl)
 
-reflect-val : ∀ (M : AST) → Conv (⟦ split M ⟧' ρ₀) → Conv (⟦ M ⟧ ρ₀)
+reflect-val : ∀ (M : AST)
+  → Conv (⟦ split M ⟧' ρ₀)
+  → Conv (⟦ M ⟧ ρ₀)
 reflect-val M ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = R-conv (split-reflect M Envs₀ _ (single⊆ d∈)) d≢

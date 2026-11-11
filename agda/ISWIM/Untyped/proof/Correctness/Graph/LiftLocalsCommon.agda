@@ -52,7 +52,9 @@ module ISWIM.Untyped.proof.Correctness.Graph.LiftLocalsCommon where
 
 {- Slots and stores ----------------------------------------------------------------}
 
-read-at : ∀ {n σ y} → y < n → read n σ y ≡ σ y
+read-at : ∀ {n σ y}
+  → y < n
+  → read n σ y ≡ σ y
 read-at {n} {σ} {y} y<n with y <? n
 ... | yes _ = refl
 ... | no y≮n = ⊥-elim (y≮n y<n)
@@ -67,25 +69,37 @@ upd-at σ x with x ≟ x
 ... | yes _ = refl
 ... | no x≢x = ⊥-elim (x≢x refl)
 
-upd-< : ∀ {σ X y d} → y < d → (σ [ d ↦ X ]) y ≃ σ y
+upd-< : ∀ {σ X y d}
+  → y < d
+  → (σ [ d ↦ X ]) y ≃ σ y
 upd-< {σ} {X} {y} {d} y<d with y ≟ d
 ... | yes refl = ⊥-elim (<-irrefl refl y<d)
 ... | no _ = ≃-refl
 
-slot-< : ∀ {x d} → x < d → d ∸ suc x < d
+slot-< : ∀ {x d}
+  → x < d
+  → d ∸ suc x < d
 slot-< {x} {suc d} _ = s≤s (m∸n≤m d x)
 
 {- the frame is large enough for what lift assigns at depth d -}
-fits : ∀ {d n} k → d + suc k ≤ n → suc d + k ≤ n
+fits : ∀ {d n} k
+  → d + suc k ≤ n
+  → suc d + k ≤ n
 fits {d} {n} k H = subst (_≤ n) (+-suc d k) H
 
-fits-< : ∀ {d n} k → suc d + k ≤ n → d < n
+fits-< : ∀ {d n} k
+  → suc d + k ≤ n
+  → d < n
 fits-< {d} k H = ≤-trans (s≤s (m≤m+n d k)) H
 
-⊔ˡ : ∀ {d n} a b → d + (a ⊔ b) ≤ n → d + a ≤ n
+⊔ˡ : ∀ {d n} a b
+  → d + (a ⊔ b) ≤ n
+  → d + a ≤ n
 ⊔ˡ {d} a b H = ≤-trans (+-mono-≤ (≤-refl {d}) (m≤m⊔n a b)) H
 
-⊔ʳ : ∀ {d n} a b → d + (a ⊔ b) ≤ n → d + b ≤ n
+⊔ʳ : ∀ {d n} a b
+  → d + (a ⊔ b) ≤ n
+  → d + b ≤ n
 ⊔ʳ {d} a b H = ≤-trans (+-mono-≤ (≤-refl {d}) (m≤n⊔m a b)) H
 
 {- The invariant ---------------------------------------------------------------------}
@@ -101,22 +115,32 @@ Scope : ℕ → Env Value → Set
 Scope d ρ = ∀ x → d ≤ x → ρ x ≃ init
 
 {- under a binder: its value in slot d -}
-agree-ext : ∀ {d σ ρ X} → Agree d σ ρ → Agree (suc d) (σ [ d ↦ X ]) (X • ρ)
+agree-ext : ∀ {d σ ρ X}
+  → Agree d σ ρ
+  → Agree (suc d) (σ [ d ↦ X ]) (X • ρ)
 agree-ext {d} {σ} A = agree λ { zero _ → ≃-reflexive (upd-at σ d)
   ; (suc x) (s≤s x<d) → ≃-trans (upd-< (slot-< x<d)) (at A x x<d) }
 
-scope-ext : ∀ {d ρ X} → Scope d ρ → Scope (suc d) (X • ρ)
+scope-ext : ∀ {d ρ X}
+  → Scope d ρ
+  → Scope (suc d) (X • ρ)
 scope-ext O (suc x) (s≤s d≤x) = O x d≤x
 
 {- back from under a binder: drop its slot -}
-weak : ∀ {d σ ρ X} → Agree (suc d) σ (X • ρ) → Agree d σ ρ
+weak : ∀ {d σ ρ X}
+  → Agree (suc d) σ (X • ρ)
+  → Agree d σ ρ
 weak A = agree λ x x<d → at A (suc x) (s≤s x<d)
 
 {- Atoms ----------------------------------------------------------------------------}
 
 module AtomsSame {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
 
-  atom-≃ : ∀ {n d h σ ρ M} (a : Atom M) → d + h ≤ n → Scope d ρ → Agree d σ ρ
+  atom-≃ : ∀ {n d h σ ρ M}
+    → (a : Atom M)
+    → d + h ≤ n
+    → Scope d ρ
+    → Agree d σ ρ
     → 𝒜 T n σ (lift-atom n d a) ≃ ⟦ M ⟧[ T' ] ρ
   atom-≃ {n} {d} {h} {σ} (var x) H O A with x <? d
   ... | yes x<d = ≃-trans (≃-reflexive (read-at (<-≤-trans (slot-< x<d) (≤-trans (m≤m+n d h) H)))) (at A x x<d)
@@ -125,10 +149,15 @@ module AtomsSame {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
   atom-≃ (ref k) _ _ _ = TT k
 
   {- the atoms of a tuple: what holds of their meanings in Clos5 holds in Imp -}
-  atoms-≃ : ∀ {n d h σ ρ k} {Ms : Args (replicate k ■)} (as : Atoms Ms) → d + h ≤ n → Scope d ρ → Agree d σ ρ
+  atoms-≃ : ∀ {n d h σ ρ k} {Ms : Args (replicate k ■)}
+    → (as : Atoms Ms)
+    → d + h ≤ n
+    → Scope d ρ
+    → Agree d σ ρ
     → (Q : ∀ m → Results (𝒫 Value) (replicate m ■) → Set)
     → (∀ {m Ds Es} → RRs _ Ds Es → Q m Es → Q m Ds)
-    → Q k (⟦ Ms ⟧₊[ T' ] ρ) → Q (length (lift-atoms n d as)) (𝒜s T n σ (lift-atoms n d as))
+    → Q k (⟦ Ms ⟧₊[ T' ] ρ)
+    → Q (length (lift-atoms n d as)) (𝒜s T n σ (lift-atoms n d as))
   atoms-≃ [] H O A Q resp q = q
   atoms-≃ (a ∷ as) H O A Q resp q =
     atoms-≃ as H O A (λ m Ds → Q (suc m) ⟨ _ , Ds ⟩) (λ eq → resp ⟨ up ≃-refl , eq ⟩)
@@ -162,11 +191,15 @@ module Into (ℐ : I.Program → 𝒫 Value)
     (≃→Same (≃-sym (lift-program-correct _ (rco-program-mon (compile M)))))
 
   compile-imp-correct-const : ∀ (M : ISWIM.AST) → ∀ {B} (c : base-rep B)
-    → (const c ∈ ⟦ M ⟧ᵢ ρ₀ → const c ∈ ℐ (compile-imp M))
-    × (const c ∈ ℐ (compile-imp M) → const c ∈ ⟦ M ⟧ᵢ ρ₀)
+    → (  const c ∈ ⟦ M ⟧ᵢ ρ₀
+       → const c ∈ ℐ (compile-imp M))
+    × (  const c ∈ ℐ (compile-imp M)
+       → const c ∈ ⟦ M ⟧ᵢ ρ₀)
   compile-imp-correct-const M = proj₁ (compile-imp-same M)
 
   compile-imp-correct-nonempty : ∀ (M : ISWIM.AST)
-    → (nonempty (⟦ M ⟧ᵢ ρ₀) → nonempty (ℐ (compile-imp M)))
-    × (nonempty (ℐ (compile-imp M)) → nonempty (⟦ M ⟧ᵢ ρ₀))
+    → (  nonempty (⟦ M ⟧ᵢ ρ₀)
+       → nonempty (ℐ (compile-imp M)))
+    × (  nonempty (ℐ (compile-imp M))
+       → nonempty (⟦ M ⟧ᵢ ρ₀))
   compile-imp-correct-nonempty M = proj₂ (compile-imp-same M)

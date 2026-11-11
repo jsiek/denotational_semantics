@@ -83,7 +83,10 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
       → M ≈ M' → let′ M (sub (exts tmK σ) N) ≈ let′ M' (sub (exts tmK τ) ⌜ rco N (ext ρ) ⌝)
 
   {- a target value is the source's -}
-  ≈-val : ∀ {A} {M V : Tm Σ [] A} → M ≈ V → Value V → M ≡ V
+  ≈-val : ∀ {A} {M V : Tm Σ [] A}
+    → M ≈ V
+    → Value V
+    → M ≡ V
   ≈-val (val≈ _) _ = refl
   ≈-val (letc≈ _ _ _) ()
   ≈-val (call≈ _ _) ()
@@ -95,16 +98,22 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
 
   {- The fundamental lemma --------------------------------------------------------}
 
-  ext-agree : ∀ {Γ Δ A} {σ : Clo Γ} {τ : Clo Δ} {ρ : Ren Γ Δ} (W : Tm Σ [] A) → Agree σ τ ρ → Agree (W • σ) (W • τ) (ext ρ)
+  ext-agree : ∀ {Γ Δ A} {σ : Clo Γ} {τ : Clo Δ} {ρ : Ren Γ Δ} (W : Tm Σ [] A)
+    → Agree σ τ ρ
+    → Agree (W • σ) (W • τ) (ext ρ)
   ext-agree W a Z = refl
   ext-agree W a (S x) = a x
 
-  ext-vals : ∀ {Γ A} {σ : Clo Γ} {W : Tm Σ [] A} → Value W → Vals σ → Vals (W • σ)
+  ext-vals : ∀ {Γ A} {σ : Clo Γ} {W : Tm Σ [] A}
+    → Value W
+    → Vals σ
+    → Vals (W • σ)
   ext-vals w vs Z = w
   ext-vals w vs (S x) = vs x
 
   {- an atom, renamed -}
-  atm-ren : ∀ {Δ Δ' A} (a : Atm Σ Δ A) {r : Ren Δ Δ'} {τ : Clo Δ} {τ' : Clo Δ'} → Agree τ τ' r
+  atm-ren : ∀ {Δ Δ' A} (a : Atm Σ Δ A) {r : Ren Δ Δ'} {τ : Clo Δ} {τ' : Clo Δ'}
+    → Agree τ τ' r
     → sub τ' ⌜ Mon.ren r a ⌝ᵃ ≡ sub τ ⌜ a ⌝ᵃ
   atm-ren (var x) e = e x
   atm-ren (lit B c) e = refl
@@ -116,25 +125,47 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
   Kont {Δ} {A} {B} h τ k = ∀ {Δ'} (r : Ren Δ Δ') (τ' : Clo Δ') (a : Atm Σ Δ' A) → Agree τ τ' r
     → Value (sub τ' ⌜ a ⌝ᵃ) → h (sub τ' ⌜ a ⌝ᵃ) ≈ sub τ' ⌜ k r a ⌝
 
-  rco≈ : ∀ {Γ Δ A} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
+  rco≈ : ∀ {Γ Δ A} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (σ : Clo Γ) (τ : Clo Δ)
+    → Agree σ τ ρ
+    → Vals σ
     → sub σ M ≈ sub τ ⌜ rco M ρ ⌝
-  atomize≈ : ∀ {Γ Δ A B} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
-    → {h : Tm Σ [] A → Tm Σ [] B} → Frame red₁ red₁ h → Kont h τ k → h (sub σ M) ≈ sub τ ⌜ atomize M ρ k ⌝
+  atomize≈ : ∀ {Γ Δ A B} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) (σ : Clo Γ) (τ : Clo Δ)
+    → Agree σ τ ρ
+    → Vals σ
+    → {h : Tm Σ [] A → Tm Σ [] B}
+    → Frame red₁ red₁ h
+    → Kont h τ k
+    → h (sub σ M) ≈ sub τ ⌜ atomize M ρ k ⌝
   atomizes≈ : ∀ {Γ Δ n B} (Ms : Vec (Tm Σ Γ Any) n) (ρ : Ren Γ Δ) (k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) n → Mon.Exp Σ Δ' B)
-    (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ → {g : Vec (Tm Σ [] Any) n → Tm Σ [] B} → Frame (T.reds ds) red₁ g
-    → (∀ {Δ'} (r : Ren Δ Δ') (τ' : Clo Δ') (as : Vec (Atm Σ Δ' Any) n) → Agree τ τ' r
-         → Allᵥ Value (T.travs tmK τ' ⌜ as ⌝ᵛ) → g (T.travs tmK τ' ⌜ as ⌝ᵛ) ≈ sub τ' ⌜ k r as ⌝)
+      (σ : Clo Γ) (τ : Clo Δ)
+    → Agree σ τ ρ
+    → Vals σ
+    → {g : Vec (Tm Σ [] Any) n → Tm Σ [] B}
+    → Frame (T.reds ds) red₁ g
+    → (  ∀ {Δ'} (r : Ren Δ Δ') (τ' : Clo Δ') (as : Vec (Atm Σ Δ' Any) n)
+       → Agree τ τ' r
+       → Allᵥ Value (T.travs tmK τ' ⌜ as ⌝ᵛ)
+       → g (T.travs tmK τ' ⌜ as ⌝ᵛ) ≈ sub τ' ⌜ k r as ⌝)
     → g (T.travs tmK σ Ms) ≈ sub τ ⌜ atomizes Ms ρ k ⌝
   atomize₂≈ : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (M : Tm Σ Γ A₂) (ρ : Ren Γ Δ)
-    (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Mon.Exp Σ Δ' B) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
-    → {h : Tm Σ [] A₁ → Tm Σ [] A₂ → Tm Σ [] B} → (∀ {Y} → Frame red₁ red₁ (λ X → h X Y))
+      (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Mon.Exp Σ Δ' B) (σ : Clo Γ) (τ : Clo Δ)
+    → Agree σ τ ρ
+    → Vals σ
+    → {h : Tm Σ [] A₁ → Tm Σ [] A₂ → Tm Σ [] B}
+    → (∀ {Y} → Frame red₁ red₁ (λ X → h X Y))
     → (∀ {X} → Value X → Frame red₁ red₁ (h X))
-    → (∀ {Δ'} (τ' : Clo Δ') a b → Value (sub τ' ⌜ a ⌝ᵃ) → Value (sub τ' ⌜ b ⌝ᵃ)
-         → h (sub τ' ⌜ a ⌝ᵃ) (sub τ' ⌜ b ⌝ᵃ) ≈ sub τ' ⌜ k a b ⌝)
+    → (  ∀ {Δ'} (τ' : Clo Δ') a b
+       → Value (sub τ' ⌜ a ⌝ᵃ)
+       → Value (sub τ' ⌜ b ⌝ᵃ)
+       → h (sub τ' ⌜ a ⌝ᵃ) (sub τ' ⌜ b ⌝ᵃ) ≈ sub τ' ⌜ k a b ⌝)
     → h (sub σ L) (sub σ M) ≈ sub τ ⌜ atomize₂ L M ρ k ⌝
   {- a complex operand: a let -}
-  let-op : ∀ {Γ Δ A B} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
-    → {h : Tm Σ [] A → Tm Σ [] B} → Frame red₁ red₁ h → Kont h τ k
+  let-op : ∀ {Γ Δ A B} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) (σ : Clo Γ) (τ : Clo Δ)
+    → Agree σ τ ρ
+    → Vals σ
+    → {h : Tm Σ [] A → Tm Σ [] B}
+    → Frame red₁ red₁ h
+    → Kont h τ k
     → h (sub σ M) ≈ sub τ ⌜ Mon.let′ (rco M ρ) (k S (var Z)) ⌝
 
   rco≈ (` x) ρ σ τ a vs = subst (_≈ _) (a x) (val≈ (subst Value (sym (a x)) (vs x)))
@@ -203,13 +234,18 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
   ... | true = T.inl (T.inject (T.tuple []ᵥ))
   ... | false = T.inr (T.inject (T.tuple []ᵥ))
 
-  sim : ∀ {A} {M M' : Tm Σ [] A} → M ≈ M' → Ans′ M (red₁ M) M'
+  sim : ∀ {A} {M M' : Tm Σ [] A}
+    → M ≈ M'
+    → Ans′ M (red₁ M) M'
   sim (val≈ v) = subst (λ x → Ans′ _ x _) (sym (value-red v)) (val ε v (val≈ v))
   sim (letc≈ {h = h} {M} F r k) =
     subst (λ x → Ans′ (h M) x _) (sym (Frame.eq F M))
       (ans-in (frame _ λ _ → refl) (λ r' → letc≈ F r' k) (sim r) λ v r' → cont v r')
     where
-    cont : ∀ {V'} → Value V' → M ≈ V' → Ans′ (h M) (Frame.κ F M) (let′ V' _)
+    cont : ∀ {V'}
+      → Value V'
+      → M ≈ V'
+      → Ans′ (h M) (Frame.κ F M) (let′ V' _)
     cont v r' with ≈-val r' v
     ... | refl = ans-step (val-in (value-red v))
                    (subst (λ x → Ans′ (h M) x _) (trans (Frame.eq F M) (val-in (value-red v))) (sim (k M v)))
@@ -225,8 +261,10 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
           pd (no _) e = error ε e
   sim (case≈ {σ = σ} {τ} {ρ} {M = M} {N} a vs v) = ans-skip (value-red v) (case-sim v)
     where
-    case-sim : ∀ {V} → Value V → Ans′ (case V (sub (exts tmK σ) M) (sub (exts tmK σ) N)) (T.case? V (sub (exts tmK σ) M) (sub (exts tmK σ) N))
-                 (case V (sub (exts tmK τ) ⌜ rco M (ext ρ) ⌝) (sub (exts tmK τ) ⌜ rco N (ext ρ) ⌝))
+    case-sim : ∀ {V}
+      → Value V
+      → Ans′ (case V (sub (exts tmK σ) M) (sub (exts tmK σ) N)) (T.case? V (sub (exts tmK σ) M) (sub (exts tmK σ) N))
+          (case V (sub (exts tmK τ) ⌜ rco M (ext ρ) ⌝) (sub (exts tmK τ) ⌜ rco N (ext ρ) ⌝))
     case-sim v@(T.inl w) = to (one (val-in (value-red v)))
       (subst₂ _≈_ (sym (T.exts-[] σ _ M)) (sym (T.exts-[] τ _ ⌜ rco M (ext ρ) ⌝)) (rco≈ M _ _ _ (ext-agree _ a) (ext-vals w vs)))
     case-sim v@(T.inr w) = to (one (val-in (value-red v)))
@@ -234,7 +272,9 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
   sim (let≈ {σ = σ} {τ} {ρ} {N = N} a vs r) =
     ans-in (frame _ λ _ → refl) (let≈ {τ = τ} {ρ = ρ} {N = N} a vs) (sim r) λ v r' → let-sim v r'
     where
-    let-sim : ∀ {M V'} → Value V' → M ≈ V'
+    let-sim : ∀ {M V'}
+      → Value V'
+      → M ≈ V'
       → Ans′ (let′ M (sub (exts tmK σ) N)) (to (sub (exts tmK σ) N [ M ])) (let′ V' (sub (exts tmK τ) ⌜ rco N (ext ρ) ⌝))
     let-sim v r' with ≈-val r' v
     ... | refl = to (one (val-in (value-red v)))

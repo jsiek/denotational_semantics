@@ -65,8 +65,10 @@ older-lvl (S f) = older-lvl f
 module _ {D : ℕ → Set} (cd : Table Σ → ∀ {n} → D n → 𝒫 Value) where
 
   {- definition g of a part ps of the table, reached through r -}
-  table-at′ : ∀ {ns} (ps : All D ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n) → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
-    → ∀ {n} (g : ns ∋ n) → tables cd ps (r g) ≡ cd (tables cd (drop g ps)) (ps ! g)
+  table-at′ : ∀ {ns} (ps : All D ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n)
+    → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
+    → ∀ {n} (g : ns ∋ n)
+    → tables cd ps (r g) ≡ cd (tables cd (drop g ps)) (ps ! g)
   table-at′ {_ ∷ ns} (p ∷ ps) r rl Z with lvl (r Z) ≟ length ns
   ... | yes _ = refl
   ... | no ne = ⊥-elim (ne (rl Z))
@@ -75,7 +77,8 @@ module _ {D : ℕ → Set} (cd : Table Σ → ∀ {n} → D n → 𝒫 Value) wh
   ... | no _ = table-at′ ps (λ x → r (S x)) (λ x → rl (S x)) g
 
   {- the definitions older than f mean the same without the newer ones -}
-  agree : ∀ {ns n} (ps : All D ns) (f : ns ∋ n) {m} (g : Σ ∋ m) → lvl g < length (older f)
+  agree : ∀ {ns n} (ps : All D ns) (f : ns ∋ n) {m} (g : Σ ∋ m)
+    → lvl g < length (older f)
     → tables cd ps g ≡ tables cd (drop f ps) g
   agree {_ ∷ ns} (p ∷ ps) Z g g< with lvl g ≟ length ns
   ... | yes e = ⊥-elim (<-irrefl e g<)
@@ -113,16 +116,23 @@ probe {Any} v = done
 probe {⟪ G ⟫} v = refl ∷↠ done
 probe {code n} v = refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ done
 
-W-inj : ∀ {A} {v₁ v₂ : Val Σ A} → W v₁ ≡ W v₂ → v₁ ≡ v₂
+W-inj : ∀ {A} {v₁ v₂ : Val Σ A}
+  → W v₁ ≡ W v₂
+  → v₁ ≡ v₂
 W-inj {Any} e = e
 W-inj {⟪ G ⟫} refl = refl
 W-inj {code n} refl = refl
 
 private
-  ret-inj : ∀ {a b : Val Σ Any} → ret a halt ≡ ret b halt → a ≡ b
+  ret-inj : ∀ {a b : Val Σ Any}
+    → ret a halt ≡ ret b halt
+    → a ≡ b
   ret-inj refl = refl
 
-⇓-det : ∀ {Γ A} {γ : Env Σ Γ} {M : Tm Σ Γ A} {v₁ v₂} → γ ⊢ M ⇓ v₁ → γ ⊢ M ⇓ v₂ → v₁ ≡ v₂
+⇓-det : ∀ {Γ A} {γ : Env Σ Γ} {M : Tm Σ Γ A} {v₁ v₂}
+  → γ ⊢ M ⇓ v₁
+  → γ ⊢ M ⇓ v₂
+  → v₁ ≡ v₂
 ⇓-det {A = A} {v₁ = v₁} {v₂} e₁ e₂ =
   W-inj (ret-inj (↠-final-det (e₁ (K₀ A) ++↠ probe v₁) (e₂ (K₀ A) ++↠ probe v₂) refl refl))
 
@@ -132,7 +142,9 @@ data Evals {Γ} (γ : Env Σ Γ) : ∀ {j} → Vec (Tm Σ Γ Any) j → Vec (Val
   [] : Evals γ [] []
   _∷_ : ∀ {j M v} {Ms : Vec _ j} {vs} → γ ⊢ M ⇓ v → Evals γ Ms vs → Evals γ (M ∷ Ms) (v ∷ vs)
 
-tuple-run : ∀ {Γ m j} {γ : Env Σ Γ} (acc : Vec _ m) (Ms : Vec (Tm Σ Γ Any) j) {vs} → Evals γ Ms vs
-  → ∀ κ → tuple-next acc Ms γ κ ↠ ret (tup (acc <>< vs)) κ
+tuple-run : ∀ {Γ m j} {γ : Env Σ Γ} (acc : Vec _ m) (Ms : Vec (Tm Σ Γ Any) j) {vs}
+  → Evals γ Ms vs
+  → ∀ κ
+  → tuple-next acc Ms γ κ ↠ ret (tup (acc <>< vs)) κ
 tuple-run acc [] [] κ = done
 tuple-run {γ = γ} acc (M ∷ Ms) (ev ∷ evs) κ = ev (tupK acc Ms γ κ) ++↠ refl ∷↠ tuple-run (_ ∷ acc) Ms evs κ

@@ -109,25 +109,38 @@ module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
   open KR K
   open S.Laws laws
 
-  vvs-trav : ∀ {k j n} {τ : T.Sub 𝒦₂ k j} {Fs : Vec (C.Tm k Any) n} → All VV Fs → (∀ x → VV (K₂.tm (τ x)))
+  vvs-trav : ∀ {k j n} {τ : T.Sub 𝒦₂ k j} {Fs : Vec (C.Tm k Any) n}
+    → All VV Fs
+    → (∀ x → VV (K₂.tm (τ x)))
     → All VV (T.travs 𝒦₂ τ Fs)
   vvs-trav [] vk = []
   vvs-trav (var x ∷ vv) vk = vk x ∷ vvs-trav vv vk
   vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
 
-  ok-exts : ∀ {k j} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x))
-    → ∀ x → K₁.tm (S.exts 𝒦₁ σ x) ≈ K₂.tm (T.exts 𝒦₂ τ x)
+  ok-exts : ∀ {k j} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j}
+    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x))
+    → ∀ x
+    → K₁.tm (S.exts 𝒦₁ σ x) ≈ K₂.tm (T.exts 𝒦₂ τ x)
   ok-exts h zero = rel-vr zero
   ok-exts h (suc x) = rel-wk (h x)
 
-  vv-exts : ∀ {k j} {τ : T.Sub 𝒦₂ k j} → (∀ x → VV (K₂.tm (τ x))) → ∀ x → VV (K₂.tm (T.exts 𝒦₂ τ x))
+  vv-exts : ∀ {k j} {τ : T.Sub 𝒦₂ k j}
+    → (∀ x → VV (K₂.tm (τ x)))
+    → ∀ x
+    → VV (K₂.tm (T.exts 𝒦₂ τ x))
   vv-exts h zero = vv-vr zero
   vv-exts h (suc x) = vv-wk (h x)
 
-  ≈-trav : ∀ {k j A} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {M : Tm k A} {M'} → M ≈ M'
-    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x)) → (∀ x → VV (K₂.tm (τ x))) → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
-  ≈-travs : ∀ {k j n} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {Ms : Vec (Tm k Any) n} {Ms' : Vec (C.Tm k Any) n} → Pointwise _≈_ Ms Ms'
-    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x)) → (∀ x → VV (K₂.tm (τ x))) → Pointwise _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
+  ≈-trav : ∀ {k j A} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {M : Tm k A} {M'}
+    → M ≈ M'
+    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x))
+    → (∀ x → VV (K₂.tm (τ x)))
+    → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
+  ≈-travs : ∀ {k j n} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {Ms : Vec (Tm k Any) n} {Ms' : Vec (C.Tm k Any) n}
+    → Pointwise _≈_ Ms Ms'
+    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x))
+    → (∀ x → VV (K₂.tm (τ x)))
+    → Pointwise _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
 
   ≈-trav var≈ ok vk = ok _
   ≈-trav {σ = σ} {τ} (lam≈ {N = N} {σ = ρ} {Fs} n h vv) ok vk =
@@ -156,7 +169,11 @@ tmKR = record { laws = S.tmL ; rel-vr = λ _ → var≈ ; rel-wk = λ r → Trav
               ; vv-vr = var ; vv-wk = λ { (var x) → var _ ; (val v) → val (T.value-trav v) } }
 
 {- substituting a value for the variable of a binder -}
-≈-[] : ∀ {A} {N : Tm 1 A} {N' V V'} → N ≈ N' → V ≈ V' → Value V' → (N S.[ V ]) ≈ (N' T.[ V' ])
+≈-[] : ∀ {A} {N : Tm 1 A} {N' V V'}
+  → N ≈ N'
+  → V ≈ V'
+  → Value V'
+  → (N S.[ V ]) ≈ (N' T.[ V' ])
 ≈-[] n m v = Trav.≈-trav tmKR n (λ _ → m) (λ _ → val v)
 
 {- The simulation ------------------------------------------------------------------}
@@ -164,13 +181,19 @@ tmKR = record { laws = S.tmL ; rel-vr = λ _ → var≈ ; rel-wk = λ r → Trav
 Ans′ : ∀ {A} → Tm 0 A → Red (Tm 0 A) → C.Tm 0 A → Set
 Ans′ = Ans T.red Value _≈_
 
-vvs-values : ∀ {n} {Fs : Vec (C.Tm 0 Any) n} → All VV Fs → All Value Fs
+vvs-values : ∀ {n} {Fs : Vec (C.Tm 0 Any) n}
+  → All VV Fs
+  → All Value Fs
 vvs-values [] = []
 vvs-values (var () ∷ vv)
 vvs-values (val v ∷ vv) = v ∷ vvs-values vv
 
-obs≈ : ∀ {A} {V : Tm 0 A} {V'} → V ≈ V' → S.obs V ≡ T.obs V'
-obss≈ : ∀ {n} {Vs : Vec (Tm 0 Any) n} {Vs'} → Pointwise _≈_ Vs Vs' → S.obss Vs ≡ T.obss Vs'
+obs≈ : ∀ {A} {V : Tm 0 A} {V'}
+  → V ≈ V'
+  → S.obs V ≡ T.obs V'
+obss≈ : ∀ {n} {Vs : Vec (Tm 0 Any) n} {Vs'}
+  → Pointwise _≈_ Vs Vs'
+  → S.obss Vs ≡ T.obss Vs'
 obs≈ (lam≈ _ _ _) = refl
 obs≈ (app≈ _ _) = refl
 obs≈ lit≈ = refl
@@ -192,15 +215,24 @@ out≈ P.eq n m with does (n Z.≟ m)
 ... | true = inl≈ (inject≈ (tuple≈ []))
 ... | false = inr≈ (inject≈ (tuple≈ []))
 
-sim : ∀ {A} {M : Tm 0 A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
-sims : ∀ {n} {Ms : Vec (Tm 0 Any) n} {Ms'} → Pointwise _≈_ Ms Ms' → Ans T.reds (All Value) (Pointwise _≈_) Ms (S.reds Ms) Ms'
+sim : ∀ {A} {M : Tm 0 A} {M'}
+  → M ≈ M'
+  → Ans′ M (S.red M) M'
+sims : ∀ {n} {Ms : Vec (Tm 0 Any) n} {Ms'}
+  → Pointwise _≈_ Ms Ms'
+  → Ans T.reds (All Value) (Pointwise _≈_) Ms (S.reds Ms) Ms'
 sim (var≈ {x = ()})
 sim m@(lam≈ _ _ vv) = val ε (T.clos (vvs-values vv)) m
 sim (app≈ r s) =
   ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
     λ v m → ans-in (frame {g = C.app _} _ λ _ → val-in (value-red v)) (app≈ m) (sim s) λ w m' → β-sim v m w m'
   where
-  β-sim : ∀ {V V' W W'} → Value V' → V ≈ V' → Value W' → W ≈ W' → Ans′ (app V W) (S.β V W) (C.app V' W')
+  β-sim : ∀ {V V' W W'}
+    → Value V'
+    → V ≈ V'
+    → Value W'
+    → W ≈ W'
+    → Ans′ (app V W) (S.β V W) (C.app V' W')
   β-sim (T.clos vs) (lam≈ {N = N} {σ = σ} n h vv) w m' =
     to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))
        (subst (_≈ _) (sym (S.exts-[] σ _ N))
@@ -222,7 +254,10 @@ sim (let≈ r s) = ans-in (frame _ λ _ → refl) (λ m → let≈ m s) (sim r)
 sim (inject≈ r) = ans-in (frame _ λ _ → refl) inject≈ (sim r) λ v m → val ε (T.inject v) (inject≈ m)
 sim (project≈ {t = t} r) = ans-in (frame _ λ _ → refl) project≈ (sim r) λ { (T.inject v) (inject≈ m) → proj-sim v m }
   where
-  proj-sim : ∀ {G V V'} → Value V' → V ≈ V' → Ans′ (project t (inject G V)) (S.project? t (inject G V)) (C.project t (C.inject G V'))
+  proj-sim : ∀ {G V V'}
+    → Value V'
+    → V ≈ V'
+    → Ans′ (project t (inject G V)) (S.project? t (inject G V)) (C.project t (C.inject G V'))
   proj-sim {G} {V} {V'} v m = pd (G ≟F flat t) (val-in (value-red (T.inject v)))
     where pd : ∀ {H} (d : Dec (G ≡ H)) {X Y} → T.red X ≡ T.proj-dec d V' → Ans′ Y (S.proj-dec d V) X
           pd (yes refl) e = to (one e) m

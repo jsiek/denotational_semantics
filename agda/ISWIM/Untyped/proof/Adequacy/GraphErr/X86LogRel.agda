@@ -98,10 +98,15 @@ obs≢err (tup vs) ()
 obs≢err (T.inl v) ()
 obs≢err (T.inr v) ()
 
-stop-inj : ∀ {o o'} → stop {S = State} o ≡ stop o' → o ≡ o'
+stop-inj : ∀ {o o'}
+  → stop {S = State} o ≡ stop o'
+  → o ≡ o'
 stop-inj refl = refl
 
-Ret-det : ∀ {S v₁ v₂} → Ret S v₁ → Ret S v₂ → v₁ ≡ v₂
+Ret-det : ∀ {S v₁ v₂}
+  → Ret S v₁
+  → Ret S v₂
+  → v₁ ≡ v₂
 Ret-det r₁ r₂ with r₁ halt | r₂ halt
 ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ₁ , e₁ ⟩ ⟩ ⟩ ⟩ ⟩ | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ₂ , e₂ ⟩ ⟩ ⟩ ⟩ ⟩
     with ↠-final-det τ₁ τ₂ (cong halt? e₁) (cong halt? e₂)
@@ -109,7 +114,10 @@ Ret-det r₁ r₂ with r₁ halt | r₂ halt
 ... | refl = refl
 
 {- a run does not both return and err -}
-Ret-Err : ∀ {S v} → Ret S v → Err S → ⊥
+Ret-Err : ∀ {S v}
+  → Ret S v
+  → Err S
+  → ⊥
 Ret-Err {v = v} r er with r halt | er halt
 ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ₁ , e₁ ⟩ ⟩ ⟩ ⟩ ⟩ | ⟨ t , ⟨ τ₂ , st ⟩ ⟩ with ↠-final-det τ₁ τ₂ (cong halt? e₁) st
 ... | refl = obs≢err v (stop-inj (trans (sym (cong halt? e₁)) st))
@@ -154,7 +162,9 @@ Callee n bs b e a stk = run (Block.instrs b) (Block.jump b) bs stk nothing (zero
 Res : Fam → Value → Set
 Res S w = (w ≡ ω × Err S) ⊎ (Σ[ v ∈ Val ] Ret S v × 𝕍 w v)
 
-𝕍-ω : ∀ {v} → 𝕍 ω v → ⊥
+𝕍-ω : ∀ {v}
+  → 𝕍 ω v
+  → ⊥
 𝕍-ω {code k} ()
 𝕍-ω {pair v w} ()
 𝕍-ω {const B k} ()
@@ -162,31 +172,47 @@ Res S w = (w ≡ ω × Err S) ⊎ (Σ[ v ∈ Val ] Ret S v × 𝕍 w v)
 𝕍-ω {T.inl v} ()
 𝕍-ω {T.inr v} ()
 
-Res-step : ∀ {S S' w} → (∀ stk → step ds (S stk) ≡ next (S' stk)) → Res S' w → Res S w
+Res-step : ∀ {S S' w}
+  → (∀ stk → step ds (S stk) ≡ next (S' stk))
+  → Res S' w
+  → Res S w
 Res-step st (inj₁ ⟨ refl , er ⟩) = inj₁ ⟨ refl , (λ stk → let ⟨ t , ⟨ τ , e ⟩ ⟩ = er stk in ⟨ t , ⟨ st stk ∷↠ τ , e ⟩ ⟩) ⟩
 Res-step st (inj₂ ⟨ v , ⟨ r , rv ⟩ ⟩) =
   inj₂ ⟨ v , ⟨ (λ stk → let ⟨ bs , ⟨ f , ⟨ φ , ⟨ ρ , ⟨ τ , e ⟩ ⟩ ⟩ ⟩ ⟩ = r stk in ⟨ bs , ⟨ f , ⟨ φ , ⟨ ρ , ⟨ st stk ∷↠ τ , e ⟩ ⟩ ⟩ ⟩ ⟩) , rv ⟩ ⟩
 
-Res-stop : ∀ {S} → (∀ stk → step ds (S stk) ≡ stop o-error) → Res S ω
+Res-stop : ∀ {S}
+  → (∀ stk → step ds (S stk) ≡ stop o-error)
+  → Res S ω
 Res-stop st = inj₁ ⟨ refl , (λ stk → ⟨ _ , ⟨ done , st stk ⟩ ⟩) ⟩
 
-𝕍s-∈ : ∀ V {v d} → 𝕍s V v → d ∈ mem V → 𝕍 d v
+𝕍s-∈ : ∀ V {v d}
+  → 𝕍s V v
+  → d ∈ mem V
+  → 𝕍 d v
 𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ (here refl) = r
 𝕍s-∈ (d ∷ V) ⟨ _ , rs ⟩ (there d∈) = 𝕍s-∈ V rs d∈
 
-all→𝕍s : ∀ V {v} → (∀ d → d ∈ mem V → 𝕍 d v) → 𝕍s V v
+all→𝕍s : ∀ V {v}
+  → (∀ d → d ∈ mem V → 𝕍 d v)
+  → 𝕍s V v
 all→𝕍s [] all = tt
 all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
 
-𝕍At-proj : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
+𝕍At-proj : ∀ {n} (i : Fin n) d vs
+  → 𝕍At i d vs
+  → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
 𝕍At-proj {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ rewrite length→has-length n vs len = ⟨ v , ⟨ refl , r ⟩ ⟩
 𝕍At-proj (suc i) d (v ∷ vs) r = 𝕍At-proj i d vs r
 
-𝕍At-length : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → length vs ≡ n
+𝕍At-length : ∀ {n} (i : Fin n) d vs
+  → 𝕍At i d vs
+  → length vs ≡ n
 𝕍At-length {suc n} zero d (v ∷ vs) ⟨ len , _ ⟩ = cong suc len
 𝕍At-length (suc i) d (v ∷ vs) r = cong suc (𝕍At-length i d vs r)
 
-proj-just-length : ∀ {n} (i : Fin n) (vs : List Val) {v} → proj i vs ≡ just v → length vs ≡ n
+proj-just-length : ∀ {n} (i : Fin n) (vs : List Val) {v}
+  → proj i vs ≡ just v
+  → length vs ≡ n
 proj-just-length {suc n} zero (v ∷ vs) e with has-length n vs in h
 proj-just-length {suc n} zero (v ∷ vs) refl | true = cong suc (has-length→length n vs h)
 proj-just-length {suc n} zero (v ∷ vs) () | false
@@ -198,8 +224,12 @@ proj-just-length (suc i) (v ∷ vs) e = cong suc (proj-just-length i vs e)
 𝕍-out (bool false) = refl
 
 {- related values are observed in the shape of the denotational value -}
-𝕍-shape : ∀ d v → 𝕍 d v → ShapeOf (obs v) d
-𝕍At-shape : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → ShapeAt i (obs-list vs) d
+𝕍-shape : ∀ d v
+  → 𝕍 d v
+  → ShapeOf (obs v) d
+𝕍At-shape : ∀ {n} (i : Fin n) d vs
+  → 𝕍At i d vs
+  → ShapeAt i (obs-list vs) d
 𝕍-shape (dconst k) (const B k) refl = refl
 𝕍-shape ν (code k) r = tt
 𝕍-shape (X ↦ w) (code k) r = tt
@@ -222,7 +252,9 @@ vkind (T.inl v) = inj
 vkind (T.inr v) = inj
 
 {- an element of the denotation of a value is of its kind -}
-𝕍-kind : ∀ d v → 𝕍 d v → kind d ≡ vkind v
+𝕍-kind : ∀ d v
+  → 𝕍 d v
+  → kind d ≡ vkind v
 𝕍-kind (dconst k) (const B k) refl = refl
 𝕍-kind ν (code k) r = refl
 𝕍-kind (X ↦ w) (code k) r = refl
@@ -232,7 +264,10 @@ vkind (T.inr v) = inj
 𝕍-kind (left d) (T.inl v) r = refl
 𝕍-kind (right d) (T.inr v) r = refl
 
-notint-obs : ∀ v → vkind v ≢ base Int → ∀ n → obs v ≢ o-const Int n
+notint-obs : ∀ v
+  → vkind v ≢ base Int
+  → ∀ n
+  → obs v ≢ o-const Int n
 notint-obs (const .Int k) ni n refl = ni refl
 
 {- the kind of a field -}
@@ -243,14 +278,18 @@ fkind (getₛ {n} i) = tup n
 fkind payload = inj
 
 {- a field that the machine finds is of a value of its kind -}
-field-kind : ∀ fl v {w} → get-field fl v ≡ just w → vkind v ≡ fkind fl
+field-kind : ∀ fl v {w}
+  → get-field fl v ≡ just w
+  → vkind v ≡ fkind fl
 field-kind fstₛ (pair v w) refl = refl
 field-kind sndₛ (pair v w) refl = refl
 field-kind (getₛ i) (tup vs) e = cong Kind.tup (proj-just-length i vs e)
 field-kind payload (T.inl v) refl = refl
 field-kind payload (T.inr v) refl = refl
 
-field-bad : ∀ fl v → vkind v ≢ fkind fl → get-field fl v ≡ nothing
+field-bad : ∀ fl v
+  → vkind v ≢ fkind fl
+  → get-field fl v ≡ nothing
 field-bad fl v ne with get-field fl v in g
 ... | nothing = refl
 ... | just w = ⊥-elim (ne (field-kind fl v g))
@@ -269,28 +308,48 @@ Rel d m = (d ≡ ω × m ≡ nothing) ⊎ (Σ[ v ∈ Val ] m ≡ just v × 𝕍 
 Fl : 𝒫 Value → Maybe Bool → Set
 Fl F f = 𝕄 F (mmap bit f)
 
-𝕄-ω : ∀ {D m} → 𝕄 D m → ω ∈ D → m ≡ nothing
+𝕄-ω : ∀ {D m}
+  → 𝕄 D m
+  → ω ∈ D
+  → m ≡ nothing
 𝕄-ω h ω∈ with h ω ω∈
 ... | inj₁ ⟨ _ , e ⟩ = e
 ... | inj₂ ⟨ v , ⟨ _ , r ⟩ ⟩ = ⊥-elim (𝕍-ω {v} r)
 
-𝕄-val : ∀ {D m} → 𝕄 D m → ∀ d → d ∈ D → d ≢ ω → Σ[ v ∈ Val ] m ≡ just v × 𝕍 d v
+𝕄-val : ∀ {D m}
+  → 𝕄 D m
+  → ∀ d
+  → d ∈ D
+  → d ≢ ω
+  → Σ[ v ∈ Val ] m ≡ just v × 𝕍 d v
 𝕄-val h d d∈ d≢ with h d d∈
 ... | inj₁ ⟨ e , _ ⟩ = ⊥-elim (d≢ e)
 ... | inj₂ r = r
 
 {- the values of D are related to the one value the location holds -}
-𝕄-all : ∀ {D m v} → 𝕄 D m → m ≡ just v → ∀ d → d ∈ ⌊ D ⌋ → 𝕍 d v
+𝕄-all : ∀ {D m v}
+  → 𝕄 D m
+  → m ≡ just v
+  → ∀ d
+  → d ∈ ⌊ D ⌋
+  → 𝕍 d v
 𝕄-all h refl d d∈ with 𝕄-val h d (proj₁ d∈) (proj₂ d∈)
 ... | ⟨ _ , ⟨ refl , r ⟩ ⟩ = r
 
-mmap-nothing : ∀ (f : Maybe Bool) → mmap bit f ≡ nothing → f ≡ nothing
+mmap-nothing : ∀ (f : Maybe Bool)
+  → mmap bit f ≡ nothing
+  → f ≡ nothing
 mmap-nothing nothing _ = refl
 
-mmap-just : ∀ (f : Maybe Bool) {x} → mmap bit f ≡ just x → Σ[ b ∈ Bool ] f ≡ just b × x ≡ bit b
+mmap-just : ∀ (f : Maybe Bool) {x}
+  → mmap bit f ≡ just x
+  → Σ[ b ∈ Bool ] f ≡ just b × x ≡ bit b
 mmap-just (just b) refl = ⟨ b , ⟨ refl , refl ⟩ ⟩
 
-Fl-ω : ∀ {F f} → Fl F f → ω ∈ F → f ≡ nothing
+Fl-ω : ∀ {F f}
+  → Fl F f
+  → ω ∈ F
+  → f ≡ nothing
 Fl-ω {f = f} h ω∈ = mmap-nothing f (𝕄-ω h ω∈)
 
 init-𝕄 : 𝕄 init nothing
@@ -310,10 +369,14 @@ init-Fl = init-𝕄
 𝕋 : ℕ → Table → Set
 𝕋 K T = ∀ k → k < K → ∀ d → d ∈ T k → 𝕍 d (code k)
 
-bind≡ : ∀ {A B : Set} {m : Maybe A} {x} {f : A → Maybe B} → m ≡ just x → (m >>= f) ≡ f x
+bind≡ : ∀ {A B : Set} {m : Maybe A} {x} {f : A → Maybe B}
+  → m ≡ just x
+  → (m >>= f) ≡ f x
 bind≡ refl = refl
 
-bind-none : ∀ {A B : Set} {m : Maybe A} {f : A → Maybe B} → m ≡ nothing → (m >>= f) ≡ nothing
+bind-none : ∀ {A B : Set} {m : Maybe A} {f : A → Maybe B}
+  → m ≡ nothing
+  → (m >>= f) ≡ nothing
 bind-none refl = refl
 
 {- Operations ----------------------------------------------------------------------}
@@ -326,24 +389,34 @@ bind-none refl = refl
 
 {- a bind: an error of its operand is the machine's error, and the values
    of the operand are related to the one the machine computes -}
-𝕄-bind : ∀ {D m F} {k : Val → Maybe Val} → 𝕄 D m → (∀ {v} → 𝕍all ⌊ D ⌋ v → 𝕄 (F ⌊ D ⌋) (k v))
+𝕄-bind : ∀ {D m F} {k : Val → Maybe Val}
+  → 𝕄 D m
+  → (∀ {v} → 𝕍all ⌊ D ⌋ v → 𝕄 (F ⌊ D ⌋) (k v))
   → 𝕄 (D ≫= F) (m >>= k)
 𝕄-bind h hF d (inj₁ ⟨ refl , ω∈ ⟩) = inj₁ ⟨ refl , bind-none (𝕄-ω h ω∈) ⟩
 𝕄-bind h hF d (inj₂ ⟨ ⟨ d₀ , ⟨ d₀∈ , d₀≢ ⟩ ⟩ , d∈ ⟩) with 𝕄-val h d₀ d₀∈ d₀≢
 ... | ⟨ v , ⟨ refl , _ ⟩ ⟩ = hF (𝕄-all h refl) d d∈
 
 {- a check: a value of the wrong kind is one the machine fails on -}
-𝕄-check : ∀ {k X v A r} → 𝕍all X v → (vkind v ≢ k → r ≡ nothing) → 𝕄 A r → 𝕄 (checked k X A) r
+𝕄-check : ∀ {k X v A r}
+  → 𝕍all X v
+  → (vkind v ≢ k → r ≡ nothing)
+  → 𝕄 A r
+  → 𝕄 (checked k X A) r
 𝕄-check {v = v} X𝕍 bad hA _ (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) =
   inj₁ ⟨ refl , bad (λ k≡ → ek (trans (𝕍-kind e v (X𝕍 e e∈)) k≡)) ⟩
 𝕄-check X𝕍 bad hA d (inj₂ d∈) = hA d d∈
 
 {- primitives, on two integers -}
-int-out : ∀ p {n m u w} → u ≡ const Int n → w ≡ const Int m
+int-out : ∀ p {n m u w}
+  → u ≡ const Int n
+  → w ≡ const Int m
   → (dout (δ p n m) ≡ ω × prim? p u w ≡ nothing) ⊎ (Σ[ v ∈ Val ] prim? p u w ≡ just v × 𝕍 (dout (δ p n m)) v)
 int-out p {n} {m} refl refl = inj₂ ⟨ out (δ p n m) , ⟨ refl , 𝕍-out (δ p n m) ⟩ ⟩
 
-prim-𝕄 : ∀ p {D E md me} → 𝕄 D md → 𝕄 E me
+prim-𝕄 : ∀ p {D E md me}
+  → 𝕄 D md
+  → 𝕄 E me
   → 𝕄 (primᵐ p ⟨ D , ⟨ E , ptt ⟩ ⟩) (md >>= λ u → me >>= λ w → prim? p u w)
 prim-𝕄 p {D} {E} hD hE = 𝕄-bind {F = λ X → E ≫= K X} hD λ {u} X𝕍 → 𝕄-bind {F = K ⌊ D ⌋} hE λ {w} Y𝕍 →
   𝕄-check X𝕍 (λ ni → cong (mmap out) (δ?-nothing₁ p (obs u) (obs w) (notint-obs u ni)))
@@ -360,7 +433,9 @@ prim-𝕄 p {D} {E} hD hE = 𝕄-bind {F = λ X → E ≫= K X} hD λ {u} X𝕍 
 >>=-comm (just a) nothing f = refl
 >>=-comm (just a) (just b) f = refl
 
-sub-𝕄 : ∀ {Dd Da md ma} → 𝕄 Dd md → 𝕄 Da ma
+sub-𝕄 : ∀ {Dd Da md ma}
+  → 𝕄 Dd md
+  → 𝕄 Da ma
   → 𝕄 (primᵐ sub ⟨ Dd , ⟨ Da , ptt ⟩ ⟩) (ma >>= λ w → md >>= λ u → prim? sub u w)
 sub-𝕄 {md = md} {ma} hd ha = subst (𝕄 _) (>>=-comm md ma (λ u w → prim? sub u w)) (prim-𝕄 sub hd ha)
 
@@ -373,30 +448,44 @@ cmp-bit (just v) (just w) with δ? eq (obs v) (obs w) in d
 ... | just r with δ?-inv eq (obs v) (obs w) d
 ...   | ⟨ n , ⟨ m , ⟨ _ , ⟨ _ , refl ⟩ ⟩ ⟩ ⟩ = refl
 
-cmp-Fl : ∀ {D₁ D₂ m₁ m₂} → 𝕄 D₁ m₁ → 𝕄 D₂ m₂
+cmp-Fl : ∀ {D₁ D₂ m₁ m₂}
+  → 𝕄 D₁ m₁
+  → 𝕄 D₂ m₂
   → Fl (primᵐ eq ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩) (m₁ >>= λ v → m₂ >>= λ w → cmp v w)
 cmp-Fl {m₁ = m₁} {m₂} h₁ h₂ = subst (𝕄 _) (sym (cmp-bit m₁ m₂)) (prim-𝕄 eq h₁ h₂)
 
 {- the tag of an injection -}
-inl-kind : ∀ v {b} → is-inl v ≡ just b → vkind v ≡ inj
+inl-kind : ∀ v {b}
+  → is-inl v ≡ just b
+  → vkind v ≡ inj
 inl-kind (T.inl v) refl = refl
 inl-kind (T.inr v) refl = refl
 
-isinl-Fl : ∀ {D m} → 𝕄 D m → Fl (isinlᵐ D) (m >>= is-inl)
+isinl-Fl : ∀ {D m}
+  → 𝕄 D m
+  → Fl (isinlᵐ D) (m >>= is-inl)
 isinl-Fl {m = m} h = subst (𝕄 _) (sym (mb m)) (𝕄-bind {F = λ X → checked inj X (isinlD X)} h λ {v} X𝕍 → 𝕄-check X𝕍 (bad v) (K X𝕍))
   where
   mb : ∀ m → mmap bit (m >>= is-inl) ≡ (m >>= λ v → mmap bit (is-inl v))
   mb nothing = refl
   mb (just v) = refl
-  bad : ∀ v → vkind v ≢ inj → mmap bit (is-inl v) ≡ nothing
+  bad : ∀ v
+    → vkind v ≢ inj
+    → mmap bit (is-inl v) ≡ nothing
   bad v ne with is-inl v in e
   ... | nothing = refl
   ... | just b = ⊥-elim (ne (inl-kind v e))
-  tl : ∀ v {u} → 𝕍 (left u) v → mmap bit (is-inl v) ≡ just (bit true)
+  tl : ∀ v {u}
+    → 𝕍 (left u) v
+    → mmap bit (is-inl v) ≡ just (bit true)
   tl (T.inl v) r = refl
-  tr : ∀ v {u} → 𝕍 (right u) v → mmap bit (is-inl v) ≡ just (bit false)
+  tr : ∀ v {u}
+    → 𝕍 (right u) v
+    → mmap bit (is-inl v) ≡ just (bit false)
   tr (T.inr v) r = refl
-  K : ∀ {X v} → 𝕍all X v → 𝕄 (isinlD X) (mmap bit (is-inl v))
+  K : ∀ {X v}
+    → 𝕍all X v
+    → 𝕄 (isinlD X) (mmap bit (is-inl v))
   K {v = v} X𝕍 _ (inj₁ ⟨ u , ⟨ l , refl ⟩ ⟩) = inj₂ ⟨ _ , ⟨ tl v (X𝕍 _ l) , refl ⟩ ⟩
   K {v = v} X𝕍 _ (inj₂ ⟨ u , ⟨ r , refl ⟩ ⟩) = inj₂ ⟨ _ , ⟨ tr v (X𝕍 _ r) , refl ⟩ ⟩
 
@@ -407,32 +496,48 @@ fkern sndₛ X = cdr ⟨ X , ptt ⟩
 fkern (getₛ i) X = projD i ⟨ X , ptt ⟩
 fkern payload X = payloadD (X ⇂ ValPayload)
 
-field-K : ∀ fl {X v} → 𝕍all X v → 𝕄 (fkern fl X) (get-field fl v)
+field-K : ∀ fl {X v}
+  → 𝕍all X v
+  → 𝕄 (fkern fl X) (get-field fl v)
 field-K fstₛ {v = v} X𝕍 u ⟨ w , p∈ ⟩ = K v (X𝕍 _ p∈)
   where
-  K : ∀ v → 𝕍 ⦅ u , w ⦆ v → Rel u (get-field fstₛ v)
+  K : ∀ v
+    → 𝕍 ⦅ u , w ⦆ v
+    → Rel u (get-field fstₛ v)
   K (pair v₁ v₂) r = inj₂ ⟨ v₁ , ⟨ refl , proj₁ r ⟩ ⟩
 field-K sndₛ {v = v} X𝕍 w ⟨ u , p∈ ⟩ = K v (X𝕍 _ p∈)
   where
-  K : ∀ v → 𝕍 ⦅ u , w ⦆ v → Rel w (get-field sndₛ v)
+  K : ∀ v
+    → 𝕍 ⦅ u , w ⦆ v
+    → Rel w (get-field sndₛ v)
   K (pair v₁ v₂) r = inj₂ ⟨ v₂ , ⟨ refl , proj₂ r ⟩ ⟩
 field-K (getₛ i) {v = v} X𝕍 x t∈ = K v (X𝕍 _ t∈)
   where
-  K : ∀ v → 𝕍 (tup[ i ] x) v → Rel x (get-field (getₛ i) v)
+  K : ∀ v
+    → 𝕍 (tup[ i ] x) v
+    → Rel x (get-field (getₛ i) v)
   K (tup vs) r = let ⟨ v' , ⟨ e , r' ⟩ ⟩ = 𝕍At-proj i x vs r in inj₂ ⟨ v' , ⟨ e , r' ⟩ ⟩
 field-K payload {v = v} X𝕍 x (inj₁ l) = K v (X𝕍 _ (proj₁ l))
   where
-  K : ∀ v → 𝕍 (left x) v → Rel x (get-field payload v)
+  K : ∀ v
+    → 𝕍 (left x) v
+    → Rel x (get-field payload v)
   K (T.inl v₁) r = inj₂ ⟨ v₁ , ⟨ refl , r ⟩ ⟩
 field-K payload {v = v} X𝕍 x (inj₂ rt) = K v (X𝕍 _ (proj₁ rt))
   where
-  K : ∀ v → 𝕍 (right x) v → Rel x (get-field payload v)
+  K : ∀ v
+    → 𝕍 (right x) v
+    → Rel x (get-field payload v)
   K (T.inr v₁) r = inj₂ ⟨ v₁ , ⟨ refl , r ⟩ ⟩
 
-field-𝕄′ : ∀ fl {D m} → 𝕄 D m → 𝕄 (D ≫= λ X → checked (fkind fl) X (fkern fl X)) (m >>= get-field fl)
+field-𝕄′ : ∀ fl {D m}
+  → 𝕄 D m
+  → 𝕄 (D ≫= λ X → checked (fkind fl) X (fkern fl X)) (m >>= get-field fl)
 field-𝕄′ fl h = 𝕄-bind {F = λ X → checked (fkind fl) X (fkern fl X)} h λ {v} X𝕍 → 𝕄-check X𝕍 (field-bad fl v) (field-K fl X𝕍)
 
-field-𝕄 : ∀ fl {D m} → 𝕄 D m → 𝕄 (field′ fl D) (m >>= get-field fl)
+field-𝕄 : ∀ fl {D m}
+  → 𝕄 D m
+  → 𝕄 (field′ fl D) (m >>= get-field fl)
 field-𝕄 fstₛ = field-𝕄′ fstₛ
 field-𝕄 sndₛ = field-𝕄′ sndₛ
 field-𝕄 (getₛ i) = field-𝕄′ (getₛ i)
@@ -451,26 +556,36 @@ build-arity tupleₛ us _ = tt
 build-arity inlₛ (u ∷ []) _ = refl
 build-arity inrₛ (u ∷ []) _ = refl
 
-nothing-if : ∀ (m : Maybe Val) → (∀ w → m ≡ just w → ⊥) → m ≡ nothing
+nothing-if : ∀ (m : Maybe Val)
+  → (∀ w → m ≡ just w → ⊥)
+  → m ≡ nothing
 nothing-if nothing _ = refl
 nothing-if (just w) h = ⊥-elim (h w refl)
 
-arity-none : ∀ {φ ρm} sh as → (Arity sh (length as) → ⊥) → args φ ρm [] as (build sh) ≡ nothing
+arity-none : ∀ {φ ρm} sh as
+  → (Arity sh (length as) → ⊥)
+  → args φ ρm [] as (build sh) ≡ nothing
 arity-none sh as ¬ar = nothing-if _ λ w e →
   let ⟨ us , ⟨ es , eb ⟩ ⟩ = args-inv [] as e in
   ¬ar (subst (Arity sh) (sym (Pointwise-length es)) (build-arity sh us eb))
 
 {- a tuple of related values -}
-tup-𝕄 : ∀ n {Xs : Results (𝒫 Value) (replicate n ■)} {vs} → length vs ≡ n
-  → (∀ j x → x ∈ nthD Xs j → 𝕍At j x vs) → 𝕄 (𝒯 n Xs) (just (tup vs))
+tup-𝕄 : ∀ n {Xs : Results (𝒫 Value) (replicate n ■)} {vs}
+  → length vs ≡ n
+  → (∀ j x → x ∈ nthD Xs j → 𝕍At j x vs)
+  → 𝕄 (𝒯 n Xs) (just (tup vs))
 tup-𝕄 zero {vs = []} _ _ ⟨⟩ tt = inj₂ ⟨ tup [] , ⟨ refl , refl ⟩ ⟩
 tup-𝕄 (suc n) _ rs (tup[ i ] x) ⟨ refl , ⟨ x∈ , _ ⟩ ⟩ = inj₂ ⟨ _ , ⟨ refl , rs i x x∈ ⟩ ⟩
 
 {- an injection of a related value -}
-inl-𝕄 : ∀ {X v} → 𝕍all X v → 𝕄 (inlD ⟨ X , ptt ⟩) (just (T.inl v))
+inl-𝕄 : ∀ {X v}
+  → 𝕍all X v
+  → 𝕄 (inlD ⟨ X , ptt ⟩) (just (T.inl v))
 inl-𝕄 X𝕍 (left u) u∈ = inj₂ ⟨ _ , ⟨ refl , X𝕍 u u∈ ⟩ ⟩
 
-inr-𝕄 : ∀ {X v} → 𝕍all X v → 𝕄 (inrD ⟨ X , ptt ⟩) (just (T.inr v))
+inr-𝕄 : ∀ {X v}
+  → 𝕍all X v
+  → 𝕄 (inrD ⟨ X , ptt ⟩) (just (T.inr v))
 inr-𝕄 X𝕍 (right u) u∈ = inj₂ ⟨ _ , ⟨ refl , X𝕍 u u∈ ⟩ ⟩
 
 {- the flag of a jump to a left or right branch -}
@@ -478,13 +593,17 @@ bit-kind : ∀ b → vkind (bit b) ≡ inj
 bit-kind true = refl
 bit-kind false = refl
 
-fl-left : ∀ f {u} → Rel (left u) (mmap bit f) → f ≡ just true
+fl-left : ∀ f {u}
+  → Rel (left u) (mmap bit f)
+  → f ≡ just true
 fl-left f (inj₁ ⟨ () , _ ⟩)
 fl-left (just true) _ = refl
 fl-left (just false) (inj₂ ⟨ _ , ⟨ refl , () ⟩ ⟩)
 fl-left nothing (inj₂ ⟨ _ , ⟨ () , _ ⟩ ⟩)
 
-fl-right : ∀ f {u} → Rel (right u) (mmap bit f) → f ≡ just false
+fl-right : ∀ f {u}
+  → Rel (right u) (mmap bit f)
+  → f ≡ just false
 fl-right f (inj₁ ⟨ () , _ ⟩)
 fl-right (just false) _ = refl
 fl-right (just true) (inj₂ ⟨ _ , ⟨ refl , () ⟩ ⟩)
@@ -494,7 +613,12 @@ fl-right nothing (inj₂ ⟨ _ , ⟨ () , _ ⟩ ⟩)
 
 module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
 
-  𝒪-𝕄 : ∀ {n σ ρs φ ρm} a → OK (_< K) a → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → 𝕄 (𝒪 T n σ ρs a) (arg φ ρm a)
+  𝒪-𝕄 : ∀ {n σ ρs φ ρm} a
+    → OK (_< K) a
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → 𝕄 (𝒪 T n σ ρs a) (arg φ ρm a)
   𝒪-𝕄 {n} {φ = φ} (loc (var x)) _ refl F G with x <? length φ
   ... | yes x< = F x x<
   ... | no ¬x< = subst (𝕄 init) (sym (‼-out φ x ¬x<)) init-𝕄
@@ -506,9 +630,14 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   {- the operands of alloc: an error of one is the machine's error, and
      their values are related to the ones the machine computes -}
   𝕄-args : ∀ {n σ ρs φ ρm} as acc {Kr : Results (𝒫 Value) (replicate (length as) ■) → 𝒫 Value} (k : List Val → Maybe Val)
-    → All (OK (_< K)) as → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm
-    → (∀ {vs} → length vs ≡ length as → (∀ j x → x ∈ nthD ⌊ 𝒪s T n σ ρs as ⌋s j → 𝕍At j x vs)
-         → 𝕄 (Kr ⌊ 𝒪s T n σ ρs as ⌋s) (k (reverse acc ++ vs)))
+    → All (OK (_< K)) as
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → (  ∀ {vs}
+       → length vs ≡ length as
+       → (∀ j x → x ∈ nthD ⌊ 𝒪s T n σ ρs as ⌋s j → 𝕍At j x vs)
+       → 𝕄 (Kr ⌊ 𝒪s T n σ ρs as ⌋s) (k (reverse acc ++ vs)))
     → 𝕄 (binds (length as) (𝒪s T n σ ρs as) Kr) (args φ ρm acc as k)
   𝕄-args [] acc k _ _ _ _ hK = subst (𝕄 _) (cong k (++-identityʳ (reverse acc))) (hK refl (λ ()))
   𝕄-args {n} {σ} {ρs} (a ∷ as) acc {Kr} k (o ∷ os) nφ F G hK =
@@ -517,11 +646,17 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
       subst (𝕄 _) (cong k (sym (trans (cong (_++ vs) (unfold-reverse v acc)) (++-assoc (reverse acc) [ v ] vs))))
         (hK (cong suc len) λ { zero x x∈ → ⟨ len , X𝕍 x x∈ ⟩ ; (suc j) x x∈ → rs j x x∈ })
 
-  object-𝕄 : ∀ {n σ ρs φ ρm} sh as → All (OK (_< K)) as → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm
+  object-𝕄 : ∀ {n σ ρs φ ρm} sh as
+    → All (OK (_< K)) as
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
     → 𝕄 (object T n σ ρs sh as) (args φ ρm [] as (build sh))
   object-𝕄 {n} {σ} {ρs} pairₛ (a ∷ b ∷ []) os nφ F G = 𝕄-args (a ∷ b ∷ []) [] {pairD} (build pairₛ) os nφ F G P
     where
-    P : ∀ {vs} → length vs ≡ 2 → (∀ j x → x ∈ nthD ⌊ 𝒪s T n σ ρs (a ∷ b ∷ []) ⌋s j → 𝕍At j x vs)
+    P : ∀ {vs}
+      → length vs ≡ 2
+      → (∀ j x → x ∈ nthD ⌊ 𝒪s T n σ ρs (a ∷ b ∷ []) ⌋s j → 𝕍At j x vs)
       → 𝕄 (pairD ⌊ 𝒪s T n σ ρs (a ∷ b ∷ []) ⌋s) (build pairₛ vs)
     P {v₁ ∷ v₂ ∷ []} _ rs ⦅ u , w ⦆ ⟨ u∈ , w∈ ⟩ = inj₂ ⟨ pair v₁ v₂ , ⟨ refl , ⟨ proj₂ (rs zero u u∈) , proj₂ (rs (suc zero) w w∈) ⟩ ⟩ ⟩
   object-𝕄 tupleₛ as os nφ F G = 𝕄-args as [] {𝒯 (length as)} (build tupleₛ) os nφ F G (tup-𝕄 (length as))
@@ -536,7 +671,12 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   object-𝕄 {φ = φ} {ρm = ρm} inrₛ (a ∷ b ∷ as) os nφ F G _ refl = inj₁ ⟨ refl , arity-none {φ} {ρm} inrₛ (a ∷ b ∷ as) (λ ()) ⟩
 
   {- the related values of a set that holds some -}
-  𝕄→𝕍s : ∀ {D m} → 𝕄 D m → ∀ V → mem V ⊆ ⌊ D ⌋ → V ≢ [] → Σ[ v ∈ Val ] m ≡ just v × 𝕍s V v
+  𝕄→𝕍s : ∀ {D m}
+    → 𝕄 D m
+    → ∀ V
+    → mem V ⊆ ⌊ D ⌋
+    → V ≢ []
+    → Σ[ v ∈ Val ] m ≡ just v × 𝕍s V v
   𝕄→𝕍s h [] V⊆ ne = ⊥-elim (ne refl)
   𝕄→𝕍s h (d₀ ∷ V) V⊆ ne with 𝕄-val h d₀ (proj₁ (V⊆ d₀ (here refl))) (proj₂ (V⊆ d₀ (here refl)))
   ... | ⟨ v , ⟨ e , _ ⟩ ⟩ = ⟨ v , ⟨ e , all→𝕍s (d₀ ∷ V) (λ d d∈ → 𝕄-all h e d (V⊆ d d∈)) ⟩ ⟩
@@ -567,11 +707,18 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
          arg φ ρm a ≡ just (code k) × ρm rdi ≡ just e₁ × ρm rsi ≡ just e₂ × global ds k ≡ just (body m bbs bst)
          × Err (Callee m bbs bst e₁ e₂))
 
-  callq-next : ∀ {φ ρm a k e₁ e₂ m bbs bst} → arg φ ρm a ≡ just (code k) → ρm rdi ≡ just e₁ → ρm rsi ≡ just e₂
-    → global ds k ≡ just (body m bbs bst) → ∀ stk → callq? ds (arg φ ρm a) stk ρm ≡ next (Callee m bbs bst e₁ e₂ stk)
+  callq-next : ∀ {φ ρm a k e₁ e₂ m bbs bst}
+    → arg φ ρm a ≡ just (code k)
+    → ρm rdi ≡ just e₁
+    → ρm rsi ≡ just e₂
+    → global ds k ≡ just (body m bbs bst)
+    → ∀ stk
+    → callq? ds (arg φ ρm a) stk ρm ≡ next (Callee m bbs bst e₁ e₂ stk)
   callq-next {ρm = ρm} ea er₁ er₂ eg stk rewrite ea | eg | er₁ | er₂ = refl
 
-  callq-rdi : ∀ v {stk ρ} → ρ rdi ≡ nothing → callq? ds (just v) stk ρ ≡ stop o-error
+  callq-rdi : ∀ v {stk ρ}
+    → ρ rdi ≡ nothing
+    → callq? ds (just v) stk ρ ≡ stop o-error
   callq-rdi (code k) e rewrite e with global ds k
   ... | just (body _ _ _) = refl
   ... | nothing = refl
@@ -581,7 +728,9 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   callq-rdi (T.inl _) e = refl
   callq-rdi (T.inr _) e = refl
 
-  callq-rsi : ∀ v {stk ρ} → ρ rsi ≡ nothing → callq? ds (just v) stk ρ ≡ stop o-error
+  callq-rsi : ∀ v {stk ρ}
+    → ρ rsi ≡ nothing
+    → callq? ds (just v) stk ρ ≡ stop o-error
   callq-rsi (code k) {ρ = ρ} e rewrite e with global ds k | ρ rdi
   ... | just (body _ _ _) | just _ = refl
   ... | just (body _ _ _) | nothing = refl
@@ -592,7 +741,9 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   callq-rsi (T.inl _) e = refl
   callq-rsi (T.inr _) e = refl
 
-  callq-notcode : ∀ v {stk ρ} → vkind v ≢ fun → callq? ds (just v) stk ρ ≡ stop o-error
+  callq-notcode : ∀ v {stk ρ}
+    → vkind v ≢ fun
+    → callq? ds (just v) stk ρ ≡ stop o-error
   callq-notcode (code k) nf = ⊥-elim (nf refl)
   callq-notcode (pair _ _) nf = refl
   callq-notcode (const _ _) nf = refl
@@ -600,8 +751,14 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   callq-notcode (T.inl _) nf = refl
   callq-notcode (T.inr _) nf = refl
 
-  call-𝕄 : ∀ {n σ ρs φ ρm} a → OK (_< K) a → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → ∀ w
-    → w ∈ callᵐ ⟨ 𝒪 T n σ ρs a , ⟨ ρs rdi , ⟨ ρs rsi , ptt ⟩ ⟩ ⟩ → (w ≡ ω × CallErr φ ρm a) ⊎ Calls φ ρm a w
+  call-𝕄 : ∀ {n σ ρs φ ρm} a
+    → OK (_< K) a
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → ∀ w
+    → w ∈ callᵐ ⟨ 𝒪 T n σ ρs a , ⟨ ρs rdi , ⟨ ρs rsi , ptt ⟩ ⟩ ⟩
+    → (w ≡ ω × CallErr φ ρm a) ⊎ Calls φ ρm a w
   call-𝕄 {ρm = ρm} a oa nφ F G w (inj₁ ⟨ refl , ω∈ ⟩) =
     inj₁ ⟨ refl , inj₁ (λ stk → cong (λ m → callq? ds m stk ρm) (𝕄-ω (𝒪-𝕄 a oa nφ F G) ω∈)) ⟩
   call-𝕄 {ρm = ρm} a oa nφ F G w (inj₂ ⟨ ⟨ c , ⟨ c∈ , c≢ ⟩ ⟩ , inj₁ ⟨ refl , ω∈ ⟩ ⟩)
@@ -624,7 +781,10 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   ... | ⟨ m , ⟨ bbs , ⟨ bst , ⟨ eg , inj₂ ⟨ v , ⟨ ret , rv ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ = inj₂ (calls k e₁ e₂ m bbs bst v ea er₁ er₂ eg ret rv)
 
   {- a call does not both err and return -}
-  CallErr-Calls : ∀ {φ ρm a w} → CallErr φ ρm a → Calls φ ρm a w → ⊥
+  CallErr-Calls : ∀ {φ ρm a w}
+    → CallErr φ ρm a
+    → Calls φ ρm a w
+    → ⊥
   CallErr-Calls {φ} {ρm} {a} (inj₁ st) (calls k e₁ e₂ m bbs bst v ea er₁ er₂ eg ret rel) with trans (sym (st halt)) (callq-next {φ} {ρm} {a} ea er₁ er₂ eg halt)
   ... | ()
   CallErr-Calls (inj₂ ⟨ k' , ⟨ e₁' , ⟨ e₂' , ⟨ m' , ⟨ bbs' , ⟨ bst' , ⟨ ea' , ⟨ er₁' , ⟨ er₂' , ⟨ eg' , er ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩)
@@ -634,7 +794,10 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   ... | refl = Ret-Err ret er
 
   {- the same call returns the same value -}
-  calls-det : ∀ {φ ρm a w w'} (c : Calls φ ρm a w) (c' : Calls φ ρm a w') → 𝕍 w' (Calls.v c)
+  calls-det : ∀ {φ ρm a w w'}
+    → (c : Calls φ ρm a w)
+    → (c' : Calls φ ρm a w')
+    → 𝕍 w' (Calls.v c)
   calls-det (calls k e₁ e₂ m bbs bst v ea er₁ er₂ eg ret rel) (calls k' e₁' e₂' m' bbs' bst' v' ea' er₁' er₂' eg' ret' rel')
       with trans (sym ea) ea' | trans (sym er₁) er₁' | trans (sym er₂) er₂'
   ... | refl | refl | refl with trans (sym eg) eg'
@@ -642,18 +805,25 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   ... | refl = rel'
 
   {- the caller: a call, a return of the callee, and the rest -}
-  Res-↠ : ∀ {S S' w} → (∀ stk → S stk ↠ S' stk) → Res S' w → Res S w
+  Res-↠ : ∀ {S S' w}
+    → (∀ stk → S stk ↠ S' stk)
+    → Res S' w
+    → Res S w
   Res-↠ τ (inj₁ ⟨ refl , er ⟩) = inj₁ ⟨ refl , (λ stk → let ⟨ t , ⟨ τ' , e ⟩ ⟩ = er stk in ⟨ t , ⟨ τ stk ++↠ τ' , e ⟩ ⟩) ⟩
   Res-↠ τ (inj₂ ⟨ v , ⟨ r , rv ⟩ ⟩) =
     inj₂ ⟨ v , ⟨ (λ stk → let ⟨ bs , ⟨ f , ⟨ φ , ⟨ ρ , ⟨ τ' , e ⟩ ⟩ ⟩ ⟩ ⟩ = r stk in ⟨ bs , ⟨ f , ⟨ φ , ⟨ ρ , ⟨ τ stk ++↠ τ' , e ⟩ ⟩ ⟩ ⟩ ⟩) , rv ⟩ ⟩
 
-  via-call : ∀ {a is j bs f φ ρm w₀} (cl : Calls φ ρm a w₀) → ∀ stk
+  via-call : ∀ {a is j bs f φ ρm w₀}
+    → (cl : Calls φ ρm a w₀)
+    → ∀ stk
     → run (callq a ∷ is) j bs stk f φ ρm ↠ run is j bs stk nothing φ (regs (just (Calls.v cl)) nothing nothing)
   via-call {a} {is} {j} {bs} {f} {φ} {ρm} (calls k e₁ e₂ m bbs bst v ea er₁ er₂ eg ret rel) stk with ret (retK is j bs φ stk)
   ... | ⟨ bs₁ , ⟨ f₁ , ⟨ φ₁ , ⟨ ρ₁ , ⟨ τ , e ⟩ ⟩ ⟩ ⟩ ⟩ =
     callq-next {φ} {ρm} {a} ea er₁ er₂ eg (retK is j bs φ stk) ∷↠ (τ ++↠ (cong (λ m → back m is j bs φ stk) e ∷↠ done))
 
-  call-err : ∀ {a is j bs f φ ρm} → CallErr φ ρm a → Err (λ stk → run (callq a ∷ is) j bs stk f φ ρm)
+  call-err : ∀ {a is j bs f φ ρm}
+    → CallErr φ ρm a
+    → Err (λ stk → run (callq a ∷ is) j bs stk f φ ρm)
   call-err {is = is} {j} {bs} {φ = φ} (inj₁ st) stk = ⟨ _ , ⟨ done , st (retK is j bs φ stk) ⟩ ⟩
   call-err {a} {is} {j} {bs} {φ = φ} {ρm} (inj₂ ⟨ k , ⟨ e₁ , ⟨ e₂ , ⟨ m , ⟨ bbs , ⟨ bst , ⟨ ea , ⟨ er₁ , ⟨ er₂ , ⟨ eg , er ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩) stk
     with er (retK is j bs φ stk)
@@ -667,7 +837,10 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
     ⊎ (Σ[ b ∈ Block ] Σ[ bs' ∈ List Block ] block-at bs l ≡ just ⟨ b , bs' ⟩
         × Res (λ stk → run (Block.instrs b) (Block.jump b) bs' stk f φ ρm) w)
 
-  go : ∀ {bs l f φ ρm w} {S : Fam} → (∀ stk → step ds (S stk) ≡ goto (block-at bs l) stk f φ ρm) → GoRes bs l f φ ρm w → Res S w
+  go : ∀ {bs l f φ ρm w} {S : Fam}
+    → (∀ stk → step ds (S stk) ≡ goto (block-at bs l) stk f φ ρm)
+    → GoRes bs l f φ ρm w
+    → Res S w
   go {f = f} {φ} {ρm} st (inj₁ ⟨ eb , refl ⟩) = Res-stop (λ stk → trans (st stk) (cong (λ mb → goto mb stk f φ ρm) eb))
   go {f = f} {φ} {ρm} st (inj₂ ⟨ b , ⟨ bs' , ⟨ eb , r ⟩ ⟩ ⟩) = Res-step (λ stk → trans (st stk) (cong (λ mb → goto mb stk f φ ρm) eb)) r
 
@@ -676,18 +849,38 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   AdeqB n bs = ∀ l {σ ρs F φ ρm f w} → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → Fl F f → w ∈ blocks T n bs l σ ρs F
     → GoRes bs l f φ ρm w
 
-  adequate : ∀ {n} is j bs {σ ρs F φ ρm f w} → Code (_< K) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → Fl F f
-    → w ∈ ⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs)) σ ρs F → Res (λ stk → run is j bs stk f φ ρm) w
+  adequate : ∀ {n} is j bs {σ ρs F φ ρm f w}
+    → Code (_< K) is
+    → AdeqB n bs
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → Fl F f
+    → w ∈ ⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs)) σ ρs F
+    → Res (λ stk → run is j bs stk f φ ρm) w
   {- a write to d, then the rest -}
   put-case : ∀ {n} d {D m} is j bs {σ ρs F φ ρm f w} {S : Fam}
-    → (∀ stk → step ds (S stk) ≡ putM d m φ ρm (run is j bs stk f)) → 𝕄 D m
-    → Code (_< K) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm → Fl F f
-    → w ∈ putD n d D (⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs))) σ ρs F → Res S w
+    → (∀ stk → step ds (S stk) ≡ putM d m φ ρm (run is j bs stk f))
+    → 𝕄 D m
+    → Code (_< K) is
+    → AdeqB n bs
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → Fl F f
+    → w ∈ putD n d D (⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs))) σ ρs F
+    → Res S w
   {- a test that sets the flag, then the rest -}
   flag-case : ∀ {n} is j bs {σ ρs F₀ φ ρm mb w} {S : Fam}
-    → (∀ stk → step ds (S stk) ≡ test mb (λ f' → run is j bs stk f' φ ρm)) → Fl F₀ mb
-    → Code (_< K) is → AdeqB n bs → length φ ≡ n → 𝔽 σ φ → ℝ ρs ρm
-    → w ∈ flagD F₀ (⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs))) σ ρs → Res S w
+    → (∀ stk → step ds (S stk) ≡ test mb (λ f' → run is j bs stk f' φ ρm))
+    → Fl F₀ mb
+    → Code (_< K) is
+    → AdeqB n bs
+    → length φ ≡ n
+    → 𝔽 σ φ
+    → ℝ ρs ρm
+    → w ∈ flagD F₀ (⟦ is ⟧ˢ T n (⟦ j ⟧ʲ (blocks T n bs))) σ ρs
+    → Res S w
 
   adequate (movq a d ∷ is) j bs ⟨ oa , c ⟩ AB nφ F G Fl' w∈ =
     put-case d is j bs (λ _ → refl) (𝒪-𝕄 a oa nφ F G) c AB nφ F G Fl' w∈
@@ -778,7 +971,9 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
   ... | ⟨ _ , ⟨ e , _ ⟩ ⟩ with mmap-just mb e
   ...   | ⟨ b , ⟨ refl , _ ⟩ ⟩ = Res-step st (adequate is j bs c AB nφ F G Fl₀ w∈)
 
-  blocks-adeq : ∀ {n} bs → All (λ b → Code (_< K) (Block.instrs b)) bs → AdeqB n bs
+  blocks-adeq : ∀ {n} bs
+    → All (λ b → Code (_< K) (Block.instrs b)) bs
+    → AdeqB n bs
   blocks-adeq [] _ l nφ F G Fl' w∈ = inj₁ ⟨ refl , w∈ ⟩
   blocks-adeq (b ∷ bs) (c ∷ cs) l nφ F G Fl' w∈ with l ≟ length bs
   ... | no _ = blocks-adeq bs cs l nφ F G Fl' w∈
@@ -790,7 +985,10 @@ module _ {K : ℕ} {T : Table} (𝕋T : 𝕋 K T) where
 zeros-𝔽 : ∀ m → 𝔽 zerosD (zeros m)
 zeros-𝔽 m x x< rewrite replicate-‼ m {const Int 0ℤ} x (subst (x <_) (length-replicate m) x<) = ℬ-𝕄 Int _
 
-tab : ∀ Ns xs → ds ≡ xs ++ Ns → DefsWF Ns → 𝕋 (length Ns) (table Ns)
+tab : ∀ Ns xs
+  → ds ≡ xs ++ Ns
+  → DefsWF Ns
+  → 𝕋 (length Ns) (table Ns)
 tab (b ∷ Ns) xs e ⟨ ok , wf ⟩ k k< d d∈ with k ≟ length Ns
 ... | no k≢ = tab Ns (xs ++ [ b ]) (trans e (sym (++-assoc xs [ b ] Ns))) wf k k<' d d∈
   where
@@ -816,7 +1014,9 @@ tab (body m bbs bst ∷ Ns) xs e ⟨ c ∷ cs , wf ⟩ .(length Ns) k< (X ↦ (Y
 {- Adequacy -----------------------------------------------------------------------}
 
 {- main: a run to a return of a related value, or, for ω, to an error -}
-adequate-main : ∀ {n bs b w} → DefsWF ds → BodyOK (length ds) (body n bs b)
+adequate-main : ∀ {n bs b w}
+  → DefsWF ds
+  → BodyOK (length ds) (body n bs b)
   → w ∈ ⟦ program ds (body n bs b) ⟧ₚ
   → Res (λ stk → run (Block.instrs b) (Block.jump b) bs stk nothing (zeros n) (regs (just (const Int 0ℤ)) nothing nothing)) w
 adequate-main {n} {bs} {b} wf (c ∷ cs) w∈ =

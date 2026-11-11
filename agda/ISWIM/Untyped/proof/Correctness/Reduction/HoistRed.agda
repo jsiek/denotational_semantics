@@ -85,9 +85,15 @@ module _ (D : Defs) where
   GRa (clear a) (C.clear a') = GRa a a'
 
   {- a term is related to its hoisting, when the table it makes grows into D -}
-  glob≈ : ∀ M ds → proj₂ (glob M ds) ⊑ D → M ≈ proj₁ (glob M ds)
-  glob≈a : ∀ {b} (a : Arg b) ds → proj₂ (glob-arg a ds) ⊑ D → GRa a (proj₁ (glob-arg a ds))
-  glob≈s : ∀ {bs} (as : Args bs) ds → proj₂ (glob-args as ds) ⊑ D → GR as (proj₁ (glob-args as ds))
+  glob≈ : ∀ M ds
+    → proj₂ (glob M ds) ⊑ D
+    → M ≈ proj₁ (glob M ds)
+  glob≈a : ∀ {b} (a : Arg b) ds
+    → proj₂ (glob-arg a ds) ⊑ D
+    → GRa a (proj₁ (glob-arg a ds))
+  glob≈s : ∀ {bs} (as : Args bs) ds
+    → proj₂ (glob-args as ds) ⊑ D
+    → GR as (proj₁ (glob-args as ds))
   glob≈ (` x) ds p = var≈
   glob≈ (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds p = fun≈ (global-⊑ p) (glob≈ N ds (∷-⊑ p))
   glob≈ (app ⦅ as@(L ,, M ,, N ,, Nil) ⦆) ds p with glob≈s as ds p
@@ -121,8 +127,14 @@ module _ (D : Defs) where
   module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x)
     (pok : ∀ {σ σ'} → P σ σ' → ⊤) (pexts : ∀ {σ σ'} → P σ σ' → P (exts σ) (TS.exts σ')) where
 
-    ≈-sub : ∀ {σ σ' M M'} → P σ σ' → M ≈ M' → sub σ M ≈ TS.sub σ' M'
-    ≈-subs : ∀ {σ σ' n as as'} → P σ σ' → Pw _≈_ {n} as as' → Pw _≈_ (sub-args σ as) (TS.sub-args σ' as')
+    ≈-sub : ∀ {σ σ' M M'}
+      → P σ σ'
+      → M ≈ M'
+      → sub σ M ≈ TS.sub σ' M'
+    ≈-subs : ∀ {σ σ' n as as'}
+      → P σ σ'
+      → Pw _≈_ {n} as as'
+      → Pw _≈_ (sub-args σ as) (TS.sub-args σ' as')
     ≈-sub p var≈ = p≈ p _
     ≈-sub p (fun≈ e r) = fun≈ e r
     ≈-sub p (app≈ r s t) = app≈ (≈-sub p r) (≈-sub p s) (≈-sub p t)
@@ -146,11 +158,17 @@ module _ (D : Defs) where
 
   Ans′ = Ans (T.red D) T.Value _≈_
 
-  vr : ∀ {V} → T.Value V → T.red D V ≡ val
+  vr : ∀ {V}
+    → T.Value V
+    → T.red D V ≡ val
   vr = T.value-red
 
-  obs≈ : ∀ {M M'} → M ≈ M' → S.obs M ≡ T.obs M'
-  obs≈s : ∀ {n as as'} → Pw _≈_ {n} as as' → S.obs-args as ≡ T.obs-args as'
+  obs≈ : ∀ {M M'}
+    → M ≈ M'
+    → S.obs M ≡ T.obs M'
+  obs≈s : ∀ {n as as'}
+    → Pw _≈_ {n} as as'
+    → S.obs-args as ≡ T.obs-args as'
   obs≈ var≈ = refl
   obs≈ (fun≈ _ _) = refl
   obs≈ (app≈ _ _ _) = refl
@@ -169,12 +187,20 @@ module _ (D : Defs) where
   obs≈s (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈s rs)
 
   {- a call, once its operands are values -}
-  call-step : ∀ {F E W r} → T.Value F → T.Value E → T.Value W → T.call D F E W ≡ r
+  call-step : ∀ {F E W r}
+    → T.Value F
+    → T.Value E
+    → T.Value W
+    → T.call D F E W ≡ r
     → T.red D (C.app C.⦅ F ,, E ,, W ,, Nil ⦆) ≡ r
   call-step v v' w e rewrite vr v | vr v' | vr w = e
 
-  sim : ∀ {M M'} → M ≈ M' → Ans′ M (S.red M) M'
-  sims : ∀ {n as as'} → Pw _≈_ {n} as as' → Ans (T.red-args D) T.Values (Pw _≈_) as (S.red-args as) as'
+  sim : ∀ {M M'}
+    → M ≈ M'
+    → Ans′ M (S.red M) M'
+  sims : ∀ {n as as'}
+    → Pw _≈_ {n} as as'
+    → Ans (T.red-args D) T.Values (Pw _≈_) as (S.red-args as) as'
   sim var≈ = error ε refl
   sim (fun≈ e r) = val ε T.fun (fun≈ e r)
   sim (app≈ {L} {L'} {M} {M'} {N} {N'} r s t) =
@@ -185,7 +211,13 @@ module _ (D : Defs) where
                                 (λ X → trans (val-in (vr v)) (val-in (vr v'))))
                          (app≈ r' s') (sim t) (call-sim v v' r' s')
     where
-    call-sim : ∀ {F F' E E' W W'} → T.Value F' → T.Value E' → F ≈ F' → E ≈ E' → T.Value W' → W ≈ W'
+    call-sim : ∀ {F F' E E' W W'}
+      → T.Value F'
+      → T.Value E'
+      → F ≈ F'
+      → E ≈ E'
+      → T.Value W'
+      → W ≈ W'
       → Ans′ (app ⦅ F ,, E ,, W ,, Nil ⦆) (S.call F E W) (C.app C.⦅ F' ,, E' ,, W' ,, Nil ⦆)
     call-sim v v' (fun≈ e r) s' w t' =
       to (one (call-step v v' w (cong (λ x → T.call? x _ _) e)))
@@ -202,7 +234,10 @@ module _ (D : Defs) where
         λ v' s' → val ε (T.pair v v') (pair≈ r' s')
   sim (fst≈ r) = ans-in (frame _ (λ _ → refl)) fst≈ (sim r) fst-sim
     where
-    fst-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (fst-op ⦅ M ,, Nil ⦆) (S.fst? M) (C.fst-op C.⦅ V' ,, Nil ⦆)
+    fst-sim : ∀ {M V'}
+      → T.Value V'
+      → M ≈ V'
+      → Ans′ (fst-op ⦅ M ,, Nil ⦆) (S.fst? M) (C.fst-op C.⦅ V' ,, Nil ⦆)
     fst-sim v@(T.pair _ _) (pair≈ r s) = to (one (val-in (vr v))) r
     fst-sim T.fun (fun≈ _ _) = error ε refl
     fst-sim T.lit lit≈ = error ε refl
@@ -211,7 +246,10 @@ module _ (D : Defs) where
     fst-sim v@(T.inr _) (inr≈ _) = error ε (val-in (vr v))
   sim (snd≈ r) = ans-in (frame _ (λ _ → refl)) snd≈ (sim r) snd-sim
     where
-    snd-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (snd-op ⦅ M ,, Nil ⦆) (S.snd? M) (C.snd-op C.⦅ V' ,, Nil ⦆)
+    snd-sim : ∀ {M V'}
+      → T.Value V'
+      → M ≈ V'
+      → Ans′ (snd-op ⦅ M ,, Nil ⦆) (S.snd? M) (C.snd-op C.⦅ V' ,, Nil ⦆)
     snd-sim v@(T.pair _ _) (pair≈ r s) = to (one (val-in (vr v))) s
     snd-sim T.fun (fun≈ _ _) = error ε refl
     snd-sim T.lit lit≈ = error ε refl
@@ -221,7 +259,10 @@ module _ (D : Defs) where
   sim (tuple≈ rs) = ans-in (frame _ (λ _ → refl)) tuple≈ (sims rs) (λ vs rs' → val ε (T.tuple vs) (tuple≈ rs'))
   sim (get≈ {i = i} r) = ans-in (frame _ (λ _ → refl)) get≈ (sim r) get-sim
     where
-    get-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
+    get-sim : ∀ {M V'}
+      → T.Value V'
+      → M ≈ V'
+      → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
     get-sim v@(T.tuple _) (tuple≈ rs) = ret?-ans (proj-pw {R = _≈_} i (pw-list rs)) (val-in (vr v))
     get-sim T.fun (fun≈ _ _) = error ε refl
     get-sim v@(T.pair _ _) (pair≈ _ _) = error ε (val-in (vr v))
@@ -232,7 +273,9 @@ module _ (D : Defs) where
   sim (inr≈ r) = ans-in (frame _ (λ _ → refl)) inr≈ (sim r) (λ v r' → val ε (T.inr v) (inr≈ r'))
   sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ r' → case≈ r' s t) (sim r) case-sim
     where
-    case-sim : ∀ {L V'} → T.Value V' → L ≈ V'
+    case-sim : ∀ {L V'}
+      → T.Value V'
+      → L ≈ V'
       → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
     case-sim v@(T.inl v₁) (inl≈ r') = to (one (val-in (vr v))) (≈-[] tt r' s)
     case-sim v@(T.inr v₁) (inr≈ r') = to (one (val-in (vr v))) (≈-[] tt r' t)
@@ -245,7 +288,9 @@ module _ (D : Defs) where
       λ v r' → ans-in (frame {g = λ X → C.prim p C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (vr v))) (prim≈ r') (sim s)
         λ v' s' → ret?-ans (out≈ (obs≈ r') (obs≈ s')) (trans (val-in (vr v)) (val-in (vr v')))
     where
-    out≈ : ∀ {o₁ o₁' o₂ o₂'} → o₁ ≡ o₁' → o₂ ≡ o₂'
+    out≈ : ∀ {o₁ o₁' o₂ o₂'}
+      → o₁ ≡ o₁'
+      → o₂ ≡ o₂'
       → M.Pointwise _≈_ (map S.out (δ? p o₁ o₂)) (map T.out (δ? p o₁' o₂'))
     out≈ {o₁} {_} {o₂} refl refl with δ? p o₁ o₂
     ... | nothing = M.nothing

@@ -59,18 +59,23 @@ open import ISWIM.proof.Correctness.GraphErr.SelectCorrect using (select-correct
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst c ∈ D) ⇔ (dconst c ∈ E))) × (val∈ D ⇔ val∈ E)
 
-⇔∘ : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
+⇔∘ : ∀ {A B C : Set}
+  → A ⇔ B
+  → B ⇔ C
+  → A ⇔ C
 ⇔∘ ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
 {- cast insertion to split, on a well-scoped closed program -}
-compile-same : ∀ (M : AST) (w : WS 0 M)
+compile-same : ∀ (M : AST)
+  → (w : WS 0 M)
   → Same (⟦ M ⟧ ρ₀) (S4.⟦ split-program (concretize-program (prune-program (capture (cast-program M w)))) ⟧ ρ₀)
 compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (capture-correct M₁) (≃-trans (prune-correct (capture M₁)) (concretize-correct M₂))))
   where
   M₁ = cast-program M w
   M₂ = prune-program (capture M₁)
   M₃ = concretize-program M₂
-  go : ⟦ M ⟧ ρ₀ ≃ ISWIM.Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀ → Same (⟦ M ⟧ ρ₀) (S4.⟦ split-program M₃ ⟧ ρ₀)
+  go : ⟦ M ⟧ ρ₀ ≃ ISWIM.Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀
+    → Same (⟦ M ⟧ ρ₀) (S4.⟦ split-program M₃ ⟧ ρ₀)
   go ⟨ D⊆ , E⊆ ⟩ =
     ⟨ ⇔∘ ⟨ D⊆ ω , E⊆ ω ⟩ (split-correct-error M₃)
     , ⟨ (λ c → ⇔∘ ⟨ D⊆ (dconst c) , E⊆ (dconst c) ⟩ (split-correct-const M₃ c))
@@ -79,37 +84,57 @@ compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (capture-correct 
 
 {- The typed compiler from untyped ISWIM ------------------------------------------}
 
-≃-Same : ∀ {D E E'} → Same D E → E ≃ E' → Same D E'
+≃-Same : ∀ {D E E'}
+  → Same D E
+  → E ≃ E'
+  → Same D E'
 ≃-Same ⟨ e , ⟨ c , v ⟩ ⟩ ⟨ E⊆ , E⊇ ⟩ =
   ⟨ ⇔∘ e ⟨ E⊆ ω , E⊇ ω ⟩
   , ⟨ (λ k → ⇔∘ (c k) ⟨ E⊆ (dconst k) , E⊇ (dconst k) ⟩)
     , ⇔∘ v ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊆ d d∈ , d≢ ⟩ ⟩ }) , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊇ d d∈ , d≢ ⟩ ⟩ }) ⟩ ⟩ ⟩
 
-compile₄-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) (S4.⟦ compile₄ M ⟧ ρ₀)
+compile₄-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) (S4.⟦ compile₄ M ⟧ ρ₀)
 compile₄-same M c rewrite cast-closed-≡ (simplify M) (simplify-ws M c) =
   ≃-Same′ (simplify-correct M c) (compile-same (simplify M) (simplify-ws M c))
   where
-  ≃-Same′ : ∀ {D D' E} → D ≃ D' → Same D' E → Same D E
+  ≃-Same′ : ∀ {D D' E}
+    → D ≃ D'
+    → Same D' E
+    → Same D E
   ≃-Same′ ⟨ D⊆ , D⊇ ⟩ ⟨ e , ⟨ k , v ⟩ ⟩ =
     ⟨ ⇔∘ ⟨ D⊆ ω , D⊇ ω ⟩ e
     , ⟨ (λ b → ⇔∘ ⟨ D⊆ (dconst b) , D⊇ (dconst b) ⟩ (k b))
       , ⇔∘ ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊆ d d∈ , d≢ ⟩ ⟩ }) , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊇ d d∈ , d≢ ⟩ ⟩ }) ⟩ v ⟩ ⟩
 
-compile-same₅ : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
+compile-same₅ : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
 compile-same₅ M c = ≃-Same (compile₄-same M c) (hoist-correct (compile₄ M))
 
-compile-mon-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
+compile-mon-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
 compile-mon-same M c = ≃-Same (compile-same₅ M c) (rco-correct (compile M))
 
-compile-imp-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
+compile-imp-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
 compile-imp-same M c = ≃-Same (compile-mon-same M c) (lift-locals-correct (compile-mon M))
 
-compile-cfg-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
+compile-cfg-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
 compile-cfg-same M c = ≃-Same (compile-imp-same M c) (explicate-correct (compile-imp M))
 
-compile-x86-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
+compile-x86-same : ∀ (M : AST)
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
 compile-x86-same M c = ≃-Same (compile-cfg-same M c) (select-correct (compile-cfg M))
 
 {- cast insertion on closed programs (cast-closed) -}
-cast-correct-closed : ∀ (M : AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ISWIM.Semantics.GraphErr.Typed.ISWIM.⟦ cast-closed M ⟧ ρ₀
+cast-correct-closed : ∀ (M : AST)
+  → Closed M
+  → ⟦ M ⟧ ρ₀ ≃ ISWIM.Semantics.GraphErr.Typed.ISWIM.⟦ cast-closed M ⟧ ρ₀
 cast-correct-closed M c rewrite cast-closed-≡ M (closed-ws {M} c) = cast-correct M (closed-ws {M} c)

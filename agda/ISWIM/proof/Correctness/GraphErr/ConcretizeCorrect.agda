@@ -47,35 +47,52 @@ shift-ok : ∀ {Γ A} (r : Ref Γ) X ρ → ⟦ ref-tm (shift-ref {A = A} r) ⟧
 shift-ok (var x) X ρ = refl
 shift-ok (prj i x) X ρ = refl
 
-rel-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₂ ρ₃} → EnvRel φ ρ₂ ρ₃ → ∀ {X X'} → X ≃ X'
+rel-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₂ ρ₃}
+  → EnvRel φ ρ₂ ρ₃
+  → ∀ {X X'}
+  → X ≃ X'
   → EnvRel (ext-ref φ) (X • ρ₂) (X' • ρ₃)
 rel-ext rel X≃ zero = X≃
 rel-ext {φ = φ} {ρ₃ = ρ₃} rel {X' = X'} X≃ (suc x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X' ρ₃)))
 
 {- the components of a tuple of sets of values -}
-getᵗ-𝒯 : ∀ n Xs → AllVal n Xs → (i : Fin n) → getᵗ i (𝒯 n Xs) ≃ nthD Xs i
+getᵗ-𝒯 : ∀ n Xs
+  → AllVal n Xs
+  → (i : Fin n)
+  → getᵗ i (𝒯 n Xs) ≃ nthD Xs i
 getᵗ-𝒯 (suc n) Xs vs i =
   ≃-trans (≫=-β {F = λ X → proj i ⟨ X , ptt ⟩} (λ X⊆ d → X⊆ (tup[ i ] d)) (𝒯-clean (suc n)) (proj₂ (𝒯-val (suc n) vs)))
     ⟨ (λ { d ⟨ refl , ⟨ d∈ , _ ⟩ ⟩ → d∈ }) , (λ d d∈ → ⟨ refl , ⟨ d∈ , (λ j → proj₂ (vs j)) ⟩ ⟩) ⟩
 
-𝒯-con : ∀ n (Ys : Results (𝒫 Value) (replicate n ■)) → (∀ j → Con (nthD Ys j)) → Con (𝒯 n Ys)
+𝒯-con : ∀ n (Ys : Results (𝒫 Value) (replicate n ■))
+  → (∀ j → Con (nthD Ys j))
+  → Con (𝒯 n Ys)
 𝒯-con n Ys c = lower (𝒯-consis n Ys Ys (cs n Ys c))
   where
-  cs : ∀ m (Ys : Results (𝒫 Value) (replicate m ■)) → (∀ j → Con (nthD Ys j))
+  cs : ∀ m (Ys : Results (𝒫 Value) (replicate m ■))
+    → (∀ j → Con (nthD Ys j))
     → results-rel-pres (Every _~_) (replicate m ■) Ys Ys
   cs zero _ _ = ptt
   cs (suc m) ⟨ Y , Ys ⟩ c = ⟨ lift (c zero) , cs m Ys (λ j → c (suc j)) ⟩
 
-cons-con : ∀ {Γ n} (Ms : Vec (T.Tm Γ Any) n) {ρ} → Con-env ρ → ∀ j → Con (nthD (⟦ Ms ⟧s₃ ρ) j)
+cons-con : ∀ {Γ n} (Ms : Vec (T.Tm Γ Any) n) {ρ}
+  → Con-env ρ
+  → ∀ j
+  → Con (nthD (⟦ Ms ⟧s₃ ρ) j)
 cons-con (M ∷ Ms) c zero = con M c
 cons-con (M ∷ Ms) c (suc j) = cons-con Ms c j
 
 {- The main lemma ---------------------------------------------------------------------}
 
-conc : ∀ {k Γ A} (M : Tm k A) (φ : Fin k → Ref Γ) {ρ₂ ρ₃} → Con-env ρ₃ → EnvRel φ ρ₂ ρ₃
+conc : ∀ {k Γ A} (M : Tm k A) (φ : Fin k → Ref Γ) {ρ₂ ρ₃}
+  → Con-env ρ₃
+  → EnvRel φ ρ₂ ρ₃
   → ⟦ M ⟧ ρ₂ ≃ ⟦ concretize φ M ⟧₃ ρ₃
-concs-nth : ∀ {k Γ n} (Ms : Vec (Tm k Any) n) (φ : Fin k → Ref Γ) {ρ₂ ρ₃} → Con-env ρ₃ → EnvRel φ ρ₂ ρ₃
-  → ∀ i → nthD (⟦ Ms ⟧s ρ₂) i ≃ nthD (⟦ concs φ Ms ⟧s₃ ρ₃) i
+concs-nth : ∀ {k Γ n} (Ms : Vec (Tm k Any) n) (φ : Fin k → Ref Γ) {ρ₂ ρ₃}
+  → Con-env ρ₃
+  → EnvRel φ ρ₂ ρ₃
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ₂) i ≃ nthD (⟦ concs φ Ms ⟧s₃ ρ₃) i
 
 conc (` x) φ c rel = rel x
 conc (clos {n = n} N Ms) φ {ρ₂} {ρ₃} c rel =
@@ -83,7 +100,9 @@ conc (clos {n = n} N Ms) φ {ρ₂} {ρ₃} c rel =
   where
   N' = concretize fv-ref N
   C = ΛΛᵐ ⟨ (λ X Y → ⟦ N' ⟧₃ (Y • X • λ _ → init)) , ptt ⟩
-  core : ∀ {Xs Ys} → (∀ i → nthD Xs i ≃ nthD Ys i × Val (nthD Ys i) × nthD Ys i ⊆ nthD (⟦ concs φ Ms ⟧s₃ ρ₃) i)
+  core : ∀ {Xs Ys}
+    → (  ∀ i
+       → nthD Xs i ≃ nthD Ys i × Val (nthD Ys i) × nthD Ys i ⊆ nthD (⟦ concs φ Ms ⟧s₃ ρ₃) i)
     → Λᵐ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env n Xs)) , ptt ⟩ ≃ (𝒯 n Ys ≫= λ T → ⋆ ⟨ C , ⟨ T , ptt ⟩ ⟩)
   core {Xs} {Ys} r =
     ≃-trans (Λᵐ-≃ body) (≃-sym (≃-trans (≫=-β (⋆-r {C}) (proj₁ vT) (proj₂ vT))

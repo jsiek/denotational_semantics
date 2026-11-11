@@ -55,7 +55,9 @@ Clos5-Semantics : Table → Semantics
 Clos5-Semantics T = G.Sem T
 
 module _ (T : Table) where
-  ⟦⟧[]-monotone : ∀ (M : AST) {ρ ρ′} → ρ ⊆ₑ ρ′ → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T ] ρ′
+  ⟦⟧[]-monotone : ∀ (M : AST) {ρ ρ′}
+    → ρ ⊆ₑ ρ′
+    → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T ] ρ′
   ⟦⟧[]-monotone M = ⟦⟧-monotone {{Clos5-Semantics T}} M
 
   open G T public using (term-continuous; let-β)

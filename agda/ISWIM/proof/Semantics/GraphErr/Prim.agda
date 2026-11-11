@@ -23,7 +23,9 @@ primᵐ-good p = strict-good (strict₂-good (checkₒ-good (swap-good (checkₒ
                  (λ { w (inj₁ ⟨ refl , _ ⟩) → inj₁ refl
                     ; w (inj₂ ⟨ n , ⟨ m , ⟨ n∈ , _ ⟩ ⟩ ⟩) → inj₂ ⟨ _ , ⟨ n∈ , refl ⟩ ⟩ })))
 
-primᵐ-≃ : ∀ p {D D' E E'} → D ≃ D' → E ≃ E'
+primᵐ-≃ : ∀ p {D D' E E'}
+  → D ≃ D'
+  → E ≃ E'
   → primᵐ p ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ primᵐ p ⟨ D' , ⟨ E' , ptt ⟩ ⟩
 primᵐ-≃ p D≃ E≃ = mono-≃ (mono (primᵐ-good {⊤} p)) ⟨ lift D≃ , ⟨ lift E≃ , ptt ⟩ ⟩
 

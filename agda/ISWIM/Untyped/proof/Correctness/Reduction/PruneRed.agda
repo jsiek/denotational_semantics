@@ -97,8 +97,12 @@ data _≈_ where
   let≈ : ∀ {M M' N N'} → M ≈ M' → N ≈ N' → let-op ⦅ M ,, ⟩ N ,, Nil ⦆ ≈ let-op ⦅ M' ,, ⟩ N' ,, Nil ⦆
 
 {- a used free variable is related to the kept one that idx renumbers it to -}
-pr-lookup : ∀ {U n m b Fs Gs idx ρ ρ'} → Pr U {n} {m} b Fs Gs idx
-  → (∀ k → U (n + k) → ρ k ≈ ρ' (b k)) → ∀ j → U j → extend Fs ρ j ≈ extend Gs ρ' (idx j)
+pr-lookup : ∀ {U n m b Fs Gs idx ρ ρ'}
+  → Pr U {n} {m} b Fs Gs idx
+  → (∀ k → U (n + k) → ρ k ≈ ρ' (b k))
+  → ∀ j
+  → U j
+  → extend Fs ρ j ≈ extend Gs ρ' (idx j)
 pr-lookup nil h j u = h j u
 pr-lookup {U} {suc n} {b = b} {F ,, Fs} {G ,, Gs} {ρ = ρ} {ρ'} (keep≈ r pr) h = pr-lookup pr h'
   where h' : ∀ k → U (n + k) → (F • ρ) k ≈ (G • ρ') (keep-base b k)
@@ -117,9 +121,17 @@ Ok σ σ' = ∀ x → VV (σ x)
 module Kit (P : SS.Subst → SS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x)
   (pok : ∀ {σ σ'} → P σ σ' → Ok σ σ') (pexts : ∀ {σ σ'} → P σ σ' → P (exts σ) (exts σ')) where
 
-  ≈-sub : ∀ {σ σ' M M'} → P σ σ' → M ≈ M' → sub σ M ≈ sub σ' M'
-  ≈-subs : ∀ {σ σ' n as as'} → P σ σ' → Pw _≈_ {n} as as' → Pw _≈_ (sub-args σ as) (sub-args σ' as')
-  pr-sub : ∀ {σ σ' U n m b Fs Gs idx} → P σ σ' → Pr U {n} {m} b Fs Gs idx
+  ≈-sub : ∀ {σ σ' M M'}
+    → P σ σ'
+    → M ≈ M'
+    → sub σ M ≈ sub σ' M'
+  ≈-subs : ∀ {σ σ' n as as'}
+    → P σ σ'
+    → Pw _≈_ {n} as as'
+    → Pw _≈_ (sub-args σ as) (sub-args σ' as')
+  pr-sub : ∀ {σ σ' U n m b Fs Gs idx}
+    → P σ σ'
+    → Pr U {n} {m} b Fs Gs idx
     → Pr U b (sub-args σ Fs) (sub-args σ' Gs) idx
   ≈-sub p var≈ = p≈ p _
   ≈-sub p (clos≈ pr) = clos≈ (pr-sub p pr)
@@ -144,16 +156,25 @@ open SubstRel.Closure _≈_ var≈ Ok (λ h x → subst VV (sym (proj₁ (proj�
 {- The fundamental lemma --------------------------------------------------------}
 
 {- under a binder -}
-under : ∀ {τ τ' r M} → (∀ x → Uses (suc x) M → τ x ≈ τ' (r x)) → ∀ x → Uses x M → exts τ x ≈ exts τ' (ext-var r x)
+under : ∀ {τ τ' r M}
+  → (∀ x → Uses (suc x) M → τ x ≈ τ' (r x))
+  → ∀ x
+  → Uses x M
+  → exts τ x ≈ exts τ' (ext-var r x)
 under h zero u = var≈
 under h (suc x) u = ≈-rename suc (h x u)
 
-opt : ∀ {τ τ'} r M → (∀ x → Uses x M → τ x ≈ τ' (r x)) → (∀ x → VV (τ x))
+opt : ∀ {τ τ'} r M
+  → (∀ x → Uses x M → τ x ≈ τ' (r x))
+  → (∀ x → VV (τ x))
   → sub τ M ≈ sub τ' (prune r M)
-opts : ∀ {τ τ' n} r (as : Args (replicate n ■)) → (∀ x → UsesArgs x as → τ x ≈ τ' (r x))
-  → (∀ x → VV (τ x)) → Pw _≈_ (sub-args τ as) (sub-args τ' (opt-args r as))
+opts : ∀ {τ τ' n} r (as : Args (replicate n ■))
+  → (∀ x → UsesArgs x as → τ x ≈ τ' (r x))
+  → (∀ x → VV (τ x))
+  → Pw _≈_ (sub-args τ as) (sub-args τ' (opt-args r as))
 pr-opt : ∀ {τ τ'} r {U} (dec : ∀ j → Dec (U j)) n (Fs : Args (replicate n ■)) b
-  → (∀ x → UsesArgs x Fs → τ x ≈ τ' (r x)) → (∀ x → VV (τ x))
+  → (∀ x → UsesArgs x Fs → τ x ≈ τ' (r x))
+  → (∀ x → VV (τ x))
   → Pr U b (sub-args τ Fs) (sub-args τ' (kept (prune-fvs n r dec Fs b))) (index (prune-fvs n r dec Fs b))
 opt r (` x) h vv = h x refl
 opt r (clos-op n ⦅ cons (clear a) Fs ⦆) h vv =
@@ -195,9 +216,21 @@ Rel M M' = M ≈ M' × WS 0 M
 Ans′ = Ans T.red Value Rel
 
 {- a closed source term related to a target value is a value -}
-≈-value : ∀ {V V'} → Value V' → V ≈ V' → WS 0 V → Value V
-≈-values : ∀ {n as as'} → Values as' → Pw _≈_ {n} as as' → WS-args 0 as → Values as
-pr-values : ∀ {U n m b Fs Gs idx} → Values Gs → Pr U {n} {m} b Fs Gs idx → WS-args 0 Fs → Values Fs
+≈-value : ∀ {V V'}
+  → Value V'
+  → V ≈ V'
+  → WS 0 V
+  → Value V
+≈-values : ∀ {n as as'}
+  → Values as'
+  → Pw _≈_ {n} as as'
+  → WS-args 0 as
+  → Values as
+pr-values : ∀ {U n m b Fs Gs idx}
+  → Values Gs
+  → Pr U {n} {m} b Fs Gs idx
+  → WS-args 0 Fs
+  → Values Fs
 ≈-value (T.clos vs) (clos≈ pr) (_ , ws) = T.clos (pr-values vs pr ws)
 ≈-value T.lit lit≈ _ = T.lit
 ≈-value (T.tuple vs) (tuple≈ rs) ws = T.tuple (≈-values vs rs ws)
@@ -209,8 +242,14 @@ pr-values T.[] nil _ = T.[]
 pr-values (v T.∷ vs) (keep≈ r pr) (w , ws) = ≈-value v r w T.∷ pr-values vs pr ws
 pr-values vs (drop≈ _ vv pr) (w , ws) = vv-value vv w T.∷ pr-values vs pr ws
 
-obs≈ : ∀ {M M'} → Value M' → M ≈ M' → T.obs M ≡ T.obs M'
-obs≈s : ∀ {n as as'} → Values as' → Pw _≈_ {n} as as' → T.obs-args as ≡ T.obs-args as'
+obs≈ : ∀ {M M'}
+  → Value M'
+  → M ≈ M'
+  → T.obs M ≡ T.obs M'
+obs≈s : ∀ {n as as'}
+  → Values as'
+  → Pw _≈_ {n} as as'
+  → T.obs-args as ≡ T.obs-args as'
 obs≈ (T.clos _) (clos≈ _) = refl
 obs≈ T.lit lit≈ = refl
 obs≈ (T.tuple vs) (tuple≈ rs) = cong o-tuple (obs≈s vs rs)
@@ -219,9 +258,17 @@ obs≈ (T.inr v) (inr≈ r) = cong o-inr (obs≈ v r)
 obs≈s T.[] [] = refl
 obs≈s (v T.∷ vs) (r ∷ rs) = cong₂ _∷_ (obs≈ v r) (obs≈s vs rs)
 
-sim : ∀ {M M'} → M ≈ M' → WS 0 M → Ans′ M (T.red M) M'
-sims : ∀ {n as as'} → Pw _≈_ {n} as as' → WS-args 0 as → Ans T.red-args Values (Pw Rel) as (T.red-args as) as'
-prs : ∀ {U n m b Fs Gs idx} → Pr U {n} {m} b Fs Gs idx → WS-args 0 Fs
+sim : ∀ {M M'}
+  → M ≈ M'
+  → WS 0 M
+  → Ans′ M (T.red M) M'
+sims : ∀ {n as as'}
+  → Pw _≈_ {n} as as'
+  → WS-args 0 as
+  → Ans T.red-args Values (Pw Rel) as (T.red-args as) as'
+prs : ∀ {U n m b Fs Gs idx}
+  → Pr U {n} {m} b Fs Gs idx
+  → WS-args 0 Fs
   → Ans T.red-args Values (λ Fs' Gs' → Pr U b Fs' Gs' idx × WS-args 0 Fs') Fs (T.red-args Fs) Gs
 sim var≈ w = error ε refl
 sim (clos≈ pr) (wa , ws) =
@@ -230,14 +277,21 @@ sim (clos≈ pr) (wa , ws) =
 sim (app≈ r s) (wL , wM , _) =
   ans-in (frame _ (λ _ → refl)) (λ (r' , w') → app≈ r' s , w' , wM , tt) (sim r wL) (λ v m → app-sim v m s wM)
   where
-  app-sim : ∀ {L V' M M'} → Value V' → Rel L V' → M ≈ M' → WS 0 M
+  app-sim : ∀ {L V' M M'}
+    → Value V'
+    → Rel L V'
+    → M ≈ M'
+    → WS 0 M
     → Ans′ (app ⦅ L ,, M ,, Nil ⦆) (T.app? L (T.red M) M) (app ⦅ V' ,, M' ,, Nil ⦆)
   app-sim v@(T.clos vs) (clos≈ {n} {m} {a} {Fs} {Gs} {idx} pr , wa , wFs) s wM =
     ans-in (frame {g = λ X → app ⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (value-red v)))
            (λ (s' , w') → app≈ (clos≈ pr) s' , (wa , wFs) , w' , tt) (sim s wM)
       λ v' (s' , w') → to (one (trans (val-in (value-red v)) (val-in (value-red v')))) (β v' s' w')
     where
-    β : ∀ {M W'} → Value W' → M ≈ W' → WS 0 M
+    β : ∀ {M W'}
+      → Value W'
+      → M ≈ W'
+      → WS 0 M
       → Rel (sub (M • extend Fs ids) (unbind-n n a)) (sub (W' • extend Gs ids) (unbind-n m (bind-n-ast m (opt-body (ext-var idx) n a))))
     β {M} {W'} v' s' w' =
       subst (λ B → sub (M • extend Fs ids) (unbind-n n a) ≈ sub (W' • extend Gs ids) B)
@@ -258,7 +312,10 @@ sim (tuple≈ rs) ws =
          (λ vs ms → val ε (T.tuple vs) (tuple≈ (proj₁ (unzipˡ ms)) , proj₂ (unzipˡ ms)))
 sim (get≈ {i = i} r) (w , _) = ans-in (frame _ (λ _ → refl)) (λ (r' , w') → get≈ r' , w' , tt) (sim r w) get-sim
   where
-  get-sim : ∀ {M V'} → Value V' → Rel M V' → Ans′ (get i ⦅ M ,, Nil ⦆) (T.get? i M) (get i ⦅ V' ,, Nil ⦆)
+  get-sim : ∀ {M V'}
+    → Value V'
+    → Rel M V'
+    → Ans′ (get i ⦅ M ,, Nil ⦆) (T.get? i M) (get i ⦅ V' ,, Nil ⦆)
   get-sim v@(T.tuple _) (tuple≈ rs , ws) = ret?-ans (proj-pw {R = Rel} i (pw-list (zipˡ rs ws))) (val-in (value-red v))
   get-sim v@(T.clos _) (clos≈ _ , _) = error ε (val-in (value-red v))
   get-sim T.lit (lit≈ , _) = error ε refl
@@ -271,7 +328,9 @@ sim (inr≈ r) (w , _) =
 sim (case≈ {M = M} {M'} {N} {N'} r s t) (wL , wM , wN , _) =
   ans-in (frame _ (λ _ → refl)) (λ (r' , w') → case≈ r' s t , w' , wM , wN , tt) (sim r wL) case-sim
   where
-  case-sim : ∀ {L V'} → Value V' → Rel L V'
+  case-sim : ∀ {L V'}
+    → Value V'
+    → Rel L V'
     → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (T.case? L M N) (case-op ⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
   case-sim v@(T.inl v₁) (inl≈ r' , w' , _) =
     to (one (val-in (value-red v)))
@@ -288,7 +347,9 @@ sim (prim≈ {p} r s) (wL , wM , _) =
                            (λ (s' , w'') → prim≈ r' s' , w' , w'' , tt) (sim s wM)
       λ v' (s' , w'') → ret?-ans (out≈ (obs≈ v r') (obs≈ v' s')) (trans (val-in (value-red v)) (val-in (value-red v')))
   where
-  out≈ : ∀ {o₁ o₁' o₂ o₂'} → o₁ ≡ o₁' → o₂ ≡ o₂'
+  out≈ : ∀ {o₁ o₁' o₂ o₂'}
+    → o₁ ≡ o₁'
+    → o₂ ≡ o₂'
     → M.Pointwise Rel (map T.out (δ? p o₁ o₂)) (map T.out (δ? p o₁' o₂'))
   out≈ {o₁} {_} {o₂} refl refl with δ? p o₁ o₂
   ... | nothing = M.nothing
@@ -314,7 +375,9 @@ prs (drop≈ nu vv pr) (w , ws) =
 
 {- The end theorem: for closed programs ------------------------------------------}
 
-prune-correct : ∀ M → WS 0 M → Equivalent (T.sem M) (T.sem (prune-program M))
+prune-correct : ∀ M
+  → WS 0 M
+  → Equivalent (T.sem M) (T.sem (prune-program M))
 prune-correct M w =
   red-equivalent value-red Rel (λ (m , w) → sim m w) (λ (m , _) _ v → obs≈ v m)
     (subst₂ _≈_ (SS.sub-id M) (SS.sub-id (prune-program M)) (opt (λ x → x) M (λ x u → var≈) vv-var) , w)

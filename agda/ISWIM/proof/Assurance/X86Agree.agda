@@ -77,7 +77,9 @@ len-⌊⌋ : ∀ {Σ n} (vs : Vec (V.Val Σ Any) n) → length ⌊ vs ⌋* ≡ n
 len-⌊⌋ [] = refl
 len-⌊⌋ (v ∷ vs) = cong suc (len-⌊⌋ vs)
 
-has-len : ∀ {A : Set} (vs : List A) n → length vs ≡ n → has-length n vs ≡ true
+has-len : ∀ {A : Set} (vs : List A) n
+  → length vs ≡ n
+  → has-length n vs ≡ true
 has-len [] zero e = refl
 has-len (v ∷ vs) (suc n) e = has-len vs n (cong N.pred e)
 
@@ -86,13 +88,17 @@ proj-ok : ∀ {Σ n} (vs : Vec (V.Val Σ Any) n) (i : Fin n) → proj i ⌊ vs �
 proj-ok {n = suc n} (v ∷ vs) zero = cong (λ b → if b then just ⌊ v ⌋ else nothing) (has-len _ n (len-⌊⌋ vs))
 proj-ok (v ∷ vs) (suc i) = proj-ok vs i
 
-has-len⁻ : ∀ {A : Set} (vs : List A) n → has-length n vs ≡ true → length vs ≡ n
+has-len⁻ : ∀ {A : Set} (vs : List A) n
+  → has-length n vs ≡ true
+  → length vs ≡ n
 has-len⁻ [] zero e = refl
 has-len⁻ [] (suc n) ()
 has-len⁻ (v ∷ vs) zero ()
 has-len⁻ (v ∷ vs) (suc n) e = cong suc (has-len⁻ vs n e)
 
-proj-bad : ∀ {A : Set} (vs : List A) {k} (i : Fin k) → length vs ≢ k → proj i vs ≡ nothing
+proj-bad : ∀ {A : Set} (vs : List A) {k} (i : Fin k)
+  → length vs ≢ k
+  → proj i vs ≡ nothing
 proj-bad [] zero ne = refl
 proj-bad [] (suc i) ne = refl
 proj-bad (v ∷ vs) {suc k} zero ne with has-length k vs in e
@@ -109,20 +115,27 @@ module _ {Σ : List ℕ} where
     constructor agree
     field at : ∀ {B} (x : Δ ∋ B) → φₓ ‼ lvl x ≡ just ⌊ φ ! x ⌋
 
-  arg-ok : ∀ {Δ A} {φ : G.Frame Σ Δ} {φₓ ρ} → Agree φ φₓ → ∀ (a : Imp.Atm Σ Δ A)
+  arg-ok : ∀ {Δ A} {φ : G.Frame Σ Δ} {φₓ ρ}
+    → Agree φ φₓ
+    → ∀ (a : Imp.Atm Σ Δ A)
     → X.arg φₓ ρ (select-atm a) ≡ just ⌊ atom φ a ⌋
   arg-ok ag (Imp.var x) = Agree.at ag x
   arg-ok ag (Imp.lit B c) = refl
   arg-ok ag (Imp.ref f) = refl
 
-upd : ∀ (φ : X.Frame) k w → k < length φ
+upd : ∀ (φ : X.Frame) k w
+  → k < length φ
   → Σ[ φ' ∈ X.Frame ] φ X.[ k ]≔ w ≡ just φ' × φ' ‼ k ≡ just w × (∀ j → j ≢ k → φ' ‼ j ≡ φ ‼ j) × length φ' ≡ length φ
 upd (u ∷ φ) zero w _ = w ∷ φ , refl , refl , (λ { zero ne → ⊥-elim (ne refl) ; (suc j) _ → refl }) , refl
 upd (u ∷ φ) (suc k) w (s≤s lt) with upd φ k w lt
 ... | φ' , e , r , o , l = u ∷ φ' , cong (mmap (u ∷_)) e , r , (λ { zero _ → refl ; (suc j) ne → o j (ne ∘ cong suc) }) , cong suc l
 
 {- slot |Δ'| := v, popping the slots from |Δ'| on -}
-write : ∀ {Σ Δ Δ' A} {φ : G.Frame Σ Δ} {φₓ} → Agree φ φₓ → (p : Δ' ⊑ Δ) → length Δ' < length φₓ → (v : V.Val Σ A)
+write : ∀ {Σ Δ Δ' A} {φ : G.Frame Σ Δ} {φₓ}
+  → Agree φ φₓ
+  → (p : Δ' ⊑ Δ)
+  → length Δ' < length φₓ
+  → (v : V.Val Σ A)
   → Σ[ φₓ' ∈ X.Frame ] φₓ X.[ length Δ' ]≔ ⌊ v ⌋ ≡ just φₓ' × Agree (v ∷ pop p φ) φₓ' × length φₓ' ≡ length φₓ
 write {φ = φ} {φₓ} ag p lt v with upd φₓ _ ⌊ v ⌋ lt
 ... | φₓ' , e , r , o , l = φₓ' , e , agree ag' , l

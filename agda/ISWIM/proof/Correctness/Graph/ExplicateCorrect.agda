@@ -40,7 +40,9 @@ open import Relation.Nullary using (yes; no)
 
 {- the continuations of Impᵀ ------------------------------------------------------------}
 
-κ-≃ : ∀ {Σ Δ A} (e : I.Exp Σ Δ A) {T : Table Σ} {σ} {κ κ' : 𝒫 Value → 𝒫 Value} → (∀ D → κ D ≃ κ' D) → ⟦ e ⟧ᴷ T σ κ ≃ ⟦ e ⟧ᴷ T σ κ'
+κ-≃ : ∀ {Σ Δ A} (e : I.Exp Σ Δ A) {T : Table Σ} {σ} {κ κ' : 𝒫 Value → 𝒫 Value}
+  → (∀ D → κ D ≃ κ' D)
+  → ⟦ e ⟧ᴷ T σ κ ≃ ⟦ e ⟧ᴷ T σ κ'
 κ-≃ (I.simple s) h = h _
 κ-≃ (I.assign e₁ e₂) {T} {σ} {κ} {κ'} h =
   κ-≃ e₁ λ D → ⋆-≃ (Λ-≃ {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ} {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ'} λ _ _ _ → κ-≃ e₂ h) (≃-refl {D = D})
@@ -54,12 +56,21 @@ data Ext {Σ} : ∀ {Bs Bs'} → Bs ⊑ Bs' → Blocks Σ Bs → Blocks Σ Bs' �
   here : ∀ {Bs} {bs : Blocks Σ Bs} → Ext here⊑ bs bs
   there : ∀ {Bs Bs' Δ g bs bs'} {t : Tail Σ Bs' Δ} → Ext {Bs = Bs} g bs bs' → Ext (there⊑ g) bs (bs' ▷ t)
 
-ext-trans : ∀ {Σ Bs Bs' Bs''} {g : Bs ⊑ Bs'} {g' : Bs' ⊑ Bs''} {bs bs' bs''}
-  → Ext {Σ} g bs bs' → Ext g' bs' bs'' → Ext (⊑-trans g g') bs bs''
+ext-trans : ∀ {Σ Bs Bs' Bs''}
+  → {g : Bs ⊑ Bs'}
+  → {g' : Bs' ⊑ Bs''}
+  → ∀ {bs bs' bs''}
+  → Ext {Σ} g bs bs'
+  → Ext g' bs' bs''
+  → Ext (⊑-trans g g') bs bs''
 ext-trans e here = e
 ext-trans e (there e') = there (ext-trans e e')
 
-ext-at : ∀ {Σ Bs Bs'} {g : Bs ⊑ Bs'} {bs bs'} {T : Table Σ} → Ext g bs bs' → ∀ {Δ} (l : Bs ∋ Δ)
+ext-at : ∀ {Σ Bs Bs'}
+  → {g : Bs ⊑ Bs'}
+  → ∀ {bs bs'} {T : Table Σ}
+  → Ext g bs bs'
+  → ∀ {Δ} (l : Bs ∋ Δ)
   → blocks bs T l ≡ blocks bs' T (⊑-∋ g l)
 ext-at here l = refl
 ext-at (there e) l = ext-at e l
@@ -75,7 +86,9 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {n} (f : Σ ∋ n) → T f ≃ T' f) w
   Good : ∀ {Bs Δ} → (Env Value → 𝒫 Value) → Blocks Σ Bs → Out Σ Bs Δ → Set₁
   Good F bs (out g bs' t) = Ext g bs bs' × (∀ σ → F σ ≃ ⟦ t ⟧ᵗ T' (blocks bs' T') σ)
 
-  cps : ∀ {Bs Δ Δ' A} (e : I.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ Bs (A ∷ Δ')) (bs : Blocks Σ Bs)
+  cps : ∀ {Bs Δ Δ' A} (e : I.Exp Σ Δ A)
+    → (p : Δ' ⊑ Δ)
+    → (k : Tail Σ Bs (A ∷ Δ')) (bs : Blocks Σ Bs)
     → Good (λ σ → ⟦ e ⟧ᴷ T σ (asg p k bs σ)) bs (explicate-assign e p k bs)
   cps (I.simple s) p k bs = ⟨ here , (λ σ → ⋆-≃ (≃-refl {D = Λ ⟨ (λ X → ⟦ k ⟧ᵗ T' (blocks bs T') (X • drop p σ)) , ptt ⟩}) (𝒮-≃ TT s σ)) ⟩
   cps (I.assign e₁ e₂) p k bs with explicate-assign e₂ (there⊑ p) k bs | cps e₂ (there⊑ p) k bs

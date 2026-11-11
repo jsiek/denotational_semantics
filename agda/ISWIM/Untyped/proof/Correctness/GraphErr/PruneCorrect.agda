@@ -73,17 +73,25 @@ Vals k ρ = ∀ x → x < k → Val (ρ x)
 {- the positions below n + m of a pushed environment hold components of Ds,
    or the first m of σ -}
 push-P : ∀ (P : 𝒫 Value → Set) n m (Ds : Results (𝒫 Value) (replicate n ■)) σ
-  → (∀ i → P (nthD Ds i)) → (∀ k → k < m → P (σ k)) → ∀ j → j < n + m → P (push Ds σ j)
+  → (∀ i → P (nthD Ds i))
+  → (∀ k → k < m → P (σ k))
+  → ∀ j
+  → j < n + m
+  → P (push Ds σ j)
 push-P P zero m Ds σ ps qs j j< = qs j j<
 push-P P (suc n) m ⟨ D , Ds ⟩ σ ps qs j j< =
   push-P P n (suc m) Ds (D • σ) (λ i → ps (suc i)) qs' j (subst (j <_) (sym (+-suc n m)) j<)
   where
-  qs' : ∀ k → k < suc m → P ((D • σ) k)
+  qs' : ∀ k
+    → k < suc m
+    → P ((D • σ) k)
   qs' zero _ = ps zero
   qs' (suc k) (s≤s k<) = qs k k<
 
 push-con : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) σ
-  → (∀ i → Con (nthD Ds i)) → Con-env σ → Con-env (push Ds σ)
+  → (∀ i → Con (nthD Ds i))
+  → Con-env σ
+  → Con-env (push Ds σ)
 push-con zero _ σ _ c = c
 push-con (suc n) ⟨ D , Ds ⟩ σ cs c = push-con n Ds (D • σ) (λ i → cs (suc i)) (Con-• (cs zero) c)
 
@@ -102,11 +110,14 @@ PruneOK n U fvs P b ρ ρ' = ∀ {K K'}
   → (∀ {Xs Xs'} → AllVal n Xs → (∀ i → Con (nthD Xs i)) → PushRel n (count P) U Xs Xs' (index P) b → K Xs ≃ K' Xs')
   → binds n (⟦ fvs ⟧₊ ρ) K ≃ binds (count P) (⟦ kept P ⟧₊ ρ') K'
 
-⌊⌋-≃ : ∀ {D E} → D ≃ E → ⌊ D ⌋ ≃ ⌊ E ⌋
+⌊⌋-≃ : ∀ {D E}
+  → D ≃ E
+  → ⌊ D ⌋ ≃ ⌊ E ⌋
 ⌊⌋-≃ ⟨ D⊆ , E⊆ ⟩ = ⟨ ⌊⌋-mono D⊆ , ⌊⌋-mono E⊆ ⟩
 
 keep-ok : ∀ {n U} {M M' : AST} {fvs : Args (replicate n ■)} {P b ρ ρ'}
-  → ⟦ M ⟧ ρ ≃ ⟦ M' ⟧ ρ' → Con (⟦ M ⟧ ρ)
+  → ⟦ M ⟧ ρ ≃ ⟦ M' ⟧ ρ'
+  → Con (⟦ M ⟧ ρ)
   → PruneOK n U fvs P (keep-base b) ρ ρ'
   → PruneOK (suc n) U (M ,, fvs) (keep M' P) b ρ ρ'
 keep-ok {n} {U} {M} {M'} {fvs} {P} {b} {ρ} {ρ'} M≃ cM ok {K} {K'} hK =
@@ -115,37 +126,60 @@ keep-ok {n} {U} {M} {M'} {fvs} {P} {b} {ρ} {ρ'} M≃ cM ok {K} {K'} hK =
     λ vXs cXs h → hK (λ { zero → ⌊⌋-val cv ; (suc i) → vXs i }) (λ { zero → Con-⊆ cM ⌊⌋-⊆ ; (suc i) → cXs i })
       (λ ρ₁ ρ₂ bse j u → h (⌊ ⟦ M ⟧ ρ ⌋ • ρ₁) (⌊ ⟦ M' ⟧ ρ' ⌋ • ρ₂) (bse' ρ₁ ρ₂ bse) j u)
   where
-  bse' : ∀ ρ₁ ρ₂ → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
-    → ∀ k → U (n + k) → (⌊ ⟦ M ⟧ ρ ⌋ • ρ₁) k ≃ (⌊ ⟦ M' ⟧ ρ' ⌋ • ρ₂) (keep-base b k)
+  bse' : ∀ ρ₁ ρ₂
+    → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
+    → ∀ k
+    → U (n + k)
+    → (⌊ ⟦ M ⟧ ρ ⌋ • ρ₁) k ≃ (⌊ ⟦ M' ⟧ ρ' ⌋ • ρ₂) (keep-base b k)
   bse' ρ₁ ρ₂ bse zero _ = ⌊⌋-≃ M≃
   bse' ρ₁ ρ₂ bse (suc k) uk = bse k (subst U (+-suc n k) uk)
 
 {- under a binder -}
-rel-ext : ∀ B {r} {ρ ρ' : Env Value} {X} → (∀ x → Uses (suc x) B → ρ x ≃ ρ' (r x))
-  → ∀ x → Uses x B → (X • ρ) x ≃ (X • ρ') (ext-var r x)
+rel-ext : ∀ B {r} {ρ ρ' : Env Value} {X}
+  → (∀ x → Uses (suc x) B → ρ x ≃ ρ' (r x))
+  → ∀ x
+  → Uses x B
+  → (X • ρ) x ≃ (X • ρ') (ext-var r x)
 rel-ext B rx zero _ = ≃-refl
 rel-ext B rx (suc x) u = rx x u
 
-vals-ext : ∀ {k ρ X} → Val X → Vals k ρ → Vals (suc k) (X • ρ)
+vals-ext : ∀ {k ρ X}
+  → Val X
+  → Vals k ρ
+  → Vals (suc k) (X • ρ)
 vals-ext vX V zero _ = vX
 vals-ext vX V (suc x) (s≤s x<) = V x x<
 
 {- The main lemma -------------------------------------------------------------}
 
-opt-correct : ∀ (M : AST) r k ρ ρ' → WS k M → Vals k ρ → Con-env ρ
+opt-correct : ∀ (M : AST) r k ρ ρ'
+  → WS k M
+  → Vals k ρ
+  → Con-env ρ
   → (∀ x → Uses x M → ρ x ≃ ρ' (r x))
   → ⟦ M ⟧ ρ ≃ ⟦ prune r M ⟧ ρ'
 
-opt-body-correct : ∀ r k m (a : Arg (ν-n k (ν ■))) ρ ρ' → WS-arg m a → Vals (k + suc m) ρ → Con-env ρ
+opt-body-correct : ∀ r k m (a : Arg (ν-n k (ν ■))) ρ ρ'
+  → WS-arg m a
+  → Vals (k + suc m) ρ
+  → Con-env ρ
   → (∀ x → Uses x (unbind-n k a) → ρ x ≃ ρ' (r x))
   → ⟦ unbind-n k a ⟧ ρ ≃ ⟦ opt-body r k a ⟧ ρ'
 
-opt-args-correct : ∀ {n} (args : Args (replicate n ■)) r k ρ ρ' → WS-args k args → Vals k ρ → Con-env ρ
+opt-args-correct : ∀ {n} (args : Args (replicate n ■)) r k ρ ρ'
+  → WS-args k args
+  → Vals k ρ
+  → Con-env ρ
   → (∀ x → UsesArgs x args → ρ x ≃ ρ' (r x))
-  → ∀ i → nthD (⟦ args ⟧₊ ρ) i ≃ nthD (⟦ opt-args r args ⟧₊ ρ') i
+  → ∀ i
+  → nthD (⟦ args ⟧₊ ρ) i ≃ nthD (⟦ opt-args r args ⟧₊ ρ') i
 
 prune-ok : ∀ n r k {U : ℕ → Set} (dec : ∀ j → Dec (U j)) (fvs : Args (replicate n ■))
-  (b : ℕ → ℕ) ρ ρ' → WS-args k fvs → Vals k ρ → Con-env ρ → (∀ x → UsesArgs x fvs → ρ x ≃ ρ' (r x))
+    (b : ℕ → ℕ) ρ ρ'
+  → WS-args k fvs
+  → Vals k ρ
+  → Con-env ρ
+  → (∀ x → UsesArgs x fvs → ρ x ≃ ρ' (r x))
   → PruneOK n U fvs (prune-fvs n r dec fvs b) b ρ ρ'
 
 opt-correct (` x) r k ρ ρ' ws V c rel = rel x refl
@@ -159,7 +193,10 @@ opt-correct (clos-op n ⦅ ! clear a ,, fvs ⦆) r k ρ ρ' ⟨ wsa , wsf ⟩ V 
   N' = opt-body (ext-var (index P)) n a
 
   {- applying the closure to U runs the same body on the same free variables -}
-  body≃ : ∀ Xs Xs' → AllVal n Xs → (∀ i → Con (nthD Xs i)) → PushRel n m (λ j → Uses (suc j) N) Xs Xs' (index P) (λ k → k)
+  body≃ : ∀ Xs Xs'
+    → AllVal n Xs
+    → (∀ i → Con (nthD Xs i))
+    → PushRel n m (λ j → Uses (suc j) N) Xs Xs' (index P) (λ k → k)
     → BodyEq (apply-n n (⟦ a ⟧ₐ init₀) Xs) (apply-n m (⟦ bind-n-ast m N' ⟧ₐ init₀) Xs')
   body≃ Xs Xs' vXs cXs h U neU cU nU
     rewrite apply-push n a init₀ Xs (mem U)
@@ -172,9 +209,13 @@ opt-correct (clos-op n ⦅ ! clear a ,, fvs ⦆) r k ρ ρ' ⟨ wsa , wsf ⟩ V 
     V' zero _ = noerr-val U neU nU
     V' (suc j) j< = push-P Val n 0 Xs init₀ vXs (λ _ ()) j (lt j<)
       where
-      lt : ∀ {j} → suc j < n + 1 → j < n + 0
+      lt : ∀ {j}
+        → suc j < n + 1
+        → j < n + 0
       lt j< rewrite +-identityʳ n | +-comm n 1 = ≤-pred j<
-    rel₁ : ∀ x → Uses x N → (mem U • push Xs init₀) x ≃ (mem U • push Xs' init₀) (ext-var (index P) x)
+    rel₁ : ∀ x
+      → Uses x N
+      → (mem U • push Xs init₀) x ≃ (mem U • push Xs' init₀) (ext-var (index P) x)
     rel₁ zero _ = ≃-refl
     rel₁ (suc j) u = h init₀ init₀ (λ k _ → ≃-refl) j u
 opt-correct (app ⦅ L ,, M ,, Nil ⦆) r k ρ ρ' ⟨ wL , ⟨ wM , _ ⟩ ⟩ V c rel =
@@ -226,8 +267,11 @@ prune-ok (suc n) r k {U} dec ((` y) ,, fvs) b ρ ρ' ⟨ y< , ws ⟩ V c rel {K}
                        (λ ρ₁ ρ₂ bse j u → h (⌊ ρ y ⌋ • ρ₁) ρ₂ (bse' ρ₁ ρ₂ bse) j u))
   where
   ok = prune-ok n r k dec fvs (drop-base b) ρ ρ' ws V c (λ x u → rel x (inj₂ u))
-  bse' : ∀ ρ₁ ρ₂ → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
-    → ∀ k → U (n + k) → (⌊ ρ y ⌋ • ρ₁) k ≃ ρ₂ (drop-base b k)
+  bse' : ∀ ρ₁ ρ₂
+    → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
+    → ∀ k
+    → U (n + k)
+    → (⌊ ρ y ⌋ • ρ₁) k ≃ ρ₂ (drop-base b k)
   bse' ρ₁ ρ₂ bse zero uk = ⊥-elim (¬u (subst U (+-identityʳ n) uk))
   bse' ρ₁ ρ₂ bse (suc k) uk = bse k (subst U (+-suc n k) uk)
 prune-ok (suc n) r k dec ((op ⦅ args ⦆) ,, fvs) b ρ ρ' ⟨ wM , ws ⟩ V c rel =
@@ -237,10 +281,13 @@ prune-ok (suc n) r k dec ((op ⦅ args ⦆) ,, fvs) b ρ ρ' ⟨ wM , ws ⟩ V c
 {- The end theorems ------------------------------------------------------------}
 
 {- a well-scoped program (no variable is free) -}
-prune-correct : ∀ (M : AST) → WS 0 M → ⟦ M ⟧ ρ₀ ≃ ⟦ prune-program M ⟧ ρ₀
+prune-correct : ∀ (M : AST)
+  → WS 0 M
+  → ⟦ M ⟧ ρ₀ ≃ ⟦ prune-program M ⟧ ρ₀
 prune-correct M ws = opt-correct M (λ x → x) 0 ρ₀ ρ₀ ws (λ x ()) (λ _ → Con-⌈⌉ ω) (λ x _ → ≃-refl)
 
 {- the input of prune in the compiler -}
-prune-correct-compile : ∀ (M : ISWIM.AST) → Closed M
+prune-correct-compile : ∀ (M : ISWIM.AST)
+  → Closed M
   → ⟦ capture (simplify M) ⟧ ρ₀ ≃ ⟦ prune-program (capture (simplify M)) ⟧ ρ₀
 prune-correct-compile M c = prune-correct (capture (simplify M)) (capture-closed (simplify M) (simplify-closed M c))

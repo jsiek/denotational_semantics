@@ -70,10 +70,15 @@ open import Relation.Nullary using (yes; no)
 
 module ISWIM.Untyped.proof.Correctness.GraphErr.SelectCorrect where
 
-primᵐ-ω : ∀ p {D E} → ω ∈ D → ω ∈ primᵐ p ⟨ D , ⟨ E , ptt ⟩ ⟩
+primᵐ-ω : ∀ p {D E}
+  → ω ∈ D
+  → ω ∈ primᵐ p ⟨ D , ⟨ E , ptt ⟩ ⟩
 primᵐ-ω p ω∈ = inj₁ ⟨ refl , ω∈ ⟩
 
-primᵐ-val : ∀ p {D E w} → w ∈ primᵐ p ⟨ D , ⟨ E , ptt ⟩ ⟩ → w ≢ ω → Conv D
+primᵐ-val : ∀ p {D E w}
+  → w ∈ primᵐ p ⟨ D , ⟨ E , ptt ⟩ ⟩
+  → w ≢ ω
+  → Conv D
 primᵐ-val p (inj₁ ⟨ refl , _ ⟩) w≢ = ⊥-elim (w≢ refl)
 primᵐ-val p (inj₂ ⟨ c , _ ⟩) _ = c
 
@@ -88,7 +93,10 @@ Atom D = Tagged D × nonempty D
 Inv : Store → Set
 Inv σ = ∀ y → Atom (σ y)
 
-atom-≈ : ∀ {V} → V ≢ [] → V ≈ V → Atom (mem V)
+atom-≈ : ∀ {V}
+  → V ≢ []
+  → V ≈ V
+  → Atom (mem V)
 atom-≈ {V} ne c = ⟨ (λ l r → ≈⇒Every V V c _ _ l r) , ne-mem ne (λ _ z → z) ⟩
 
 atom-zero : Atom (ℬ Int (+ 0) ptt)
@@ -97,7 +105,10 @@ atom-zero = ⟨ (λ ()) , ⟨ const {Int} (+ 0) , ⟨ refl , refl ⟩ ⟩ ⟩
 inv-zeros : Inv zeros
 inv-zeros _ = atom-zero
 
-inv-↦ : ∀ {σ x X} → Inv σ → Atom X → Inv (σ [ x ↦ X ])
+inv-↦ : ∀ {σ x X}
+  → Inv σ
+  → Atom X
+  → Inv (σ [ x ↦ X ])
 inv-↦ {x = x} i t y with y ≟ x
 ... | yes _ = t
 ... | no _ = i y
@@ -114,37 +125,48 @@ atom-table (b ∷ bs) k with k ≟ length bs
 Err : 𝒫 Value → Set
 Err A = ω ∈ A ⊎ (Conv A × Bad inj ⌊ A ⌋)
 
-isinl-ω : ∀ {A} → ω ∈ isinlᵐ A → Err A
+isinl-ω : ∀ {A}
+  → ω ∈ isinlᵐ A
+  → Err A
 isinl-ω (inj₁ ⟨ _ , ω∈ ⟩) = inj₁ ω∈
 isinl-ω (inj₂ ⟨ c , inj₁ ⟨ _ , b ⟩ ⟩) = inj₂ ⟨ c , b ⟩
 isinl-ω (inj₂ ⟨ c , inj₂ (inj₁ ⟨ _ , ⟨ _ , () ⟩ ⟩) ⟩)
 isinl-ω (inj₂ ⟨ c , inj₂ (inj₂ ⟨ _ , ⟨ _ , () ⟩ ⟩) ⟩)
 
-payload-ω : ∀ {A} → ω ∈ payloadᵐ A → Err A
+payload-ω : ∀ {A}
+  → ω ∈ payloadᵐ A
+  → Err A
 payload-ω (inj₁ ⟨ _ , ω∈ ⟩) = inj₁ ω∈
 payload-ω (inj₂ ⟨ c , inj₁ ⟨ _ , b ⟩ ⟩) = inj₂ ⟨ c , b ⟩
 payload-ω (inj₂ ⟨ c , inj₂ (inj₁ ⟨ _ , ω≢ ⟩) ⟩) = ⊥-elim (ω≢ refl)
 payload-ω (inj₂ ⟨ c , inj₂ (inj₂ ⟨ _ , ω≢ ⟩) ⟩) = ⊥-elim (ω≢ refl)
 
-err-isinl : ∀ {A} → Err A → ω ∈ isinlᵐ A
+err-isinl : ∀ {A}
+  → Err A
+  → ω ∈ isinlᵐ A
 err-isinl (inj₁ ω∈) = inj₁ ⟨ refl , ω∈ ⟩
 err-isinl (inj₂ ⟨ c , b ⟩) = inj₂ ⟨ c , inj₁ ⟨ refl , b ⟩ ⟩
 
-err-case : ∀ {A F₁ F₂} → Err A → ω ∈ 𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩
+err-case : ∀ {A F₁ F₂}
+  → Err A
+  → ω ∈ 𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩
 err-case (inj₁ ω∈) = inj₁ ⟨ refl , ω∈ ⟩
 err-case (inj₂ ⟨ c , b ⟩) = inj₂ ⟨ c , inj₁ ⟨ refl , b ⟩ ⟩
 
 {- a payload is that of an injection, whose tag the flag holds, or an error -}
-payload-has : ∀ {A d} → d ∈ payloadᵐ A → Has (isinlᵐ A)
+payload-has : ∀ {A d}
+  → d ∈ payloadᵐ A
+  → Has (isinlᵐ A)
 payload-has (inj₁ ⟨ _ , ω∈ ⟩) = inj₁ (inj₁ ⟨ refl , ω∈ ⟩)
 payload-has (inj₂ ⟨ c , inj₁ ⟨ _ , b ⟩ ⟩) = inj₁ (inj₂ ⟨ c , inj₁ ⟨ refl , b ⟩ ⟩)
 payload-has {d = d} (inj₂ ⟨ c , inj₂ (inj₁ l) ⟩) = inj₂ ⟨ left ⟨⟩ , ⟨ inj₂ ⟨ c , inj₂ (inj₁ ⟨ d , ⟨ proj₁ l , refl ⟩ ⟩) ⟩ , (λ ()) ⟩ ⟩
 payload-has {d = d} (inj₂ ⟨ c , inj₂ (inj₂ r) ⟩) = inj₂ ⟨ right ⟨⟩ , ⟨ inj₂ ⟨ c , inj₂ (inj₂ ⟨ d , ⟨ proj₁ r , refl ⟩ ⟩) ⟩ , (λ ()) ⟩ ⟩
 
-case-core : ∀ n x {A : 𝒫 Value} {F₁ F₂ : 𝒫 Value → 𝒫 Value} → Tagged A
+case-core : ∀ n x {A : 𝒫 Value} {F₁ F₂ : 𝒫 Value → 𝒫 Value}
+  → Tagged A
   → strictᵐ (isinlᵐ A) (frameᵐ n x (payloadᵐ A)
-       (letᵐ ⟨ payloadᵐ A , ⟨ (λ X → 𝒞ᵐ ⟨ isinlᵐ A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩ ⟩))
-    ≃ frameᵐ n x (payloadᵐ A) (𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)
+         (letᵐ ⟨ payloadᵐ A , ⟨ (λ X → 𝒞ᵐ ⟨ isinlᵐ A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩ ⟩))
+      ≃ frameᵐ n x (payloadᵐ A) (𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)
 case-core n x {A} {F₁} {F₂} tg with x <? n
 ... | yes _ = ⟨ to , from ⟩
   where
@@ -154,20 +176,34 @@ case-core n x {A} {F₁} {F₂} tg with x <? n
   C = 𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩
 
   {- the payloads in a branch are all of the one injection -}
-  lefts : ∀ {u} V → left u ∈ ⌊ A ⌋ → mem V ⊆ ⌊ P ⌋ → ∀ d → d ∈ mem V → (⌊ A ⌋ ⇂ ValPayload) (left d)
+  lefts : ∀ {u} V
+    → left u ∈ ⌊ A ⌋
+    → mem V ⊆ ⌊ P ⌋
+    → ∀ d
+    → d ∈ mem V
+    → (⌊ A ⌋ ⇂ ValPayload) (left d)
   lefts V l V⊆ d d∈ with V⊆ d d∈
   ... | ⟨ inj₁ ⟨ refl , _ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
   ... | ⟨ inj₂ ⟨ _ , inj₁ ⟨ refl , _ ⟩ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
   ... | ⟨ inj₂ ⟨ _ , inj₂ (inj₁ l') ⟩ , _ ⟩ = l'
   ... | ⟨ inj₂ ⟨ _ , inj₂ (inj₂ ⟨ ⟨ r , _ ⟩ , _ ⟩) ⟩ , _ ⟩ = ⊥-elim (tg (proj₁ l) r)
-  rights : ∀ {u} V → right u ∈ ⌊ A ⌋ → mem V ⊆ ⌊ P ⌋ → ∀ d → d ∈ mem V → (⌊ A ⌋ ⇂ ValPayload) (right d)
+  rights : ∀ {u} V
+    → right u ∈ ⌊ A ⌋
+    → mem V ⊆ ⌊ P ⌋
+    → ∀ d
+    → d ∈ mem V
+    → (⌊ A ⌋ ⇂ ValPayload) (right d)
   rights V r V⊆ d d∈ with V⊆ d d∈
   ... | ⟨ inj₁ ⟨ refl , _ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
   ... | ⟨ inj₂ ⟨ _ , inj₁ ⟨ refl , _ ⟩ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
   ... | ⟨ inj₂ ⟨ _ , inj₂ (inj₁ ⟨ ⟨ l , _ ⟩ , _ ⟩) ⟩ , _ ⟩ = ⊥-elim (tg l (proj₁ r))
   ... | ⟨ inj₂ ⟨ _ , inj₂ (inj₂ r') ⟩ , _ ⟩ = r'
 
-  branch : ∀ V → V ≢ [] → V ≈ V → mem V ⊆ ⌊ P ⌋ → H (mem V) ⊆ C
+  branch : ∀ V
+    → V ≢ []
+    → V ≈ V
+    → mem V ⊆ ⌊ P ⌋
+    → H (mem V) ⊆ C
   branch V ne c V⊆ w (inj₁ ⟨ refl , ω∈ ⟩) = err-case {F₁ = F₁} {F₂} (isinl-ω ω∈)
   branch V ne c V⊆ w (inj₂ ⟨ _ , inj₁ ⟨ refl , ⟨ _ , ⟨ ⟨ inj₂ ⟨ _ , inj₂ (inj₁ ⟨ _ , ⟨ _ , refl ⟩ ⟩) ⟩ , _ ⟩ , k ⟩ ⟩ ⟩ ⟩) = ⊥-elim (k refl)
   branch V ne c V⊆ w (inj₂ ⟨ _ , inj₁ ⟨ refl , ⟨ _ , ⟨ ⟨ inj₂ ⟨ _ , inj₂ (inj₂ ⟨ _ , ⟨ _ , refl ⟩ ⟩) ⟩ , _ ⟩ , k ⟩ ⟩ ⟩ ⟩) = ⊥-elim (k refl)
@@ -205,9 +241,13 @@ case-core n x {A} {F₁} {F₂} tg with x <? n
                       , ⟨ (λ d d∈ → ⟨ pay d d∈ , vω d∈ ⟩) , (λ ()) ⟩ ⟩ ⟩ ⟩) ⟩
     where
     tag = inj₂ ⟨ cA , inj₂ (inj₁ ⟨ v , ⟨ proj₁ (ls v (here refl)) , refl ⟩ ⟩) ⟩
-    vω : ∀ {d} → d ∈ mem (v ∷ V) → d ≢ ω
+    vω : ∀ {d}
+      → d ∈ mem (v ∷ V)
+      → d ≢ ω
     vω d∈ = proj₂ (ls _ d∈)
-    pay : ∀ d → d ∈ mem (v ∷ V) → d ∈ P
+    pay : ∀ d
+      → d ∈ mem (v ∷ V)
+      → d ∈ P
     pay d d∈ = inj₂ ⟨ cA , inj₂ (inj₁ (ls d d∈)) ⟩
   from w (inj₂ ⟨ cA , inj₂ (inj₂ ⟨ v , ⟨ V , ⟨ rs , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) ⟩) =
     inj₂ ⟨ ⟨ right ⟨⟩ , ⟨ tag , (λ ()) ⟩ ⟩ , proj₂ (letᵐ-unfold {P} {H}) w
@@ -218,16 +258,23 @@ case-core n x {A} {F₁} {F₂} tg with x <? n
                       , ⟨ (λ d d∈ → ⟨ pay d d∈ , vω d∈ ⟩) , (λ ()) ⟩ ⟩ ⟩ ⟩) ⟩
     where
     tag = inj₂ ⟨ cA , inj₂ (inj₂ ⟨ v , ⟨ proj₁ (rs v (here refl)) , refl ⟩ ⟩) ⟩
-    vω : ∀ {d} → d ∈ mem (v ∷ V) → d ≢ ω
+    vω : ∀ {d}
+      → d ∈ mem (v ∷ V)
+      → d ≢ ω
     vω d∈ = proj₂ (rs _ d∈)
-    pay : ∀ d → d ∈ mem (v ∷ V) → d ∈ P
+    pay : ∀ d
+      → d ∈ mem (v ∷ V)
+      → d ∈ P
     pay d d∈ = inj₂ ⟨ cA , inj₂ (inj₂ (rs d d∈)) ⟩
 ... | no _ = strictᵐ-skip (λ w w∈ → has w∈) (λ ω∈ → inj₁ ⟨ refl , err-payload (isinl-ω ω∈) ⟩) (λ { w (inj₁ ⟨ refl , _ ⟩) w≢ → ⊥-elim (w≢ refl) ; w (inj₂ ⟨ _ , refl ⟩) w≢ → ⊥-elim (w≢ refl) })
   where
-  err-payload : Err A → ω ∈ payloadᵐ A
+  err-payload : Err A
+    → ω ∈ payloadᵐ A
   err-payload (inj₁ ω∈) = inj₁ ⟨ refl , ω∈ ⟩
   err-payload (inj₂ ⟨ c , b ⟩) = inj₂ ⟨ c , inj₁ ⟨ refl , b ⟩ ⟩
-  has : ∀ {w} → w ∈ (payloadᵐ A ≫= λ _ → ⌈ ω ⌉) → Has (isinlᵐ A)
+  has : ∀ {w}
+    → w ∈ (payloadᵐ A ≫= λ _ → ⌈ ω ⌉)
+    → Has (isinlᵐ A)
   has (inj₁ ⟨ _ , ω∈ ⟩) = inj₁ (err-isinl (payload-ω ω∈))
   has (inj₂ ⟨ ⟨ d , ⟨ d∈ , _ ⟩ ⟩ , _ ⟩) = payload-has d∈
 
@@ -239,23 +286,32 @@ _⊆ₛ_ : Store → Store → Set
 
 module Mono (T : Table) (n : ℕ) where
 
-  ↦-mono : ∀ {σ σ' x X Y} → σ ⊆ₛ σ' → X ⊆ Y → σ [ x ↦ X ] ⊆ₛ σ' [ x ↦ Y ]
+  ↦-mono : ∀ {σ σ' x X Y}
+    → σ ⊆ₛ σ'
+    → X ⊆ Y
+    → σ [ x ↦ X ] ⊆ₛ σ' [ x ↦ Y ]
   ↦-mono {x = x} s X⊆ y with y ≟ x
   ... | yes _ = X⊆
   ... | no _ = s y
 
-  𝒜-mono : ∀ a {σ σ'} → σ ⊆ₛ σ' → 𝒜 T n σ a ⊆ 𝒜 T n σ' a
+  𝒜-mono : ∀ a {σ σ'}
+    → σ ⊆ₛ σ'
+    → 𝒜 T n σ a ⊆ 𝒜 T n σ' a
   𝒜-mono (var x) s with x <? n
   ... | yes _ = s x
   ... | no _ = λ _ z → z
   𝒜-mono (lit B k) s = λ _ z → z
   𝒜-mono (fun-ref k) s = λ _ z → z
 
-  𝒜s-mono : ∀ as {σ σ'} → σ ⊆ₛ σ' → results-rel-pres _⊆_ (replicate (length as) ■) (𝒜s T n σ as) (𝒜s T n σ' as)
+  𝒜s-mono : ∀ as {σ σ'}
+    → σ ⊆ₛ σ'
+    → results-rel-pres _⊆_ (replicate (length as) ■) (𝒜s T n σ as) (𝒜s T n σ' as)
   𝒜s-mono [] s = ptt
   𝒜s-mono (a ∷ as) s = ⟨ lift (𝒜-mono a s) , 𝒜s-mono as s ⟩
 
-  𝒮-mono : ∀ r {σ σ'} → σ ⊆ₛ σ' → 𝒮 T n σ r ⊆ 𝒮 T n σ' r
+  𝒮-mono : ∀ r {σ σ'}
+    → σ ⊆ₛ σ'
+    → 𝒮 T n σ r ⊆ 𝒮 T n σ' r
   𝒮-mono (atm a) s = 𝒜-mono a s
   𝒮-mono (app f e a) s =
     lower (mono (callᵐ-good {⊤}) _ _ ⟨ lift (𝒜-mono f s) , ⟨ lift (𝒜-mono e s) , ⟨ lift (𝒜-mono a s) , ptt ⟩ ⟩ ⟩)
@@ -268,7 +324,10 @@ module Mono (T : Table) (n : ℕ) where
   𝒮-mono (I.inr a) s = lower (mono (inrᵐ-good {⊤}) _ _ ⟨ lift (𝒜-mono a s) , ptt ⟩)
   𝒮-mono (prim p a b) s = lower (mono (primᵐ-good {⊤} p) _ _ ⟨ lift (𝒜-mono a s) , ⟨ lift (𝒜-mono b s) , ptt ⟩ ⟩)
 
-  frameᵐ-mono : ∀ x {D D' E E'} → D ⊆ D' → E ⊆ E' → frameᵐ n x D E ⊆ frameᵐ n x D' E'
+  frameᵐ-mono : ∀ x {D D' E E'}
+    → D ⊆ D'
+    → E ⊆ E'
+    → frameᵐ n x D E ⊆ frameᵐ n x D' E'
   frameᵐ-mono x D⊆ E⊆ with x <? n
   ... | yes _ = E⊆
   ... | no _ = ≫=-mono D⊆ (λ _ w z → z)
@@ -276,7 +335,11 @@ module Mono (T : Table) (n : ℕ) where
   MonoB : Blocksₜ → Set₁
   MonoB B = ∀ l {σ σ'} → σ ⊆ₛ σ' → B l σ ⊆ B l σ'
 
-  tail-mono : ∀ t {B} → MonoB B → ∀ {σ σ'} → σ ⊆ₛ σ' → ⟪ t ⟫[ T ] n B σ ⊆ ⟪ t ⟫[ T ] n B σ'
+  tail-mono : ∀ t {B}
+    → MonoB B
+    → ∀ {σ σ'}
+    → σ ⊆ₛ σ'
+    → ⟪ t ⟫[ T ] n B σ ⊆ ⟪ t ⟫[ T ] n B σ'
   tail-mono (C.return r) mB s = 𝒮-mono r s
   tail-mono (C.seq x r t) mB s = frameᵐ-mono x (𝒮-mono r s) (lower (mono (letᵐ-good {⊤}) _ _
     ⟨ lift (𝒮-mono r s) , ⟨ (λ X Y X⊆ → lift (tail-mono t mB (↦-mono s X⊆))) , ptt ⟩ ⟩))
@@ -305,14 +368,18 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)
   atm-≃ : ∀ a {σ ρ} → 𝒪 T n σ ρ (select-atm a) ≃ 𝒜 T' n σ a
   atm-≃ a {σ} = ≃-trans (≃-reflexive (atm-≡ a)) (𝒜-≃ a σ)
 
-  atm-atom : ∀ a {σ ρ} → Inv σ → Atom (𝒪 T n σ ρ (select-atm a))
+  atm-atom : ∀ a {σ ρ}
+    → Inv σ
+    → Atom (𝒪 T n σ ρ (select-atm a))
   atm-atom (var x) i with x <? n
   ... | yes _ = i x
   ... | no _ = ⟨ (λ ()) , ⟨ ω , refl ⟩ ⟩
   atm-atom (lit B k) i = ⟨ (λ ()) , ⟨ const k , ⟨ refl , refl ⟩ ⟩ ⟩
   atm-atom (fun-ref k) i = TL k
 
-  atm-has : ∀ a {σ ρ} → Inv σ → Has (𝒪 T n σ ρ (select-atm a))
+  atm-has : ∀ a {σ ρ}
+    → Inv σ
+    → Has (𝒪 T n σ ρ (select-atm a))
   atm-has a i = ne-has (proj₂ (atm-atom a i))
 
   𝒪s-≡ : ∀ as {σ ρ} → _≡_ {A = Σ ℕ λ m → Results (𝒫 Value) (replicate m ■)}
@@ -336,7 +403,11 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)
   ≔-same rdi = refl
   ≔-same rsi = refl
 
-  put-≃ : ∀ d {κ K D D' σ ρ φ} → Fits d κ K → Inv σ → D ≃ D' → put n d D κ σ ρ φ ≃ after d K σ D'
+  put-≃ : ∀ d {κ K D D' σ ρ φ}
+    → Fits d κ K
+    → Inv σ
+    → D ≃ D'
+    → put n d D κ σ ρ φ ≃ after d K σ D'
   put-≃ (var x) {κ} {K} {σ = σ} {ρ} {φ} fits i D≃ =
     frameᵐ-≃ n {x} D≃ (letᵐ-≃ {F = λ X → κ (σ [ x ↦ X ]) ρ φ} {λ X → K (σ [ x ↦ X ])} D≃
       (λ V ne c _ → fits _ (inv-↦ i (atom-≈ ne c)) ρ φ))
@@ -344,31 +415,45 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)
     ≃-trans (strictᵐ-self (≃-trans (fits σ (ρ [ g ≔ D ]) φ) (≃-reflexive (≔-same g)))) D≃
 
   {- an assignment needs its value -}
-  put-has : ∀ d {D κ σ ρ φ} w → w ∈ put n d D κ σ ρ φ → Has D
+  put-has : ∀ d {D κ σ ρ φ} w
+    → w ∈ put n d D κ σ ρ φ
+    → Has D
   put-has (var x) {D} {κ} {σ} {ρ} {φ} w w∈ with x <? n
   ... | yes _ = ≫=-has {F = λ X → ⋆ ⟨ Λᵐ ⟨ (λ X → κ (σ [ x ↦ X ]) ρ φ) , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} (proj₁ (letᵐ-unfold {D} {λ X → κ (σ [ x ↦ X ]) ρ φ}) w w∈)
   ... | no _ = ≫=-has {F = λ _ → ⌈ ω ⌉} w∈
   put-has (reg g) {D} {κ} {σ} {ρ} {φ} w w∈ = ≫=-has {F = λ _ → κ σ (ρ [ g ≔ D ]) φ} w∈
 
-  put-val : ∀ d {D κ σ ρ φ} w → w ∈ put n d D κ σ ρ φ → w ≢ ω → Conv D
+  put-val : ∀ d {D κ σ ρ φ} w
+    → w ∈ put n d D κ σ ρ φ
+    → w ≢ ω
+    → Conv D
   put-val (var x) {D} {κ} {σ} {ρ} {φ} w w∈ w≢ with x <? n
   ... | yes _ = proj₁ (≫=-conv {F = λ X → ⋆ ⟨ Λᵐ ⟨ (λ X → κ (σ [ x ↦ X ]) ρ φ) , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} (proj₁ (letᵐ-unfold {D} {λ X → κ (σ [ x ↦ X ]) ρ φ}) w w∈) w≢)
   ... | no _ = proj₁ (≫=-conv {F = λ _ → ⌈ ω ⌉} w∈ w≢)
   put-val (reg g) {D} {κ} {σ} {ρ} {φ} w w∈ w≢ = proj₁ (≫=-conv {F = λ _ → κ σ (ρ [ g ≔ D ]) φ} w∈ w≢)
 
-  put-ω : ∀ d {D κ σ ρ φ} → ω ∈ D → ω ∈ put n d D κ σ ρ φ
+  put-ω : ∀ d {D κ σ ρ φ}
+    → ω ∈ D
+    → ω ∈ put n d D κ σ ρ φ
   put-ω (var x) {D} {κ} {σ} {ρ} {φ} ω∈ with x <? n
   ... | yes _ = proj₂ (letᵐ-unfold {D} {λ X → κ (σ [ x ↦ X ]) ρ φ}) ω (inj₁ ⟨ refl , ω∈ ⟩)
   ... | no _ = inj₁ ⟨ refl , ω∈ ⟩
   put-ω (reg g) ω∈ = inj₁ ⟨ refl , ω∈ ⟩
 
   {- the last write of the instructions of r, into d -}
-  put-strict : ∀ d {D κ K D' σ ρ φ} → Fits d κ K → Inv σ → D ≃ D'
+  put-strict : ∀ d {D κ K D' σ ρ φ}
+    → Fits d κ K
+    → Inv σ
+    → D ≃ D'
     → strictᵐ D (put n d D κ σ ρ φ) ≃ after d K σ D'
   put-strict d f i D≃ = strictᵐ-≃′ (put-≃ d f i D≃) (put-has d) (put-ω d) (put-val d)
 
   {- the instructions of r into d, then is -}
-  sel : ∀ r d is {κ K} → Fits d (⟦ is ⟧ˢ T n κ) K → ∀ σ → Inv σ → ∀ ρ φ
+  sel : ∀ r d is {κ K}
+    → Fits d (⟦ is ⟧ˢ T n κ) K
+    → ∀ σ
+    → Inv σ
+    → ∀ ρ φ
     → ⟦ select-simple r d ++ is ⟧ˢ T n κ σ ρ φ ≃ after d K σ (𝒮 T' n σ r)
   sel (atm a) d is f σ i ρ φ = put-≃ d f i (atm-≃ a)
   sel (app g e a) d is {κ} f σ i ρ φ = strictᵐ-≃′ LA (λ _ _ → atm-has e i) ωE valE
@@ -382,20 +467,28 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)
     Y = put n d R (⟦ is ⟧ˢ T n κ) σ (called R) init
     LR : strictᵐ R Y ≃ _
     LR = put-strict d f i (callᵐ-≃ (atm-≃ g) (atm-≃ e) (atm-≃ a))
-    ωA : ω ∈ A → ω ∈ strictᵐ R Y
+    ωA : ω ∈ A
+      → ω ∈ strictᵐ R Y
     ωA ωa with atm-has e i
     ... | inj₁ ωe = inj₁ ⟨ refl , callᵐ-ω (atm-has g i) (inj₁ ωe) ⟩
     ... | inj₂ ve = inj₁ ⟨ refl , callᵐ-ω (atm-has g i) (inj₂ ⟨ ve , ωa ⟩) ⟩
-    valA : ∀ w → w ∈ strictᵐ R Y → w ≢ ω → Conv A
+    valA : ∀ w
+      → w ∈ strictᵐ R Y
+      → w ≢ ω
+      → Conv A
     valA w (inj₁ ⟨ refl , _ ⟩) w≢ = ⊥-elim (w≢ refl)
     valA w (inj₂ ⟨ ⟨ r , ⟨ r∈ , r≢ ⟩ ⟩ , _ ⟩) _ = proj₂ (callᵐ-conv {G} r∈ r≢)
     LA : strictᵐ A (strictᵐ R Y) ≃ _
     LA = strictᵐ-≃′ LR (λ _ _ → atm-has a i) ωA valA
-    ωE : ω ∈ E → ω ∈ strictᵐ A (strictᵐ R Y)
+    ωE : ω ∈ E
+      → ω ∈ strictᵐ A (strictᵐ R Y)
     ωE ωe with atm-has a i
     ... | inj₁ ωa = inj₁ ⟨ refl , ωa ⟩
     ... | inj₂ va = inj₂ ⟨ va , inj₁ ⟨ refl , callᵐ-ω (atm-has g i) (inj₁ ωe) ⟩ ⟩
-    valE : ∀ w → w ∈ strictᵐ A (strictᵐ R Y) → w ≢ ω → Conv E
+    valE : ∀ w
+      → w ∈ strictᵐ A (strictᵐ R Y)
+      → w ≢ ω
+      → Conv E
     valE w (inj₁ ⟨ refl , _ ⟩) w≢ = ⊥-elim (w≢ refl)
     valE w (inj₂ ⟨ _ , inj₁ ⟨ refl , _ ⟩ ⟩) w≢ = ⊥-elim (w≢ refl)
     valE w (inj₂ ⟨ _ , inj₂ ⟨ ⟨ r , ⟨ r∈ , r≢ ⟩ ⟩ , _ ⟩ ⟩) _ = proj₁ (callᵐ-conv {G} r∈ r≢)
@@ -413,7 +506,10 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)
     where
     A = 𝒪 T n σ ρ (select-atm a)
     Q = primᵐ P.sub ⟨ A , ⟨ 𝒪 T n σ (ρ [ rax ≔ A ]) (select-atm b) , ptt ⟩ ⟩
-    valA : ∀ w → w ∈ strictᵐ Q (put n d Q (⟦ is ⟧ˢ T n κ) σ (ρ [ rax ≔ A ] [ rax ≔ Q ]) φ) → w ≢ ω → Conv A
+    valA : ∀ w
+      → w ∈ strictᵐ Q (put n d Q (⟦ is ⟧ˢ T n κ) σ (ρ [ rax ≔ A ] [ rax ≔ Q ]) φ)
+      → w ≢ ω
+      → Conv A
     valA w (inj₁ ⟨ refl , _ ⟩) w≢ = ⊥-elim (w≢ refl)
     valA w (inj₂ ⟨ ⟨ r , ⟨ r∈ , r≢ ⟩ ⟩ , _ ⟩) _ = primᵐ-val P.sub r∈ r≢
   sel (prim P.eq a b) d is f σ i ρ φ = put-strict d f i (primᵐ-≃ P.eq (atm-≃ a) (atm-≃ b))
@@ -422,7 +518,12 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)
   BR : Blocks → Blocksₜ → Set₁
   BR B B' = ∀ l σ → Inv σ → ∀ ρ φ → B l σ ρ φ ≃ B' l σ
 
-  tail : ∀ t {B B'} → BR B B' → ∀ σ → Inv σ → ∀ ρ φ → ⟦ select-tail t ⟧ᵇ T n B σ ρ φ ≃ ⟪ t ⟫[ T' ] n B' σ
+  tail : ∀ t {B B'}
+    → BR B B'
+    → ∀ σ
+    → Inv σ
+    → ∀ ρ φ
+    → ⟦ select-tail t ⟧ᵇ T n B σ ρ φ ≃ ⟪ t ⟫[ T' ] n B' σ
   tail (C.return r) {B} br σ i ρ φ =
     ≃-trans (≃-reflexive (cong (λ is → ⟦ is ⟧ˢ T n (⟦ retq ⟧ʲ B) σ ρ φ) (sym (++-identityʳ (select-simple r (reg rax))))))
             (sel r (reg rax) [] {K = λ _ → ∅} (λ σ ρ φ → ≃-refl) σ i ρ φ)
@@ -448,11 +549,20 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)
   ... | no l≢ | yes l≡ = ⊥-elim (l≢ (trans l≡ (sym (length-map select-tail bs))))
 
   {- the prologue binds parts of the parameters; F is the rest of the start -}
-  frame-≃ : 2 ≤ n → ∀ {F G : Store → 𝒫 Value} → (∀ σ → Inv σ → F σ ≃ G σ) → (∀ {σ σ'} → σ ⊆ₛ σ' → G σ ⊆ G σ')
-    → ∀ {V U} → V ≢ [] → V ≈ V → NoErr V → U ≢ [] → U ≈ U → NoErr U
+  frame-≃ : 2 ≤ n
+    → ∀ {F G : Store → 𝒫 Value}
+    → (∀ σ → Inv σ → F σ ≃ G σ)
+    → (∀ {σ σ'} → σ ⊆ₛ σ' → G σ ⊆ G σ')
+    → ∀ {V U}
+    → V ≢ []
+    → V ≈ V
+    → NoErr V
+    → U ≢ []
+    → U ≈ U
+    → NoErr U
     → frameᵐ n 0 (mem V) (letᵐ ⟨ mem V , ⟨ (λ X → frameᵐ n 1 (mem U)
-        (letᵐ ⟨ mem U , ⟨ (λ Y → F (zeros [ 0 ↦ X ] [ 1 ↦ Y ])) , ptt ⟩ ⟩)) , ptt ⟩ ⟩)
-      ≃ G (frame (mem V) (mem U))
+          (letᵐ ⟨ mem U , ⟨ (λ Y → F (zeros [ 0 ↦ X ] [ 1 ↦ Y ])) , ptt ⟩ ⟩)) , ptt ⟩ ⟩)
+        ≃ G (frame (mem V) (mem U))
   frame-≃ le {F} {G} FG mono {V} {U} neV cV nV neU cU nU with 0 <? n | 1 <? n
   ... | no ¬p | _ = ⊥-elim (¬p (≤-trans (s≤s z≤n) le))
   ... | yes _ | no ¬p = ⊥-elim (¬p le)
@@ -465,7 +575,12 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)
     s' 0 = λ _ z → z
     s' 1 = λ _ z → z
     s' (suc (suc y)) = λ _ z → z
-    i : ∀ V' U' → V' ≢ [] → V' ≈ V' → U' ≢ [] → U' ≈ U' → Inv (zeros [ 0 ↦ mem V' ] [ 1 ↦ mem U' ])
+    i : ∀ V' U'
+      → V' ≢ []
+      → V' ≈ V'
+      → U' ≢ []
+      → U' ≈ U'
+      → Inv (zeros [ 0 ↦ mem V' ] [ 1 ↦ mem U' ])
     i V' U' neV' cV' neU' cU' 0 = atom-≈ neV' cV'
     i V' U' neV' cV' neU' cU' 1 = atom-≈ neU' cU'
     i V' U' neV' cV' neU' cU' (suc (suc y)) = atom-zero
@@ -480,7 +595,10 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)
       s (suc (suc y)) = λ _ z → z
 
 {- the code of a global definition, in a frame of max(2, n) slots -}
-code-≃ : ∀ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Atom (T k)) n bs t
+code-≃ : ∀ {T T' : Table}
+  → (TT : ∀ k → T k ≃ T' k)
+  → (TL : ∀ k → Atom (T k))
+  → ∀ n bs t
   → code T (select-body prologue (C.body n bs t)) ≃ codeₜ T' (C.body n bs t)
 code-≃ {T} {T'} TT TL n bs t = ΛΛᵐ-≃′ λ V U neV cV nV neU cU nU →
   frame-≃ TT TL m (m≤m⊔n 2 n)
@@ -509,5 +627,7 @@ select-correct (C.program ds (C.body n bs t)) =
 
 {- The whole compiler, into X86 ----------------------------------------------------------}
 
-select-correct-compile : ∀ (M : ISWIM.AST) → Closed M → ⟦ compile-x86 M ⟧ₚ ≃ ⟪ compile-cfg M ⟫ₚ
+select-correct-compile : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ⟦ compile-x86 M ⟧ₚ ≃ ⟪ compile-cfg M ⟫ₚ
 select-correct-compile M _ = select-correct (compile-cfg M)

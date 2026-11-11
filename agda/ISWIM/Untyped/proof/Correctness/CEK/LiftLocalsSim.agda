@@ -71,13 +71,18 @@ open import Relation.Nullary using (yes; no)
 data Fr (n : ℕ) (ρ : C.Env) : I.Frame → Set where
   frame : ∀ σ → length (ρ ʳ++ σ) ≡ n → Fr n ρ (ρ ʳ++ σ)
 
-‼-ʳ++ : ∀ (ρ : C.Env) {σ} x → x < length ρ → (ρ ʳ++ σ) ‼ (length ρ ∸ suc x) ≡ ρ ‼ x
+‼-ʳ++ : ∀ (ρ : C.Env) {σ} x
+  → x < length ρ
+  → (ρ ʳ++ σ) ‼ (length ρ ∸ suc x) ≡ ρ ‼ x
 ‼-ʳ++ (v ∷ ρ) zero _ =
   subst₂ (λ φ k → φ ‼ k ≡ just v) (sym (ʳ++-defn ρ)) (length-reverse ρ) (‼-++ (reverse ρ))
 ‼-ʳ++ (v ∷ ρ) (suc x) (s≤s lt) = ‼-ʳ++ ρ x lt
 
 {- a variable reads its value from its slot -}
-look : ∀ {n ρ φ} → Fr n ρ φ → ∀ x → φ ‼ slot n (length ρ) x ≡ ρ ‼ x
+look : ∀ {n ρ φ}
+  → Fr n ρ φ
+  → ∀ x
+  → φ ‼ slot n (length ρ) x ≡ ρ ‼ x
 look {n} {ρ} (frame σ len) x with x <? length ρ
 ... | yes lt = ‼-ʳ++ ρ x lt
 ... | no ¬lt = trans (‼-≥ (ρ ʳ++ σ) n (≤-reflexive len)) (sym (‼-≥ ρ x (≮⇒≥ ¬lt)))
@@ -87,7 +92,9 @@ upd-++ [] = refl
 upd-++ (u ∷ π) = cong (mmap (u ∷_)) (upd-++ π)
 
 {- assigning slot length ρ, below n, pushes the value on ρ -}
-assign : ∀ {n ρ φ} v → Fr n ρ φ → length ρ < n
+assign : ∀ {n ρ φ} v
+  → Fr n ρ φ
+  → length ρ < n
   → Σ[ φ' ∈ I.Frame ] φ I.[ length ρ ]≔ v ≡ just φ' × Fr n (v ∷ ρ) φ'
 assign {ρ = ρ} v (frame [] len) lt =
   ⊥-elim (<⇒≱ lt (≤-reflexive (trans (sym len) (trans (length-ʳ++ ρ) (+-identityʳ _)))))
@@ -97,18 +104,27 @@ assign {ρ = ρ} v (frame (t ∷ σ) len) lt =
   eq : (ρ ʳ++ t ∷ σ) I.[ length ρ ]≔ v ≡ just (ρ ʳ++ v ∷ σ)
   eq rewrite ʳ++-defn ρ {t ∷ σ} | ʳ++-defn ρ {v ∷ σ} | sym (length-reverse ρ) = upd-++ (reverse ρ)
 
-fr-≤ : ∀ {n ρ φ} → Fr n ρ φ → length ρ + 0 ≤ n
+fr-≤ : ∀ {n ρ φ}
+  → Fr n ρ φ
+  → length ρ + 0 ≤ n
 fr-≤ {ρ = ρ} (frame σ len) =
   ≤-trans (+-monoʳ-≤ (length ρ) z≤n) (≤-reflexive (trans (sym (length-ʳ++ ρ)) len))
 
 {- the frame sizes of nested terms -}
-bnd : ∀ d {h h' n} → h ≤ h' → d + h' ≤ n → d + h ≤ n
+bnd : ∀ d {h h' n}
+  → h ≤ h'
+  → d + h' ≤ n
+  → d + h ≤ n
 bnd d le b = ≤-trans (+-monoʳ-≤ d le) b
 
-sbnd : ∀ d h {n} → d + suc h ≤ n → suc d + h ≤ n
+sbnd : ∀ d h {n}
+  → d + suc h ≤ n
+  → suc d + h ≤ n
 sbnd d h {n} = subst (_≤ n) (+-suc d h)
 
-room : ∀ d h {n} → suc d + h ≤ n → d < n
+room : ∀ d h {n}
+  → suc d + h ≤ n
+  → d < n
 room d h b = ≤-trans (s≤s (m≤m+n d h)) b
 
 {- The table ---------------------------------------------------------------------}
@@ -179,25 +195,36 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
     ret~ : KontH n ρ κ₁ κ₂ → Fr n ρ φ → C.ret v κ₁ ~ I.ret v φ κ₂
 
   {- the target returns from calls -}
-  pop : Kont n ρ κ₁ κ₂ → Fr n ρ φ → Reach L₂ _~_ (C.ret v κ₁) (I.ret v φ κ₂)
+  pop : Kont n ρ κ₁ κ₂
+    → Fr n ρ φ
+    → Reach L₂ _~_ (C.ret v κ₁) (I.ret v φ κ₂)
   pop (head h) fr = _ , ε , ret~ h fr
   pop (weak {v = u} k) (frame σ len) = pop k (frame (u ∷ σ) len)
   pop (call k fr') fr with pop k fr'
   ... | s , σ , m = s , refl ◅ σ , m
 
-  call-ans : ∀ {s₂ mN mb} → M.Pointwise Lifted mN mb → I.step ds₂ s₂ ≡ I.call mb v w φ κ₂
-    → Kont n ρ κ₁ κ₂ → Fr n ρ φ → Answers L₂ _~_ (C.call mN w v κ₁) s₂
+  call-ans : ∀ {s₂ mN mb}
+    → M.Pointwise Lifted mN mb
+    → I.step ds₂ s₂ ≡ I.call mb v w φ κ₂
+    → Kont n ρ κ₁ κ₂
+    → Fr n ρ φ
+    → Answers L₂ _~_ (C.call mN w v κ₁) s₂
   call-ans (M.just (m , refl)) st k fr = steps₁ st
     (eval~ m ≤-refl (frame (I.zeros (height m)) (cong (2 +_) (length-replicate (height m)))) (call k fr))
   call-ans M.nothing st k fr = stops st
 
-  tup-ans : ∀ {s₂ k vs} {As : Args (replicate k ■)} (as : Atoms As)
+  tup-ans : ∀ {s₂ k vs} {As : Args (replicate k ■)}
+    → (as : Atoms As)
     → I.step ds₂ s₂ ≡ I.res ds₂ (I.tuple-next vs (lift-atoms n (length ρ) as)) φ κ₂
-    → Kont n ρ κ₁ κ₂ → Fr n ρ φ → Answers L₂ _~_ (next (C.tuple-next vs (args→list As) ρ κ₁)) s₂
+    → Kont n ρ κ₁ κ₂
+    → Fr n ρ φ
+    → Answers L₂ _~_ (next (C.tuple-next vs (args→list As) ρ κ₁)) s₂
   tup-ans [] st k fr = after st (pop k fr)
   tup-ans (a ∷ as) st k fr = steps₁ st (eval~ (atom a) (fr-≤ fr) fr (head (tupK as k)))
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (C.step ds s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (C.step ds s₁) s₂
   sim (eval~ {ρ = ρ} {φ = φ} {κ₂ = κ₂} (atom (var x)) b fr k) =
     next?-same (λ _ → pop k fr) (cong (λ mv → I.ret? mv φ κ₂) (look fr x))
   sim (eval~ (atom (lit B j)) b fr k) = after refl (pop k fr)
@@ -265,13 +292,17 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
 
 {- The end theorem ---------------------------------------------------------------}
 
-lift-correct : ∀ P (mp : MonProgram P) → Equivalent (C.sem P) (I.sem (lift-program P mp))
+lift-correct : ∀ P
+  → (mp : MonProgram P)
+  → Equivalent (C.sem P) (I.sem (lift-program P mp))
 lift-correct (program ds M) (ms , m) = equivalent (plus-simulation _~_
   (eval~ m ≤-refl (frame (I.zeros (height m)) (length-replicate (height m))) (head halt)) sim)
   where open Sim ms (height m) (lift (height m) 0 m)
 
 {- The whole compiler, into Imp --------------------------------------------------}
 
-compile-imp-correct : ∀ M → Closed M → Equivalent (S.sem M) (I.sem (compile-imp M))
+compile-imp-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (I.sem (compile-imp M))
 compile-imp-correct M c =
   equiv-trans (compile-mon-correct M c) (lift-correct (compile-mon M) (rco-program-mon (compile M)))

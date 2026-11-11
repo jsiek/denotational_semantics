@@ -97,8 +97,12 @@ data _~_ : Src.State → Tgt.State → Set where
   ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
 {- Related values are observed alike, and primitives give related values -}
-obs≈ : ∀ {A} {v : Src.Val A} {w} → v ≈ w → Src.obs v ≡ Tgt.obs w
-obs≈* : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Src.obs-vec vs ≡ Tgt.obs-vec ws
+obs≈ : ∀ {A} {v : Src.Val A} {w}
+  → v ≈ w
+  → Src.obs v ≡ Tgt.obs w
+obs≈* : ∀ {n} {vs : Vec _ n} {ws}
+  → V.Pointwise _≈_ vs ws
+  → Src.obs-vec vs ≡ Tgt.obs-vec ws
 obs≈ (clos≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)
@@ -115,7 +119,9 @@ obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 ... | false = inr≈ (dyn≈ (tup≈ []))
 
 {- the only error: both machines project, and fail, at the same time -}
-proj~ : ∀ {H G v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+proj~ : ∀ {H G v w κ₁ κ₂}
+  → v ≈ w
+  → κ₁ ≈k κ₂
   → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁))) (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
 proj~ {H} {G} r k with H ≟F flat G
 ... | yes refl = same-next (ret~ r k)
@@ -123,7 +129,9 @@ proj~ {H} {G} r k with H ≟F flat G
 
 {- Related environments --------------------------------------------------------}
 
-env-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ v} {w : Tgt.Val Any} → v ≈ w → EnvRel φ ρ₁ ρ₂
+env-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ v} {w : Tgt.Val Any}
+  → v ≈ w
+  → EnvRel φ ρ₁ ρ₂
   → EnvRel (ext-ref φ) (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext r er zero = r
 env-ext {φ = φ} r er (suc x) with φ x | er x
@@ -131,7 +139,9 @@ env-ext {φ = φ} r er (suc x) with φ x | er x
 ... | prj i y | p = p
 
 {- the environment of a closure's code: its argument and its free variables -}
-env-clos : ∀ {n v w} {vs : Vec _ n} {ws} → v ≈ w → V.Pointwise _≈_ vs ws
+env-clos : ∀ {n v w} {vs : Vec _ n} {ws}
+  → v ≈ w
+  → V.Pointwise _≈_ vs ws
   → EnvRel fv-ref (v ∷ vs) (w ∷ Tgt.tup ws ∷ [])
 env-clos r rs zero = r
 env-clos r rs (suc i) = V.lookup rs i
@@ -150,12 +160,16 @@ module _ (P : C3.Tm [] Any) where
           get-step (Tgt.tup vs) = refl
 
   tuple-next~ : ∀ {k Γ} {φ : Fin k → Ref Γ} {m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ ρ₂} {κ₁ κ₂}
-    → V.Pointwise _≈_ vs ws → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → V.Pointwise _≈_ vs ws
+    → EnvRel φ ρ₁ ρ₂
+    → κ₁ ≈k κ₂
     → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (concs φ Ms) ρ₂ κ₂
   tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (Src.step s₁) s₂
   sim (eval~ {φ = φ} {M = ` x} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) = steps (ref-run (φ x) ρ₂ κ₂) (ret~ (er x) k)
   sim (eval~ {M = clos N Ms} er k) = steps₁ refl (tuple-next~ [] er (closK k))
   sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))

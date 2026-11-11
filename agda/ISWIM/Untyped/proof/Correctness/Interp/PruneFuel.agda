@@ -83,8 +83,12 @@ record Collected (U : ℕ → Set) (m : ℕ) (b : ℕ → ℕ) (vs ws : T.Env) :
   field look : ∀ k → U (m + k) → Lookup vs k ws (b k)
 
 {- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → T.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → T.obs-list vs ≡ T.obs-list ws
+obs≈ : ∀ {v w}
+  → v ≈ w
+  → T.obs v ≡ T.obs w
+obs≈-list : ∀ {vs ws}
+  → Pointwise _≈_ vs ws
+  → T.obs-list vs ≡ T.obs-list ws
 obs≈ (clo≈ _) = refl
 obs≈ const≈ = refl
 obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
@@ -94,7 +98,10 @@ obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (T.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+  → v₁ ≈ w₁
+  → v₂ ≈ w₂
+  → M.Pointwise _≈_ (T.prim? p v₁ v₂) (T.prim? p w₁ w₂)
 prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
 ... | nothing = M.nothing
 ... | just (int n) = M.just const≈
@@ -103,45 +110,66 @@ prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p
 
 {- Agreement of environments ---------------------------------------------------}
 
-agree-ext : ∀ {M r ρ₁ ρ₂ v w} → v ≈ w → Agree M 1 r ρ₁ ρ₂
+agree-ext : ∀ {M r ρ₁ ρ₂ v w}
+  → v ≈ w
+  → Agree M 1 r ρ₁ ρ₂
   → Agree M 0 (ext-var r) (v ∷ ρ₁) (w ∷ ρ₂)
 agree-ext {M} {r} {ρ₁} {ρ₂} {v} {w} vw (agree sc look) = agree sc look'
   where
-  look' : ∀ x → Uses x M → Lookup (v ∷ ρ₁) x (w ∷ ρ₂) (ext-var r x)
+  look' : ∀ x
+    → Uses x M
+    → Lookup (v ∷ ρ₁) x (w ∷ ρ₂) (ext-var r x)
   look' zero _ = v , w , refl , refl , vw
   look' (suc x) u = look x u
 
-agree-look : ∀ {M k r ρ₁ ρ₂} → Agree M k r ρ₁ ρ₂ → ∀ x → Uses (k + x) M → Lookup ρ₁ x ρ₂ (r x)
+agree-look : ∀ {M k r ρ₁ ρ₂}
+  → Agree M k r ρ₁ ρ₂
+  → ∀ x
+  → Uses (k + x) M
+  → Lookup ρ₁ x ρ₂ (r x)
 agree-look (agree _ look) = look
 
 {- a subterm M' of M, under k binders -}
-agree-sub : ∀ {k M M' r ρ₁ ρ₂} → (∀ {j} → WS j M → WS (k + j) M')
-  → (∀ x → Uses (k + x) M' → Uses x M) → Agree M 0 r ρ₁ ρ₂ → Agree M' k r ρ₁ ρ₂
+agree-sub : ∀ {k M M' r ρ₁ ρ₂}
+  → (∀ {j} → WS j M → WS (k + j) M')
+  → (∀ x → Uses (k + x) M' → Uses x M)
+  → Agree M 0 r ρ₁ ρ₂
+  → Agree M' k r ρ₁ ρ₂
 agree-sub sc sub (agree w look) = agree (sc w) (λ x u → look x (sub x u))
 
 {- the first of a list of arguments, and the rest -}
 agree-hd : ∀ {n M r ρ₁ ρ₂} {args : Args (replicate n ■)}
-  → Agree (tuple (suc n) ⦅ M ,, args ⦆) 0 r ρ₁ ρ₂ → Agree M 0 r ρ₁ ρ₂
+  → Agree (tuple (suc n) ⦅ M ,, args ⦆) 0 r ρ₁ ρ₂
+  → Agree M 0 r ρ₁ ρ₂
 agree-hd = agree-sub proj₁ (λ x → inj₁)
 
 agree-tl : ∀ {n M r ρ₁ ρ₂} {args : Args (replicate n ■)}
-  → Agree (tuple (suc n) ⦅ M ,, args ⦆) 0 r ρ₁ ρ₂ → Agree (tuple n ⦅ args ⦆) 0 r ρ₁ ρ₂
+  → Agree (tuple (suc n) ⦅ M ,, args ⦆) 0 r ρ₁ ρ₂
+  → Agree (tuple n ⦅ args ⦆) 0 r ρ₁ ρ₂
 agree-tl = agree-sub proj₂ (λ x → inj₂)
 
 {- after a kept or a dropped free variable -}
-keep-col : ∀ {U m b vs ws v w} → v ≈ w → Collected U (suc m) b vs ws
+keep-col : ∀ {U m b vs ws v w}
+  → v ≈ w
+  → Collected U (suc m) b vs ws
   → Collected U m (keep-base b) (v ∷ vs) (w ∷ ws)
 keep-col {U} {m} {v = v} {w} vw (collected col) = collected look
   where
-  look : ∀ k → U (m + k) → _
+  look : ∀ k
+    → U (m + k)
+    → _
   look zero _ = v , w , refl , refl , vw
   look (suc k) u = col k (subst U (+-suc m k) u)
 
-drop-col : ∀ {U m b vs ws v} → ¬ U m → Collected U (suc m) b vs ws
+drop-col : ∀ {U m b vs ws v}
+  → ¬ U m
+  → Collected U (suc m) b vs ws
   → Collected U m (drop-base b) (v ∷ vs) ws
 drop-col {U} {m} nu (collected col) = collected look
   where
-  look : ∀ k → U (m + k) → _
+  look : ∀ k
+    → U (m + k)
+    → _
   look zero u = ⊥-elim (nu (subst U (+-identityʳ m) u))
   look (suc k) u = col k (subst U (+-suc m k) u)
 
@@ -154,34 +182,46 @@ opt-body-body : ∀ r k (a : Arg (ν-n k (ν ■))) → opt-body r k a ≡ prune
 opt-body-body r zero (bind (ast N)) = refl
 opt-body-body r (suc k) (bind a) = opt-body-body r k a
 
-ws-body : ∀ n k (a : Arg (ν-n n (ν ■))) → WS-arg k a → WS (suc (n + k)) (T.body n a)
+ws-body : ∀ n k (a : Arg (ν-n n (ν ■)))
+  → WS-arg k a
+  → WS (suc (n + k)) (T.body n a)
 ws-body zero k (bind (ast N)) w = w
 ws-body (suc n) k (bind a) w =
   subst (λ x → WS (suc x) (T.body n a)) (+-suc n k) (ws-body n (suc k) a w)
 
 {- Clock for clock ---------------------------------------------------------------}
 
-var≈ : ∀ ck {r ρ₁ ρ₂} x → Agree (` x) 0 r ρ₁ ρ₂
+var≈ : ∀ ck {r ρ₁ ρ₂} x
+  → Agree (` x) 0 r ρ₁ ρ₂
   → RelResult _≈_ (T.eval ck ρ₁ (` x)) (T.eval ck ρ₂ (` r x))
 var≈ ck x ag with agree-look ag x refl
 ... | v , w , e₁ , e₂ , vw rewrite e₁ | e₂ = ret vw
 
-run≈ : ∀ ck {r ρ₁ ρ₂} M → Agree M 0 r ρ₁ ρ₂
+run≈ : ∀ ck {r ρ₁ ρ₂} M
+  → Agree M 0 r ρ₁ ρ₂
   → RelResult _≈_ (T.eval ck ρ₁ M) (T.eval ck ρ₂ (prune r M))
-args≈ : ∀ ck {n r ρ₁ ρ₂ vs ws} (args : Args (replicate n ■)) → Agree (tuple n ⦅ args ⦆) 0 r ρ₁ ρ₂
+args≈ : ∀ ck {n r ρ₁ ρ₂ vs ws} (args : Args (replicate n ■))
+  → Agree (tuple n ⦅ args ⦆) 0 r ρ₁ ρ₂
   → Pointwise _≈_ vs ws
   → RelResult (Pointwise _≈_) (T.eval-args ck ρ₁ vs args) (T.eval-args ck ρ₂ ws (opt-args r args))
 {- the free variables of a closure: the source evaluates all of them, the
    target only those that prune-fvs keeps -}
 prune≈ : ∀ ck m {r ρ₁ ρ₂ U b vs ws} (dec : ∀ j → Dec (U j)) (fvs : Args (replicate m ■))
-  → Agree (tuple m ⦅ fvs ⦆) 0 r ρ₁ ρ₂ → Collected U m b vs ws
+  → Agree (tuple m ⦅ fvs ⦆) 0 r ρ₁ ρ₂
+  → Collected U m b vs ws
   → RelResult (Collected U 0 (index (prune-fvs m r dec fvs b)))
       (T.eval-args ck ρ₁ vs fvs) (T.eval-args ck ρ₂ ws (kept (prune-fvs m r dec fvs b)))
-apply≈ : ∀ ck {r ρ₁ ρ₂ f g} M → Agree M 0 r ρ₁ ρ₂ → f ≈ g
+apply≈ : ∀ ck {r ρ₁ ρ₂ f g} M
+  → Agree M 0 r ρ₁ ρ₂
+  → f ≈ g
   → RelResult _≈_ (T.apply ck ρ₁ M f) (T.apply ck ρ₂ (prune r M) g)
-call≈ : ∀ ck {r ρ₁ ρ₂} N → Agree N 0 r ρ₁ ρ₂
+call≈ : ∀ ck {r ρ₁ ρ₂} N
+  → Agree N 0 r ρ₁ ρ₂
   → RelResult _≈_ (T.call ck N ρ₁) (T.call ck (prune r N) ρ₂)
-branch≈ : ∀ ck {r ρ₁ ρ₂ v w} M N → Agree M 1 r ρ₁ ρ₂ → Agree N 1 r ρ₁ ρ₂ → v ≈ w
+branch≈ : ∀ ck {r ρ₁ ρ₂ v w} M N
+  → Agree M 1 r ρ₁ ρ₂
+  → Agree N 1 r ρ₁ ρ₂
+  → v ≈ w
   → RelResult _≈_ (T.branch ck ρ₁ M N v) (T.branch ck ρ₂ (prune (ext-var r) M) (prune (ext-var r) N) w)
 
 run≈ ck (` x) ag = var≈ ck x ag
@@ -213,7 +253,9 @@ run≈ ck (lit B k ⦅ Nil ⦆) ag = ret const≈
 run≈ ck (tuple n ⦅ args ⦆) ag = bind-rel (args≈ ck args ag []) (λ rs → ret (tup≈ (reverse⁺ rs)))
 run≈ ck (get i ⦅ M ,, Nil ⦆) ag = bind-rel (run≈ ck M (agree-sub proj₁ (λ x → inj₁) ag)) get≈
   where
-  get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (T.project i v) (T.project i w)
+  get≈ : ∀ {v w}
+    → v ≈ w
+    → RelResult _≈_ (T.project i v) (T.project i w)
   get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
   get≈ (clo≈ _) = error
   get≈ const≈ = error
@@ -264,11 +306,15 @@ branch≈ ck M N agM agN (tup≈ _) = error
 
 {- The end theorem -------------------------------------------------------------}
 
-prune-correct : ∀ M → WS 0 M → Equivalent (T.sem M) (T.sem (prune-program M))
+prune-correct : ∀ M
+  → WS 0 M
+  → Equivalent (T.sem M) (T.sem (prune-program M))
 prune-correct M c =
   clocked _≈_ obs≈ (λ ck → run≈ ck M (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))))
 
 {- capture, then prune, for closed ISWIM programs -}
-capture-prune-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (prune-program (capture M)))
+capture-prune-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (T.sem (prune-program (capture M)))
 capture-prune-correct M c =
   equiv-trans (EF.capture-correct M c) (prune-correct (capture M) (capture-closed M c))

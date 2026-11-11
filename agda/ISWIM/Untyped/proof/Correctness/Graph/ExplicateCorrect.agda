@@ -87,12 +87,18 @@ _⊆ₛ_ : Store → Store → Set
 _~ₛ_ : Store → Store → Set
 σ ~ₛ σ' = ∀ z → Every _~_ (σ z) (σ' z)
 
-upd-⊆ : ∀ {σ σ' X X'} x → σ ⊆ₛ σ' → X ⊆ X' → σ [ x ↦ X ] ⊆ₛ σ' [ x ↦ X' ]
+upd-⊆ : ∀ {σ σ' X X'} x
+  → σ ⊆ₛ σ'
+  → X ⊆ X'
+  → σ [ x ↦ X ] ⊆ₛ σ' [ x ↦ X' ]
 upd-⊆ x s X⊆ z with z ≟ x
 ... | yes _ = X⊆
 ... | no _ = s z
 
-upd-~ : ∀ {σ σ' X X'} x → σ ~ₛ σ' → Every _~_ X X' → σ [ x ↦ X ] ~ₛ σ' [ x ↦ X' ]
+upd-~ : ∀ {σ σ' X X'} x
+  → σ ~ₛ σ'
+  → Every _~_ X X'
+  → σ [ x ↦ X ] ~ₛ σ' [ x ↦ X' ]
 upd-~ x c X~ z with z ≟ x
 ... | yes _ = X~
 ... | no _ = c z
@@ -127,20 +133,28 @@ Good : (Store → 𝒫 Value) → Set₁
 Good F = Mono F × DC F
 
 {- finitely many elements, each in some member, are all in one -}
-dir-list : ∀ d (G : I d → 𝒫 Value) → (∀ i j → G i ⊆ G (ub d i j) × G j ⊆ G (ub d i j))
-  → ∀ V → (∀ u → u ∈ mem V → Σ[ i ∈ I d ] u ∈ G i) → Σ[ i ∈ I d ] mem V ⊆ G i
+dir-list : ∀ d (G : I d → 𝒫 Value)
+  → (∀ i j → G i ⊆ G (ub d i j) × G j ⊆ G (ub d i j))
+  → ∀ V
+  → (∀ u → u ∈ mem V → Σ[ i ∈ I d ] u ∈ G i)
+  → Σ[ i ∈ I d ] mem V ⊆ G i
 dir-list d G up [] _ = ⟨ i₀ d , (λ _ ()) ⟩
 dir-list d G up (v ∷ V) h with h v (here refl) | dir-list d G up V (λ u u∈ → h u (there u∈))
 ... | ⟨ i , v∈ ⟩ | ⟨ j , V⊆ ⟩ =
   ⟨ ub d i j , (λ { _ (here refl) → proj₁ (up i j) _ v∈ ; u (there u∈) → proj₂ (up i j) u (V⊆ u u∈) }) ⟩
 
-dc-list : ∀ {F} (f : Value → Value) → Good F → ∀ d V → (∀ u → u ∈ mem V → f u ∈ F (⋃ d))
+dc-list : ∀ {F} (f : Value → Value)
+  → Good F
+  → ∀ d V
+  → (∀ u → u ∈ mem V → f u ∈ F (⋃ d))
   → Σ[ i ∈ I d ] (∀ u → u ∈ mem V → f u ∈ F (at d i))
 dc-list {F} f ⟨ m , c ⟩ d V h =
   dir-list d (λ i u → f u ∈ F (at d i)) (λ i j → ⟨ (λ u → m (ub₁ d i j) (f u)) , (λ u → m (ub₂ d i j) (f u)) ⟩)
     V (λ u u∈ → c d (f u) (h u u∈))
 
-_[_↦_]ᵈ : Dir → ℕ → 𝒫 Value → Dir
+_[_↦_]ᵈ : Dir
+  → ℕ → 𝒫 Value
+  → Dir
 d [ x ↦ X ]ᵈ = record { I = I d ; at = λ i → at d i [ x ↦ X ] ; i₀ = i₀ d ; ub = ub d
   ; ub₁ = λ i j → upd-⊆ x (ub₁ d i j) ⊆-refl ; ub₂ = λ i j → upd-⊆ x (ub₂ d i j) ⊆-refl }
 
@@ -154,7 +168,10 @@ d [ x ↦ X ]ᵈ = record { I = I d ; at = λ i → at d i [ x ↦ X ] ; i₀ = 
 const-good : ∀ {D} → Good (λ _ → D)
 const-good = ⟨ (λ _ → ⊆-refl) , (λ d w w∈ → ⟨ i₀ d , w∈ ⟩) ⟩
 
-⋆-good : ∀ {F G} → Good F → Good G → Good (λ σ → ⋆ ⟨ F σ , ⟨ G σ , ptt ⟩ ⟩)
+⋆-good : ∀ {F G}
+  → Good F
+  → Good G
+  → Good (λ σ → ⋆ ⟨ F σ , ⟨ G σ , ptt ⟩ ⟩)
 ⋆-good {F} {G} ⟨ mF , cF ⟩ gG@(⟨ mG , cG ⟩) = ⟨ m , c ⟩
   where
   m : Mono (λ σ → ⋆ ⟨ F σ , ⟨ G σ , ptt ⟩ ⟩)
@@ -164,7 +181,9 @@ const-good = ⟨ (λ _ → ⊆-refl) , (λ d w w∈ → ⟨ i₀ d , w∈ ⟩) �
   ... | ⟨ i , f∈′ ⟩ | ⟨ j , V⊆′ ⟩ =
     ⟨ ub d i j , ⟨ V , ⟨ mF (ub₁ d i j) _ f∈′ , ⟨ (λ u u∈ → mG (ub₂ d i j) u (V⊆′ u u∈)) , ne ⟩ ⟩ ⟩ ⟩
 
-Λ-good : ∀ x {F} → Good F → Good (λ σ → Λ ⟨ (λ X → F (σ [ x ↦ X ])) , ptt ⟩)
+Λ-good : ∀ x {F}
+  → Good F
+  → Good (λ σ → Λ ⟨ (λ X → F (σ [ x ↦ X ])) , ptt ⟩)
 Λ-good x {F} ⟨ mF , cF ⟩ = ⟨ m , c ⟩
   where
   m : Mono (λ σ → Λ ⟨ (λ X → F (σ [ x ↦ X ])) , ptt ⟩)
@@ -175,7 +194,10 @@ const-good = ⟨ (λ _ → ⊆-refl) , (λ d w w∈ → ⟨ i₀ d , w∈ ⟩) �
   c d (V ↦ w) ⟨ w∈ , ok ⟩ with cF (d [ x ↦ mem V ]ᵈ) w (mF (⋃-upd d x (mem V)) w w∈)
   ... | ⟨ i , w∈′ ⟩ = ⟨ i , ⟨ w∈′ , ok ⟩ ⟩
 
-𝒞-good : ∀ x {A F₁ F₂} → Good A → Good F₁ → Good F₂
+𝒞-good : ∀ x {A F₁ F₂}
+  → Good A
+  → Good F₁
+  → Good F₂
   → Good (λ σ → 𝒞 ⟨ A σ , ⟨ (λ X → F₁ (σ [ x ↦ X ])) , ⟨ (λ X → F₂ (σ [ x ↦ X ])) , ptt ⟩ ⟩ ⟩)
 𝒞-good x {A} {F₁} {F₂} gA@(⟨ mA , cA ⟩) ⟨ m₁ , c₁ ⟩ ⟨ m₂ , c₂ ⟩ = ⟨ m , c ⟩
   where
@@ -195,14 +217,20 @@ const-good = ⟨ (λ _ → ⊆-refl) , (λ d w w∈ → ⟨ i₀ d , w∈ ⟩) �
   ... | ⟨ i , w∈′ ⟩ | ⟨ j , all′ ⟩ = ⟨ ub d i j , inj₂ ⟨ v , ⟨ V ,
           ⟨ (λ u u∈ → mA (ub₂ d i j) _ (all′ u u∈)) , ⟨ m₂ (upd-⊆ x (ub₁ d i j) ⊆-refl) w w∈′ , ok ⟩ ⟩ ⟩ ⟩ ⟩
 
-pair-good : ∀ {F G} → Good F → Good G → Good (λ σ → pair ⟨ F σ , ⟨ G σ , ptt ⟩ ⟩)
+pair-good : ∀ {F G}
+  → Good F
+  → Good G
+  → Good (λ σ → pair ⟨ F σ , ⟨ G σ , ptt ⟩ ⟩)
 pair-good {F} {G} ⟨ mF , cF ⟩ ⟨ mG , cG ⟩ = ⟨ (λ { s ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩ → ⟨ mF s u u∈ , mG s v v∈ ⟩ }) , c ⟩
   where
   c : DC (λ σ → pair ⟨ F σ , ⟨ G σ , ptt ⟩ ⟩)
   c d ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩ with cF d u u∈ | cG d v v∈
   ... | ⟨ i , u∈′ ⟩ | ⟨ j , v∈′ ⟩ = ⟨ ub d i j , ⟨ mF (ub₁ d i j) u u∈′ , mG (ub₂ d i j) v v∈′ ⟩ ⟩
 
-prim-good : ∀ p {F G} → Good F → Good G → Good (λ σ → primD p ⟨ F σ , ⟨ G σ , ptt ⟩ ⟩)
+prim-good : ∀ p {F G}
+  → Good F
+  → Good G
+  → Good (λ σ → primD p ⟨ F σ , ⟨ G σ , ptt ⟩ ⟩)
 prim-good p {F} {G} ⟨ mF , cF ⟩ ⟨ mG , cG ⟩ =
   ⟨ (λ { s v ⟨ k , ⟨ l , ⟨ k∈ , ⟨ l∈ , eq ⟩ ⟩ ⟩ ⟩ → ⟨ k , ⟨ l , ⟨ mF s _ k∈ , ⟨ mG s _ l∈ , eq ⟩ ⟩ ⟩ ⟩ }) , c ⟩
   where
@@ -211,26 +239,39 @@ prim-good p {F} {G} ⟨ mF , cF ⟩ ⟨ mG , cG ⟩ =
   ... | ⟨ i , k∈′ ⟩ | ⟨ j , l∈′ ⟩ =
     ⟨ ub d i j , ⟨ k , ⟨ l , ⟨ mF (ub₁ d i j) _ k∈′ , ⟨ mG (ub₂ d i j) _ l∈′ , eq ⟩ ⟩ ⟩ ⟩ ⟩
 
-car-good : ∀ {F} → Good F → Good (λ σ → car ⟨ F σ , ptt ⟩)
+car-good : ∀ {F}
+  → Good F
+  → Good (λ σ → car ⟨ F σ , ptt ⟩)
 car-good ⟨ m , c ⟩ = ⟨ (λ { s u ⟨ v , ∈ ⟩ → ⟨ v , m s _ ∈ ⟩ })
                      , (λ { d u ⟨ v , ∈ ⟩ → let ⟨ i , ∈′ ⟩ = c d _ ∈ in ⟨ i , ⟨ v , ∈′ ⟩ ⟩ }) ⟩
 
-cdr-good : ∀ {F} → Good F → Good (λ σ → cdr ⟨ F σ , ptt ⟩)
+cdr-good : ∀ {F}
+  → Good F
+  → Good (λ σ → cdr ⟨ F σ , ptt ⟩)
 cdr-good ⟨ m , c ⟩ = ⟨ (λ { s v ⟨ u , ∈ ⟩ → ⟨ u , m s _ ∈ ⟩ })
                      , (λ { d v ⟨ u , ∈ ⟩ → let ⟨ i , ∈′ ⟩ = c d _ ∈ in ⟨ i , ⟨ u , ∈′ ⟩ ⟩ }) ⟩
 
-proj-good : ∀ {k} (i : Fin k) {F} → Good F → Good (λ σ → proj i ⟨ F σ , ptt ⟩)
+proj-good : ∀ {k} (i : Fin k) {F}
+  → Good F
+  → Good (λ σ → proj i ⟨ F σ , ptt ⟩)
 proj-good i ⟨ m , c ⟩ = ⟨ (λ s w → m s (tup[ i ] w)) , (λ d w → c d (tup[ i ] w)) ⟩
 
-inl-good : ∀ {F} → Good F → Good (λ σ → inl ⟨ F σ , ptt ⟩)
+inl-good : ∀ {F}
+  → Good F
+  → Good (λ σ → inl ⟨ F σ , ptt ⟩)
 inl-good ⟨ m , c ⟩ = ⟨ (λ { s (left v) ∈ → m s v ∈ }) , (λ { d (left v) ∈ → c d v ∈ }) ⟩
 
-inr-good : ∀ {F} → Good F → Good (λ σ → inr ⟨ F σ , ptt ⟩)
+inr-good : ∀ {F}
+  → Good F
+  → Good (λ σ → inr ⟨ F σ , ptt ⟩)
 inr-good ⟨ m , c ⟩ = ⟨ (λ { s (right v) ∈ → m s v ∈ }) , (λ { d (right v) ∈ → c d v ∈ }) ⟩
 
 {- one member that has an element of each of k sets -}
-cover : ∀ k (F : Fin k → Store → 𝒫 Value) → (∀ j → Good (F j)) → ∀ d
-  → (∀ j → nonempty (F j (⋃ d))) → Σ[ i ∈ I d ] (∀ j → nonempty (F j (at d i)))
+cover : ∀ k (F : Fin k → Store → 𝒫 Value)
+  → (∀ j → Good (F j))
+  → ∀ d
+  → (∀ j → nonempty (F j (⋃ d)))
+  → Σ[ i ∈ I d ] (∀ j → nonempty (F j (at d i)))
 cover zero F g d ne = ⟨ i₀ d , (λ ()) ⟩
 cover (suc k) F g d ne
     with proj₂ (g zero) d _ (proj₂ (ne zero)) | cover k (λ j → F (suc j)) (λ j → g (suc j)) d (λ j → ne (suc j))
@@ -280,7 +321,10 @@ module _ (T : Table) (n : ℕ) where
   ∅-good : Good (λ _ → ∅)
   ∅-good = ⟨ (λ _ _ ()) , (λ _ _ ()) ⟩
 
-  tail-good : ∀ B → (∀ l → Good (B l)) → ∀ t → Good (⟪ t ⟫[ T ] n B)
+  tail-good : ∀ B
+    → (∀ l → Good (B l))
+    → ∀ t
+    → Good (⟪ t ⟫[ T ] n B)
   tail-good B g (C.return s) = 𝒮-good s
   tail-good B g (C.seq x s t) with x <? n
   ... | yes _ = ⋆-good (Λ-good x (tail-good B g t)) (𝒮-good s)
@@ -302,15 +346,23 @@ module _ (T : Table) (n : ℕ) where
 Grows : (𝒫 Value × Store) → (𝒫 Value × Store) → Set
 Grows r r' = proj₁ r ⊆ proj₁ r' × proj₂ r ⊆ₛ proj₂ r'
 
-↓-mono : ∀ {r r'} → Grows r r' → ∀ z → r ↓ z ⊆ r' ↓ z
+↓-mono : ∀ {r r'}
+  → Grows r r'
+  → ∀ z
+  → r ↓ z ⊆ r' ↓ z
 ↓-mono ⟨ v⊆ , s⊆ ⟩ z w ⟨ w∈ , ⟨ u , u∈ ⟩ ⟩ = ⟨ s⊆ z w w∈ , ⟨ u , v⊆ u u∈ ⟩ ⟩
 
-↓-con : ∀ {r r'} → proj₂ r ~ₛ proj₂ r' → ∀ z → Every _~_ (r ↓ z) (r' ↓ z)
+↓-con : ∀ {r r'}
+  → proj₂ r ~ₛ proj₂ r'
+  → ∀ z
+  → Every _~_ (r ↓ z) (r' ↓ z)
 ↓-con c z a b ⟨ a∈ , _ ⟩ ⟨ b∈ , _ ⟩ = c z a b a∈ b∈
 
 module _ (T : Table) (n : ℕ) where
 
-  I-mono : ∀ e {σ σ'} → σ ⊆ₛ σ' → Grows (ℐ⟦ e ⟧[ T ] n σ) (ℐ⟦ e ⟧[ T ] n σ')
+  I-mono : ∀ e {σ σ'}
+    → σ ⊆ₛ σ'
+    → Grows (ℐ⟦ e ⟧[ T ] n σ) (ℐ⟦ e ⟧[ T ] n σ')
   I-mono (simple s) s⊆ = ⟨ proj₁ (𝒮-good T n s) s⊆ , s⊆ ⟩
   I-mono (case a x e₁ e₂) {σ} {σ'} s⊆ with x <? n
   ... | no _ = ⟨ (λ _ ()) , s⊆ ⟩
@@ -320,7 +372,10 @@ module _ (T : Table) (n : ℕ) where
     where
     A⊆ = lift (proj₁ (𝒜-good T n a) s⊆)
     IH = λ e {X X'} (X⊆ : X ⊆ X') → I-mono e (upd-⊆ x s⊆ X⊆)
-    ↓IH : ∀ e {X X'} → X ⊆ X' → ∀ z → ℐ⟦ e ⟧[ T ] n (σ [ x ↦ X ]) ↓ z ⊆ ℐ⟦ e ⟧[ T ] n (σ' [ x ↦ X' ]) ↓ z
+    ↓IH : ∀ e {X X'}
+      → X ⊆ X'
+      → ∀ z
+      → ℐ⟦ e ⟧[ T ] n (σ [ x ↦ X ]) ↓ z ⊆ ℐ⟦ e ⟧[ T ] n (σ' [ x ↦ X' ]) ↓ z
     ↓IH e {X} {X'} X⊆ = ↓-mono {ℐ⟦ e ⟧[ T ] n (σ [ x ↦ X ])} {ℐ⟦ e ⟧[ T ] n (σ' [ x ↦ X' ])} (IH e X⊆)
   I-mono (assign x e₁ e₂) {σ} {σ'} s⊆ with x <? n
   ... | no _ = ⟨ (λ _ ()) , s⊆ ⟩
@@ -333,24 +388,32 @@ module _ (T : Table) (n : ℕ) where
     σ₁ = proj₂ (ℐ⟦ e₁ ⟧[ T ] n σ)
     σ₁' = proj₂ (ℐ⟦ e₁ ⟧[ T ] n σ')
     IH = λ {X X'} (X⊆ : X ⊆ X') → I-mono e₂ (upd-⊆ x (proj₂ IH₁) X⊆)
-    ↓IH : ∀ {X X'} → X ⊆ X' → ∀ z → ℐ⟦ e₂ ⟧[ T ] n (σ₁ [ x ↦ X ]) ↓ z ⊆ ℐ⟦ e₂ ⟧[ T ] n (σ₁' [ x ↦ X' ]) ↓ z
+    ↓IH : ∀ {X X'}
+      → X ⊆ X'
+      → ∀ z
+      → ℐ⟦ e₂ ⟧[ T ] n (σ₁ [ x ↦ X ]) ↓ z ⊆ ℐ⟦ e₂ ⟧[ T ] n (σ₁' [ x ↦ X' ]) ↓ z
     ↓IH {X} {X'} X⊆ = ↓-mono {ℐ⟦ e₂ ⟧[ T ] n (σ₁ [ x ↦ X ])} {ℐ⟦ e₂ ⟧[ T ] n (σ₁' [ x ↦ X' ])} (IH X⊆)
 
 module _ (T : Table) (TC : ∀ k → Con (T k)) (n : ℕ) where
 
-  𝒜-con : ∀ a {σ σ'} → σ ~ₛ σ' → Every _~_ (𝒜 T n σ a) (𝒜 T n σ' a)
+  𝒜-con : ∀ a {σ σ'}
+    → σ ~ₛ σ'
+    → Every _~_ (𝒜 T n σ a) (𝒜 T n σ' a)
   𝒜-con (var x) c with x <? n
   ... | yes _ = c x
   ... | no _ = Con-⌈⌉ ω
   𝒜-con (lit B k) c = lower (ℬ-consis B k ptt ptt ptt)
   𝒜-con (fun-ref k) c = TC k
 
-  𝒜s-con : ∀ as {σ σ'} → σ ~ₛ σ'
+  𝒜s-con : ∀ as {σ σ'}
+    → σ ~ₛ σ'
     → results-rel-pres (Every _~_) (replicate (length as) ■) (𝒜s T n σ as) (𝒜s T n σ' as)
   𝒜s-con [] c = ptt
   𝒜s-con (a ∷ as) c = ⟨ lift (𝒜-con a c) , 𝒜s-con as c ⟩
 
-  𝒮-con : ∀ s {σ σ'} → σ ~ₛ σ' → Every _~_ (𝒮 T n σ s) (𝒮 T n σ' s)
+  𝒮-con : ∀ s {σ σ'}
+    → σ ~ₛ σ'
+    → Every _~_ (𝒮 T n σ s) (𝒮 T n σ' s)
   𝒮-con (atm a) c = 𝒜-con a c
   𝒮-con (app f e a) c =
     lower (⋆-consis _ _ ⟨ ⋆-consis _ _ ⟨ lift (𝒜-con f c) , ⟨ lift (𝒜-con e c) , ptt ⟩ ⟩ , ⟨ lift (𝒜-con a c) , ptt ⟩ ⟩)
@@ -364,7 +427,8 @@ module _ (T : Table) (TC : ∀ k → Con (T k)) (n : ℕ) where
   𝒮-con (prim p a b) c = lower (primD-consis p _ _ ⟨ lift (𝒜-con a c) , ⟨ lift (𝒜-con b c) , ptt ⟩ ⟩)
 
   {- consistent stores give consistent values and stores -}
-  I-con : ∀ e {σ σ'} → σ ~ₛ σ'
+  I-con : ∀ e {σ σ'}
+    → σ ~ₛ σ'
     → Every _~_ (proj₁ (ℐ⟦ e ⟧[ T ] n σ)) (proj₁ (ℐ⟦ e ⟧[ T ] n σ')) × proj₂ (ℐ⟦ e ⟧[ T ] n σ) ~ₛ proj₂ (ℐ⟦ e ⟧[ T ] n σ')
   I-con (simple s) c = ⟨ 𝒮-con s c , c ⟩
   I-con (case a x e₁ e₂) {σ} {σ'} c with x <? n
@@ -375,7 +439,9 @@ module _ (T : Table) (TC : ∀ k → Con (T k)) (n : ℕ) where
     where
     A~ = lift (𝒜-con a c)
     IH = λ e {X X'} (X~ : Every _~_ X X') → I-con e (upd-~ x c X~)
-    ↓IH : ∀ e {X X'} → Every _~_ X X' → ∀ z
+    ↓IH : ∀ e {X X'}
+      → Every _~_ X X'
+      → ∀ z
       → Every _~_ (ℐ⟦ e ⟧[ T ] n (σ [ x ↦ X ]) ↓ z) (ℐ⟦ e ⟧[ T ] n (σ' [ x ↦ X' ]) ↓ z)
     ↓IH e {X} {X'} X~ = ↓-con {ℐ⟦ e ⟧[ T ] n (σ [ x ↦ X ])} {ℐ⟦ e ⟧[ T ] n (σ' [ x ↦ X' ])} (proj₂ (IH e X~))
   I-con (assign x e₁ e₂) {σ} {σ'} c with x <? n
@@ -389,14 +455,19 @@ module _ (T : Table) (TC : ∀ k → Con (T k)) (n : ℕ) where
     σ₁ = proj₂ (ℐ⟦ e₁ ⟧[ T ] n σ)
     σ₁' = proj₂ (ℐ⟦ e₁ ⟧[ T ] n σ')
     IH = λ {X X'} (X~ : Every _~_ X X') → I-con e₂ (upd-~ x (proj₂ IH₁) X~)
-    ↓IH : ∀ {X X'} → Every _~_ X X' → ∀ z
+    ↓IH : ∀ {X X'}
+      → Every _~_ X X'
+      → ∀ z
       → Every _~_ (ℐ⟦ e₂ ⟧[ T ] n (σ₁ [ x ↦ X ]) ↓ z) (ℐ⟦ e₂ ⟧[ T ] n (σ₁' [ x ↦ X' ]) ↓ z)
     ↓IH {X} {X'} X~ = ↓-con {ℐ⟦ e₂ ⟧[ T ] n (σ₁ [ x ↦ X ])} {ℐ⟦ e₂ ⟧[ T ] n (σ₁' [ x ↦ X' ])} (proj₂ (IH X~))
 
 zeros-con : Con-env zeros
 zeros-con _ = lower (ℬ-consis _ _ ptt ptt ptt)
 
-frame-~ : ∀ {X X' Y Y'} → Every _~_ X X' → Every _~_ Y Y' → frame X Y ~ₛ frame X' Y'
+frame-~ : ∀ {X X' Y Y'}
+  → Every _~_ X X'
+  → Every _~_ Y Y'
+  → frame X Y ~ₛ frame X' Y'
 frame-~ X~ Y~ zero = X~
 frame-~ X~ Y~ (suc zero) = Y~
 frame-~ X~ Y~ (suc (suc y)) = zeros-con y
@@ -419,8 +490,11 @@ module _ (n : ℕ) where
   letK : ℕ → 𝒫 Value × Store → (Store → 𝒫 Value) → 𝒫 Value
   letK x r K = checked n x (letK⁰ x r K)
 
-  letK-≃ : ∀ {x r D' K K'} → Con-env (proj₂ r) → proj₁ r ≃ D'
-    → (∀ σ' → Con-env σ' → K σ' ≃ K' σ') → letK x r K ≃ letK x ⟨ D' , proj₂ r ⟩ K'
+  letK-≃ : ∀ {x r D' K K'}
+    → Con-env (proj₂ r)
+    → proj₁ r ≃ D'
+    → (∀ σ' → Con-env σ' → K σ' ≃ K' σ')
+    → letK x r K ≃ letK x ⟨ D' , proj₂ r ⟩ K'
   letK-≃ {x} {r} {D'} {K} {K'} c D≃ K≃ =
     checked-≃ n {x} (⋆-≃ (Λ-≃ {λ X → K (proj₂ r [ x ↦ X ])} {λ X → K' (proj₂ r [ x ↦ X ])}
                               (λ X _ cX → K≃ _ (upd-~ x c (≈⇒Con cX)))) D≃)
@@ -462,7 +536,10 @@ EMono E = ∀ {Y Y'} → Y ⊆ Y' → Grows (E Y) (E Y')
 Part : 𝒫 Value → List Value → Set
 Part P Y = Y ≢ [] × mem Y ⊆ P
 
-++-part : ∀ {P Y Y'} → Part P Y → Part P Y' → Part P (Y ++ Y')
+++-part : ∀ {P Y Y'}
+  → Part P Y
+  → Part P Y'
+  → Part P (Y ++ Y')
 ++-part {Y = []} ⟨ ne , _ ⟩ _ = ⊥-elim (ne refl)
 ++-part {P} {v ∷ Y} {Y'} ⟨ _ , Y⊆ ⟩ ⟨ _ , Y'⊆ ⟩ = ⟨ (λ ()) , G ⟩
   where
@@ -473,8 +550,12 @@ Part P Y = Y ≢ [] × mem Y ⊆ P
 
 {- an element of K on a directed union, and finitely many elements of
    the G i, are all in one member -}
-one-member : ∀ {K} d (G : I d → 𝒫 Value) → Good K → (∀ i j → G i ⊆ G (ub d i j) × G j ⊆ G (ub d i j))
-  → ∀ {w} X → w ∈ K (⋃ d) → (∀ u → u ∈ mem X → Σ[ i ∈ I d ] u ∈ G i)
+one-member : ∀ {K} d (G : I d → 𝒫 Value)
+  → Good K
+  → (∀ i j → G i ⊆ G (ub d i j) × G j ⊆ G (ub d i j))
+  → ∀ {w} X
+  → w ∈ K (⋃ d)
+  → (∀ u → u ∈ mem X → Σ[ i ∈ I d ] u ∈ G i)
   → Σ[ i ∈ I d ] w ∈ K (at d i) × mem X ⊆ G i
 one-member d G ⟨ mK , cK ⟩ up X w∈ h with cK d _ w∈ | dir-list d G up X h
 ... | ⟨ i , w∈′ ⟩ | ⟨ j , X⊆ ⟩ = ⟨ ub d i j , ⟨ mK (ub₁ d i j) _ w∈′ , (λ u u∈ → proj₂ (up i j) u (X⊆ u u∈)) ⟩ ⟩
@@ -482,7 +563,11 @@ one-member d G ⟨ mK , cK ⟩ up X w∈ h with cK d _ w∈ | dir-list d G up X 
 {- K ran on the store that collects the runs of E on the finite parts
    of P, with x bound to X, which collects their values: then one run
    of E, on a consistent finite part of P, gives X and what K needs -}
-merge : ∀ {P E K x X σm w} → Con P → EMono E → Good K → X ≢ []
+merge : ∀ {P E K x X σm w}
+  → Con P
+  → EMono E
+  → Good K
+  → X ≢ []
   → (∀ u → u ∈ mem X → Σ[ Y ∈ List Value ] Part P Y × u ∈ proj₁ (E (mem Y)))
   → (∀ z u → u ∈ σm z → Σ[ Y ∈ List Value ] Part P Y × u ∈ (E (mem Y) ↓ z))
   → w ∈ K (σm [ x ↦ mem X ])
@@ -494,7 +579,9 @@ merge {P} {E} {K} {x} {X} {σm} {w} cP mE gK neX inX inσ w∈
   G : Run → 𝒫 Value
   G i = proj₁ (E (mem (proj₁ i)))
   first = inX _ (proj₂ (E≢[]⇒nonempty-mem neX))
-  ub′ : Run → Run → Run
+  ub′ : Run
+    → Run
+    → Run
   ub′ ⟨ Y , ⟨ p , ⟨ u , u∈ ⟩ ⟩ ⟩ ⟨ Y' , ⟨ p' , _ ⟩ ⟩ =
     ⟨ Y ++ Y' , ⟨ ++-part p p' , ⟨ u , proj₁ (mE (λ v → ∈-++⁺ˡ)) u u∈ ⟩ ⟩ ⟩
   up : ∀ i j → G i ⊆ G (ub′ i j) × G j ⊆ G (ub′ i j)
@@ -509,7 +596,9 @@ merge {P} {E} {K} {x} {X} {σm} {w} cP mE gK neX inX inσ w∈
   σ⊆ z with z ≟ x
   ... | yes _ = λ u u∈ → ⟨ i₀ d , u∈ ⟩
   ... | no _ = λ u u∈ → let ⟨ Y , ⟨ p , ⟨ u∈′ , ne ⟩ ⟩ ⟩ = inσ z u u∈ in ⟨ ⟨ Y , ⟨ p , ne ⟩ ⟩ , u∈′ ⟩
-  got : ∀ u → u ∈ mem X → Σ[ i ∈ Run ] u ∈ G i
+  got : ∀ u
+    → u ∈ mem X
+    → Σ[ i ∈ Run ] u ∈ G i
   got u u∈ = let ⟨ Y , ⟨ p , u∈′ ⟩ ⟩ = inX u u∈ in ⟨ ⟨ Y , ⟨ p , ⟨ u , u∈′ ⟩ ⟩ ⟩ , u∈′ ⟩
 ... | ⟨ ⟨ Y , ⟨ p , _ ⟩ ⟩ , ⟨ w∈′ , X⊆ ⟩ ⟩ = ⟨ Y , ⟨ p , ⟨ Con⇒≈ Y cP (proj₂ p) , ⟨ X⊆ , w∈′ ⟩ ⟩ ⟩ ⟩
 
@@ -518,7 +607,10 @@ merge {P} {E} {K} {x} {X} {σm} {w} cP mE gK neX inX inσ w∈
 module _ (n : ℕ) where
 
   {- a nested assignment: K after y := D; E y, or after each run of E -}
-  let-assoc⁰ : ∀ {D E K x} → Con D → EMono E → Good K
+  let-assoc⁰ : ∀ {D E K x}
+    → Con D
+    → EMono E
+    → Good K
     → ⋆ ⟨ Λ ⟨ (λ Y → letK⁰ n x (E Y) K) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ≃ letK⁰ n x (letₛ D E) K
   let-assoc⁰ {D} {E} {K} {x} cD mE gK = ⟨ G , H ⟩
     where
@@ -531,33 +623,46 @@ module _ (n : ℕ) where
     H w ⟨ X , ⟨ ⟨ w∈ , ⟨ neX , cX ⟩ ⟩ , ⟨ X⊆ , _ ⟩ ⟩ ⟩
         with merge {D} {E} {K} {x} {X} {proj₂ (letₛ D E)} cD mE gK neX inX inσ w∈
       where
-      inX : ∀ u → u ∈ mem X → Σ[ Y ∈ List Value ] Part D Y × u ∈ proj₁ (E (mem Y))
+      inX : ∀ u
+        → u ∈ mem X
+        → Σ[ Y ∈ List Value ] Part D Y × u ∈ proj₁ (E (mem Y))
       inX u u∈ with X⊆ u u∈
       ... | ⟨ Y , ⟨ ⟨ u∈′ , ⟨ neY , _ ⟩ ⟩ , ⟨ Y⊆ , _ ⟩ ⟩ ⟩ = ⟨ Y , ⟨ ⟨ neY , Y⊆ ⟩ , u∈′ ⟩ ⟩
-      inσ : ∀ z u → u ∈ proj₂ (letₛ D E) z → Σ[ Y ∈ List Value ] Part D Y × u ∈ (E (mem Y) ↓ z)
+      inσ : ∀ z u
+        → u ∈ proj₂ (letₛ D E) z
+        → Σ[ Y ∈ List Value ] Part D Y × u ∈ (E (mem Y) ↓ z)
       inσ z u ⟨ Y , ⟨ ⟨ u∈ , ⟨ neY , _ ⟩ ⟩ , ⟨ Y⊆ , _ ⟩ ⟩ ⟩ = ⟨ Y , ⟨ ⟨ neY , Y⊆ ⟩ , u∈ ⟩ ⟩
     ... | ⟨ Y , ⟨ ⟨ neY , Y⊆ ⟩ , ⟨ cY , ⟨ X⊆′ , w∈′ ⟩ ⟩ ⟩ ⟩ =
       ⟨ Y , ⟨ ⟨ ⟨ X , ⟨ ⟨ w∈′ , ⟨ neX , cX ⟩ ⟩ , ⟨ X⊆′ , neX ⟩ ⟩ ⟩ , ⟨ neY , cY ⟩ ⟩ , ⟨ Y⊆ , neY ⟩ ⟩ ⟩
 
-  let-assoc : ∀ {D E K x} → Con D → EMono E → Good K
+  let-assoc : ∀ {D E K x}
+    → Con D
+    → EMono E
+    → Good K
     → ⋆ ⟨ Λ ⟨ (λ Y → letK n x (E Y) K) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ≃ letK n x (letₛ D E) K
   let-assoc {D} {E} {K} {x} cD mE gK =
     ≃-trans (checked-⋆Λ n {x} {λ Y → letK⁰ n x (E Y) K} {D}) (checked-≃ n {x} (let-assoc⁰ cD mE gK))
 
   {- the bound parts of one run, as a branch of 𝒞 -}
-  pack : ∀ {P} {E : 𝒫 Value → 𝒫 Value × Store} {K x X w} → X ≢ [] → X ≈ X
+  pack : ∀ {P} {E : 𝒫 Value → 𝒫 Value × Store} {K x X w}
+    → X ≢ []
+    → X ≈ X
     → Σ[ Y ∈ List Value ] Part P Y × Y ≈ Y × mem X ⊆ proj₁ (E (mem Y)) × w ∈ K (proj₂ (E (mem Y)) [ x ↦ mem X ])
-    → Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → d ∈ P)
-        × w ∈ letK⁰ n x (E (mem (v ∷ V))) K × (v ∷ V) ≈ (v ∷ V)
+        → Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → d ∈ P)
+            × w ∈ letK⁰ n x (E (mem (v ∷ V))) K × (v ∷ V) ≈ (v ∷ V)
   pack neX cX ⟨ [] , ⟨ ⟨ ne , _ ⟩ , _ ⟩ ⟩ = ⊥-elim (ne refl)
   pack {X = X} neX cX ⟨ v ∷ V , ⟨ ⟨ _ , Y⊆ ⟩ , ⟨ cY , ⟨ X⊆ , w∈ ⟩ ⟩ ⟩ ⟩ =
     ⟨ v , ⟨ V , ⟨ Y⊆ , ⟨ ⟨ X , ⟨ ⟨ w∈ , ⟨ neX , cX ⟩ ⟩ , ⟨ X⊆ , neX ⟩ ⟩ ⟩ , cY ⟩ ⟩ ⟩ ⟩
 
   {- a case: K after a case on A, or after each run of a branch; by the
      consistency of A, all the runs are of the same branch -}
-  let-case⁰ : ∀ {A E₁ E₂ K x} → Con A → EMono E₁ → EMono E₂ → Good K
+  let-case⁰ : ∀ {A E₁ E₂ K x}
+    → Con A
+    → EMono E₁
+    → EMono E₂
+    → Good K
     → 𝒞 ⟨ A , ⟨ (λ Y → letK⁰ n x (E₁ Y) K) , ⟨ (λ Y → letK⁰ n x (E₂ Y) K) , ptt ⟩ ⟩ ⟩
-      ≃ letK⁰ n x (caseₛ A E₁ E₂) K
+        ≃ letK⁰ n x (caseₛ A E₁ E₂) K
   let-case⁰ {A} {E₁} {E₂} {K} {x} cA m₁ m₂ gK = ⟨ G , H ⟩
     where
     G : 𝒞 ⟨ A , ⟨ (λ Y → letK⁰ n x (E₁ Y) K) , ⟨ (λ Y → letK⁰ n x (E₂ Y) K) , ptt ⟩ ⟩ ⟩
@@ -579,11 +684,15 @@ module _ (n : ℕ) where
       where
       other : ∀ {v} → right v ∈ A → ∀ {B : Set} → B
       other r∈ = ⊥-elim (cA _ _ (all₀ v₀ (here refl)) r∈)
-      inX : ∀ u → u ∈ mem (u₀ ∷ X) → Σ[ Y ∈ List Value ] Part (λ d → left d ∈ A) Y × u ∈ proj₁ (E₁ (mem Y))
+      inX : ∀ u
+        → u ∈ mem (u₀ ∷ X)
+        → Σ[ Y ∈ List Value ] Part (λ d → left d ∈ A) Y × u ∈ proj₁ (E₁ (mem Y))
       inX u u∈ with X⊆ u u∈
       ... | inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈′ , _ ⟩ ⟩ ⟩ ⟩ = ⟨ v ∷ V , ⟨ ⟨ (λ ()) , all ⟩ , u∈′ ⟩ ⟩
       ... | inj₂ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩ = other (all v (here refl))
-      inσ : ∀ z u → u ∈ proj₂ (caseₛ A E₁ E₂) z → Σ[ Y ∈ List Value ] Part (λ d → left d ∈ A) Y × u ∈ (E₁ (mem Y) ↓ z)
+      inσ : ∀ z u
+        → u ∈ proj₂ (caseₛ A E₁ E₂) z
+        → Σ[ Y ∈ List Value ] Part (λ d → left d ∈ A) Y × u ∈ (E₁ (mem Y) ↓ z)
       inσ z u (inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) = ⟨ v ∷ V , ⟨ ⟨ (λ ()) , all ⟩ , u∈ ⟩ ⟩
       inσ z u (inj₂ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩) = other (all v (here refl))
     ... | inj₂ ⟨ v₀ , ⟨ _ , ⟨ all₀ , _ ⟩ ⟩ ⟩ =
@@ -591,15 +700,23 @@ module _ (n : ℕ) where
       where
       other : ∀ {v} → left v ∈ A → ∀ {B : Set} → B
       other l∈ = ⊥-elim (cA _ _ (all₀ v₀ (here refl)) l∈)
-      inX : ∀ u → u ∈ mem (u₀ ∷ X) → Σ[ Y ∈ List Value ] Part (λ d → right d ∈ A) Y × u ∈ proj₁ (E₂ (mem Y))
+      inX : ∀ u
+        → u ∈ mem (u₀ ∷ X)
+        → Σ[ Y ∈ List Value ] Part (λ d → right d ∈ A) Y × u ∈ proj₁ (E₂ (mem Y))
       inX u u∈ with X⊆ u u∈
       ... | inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈′ , _ ⟩ ⟩ ⟩ ⟩ = ⟨ v ∷ V , ⟨ ⟨ (λ ()) , all ⟩ , u∈′ ⟩ ⟩
       ... | inj₁ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩ = other (all v (here refl))
-      inσ : ∀ z u → u ∈ proj₂ (caseₛ A E₁ E₂) z → Σ[ Y ∈ List Value ] Part (λ d → right d ∈ A) Y × u ∈ (E₂ (mem Y) ↓ z)
+      inσ : ∀ z u
+        → u ∈ proj₂ (caseₛ A E₁ E₂) z
+        → Σ[ Y ∈ List Value ] Part (λ d → right d ∈ A) Y × u ∈ (E₂ (mem Y) ↓ z)
       inσ z u (inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) = ⟨ v ∷ V , ⟨ ⟨ (λ ()) , all ⟩ , u∈ ⟩ ⟩
       inσ z u (inj₁ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩) = other (all v (here refl))
 
-  let-case : ∀ {A E₁ E₂ K x} → Con A → EMono E₁ → EMono E₂ → Good K
+  let-case : ∀ {A E₁ E₂ K x}
+    → Con A
+    → EMono E₁
+    → EMono E₂
+    → Good K
     → 𝒞 ⟨ A , ⟨ (λ Y → letK n x (E₁ Y) K) , ⟨ (λ Y → letK n x (E₂ Y) K) , ptt ⟩ ⟩ ⟩ ≃ letK n x (caseₛ A E₁ E₂) K
   let-case {A} {E₁} {E₂} {K} {x} cA m₁ m₂ gK =
     ≃-trans (checked-𝒞 n {x} {A} {λ Y → letK⁰ n x (E₁ Y) K} {λ Y → letK⁰ n x (E₂ Y) K})
@@ -617,11 +734,18 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
   Stable bs k = ∀ bs'' → bs ≼ bs'' → ∀ σ → Con-env σ → ⟪ k ⟫[ T ] n (B bs'') σ ≃ ⟪ k ⟫[ T ] n (B bs) σ
 
   {- a jump to the block that holds k -}
-  goto-stable : ∀ {k bs bs₁} → k ∷ bs ≼ bs₁ → Stable bs₁ (C.goto (length bs))
+  goto-stable : ∀ {k bs bs₁}
+    → k ∷ bs ≼ bs₁
+    → Stable bs₁ (C.goto (length bs))
   goto-stable e₁ bs'' e σ c = goto-≃ e₁ e σ
 
   {- explicate-assign e x k: run e, assign x, then k -}
-  cps : ∀ e x k bs → Stable bs k → ∀ bs'' → proj₂ (explicate-assign e x k bs) ≼ bs'' → ∀ σ → Con-env σ
+  cps : ∀ e x k bs
+    → Stable bs k
+    → ∀ bs''
+    → proj₂ (explicate-assign e x k bs) ≼ bs''
+    → ∀ σ
+    → Con-env σ
     → ⟪ proj₁ (explicate-assign e x k bs) ⟫[ T ] n (B bs'') σ ≃ letK n x (ℐ⟦ e ⟧[ T' ] n σ) (⟪ k ⟫[ T ] n (B bs))
   cps (simple s) x k bs st bs'' ext σ c =
     letK-≃ n {x} {⟨ 𝒮 T n σ s , σ ⟩} c (𝒮-≃ s σ) (st bs'' ext)
@@ -655,12 +779,16 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
     bs₄ = proj₂ (explicate-assign e₂ x (C.goto l) bs₃)
     e₁₃ : bs₁ ≼ bs₃
     e₁₃ = ≼-trans (grows-assign e₁ x (C.goto l) bs₁) ≼-∷
-    br₁ : ∀ σ' → Con-env σ' → B bs'' (length bs₂) σ' ≃ letK n x (ℐ⟦ e₁ ⟧[ T' ] n σ') K
+    br₁ : ∀ σ'
+      → Con-env σ'
+      → B bs'' (length bs₂) σ' ≃ letK n x (ℐ⟦ e₁ ⟧[ T' ] n σ') K
     br₁ σ' c' =
       ≃-trans (at-σ (blocks-at T n (≼-trans (grows-assign e₂ x (C.goto l) bs₃) (≼-trans ≼-∷ ext))) σ')
       (≃-trans (cps e₁ x (C.goto l) bs₁ (goto-stable ≼-refl) bs₂ ≼-refl σ' c')
                (≃-reflexive (cong (letK n x (ℐ⟦ e₁ ⟧[ T' ] n σ')) (blocks-at T n {k} {bs} ≼-refl))))
-    br₂ : ∀ σ' → Con-env σ' → B bs'' (length bs₄) σ' ≃ letK n x (ℐ⟦ e₂ ⟧[ T' ] n σ') K
+    br₂ : ∀ σ'
+      → Con-env σ'
+      → B bs'' (length bs₄) σ' ≃ letK n x (ℐ⟦ e₂ ⟧[ T' ] n σ') K
     br₂ σ' c' =
       ≃-trans (at-σ (blocks-at T n ext) σ')
       (≃-trans (cps e₂ x (C.goto l) bs₃ (goto-stable e₁₃) bs₄ ≼-refl σ' c')
@@ -670,7 +798,10 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
     gK = tail-good T n (B bs) (blocks-good T n bs) k
 
   {- explicate-tail e: the value of e -}
-  tail : ∀ e bs bs'' → proj₂ (explicate-tail e bs) ≼ bs'' → ∀ σ → Con-env σ
+  tail : ∀ e bs bs''
+    → proj₂ (explicate-tail e bs) ≼ bs''
+    → ∀ σ
+    → Con-env σ
     → ⟪ proj₁ (explicate-tail e bs) ⟫[ T ] n (B bs'') σ ≃ proj₁ (ℐ⟦ e ⟧[ T' ] n σ)
   tail (simple s) bs bs'' ext σ c = 𝒮-≃ s σ
   tail (assign x e₁ e₂) bs bs'' ext σ c =
@@ -694,15 +825,23 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
     bs₁ = proj₂ (explicate-tail e₁ bs)
     bs₂ = t₁ ∷ bs₁
     bs₃ = proj₂ (explicate-tail e₂ bs₂)
-    br₁ : ∀ σ' → Con-env σ' → B bs'' (length bs₁) σ' ≃ proj₁ (ℐ⟦ e₁ ⟧[ T' ] n σ')
+    br₁ : ∀ σ'
+      → Con-env σ'
+      → B bs'' (length bs₁) σ' ≃ proj₁ (ℐ⟦ e₁ ⟧[ T' ] n σ')
     br₁ σ' c' = ≃-trans (at-σ (blocks-at T n (≼-trans (grows-tail e₂ bs₂) (≼-trans ≼-∷ ext))) σ')
                         (tail e₁ bs bs₁ ≼-refl σ' c')
-    br₂ : ∀ σ' → Con-env σ' → B bs'' (length bs₃) σ' ≃ proj₁ (ℐ⟦ e₂ ⟧[ T' ] n σ')
+    br₂ : ∀ σ'
+      → Con-env σ'
+      → B bs'' (length bs₃) σ' ≃ proj₁ (ℐ⟦ e₂ ⟧[ T' ] n σ')
     br₂ σ' c' = ≃-trans (at-σ (blocks-at T n ext) σ') (tail e₂ bs₂ bs₃ ≼-refl σ' c')
 
 {- Programs -----------------------------------------------------------------------------}
 
-code-≃ : ∀ {T T'} → (∀ k → T k ≃ T' k) → (∀ k → Con (T' k)) → ∀ b → codeₜ T (explicate-body b) ≃ codeᵢ T' b
+code-≃ : ∀ {T T'}
+  → (∀ k → T k ≃ T' k)
+  → (∀ k → Con (T' k))
+  → ∀ b
+  → codeₜ T (explicate-body b) ≃ codeᵢ T' b
 code-≃ TT TC (body n e) = Λ-≃ λ X _ cX → Λ-≃ λ Y _ cY →
   tail TT TC n e [] _ ≼-refl (frame (mem X) (mem Y)) (frame-~ (≈⇒Con cX) (≈⇒Con cY))
 

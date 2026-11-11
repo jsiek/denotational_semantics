@@ -40,8 +40,12 @@ module _ {Σ : List ℕ} where
     inr : ∀ {V} → Value V → Value (inr V)
     inject : ∀ {G V} → Value V → Value (inject G V)
 
-  value-red : ∀ {ds A} {V : Tm Σ [] A} → Value V → red ds V ≡ val
-  values-red : ∀ {ds n} {Vs : Vec (Tm Σ [] Any) n} → Allᵥ Value Vs → reds ds Vs ≡ val
+  value-red : ∀ {ds A} {V : Tm Σ [] A}
+    → Value V
+    → red ds V ≡ val
+  values-red : ∀ {ds n} {Vs : Vec (Tm Σ [] Any) n}
+    → Allᵥ Value Vs
+    → reds ds Vs ≡ val
   value-red fun-ref = refl
   value-red {ds} (pack v w) rewrite value-red {ds} v | value-red {ds} w = refl
   value-red lit = refl
@@ -63,8 +67,13 @@ module _ {Σ : List ℕ} where
     (R-var : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → ∀ {A} (x : Γ ∋ A)
       → trav 𝒦₂ σ₂ (Kit.tm 𝒦₁ (σ₁ x)) ≡ Kit.tm 𝒦₃ (σ₃ x)) where
 
-    fuse : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → ∀ {A} (M : Tm Σ Γ A) → trav 𝒦₂ σ₂ (trav 𝒦₁ σ₁ M) ≡ trav 𝒦₃ σ₃ M
-    fuses : ∀ {Γ Δ Θ n} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ} → R σ₁ σ₂ σ₃ → (Ms : Vec (Tm Σ Γ Any) n)
+    fuse : ∀ {Γ Δ Θ} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
+      → R σ₁ σ₂ σ₃
+      → ∀ {A} (M : Tm Σ Γ A)
+      → trav 𝒦₂ σ₂ (trav 𝒦₁ σ₁ M) ≡ trav 𝒦₃ σ₃ M
+    fuses : ∀ {Γ Δ Θ n} {σ₁ : Sub 𝒦₁ Γ Δ} {σ₂ : Sub 𝒦₂ Δ Θ} {σ₃ : Sub 𝒦₃ Γ Θ}
+      → R σ₁ σ₂ σ₃
+      → (Ms : Vec (Tm Σ Γ Any) n)
       → travs 𝒦₂ σ₂ (travs 𝒦₁ σ₁ Ms) ≡ travs 𝒦₃ σ₃ Ms
     fuse r (` x) = R-var r x
     fuse r (fun-ref f) = refl
@@ -84,7 +93,10 @@ module _ {Σ : List ℕ} where
     fuses r (M ∷ Ms) = cong₂ _∷_ (fuse r M) (fuses r Ms)
 
   sub-id : SubId
-  sub-ids : ∀ {Γ n} {σ : Sub tmK Γ Γ} → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x) → (Ms : Vec (Tm Σ Γ Any) n) → travs tmK σ Ms ≡ Ms
+  sub-ids : ∀ {Γ n} {σ : Sub tmK Γ Γ}
+    → (∀ {B} (x : Γ ∋ B) → σ x ≡ ` x)
+    → (Ms : Vec (Tm Σ Γ Any) n)
+    → travs tmK σ Ms ≡ Ms
   sub-id h (` x) = h x
   sub-id h (fun-ref f) = refl
   sub-id h (pack L M) = cong₂ pack (sub-id h L) (sub-id h M)

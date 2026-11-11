@@ -85,22 +85,26 @@ import ISWIM.Untyped.proof.Correctness.Reduction.CompilerX86Red as CompilerX86Re
 {- Each pass ------------------------------------------------------------------}
 
 {- simplify (ISWIM → ISWIM, the first pass), for closed programs -}
-simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+simplify-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (ISWIMᵣ.sem (simplify M))
 simplify-correct = SimplifyRed.simplify-correct
 
 {- capture, for closed programs -}
-capture-correct : ∀ (M : ISWIM.AST) → Closed M
+capture-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Clos2ᵣ.sem (capture M))
 capture-correct = CaptureRed.capture-correct
 
 {- prune, for well-scoped programs (which capture produces) -}
-prune-correct : ∀ (M : Clos2.AST) → WS 0 M
+prune-correct : ∀ (M : Clos2.AST)
+  → WS 0 M
   → Equivalent (Clos2ᵣ.sem M) (Clos2ᵣ.sem (prune-program M))
 prune-correct = PruneRed.prune-correct
 
 {- concretize, for well-scoped programs (which prune produces) -}
-concretize-correct : ∀ (M : Clos2.AST) → WS 0 M
+concretize-correct : ∀ (M : Clos2.AST)
+  → WS 0 M
   → Equivalent (Clos2ᵣ.sem M) (Clos3ᵣ.sem (concretize-program M))
 concretize-correct = ConcretizeRed.concretize-correct
 
@@ -112,12 +116,14 @@ hoist-correct = HoistRed.hoist-correct
 
 {- remove complex operands, for well-scoped programs (which the compiler
    produces) -}
-rco-correct : ∀ (P : Clos5.Program) → Scoped P
+rco-correct : ∀ (P : Clos5.Program)
+  → Scoped P
   → Equivalent (Clos5ᵣ.sem P) (Clos5ᵣ.sem (rco-program P))
 rco-correct = RCORed.rco-correct
 
 {- lift locals, for programs in monadic normal form (which rco produces) -}
-lift-locals-correct : ∀ (P : Clos5.Program) (mp : MonProgram P)
+lift-locals-correct : ∀ (P : Clos5.Program)
+  → (mp : MonProgram P)
   → Equivalent (Clos5ᵣ.sem P) (Impₘ.sem (lift-program P mp))
 lift-locals-correct = LiftLocalsRed.lift-correct
 
@@ -131,23 +137,28 @@ select-correct = SelectSim.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
 
-compile-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Clos5ᵣ.sem (compile M))
 compile-correct = CompilerRed.compile-correct
 
-compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-mon-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Clos5ᵣ.sem (compile-mon M))
 compile-mon-correct = RCORed.compile-mon-correct
 
-compile-imp-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-imp-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Impₘ.sem (compile-imp M))
 compile-imp-correct = LiftLocalsRed.compile-imp-correct
 
-compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-cfg-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (CFGₘ.sem (compile-cfg M))
 compile-cfg-correct = CompilerX86Red.compile-cfg-correct
 
-compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
+compile-x86-correct : ∀ (M : ISWIM.AST)
+  → Closed M
   → Equivalent (ISWIMᵣ.sem M) (X86ₘ.sem (compile-x86 M))
 compile-x86-correct = CompilerX86Red.compile-x86-correct
 
@@ -156,18 +167,23 @@ compile-x86-correct = CompilerX86Red.compile-x86-correct
    does, errors exactly when it does, and diverges exactly when it
    does -}
 
-compile-const : ∀ (M : ISWIM.AST) → Closed M → ∀ B k
+compile-const : ∀ (M : ISWIM.AST)
+  → Closed M
+  → ∀ B k
   → Terminates (ISWIMᵣ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵣ.sem (compile M)) (o-const B k)
 compile-const = CompilerRed.compile-const
 
-compile-converges : ∀ (M : ISWIM.AST) → Closed M
+compile-converges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Converges (Terminates (ISWIMᵣ.sem M)) ⇔ Converges (Terminates (Clos5ᵣ.sem (compile M)))
 compile-converges = CompilerRed.compile-converges
 
-compile-error : ∀ (M : ISWIM.AST) → Closed M
+compile-error : ∀ (M : ISWIM.AST)
+  → Closed M
   → Terminates (ISWIMᵣ.sem M) o-error ⇔ Terminates (Clos5ᵣ.sem (compile M)) o-error
 compile-error = CompilerRed.compile-error
 
-compile-diverges : ∀ (M : ISWIM.AST) → Closed M
+compile-diverges : ∀ (M : ISWIM.AST)
+  → Closed M
   → Diverges (ISWIMᵣ.sem M) ⇔ Diverges (Clos5ᵣ.sem (compile M))
 compile-diverges = CompilerRed.compile-diverges

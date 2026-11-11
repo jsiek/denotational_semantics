@@ -29,13 +29,19 @@ open import Data.Product using (proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 {- the head of the environment, and the rest without the popped slots -}
-drop-ok : ∀ {Δ' Δ : Ctx} (p : Δ' ⊑ Δ) {E} → Ok E → Ok (λ ρ → E (ρ 0 • drop p (λ i → ρ (suc i))))
+drop-ok : ∀ {Δ' Δ : Ctx}
+  → (p : Δ' ⊑ Δ)
+  → ∀ {E}
+  → Ok E
+  → Ok (λ ρ → E (ρ 0 • drop p (λ i → ρ (suc i))))
 drop-ok here⊑ o = Ok-η o
 drop-ok (there⊑ p) o = Ok-skip (drop-ok p o)
 
 module _ {T : Table} (TC : ∀ k → Con (T k)) where
 
-  tail-ok : ∀ {Σ Bs Δ} (t : Tail Σ Bs Δ) {B : BEnv Bs} → (∀ {Δ'} (l : Bs ∋ Δ') → Ok (B l)) → Ok (⟦ t ⟧ᵗ T B)
+  tail-ok : ∀ {Σ Bs Δ} (t : Tail Σ Bs Δ) {B : BEnv Bs}
+    → (∀ {Δ'} (l : Bs ∋ Δ') → Ok (B l))
+    → Ok (⟦ t ⟧ᵗ T B)
   tail-ok (return s) oB = ok TC M.⌜ ⌞ s ⌟ ⌝
   tail-ok (seq p s t) {B} oB = Ok-≃ (λ ρ → letᵐ-unfold {𝒮 s T ρ} {λ X → ⟦ t ⟧ᵗ T B (X • drop p ρ)})
     (ok-op letᵐ-good ⟨ ok TC M.⌜ ⌞ s ⌟ ⌝ , ⟨ drop-ok p (tail-ok t oB) , ptt ⟩ ⟩)

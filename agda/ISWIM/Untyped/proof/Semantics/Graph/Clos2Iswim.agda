@@ -23,7 +23,8 @@ open import Level renaming (zero to lzero; suc to lsuc)
    consistency of its operators. -}
 
 apply-n-mono : ∀ n {b} (F F' : Result (𝒫 Value) (ν-n n b)) Ds Ds'
-  → result-rel-pres _⊆_ (ν-n n b) F F' → results-rel-pres _⊆_ (replicate n ■) Ds Ds'
+  → result-rel-pres _⊆_ (ν-n n b) F F'
+  → results-rel-pres _⊆_ (replicate n ■) Ds Ds'
   → result-rel-pres _⊆_ b (apply-n n F Ds) (apply-n n F' Ds')
 apply-n-mono zero F F' _ _ F~ _ = F~
 apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~ ⟩ =

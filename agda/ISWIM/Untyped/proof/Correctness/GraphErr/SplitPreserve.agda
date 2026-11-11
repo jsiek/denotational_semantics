@@ -70,7 +70,10 @@ v ⊑ D' = Lift (lsuc lzero) (v ∈ D')
 _⊑ₑ_ : Env → Env → Set₁
 ρ ⊑ₑ ρ' = ∀ x v → v ∈ ρ x → v ⊑ ρ' x
 
-⊑-mono : ∀ v {D₁ D₂} → D₁ ⊆ D₂ → v ⊑ D₁ → v ⊑ D₂
+⊑-mono : ∀ v {D₁ D₂}
+  → D₁ ⊆ D₂
+  → v ⊑ D₁
+  → v ⊑ D₂
 ⊑-mono ν D⊆ (lift ⟨ u , ⟨ t , ⟨ p∈ , r ⟩ ⟩ ⟩) = lift ⟨ u , ⟨ t , ⟨ D⊆ _ p∈ , r ⟩ ⟩ ⟩
 ⊑-mono (U ↦ w) D⊆ ⟨ lift ⟨ u , ⟨ t , ⟨ p∈ , r ⟩ ⟩ ⟩ , f ⟩ =
   ⟨ lift ⟨ u , ⟨ t , ⟨ D⊆ _ p∈ , r ⟩ ⟩ ⟩ , (λ E' cE U⊑ → ⊑-mono w (⊙-mono-l D⊆) (f E' cE U⊑)) ⟩
@@ -82,9 +85,14 @@ _⊑ₑ_ : Env → Env → Set₁
 ⊑-mono ⦅ u , v ⦆ D⊆ (lift ())
 ⊑-mono ⟨⟩ D⊆ (lift v∈) = lift (D⊆ _ v∈)
 
-⊑-ne : ∀ v {D'} → v ⊑ D' → nonempty D'
+⊑-ne : ∀ v {D'}
+  → v ⊑ D'
+  → nonempty D'
 {- a source value other than ω is exhibited by a target value of its kind -}
-⊑-wit : ∀ v {D'} → v ⊑ D' → v ≢ ω → Σ[ d' ∈ Value ] d' ∈ ⌊ D' ⌋ × kind d' ≡ tgt (kind v) × kind v ≢ prod
+⊑-wit : ∀ v {D'}
+  → v ⊑ D'
+  → v ≢ ω
+  → Σ[ d' ∈ Value ] d' ∈ ⌊ D' ⌋ × kind d' ≡ tgt (kind v) × kind v ≢ prod
 ⊑-ne v {D'} v⊑ with ω? v
 ... | inj₁ refl = ⟨ ω , lower v⊑ ⟩
 ... | inj₂ v≢ = let ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = ⊑-wit v v⊑ v≢ in ⟨ d' , proj₁ d'∈ ⟩
@@ -98,40 +106,63 @@ _⊑ₑ_ : Env → Env → Set₁
 ⊑-wit ⦅ u , v ⦆ (lift ())
 ⊑-wit ⟨⟩ (lift v∈) _ = ⟨ _ , ⟨ ⟨ v∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
 
-⊑-val : ∀ {v D'} → v ≢ ω → v ⊑ D' → Conv D'
+⊑-val : ∀ {v D'}
+  → v ≢ ω
+  → v ⊑ D'
+  → Conv D'
 ⊑-val {v} v≢ v⊑ = let ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = ⊑-wit v v⊑ v≢ in ⟨ d' , d'∈ ⟩
 
 ⊑-lift : LiftRel _⊑_
 ⊑-lift = record { ω→ = lower ; →ω = lift ; S-mono = λ {d} → ⊑-mono d ; S-val = ⊑-val }
 
 {- a source value of the wrong kind gives a target value of the wrong kind -}
-bad-⊑ : ∀ {k X X'} → k ≢ prod → Clean X → Lifted _⊑_ X X' → Bad k X → Bad (tgt k) X'
+bad-⊑ : ∀ {k X X'}
+  → k ≢ prod
+  → Clean X
+  → Lifted _⊑_ X X'
+  → Bad k X
+  → Bad (tgt k) X'
 bad-⊑ {k} np clX h ⟨ s , ⟨ s∈ , sk ⟩ ⟩ with ⊑-wit s (h s s∈) (clX s s∈)
 ... | ⟨ d' , ⟨ d'∈ , ⟨ dk , ns ⟩ ⟩ ⟩ = ⟨ d' , ⟨ proj₁ d'∈ , (λ eq → sk (tgt-inj _ k ns np (Relation.Binary.PropositionalEquality.trans (sym dk) eq))) ⟩ ⟩
   where import Relation.Binary.PropositionalEquality
 
-⊑-check : ∀ {k X X' A A'} → k ≢ prod → Clean X → Lifted _⊑_ X X' → Lifted _⊑_ A A'
+⊑-check : ∀ {k X X' A A'}
+  → k ≢ prod
+  → Clean X
+  → Lifted _⊑_ X X'
+  → Lifted _⊑_ A A'
   → Lifted _⊑_ (checked k X A) (checked (tgt k) X' A')
 ⊑-check np clX hX hA w (inj₁ ⟨ refl , b ⟩) = lift (inj₁ ⟨ refl , bad-⊑ np clX hX b ⟩)
 ⊑-check np clX hX hA w (inj₂ w∈) = ⊑-mono w (λ x x∈ → inj₂ x∈) (hA w w∈)
 
-data-⊑ : ∀ v {D'} → Data v → v ∈ D' → v ⊑ D'
+data-⊑ : ∀ v {D'}
+  → Data v
+  → v ∈ D'
+  → v ⊑ D'
 data-⊑ (left d) dd v∈ = data-⊑ d dd v∈
 data-⊑ (right d) dd v∈ = data-⊑ d dd v∈
 data-⊑ (const k) _ v∈ = lift v∈
 data-⊑ ω _ v∈ = lift v∈
 data-⊑ ⟨⟩ _ v∈ = lift v∈
 
-⊑*-intro : ∀ U {D E'} → mem U ⊆ D → Lifted _⊑_ D E' → U ⊑* E'
+⊑*-intro : ∀ U {D E'}
+  → mem U ⊆ D
+  → Lifted _⊑_ D E'
+  → U ⊑* E'
 ⊑*-intro [] U⊆ f = ptt
 ⊑*-intro (u ∷ U) U⊆ f = ⟨ f u (U⊆ u (here refl)) , ⊑*-intro U (λ d d∈ → U⊆ d (there d∈)) f ⟩
 
-⊑*-elim : ∀ {U E'} → U ⊑* E' → Lifted _⊑_ (mem U) E'
+⊑*-elim : ∀ {U E'}
+  → U ⊑* E'
+  → Lifted _⊑_ (mem U) E'
 ⊑*-elim ⟨ u⊑ , _ ⟩ u (here refl) = u⊑
 ⊑*-elim ⟨ _ , U⊑ ⟩ u (there u∈) = ⊑*-elim U⊑ u u∈
 
 {- a function exhibited by D' gives a closure: its code and environment are values -}
-fun-pair : ∀ f {D'} → kind f ≡ fun → f ⊑ D' → PairV D'
+fun-pair : ∀ f {D'}
+  → kind f ≡ fun
+  → f ⊑ D'
+  → PairV D'
 fun-pair ν _ (lift p) = p
 fun-pair (U ↦ w) _ ⟨ lift p , _ ⟩ = p
 
@@ -145,17 +176,31 @@ fun? (base B) = inj₂ (λ ())
 
 {- The fundamental lemma ------------------------------------------------------}
 
-args-con' : ∀ {n} (args : Args (replicate n ■)) {ρ} → Con-env ρ → ∀ i → Con (nthD (⟦ del-map-args args ⟧₊' ρ) i)
+args-con' : ∀ {n} (args : Args (replicate n ■)) {ρ}
+  → Con-env ρ
+  → ∀ i
+  → Con (nthD (⟦ del-map-args args ⟧₊' ρ) i)
 args-con' {suc n} (M ,, args) c zero = Clos4ᵐ-con (split M) c
 args-con' {suc n} (M ,, args) c (suc i) = args-con' args c i
 
 clean⌊⌋ : ∀ {D} → Clean ⌊ D ⌋
 clean⌊⌋ d d∈ = proj₂ d∈
 
-preserve : ∀ (M : AST) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ' → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split M ⟧' ρ')
-preserve-nth : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
-  → ∀ i → Lifted _⊑_ (nthD (⟦ args ⟧₊ ρ) i) (nthD (⟦ del-map-args args ⟧₊' ρ') i)
-preserve-𝒯 : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
+preserve : ∀ (M : AST) {ρ ρ'}
+  → nonempty-env ρ'
+  → Con-env ρ'
+  → ρ ⊑ₑ ρ'
+  → Lifted _⊑_ (⟦ M ⟧ ρ) (⟦ split M ⟧' ρ')
+preserve-nth : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'}
+  → nonempty-env ρ'
+  → Con-env ρ'
+  → ρ ⊑ₑ ρ'
+  → ∀ i
+  → Lifted _⊑_ (nthD (⟦ args ⟧₊ ρ) i) (nthD (⟦ del-map-args args ⟧₊' ρ') i)
+preserve-𝒯 : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'}
+  → nonempty-env ρ'
+  → Con-env ρ'
+  → ρ ⊑ₑ ρ'
   → Lifted _⊑_ (𝒯ᵐ n (⟦ args ⟧₊ ρ)) (𝒯ᵐ n (⟦ del-map-args args ⟧₊' ρ'))
 
 preserve (` x) NE C' ρ⊑ = ρ⊑ x
@@ -168,7 +213,9 @@ preserve (prim p ⦅ L ,, M ,, Nil ⦆) {ρ} {ρ'} NE C' ρ⊑ =
     λ _ _ hY → ⊑-check (λ ()) clean⌊⌋ hX (⊑-check (λ ()) clean⌊⌋ hY (kernel hX hY))
   where
   K = λ X Y → checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩))
-  kernel : ∀ {X X' Y Y'} → Lifted _⊑_ X X' → Lifted _⊑_ Y Y'
+  kernel : ∀ {X X' Y Y'}
+    → Lifted _⊑_ X X'
+    → Lifted _⊑_ Y Y'
     → Lifted _⊑_ (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩) (primD p ⟨ X' , ⟨ Y' , ptt ⟩ ⟩)
   kernel hX hY _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
     data-⊑ (out (δ p n m)) (out-data (δ p n m)) ⟨ n , ⟨ m , ⟨ lower (hX _ n∈) , ⟨ lower (hY _ m∈) , refl ⟩ ⟩ ⟩ ⟩
@@ -202,11 +249,18 @@ preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {ρ'} NE C' ρ⊑ =
   cX' : Con X'
   cX' = Con-⊆ (Clos4ᵐ-con (split L) C') (λ d d∈ → proj₁ (proj₁ d∈))
   {- the branch B on the side s of the scrutinee -}
-  branch : ∀ (s : Tag) (B : AST) {Cs} → (∀ {a b} → tag s a ~ tag s b → a ~ b)
+  branch : ∀ (s : Tag) (B : AST) {Cs}
+    → (∀ {a b} → tag s a ~ tag s b → a ~ b)
     → (∀ {y} → y ≢ ω → ValPayload (tag s y))
-    → (nonempty (Untag s X') → Con (Untag s X') → ⟦ split B ⟧' (Untag s X' • ρ') ⊆ Cs)
-    → ∀ u U → (∀ d → d ∈ mem (u ∷ U) → d ⊑ Untag s ⌊ ⟦ split L ⟧' ρ' ⌋) → NoErr (u ∷ U)
-    → ∀ v → v ∈ ⟦ B ⟧ (mem (u ∷ U) • ρ) → v ⊑ Cs
+    → (  nonempty (Untag s X')
+       → Con (Untag s X')
+       → ⟦ split B ⟧' (Untag s X' • ρ') ⊆ Cs)
+    → ∀ u U
+    → (∀ d → d ∈ mem (u ∷ U) → d ⊑ Untag s ⌊ ⟦ split L ⟧' ρ' ⌋)
+    → NoErr (u ∷ U)
+    → ∀ v
+    → v ∈ ⟦ B ⟧ (mem (u ∷ U) • ρ)
+    → v ⊑ Cs
   branch s B {Cs} s~ vp B⊆ u U u⊑ nU v v∈ =
     ⊑-mono v (B⊆ ne cS) (preserve B (extend-nonempty-env NE ne) (Con-• cS C') ρ⊑' v v∈)
     where
@@ -239,7 +293,9 @@ preserve (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ} {ρ'} NE C' ρ⊑ v v∈ =
   where
   F = λ Y → ⟦ N ⟧ (Y • ρ)
   F' = λ Y → ⟦ split N ⟧' (Y • ρ')
-  kernel : Conv (⟦ M ⟧ ρ) → Conv (⟦ split M ⟧' ρ') → Lifted _⊑_ ⌊ ⟦ M ⟧ ρ ⌋ ⌊ ⟦ split M ⟧' ρ' ⌋
+  kernel : Conv (⟦ M ⟧ ρ)
+    → Conv (⟦ split M ⟧' ρ')
+    → Lifted _⊑_ ⌊ ⟦ M ⟧ ρ ⌋ ⌊ ⟦ split M ⟧' ρ' ⌋
     → Lifted _⊑_ (⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ ⟦ M ⟧ ρ ⌋ , ptt ⟩ ⟩) (⋆ ⟨ Λᵐ ⟨ F' , ptt ⟩ , ⟨ ⌊ ⟦ split M ⟧' ρ' ⌋ , ptt ⟩ ⟩)
   kernel _ ⟨ m , m∈ ⟩ hX v ⟨ U , ⟨ ⟨ ⟨ v∈ , _ ⟩ , _ ⟩ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ =
     ⊑-mono v (proj₂ (Λᵐ-β (S4.body-mono (split N) ρ') (S4.body-continuous (split N) ρ' NE _ ⟨ m , m∈ ⟩) cM clean⌊⌋))
@@ -257,12 +313,15 @@ preserve (app ⦅ L ,, N ,, Nil ⦆) {ρ} {ρ'} NE C' ρ⊑ v v∈ =
   where
   N' = ⟦ split N ⟧' ρ'
   Nₛ = ⟦ N ⟧ ρ
-  APP : Conv (⟦ L ⟧ ρ) → Conv (⟦ split L ⟧' ρ') → Lifted _⊑_ ⌊ ⟦ L ⟧ ρ ⌋ ⌊ ⟦ split L ⟧' ρ' ⌋
+  APP : Conv (⟦ L ⟧ ρ)
+    → Conv (⟦ split L ⟧' ρ')
+    → Lifted _⊑_ ⌊ ⟦ L ⟧ ρ ⌋ ⌊ ⟦ split L ⟧' ρ' ⌋
     → Lifted _⊑_ (checked fun ⌊ ⟦ L ⟧ ρ ⌋ (Nₛ ≫= λ Y → ⋆ ⟨ ⌊ ⟦ L ⟧ ρ ⌋ , ⟨ Y , ptt ⟩ ⟩)) (⌊ ⟦ split L ⟧' ρ' ⌋ ⊙ N')
   APP ⟨ f , f∈ ⟩ cL' hX = G
     where
     X' = ⌊ ⟦ split L ⟧' ρ' ⌋
-    carω : Bad fun ⌊ ⟦ L ⟧ ρ ⌋ → ω ∈ (X' ⊙ N')
+    carω : Bad fun ⌊ ⟦ L ⟧ ρ ⌋
+      → ω ∈ (X' ⊙ N')
     carω b = inj₁ ⟨ refl , inj₂ ⟨ ⌊⌋-conv , inj₁ ⟨ refl , ⟨ d , ⟨ ⟨ d∈ , proj₂ d∈ ⟩ , dk ⟩ ⟩ ⟩ ⟩ ⟩
       where
       ⌊⌋-conv = let ⟨ d , d∈ ⟩ = cL' in ⟨ d , ⟨ d∈ , proj₂ d∈ ⟩ ⟩
@@ -296,7 +355,9 @@ preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ} {ρ'} NE 
   T = 𝒯ᵐ n (⟦ fvs ⟧₊ ρ)
   T' = 𝒯ᵐ n (⟦ del-map-args fvs ⟧₊' ρ')
   cT' = Clos4ᵐ-con (L4.tuple n L4.⦅ del-map-args fvs ⦆) C'
-  kernel : Conv T → Conv T' → Lifted _⊑_ ⌊ T ⌋ ⌊ T' ⌋
+  kernel : Conv T
+    → Conv T'
+    → Lifted _⊑_ ⌊ T ⌋ ⌊ T' ⌋
     → Lifted _⊑_ (⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ T ⌋ , ptt ⟩ ⟩) (pair ⟨ ΛΛᵐ ⟨ F' , ptt ⟩ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩)
   kernel _ ⟨ t' , t'∈ ⟩ hT = G
     where
@@ -308,7 +369,10 @@ preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ} {ρ'} NE 
     G ν _ = lift PV
     G (U ↦ w) ⟨ FV , ⟨ ⟨ ⟨ ⟨ w∈ , ⟨ neU , _ ⟩ ⟩ , _ ⟩ , ⟨ _ , nU ⟩ ⟩ , ⟨ FV⊆ , _ ⟩ ⟩ ⟩ = ⟨ lift PV , call ⟩
       where
-      call : ∀ E' → Con E' → U ⊑* E' → w ⊑ P ⊙ E'
+      call : ∀ E'
+        → Con E'
+        → U ⊑* E'
+        → w ⊑ P ⊙ E'
       call E' cE' U⊑ =
         ⊑-mono w (pair-call-β {F'} (Con-⊆ cT' ⌊⌋-⊆) cE' vT' vE'
                     (S4.body2-continuous (split N) (λ _ → ⌈ ω ⌉) (λ _ → ⟨ ω , refl ⟩) (proj₂ vT') (proj₂ vE')))
@@ -329,7 +393,9 @@ preserve-nth (M ,, args) NE C' ρ⊑ (suc i) = preserve-nth args NE C' ρ⊑ i
 preserve-𝒯 {n} args NE C' ρ⊑ =
   binds-lift n ⊑-lift (args-con' args C') (preserve-nth args NE C' ρ⊑) (kernel n)
   where
-  kernel : ∀ m {Xs Xs'} → (∀ i → Clean (nthD Xs i)) → (∀ i → Lifted _⊑_ (nthD Xs i) (nthD Xs' i))
+  kernel : ∀ m {Xs Xs'}
+    → (∀ i → Clean (nthD Xs i))
+    → (∀ i → Lifted _⊑_ (nthD Xs i) (nthD Xs' i))
     → Lifted _⊑_ (𝒯 m Xs) (𝒯 m Xs')
   kernel zero cl hs ⟨⟩ tt = lift tt
   kernel (suc m) cl hs (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =
@@ -347,13 +413,23 @@ preserve₀ M = preserve M (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω)
 
 {- For every program, the split pass preserves and reflects an error, the
    constants it produces, and whether it produces a value -}
-split-correct-error : ∀ (M : AST) → (ω ∈ ⟦ M ⟧ ρ₀ → ω ∈ ⟦ split M ⟧' ρ₀) × (ω ∈ ⟦ split M ⟧' ρ₀ → ω ∈ ⟦ M ⟧ ρ₀)
+split-correct-error : ∀ (M : AST)
+  → (  ω ∈ ⟦ M ⟧ ρ₀
+     → ω ∈ ⟦ split M ⟧' ρ₀)
+  × (  ω ∈ ⟦ split M ⟧' ρ₀
+     → ω ∈ ⟦ M ⟧ ρ₀)
 split-correct-error M = ⟨ (λ ω∈ → lower (preserve₀ M ω ω∈)) , Reflect.reflect-error M ⟩
 
 split-correct-const : ∀ (M : AST) {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ split M ⟧' ρ₀)
-  × (const c ∈ ⟦ split M ⟧' ρ₀ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (  const c ∈ ⟦ M ⟧ ρ₀
+     → const c ∈ ⟦ split M ⟧' ρ₀)
+  × (  const c ∈ ⟦ split M ⟧' ρ₀
+     → const c ∈ ⟦ M ⟧ ρ₀)
 split-correct-const M c = ⟨ (λ c∈ → lower (preserve₀ M (const c) c∈)) , Reflect.reflect-const M c ⟩
 
-split-correct-val : ∀ (M : AST) → (Conv (⟦ M ⟧ ρ₀) → Conv (⟦ split M ⟧' ρ₀)) × (Conv (⟦ split M ⟧' ρ₀) → Conv (⟦ M ⟧ ρ₀))
+split-correct-val : ∀ (M : AST)
+  → (  Conv (⟦ M ⟧ ρ₀)
+     → Conv (⟦ split M ⟧' ρ₀))
+  × (  Conv (⟦ split M ⟧' ρ₀)
+     → Conv (⟦ M ⟧ ρ₀))
 split-correct-val M = ⟨ (λ { ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩ → ⊑-val v≢ (preserve₀ M v v∈) }) , Reflect.reflect-val M ⟩

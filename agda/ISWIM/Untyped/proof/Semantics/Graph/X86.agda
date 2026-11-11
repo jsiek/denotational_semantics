@@ -37,19 +37,27 @@ Tagged D = ∀ {u v} → left u ∈ D → right v ∈ D → ⊥
 Inv : Store → Set
 Inv σ = ∀ y → Tagged (σ y)
 
-tagged-≈ : ∀ {V} → V ≈ V → Tagged (mem V)
+tagged-≈ : ∀ {V}
+  → V ≈ V
+  → Tagged (mem V)
 tagged-≈ {V} c l r = ≈⇒Every V V c _ _ l r
 
-inv-↦ : ∀ {σ x X} → Inv σ → Tagged X → Inv (σ [ x ↦ X ])
+inv-↦ : ∀ {σ x X}
+  → Inv σ
+  → Tagged X
+  → Inv (σ [ x ↦ X ])
 inv-↦ {x = x} i t y with y ≟ x
 ... | yes _ = t
 ... | no _ = i y
 
 {- case: test, bind the payload, and branch on the flag -}
-case-core : ∀ {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 Value} → A ≃ A' → Tagged A
-  → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V)) → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
+case-core : ∀ {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 Value}
+  → A ≃ A'
+  → Tagged A
+  → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V))
+  → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
   → ⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩ , ⟨ payloadD A , ptt ⟩ ⟩
-    ≃ 𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩
+      ≃ 𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩
 case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
   where
   G : _
@@ -59,7 +67,9 @@ case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
   ... | inj₁ ⟨ u , ⟨ l∈ , _ ⟩ ⟩ =
     inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (lefts (V⊆ d d∈))) , ⟨ proj₁ (F₁≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
     where
-    lefts : ∀ {d} → payloadD A d → left d ∈ A
+    lefts : ∀ {d}
+      → payloadD A d
+      → left d ∈ A
     lefts (inj₁ l) = l
     lefts (inj₂ r) = ⊥-elim (tg l∈ r)
   ... | inj₂ ⟨ _ , ⟨ _ , () ⟩ ⟩
@@ -68,7 +78,9 @@ case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
   ... | inj₂ ⟨ u , ⟨ r∈ , _ ⟩ ⟩ =
     inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (rights (V⊆ d d∈))) , ⟨ proj₁ (F₂≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
     where
-    rights : ∀ {d} → payloadD A d → right d ∈ A
+    rights : ∀ {d}
+      → payloadD A d
+      → right d ∈ A
     rights (inj₁ l) = ⊥-elim (tg l r∈)
     rights (inj₂ r) = r
   ... | inj₁ ⟨ _ , ⟨ _ , () ⟩ ⟩

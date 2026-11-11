@@ -48,11 +48,17 @@ data SVs where
   [] : SVs Nil
   _∷_ : ∀ {n V} {as : Args (replicate n ■)} → SV V → SVs as → SVs (V ,, as)
 
-∧-true : ∀ {a b} → a ∧ b ≡ true → a ≡ true × b ≡ true
+∧-true : ∀ {a b}
+  → a ∧ b ≡ true
+  → a ≡ true × b ≡ true
 ∧-true {true} {true} refl = refl , refl
 
-value-sv : ∀ M → value M ≡ true → SV M
-values-sv : ∀ {n} (as : Args (replicate n ■)) → values as ≡ true → SVs as
+value-sv : ∀ M
+  → value M ≡ true
+  → SV M
+values-sv : ∀ {n} (as : Args (replicate n ■))
+  → values as ≡ true
+  → SVs as
 value-sv (` x) _ = var x
 value-sv (lam ⦅ ⟩ N ,, Nil ⦆) _ = lam
 value-sv (lit B k ⦅ Nil ⦆) _ = lit
@@ -68,7 +74,9 @@ values-sv {zero} Nil _ = []
 values-sv {suc n} (M ,, as) e with ∧-true {value M} e
 ... | e₁ , e₂ = value-sv M e₁ ∷ values-sv as e₂
 
-atom-sv : ∀ M → atom M ≡ true → SV M
+atom-sv : ∀ M
+  → atom M ≡ true
+  → SV M
 atom-sv (` x) _ = var x
 atom-sv (lit B k ⦅ Nil ⦆) _ = lit
 atom-sv (tuple zero ⦅ Nil ⦆) _ = tuple []
@@ -82,7 +90,9 @@ atom-sv (case-op ⦅ _ ⦆) ()
 atom-sv (prim p ⦅ _ ⦆) ()
 atom-sv (let-op ⦅ _ ⦆) ()
 
-small-sv : ∀ M → small M ≡ true → SV M
+small-sv : ∀ M
+  → small M ≡ true
+  → SV M
 small-sv (inl-op ⦅ M ,, Nil ⦆) e = inl (atom-sv M e)
 small-sv (inr-op ⦅ M ,, Nil ⦆) e = inr (atom-sv M e)
 small-sv (` x) e = atom-sv (` x) e
@@ -101,8 +111,14 @@ prim-term-sv (bool true) = inl (tuple [])
 prim-term-sv (bool false) = inr (tuple [])
 
 {- substitution by values keeps values -}
-sv-sub : ∀ {σ V} → (∀ x → SV (σ x)) → SV V → SV (sub σ V)
-svs-sub : ∀ {σ n} {as : Args (replicate n ■)} → (∀ x → SV (σ x)) → SVs as → SVs (sub-args σ as)
+sv-sub : ∀ {σ V}
+  → (∀ x → SV (σ x))
+  → SV V
+  → SV (sub σ V)
+svs-sub : ∀ {σ n} {as : Args (replicate n ■)}
+  → (∀ x → SV (σ x))
+  → SVs as
+  → SVs (sub-args σ as)
 sv-sub h (var x) = h x
 sv-sub h lam = lam
 sv-sub h lit = lit
@@ -112,18 +128,25 @@ sv-sub h (inr v) = inr (sv-sub h v)
 svs-sub h [] = []
 svs-sub h (v ∷ vs) = sv-sub h v ∷ svs-sub h vs
 
-sv-rename : ∀ r {V} → SV V → SV (rename r V)
+sv-rename : ∀ r {V}
+  → SV V
+  → SV (rename r V)
 sv-rename r {V} v = subst SV (sym (SS.rename-sub r V)) (sv-sub (λ x → var (r x)) v)
 
 {- Known values -----------------------------------------------------------------}
 
 {- a known integer is a literal -}
-int-of-just : ∀ {K n} → SV K → int-of (just (val K)) ≡ just n → K ≡ lit Int n ⦅ Nil ⦆
+int-of-just : ∀ {K n}
+  → SV K
+  → int-of (just (val K)) ≡ just n
+  → K ≡ lit Int n ⦅ Nil ⦆
 int-of-just (lit {Int}) refl = refl
 
 {- a component of a known tuple of values -}
 component-just : ∀ {n m} (i : Fin n) {Ks : Args (replicate m ■)} {K}
-  → SVs Ks → proj i (args→list Ks) ≡ just K → SV K
+  → SVs Ks
+  → proj i (args→list Ks) ≡ just K
+  → SV K
 component-just zero [] ()
 component-just (suc i) [] ()
 component-just (suc i) (v ∷ vs) e = component-just i vs e
@@ -132,20 +155,27 @@ component-just {suc n} zero {_ ,, Ks} (v ∷ vs) refl | true = v
 component-just {suc n} zero {_ ,, Ks} (v ∷ vs) () | false
 
 {- what simplify's tests on known values found -}
-comp-inv : ∀ {n} (i : Fin n) k {K} → component i k ≡ just K
+comp-inv : ∀ {n} (i : Fin n) k {K}
+  → component i k ≡ just K
   → Σ[ m ∈ ℕ ] Σ[ Ks ∈ Args (replicate m ■) ] k ≡ just (val (tuple m ⦅ Ks ⦆)) × proj i (args→list Ks) ≡ just K
 comp-inv i (just (val (tuple m ⦅ Ks ⦆))) e = m , Ks , refl , e
 
-int-inv : ∀ k {n} → int-of k ≡ just n → k ≡ just (val (lit Int n ⦅ Nil ⦆))
+int-inv : ∀ k {n}
+  → int-of k ≡ just n
+  → k ≡ just (val (lit Int n ⦅ Nil ⦆))
 int-inv (just (val (lit Int n ⦅ Nil ⦆))) refl = refl
 
-branch-inl : ∀ k {K} → branch k ≡ just (true , K) → k ≡ just (val (inl-op ⦅ K ,, Nil ⦆)) × small K ≡ true
+branch-inl : ∀ k {K}
+  → branch k ≡ just (true , K)
+  → k ≡ just (val (inl-op ⦅ K ,, Nil ⦆)) × small K ≡ true
 branch-inl (just (val (inl-op ⦅ K ,, Nil ⦆))) e with small K in s | e
 ... | true | refl = refl , s
 branch-inl (just (val (inr-op ⦅ K ,, Nil ⦆))) e with small K | e
 ... | true | ()
 
-branch-inr : ∀ k {K} → branch k ≡ just (false , K) → k ≡ just (val (inr-op ⦅ K ,, Nil ⦆)) × small K ≡ true
+branch-inr : ∀ k {K}
+  → branch k ≡ just (false , K)
+  → k ≡ just (val (inr-op ⦅ K ,, Nil ⦆)) × small K ≡ true
 branch-inr (just (val (inr-op ⦅ K ,, Nil ⦆))) e with small K in s | e
 ... | true | refl = refl , s
 branch-inr (just (val (inl-op ⦅ K ,, Nil ⦆))) e with small K | e
@@ -153,8 +183,12 @@ branch-inr (just (val (inl-op ⦅ K ,, Nil ⦆))) e with small K | e
 
 
 {- value recognizes values -}
-sv-value : ∀ {V} → SV V → value V ≡ true
-svs-values : ∀ {n} {as : Args (replicate n ■)} → SVs as → values as ≡ true
+sv-value : ∀ {V}
+  → SV V
+  → value V ≡ true
+svs-values : ∀ {n} {as : Args (replicate n ■)}
+  → SVs as
+  → values as ≡ true
 sv-value (var x) = refl
 sv-value lam = refl
 sv-value lit = refl
@@ -164,5 +198,7 @@ sv-value (inr v) = sv-value v
 svs-values [] = refl
 svs-values (v ∷ vs) rewrite sv-value v = svs-values vs
 
-small-value : ∀ T → small T ≡ true → value T ≡ true
+small-value : ∀ T
+  → small T ≡ true
+  → value T ≡ true
 small-value T s = sv-value (small-sv T s)

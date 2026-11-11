@@ -50,24 +50,36 @@ open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_�
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst c ∈ D) ⇔ (dconst c ∈ E))) × (val∈ D ⇔ val∈ E)
 
-≃→Same : ∀ {D E} → D ≃ E → Same D E
+≃→Same : ∀ {D E}
+  → D ≃ E
+  → Same D E
 ≃→Same ⟨ D⊆ , E⊆ ⟩ =
   ⟨ ⟨ D⊆ ω , E⊆ ω ⟩
   , ⟨ (λ c → ⟨ D⊆ (dconst c) , E⊆ (dconst c) ⟩)
     , ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊆ d d∈ , d≢ ⟩ ⟩ }) , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊆ d d∈ , d≢ ⟩ ⟩ }) ⟩ ⟩ ⟩
 
-⇔-trans : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
+⇔-trans : ∀ {A B C : Set}
+  → A ⇔ B
+  → B ⇔ C
+  → A ⇔ C
 ⇔-trans ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
-Same-trans : ∀ {D E F} → Same D E → Same E F → Same D F
+Same-trans : ∀ {D E F}
+  → Same D E
+  → Same E F
+  → Same D F
 Same-trans ⟨ e₁ , ⟨ c₁ , v₁ ⟩ ⟩ ⟨ e₂ , ⟨ c₂ , v₂ ⟩ ⟩ =
   ⟨ ⇔-trans e₁ e₂ , ⟨ (λ c → ⇔-trans (c₁ c) (c₂ c)) , ⇔-trans v₁ v₂ ⟩ ⟩
 
-≃-sym′ : ∀ {D E : 𝒫 Value} → D ≃ E → E ≃ D
+≃-sym′ : ∀ {D E : 𝒫 Value}
+  → D ≃ E
+  → E ≃ D
 ≃-sym′ ⟨ a , b ⟩ = ⟨ b , a ⟩
 
 {- into Clos4, before hoist -}
-compile₄-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) (S4.⟦ compile₄ M ⟧ ρ₀)
+compile₄-same : ∀ M
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) (S4.⟦ compile₄ M ⟧ ρ₀)
 compile₄-same M c =
   Same-trans (≃→Same (≃-trans (simplify-correct M c)
                (≃-trans (capture-correct (simplify M) (simplify-closed M c))
@@ -76,17 +88,27 @@ compile₄-same M c =
     ⟨ split-correct-error C₃ , ⟨ split-correct-const C₃ , split-correct-val C₃ ⟩ ⟩
   where C₃ = concretize-program (prune-program (capture (simplify M)))
 
-compile-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
+compile-same : ∀ M
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
 compile-same M c = Same-trans (compile₄-same M c) (≃→Same (hoist-correct-compile M c))
 
-compile-mon-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-mon M ⟧₅
+compile-mon-same : ∀ M
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-mon M ⟧₅
 compile-mon-same M c = Same-trans (compile-same M c) (≃→Same (≃-sym′ (rco-correct-compile M c)))
 
-compile-imp-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
+compile-imp-same : ∀ M
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
 compile-imp-same M c = Same-trans (compile-mon-same M c) (≃→Same (≃-sym′ (lift-correct-compile M c)))
 
-compile-cfg-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
+compile-cfg-same : ∀ M
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
 compile-cfg-same M c = Same-trans (compile-imp-same M c) (≃→Same (≃-sym′ (explicate-correct-compile M c)))
 
-compile-x86-same : ∀ M → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₓ
+compile-x86-same : ∀ M
+  → Closed M
+  → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₓ
 compile-x86-same M c = Same-trans (compile-cfg-same M c) (≃→Same (≃-sym′ (select-correct-compile M c)))

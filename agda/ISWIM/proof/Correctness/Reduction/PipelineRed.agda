@@ -38,39 +38,56 @@ import ISWIM.Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 open import Data.Product using (_,_; proj₁; proj₂)
 
-compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
+compile-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
   equiv-trans (simplify-correct M c) (equiv-trans (cast-correct (simplify M) (simplify-closed M c))
     (equiv-trans (capture-correct _) (equiv-trans (prune-correct _) (equiv-trans (concretize-correct _)
       (equiv-trans (split-correct _) (hoist-correct _))))))
 
-compile-mon-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem ⌜ compile-mon M ⌝ₚ)
+compile-mon-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (T.sem ⌜ compile-mon M ⌝ₚ)
 compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct _)
 
-compile-imp-correct : ∀ M → Closed M → Equivalent (S.sem M) (Impᵀₘ.sem (compile-imp M))
+compile-imp-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (Impᵀₘ.sem (compile-imp M))
 compile-imp-correct M c = equiv-trans (compile-mon-correct M c) (lift-locals-correct _)
 
-compile-cfg-correct : ∀ M → Closed M → Equivalent (S.sem M) (CFGᵀₘ.sem (compile-cfg M))
+compile-cfg-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (CFGᵀₘ.sem (compile-cfg M))
 compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct _)
 
-compile-x86-correct : ∀ M → Closed M → Equivalent (S.sem M) (X86ᵀₘ.sem (compile-x86 M))
+compile-x86-correct : ∀ M
+  → Closed M
+  → Equivalent (S.sem M) (X86ᵀₘ.sem (compile-x86 M))
 compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct _)
 
 {- in particular, for compile -}
 
-compile-const : ∀ M → Closed M → ∀ B k
+compile-const : ∀ M
+  → Closed M
+  → ∀ B k
   → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (compile M)) (o-const B k)
 compile-const M c B k = Equivalent.terminates (compile-correct M c) (o-const B k)
 
-compile-converges : ∀ M → Closed M
+compile-converges : ∀ M
+  → Closed M
   → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (compile M)))
 compile-converges M c =
     (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
   , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
   where E = compile-correct M c
 
-compile-error : ∀ M → Closed M → Terminates (S.sem M) o-error ⇔ Terminates (T.sem (compile M)) o-error
+compile-error : ∀ M
+  → Closed M
+  → Terminates (S.sem M) o-error ⇔ Terminates (T.sem (compile M)) o-error
 compile-error M c = Equivalent.terminates (compile-correct M c) o-error
 
-compile-diverges : ∀ M → Closed M → Diverges (S.sem M) ⇔ Diverges (T.sem (compile M))
+compile-diverges : ∀ M
+  → Closed M
+  → Diverges (S.sem M) ⇔ Diverges (T.sem (compile M))
 compile-diverges M c = Equivalent.diverges (compile-correct M c)

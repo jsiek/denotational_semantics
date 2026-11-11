@@ -37,7 +37,9 @@ let-app L' N' =
   let-op ⦅ L' ,, ⟩ (app ⦅ (fst-op ⦅ (` 0) ,, Nil ⦆) ,, (snd-op ⦅ (` 0) ,, Nil ⦆) ,,
                           shift N' ,, Nil ⦆) ,, Nil ⦆
 
-let-app-≃ : ∀ (L' N' : AST) (ρ : Env Value) → nonempty-env ρ → Con (⟦ L' ⟧ ρ)
+let-app-≃ : ∀ (L' N' : AST) (ρ : Env Value)
+  → nonempty-env ρ
+  → Con (⟦ L' ⟧ ρ)
   → ⟦ let-app L' N' ⟧ ρ ≃ (⟦ L' ⟧ ρ ≫= λ X → X ⊙ ⟦ N' ⟧ ρ)
 let-app-≃ L' N' ρ NE cL =
   ≃-trans (⋆ᵐ-val {Λᵐ ⟨ F , ptt ⟩} {⟦ L' ⟧ ρ} Λᵐ-clean ⟨ ν , ⟨ tt , tt ⟩ ⟩ Λᵐ-fun)

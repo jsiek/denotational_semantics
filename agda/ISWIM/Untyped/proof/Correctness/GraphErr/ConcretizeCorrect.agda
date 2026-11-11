@@ -68,7 +68,10 @@ shift-ok (prj i x) X ρ = refl
 EnvRel : (Var → Ref) → Env Value → Env Value → Set
 EnvRel φ ρ₂ ρ₃ = ∀ x → ρ₂ x ≃ ⟦ φ x ⟧ᵣ ρ₃
 
-rel-ext : ∀ {φ ρ₂ ρ₃} → EnvRel φ ρ₂ ρ₃ → ∀ X → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
+rel-ext : ∀ {φ ρ₂ ρ₃}
+  → EnvRel φ ρ₂ ρ₃
+  → ∀ X
+  → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
 rel-ext rel X zero = ≃-refl
 rel-ext {φ} {ρ₃ = ρ₃} rel X (suc x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
 
@@ -77,7 +80,8 @@ rel-ext {φ} {ρ₃ = ρ₃} rel X (suc x) = ≃-trans (rel x) (≃-reflexive (s
 init₀ : Env Value
 init₀ = λ _ → ⌈ ω ⌉
 
-push-yes : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ k (p : k < n)
+push-yes : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ k
+  → (p : k < n)
   → push Ds ρ k ≡ nthD Ds (fv-index n k p)
 push-yes (suc n) ⟨ D , Ds ⟩ ρ k p with k <? n
 ... | yes k<n = push-yes n Ds (D • ρ) k k<n
@@ -85,18 +89,22 @@ push-yes (suc n) ⟨ D , Ds ⟩ ρ k p with k <? n
   trans (cong (push Ds (D • ρ)) (trans (≤-antisym (≤-pred p) (≮⇒≥ ¬k<n)) (sym (+-identityʳ n))))
         (push-plus n Ds (D • ρ) 0)
 
-push-no : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ k → ¬ (k < n)
+push-no : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ k
+  → ¬ (k < n)
   → push Ds ρ k ≡ ρ (k ∸ n)
 push-no n Ds ρ k ¬k<n =
   trans (cong (push Ds ρ) (sym (m+[n∸m]≡n (≮⇒≥ ¬k<n)))) (push-plus n Ds ρ (k ∸ n))
 
-𝒯-ne : ∀ n (Xs : Results (𝒫 Value) (replicate n ■)) → (∀ j → nonempty (nthD Xs j)) → nonempty (𝒯 n Xs)
+𝒯-ne : ∀ n (Xs : Results (𝒫 Value) (replicate n ■))
+  → (∀ j → nonempty (nthD Xs j))
+  → nonempty (𝒯 n Xs)
 𝒯-ne zero _ _ = ⟨ ⟨⟩ , tt ⟩
 𝒯-ne (suc n) Xs ne = ⟨ tup[ zero ] _ , ⟨ refl , ⟨ proj₂ (ne zero) , ne ⟩ ⟩ ⟩
 
 {- the body of a Clos2 closure and the body of its Clos3 code see the
    same free variables -}
-fv-env-rel : ∀ n (Xs : Results (𝒫 Value) (replicate n ■)) (Y : 𝒫 Value) → (∀ j → nonempty (nthD Xs j))
+fv-env-rel : ∀ n (Xs : Results (𝒫 Value) (replicate n ■)) (Y : 𝒫 Value)
+  → (∀ j → nonempty (nthD Xs j))
   → EnvRel (fv-ref n) (Y • push Xs init₀) (Y • 𝒯 n Xs • init₀)
 fv-env-rel n Xs Y ne zero = ≃-refl
 fv-env-rel n Xs Y ne (suc k) with k <? n
@@ -106,10 +114,14 @@ fv-env-rel n Xs Y ne (suc k) with k <? n
 {- Closures -------------------------------------------------------------------}
 
 clos-correct : ∀ n (a : Arg (ν-n n (ν ■))) (Ds₂ Ds₃ : Results (𝒫 Value) (replicate n ■)) (N' : AST')
-  → (∀ i → nthD Ds₂ i ≃ nthD Ds₃ i) → (∀ i → Con (nthD Ds₃ i))
-  → (∀ ρ₂ ρ₃ → Con-env ρ₃ → EnvRel (fv-ref n) ρ₂ ρ₃ → ⟦ unbind-n n a ⟧ ρ₂ ≃ ⟦ N' ⟧' ρ₃)
+  → (∀ i → nthD Ds₂ i ≃ nthD Ds₃ i)
+  → (∀ i → Con (nthD Ds₃ i))
+  → (  ∀ ρ₂ ρ₃
+     → Con-env ρ₃
+     → EnvRel (fv-ref n) ρ₂ ρ₃
+     → ⟦ unbind-n n a ⟧ ρ₂ ≃ ⟦ N' ⟧' ρ₃)
   → binds n Ds₂ (λ Xs → Λᵐ ⟨ apply-n n (⟦ a ⟧ₐ init₀) Xs , ptt ⟩)
-    ≃ closᵐ n ⟨ (λ X Y → ⟦ N' ⟧' (Y • X • init₀)) , Ds₃ ⟩
+      ≃ closᵐ n ⟨ (λ X Y → ⟦ N' ⟧' (Y • X • init₀)) , Ds₃ ⟩
 clos-correct n a Ds₂ Ds₃ N' Ds≃ cDs body =
   ≃-trans (mono⇒≃ (λ _ _ r → lift (binds-mono n r mK)) (proj₁ (RRs⇒⊆ (nthD⇒RRs Ds₂ Ds₃ Ds≃)))
                                                        (proj₂ (RRs⇒⊆ (nthD⇒RRs Ds₂ Ds₃ Ds≃))))
@@ -125,7 +137,9 @@ clos-correct n a Ds₂ Ds₃ N' Ds≃ cDs body =
   mK : Rel⊆ n (λ Xs → Λᵐ ⟨ apply-n n F Xs , ptt ⟩) (λ Xs → Λᵐ ⟨ apply-n n F Xs , ptt ⟩)
   mK {Xs} {Ys} Xs⊆ = lower (mono (Λᵐ-good {⊤}) ⟨ apply-n n F Xs , ptt ⟩ ⟨ apply-n n F Ys , ptt ⟩
     ⟨ apply-n-pres _⊆_ n F F Xs Ys (⟦⟧-monotone-arg a (λ _ _ z → z)) Xs⊆ , ptt ⟩)
-  core : ∀ {Xs} → Bound n Xs Ds₃ → Λᵐ ⟨ apply-n n F Xs , ptt ⟩ ≃ ⋆ ⟨ ΛΛᵐ ⟨ F' , ptt ⟩ , ⟨ 𝒯 n Xs , ptt ⟩ ⟩
+  core : ∀ {Xs}
+    → Bound n Xs Ds₃
+    → Λᵐ ⟨ apply-n n F Xs , ptt ⟩ ≃ ⋆ ⟨ ΛΛᵐ ⟨ F' , ptt ⟩ , ⟨ 𝒯 n Xs , ptt ⟩ ⟩
   core {Xs} b = ⟨ G , H ⟩
     where
     ne = λ j → proj₂ (proj₂ (b j))
@@ -133,13 +147,16 @@ clos-correct n a Ds₂ Ds₃ N' Ds≃ cDs body =
     cT : Con T
     cT = lower (𝒯-consis n Xs Xs (cs n Xs (λ j → Con-⊆ (cDs j) (proj₁ (b j)))))
       where
-      cs : ∀ m (Ys : Results (𝒫 Value) (replicate m ■)) → (∀ j → Con (nthD Ys j))
+      cs : ∀ m (Ys : Results (𝒫 Value) (replicate m ■))
+        → (∀ j → Con (nthD Ys j))
         → results-rel-pres (Every _~_) (replicate m ■) Ys Ys
       cs zero _ _ = ptt
       cs (suc m) ⟨ Y , Ys ⟩ c = ⟨ lift (c zero) , cs m Ys (λ j → c (suc j)) ⟩
     t = proj₁ (𝒯-ne n Xs ne)
     t∈ = proj₂ (𝒯-ne n Xs ne)
-    body≃ : ∀ U → U ≈ U → apply-n n F Xs (mem U) ≃ ⟦ N' ⟧' (mem U • T • init₀)
+    body≃ : ∀ U
+      → U ≈ U
+      → apply-n n F Xs (mem U) ≃ ⟦ N' ⟧' (mem U • T • init₀)
     body≃ U cU rewrite apply-push n a init₀ Xs (mem U) =
       body (mem U • push Xs init₀) (mem U • T • init₀) (Con-• (≈⇒Con cU) (Con-• cT (λ _ → Con-⌈⌉ ω)))
         (fv-env-rel n Xs (mem U) ne)
@@ -158,20 +175,28 @@ clos-correct n a Ds₂ Ds₃ N' Ds≃ cDs body =
       ⟨ ⟨ proj₂ (body≃ U (proj₂ r)) x
             (S3.⟦⟧-monotone N' (•-~ _⊆_ (•-~ _⊆_ (λ _ _ d∈ → d∈) V⊆T) (λ _ d∈ → d∈)) x x∈) , r ⟩ , nU ⟩
 
-args-con : ∀ {n} (args : Args' (replicate n ■)) {ρ} → Con-env ρ → ∀ i → Con (nthD (⟦ args ⟧₊' ρ) i)
+args-con : ∀ {n} (args : Args' (replicate n ■)) {ρ}
+  → Con-env ρ
+  → ∀ i
+  → Con (nthD (⟦ args ⟧₊' ρ) i)
 args-con {suc n} (M ,, args) c zero = Clos3ᵐ-con M c
 args-con {suc n} (M ,, args) c (suc i) = args-con args c i
 
 {- The main lemma -------------------------------------------------------------}
 
-concretize-correct : ∀ (M : AST) φ ρ₂ ρ₃ → Con-env ρ₃ → EnvRel φ ρ₂ ρ₃
+concretize-correct : ∀ (M : AST) φ ρ₂ ρ₃
+  → Con-env ρ₃
+  → EnvRel φ ρ₂ ρ₃
   → ⟦ M ⟧ ρ₂ ≃ ⟦ concretize φ M ⟧' ρ₃
 
-body-correct : ∀ n k (a : Arg (ν-n k (ν ■)))
-  → ∀ ρ₂ ρ₃ → Con-env ρ₃ → EnvRel (fv-ref n) ρ₂ ρ₃
+body-correct : ∀ n k (a : Arg (ν-n k (ν ■))) → ∀ ρ₂ ρ₃
+  → Con-env ρ₃
+  → EnvRel (fv-ref n) ρ₂ ρ₃
   → ⟦ unbind-n k a ⟧ ρ₂ ≃ ⟦ conc-body n k a ⟧' ρ₃
 
-args-correct : ∀ {n} (args : Args (replicate n ■)) φ ρ₂ ρ₃ → Con-env ρ₃ → EnvRel φ ρ₂ ρ₃
+args-correct : ∀ {n} (args : Args (replicate n ■)) φ ρ₂ ρ₃
+  → Con-env ρ₃
+  → EnvRel φ ρ₂ ρ₃
   → RRs (replicate n ■) (⟦ args ⟧₊ ρ₂) (⟦ conc-args φ args ⟧₊' ρ₃)
 
 concretize-correct (` x) φ ρ₂ ρ₃ c rel =

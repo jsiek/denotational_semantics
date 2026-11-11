@@ -34,7 +34,10 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 Rel : ∀ k → Env Value → Env Value → Set
 Rel k ρ ρ' = ∀ (x : Fin k) → ρ (toℕ x) ≃ ρ' (toℕ x) × nonempty (ρ' (toℕ x))
 
-ext : ∀ {k ρ ρ' X} → nonempty X → Rel k ρ ρ' → Rel (suc k) (X • ρ) (X • ρ')
+ext : ∀ {k ρ ρ' X}
+  → nonempty X
+  → Rel k ρ ρ'
+  → Rel (suc k) (X • ρ) (X • ρ')
 ext ne r zero = ⟨ ≃-refl , ne ⟩
 ext ne r (suc x) = r x
 
@@ -42,9 +45,13 @@ tab-nth : ∀ {k n} (f : Fin n → T.Tm k Any) ρ i → nthD (⟦ tabulate f ⟧
 tab-nth f ρ zero = refl
 tab-nth f ρ (suc i) = tab-nth (λ j → f (suc j)) ρ i
 
-enc : ∀ {k A} (M : Tm k A) {ρ ρ'} → Rel k ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ'
-encs-nth : ∀ {k n} (Ms : Vec (Tm k Any) n) {ρ ρ'} → Rel k ρ ρ'
-  → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ encs Ms ⟧s₂ ρ') i
+enc : ∀ {k A} (M : Tm k A) {ρ ρ'}
+  → Rel k ρ ρ'
+  → ⟦ M ⟧ ρ ≃ ⟦ capture M ⟧₂ ρ'
+encs-nth : ∀ {k n} (Ms : Vec (Tm k Any) n) {ρ ρ'}
+  → Rel k ρ ρ'
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ encs Ms ⟧s₂ ρ') i
 
 enc (` x) r = proj₁ (r x)
 enc {k} (lam N) {ρ} {ρ'} r =

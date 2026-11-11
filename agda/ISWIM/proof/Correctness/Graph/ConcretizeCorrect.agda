@@ -50,26 +50,40 @@ shift-ok : ∀ {Γ A} (r : Ref Γ) X ρ → ⟦ ref-tm (shift-ref {A = A} r) ⟧
 shift-ok (var x) X ρ = refl
 shift-ok (prj i x) X ρ = refl
 
-rel-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₂ ρ₃} → EnvRel φ ρ₂ ρ₃ → ∀ {X} → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
+rel-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₂ ρ₃}
+  → EnvRel φ ρ₂ ρ₃
+  → ∀ {X}
+  → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
 rel-ext rel zero = ≃-refl
 rel-ext {φ = φ} {ρ₃ = ρ₃} rel {X} (suc x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
 
-𝒯-con : ∀ n (Ys : Results (𝒫 Value) (replicate n ■)) → (∀ j → Con (nthD Ys j)) → Con (𝒯 n Ys)
+𝒯-con : ∀ n (Ys : Results (𝒫 Value) (replicate n ■))
+  → (∀ j → Con (nthD Ys j))
+  → Con (𝒯 n Ys)
 𝒯-con n Ys c = lower (𝒯-consis n Ys Ys (cs n Ys c))
   where
-  cs : ∀ m (Ys : Results (𝒫 Value) (replicate m ■)) → (∀ j → Con (nthD Ys j))
+  cs : ∀ m (Ys : Results (𝒫 Value) (replicate m ■))
+    → (∀ j → Con (nthD Ys j))
     → results-rel-pres (Every _~_) (replicate m ■) Ys Ys
   cs zero _ _ = ptt
   cs (suc m) ⟨ Y , Ys ⟩ c = ⟨ lift (c zero) , cs m Ys (λ j → c (suc j)) ⟩
 
-cons-con : ∀ {Γ n} (Ms : Vec (T.Tm Γ Any) n) {ρ} → Con-env ρ → ∀ j → Con (nthD (⟦ Ms ⟧s₃ ρ) j)
+cons-con : ∀ {Γ n} (Ms : Vec (T.Tm Γ Any) n) {ρ}
+  → Con-env ρ
+  → ∀ j
+  → Con (nthD (⟦ Ms ⟧s₃ ρ) j)
 cons-con (M ∷ Ms) c zero = con M c
 cons-con (M ∷ Ms) c (suc j) = cons-con Ms c j
 
-conc : ∀ {k Γ A} (M : Tm k A) (φ : Fin k → Ref Γ) {ρ₂ ρ₃} → Con-env ρ₃ → EnvRel φ ρ₂ ρ₃
+conc : ∀ {k Γ A} (M : Tm k A) (φ : Fin k → Ref Γ) {ρ₂ ρ₃}
+  → Con-env ρ₃
+  → EnvRel φ ρ₂ ρ₃
   → ⟦ M ⟧ ρ₂ ≃ ⟦ concretize φ M ⟧₃ ρ₃
-concs-nth : ∀ {k Γ n} (Ms : Vec (Tm k Any) n) (φ : Fin k → Ref Γ) {ρ₂ ρ₃} → Con-env ρ₃ → EnvRel φ ρ₂ ρ₃
-  → ∀ i → nthD (⟦ Ms ⟧s ρ₂) i ≃ nthD (⟦ concs φ Ms ⟧s₃ ρ₃) i
+concs-nth : ∀ {k Γ n} (Ms : Vec (Tm k Any) n) (φ : Fin k → Ref Γ) {ρ₂ ρ₃}
+  → Con-env ρ₃
+  → EnvRel φ ρ₂ ρ₃
+  → ∀ i
+  → nthD (⟦ Ms ⟧s ρ₂) i ≃ nthD (⟦ concs φ Ms ⟧s₃ ρ₃) i
 
 conc (` x) φ c rel = rel x
 conc (clos {n = n} N Ms) φ {ρ₂} {ρ₃} c rel =
@@ -79,9 +93,13 @@ conc (clos {n = n} N Ms) φ {ρ₂} {ρ₃} c rel =
   N' = concretize fv-ref N
   Ds = ⟦ Ms ⟧s ρ₂
   Es = ⟦ concs φ Ms ⟧s₃ ρ₃
-  ne→ : ∀ i → nonempty (nthD Ds i) → nonempty (nthD Es i)
+  ne→ : ∀ i
+    → nonempty (nthD Ds i)
+    → nonempty (nthD Es i)
   ne→ i ⟨ d , d∈ ⟩ = ⟨ d , proj₁ (concs-nth Ms φ c rel i) d d∈ ⟩
-  ne← : ∀ i → nonempty (nthD Es i) → nonempty (nthD Ds i)
+  ne← : ∀ i
+    → nonempty (nthD Es i)
+    → nonempty (nthD Ds i)
   ne← i ⟨ d , d∈ ⟩ = ⟨ d , proj₂ (concs-nth Ms φ c rel i) d d∈ ⟩
   eq : (∀ i → nonempty (nthD Es i))
     → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • fv-env n Ds)) , ptt ⟩ ≃ ⟦ concretize φ (clos N Ms) ⟧₃ ρ₃
@@ -89,7 +107,10 @@ conc (clos {n = n} N Ms) φ {ρ₂} {ρ₃} c rel =
             (λ X⊆ → proj₁ (ok N') (•-~ _⊆_ (•-~ _⊆_ (λ _ _ z → z) X⊆) (λ _ z → z))) (fin-code (ok N') (𝒯-intro n ne))))
     where
     cT = 𝒯-con n Es (cons-con (concs φ Ms) c)
-    body : ∀ V → _ → V ≈ V → ⟦ N ⟧ (mem V • fv-env n Ds) ≃ ⟦ N' ⟧₃ (mem V • 𝒯 n Es • λ _ → init)
+    body : ∀ V
+      → _
+      → V ≈ V
+      → ⟦ N ⟧ (mem V • fv-env n Ds) ≃ ⟦ N' ⟧₃ (mem V • 𝒯 n Es • λ _ → init)
     body V _ cV = conc N fv-ref (Con-• (≈⇒Con cV) (Con-• cT (λ _ → Con-⌈⌉ ω)))
       λ { zero → ≃-refl
         ; (suc i) → ≃-trans (≃-reflexive (fv-env-nth n Ds i))

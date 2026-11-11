@@ -76,15 +76,23 @@ c ⇓ v = ∀ κ → c κ ↠ ret v κ
 Err : State → Set
 Err s = Σ[ t ∈ State ] s ↠ t × step t ≡ stop o-error
 
-_⟫_ : ∀ {s s'} → s ↠ s' → Err s' → Err s
+_⟫_ : ∀ {s s'}
+  → s ↠ s'
+  → Err s'
+  → Err s
 σ ⟫ ⟨ t , ⟨ τ , st ⟩ ⟩ = ⟨ t , ⟨ σ ++↠ τ , st ⟩ ⟩
 infixr 4 _⟫_
 
-⇓-det : ∀ {c v₁ v₂} → c ⇓ v₁ → c ⇓ v₂ → v₁ ≡ v₂
+⇓-det : ∀ {c v₁ v₂}
+  → c ⇓ v₁
+  → c ⇓ v₂
+  → v₁ ≡ v₂
 ⇓-det e₁ e₂ with ↠-final-det (e₁ halt) (e₂ halt) refl refl
 ... | refl = refl
 
-obs-ok : ∀ v → stop {S = State} (obs v) ≡ stop o-error → ⊥
+obs-ok : ∀ v
+  → stop {S = State} (obs v) ≡ stop o-error
+  → ⊥
 obs-ok (clo N γ) ()
 obs-ok (const B k) ()
 obs-ok (tup vs) ()
@@ -92,7 +100,10 @@ obs-ok (inl v) ()
 obs-ok (inr v) ()
 
 {- a computation does not both return a value and stop with an error -}
-⇓-err : ∀ {c v} → c ⇓ v → (∀ κ → Err (c κ)) → ⊥
+⇓-err : ∀ {c v}
+  → c ⇓ v
+  → (∀ κ → Err (c κ))
+  → ⊥
 ⇓-err {v = v} e er with er halt
 ... | ⟨ t , ⟨ τ , st ⟩ ⟩ with ↠-final-det (e halt) τ refl st
 ... | refl = obs-ok v st
@@ -126,39 +137,65 @@ obs-ok (inr v) ()
 
 ℝ d γ M = ℂ d (eval M γ)
 
-𝕍-ω : ∀ {v} → 𝕍 ω v → ⊥
+𝕍-ω : ∀ {v}
+  → 𝕍 ω v
+  → ⊥
 𝕍-ω {clo N γ} ()
 
-conv : ∀ {d c} → ℂ d c → d ≢ ω → Σ[ v ∈ Val ] c ⇓ v × 𝕍 d v
+conv : ∀ {d c}
+  → ℂ d c
+  → d ≢ ω
+  → Σ[ v ∈ Val ] c ⇓ v × 𝕍 d v
 conv (inj₁ ⟨ refl , _ ⟩) d≢ = ⊥-elim (d≢ refl)
 conv (inj₂ r) d≢ = r
 
-err : ∀ {c} → ℂ ω c → ∀ κ → Err (c κ)
+err : ∀ {c}
+  → ℂ ω c
+  → ∀ κ
+  → Err (c κ)
 err (inj₁ ⟨ _ , e ⟩) = e
 err (inj₂ ⟨ v , ⟨ _ , r ⟩ ⟩) = ⊥-elim (𝕍-ω {v} r)
 
 {- the value a computation returns is related to every element -}
-collect : ∀ {c v d} → c ⇓ v → ℂ d c → 𝕍 d v
+collect : ∀ {c v d}
+  → c ⇓ v
+  → ℂ d c
+  → 𝕍 d v
 collect e (inj₁ ⟨ _ , er ⟩) = ⊥-elim (⇓-err e er)
 collect e (inj₂ ⟨ v' , ⟨ e' , r ⟩ ⟩) with ⇓-det e e'
 ... | refl = r
 
 {- a computation that runs first to another -}
-prepend : ∀ {c c' w} → (∀ κ → c κ ↠ c' κ) → ℂ w c' → ℂ w c
+prepend : ∀ {c c' w}
+  → (∀ κ → c κ ↠ c' κ)
+  → ℂ w c'
+  → ℂ w c
 prepend σ (inj₁ ⟨ refl , e ⟩) = inj₁ ⟨ refl , (λ κ → σ κ ⟫ e κ) ⟩
 prepend σ (inj₂ ⟨ v , ⟨ e , r ⟩ ⟩) = inj₂ ⟨ v , ⟨ (λ κ → σ κ ++↠ e κ) , r ⟩ ⟩
 
-step₁ : ∀ {c c' w} → (∀ κ → step (c κ) ≡ next (c' κ)) → ℂ w c' → ℂ w c
+step₁ : ∀ {c c' w}
+  → (∀ κ → step (c κ) ≡ next (c' κ))
+  → ℂ w c'
+  → ℂ w c
 step₁ st = prepend (λ κ → st κ ∷↠ done)
 
 {- a computation that stops with an error -}
-ℂ-stop : ∀ {c w} → (∀ κ → step (c κ) ≡ stop o-error) → w ≡ ω → ℂ w c
+ℂ-stop : ∀ {c w}
+  → (∀ κ → step (c κ) ≡ stop o-error)
+  → w ≡ ω
+  → ℂ w c
 ℂ-stop st refl = inj₁ ⟨ refl , (λ κ → ⟨ _ , ⟨ done , st κ ⟩ ⟩) ⟩
 
 {- bind, through the relation: the operand D is computed by c, and then
    the frame f runs on its value -}
-ℂ-bind : ∀ {D F c w} (f : Cont → Cont) → (∀ d → d ∈ D → ℂ d c) → w ∈ (D ≫= F)
-  → (∀ v → (∀ d → d ∈ ⌊ D ⌋ → 𝕍 d v) → ∀ w → w ∈ F ⌊ D ⌋ → ℂ w (λ κ → ret v (f κ)))
+ℂ-bind : ∀ {D F c w} (f : Cont → Cont)
+  → (∀ d → d ∈ D → ℂ d c)
+  → w ∈ (D ≫= F)
+  → (  ∀ v
+     → (∀ d → d ∈ ⌊ D ⌋ → 𝕍 d v)
+     → ∀ w
+     → w ∈ F ⌊ D ⌋
+     → ℂ w (λ κ → ret v (f κ)))
   → ℂ w (λ κ → c (f κ))
 ℂ-bind f h (inj₁ ⟨ refl , ω∈ ⟩) k = inj₁ ⟨ refl , (λ κ → err (h ω ω∈) (f κ)) ⟩
 ℂ-bind f h (inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , w∈ ⟩) k with conv (h d d∈) d≢
@@ -166,11 +203,15 @@ step₁ st = prepend (λ κ → st κ ∷↠ done)
 
 {- The kinds of related values ----------------------------------------------------}
 
-𝕍At-length : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → length vs ≡ n
+𝕍At-length : ∀ {n} (i : Fin n) d vs
+  → 𝕍At i d vs
+  → length vs ≡ n
 𝕍At-length {suc n} zero d (v ∷ vs) ⟨ len , _ ⟩ = cong suc len
 𝕍At-length (suc i) d (v ∷ vs) r = cong suc (𝕍At-length i d vs r)
 
-𝕍-kind : ∀ d v → 𝕍 d v → kind d ≡ vkind v
+𝕍-kind : ∀ d v
+  → 𝕍 d v
+  → kind d ≡ vkind v
 𝕍-kind (dconst k) (const B k) refl = refl
 𝕍-kind (V ↦ w) (clo N γ) _ = refl
 𝕍-kind ν (clo N γ) _ = refl
@@ -179,20 +220,32 @@ step₁ st = prepend (λ κ → st κ ∷↠ done)
 𝕍-kind (left d) (inl v) _ = refl
 𝕍-kind (right d) (inr v) _ = refl
 
-𝕍-left : ∀ {d} v → 𝕍 (left d) v → Σ[ v' ∈ Val ] v ≡ inl v'
+𝕍-left : ∀ {d} v
+  → 𝕍 (left d) v
+  → Σ[ v' ∈ Val ] v ≡ inl v'
 𝕍-left (inl v') _ = ⟨ v' , refl ⟩
 
-𝕍-right : ∀ {d} v → 𝕍 (right d) v → Σ[ v' ∈ Val ] v ≡ inr v'
+𝕍-right : ∀ {d} v
+  → 𝕍 (right d) v
+  → Σ[ v' ∈ Val ] v ≡ inr v'
 𝕍-right (inr v') _ = ⟨ v' , refl ⟩
 
 {- a value of another kind in an operand, all of whose values are related
    to v: v is of another kind -}
-bad-kind : ∀ {k X v} → (∀ d → d ∈ X → 𝕍 d v) → Bad k X → vkind v ≢ k
+bad-kind : ∀ {k X v}
+  → (∀ d → d ∈ X → 𝕍 d v)
+  → Bad k X
+  → vkind v ≢ k
 bad-kind all ⟨ e , ⟨ e∈ , ek ⟩ ⟩ eq = ek (trans (𝕍-kind e _ (all e e∈)) eq)
 
 {- a kernel that needs a value of kind k, on an operand related to a
    value of another kind, yields only ω -}
-needs-ω : ∀ {k X A v w} → (∀ d → d ∈ X → 𝕍 d v) → vkind v ≢ k → Needs k X A → w ∈ A → w ≡ ω
+needs-ω : ∀ {k X A v w}
+  → (∀ d → d ∈ X → 𝕍 d v)
+  → vkind v ≢ k
+  → Needs k X A
+  → w ∈ A
+  → w ≡ ω
 needs-ω all nk n w∈ with n _ w∈
 ... | inj₁ eq = eq
 ... | inj₂ ⟨ u , ⟨ u∈ , uk ⟩ ⟩ = ⊥-elim (nk (trans (sym (𝕍-kind u _ (all u u∈))) uk))
@@ -206,20 +259,28 @@ clo? (tup vs) = inj₂ (λ ())
 clo? (inl v) = inj₂ (λ ())
 clo? (inr v) = inj₂ (λ ())
 
-notfun-stop : ∀ v → vkind v ≢ fun → ∀ M γ κ → step (ret v (appL M γ κ)) ≡ stop o-error
+notfun-stop : ∀ v
+  → vkind v ≢ fun
+  → ∀ M γ κ
+  → step (ret v (appL M γ κ)) ≡ stop o-error
 notfun-stop (clo N γ') nf M γ κ = ⊥-elim (nf refl)
 notfun-stop (const B k) nf M γ κ = refl
 notfun-stop (tup vs) nf M γ κ = refl
 notfun-stop (inl v) nf M γ κ = refl
 notfun-stop (inr v) nf M γ κ = refl
 
-proj-just-length : ∀ {n} (i : Fin n) (vs : List Val) {v} → proj i vs ≡ just v → length vs ≡ n
+proj-just-length : ∀ {n} (i : Fin n) (vs : List Val) {v}
+  → proj i vs ≡ just v
+  → length vs ≡ n
 proj-just-length {suc n} zero (v ∷ vs) eq with has-length n vs in h
 proj-just-length {suc n} zero (v ∷ vs) refl | true = cong suc (has-length→length n vs h)
 proj-just-length {suc n} zero (v ∷ vs) () | false
 proj-just-length (suc i) (v ∷ vs) eq = cong suc (proj-just-length i vs eq)
 
-nottup-stop : ∀ {n} (i : Fin n) v → vkind v ≢ tup n → ∀ κ → step (ret v (getK i κ)) ≡ stop o-error
+nottup-stop : ∀ {n} (i : Fin n) v
+  → vkind v ≢ tup n
+  → ∀ κ
+  → step (ret v (getK i κ)) ≡ stop o-error
 nottup-stop i (tup vs) nt κ with proj i vs in p
 ... | just v = ⊥-elim (nt (cong tup (proj-just-length i vs p)))
 ... | nothing = refl
@@ -228,7 +289,10 @@ nottup-stop i (const B k) nt κ = refl
 nottup-stop i (inl v) nt κ = refl
 nottup-stop i (inr v) nt κ = refl
 
-notinj-stop : ∀ v → vkind v ≢ inj → ∀ M N γ κ → step (ret v (caseK M N γ κ)) ≡ stop o-error
+notinj-stop : ∀ v
+  → vkind v ≢ inj
+  → ∀ M N γ κ
+  → step (ret v (caseK M N γ κ)) ≡ stop o-error
 notinj-stop (inl v) ni M N γ κ = ⊥-elim (ni refl)
 notinj-stop (inr v) ni M N γ κ = ⊥-elim (ni refl)
 notinj-stop (clo N' γ') ni M N γ κ = refl
@@ -236,10 +300,15 @@ notinj-stop (const B k) ni M N γ κ = refl
 notinj-stop (tup vs) ni M N γ κ = refl
 
 {- a value of another kind than an integer is not observed as one -}
-notint-obs : ∀ v → vkind v ≢ base Int → ∀ n → obs v ≢ o-const Int n
+notint-obs : ∀ v
+  → vkind v ≢ base Int
+  → ∀ n
+  → obs v ≢ o-const Int n
 notint-obs (const .Int k) ni n refl = ni refl
 
-δ?-nothing₁ : ∀ p o₁ o₂ → (∀ n → o₁ ≢ o-const Int n) → δ? p o₁ o₂ ≡ nothing
+δ?-nothing₁ : ∀ p o₁ o₂
+  → (∀ n → o₁ ≢ o-const Int n)
+  → δ? p o₁ o₂ ≡ nothing
 δ?-nothing₁ p (o-const Int n) o₂ f = ⊥-elim (f n refl)
 δ?-nothing₁ p (o-const Nat k) o₂ f = refl
 δ?-nothing₁ p (o-const 𝔹 k) o₂ f = refl
@@ -252,7 +321,9 @@ notint-obs (const .Int k) ni n refl = ni refl
 δ?-nothing₁ p (o-inr o) o₂ f = refl
 δ?-nothing₁ p o-error o₂ f = refl
 
-δ?-nothing₂ : ∀ p o₁ o₂ → (∀ m → o₂ ≢ o-const Int m) → δ? p o₁ o₂ ≡ nothing
+δ?-nothing₂ : ∀ p o₁ o₂
+  → (∀ m → o₂ ≢ o-const Int m)
+  → δ? p o₁ o₂ ≡ nothing
 δ?-nothing₂ p (o-const Int n) (o-const Int m) f = ⊥-elim (f m refl)
 δ?-nothing₂ p (o-const Int n) (o-const Nat k) f = refl
 δ?-nothing₂ p (o-const Int n) (o-const 𝔹 k) f = refl
@@ -277,15 +348,22 @@ notint-obs (const .Int k) ni n refl = ni refl
 
 {- Shapes and lists ---------------------------------------------------------------}
 
-𝕍s-∈ : ∀ V {v d} → 𝕍s V v → d ∈ mem V → 𝕍 d v
+𝕍s-∈ : ∀ V {v d}
+  → 𝕍s V v
+  → d ∈ mem V
+  → 𝕍 d v
 𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ (here refl) = r
 𝕍s-∈ (d ∷ V) ⟨ _ , rs ⟩ (there d∈) = 𝕍s-∈ V rs d∈
 
-all→𝕍s : ∀ V {v} → (∀ d → d ∈ mem V → 𝕍 d v) → 𝕍s V v
+all→𝕍s : ∀ V {v}
+  → (∀ d → d ∈ mem V → 𝕍 d v)
+  → 𝕍s V v
 all→𝕍s [] all = tt
 all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
 
-𝕍At-proj : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
+𝕍At-proj : ∀ {n} (i : Fin n) d vs
+  → 𝕍At i d vs
+  → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
 𝕍At-proj {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ rewrite length→has-length n vs len = ⟨ v , ⟨ refl , r ⟩ ⟩
 𝕍At-proj (suc i) d (v ∷ vs) r = 𝕍At-proj i d vs r
 
@@ -295,8 +373,12 @@ all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ �
 𝕍-out (bool false) = refl
 
 {- related values are observed in the shape of the denotational value -}
-𝕍-shape : ∀ d v → 𝕍 d v → ShapeOf (obs v) d
-𝕍At-shape : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → ShapeAt i (obs-list vs) d
+𝕍-shape : ∀ d v
+  → 𝕍 d v
+  → ShapeOf (obs v) d
+𝕍At-shape : ∀ {n} (i : Fin n) d vs
+  → 𝕍At i d vs
+  → ShapeAt i (obs-list vs) d
 𝕍-shape (dconst k) (const B k) refl = refl
 𝕍-shape (V ↦ w) (clo N γ) r = tt
 𝕍-shape ν (clo N γ) r = tt
@@ -312,7 +394,10 @@ all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ �
 𝔾 : (Var → Set) → VEnv → Env → Set
 𝔾 P ρ γ = ∀ x → P x → ∀ d → d ∈ ρ x → Σ[ v ∈ Val ] γ ‼ x ≡ just v × 𝕍 d v
 
-𝔾-ext : ∀ {P ρ γ} V v → 𝔾 (λ x → P (suc x)) ρ γ → 𝕍s V v → 𝔾 P (mem V • ρ) (v ∷ γ)
+𝔾-ext : ∀ {P ρ γ} V v
+  → 𝔾 (λ x → P (suc x)) ρ γ
+  → 𝕍s V v
+  → 𝔾 P (mem V • ρ) (v ∷ γ)
 𝔾-ext V v G Vv zero _ d d∈ = ⟨ v , ⟨ refl , 𝕍s-∈ V Vv d∈ ⟩ ⟩
 𝔾-ext V v G Vv (suc x) u d d∈ = G x u d d∈
 
@@ -321,12 +406,21 @@ UsesP M x = Uses x M
 
 {- The fundamental lemma ----------------------------------------------------------}
 
-adequate : ∀ M {ρ γ d} → 𝔾 (UsesP M) ρ γ → d ∈ ⟦ M ⟧ ρ → ℝ d γ M
+adequate : ∀ M {ρ γ d}
+  → 𝔾 (UsesP M) ρ γ
+  → d ∈ ⟦ M ⟧ ρ
+  → ℝ d γ M
 {- the operands of a tuple, bound left to right by the machine's tupK -}
-tuple-ℂ : ∀ {m} (as : Args (replicate m ■)) {ρ γ} → 𝔾 (λ x → UsesArgs x as) ρ γ
-  → ∀ {K w} acc → w ∈ binds m (⟦ as ⟧₊ ρ) K
-  → (∀ vs Xs → length vs ≡ m → (∀ j d → d ∈ nthD Xs j → 𝕍At j d vs) → ∀ w → w ∈ K Xs
-       → ℂ w (λ κ → ret (tup (reverse (reverseAcc acc vs))) κ))
+tuple-ℂ : ∀ {m} (as : Args (replicate m ■)) {ρ γ}
+  → 𝔾 (λ x → UsesArgs x as) ρ γ
+  → ∀ {K w} acc
+  → w ∈ binds m (⟦ as ⟧₊ ρ) K
+  → (  ∀ vs Xs
+     → length vs ≡ m
+     → (∀ j d → d ∈ nthD Xs j → 𝕍At j d vs)
+     → ∀ w
+     → w ∈ K Xs
+     → ℂ w (λ κ → ret (tup (reverse (reverseAcc acc vs))) κ))
   → ℂ w (λ κ → tuple-next acc (args→list as) γ κ)
 
 adequate (` x) {γ = γ} G d∈ with G x refl _ d∈
@@ -341,7 +435,10 @@ adequate (app ⦅ L ,, M ,, Nil ⦆) {ρ} {γ} G w∈ =
   step₁ (λ κ → refl) (ℂ-bind {F = λ X → checked fun X (⟦ M ⟧ ρ ≫= λ Y → ⋆ ⟨ X , ⟨ Y , ptt ⟩ ⟩)} (λ κ → appL M γ κ) (λ d → adequate L (λ x p → G x (inj₁ p))) w∈ APP)
   where
   X = ⌊ ⟦ L ⟧ ρ ⌋
-  APP : ∀ v → (∀ d → d ∈ X → 𝕍 d v) → ∀ w → w ∈ checked fun X (⟦ M ⟧ ρ ≫= λ Y → ⋆ ⟨ X , ⟨ Y , ptt ⟩ ⟩)
+  APP : ∀ v
+    → (∀ d → d ∈ X → 𝕍 d v)
+    → ∀ w
+    → w ∈ checked fun X (⟦ M ⟧ ρ ≫= λ Y → ⋆ ⟨ X , ⟨ Y , ptt ⟩ ⟩)
     → ℂ w (λ κ → ret v (appL M γ κ))
   APP v all w (inj₁ ⟨ refl , bad ⟩) = ℂ-stop (notfun-stop v (bad-kind all bad) M γ) refl
   APP v all w (inj₂ w∈′) with clo? v
@@ -357,12 +454,20 @@ adequate (lit B k ⦅ Nil ⦆) {d = dconst k'} G ⟨ refl , refl ⟩ =
 adequate (tuple n ⦅ args ⦆) {γ = γ} G w∈ =
   step₁ (λ κ → refl) (tuple-ℂ args G [] w∈ TUP)
   where
-  TUP : ∀ vs Xs → length vs ≡ n → (∀ j d → d ∈ nthD Xs j → 𝕍At j d vs) → ∀ w → w ∈ 𝒯 n Xs
+  TUP : ∀ vs Xs
+    → length vs ≡ n
+    → (∀ j d → d ∈ nthD Xs j → 𝕍At j d vs)
+    → ∀ w
+    → w ∈ 𝒯 n Xs
     → ℂ w (λ κ → ret (tup (reverse (reverseAcc [] vs))) κ)
   TUP vs Xs len rs w w∈ rewrite reverse-involutive vs = inj₂ ⟨ tup vs , ⟨ (λ κ → done) , T Xs vs len rs w w∈ ⟩ ⟩
     where
-    T : ∀ {m} (Ys : Results (𝒫 Value) (replicate m ■)) vs → length vs ≡ m
-      → (∀ j d → d ∈ nthD Ys j → 𝕍At j d vs) → ∀ w → w ∈ 𝒯 m Ys → 𝕍 w (tup vs)
+    T : ∀ {m} (Ys : Results (𝒫 Value) (replicate m ■)) vs
+      → length vs ≡ m
+      → (∀ j d → d ∈ nthD Ys j → 𝕍At j d vs)
+      → ∀ w
+      → w ∈ 𝒯 m Ys
+      → 𝕍 w (tup vs)
     T {zero} Ys [] refl rs ⟨⟩ _ = refl
     T {suc m} Ys vs len rs (tup[ i ] d) ⟨ refl , ⟨ d∈ , _ ⟩ ⟩ = rs i d d∈
 
@@ -370,7 +475,10 @@ adequate (get {n} i ⦅ M ,, Nil ⦆) {ρ} {γ} G w∈ =
   step₁ (λ κ → refl) (ℂ-bind {F = λ X → checked (tup n) X (projD i ⟨ X , ptt ⟩)} (getK i) (λ d → adequate M (λ x p → G x (inj₁ p))) w∈ GET)
   where
   X = ⌊ ⟦ M ⟧ ρ ⌋
-  GET : ∀ v → (∀ d → d ∈ X → 𝕍 d v) → ∀ w → w ∈ checked (tup n) X (projD i ⟨ X , ptt ⟩)
+  GET : ∀ v
+    → (∀ d → d ∈ X → 𝕍 d v)
+    → ∀ w
+    → w ∈ checked (tup n) X (projD i ⟨ X , ptt ⟩)
     → ℂ w (λ κ → ret v (getK i κ))
   GET v all w (inj₁ ⟨ refl , bad ⟩) = ℂ-stop (nottup-stop i v (bad-kind all bad)) refl
   GET v all w (inj₂ t∈) with v | all _ t∈
@@ -380,20 +488,30 @@ adequate (get {n} i ⦅ M ,, Nil ⦆) {ρ} {γ} G w∈ =
 adequate (inl-op ⦅ M ,, Nil ⦆) {ρ} G w∈ =
   step₁ (λ κ → refl) (ℂ-bind {F = λ X → inlD ⟨ X , ptt ⟩} inlK (λ d → adequate M (λ x p → G x (inj₁ p))) w∈ INL)
   where
-  INL : ∀ v → (∀ d → d ∈ ⌊ ⟦ M ⟧ ρ ⌋ → 𝕍 d v) → ∀ w → w ∈ inlD ⟨ ⌊ ⟦ M ⟧ ρ ⌋ , ptt ⟩ → ℂ w (λ κ → ret v (inlK κ))
+  INL : ∀ v
+    → (∀ d → d ∈ ⌊ ⟦ M ⟧ ρ ⌋ → 𝕍 d v)
+    → ∀ w
+    → w ∈ inlD ⟨ ⌊ ⟦ M ⟧ ρ ⌋ , ptt ⟩
+    → ℂ w (λ κ → ret v (inlK κ))
   INL v all (left d) d∈ = inj₂ ⟨ inl v , ⟨ (λ κ → refl ∷↠ done) , all d d∈ ⟩ ⟩
 
 adequate (inr-op ⦅ M ,, Nil ⦆) {ρ} G w∈ =
   step₁ (λ κ → refl) (ℂ-bind {F = λ X → inrD ⟨ X , ptt ⟩} inrK (λ d → adequate M (λ x p → G x (inj₁ p))) w∈ INR)
   where
-  INR : ∀ v → (∀ d → d ∈ ⌊ ⟦ M ⟧ ρ ⌋ → 𝕍 d v) → ∀ w → w ∈ inrD ⟨ ⌊ ⟦ M ⟧ ρ ⌋ , ptt ⟩ → ℂ w (λ κ → ret v (inrK κ))
+  INR : ∀ v
+    → (∀ d → d ∈ ⌊ ⟦ M ⟧ ρ ⌋ → 𝕍 d v)
+    → ∀ w
+    → w ∈ inrD ⟨ ⌊ ⟦ M ⟧ ρ ⌋ , ptt ⟩
+    → ℂ w (λ κ → ret v (inrK κ))
   INR v all (right d) d∈ = inj₂ ⟨ inr v , ⟨ (λ κ → refl ∷↠ done) , all d d∈ ⟩ ⟩
 
 adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G w∈ =
   step₁ (λ κ → refl) (ℂ-bind {F = λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ (λ Z → ⟦ M ⟧ (Z • ρ)) , ⟨ (λ Z → ⟦ N ⟧ (Z • ρ)) , ptt ⟩ ⟩ ⟩)} (caseK M N γ) (λ d → adequate L (λ x p → G x (inj₁ p))) w∈ CASE)
   where
   X = ⌊ ⟦ L ⟧ ρ ⌋
-  CASE : ∀ v → (∀ d → d ∈ X → 𝕍 d v) → ∀ w
+  CASE : ∀ v
+    → (∀ d → d ∈ X → 𝕍 d v)
+    → ∀ w
     → w ∈ checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ (λ Z → ⟦ M ⟧ (Z • ρ)) , ⟨ (λ Z → ⟦ N ⟧ (Z • ρ)) , ptt ⟩ ⟩ ⟩)
     → ℂ w (λ κ → ret v (caseK M N γ κ))
   CASE v all w (inj₁ ⟨ refl , bad ⟩) = ℂ-stop (notinj-stop v (bad-kind all bad) M N γ) refl
@@ -414,8 +532,13 @@ adequate (prim p ⦅ L ,, M ,, Nil ⦆) {ρ} {γ} G w∈ =
   K = λ X Y → checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩))
   X = ⌊ ⟦ L ⟧ ρ ⌋
   Y = ⌊ ⟦ M ⟧ ρ ⌋
-  PRIM : ∀ v → (∀ d → d ∈ X → 𝕍 d v) → ∀ u → (∀ d → d ∈ Y → 𝕍 d u) → ∀ w
-    → w ∈ checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩)) → ℂ w (λ κ → ret u (primR p v κ))
+  PRIM : ∀ v
+    → (∀ d → d ∈ X → 𝕍 d v)
+    → ∀ u
+    → (∀ d → d ∈ Y → 𝕍 d u)
+    → ∀ w
+    → w ∈ checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩))
+    → ℂ w (λ κ → ret u (primR p v κ))
   PRIM v allL u allM w (inj₁ ⟨ refl , bad ⟩) =
     ℂ-stop (λ κ → cong (λ m → ret? m κ) (cong (map out) (δ?-nothing₁ p (obs v) (obs u) (notint-obs v (bad-kind allL bad))))) refl
   PRIM v allL u allM w (inj₂ (inj₁ ⟨ refl , bad ⟩)) =

@@ -103,8 +103,12 @@ module Rel (D : Defs) where
     ret~ : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.ret v κ₁ ~ T.ret w κ₂
 
   {- Related values are observed alike -}
-  obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-  obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
+  obs≈ : ∀ {v w}
+    → v ≈ w
+    → S.obs v ≡ T.obs w
+  obs≈-list : ∀ {vs ws}
+    → Pointwise _≈_ vs ws
+    → S.obs-list vs ≡ T.obs-list ws
   obs≈ (fun≈ _) = refl
   obs≈ (pair≈ _ _) = refl
   obs≈ const≈ = refl
@@ -115,7 +119,10 @@ module Rel (D : Defs) where
   obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
   {- related operands give related results of a primitive -}
-  prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+  prim≈ : ∀ p {v₁ v₂ w₁ w₂}
+    → v₁ ≈ w₁
+    → v₂ ≈ w₂
+    → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
   prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
   ... | nothing = M.nothing
   ... | just (int n) = M.just const≈
@@ -123,10 +130,14 @@ module Rel (D : Defs) where
   ... | just (bool false) = M.just (inr≈ (tup≈ []))
 
   {- a subterm, whose table is extended by the rest of the term -}
-  sub↝ : ∀ {M ds ds'} → proj₂ (glob M ds) ⊑ ds' → ds' ⊑ D → M ↝ proj₁ (glob M ds)
+  sub↝ : ∀ {M ds ds'}
+    → proj₂ (glob M ds) ⊑ ds'
+    → ds' ⊑ D
+    → M ↝ proj₁ (glob M ds)
   sub↝ p q = glob↝ (⊑-trans p q)
 
-  glob-list : ∀ {n} (args : Args (replicate n ■)) ds → proj₂ (glob-args args ds) ⊑ D
+  glob-list : ∀ {n} (args : Args (replicate n ■)) ds
+    → proj₂ (glob-args args ds) ⊑ D
     → Pointwise _↝_ (args→list args) (args→list (proj₁ (glob-args args ds)))
   glob-list {zero} Nil ds p = []
   glob-list {suc n} (M ,, args) ds p =
@@ -139,13 +150,18 @@ module _ (D : Defs) (M₀ : C.AST) where
 
   L₂ = T.sem (C.program D M₀)
 
-  tuple-next~ : ∀ {vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
-    → Pointwise _↝_ Ms Ms' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
+  tuple-next~ : ∀ {vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂}
+    → Pointwise _≈_ vs ws
+    → Pointwise _↝_ Ms Ms'
+    → ρ₁ ≈ρ ρ₂
+    → κ₁ ≈k κ₂
     → S.tuple-next vs Ms ρ₁ κ₁ ~ T.tuple-next ws Ms' ρ₂ κ₂
   tuple-next~ rs [] ρ κ = ret~ (tup≈ (reverse⁺ rs)) κ
   tuple-next~ rs (g ∷ gs) ρ κ = eval~ g ρ (tupK rs gs ρ κ)
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
+  sim : ∀ {s₁ s₂}
+    → s₁ ~ s₂
+    → Answers L₂ _~_ (S.step s₁) s₂
   sim (eval~ {M = ` x} (glob↝ p) ρ κ) = next?-answers (‼-pw ρ x) (λ r → ret~ r κ) refl
   sim (eval~ {M = fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆} (glob↝ p) ρ κ) =
     steps₁ refl (ret~ (fun≈ p) κ)

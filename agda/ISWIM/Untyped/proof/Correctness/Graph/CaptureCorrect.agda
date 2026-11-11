@@ -49,12 +49,17 @@ module ISWIM.Untyped.proof.Correctness.Graph.CaptureCorrect where
 {- The captured free variables ------------------------------------------------}
 
 {- they are nonempty -}
-fv-vars-ne : ∀ m (ρ : Env) → nonempty-env ρ → ∀ i → nonempty (nthD (⟦ fv-vars m ⟧₊₂ ρ) i)
+fv-vars-ne : ∀ m (ρ : Env)
+  → nonempty-env ρ
+  → ∀ i
+  → nonempty (nthD (⟦ fv-vars m ⟧₊₂ ρ) i)
 fv-vars-ne (suc m) ρ NE zero = NE m
 fv-vars-ne (suc m) ρ NE (suc i) = fv-vars-ne m ρ NE i
 
 {- binding ` (n - 1) , ... , ` 0 one at a time puts ρ k at position k -}
-push-vars : ∀ n (ρ σ : Env) k → k < n → push (⟦ fv-vars n ⟧₊₂ ρ) σ k ≡ ρ k
+push-vars : ∀ n (ρ σ : Env) k
+  → k < n
+  → push (⟦ fv-vars n ⟧₊₂ ρ) σ k ≡ ρ k
 push-vars (suc n) ρ σ k k<sn with k <? n
 ... | yes k<n = push-vars n ρ (ρ n • σ) k k<n
 ... | no ¬k<n =
@@ -65,19 +70,26 @@ push-vars (suc n) ρ σ k k<sn with k <? n
   k≡n = ≤-antisym (≤-pred k<sn) (≮⇒≥ ¬k<n)
 
 {- under a binder -}
-rel-ext : ∀ B {ρ₁ ρ₂ : Env} {X} → (∀ x → Uses (suc x) B → ρ₁ x ≃ ρ₂ x)
-  → ∀ x → Uses x B → (X • ρ₁) x ≃ (X • ρ₂) x
+rel-ext : ∀ B {ρ₁ ρ₂ : Env} {X}
+  → (∀ x → Uses (suc x) B → ρ₁ x ≃ ρ₂ x)
+  → ∀ x
+  → Uses x B
+  → (X • ρ₁) x ≃ (X • ρ₂) x
 rel-ext B r zero _ = ≃-refl
 rel-ext B r (suc x) u = r x u
 
 {- The main lemma -------------------------------------------------------------}
 
-enc-correct : ∀ (M : AST) ρ₁ ρ₂ → nonempty-env ρ₂ → (∀ x → Uses x M → ρ₁ x ≃ ρ₂ x)
+enc-correct : ∀ (M : AST) ρ₁ ρ₂
+  → nonempty-env ρ₂
+  → (∀ x → Uses x M → ρ₁ x ≃ ρ₂ x)
   → ⟦ M ⟧ ρ₁ ≃ ⟦ capture M ⟧₂ ρ₂
 
-enc-args-correct : ∀ {n} (args : Args (replicate n ■)) ρ₁ ρ₂ → nonempty-env ρ₂
+enc-args-correct : ∀ {n} (args : Args (replicate n ■)) ρ₁ ρ₂
+  → nonempty-env ρ₂
   → (∀ x → UsesArgs x args → ρ₁ x ≃ ρ₂ x)
-  → ∀ i → nthD (⟦ args ⟧₊ ρ₁) i ≃ nthD (⟦ enc-args args ⟧₊₂ ρ₂) i
+  → ∀ i
+  → nthD (⟦ args ⟧₊ ρ₁) i ≃ nthD (⟦ enc-args args ⟧₊₂ ρ₂) i
 
 enc-correct (` x) ρ₁ ρ₂ NE rel = rel x refl
 enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel = ⟨ G , H ⟩
@@ -87,15 +99,18 @@ enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel = ⟨ G , H ⟩
   ne = fv-vars-ne m ρ₂ NE
 
   {- the body finds its free variables where it found them before -}
-  body≃ : ∀ U → U ≢ [] → ⟦ N ⟧ (mem U • ρ₁)
-              ≃ apply-n m (⟦ bind-n-ast m (capture N) ⟧ₐ₂ init₀) Ds (mem U)
+  body≃ : ∀ U
+    → U ≢ []
+    → ⟦ N ⟧ (mem U • ρ₁) ≃ apply-n m (⟦ bind-n-ast m (capture N) ⟧ₐ₂ init₀) Ds (mem U)
   body≃ U neU rewrite apply-push m (bind-n-ast m (capture N)) init₀ Ds (mem U)
                     | unbind-bind m (capture N) =
     enc-correct N (mem U • ρ₁) (mem U • push Ds init₀)
       (extend-nonempty-env (push-ne m Ds init₀ ne (λ _ → ⟨ ω , refl ⟩)) (E≢[]⇒nonempty-mem neU))
       rel'
     where
-    rel' : ∀ x → Uses x N → (mem U • ρ₁) x ≃ (mem U • push Ds init₀) x
+    rel' : ∀ x
+      → Uses x N
+      → (mem U • ρ₁) x ≃ (mem U • push Ds init₀) x
     rel' zero _ = ≃-refl
     rel' (suc k) u =
       ≃-trans (rel k (inj₁ u))
