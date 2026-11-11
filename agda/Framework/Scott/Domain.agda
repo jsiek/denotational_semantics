@@ -84,6 +84,7 @@ opaque
  case E h = ∘₁ 𝔻 (𝓛ᵈ (obj Val 𝔻)) (E ⁻) unroll
               (extend (obj Val 𝔻) E (copair Tag Tag-is-set (λ t → obj (Payload t) 𝔻) (E ⁻) h))
 
-{- a value is defined when it is not ⊥ -}
+{- a value is defined when unrolling it gives a tag and a payload
+   (it is ⊥ exactly when it is not defined: ⊥-undefined, undefined-⊥) -}
 defined : ⟨ 𝔻 ⟩ → 𝓤₀ ̇
 defined d = is-defined (unroll · d)
