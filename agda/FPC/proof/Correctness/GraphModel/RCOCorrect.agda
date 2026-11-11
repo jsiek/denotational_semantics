@@ -92,7 +92,6 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {s} (f : Σ ∋ s) → 
   ext-ext e neX cX = ext′ (extend-nonempty-env (ne e) neX) (Con-• cX (cn e)) λ { Z → ≃-refl ; (S x) → agr e x }
 
   rco-sem : ∀ {Γ Δ A} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} {γ σ} → Ext ρ γ σ → ⟦ N ⟧[ T ] γ ≃ ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] σ
-
   atomize-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ} → Ext ρ γ σ → (O : Strict 1)
     → (∀ {Δ'} (r : Ren Δ Δ') σ' a → Ext r σ σ' → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
     → op O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ≃ ⟦ ⌜ atomize N ρ k ⌝ ⟧[ T' ] σ
@@ -100,6 +99,33 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {s} (f : Σ ∋ s) → 
   let-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ} → Ext ρ γ σ → (O : Strict 1)
     → (∀ {Δ'} (r : Ren Δ Δ') σ' a → Ext r σ σ' → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
     → op O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ≃ ⟦ ⌜ M.let′ (rco N ρ) (k S (var Z)) ⌝ ⟧[ T' ] σ
+  atomizes-sem : ∀ {Γ Δ Δs B} (Ns : All (Tm Σ Γ) Δs) {ρ : Ren Γ Δ}
+    (k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → Exp Σ Δ' B) {γ σ} → Ext ρ γ σ → (O : Strict (length Δs))
+    → (∀ {Δ'} (r : Ren Δ Δ') σ' as → Ext r σ σ' → op O (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] σ') ≃ ⟦ ⌜ k r as ⌝ ⟧[ T' ] σ')
+    → op O (⟦ Ns ⟧s[ T ] γ) ≃ ⟦ ⌜ atomizes Ns ρ k ⌝ ⟧[ T' ] σ
+  atomize₂-sem : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) {ρ : Ren Γ Δ}
+    (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) {γ σ} → Ext ρ γ σ → (O : Strict 2)
+    → (∀ {Δ'} σ' (a : Atm Σ Δ' A₁) b → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ⟨ ⟦ ⌜ b ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ⟩ ≃ ⟦ ⌜ k a b ⌝ ⟧[ T' ] σ')
+    → op O ⟨ ⟦ L ⟧[ T ] γ , ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ⟩ ≃ ⟦ ⌜ atomize₂ L N ρ k ⌝ ⟧[ T' ] σ
+
+  rco-sem (` x) e = agr e x
+  rco-sem (fun-ref f) e = TT f
+  rco-sem (pair L N) e = atomize₂-sem L N M.pair e pair-op′ λ _ _ _ → ≃-refl
+  rco-sem (callc L N) e = atomize₂-sem L N M.callc e callc-op λ _ _ _ → ≃-refl
+  rco-sem (lit B c) e = ≃-refl
+  rco-sem (tuple Ns) e = atomizes-sem Ns _ e (tuple-op _) λ _ _ _ _ → ≃-refl
+  rco-sem (get i N) e = atomize-sem N _ e (get-op (pos i)) λ _ _ _ _ → ≃-refl
+  rco-sem (inl N) e = atomize-sem N _ e inl-op′ λ _ _ _ _ → ≃-refl
+  rco-sem (inr N) e = atomize-sem N _ e inr-op′ λ _ _ _ _ → ≃-refl
+  rco-sem (case L N₁ N₂) {γ = γ} e =
+    atomize-sem L _ e (case-op′ (λ X → ⟦ N₁ ⟧[ T ] (X • γ)) (λ X → ⟦ N₂ ⟧[ T ] (X • γ))) λ r σ' a e₁ →
+      case-≃ (≃-refl {D = ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ'}) (λ X neX cX → rco-sem N₁ (ext-ext (e ⨾ e₁) neX cX))
+        (λ X neX cX → rco-sem N₂ (ext-ext (e ⨾ e₁) neX cX))
+  rco-sem (prim p L N) e = atomize₂-sem L N (M.prim p) e (prim-op p) λ _ _ _ → ≃-refl
+  rco-sem (let′ N₁ N₂) e = let-≃ (rco-sem N₁ e) λ X neX cX → rco-sem N₂ (ext-ext e neX cX)
+  rco-sem (fold N) e = atomize-sem N _ e id-op λ _ _ _ _ → ≃-refl
+  rco-sem (unfold N) e = atomize-sem N _ e id-op λ _ _ _ _ → ≃-refl
+
   atomize-sem (` x) k e O ks = ≃-trans (cong O ⟨ lift (agr e x) , ptt ⟩) (ks (λ y → y) _ _ (id-ext e))
   atomize-sem (fun-ref f) k e O ks = ≃-trans (cong O ⟨ lift (TT f) , ptt ⟩) (ks (λ y → y) _ _ (id-ext e))
   atomize-sem (lit B c) k e O ks = ks (λ y → y) _ _ (id-ext e)
@@ -123,42 +149,16 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {s} (f : Σ ∋ s) → 
           cD = con cT ⌜ rco N ρ ⌝ (cn e)
           okt = ok cT ⌜ k S (var Z) ⌝
 
-  atomizes-sem : ∀ {Γ Δ Δs B} (Ns : All (Tm Σ Γ) Δs) {ρ : Ren Γ Δ}
-    (k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → Exp Σ Δ' B) {γ σ} → Ext ρ γ σ → (O : Strict (length Δs))
-    → (∀ {Δ'} (r : Ren Δ Δ') σ' as → Ext r σ σ' → op O (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] σ') ≃ ⟦ ⌜ k r as ⌝ ⟧[ T' ] σ')
-    → op O (⟦ Ns ⟧s[ T ] γ) ≃ ⟦ ⌜ atomizes Ns ρ k ⌝ ⟧[ T' ] σ
   atomizes-sem [] k e O ks = ks (λ y → y) _ [] (id-ext e)
   atomizes-sem (N ∷ Ns) k {γ} e O ks =
     atomize-sem N _ e (first O (⟦ Ns ⟧s[ T ] γ)) λ r σ' a e₁ →
       atomizes-sem Ns _ (e ⨾ e₁) (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' ▷ O) λ r' σ'' xs e₂ →
         ≃-trans (cong O ⟨ lift (ren-atm r' a (agr e₂)) , RRs-refl _ ⟩) (ks _ σ'' (ren r' a ∷ xs) (e₁ ⨾ e₂))
 
-  atomize₂-sem : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) {ρ : Ren Γ Δ}
-    (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) {γ σ} → Ext ρ γ σ → (O : Strict 2)
-    → (∀ {Δ'} σ' (a : Atm Σ Δ' A₁) b → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ⟨ ⟦ ⌜ b ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ⟩ ≃ ⟦ ⌜ k a b ⌝ ⟧[ T' ] σ')
-    → op O ⟨ ⟦ L ⟧[ T ] γ , ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ⟩ ≃ ⟦ ⌜ atomize₂ L N ρ k ⌝ ⟧[ T' ] σ
   atomize₂-sem L N k {γ} e O ks =
     atomize-sem L _ e (first O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩) λ r σ' a e₁ →
       atomize-sem N _ (e ⨾ e₁) (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' ▷ O) λ r' σ'' b e₂ →
         ≃-trans (cong O ⟨ lift (ren-atm r' a (agr e₂)) , ⟨ lift ≃-refl , ptt ⟩ ⟩) (ks σ'' (ren r' a) b)
-
-  rco-sem (` x) e = agr e x
-  rco-sem (fun-ref f) e = TT f
-  rco-sem (pair L N) e = atomize₂-sem L N M.pair e pair-op′ λ _ _ _ → ≃-refl
-  rco-sem (callc L N) e = atomize₂-sem L N M.callc e callc-op λ _ _ _ → ≃-refl
-  rco-sem (lit B c) e = ≃-refl
-  rco-sem (tuple Ns) e = atomizes-sem Ns _ e (tuple-op _) λ _ _ _ _ → ≃-refl
-  rco-sem (get i N) e = atomize-sem N _ e (get-op (pos i)) λ _ _ _ _ → ≃-refl
-  rco-sem (inl N) e = atomize-sem N _ e inl-op′ λ _ _ _ _ → ≃-refl
-  rco-sem (inr N) e = atomize-sem N _ e inr-op′ λ _ _ _ _ → ≃-refl
-  rco-sem (case L N₁ N₂) {γ = γ} e =
-    atomize-sem L _ e (case-op′ (λ X → ⟦ N₁ ⟧[ T ] (X • γ)) (λ X → ⟦ N₂ ⟧[ T ] (X • γ))) λ r σ' a e₁ →
-      case-≃ (≃-refl {D = ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ'}) (λ X neX cX → rco-sem N₁ (ext-ext (e ⨾ e₁) neX cX))
-        (λ X neX cX → rco-sem N₂ (ext-ext (e ⨾ e₁) neX cX))
-  rco-sem (prim p L N) e = atomize₂-sem L N (M.prim p) e (prim-op p) λ _ _ _ → ≃-refl
-  rco-sem (let′ N₁ N₂) e = let-≃ (rco-sem N₁ e) λ X neX cX → rco-sem N₂ (ext-ext e neX cX)
-  rco-sem (fold N) e = atomize-sem N _ e id-op λ _ _ _ _ → ≃-refl
-  rco-sem (unfold N) e = atomize-sem N _ e id-op λ _ _ _ _ → ≃-refl
 
   {- the code of a definition means the code of its output -}
   code-rco : ∀ {s} (d : Code Σ s) → code′ T d ≃ code′ T' ⌜ rco d (λ x → x) ⌝

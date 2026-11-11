@@ -68,8 +68,6 @@ subs-nth : ∀ {Γ Δ Δ'} (σ : ∀ {B} → Γ ∋ B → Tm Δ B) (Ms : All (Tm
   → (∀ {B} (x : Γ ∋ B) → ⟦ σ x ⟧ ρ' ≃ ρ (idx x)) → ∀ i → nthD (⟦ travs tmK σ Ms ⟧s ρ') i ≃ nthD (⟦ Ms ⟧s ρ) i
 sub-ext : ∀ {Γ Δ C} (σ : ∀ {B} → Γ ∋ B → Tm Δ B) {ρ ρ' X} → (∀ {B} (x : Γ ∋ B) → ⟦ σ x ⟧ ρ' ≃ ρ (idx x))
   → ∀ {B} (x : (C ∷ Γ) ∋ B) → ⟦ exts tmK σ x ⟧ (X • ρ') ≃ (X • ρ) (idx x)
-sub-ext σ h Z = ≃-refl
-sub-ext σ h (S x) = ≃-trans (shift-≃ (σ x) _ _) (h x)
 sub-≃ σ (` x) h = h x
 sub-≃ σ (lam N) {ρ} {ρ'} h = lam-≃ λ X _ _ → sub-≃ (exts tmK σ) N {X • ρ} {X • ρ'} (sub-ext σ h)
 sub-≃ σ (app L M) h = ⋆-≃ (sub-≃ σ L h) (sub-≃ σ M h)
@@ -86,6 +84,8 @@ sub-≃ σ (fold M) h = sub-≃ σ M h
 sub-≃ σ (unfold M) h = sub-≃ σ M h
 subs-nth σ (M ∷ Ms) h zero = sub-≃ σ M h
 subs-nth σ (M ∷ Ms) h (suc i) = subs-nth σ Ms h i
+sub-ext σ h Z = ≃-refl
+sub-ext σ h (S x) = ≃-trans (shift-≃ (σ x) _ _) (h x)
 
 {- substituting a closed W for the variable of N -}
 []-≃ : ∀ {A B} (N : Tm (A ∷ []) B) (W : Tm [] A) → ⟦ N [ W ] ⟧ ρ₀ ≃ ⟦ N ⟧ (⟦ W ⟧ ρ₀ • ρ₀)

@@ -75,15 +75,11 @@ data _≈_ : ∀ {A} → S.Val A → S.Val A → Set
 Desc : Bool → ∀ {Γ A} → S.Val A → Tm Γ A → S.Env Γ → Set
 Descs : Bool → ∀ {Γ Δ} → All S.Val Δ → All (Tm Γ) Δ → S.Env Γ → Set
 Strong Den : ∀ {Γ A} → S.Val A → Tm Γ A → S.Env Γ → Set
-Strong = Desc true
-Den = Desc false
-
 {- what a value is known to be is true of it: a value that describes it,
    or a function λ N that is a source closure of N, under Facts true of
    the closure's environment and the target's -}
 KDen : ∀ {Γ A} → S.Val A → Known Γ A → S.Env Γ → Set
 Kn : ∀ {Γ A} → S.Val A → Info Γ A → S.Env Γ → Set
-Kn v I ρ' = ∀ {K} → known I ≡ just K → KDen v K ρ'
 
 {- what simp knows of each variable is true of the source's environment ρ
    and the target's ρ' -}
@@ -117,8 +113,12 @@ Desc b v _ ρ' = ⊥
 Descs b [] [] ρ' = ⊤
 Descs b (v ∷ vs) (M ∷ Ms) ρ' = Desc b v M ρ' × Descs b vs Ms ρ'
 
+Strong = Desc true
+Den = Desc false
+
 KDen v (P.val K) ρ' = Den v K ρ'
 KDen v (P.fun {Δ} N E) ρ' = Σ[ ρ ∈ S.Env Δ ] v ≡ clo N ρ × Ok E ρ ρ'
+Kn v I ρ' = ∀ {K} → known I ≡ just K → KDen v K ρ'
 
 Strongs Dens : ∀ {Γ Δ} → All S.Val Δ → All (Tm Γ) Δ → S.Env Γ → Set
 Strongs = Descs true
@@ -374,12 +374,10 @@ run-let : ∀ {Δf Δ Γ A B} t fl (N : Tm (A ∷ Δf) B) {Ef : Facts Δf Γ} {�
   → Opd (λ ck → S.eval ck ρ M) I ρ' → Opd (Bound t M N ρf ρ) (simp-let fl Ef N I) ρ'
 run-call : ∀ {Δ Γ A B} fl (J : Info Γ (A ⇒ B)) I {L : Tm Δ (A ⇒ B)} {M ρ' ρ} → Opd (λ ck → S.eval ck ρ L) J ρ'
   → Opd (λ ck → S.eval ck ρ M) I ρ' → Opd (λ ck → S.eval ck ρ (app L M)) (simp-call fl J I) ρ'
-
 {- a primitive on known integers -}
 run-prim : ∀ {Δ Γ} fl p (L M : Tm Δ (base Int)) {E : Facts Δ Γ} {ρ ρ' n m} → Ok E ρ ρ'
   → int-of (known (simp fl E L)) ≡ just n → int-of (known (simp fl E M)) ≡ just m
   → Run (prim p L M) ρ (S.δ p (S.const n) (S.const m))
-run-prim fl p L M ok e₁ e₂ = st-bind (run-int fl L ok e₁) (st-bind (run-int fl M ok e₂) (st-now (λ _ → refl)))
 
 run fl (` x) {ρ = ρ} ok = opd (λ _ → _ , st-now (λ _ → refl) , trm ok x) λ k → _ , st-now (λ _ → refl) , knw ok x k
 run fl (lam N) ok = opd (λ _ → _ , st-now (λ _ → refl) , clo≈ ok) λ { refl → _ , st-now (λ _ → refl) , _ , refl , ok }
@@ -456,6 +454,8 @@ run-call zero J I hJ o = opd (λ ()) (λ ())
 run-call (suc fl) (T ∣ nothing) I hJ o = opd (λ ()) (λ ())
 run-call (suc fl) (T ∣ just (P.val K)) I hJ o = opd (λ ()) (λ ())
 
+run-prim fl p L M ok e₁ e₂ = st-bind (run-int fl L ok e₁) (st-bind (run-int fl M ok e₂) (st-now (λ _ → refl)))
+
 {- Both directions, at each clock ---------------------------------------------------}
 
 {- at clock ck, the source's result is the target's, related, or a timeout
@@ -500,9 +500,6 @@ sim : ∀ ck fl {Δ Γ A} (M : Tm Δ A) {E : Facts Δ Γ} {ρ ρ'} → Ok E ρ �
 sims : ∀ ck fl {Δ Γ Δ'} (Ms : All (Tm Δ) Δ') {E : Facts Δ Γ} {ρ ρ'} → Ok E ρ ρ'
   → Sim (All₂ _≈_) (λ c → S.evals c ρ Ms) (S.evals ck ρ' (simps fl E Ms)) ck
 sim-call : ∀ ck {A B} {f f' : S.Val (A ⇒ B)} {w w'} → f ≈ f' → w ≈ w' → Sim _≈_ (λ c → S.call c f w) (S.call ck f' w') ck
-sim-call zero r s = both timeout λ nt → ⊥-elim (nt refl)
-sim-call (suc ck) (clo≈ {fl} {N = N} ok) s with sim ck fl N (ok-under ok s)
-... | both le bk = both le (back-call bk)
 {- a let or a call, as in run-let and run-call -}
 body-sim : ∀ {Δ Γ A B} t ck fl (N : Tm (A ∷ Δ) B) {E : Facts (A ∷ Δ) Γ} {ρ v ρ'} → Ok E (v ∷ ρ) ρ'
   → Sim _≈_ (λ c → Body t c N ρ v) (S.eval ck ρ' (term (simp fl E N))) ck
@@ -513,29 +510,6 @@ call-sim : ∀ {Δ Γ A B} ck fl (J : Info Γ (A ⇒ B)) I {L : Tm Δ (A ⇒ B)}
   → Sim _≈_ (λ c → S.eval c ρ L) (S.eval ck ρ' (term J)) ck → Opd (λ ck → S.eval ck ρ M) I ρ'
   → Sim _≈_ (λ c → S.eval c ρ M) (S.eval ck ρ' (term I)) ck
   → Sim _≈_ (λ c → S.eval c ρ (app L M)) (S.eval ck ρ' (term (simp-call fl J I))) ck
-
-sims ck fl [] ok = sim-ret []
-sims ck fl (M ∷ Ms) ok = sim-bind (sim ck fl M ok) λ _ r → sim-bind (sims ck fl Ms ok) λ _ rs → sim-ret (r ∷ rs)
-
-body-sim true zero fl N ok = both timeout (back-call (bwd (sim zero fl N ok)))
-body-sim true (suc ck) fl N {E} {ρ' = ρ'} ok =
-  both (le-⊑ (fwd (sim ck fl N ok)) (mono (n≤1+n ck) ρ' (term (simp fl E N)))) (back-call (bwd (sim (suc ck) fl N ok)))
-body-sim false ck fl N ok = sim ck fl N ok
-
-let-sim t ck fl N {I = I} {M} {ρ} okf o hM with small (term I) in s | value (term I) in isv
-... | true | _ with opd-val (mono-at ρ M) o (P.small-value (term I) s)
-...   | v , σ , d , h = sim-run (mono-at ρ M) σ (body-sim t ck fl N (ok-cons okf d h s))
-let-sim t ck fl N {I = I} {M} {ρ} okf o hM | false | true =
-  sim-bind hM λ e r → body-sim t ck fl N (ok-let {I = I} okf r (opd-kn (mono-at ρ M) o e))
-let-sim t ck fl N okf o hM | false | false = sim-bind hM λ _ r → body-sim t ck fl N (ok-under okf r)
-
-call-sim ck (suc fl) (T ∣ just (P.fun N Ef)) I {L} {M} hJ hL o hM with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
-... | true with o-known hJ refl
-...   | _ , σL , (ρf , refl , okf) = sim-run (mono-at _ L) σL (let-sim true ck fl N {M = M} okf o hM)
-call-sim ck (suc fl) (T ∣ just (P.fun N Ef)) I {L} hJ hL o hM | false = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
-call-sim ck zero J I hJ hL o hM = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
-call-sim ck (suc fl) (T ∣ nothing) I hJ hL o hM = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
-call-sim ck (suc fl) (T ∣ just (P.val K)) I hJ hL o hM = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
 
 sim ck fl (` x) {ρ = ρ} ok = sim-known ck (` x) ρ (st-now (λ _ → refl)) (trm ok x)
 sim ck fl (lam N) ok = sim-ret (clo≈ ok)
@@ -569,6 +543,33 @@ sim ck fl (unfold L) {E} ok with unfolded (known (simp fl E L)) refl in u
 ... | just K with small K in s | run-unf fl L ok u
 ...   | true | v , σ , d = sim-known ck (unfold L) _ σ (small-strong K s d)
 ...   | false | _ = sim-bind (sim ck fl L ok) λ _ r → sim-ret (unfold≈ r)
+
+sims ck fl [] ok = sim-ret []
+sims ck fl (M ∷ Ms) ok = sim-bind (sim ck fl M ok) λ _ r → sim-bind (sims ck fl Ms ok) λ _ rs → sim-ret (r ∷ rs)
+
+sim-call zero r s = both timeout λ nt → ⊥-elim (nt refl)
+sim-call (suc ck) (clo≈ {fl} {N = N} ok) s with sim ck fl N (ok-under ok s)
+... | both le bk = both le (back-call bk)
+
+body-sim true zero fl N ok = both timeout (back-call (bwd (sim zero fl N ok)))
+body-sim true (suc ck) fl N {E} {ρ' = ρ'} ok =
+  both (le-⊑ (fwd (sim ck fl N ok)) (mono (n≤1+n ck) ρ' (term (simp fl E N)))) (back-call (bwd (sim (suc ck) fl N ok)))
+body-sim false ck fl N ok = sim ck fl N ok
+
+let-sim t ck fl N {I = I} {M} {ρ} okf o hM with small (term I) in s | value (term I) in isv
+... | true | _ with opd-val (mono-at ρ M) o (P.small-value (term I) s)
+...   | v , σ , d , h = sim-run (mono-at ρ M) σ (body-sim t ck fl N (ok-cons okf d h s))
+let-sim t ck fl N {I = I} {M} {ρ} okf o hM | false | true =
+  sim-bind hM λ e r → body-sim t ck fl N (ok-let {I = I} okf r (opd-kn (mono-at ρ M) o e))
+let-sim t ck fl N okf o hM | false | false = sim-bind hM λ _ r → body-sim t ck fl N (ok-under okf r)
+
+call-sim ck (suc fl) (T ∣ just (P.fun N Ef)) I {L} {M} hJ hL o hM with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
+... | true with o-known hJ refl
+...   | _ , σL , (ρf , refl , okf) = sim-run (mono-at _ L) σL (let-sim true ck fl N {M = M} okf o hM)
+call-sim ck (suc fl) (T ∣ just (P.fun N Ef)) I {L} hJ hL o hM | false = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
+call-sim ck zero J I hJ hL o hM = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
+call-sim ck (suc fl) (T ∣ nothing) I hJ hL o hM = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
+call-sim ck (suc fl) (T ∣ just (P.val K)) I hJ hL o hM = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
 
 {- The end theorem: for every closed program ----------------------------------------}
 

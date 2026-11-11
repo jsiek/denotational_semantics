@@ -322,19 +322,12 @@ UsesP M x = Uses x M
 {- The fundamental lemma ----------------------------------------------------------}
 
 adequate : ∀ M {ρ γ d} → 𝔾 (UsesP M) ρ γ → d ∈ ⟦ M ⟧ ρ → ℝ d γ M
-
 {- the operands of a tuple, bound left to right by the machine's tupK -}
 tuple-ℂ : ∀ {m} (as : Args (replicate m ■)) {ρ γ} → 𝔾 (λ x → UsesArgs x as) ρ γ
   → ∀ {K w} acc → w ∈ binds m (⟦ as ⟧₊ ρ) K
   → (∀ vs Xs → length vs ≡ m → (∀ j d → d ∈ nthD Xs j → 𝕍At j d vs) → ∀ w → w ∈ K Xs
        → ℂ w (λ κ → ret (tup (reverse (reverseAcc acc vs))) κ))
   → ℂ w (λ κ → tuple-next acc (args→list as) γ κ)
-tuple-ℂ {zero} Nil G acc w∈ k = k [] ptt refl (λ ()) _ w∈
-tuple-ℂ {suc m} (M ,, as) {ρ} {γ} G {K} acc w∈ k =
-  ℂ-bind {F = λ X → binds m (⟦ as ⟧₊ ρ) (λ Xs → K ⟨ X , Xs ⟩)} (λ κ → tupK acc (args→list as) γ κ) (λ d → adequate M (λ x p → G x (inj₁ p))) w∈
-    λ v all w w∈′ → step₁ (λ κ → refl) (tuple-ℂ as (λ x p → G x (inj₂ p)) (v ∷ acc) w∈′
-      λ vs Xs len rs w′ w∈″ → k (v ∷ vs) _ (cong suc len)
-        (λ { zero d d∈ → ⟨ len , all d d∈ ⟩ ; (suc j) d d∈ → rs j d d∈ }) w′ w∈″)
 
 adequate (` x) {γ = γ} G d∈ with G x refl _ d∈
 ... | ⟨ v , ⟨ look , r ⟩ ⟩ = inj₂ ⟨ v , ⟨ (λ κ → cong (λ m → ret? m κ) look ∷↠ done) , r ⟩ ⟩
@@ -436,3 +429,10 @@ adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G w∈ =
     λ { v all w ⟨ V , ⟨ ⟨ ⟨ w∈′ , _ ⟩ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ →
         step₁ (λ κ → refl) (adequate N (𝔾-ext V v (λ x p → G x (inj₂ (inj₁ p))) (all→𝕍s V (λ d d∈ → all d (V⊆ d d∈)))) w∈′) })
   where F = λ Y → ⟦ N ⟧ (Y • ρ)
+
+tuple-ℂ {zero} Nil G acc w∈ k = k [] ptt refl (λ ()) _ w∈
+tuple-ℂ {suc m} (M ,, as) {ρ} {γ} G {K} acc w∈ k =
+  ℂ-bind {F = λ X → binds m (⟦ as ⟧₊ ρ) (λ Xs → K ⟨ X , Xs ⟩)} (λ κ → tupK acc (args→list as) γ κ) (λ d → adequate M (λ x p → G x (inj₁ p))) w∈
+    λ v all w w∈′ → step₁ (λ κ → refl) (tuple-ℂ as (λ x p → G x (inj₂ p)) (v ∷ acc) w∈′
+      λ vs Xs len rs w′ w∈″ → k (v ∷ vs) _ (cong suc len)
+        (λ { zero d d∈ → ⟨ len , all d d∈ ⟩ ; (suc j) d d∈ → rs j d d∈ }) w′ w∈″)

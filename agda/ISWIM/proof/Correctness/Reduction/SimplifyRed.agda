@@ -527,9 +527,9 @@ simp-args-ok : ∀ fl {n} (as : Args (replicate n ■)) {E τ υ} → Inv E τ �
   → Pw _≽_ (sub-args τ as) (sub-args υ (simp-args fl E as))
 app-ok : ∀ fl L M {E τ υ I} → Inv E τ υ → Desc (sub τ M) I υ
   → Desc (sub τ (app ⦅ L ,, M ,, Nil ⦆)) (simp-app fl E L I) υ
+call-ok : ∀ fl J I {υ L M} → Desc L J υ → Desc M I υ → Desc (app ⦅ L ,, M ,, Nil ⦆) (simp-call fl J I) υ
 let-ok : ∀ fl f N {E τ υ I X} → Inv E τ υ → Desc X I υ
   → Desc (bnd f (sub (exts τ) N) X) (simp-let fl E N I) υ
-call-ok : ∀ fl J I {υ L M} → Desc L J υ → Desc M I υ → Desc (app ⦅ L ,, M ,, Nil ⦆) (simp-call fl J I) υ
 case-ok : ∀ fl L M N {E τ υ I} → Inv E τ υ → Desc (sub τ L) I υ
   → Desc (sub τ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆)) (simp-case fl E I M N) υ
 

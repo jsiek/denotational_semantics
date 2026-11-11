@@ -80,18 +80,11 @@ fv-ne ne (S i) = fv-ne (λ j → ne (suc j)) i
 opt-ok : ∀ {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ ρ'} → NE Γ ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ opt M r ⟧ ρ'
 opts-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'} → NE Γ ρ → Agree (usesA Ms) r ρ ρ'
   → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts Ms r ⟧s ρ') i
-
 {- a body under a binder, for the variables its binder's term uses -}
 under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) {r : Ren (λ x → uses N (S x)) Γ'} {ρ ρ'} → NE Γ ρ → Agree (λ x → uses N (S x)) r ρ ρ'
   → Body-≃ (λ X → ⟦ N ⟧ (X • ρ)) (λ X → ⟦ opt N (ext {u = uses N} r) ⟧ (X • ρ'))
-under N V ag X ne _ = opt-ok N (ext-ne ne V) λ { Z _ → ≃-refl ; (S x) t → ag x t }
-
 th-ok : ∀ {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'}
   → NE Γ ρ → Agree (usesA Ms) r ρ ρ' → Th (flags u Ms) (⟦ Ms ⟧s ρ) (⟦ select (flags u Ms) (opts Ms r) ⟧s ρ')
-th-ok u [] V ag = []
-th-ok u (M ∷ Ms) V ag with keep? M (u Z) | fl-ok M (u Z)
-... | true | _ = keep (opt-ok M V (λ x t → ag x (∨-l _ t))) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
-... | false | var-fv {x = x} = drop (V x) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
 
 opt-ok (` x) V ag = ag x (fromWitness refl)
 opt-ok (clos {Δ} N Ms) V ag =
@@ -115,6 +108,13 @@ opt-ok (unfold M) V ag = opt-ok M V ag
 
 opts-ok (M ∷ Ms) V ag zero = opt-ok M V (λ x t → ag x (∨-l _ t))
 opts-ok (M ∷ Ms) V ag (suc i) = opts-ok Ms V (λ x t → ag x (∨-r (uses M x) t)) i
+
+under N V ag X ne _ = opt-ok N (ext-ne ne V) λ { Z _ → ≃-refl ; (S x) t → ag x t }
+
+th-ok u [] V ag = []
+th-ok u (M ∷ Ms) V ag with keep? M (u Z) | fl-ok M (u Z)
+... | true | _ = keep (opt-ok M V (λ x t → ag x (∨-l _ t))) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
+... | false | var-fv {x = x} = drop (V x) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
 
 prune-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ ρ₀ ≃ ⟦ prune-program M ⟧ ρ₀
 prune-correct M = opt-ok M (λ ()) (λ ())

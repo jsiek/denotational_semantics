@@ -98,11 +98,11 @@ args≈ : ∀ ck r {n ρ₁ ρ₂ vs ws} (args : Args (replicate n ■)) → Env
 apply≈ : ∀ ck r {ρ₁ ρ₂ f g} M → EnvRel r ρ₁ ρ₂ → f ≈ g
   → RelResult _≈_ (S.apply ck ρ₁ M f)
       (T.first g >>= T.apply ck (g ∷ ρ₂) snd0 (rename (ext r) (shift (split M))))
+call≈ : ∀ ck {ρ₁ ρ₂} N → EnvRel (λ x → x) ρ₁ ρ₂
+  → RelResult _≈_ (S.call ck N ρ₁) (T.call (T.fun (split N)) ck ρ₂)
 {- under the identity renaming -}
 run-id : ∀ ck {ρ₁ ρ₂} M → EnvRel (λ x → x) ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (split M))
-call≈ : ∀ ck {ρ₁ ρ₂} N → EnvRel (λ x → x) ρ₁ ρ₂
-  → RelResult _≈_ (S.call ck N ρ₁) (T.call (T.fun (split N)) ck ρ₂)
 branch≈ : ∀ ck r {ρ₁ ρ₂ v w} M N → EnvRel r ρ₁ ρ₂ → v ≈ w
   → RelResult _≈_ (S.branch ck ρ₁ M N v)
       (T.branch ck ρ₂ (rename (ext r) (split M)) (rename (ext r) (split N)) w)

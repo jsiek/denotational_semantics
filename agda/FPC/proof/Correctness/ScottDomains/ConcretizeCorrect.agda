@@ -67,11 +67,9 @@ fv-pos ds Y (S i) = fv-pos (λ j → ds (suc j)) (ds zero) i
 conc : ∀ {Γ Γ' A} (M : Tm Γ A) (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩} → EnvRel φ ρ₂ ρ₃ → ⟦ M ⟧ · ρ₂ ＝ ⟦ concretize φ M ⟧₃ · ρ₃
 concs-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩} → EnvRel φ ρ₂ ρ₃
   → ⟦ Ms ⟧s · ρ₂ ＝ ⟦ concs φ Ms ⟧s₃ · ρ₃
-
 {- a body under a binder -}
 under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) (φ : Refs Γ Γ') {ρ₂ ρ₃ : ⟨ Env ⟩} → EnvRel φ ρ₂ ρ₃
   → (d : ⟨ 𝔻 ⟩) → defined d → ⟦ N ⟧ · (d • ρ₂) ＝ ⟦ concretize (ext-ref φ) N ⟧₃ · (d • ρ₃)
-under N φ rel d _ = conc N (ext-ref φ) (rel-ext φ rel)
 
 conc (` x) φ rel = rel x
 conc (clos {Δ} N Ms) φ {ρ₂} {ρ₃} rel =
@@ -108,6 +106,8 @@ conc (unfold M) φ rel = conc M φ rel
 
 concs-ok [] φ rel = refl
 concs-ok (M ∷ Ms) φ rel = dfunext fe λ { zero → conc M φ rel ; (suc i) → happly (concs-ok Ms φ rel) i }
+
+under N φ rel d _ = conc N (ext-ref φ) (rel-ext φ rel)
 
 concretize-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ · ρ₀ ＝ ⟦ concretize-program M ⟧₃ · ρ₀
 concretize-correct M = conc M (λ ()) (λ ())

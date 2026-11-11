@@ -155,53 +155,21 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
   KOK {Δ} k σ F = ∀ {Δ'} {r : Ren Δ Δ'} {σ'} a → Ag r σ σ' → F (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ') ＝ ⟦ ⌜ k r a ⌝ ⟧[ T' ] · σ'
 
   rco-sem : ∀ {Γ Δ A} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} {γ σ} → Ag ρ γ σ → ⟦ N ⟧[ T ] · γ ＝ ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] · σ
-
   atomize-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ} → Ag ρ γ σ
     → (F : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩) → Str F → KOK k σ F → F (⟦ N ⟧[ T ] · γ) ＝ ⟦ ⌜ atomize N ρ k ⌝ ⟧[ T' ] · σ
   {- a complex operand, bound by a let -}
   let-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) {ρ : Ren Γ Δ} (k : K Σ Δ A B) {γ σ} → Ag ρ γ σ
     → (F : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩) → Str F → KOK k σ F → F (⟦ N ⟧[ T ] · γ) ＝ ⟦ ⌜ M.let′ (rco N ρ) (k S (var Z)) ⌝ ⟧[ T' ] · σ
-  atomize-sem (` x) {ρ} k ag F sF ks = ap F (agr ag x) ∙ ks (var (ρ x)) id-ag
-  atomize-sem (fun-ref f) k ag F sF ks = ap F (TT f) ∙ ks (ref f) id-ag
-  atomize-sem (lit B c) k ag F sF ks = ks (lit B c) id-ag
-  atomize-sem N@(pair _ _) = let-sem N
-  atomize-sem N@(callc _ _) = let-sem N
-  atomize-sem N@(tuple _) = let-sem N
-  atomize-sem N@(get _ _) = let-sem N
-  atomize-sem N@(inl _) = let-sem N
-  atomize-sem N@(inr _) = let-sem N
-  atomize-sem N@(case _ _ _) = let-sem N
-  atomize-sem N@(prim _ _ _) = let-sem N
-  atomize-sem N@(let′ _ _) = let-sem N
-  atomize-sem N@(fold _) = let-sem N
-  atomize-sem N@(unfold _) = let-sem N
-  let-sem N {ρ} k {σ = σ} ag F sF ks =
-    ap F (rco-sem N ag)
-    ∙ seq-absorb v (F v) (sF v) ⁻¹
-    ∙ seq-cong v (F v) (⟦ ⌜ k S (var Z) ⌝ ⟧[ T' ] · (v • σ)) (λ _ → ks (var Z) (mk-ag λ y → refl))
-    ∙ letᶜ-β ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] ⟦ ⌜ k S (var Z) ⌝ ⟧[ T' ] σ ⁻¹
-   where v = ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] · σ
-
   atomizes-sem : ∀ {Γ Δ Δs B} (Ns : All (Tm Σ Γ) Δs) {ρ : Ren Γ Δ}
     (k : ∀ {Δ'} → Ren Δ Δ' → All (Atm Σ Δ') Δs → Exp Σ Δ' B) {γ σ} → Ag ρ γ σ
     → (G : (Fin (length Δs) → ⟨ 𝔻 ⟩) → ⟨ 𝔻 ⟩) → ((ds : Fin (length Δs) → ⟨ 𝔻 ⟩) (i : Fin (length Δs)) → defined (G ds) → defined (ds i))
     → (∀ {Δ'} {r : Ren Δ Δ'} {σ'} as → Ag r σ σ' → G (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] · σ') ＝ ⟦ ⌜ k r as ⌝ ⟧[ T' ] · σ')
     → G (⟦ Ns ⟧s[ T ] · γ) ＝ ⟦ ⌜ atomizes Ns ρ k ⌝ ⟧[ T' ] · σ
-  atomizes-sem [] k ag G sG ks = ks [] id-ag
-  atomizes-sem (N ∷ Ns) k {γ} ag G sG ks =
-    atomize-sem N _ ag (λ v → G (v ∷ᶠ (⟦ Ns ⟧s[ T ] · γ))) (λ v → sG (v ∷ᶠ (⟦ Ns ⟧s[ T ] · γ)) zero) λ {_} {r} {σ'} a ag₁ →
-      atomizes-sem Ns _ (ag ⨾ ag₁) (λ ds → G ((⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ') ∷ᶠ ds)) (λ ds i → sG ((⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ') ∷ᶠ ds) (suc i))
-        λ {_} {r'} {σ''} as ag₂ → ap (λ u → G (u ∷ᶠ (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] · σ''))) (ren-atm a ag₂) ∙ ks (ren r' a ∷ as) (ag₁ ⨾ ag₂)
-
   atomize₂-sem : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) {ρ : Ren Γ Δ}
     (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) {γ σ} → Ag ρ γ σ
     → (F : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩) → ((b : ⟨ 𝔻 ⟩) → Str (λ a → F a b)) → ((a : ⟨ 𝔻 ⟩) → Str (F a))
     → (∀ {Δ'} (σ' : ⟨ Env ⟩) (a : Atm Σ Δ' A₁) b → F (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ') (⟦ ⌜ b ⌝ᵃ ⟧[ T' ] · σ') ＝ ⟦ ⌜ k a b ⌝ ⟧[ T' ] · σ')
     → F (⟦ L ⟧[ T ] · γ) (⟦ N ⟧[ T ] · γ) ＝ ⟦ ⌜ atomize₂ L N ρ k ⌝ ⟧[ T' ] · σ
-  atomize₂-sem L N k {γ} ag F s₁ s₂ ks =
-    atomize-sem L _ ag (λ a → F a (⟦ N ⟧[ T ] · γ)) (s₁ (⟦ N ⟧[ T ] · γ)) λ {_} {r} {σ'} a ag₁ →
-      atomize-sem N _ (ag ⨾ ag₁) (F (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ')) (s₂ (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ')) λ {_} {r'} {σ''} b ag₂ →
-        ap (λ u → F u (⟦ ⌜ b ⌝ᵃ ⟧[ T' ] · σ'')) (ren-atm a ag₂) ∙ ks σ'' (ren r' a) b
 
   rco-sem (` x) ag = agr ag x
   rco-sem (fun-ref f) ag = TT f
@@ -234,6 +202,38 @@ module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
       (rco-sem N₁ ag) (λ d _ → rco-sem N₂ (ext-ag ag))
   rco-sem (fold N) ag = atomize-sem N _ ag (λ v → v) (λ v p → p) λ _ _ → refl
   rco-sem (unfold N) ag = atomize-sem N _ ag (λ v → v) (λ v p → p) λ _ _ → refl
+
+  atomize-sem (` x) {ρ} k ag F sF ks = ap F (agr ag x) ∙ ks (var (ρ x)) id-ag
+  atomize-sem (fun-ref f) k ag F sF ks = ap F (TT f) ∙ ks (ref f) id-ag
+  atomize-sem (lit B c) k ag F sF ks = ks (lit B c) id-ag
+  atomize-sem N@(pair _ _) = let-sem N
+  atomize-sem N@(callc _ _) = let-sem N
+  atomize-sem N@(tuple _) = let-sem N
+  atomize-sem N@(get _ _) = let-sem N
+  atomize-sem N@(inl _) = let-sem N
+  atomize-sem N@(inr _) = let-sem N
+  atomize-sem N@(case _ _ _) = let-sem N
+  atomize-sem N@(prim _ _ _) = let-sem N
+  atomize-sem N@(let′ _ _) = let-sem N
+  atomize-sem N@(fold _) = let-sem N
+  atomize-sem N@(unfold _) = let-sem N
+  let-sem N {ρ} k {σ = σ} ag F sF ks =
+    ap F (rco-sem N ag)
+    ∙ seq-absorb v (F v) (sF v) ⁻¹
+    ∙ seq-cong v (F v) (⟦ ⌜ k S (var Z) ⌝ ⟧[ T' ] · (v • σ)) (λ _ → ks (var Z) (mk-ag λ y → refl))
+    ∙ letᶜ-β ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] ⟦ ⌜ k S (var Z) ⌝ ⟧[ T' ] σ ⁻¹
+   where v = ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] · σ
+
+  atomizes-sem [] k ag G sG ks = ks [] id-ag
+  atomizes-sem (N ∷ Ns) k {γ} ag G sG ks =
+    atomize-sem N _ ag (λ v → G (v ∷ᶠ (⟦ Ns ⟧s[ T ] · γ))) (λ v → sG (v ∷ᶠ (⟦ Ns ⟧s[ T ] · γ)) zero) λ {_} {r} {σ'} a ag₁ →
+      atomizes-sem Ns _ (ag ⨾ ag₁) (λ ds → G ((⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ') ∷ᶠ ds)) (λ ds i → sG ((⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ') ∷ᶠ ds) (suc i))
+        λ {_} {r'} {σ''} as ag₂ → ap (λ u → G (u ∷ᶠ (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] · σ''))) (ren-atm a ag₂) ∙ ks (ren r' a ∷ as) (ag₁ ⨾ ag₂)
+
+  atomize₂-sem L N k {γ} ag F s₁ s₂ ks =
+    atomize-sem L _ ag (λ a → F a (⟦ N ⟧[ T ] · γ)) (s₁ (⟦ N ⟧[ T ] · γ)) λ {_} {r} {σ'} a ag₁ →
+      atomize-sem N _ (ag ⨾ ag₁) (F (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ')) (s₂ (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] · σ')) λ {_} {r'} {σ''} b ag₂ →
+        ap (λ u → F u (⟦ ⌜ b ⌝ᵃ ⟧[ T' ] · σ'')) (ren-atm a ag₂) ∙ ks σ'' (ren r' a) b
 
   {- the code of a definition means the code of its output -}
   code-rco : ∀ {s} (d : Code Σ s) → code′ T d ＝ code′ T' ⌜ rco d (λ x → x) ⌝

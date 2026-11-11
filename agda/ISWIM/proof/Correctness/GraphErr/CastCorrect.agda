@@ -174,18 +174,12 @@ agree-• R e (suc x) = R x
 cc : ∀ {k k'} (r : Fin k → Fin k') M (w : WS k M) {ρ σ} → Wf ρ → Agree r ρ σ → ⟦ M ⟧ ρ ≃ T.⟦ cast r M w ⟧ σ
 ccs : ∀ {k k' n} (r : Fin k → Fin k') (Ms : Args (replicate n ■)) (ws : WS-args k Ms) {ρ σ} → Wf ρ → Agree r ρ σ
   → ∀ i → nthD (⟦ Ms ⟧₊ ρ) i ≃ nthD (T.⟦ casts r Ms ws ⟧s σ) i
-
 {- the typed meaning is consistent, as the untyped one is -}
 con : ∀ {k k'} {r : Fin k → Fin k'} M (w : WS k M) {ρ σ} → Wf ρ → Agree r ρ σ → Con (T.⟦ cast r M w ⟧ σ)
-con M w wf R = Con-⊆ (ISWIMᵐ-con M (proj₂ wf)) (proj₂ (cc _ M w wf R))
-
 ⌊con⌋ : ∀ {k k'} {r : Fin k → Fin k'} M (w : WS k M) {ρ σ} → Wf ρ → Agree r ρ σ → Con ⌊ T.⟦ cast r M w ⟧ σ ⌋
-⌊con⌋ M w wf R = Con-⊆ (con M w wf R) ⌊⌋-⊆
-
 {- a binder: the body on a finite consistent set of values -}
 body : ∀ {k k'} (r : Fin k → Fin k') N (w : WS (suc k) N) {ρ σ} → Wf ρ → Agree r ρ σ
   → BodyEq (λ X → ⟦ N ⟧ (X • ρ)) (λ X → T.⟦ cast (ext r) N w ⟧ (X • σ))
-body r N w wf R V ne c n = cc (ext r) N w (wf-• wf (proj₂ (noerr-val V ne n)) (≈⇒Con c)) (agree-• R ≃-refl)
 
 cc r (` x) x<k {ρ} wf R = ≃-trans (≃-reflexive (cong ρ (sym (toℕ-fromℕ< x<k)))) (R _)
 cc r (lam ⦅ ⟩ N ,, Nil ⦆) ⟨ w , _ ⟩ wf R = Λᵐ-≃ (body r N w wf R)
@@ -220,6 +214,12 @@ cc r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ⟨ wM , ⟨ wN , _ ⟩ ⟩ {ρ} {σ} wf
 
 ccs {n = suc n} r (M ,, Ms) ⟨ w , ws ⟩ wf R zero = cc r M w wf R
 ccs {n = suc n} r (M ,, Ms) ⟨ w , ws ⟩ wf R (suc i) = ccs r Ms ws wf R i
+
+con M w wf R = Con-⊆ (ISWIMᵐ-con M (proj₂ wf)) (proj₂ (cc _ M w wf R))
+
+⌊con⌋ M w wf R = Con-⊆ (con M w wf R) ⌊⌋-⊆
+
+body r N w wf R V ne c n = cc (ext r) N w (wf-• wf (proj₂ (noerr-val V ne n)) (≈⇒Con c)) (agree-• R ≃-refl)
 
 {- The end theorem: closed programs ----------------------------------------------}
 

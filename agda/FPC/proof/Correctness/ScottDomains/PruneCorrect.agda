@@ -98,15 +98,6 @@ fv-ne : ∀ {Δ : Ctx} {A} (ds : Fs (length Δ)) {Y} → defined Y → All-defin
 fv-ne ds p ne Z = p
 fv-ne ds {Y} p ne (S i) = transport defined (fv-pos ds Y i ⁻¹) (ne (pos i))
 
-opt-ok : ∀ {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ ρ'} → NE Γ ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ · ρ ＝ ⟦ opt M r ⟧ · ρ'
-opts-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'} → NE Γ ρ → Agree (usesA Ms) r ρ ρ'
-  → ⟦ Ms ⟧s · ρ ＝ ⟦ opts Ms r ⟧s · ρ'
-
-{- a body under a binder, for the variables its binder's term uses -}
-under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) {r : Ren (λ x → uses N (S x)) Γ'} {ρ ρ'} → NE Γ ρ → Agree (λ x → uses N (S x)) r ρ ρ'
-  → (d : ⟨ 𝔻 ⟩) → defined d → ⟦ N ⟧ · (d • ρ) ＝ ⟦ opt N (ext-ren {u = uses N} r) ⟧ · (d • ρ')
-under N V ag d p = opt-ok N (ext-ne p V) λ { Z _ → refl ; (S x) t → ag x t }
-
 {- the free variables and the kept ones (a non-recursive step) -}
 th-cons : ∀ {Γ Γ' Δ C} (M : Tm Γ C) (Ms : All (Tm Γ) Δ) (b : Bool) → Fl b M → (fl : Flags Δ)
   {r₁ : Ren (uses M) Γ'} {r₂ : Ren (usesA Ms) Γ'} {ρ ρ' : ⟨ Env ⟩} → NE Γ ρ
@@ -115,12 +106,14 @@ th-cons : ∀ {Γ Γ' Δ C} (M : Tm Γ C) (Ms : All (Tm Γ) Δ) (b : Bool) → F
 th-cons M Ms true kept-fv fl V e th = e , th
 th-cons (` x) Ms false var-fv fl V e th = V x , th
 
+opt-ok : ∀ {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ ρ'} → NE Γ ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ · ρ ＝ ⟦ opt M r ⟧ · ρ'
+opts-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'} → NE Γ ρ → Agree (usesA Ms) r ρ ρ'
+  → ⟦ Ms ⟧s · ρ ＝ ⟦ opts Ms r ⟧s · ρ'
+{- a body under a binder, for the variables its binder's term uses -}
+under : ∀ {Γ Γ' A B} (N : Tm (B ∷ Γ) A) {r : Ren (λ x → uses N (S x)) Γ'} {ρ ρ'} → NE Γ ρ → Agree (λ x → uses N (S x)) r ρ ρ'
+  → (d : ⟨ 𝔻 ⟩) → defined d → ⟦ N ⟧ · (d • ρ) ＝ ⟦ opt N (ext-ren {u = uses N} r) ⟧ · (d • ρ')
 th-ok : ∀ {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'}
   → NE Γ ρ → Agree (usesA Ms) r ρ ρ' → Th (flags u Ms) (⟦ Ms ⟧s · ρ) (⟦ select (flags u Ms) (opts Ms r) ⟧s · ρ')
-th-ok u [] V ag = ⋆
-th-ok u (M ∷ Ms) V ag =
-  th-cons M Ms (keep? M (u Z)) (fl-ok M (u Z)) (flags (λ x → u (S x)) Ms) V
-    (opt-ok M V (λ x t → ag x (∨-l _ t))) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
 
 opt-ok (` x) V ag = ag x (fromWitness Eq.refl)
 opt-ok (clos {Δ} N Ms) {ρ = ρ} {ρ'} V ag =
@@ -158,6 +151,13 @@ opt-ok (unfold M) V ag = opt-ok M V ag
 opts-ok [] V ag = refl
 opts-ok (M ∷ Ms) V ag =
   dfunext fe λ { zero → opt-ok M V (λ x t → ag x (∨-l _ t)) ; (suc i) → happly (opts-ok Ms V (λ x t → ag x (∨-r (uses M x) t))) i }
+
+under N V ag d p = opt-ok N (ext-ne p V) λ { Z _ → refl ; (S x) t → ag x t }
+
+th-ok u [] V ag = ⋆
+th-ok u (M ∷ Ms) V ag =
+  th-cons M Ms (keep? M (u Z)) (fl-ok M (u Z)) (flags (λ x → u (S x)) Ms) V
+    (opt-ok M V (λ x t → ag x (∨-l _ t))) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
 
 prune-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ · ρ₀ ＝ ⟦ prune-program M ⟧ · ρ₀
 prune-correct M = opt-ok M (λ ()) (λ ())

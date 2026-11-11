@@ -71,9 +71,6 @@ data _≈_ : S.Val → S.Val → Set
 Desc : Bool → S.Val → AST → S.Env → Set
 Descs : Bool → ∀ {n} → List S.Val → Args (replicate n ■) → S.Env → Set
 Strong Den : S.Val → AST → S.Env → Set
-Strong = Desc true
-Den = Desc false
-
 {- what a value is known to be is true of it: a value that describes it,
    or a function λ N that is a source closure of N, under Facts true of
    the closure's environment and the target's -}
@@ -107,6 +104,9 @@ Desc b v (inr-op ⦅ M ,, Nil ⦆) ρ' = Σ[ v₀ ∈ S.Val ] v ≡ S.inr v₀ �
 Desc b v _ ρ' = ⊥
 Descs b {zero} vs Nil ρ' = vs ≡ []
 Descs b {suc n} vs (M ,, as) ρ' = Σ[ v ∈ S.Val ] Σ[ vs' ∈ List S.Val ] vs ≡ v ∷ vs' × Desc b v M ρ' × Descs b vs' as ρ'
+
+Strong = Desc true
+Den = Desc false
 
 KDen v (val K) ρ' = Den v K ρ'
 KDen v (fun N E) ρ' = Σ[ ρ ∈ S.Env ] v ≡ S.clo N ρ × Ok E ρ ρ' × WS (suc (length ρ)) N
@@ -360,8 +360,6 @@ opd-val {I} {M} {ρ'} {ρ} o e with o-term o e
 
 run-term : ∀ fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → value (term (simp fl E M)) ≡ true
   → Σ[ v ∈ S.Val ] Run M ρ v × Strong v (term (simp fl E M)) ρ'
-run-known : ∀ fl M {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) M → known (simp fl E M) ≡ just K
-  → Σ[ v ∈ S.Val ] Run M ρ v × KDen v K ρ'
 run-terms : ∀ fl {n} (as : Args (replicate n ■)) {E ρ ρ'} → Ok E ρ ρ' → WS-args (length ρ) as
   → values (simp-args fl E as) ≡ true
   → Σ[ vs ∈ List S.Val ] (∀ acc → Stable (λ ck → S.eval-args ck ρ acc as) (ret (reverseAcc acc vs)))
@@ -373,6 +371,8 @@ run-inl : ∀ fl L {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) L → branch 
 run-inr : ∀ fl L {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) L → branch (known (simp fl E L)) ≡ just (false , K)
   → Σ[ v ∈ S.Val ] Run L ρ (S.inr v) × Strong v K ρ'
 run-int : ∀ fl L {E ρ ρ' n} → Ok E ρ ρ' → WS (length ρ) L → int-of (known (simp fl E L)) ≡ just n → Run L ρ (S.const Int n)
+run-known : ∀ fl M {E ρ ρ' K} → Ok E ρ ρ' → WS (length ρ) M → known (simp fl E M) ≡ just K
+  → Σ[ v ∈ S.Val ] Run M ρ v × KDen v K ρ'
 {- a let, or a call: the source runs the operand, then N (run-let), or
    the target calls (run-call) -}
 run-let : ∀ t fl N {Ef ρf ρ' I M ρ} → Ok Ef ρf ρ' → WS (suc (length ρf)) N → Opd M ρ I ρ'
@@ -385,15 +385,11 @@ run-call : ∀ fl J I {L M ρ' ρ} → (∀ {K} → known J ≡ just K → Σ[ v
   → Σ[ v ∈ S.Val ] Run (app ⦅ L ,, M ,, Nil ⦆) ρ v × Strong v (term (simp-call fl J I)) ρ'
 known-call : ∀ fl J I {L M ρ' ρ K} → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ') → Opd M ρ I ρ'
   → known (simp-call fl J I) ≡ just K → Σ[ v ∈ S.Val ] Run (app ⦅ L ,, M ,, Nil ⦆) ρ v × KDen v K ρ'
-
 run-opd : ∀ fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → Opd M ρ (simp fl E M) ρ'
-run-opd fl M ok w = opd (run-term fl M ok w) (run-known fl M ok w)
-
 {- a primitive on known integers -}
 run-prim : ∀ fl p L M {E ρ ρ' n m} → Ok E ρ ρ' → WS (length ρ) L → WS (length ρ) M
   → int-of (known (simp fl E L)) ≡ just n → int-of (known (simp fl E M)) ≡ just m
   → Run (prim p ⦅ L ,, M ,, Nil ⦆) ρ (S.out (δ p n m))
-run-prim fl p L M ok wL wM e₁ e₂ = st-bind (run-int fl L ok wL e₁) (st-bind (run-int fl M ok wM e₂) (st-now (λ _ → refl)))
 
 run-term fl (` x) {ρ = ρ} ok w e with lookup-ws ρ w
 ... | v , l = v , st-now (λ ck → cong from-maybe l) , trm ok x l
@@ -508,6 +504,10 @@ known-call zero J I hJ o ()
 known-call (suc fl) (T ∣ nothing) I hJ o ()
 known-call (suc fl) (T ∣ just (val K)) I hJ o ()
 
+run-opd fl M ok w = opd (run-term fl M ok w) (run-known fl M ok w)
+
+run-prim fl p L M ok wL wM e₁ e₂ = st-bind (run-int fl L ok wL e₁) (st-bind (run-int fl M ok wM e₂) (st-now (λ _ → refl)))
+
 {- Forward, at the same clock ------------------------------------------------------}
 
 {- the source runs M to a value that the target's value term T describes -}
@@ -515,27 +515,21 @@ known-le : ∀ ck M ρ {v T ρ'} → Run M ρ v → Strong v T ρ' → LeResult 
 known-le ck M ρ σ d with teval _ d
 ... | w , et , r rewrite et ck = subst (λ x → LeResult _≈_ x _) (bind-ret (S.eval ck ρ M)) (le-stable ck (mono-at ρ M) σ (ret r))
 
-run≈ : ∀ ck fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' (term (simp fl E M)))
-args≈ : ∀ ck fl {n} (as : Args (replicate n ■)) {E ρ ρ' acc acc'} → Ok E ρ ρ' → WS-args (length ρ) as → Pointwise _≈_ acc acc'
-  → LeResult (Pointwise _≈_) (S.eval-args ck ρ acc as) (S.eval-args ck ρ' acc' (simp-args fl E as))
-apply≈ : ∀ ck {M M' ρ ρ' v v'} → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' M') → v ≈ v'
-  → LeResult _≈_ (S.apply ck ρ M v) (S.apply ck ρ' M' v')
-call≈ : ∀ ck fl N {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) N → LeResult _≈_ (S.call ck N ρ) (S.call ck (term (simp fl E N)) ρ')
-call≈ zero fl N ok w = timeout
-call≈ (suc ck) fl N ok w = run≈ ck fl N ok w
-branch≈ : ∀ ck fl M N {E ρ ρ' v v'} → Ok E ρ ρ' → WS (suc (length ρ)) M → WS (suc (length ρ)) N → v ≈ v'
-  → LeResult _≈_ (S.branch ck ρ M N v) (S.branch ck ρ' (term (simp fl (under E) M)) (term (simp fl (under E) N)) v')
-branch≈ ck fl M N ok wM wN (inl≈ r) = run≈ ck fl M (ok-under ok r) wM
-branch≈ ck fl M N ok wM wN (inr≈ r) = run≈ ck fl N (ok-under ok r) wN
-branch≈ ck fl M N ok wM wN (clo≈ _ _) = error
-branch≈ ck fl M N ok wM wN const≈ = error
-branch≈ ck fl M N ok wM wN (tup≈ _) = error
 project≈ : ∀ {n} (i : Fin n) {v v'} → v ≈ v' → LeResult _≈_ (S.project i v) (S.project i v')
 project≈ i (tup≈ rs) = from-maybe-le (proj-pw i rs)
 project≈ i (clo≈ _ _) = error
 project≈ i const≈ = error
 project≈ i (inl≈ _) = error
 project≈ i (inr≈ _) = error
+
+run≈ : ∀ ck fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' (term (simp fl E M)))
+args≈ : ∀ ck fl {n} (as : Args (replicate n ■)) {E ρ ρ' acc acc'} → Ok E ρ ρ' → WS-args (length ρ) as → Pointwise _≈_ acc acc'
+  → LeResult (Pointwise _≈_) (S.eval-args ck ρ acc as) (S.eval-args ck ρ' acc' (simp-args fl E as))
+apply≈ : ∀ ck {M M' ρ ρ' v v'} → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' M') → v ≈ v'
+  → LeResult _≈_ (S.apply ck ρ M v) (S.apply ck ρ' M' v')
+call≈ : ∀ ck fl N {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) N → LeResult _≈_ (S.call ck N ρ) (S.call ck (term (simp fl E N)) ρ')
+branch≈ : ∀ ck fl M N {E ρ ρ' v v'} → Ok E ρ ρ' → WS (suc (length ρ)) M → WS (suc (length ρ)) N → v ≈ v'
+  → LeResult _≈_ (S.branch ck ρ M N v) (S.branch ck ρ' (term (simp fl (under E) M)) (term (simp fl (under E) N)) v')
 {- a let or a call, as in run-let and run-call -}
 body-le : ∀ t ck fl N {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) N → LeResult _≈_ (Body t ck N ρ) (S.eval ck ρ' (term (simp fl E N)))
 let≈ : ∀ t ck fl N {Ef ρf ρ' I M ρ} → Ok Ef ρf ρ' → WS (suc (length ρf)) N → Opd M ρ I ρ'
@@ -544,37 +538,6 @@ let≈ : ∀ t ck fl N {Ef ρf ρ' I M ρ} → Ok Ef ρf ρ' → WS (suc (length
 call-le : ∀ ck fl J I {L M ρ' ρ} → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ')
   → LeResult _≈_ (S.eval ck ρ L) (S.eval ck ρ' (term J)) → Opd M ρ I ρ' → LeResult _≈_ (S.eval ck ρ M) (S.eval ck ρ' (term I))
   → LeResult _≈_ (S.eval ck ρ (app ⦅ L ,, M ,, Nil ⦆)) (S.eval ck ρ' (term (simp-call fl J I)))
-
-apply≈ ck hM (clo≈ {fl} {N = N} ok₁ w₁) = bind-le hM (λ _ r → call≈ ck fl N (ok-under ok₁ r) w₁)
-apply≈ ck hM const≈ = error
-apply≈ ck hM (tup≈ _) = error
-apply≈ ck hM (inl≈ _) = error
-apply≈ ck hM (inr≈ _) = error
-
-args≈ ck fl {zero} Nil ok _ rs = ret rs
-args≈ ck fl {suc n} (M ,, as) ok (w , ws) rs = bind-le (run≈ ck fl M ok w) (λ _ r → args≈ ck fl as ok ws (r ∷ rs))
-
-body-le true zero fl N ok w = timeout
-body-le true (suc ck) fl N {E} {ρ' = ρ'} ok w = le-⊑ (run≈ ck fl N ok w) (mono (n≤1+n ck) ρ' (term (simp fl E N)))
-body-le false ck fl N ok w = run≈ ck fl N ok w
-
-let≈ t ck fl N {I = I} {M} {ρ} okf wN o hM with small (term I) in s | value (term I) in isv
-... | true | _ with opd-val o (P.small-value (term I) s)
-...   | v , σ , d , h = le-stable ck (mono-at ρ M) σ (body-le t ck fl N (ok-cons okf s d h) wN)
-let≈ t ck fl N {Ef} {ρf} {ρ'} {I} {M} {ρ} okf wN o hM | false | true with opd-val o isv
-... | v₀ , σ , d , h = bind-le hM λ e r → G (stable-ret (mono-at ρ M) σ e) r
-  where
-  G : ∀ {v w} → v ≡ v₀ → v ≈ w → LeResult _≈_ (Body t ck N (v ∷ ρf)) (S.eval ck (w ∷ ρ') (term (simp fl (known-as I Ef) N)))
-  G refl r = body-le t ck fl N (ok-let {I = I} okf r h) wN
-let≈ t ck fl N okf wN o hM | false | false = bind-le hM λ _ r → body-le t ck fl N (ok-under okf r) wN
-
-call-le ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
-... | true with hJ refl
-...   | _ , σL , (ρf , refl , okf , wN) = le-stable ck (mono-at _ L) σL (let≈ true ck fl N okf wN o hM)
-call-le ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM | false = bind-le hL (λ _ r → apply≈ ck hM r)
-call-le ck zero J I hJ hL o hM = bind-le hL (λ _ r → apply≈ ck hM r)
-call-le ck (suc fl) (T ∣ nothing) I hJ hL o hM = bind-le hL (λ _ r → apply≈ ck hM r)
-call-le ck (suc fl) (T ∣ just (val K)) I hJ hL o hM = bind-le hL (λ _ r → apply≈ ck hM r)
 
 run≈ ck fl (` x) {ρ = ρ} ok w with lookup-ws ρ w
 ... | v , l = known-le ck (` x) ρ (st-now (λ ck → cong from-maybe l)) (trm ok x l)
@@ -605,12 +568,59 @@ run≈ ck fl (prim p ⦅ L ,, M ,, Nil ⦆) {E} ok (wL , wM , _) with int-of (kn
 ...   | just m = known-le ck (prim p ⦅ L ,, M ,, Nil ⦆) _ (run-prim fl p L M ok wL wM e₁ e₂) (prim-strong (δ p n m))
 run≈ ck fl (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ok (wM , wN , _) = let≈ false ck fl N ok wN (run-opd fl M ok wM) (run≈ ck fl M ok wM)
 
+args≈ ck fl {zero} Nil ok _ rs = ret rs
+args≈ ck fl {suc n} (M ,, as) ok (w , ws) rs = bind-le (run≈ ck fl M ok w) (λ _ r → args≈ ck fl as ok ws (r ∷ rs))
+
+apply≈ ck hM (clo≈ {fl} {N = N} ok₁ w₁) = bind-le hM (λ _ r → call≈ ck fl N (ok-under ok₁ r) w₁)
+apply≈ ck hM const≈ = error
+apply≈ ck hM (tup≈ _) = error
+apply≈ ck hM (inl≈ _) = error
+apply≈ ck hM (inr≈ _) = error
+
+call≈ zero fl N ok w = timeout
+call≈ (suc ck) fl N ok w = run≈ ck fl N ok w
+
+branch≈ ck fl M N ok wM wN (inl≈ r) = run≈ ck fl M (ok-under ok r) wM
+branch≈ ck fl M N ok wM wN (inr≈ r) = run≈ ck fl N (ok-under ok r) wN
+branch≈ ck fl M N ok wM wN (clo≈ _ _) = error
+branch≈ ck fl M N ok wM wN const≈ = error
+branch≈ ck fl M N ok wM wN (tup≈ _) = error
+
+body-le true zero fl N ok w = timeout
+body-le true (suc ck) fl N {E} {ρ' = ρ'} ok w = le-⊑ (run≈ ck fl N ok w) (mono (n≤1+n ck) ρ' (term (simp fl E N)))
+body-le false ck fl N ok w = run≈ ck fl N ok w
+
+let≈ t ck fl N {I = I} {M} {ρ} okf wN o hM with small (term I) in s | value (term I) in isv
+... | true | _ with opd-val o (P.small-value (term I) s)
+...   | v , σ , d , h = le-stable ck (mono-at ρ M) σ (body-le t ck fl N (ok-cons okf s d h) wN)
+let≈ t ck fl N {Ef} {ρf} {ρ'} {I} {M} {ρ} okf wN o hM | false | true with opd-val o isv
+... | v₀ , σ , d , h = bind-le hM λ e r → G (stable-ret (mono-at ρ M) σ e) r
+  where
+  G : ∀ {v w} → v ≡ v₀ → v ≈ w → LeResult _≈_ (Body t ck N (v ∷ ρf)) (S.eval ck (w ∷ ρ') (term (simp fl (known-as I Ef) N)))
+  G refl r = body-le t ck fl N (ok-let {I = I} okf r h) wN
+let≈ t ck fl N okf wN o hM | false | false = bind-le hM λ _ r → body-le t ck fl N (ok-under okf r) wN
+
+call-le ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
+... | true with hJ refl
+...   | _ , σL , (ρf , refl , okf , wN) = le-stable ck (mono-at _ L) σL (let≈ true ck fl N okf wN o hM)
+call-le ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM | false = bind-le hL (λ _ r → apply≈ ck hM r)
+call-le ck zero J I hJ hL o hM = bind-le hL (λ _ r → apply≈ ck hM r)
+call-le ck (suc fl) (T ∣ nothing) I hJ hL o hM = bind-le hL (λ _ r → apply≈ ck hM r)
+call-le ck (suc fl) (T ∣ just (val K)) I hJ hL o hM = bind-le hL (λ _ r → apply≈ ck hM r)
+
 {- Backward: the source catches up -------------------------------------------------}
 
 {- the source runs M to a value that the target's value term T describes -}
 known-back : ∀ ck M ρ {v T ρ'} → Run M ρ v → Strong v T ρ' → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' T)
 known-back ck M ρ σ d _ with teval _ d
 ... | w , et , r rewrite et ck = _ , σ , ret r
+
+back-project : ∀ {n} (i : Fin n) {v v'} → v ≈ v' → Back _≈_ (λ _ → S.project i v) (S.project i v')
+back-project i (tup≈ rs) = back-maybe (proj-pw i rs)
+back-project i (clo≈ _ _) = back-error (λ _ → refl)
+back-project i const≈ = back-error (λ _ → refl)
+back-project i (inl≈ _) = back-error (λ _ → refl)
+back-project i (inr≈ _) = back-error (λ _ → refl)
 
 back : ∀ ck fl M {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) M → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' (term (simp fl E M)))
 back-args : ∀ ck fl {n} (as : Args (replicate n ■)) {E ρ ρ' acc acc'} → Ok E ρ ρ' → WS-args (length ρ) as → Pointwise _≈_ acc acc'
@@ -619,22 +629,8 @@ back-apply : ∀ ck {M M' ρ ρ' v v'} → Back _≈_ (λ ck → S.eval ck ρ M)
   → Back _≈_ (λ ck → S.apply ck ρ M v) (S.apply ck ρ' M' v')
 back-call : ∀ ck fl N {E ρ ρ' N'} → N' ≡ term (simp fl E N) → Ok E ρ ρ' → WS (length ρ) N
   → Back _≈_ (λ ck → S.call ck N ρ) (S.call ck N' ρ')
-back-call zero fl N e ok w nt = ⊥-elim (nt refl)
-back-call (suc ck) fl N refl ok w nt with back ck fl N ok w nt
-... | r , st , rr = r , st-call st , rr
 back-branch : ∀ ck fl M N {E ρ ρ' v v'} → Ok E ρ ρ' → WS (suc (length ρ)) M → WS (suc (length ρ)) N → v ≈ v'
   → Back _≈_ (λ ck → S.branch ck ρ M N v) (S.branch ck ρ' (term (simp fl (under E) M)) (term (simp fl (under E) N)) v')
-back-branch ck fl M N ok wM wN (inl≈ r) = back ck fl M (ok-under ok r) wM
-back-branch ck fl M N ok wM wN (inr≈ r) = back ck fl N (ok-under ok r) wN
-back-branch ck fl M N ok wM wN (clo≈ _ _) = back-error (λ _ → refl)
-back-branch ck fl M N ok wM wN const≈ = back-error (λ _ → refl)
-back-branch ck fl M N ok wM wN (tup≈ _) = back-error (λ _ → refl)
-back-project : ∀ {n} (i : Fin n) {v v'} → v ≈ v' → Back _≈_ (λ _ → S.project i v) (S.project i v')
-back-project i (tup≈ rs) = back-maybe (proj-pw i rs)
-back-project i (clo≈ _ _) = back-error (λ _ → refl)
-back-project i const≈ = back-error (λ _ → refl)
-back-project i (inl≈ _) = back-error (λ _ → refl)
-back-project i (inr≈ _) = back-error (λ _ → refl)
 {- a let or a call, as in run-let and run-call -}
 body-back : ∀ t ck fl N {E ρ ρ'} → Ok E ρ ρ' → WS (length ρ) N → Back _≈_ (λ ck → Body t ck N ρ) (S.eval ck ρ' (term (simp fl E N)))
 back-let : ∀ t ck fl N {Ef ρf ρ' I M ρ} → Ok Ef ρf ρ' → WS (suc (length ρf)) N → Opd M ρ I ρ'
@@ -643,37 +639,6 @@ back-let : ∀ t ck fl N {Ef ρf ρ' I M ρ} → Ok Ef ρf ρ' → WS (suc (leng
 back-call' : ∀ ck fl J I {L M ρ' ρ} → (∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val ] Run L ρ v × KDen v K ρ')
   → Back _≈_ (λ ck → S.eval ck ρ L) (S.eval ck ρ' (term J)) → Opd M ρ I ρ' → Back _≈_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' (term I))
   → Back _≈_ (λ ck → S.eval ck ρ (app ⦅ L ,, M ,, Nil ⦆)) (S.eval ck ρ' (term (simp-call fl J I)))
-
-back-apply ck hM (clo≈ {fl} {N = N} ok₁ w₁) = back-bind hM (λ _ r → back-call ck fl N refl (ok-under ok₁ r) w₁)
-back-apply ck hM const≈ = back-error (λ _ → refl)
-back-apply ck hM (tup≈ _) = back-error (λ _ → refl)
-back-apply ck hM (inl≈ _) = back-error (λ _ → refl)
-back-apply ck hM (inr≈ _) = back-error (λ _ → refl)
-
-back-args ck fl {zero} Nil ok _ rs _ = _ , st-now (λ _ → refl) , ret rs
-back-args ck fl {suc n} (M ,, as) ok (w , ws) rs = back-bind (back ck fl M ok w) (λ _ r → back-args ck fl as ok ws (r ∷ rs))
-
-body-back true ck fl N ok w nt with back ck fl N ok w nt
-... | r , st , rr = r , st-call st , rr
-body-back false ck fl N ok w = back ck fl N ok w
-
-back-let t ck fl N {ρf = ρf} {I = I} {M} okf wN o hM with small (term I) in s | value (term I) in isv
-... | true | _ with opd-val o (P.small-value (term I) s)
-...   | v , σ , d , h = back-run {g = λ c v → Body t c N (v ∷ ρf)} σ (body-back t ck fl N (ok-cons okf s d h) wN)
-back-let t ck fl N {ρ' = ρ'} {I = I} {M} {ρ} okf wN o hM | false | true with opd-val o isv
-... | v₀ , σ , d , h = back-bind hM λ st r → body-back t ck fl N (ok-let {I = I} okf r (h' st)) wN
-  where h' : ∀ {v} → Stable (λ ck → S.eval ck ρ M) (ret v) → ∀ {K} → known I ≡ just K → KDen v K ρ'
-        h' st k with stable-unique st σ
-        ... | refl = h k
-back-let t ck fl N okf wN o hM | false | false = back-bind hM λ _ r → body-back t ck fl N (ok-under okf r) wN
-
-back-call' ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
-... | true with hJ refl
-...   | _ , σL , (ρf , refl , okf , wN) = back-run σL (back-let true ck fl N okf wN o hM)
-back-call' ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM | false = back-bind hL (λ _ r → back-apply ck hM r)
-back-call' ck zero J I hJ hL o hM = back-bind hL (λ _ r → back-apply ck hM r)
-back-call' ck (suc fl) (T ∣ nothing) I hJ hL o hM = back-bind hL (λ _ r → back-apply ck hM r)
-back-call' ck (suc fl) (T ∣ just (val K)) I hJ hL o hM = back-bind hL (λ _ r → back-apply ck hM r)
 
 back ck fl (` x) {ρ = ρ} ok w with lookup-ws ρ w
 ... | v , l = known-back ck (` x) ρ (st-now (λ ck → cong from-maybe l)) (trm ok x l)
@@ -704,6 +669,47 @@ back ck fl (prim p ⦅ L ,, M ,, Nil ⦆) {E} ok (wL , wM , _) with int-of (know
 ...   | nothing = back-bind (back ck fl L ok wL) (λ _ r → back-bind (back ck fl M ok wM) (λ _ s → back-maybe (prim≈ p r s)))
 ...   | just m = known-back ck (prim p ⦅ L ,, M ,, Nil ⦆) _ (run-prim fl p L M ok wL wM e₁ e₂) (prim-strong (δ p n m))
 back ck fl (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ok (wM , wN , _) = back-let false ck fl N ok wN (run-opd fl M ok wM) (back ck fl M ok wM)
+
+back-args ck fl {zero} Nil ok _ rs _ = _ , st-now (λ _ → refl) , ret rs
+back-args ck fl {suc n} (M ,, as) ok (w , ws) rs = back-bind (back ck fl M ok w) (λ _ r → back-args ck fl as ok ws (r ∷ rs))
+
+back-apply ck hM (clo≈ {fl} {N = N} ok₁ w₁) = back-bind hM (λ _ r → back-call ck fl N refl (ok-under ok₁ r) w₁)
+back-apply ck hM const≈ = back-error (λ _ → refl)
+back-apply ck hM (tup≈ _) = back-error (λ _ → refl)
+back-apply ck hM (inl≈ _) = back-error (λ _ → refl)
+back-apply ck hM (inr≈ _) = back-error (λ _ → refl)
+
+back-call zero fl N e ok w nt = ⊥-elim (nt refl)
+back-call (suc ck) fl N refl ok w nt with back ck fl N ok w nt
+... | r , st , rr = r , st-call st , rr
+
+back-branch ck fl M N ok wM wN (inl≈ r) = back ck fl M (ok-under ok r) wM
+back-branch ck fl M N ok wM wN (inr≈ r) = back ck fl N (ok-under ok r) wN
+back-branch ck fl M N ok wM wN (clo≈ _ _) = back-error (λ _ → refl)
+back-branch ck fl M N ok wM wN const≈ = back-error (λ _ → refl)
+back-branch ck fl M N ok wM wN (tup≈ _) = back-error (λ _ → refl)
+
+body-back true ck fl N ok w nt with back ck fl N ok w nt
+... | r , st , rr = r , st-call st , rr
+body-back false ck fl N ok w = back ck fl N ok w
+
+back-let t ck fl N {ρf = ρf} {I = I} {M} okf wN o hM with small (term I) in s | value (term I) in isv
+... | true | _ with opd-val o (P.small-value (term I) s)
+...   | v , σ , d , h = back-run {g = λ c v → Body t c N (v ∷ ρf)} σ (body-back t ck fl N (ok-cons okf s d h) wN)
+back-let t ck fl N {ρ' = ρ'} {I = I} {M} {ρ} okf wN o hM | false | true with opd-val o isv
+... | v₀ , σ , d , h = back-bind hM λ st r → body-back t ck fl N (ok-let {I = I} okf r (h' st)) wN
+  where h' : ∀ {v} → Stable (λ ck → S.eval ck ρ M) (ret v) → ∀ {K} → known I ≡ just K → KDen v K ρ'
+        h' st k with stable-unique st σ
+        ... | refl = h k
+back-let t ck fl N okf wN o hM | false | false = back-bind hM λ _ r → body-back t ck fl N (ok-under okf r) wN
+
+back-call' ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
+... | true with hJ refl
+...   | _ , σL , (ρf , refl , okf , wN) = back-run σL (back-let true ck fl N okf wN o hM)
+back-call' ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM | false = back-bind hL (λ _ r → back-apply ck hM r)
+back-call' ck zero J I hJ hL o hM = back-bind hL (λ _ r → back-apply ck hM r)
+back-call' ck (suc fl) (T ∣ nothing) I hJ hL o hM = back-bind hL (λ _ r → back-apply ck hM r)
+back-call' ck (suc fl) (T ∣ just (val K)) I hJ hL o hM = back-bind hL (λ _ r → back-apply ck hM r)
 
 {- The end theorem: for closed programs ------------------------------------------}
 

@@ -154,7 +154,6 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     → Faithful (Out.made (glob M (Out.made (glob L D)))) s
     → I[ s ] ⊢ L ⇝ wk (⊑-∋ (Out.grows (glob M (Out.made (glob L D))))) (Out.res (glob L D))
       × I[ s ] ⊢ M ⇝ Out.res (glob M (Out.made (glob L D)))
-  two L M D F = lift (glob-⇝ L D (faithful-ext (glob-grows M _) F)) , glob-⇝ M _ F
 
   glob-⇝ (S.` x) D F = var
   glob-⇝ (S.code N) D (h , F) = code (h N (glob-⇝ N D F))
@@ -174,6 +173,7 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
   glob-⇝ (S.unfold M) D F = unfold (glob-⇝ M D F)
   globs-⇝ [] D F = []
   globs-⇝ (M ∷ Ms) D F = proj₁ (two M (S.tuple Ms) D F) ∷ globs-⇝ Ms _ F
+  two L M D F = lift (glob-⇝ L D (faithful-ext (glob-grows M _) F)) , glob-⇝ M _ F
 
   {- close puts the definitions made before at their positions -}
   suffix : ∀ {Σ₀ Σ₁} {s : Σ₀ ⊑ Σ₁} {D : Made Σ₀} {D₁ : Made Σ₁} → MExt s D D₁ → ∀ (q : Σ₁ ⊑ Σ) {t} (x : Σ₀ ∋ t)

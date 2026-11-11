@@ -547,9 +547,9 @@ simps-ok : ∀ {Δ Γ Θ Δ'} fl (Ms : All (Tm Δ) Δ') {E : Facts Δ Γ} {τ : 
   → All₂ R˘ (S.travs tmK υ (simps fl E Ms)) (S.travs tmK τ Ms)
 app-ok : ∀ {Δ Γ Θ A B} fl (L : Tm Δ (A ⇒ B)) M {E : Facts Δ Γ} {τ : Sb Δ Θ} {υ : Sb Γ Θ} {I} → Inv E τ υ → Desc (sub τ M) I υ
   → Desc (sub τ (app L M)) (simp-app fl E L I) υ
+call-ok : ∀ {Γ Θ A B} fl (J : Info Γ (A ⇒ B)) I {υ : Sb Γ Θ} {L M} → Desc L J υ → Desc M I υ → Desc (app L M) (simp-call fl J I) υ
 let-ok : ∀ {Δ Γ Θ A B} fl f (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {τ : Sb Δ Θ} {υ : Sb Γ Θ} {I X} → Inv E τ υ → Desc X I υ
   → Desc (bnd f (sub (S.exts tmK τ) N) X) (simp-let fl E N I) υ
-call-ok : ∀ {Γ Θ A B} fl (J : Info Γ (A ⇒ B)) I {υ : Sb Γ Θ} {L M} → Desc L J υ → Desc M I υ → Desc (app L M) (simp-call fl J I) υ
 case-ok : ∀ {Δ Γ Θ A B C} fl (L : Tm Δ (A ⊹ B)) (M : Tm (A ∷ Δ) C) N {E : Facts Δ Γ} {τ : Sb Δ Θ} {υ : Sb Γ Θ} {I} → Inv E τ υ
   → Desc (sub τ L) I υ → Desc (sub τ (case L M N)) (simp-case fl E I M N) υ
 

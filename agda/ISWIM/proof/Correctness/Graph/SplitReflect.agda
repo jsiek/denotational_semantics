@@ -118,32 +118,15 @@ reflect-nth : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} �
   → (i : Fin n) → ∀ V' → mem V' ⊆ nthD (⟦ splits r Ms ⟧s' ρ') i → ApproxLR (nthD (⟦ Ms ⟧s ρ) i) V'
 reflect-𝒯 : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
   → ∀ V' → mem V' ⊆ 𝒯 n (⟦ splits r Ms ⟧s' ρ') → ApproxLR (𝒯 n (⟦ Ms ⟧s ρ)) V'
-
 ne-reflect : ∀ {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
   → nonempty (⟦ split r M ⟧' ρ') → nonempty (⟦ M ⟧ ρ)
-ne-reflect M E ⟨ v , v∈ ⟩ = ApproxLRLayer.nonempty-obs (unfold (split-reflect M E (v ∷ []) (single⊆ v∈))) (λ ())
-
 tag-reflect : ∀ {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
   → ∀ t W → mem W ⊆ Untag t (⟦ split r M ⟧' ρ') → ApproxLR (Untag t (⟦ M ⟧ ρ)) W
-tag-reflect M E t W W⊆ =
-  ApproxLRLayer.tag-obs (unfold (split-reflect M E (lmap (tag t) W) mW)) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
-  where
-  mW : mem (lmap (tag t) W) ⊆ _
-  mW d d∈ with ∈-map⁻ (tag t) d∈
-  ... | ⟨ x , ⟨ x∈ , refl ⟩ ⟩ = W⊆ x x∈
-
 {- by consistency, all the results of a target case come from the branch B on the side s -}
 reflect-branch : ∀ {Γ Δ} (s : Tag) (L : Tm Γ ⟪ sum ⟫) (B : Tm (Any ∷ Γ) Any) {r : Ren Γ Δ} {ρ ρ' C} → Envs r ρ ρ'
   → ∀ v → tag s v ∈ ⟦ split r L ⟧' ρ' → (∀ {a b} → tag s a ~ tag s b → a ~ b)
   → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)
   → ∀ V' → mem V' ⊆ ⟦ split (ext r) B ⟧' (Untag s (⟦ split r L ⟧' ρ') • ρ') → ApproxLR C V'
-reflect-branch s L B {r} E v sv s~ B⊆ V' V'⊆ =
-  ApproxLR-mono (B⊆ NE-s)
-    (split-reflect B (ext-envs E NE-s (Untag-con s s~ (S3.con L ρ~)) (Untag-con s s~ (S4.con (split r L) ρ'~))
-       (tag-reflect L E s)) V' V'⊆)
-  where
-  open Envs E
-  NE-s = ApproxLRLayer.nonempty-obs (unfold (tag-reflect L E s (v ∷ []) (single⊆ sv))) (λ ())
 
 split-reflect (` x) E = Envs.ρ⊳ E x
 
@@ -322,6 +305,23 @@ reflect-𝒯 {n = suc n} Ms {r} {ρ} {ρ'} E V' V'⊆ = fold record
     sub : mem (w ∷ W') ⊆ nthD Ds' i
     sub d d∈ with V'⊆ _ (W'⊆ d d∈)
     ... | ⟨ refl , ⟨ d∈' , _ ⟩ ⟩ = d∈'
+
+ne-reflect M E ⟨ v , v∈ ⟩ = ApproxLRLayer.nonempty-obs (unfold (split-reflect M E (v ∷ []) (single⊆ v∈))) (λ ())
+
+tag-reflect M E t W W⊆ =
+  ApproxLRLayer.tag-obs (unfold (split-reflect M E (lmap (tag t) W) mW)) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
+  where
+  mW : mem (lmap (tag t) W) ⊆ _
+  mW d d∈ with ∈-map⁻ (tag t) d∈
+  ... | ⟨ x , ⟨ x∈ , refl ⟩ ⟩ = W⊆ x x∈
+
+reflect-branch s L B {r} E v sv s~ B⊆ V' V'⊆ =
+  ApproxLR-mono (B⊆ NE-s)
+    (split-reflect B (ext-envs E NE-s (Untag-con s s~ (S3.con L ρ~)) (Untag-con s s~ (S4.con (split r L) ρ'~))
+       (tag-reflect L E s)) V' V'⊆)
+  where
+  open Envs E
+  NE-s = ApproxLRLayer.nonempty-obs (unfold (tag-reflect L E s (v ∷ []) (single⊆ sv))) (λ ())
 
 {- The end theorem (backward half) --------------------------------------------}
 

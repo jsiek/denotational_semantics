@@ -73,23 +73,19 @@ open import Relation.Nullary using (does)
 
 infix 4 _≈_ _≈k_ _~_
 
+{- what simp knows of each variable is true of the source's environment ρ
+   and the target's ρ' -}
+record Ok {Δ Γ} (E : Facts Δ Γ) (ρ : S.Env Δ) (ρ' : S.Env Γ) : Set
 data _≈_ : ∀ {A} → S.Val A → S.Val A → Set
 {- v is related to a value that the value term T denotes in ρ' (Strong);
    or the same, but a function describes any value (Den) -}
 Desc : Bool → ∀ {Γ A} → S.Val A → Tm Γ A → S.Env Γ → Set
 Descs : Bool → ∀ {Γ Δ} → All S.Val Δ → All (Tm Γ) Δ → S.Env Γ → Set
 Strong Den : ∀ {Γ A} → S.Val A → Tm Γ A → S.Env Γ → Set
-Strong = Desc true
-Den = Desc false
-
-{- what simp knows of each variable is true of the source's environment ρ
-   and the target's ρ' -}
-record Ok {Δ Γ} (E : Facts Δ Γ) (ρ : S.Env Δ) (ρ' : S.Env Γ) : Set
 {- what simp knows a term is describes v: a value, or a function λ N closed
    in a source environment ρ of which its Facts are true (KDen) -}
 KDen : ∀ {Γ A} → S.Val A → Known Γ A → S.Env Γ → Set
 Kn : ∀ {Γ A} → S.Val A → Info Γ A → S.Env Γ → Set
-Kn v I ρ' = ∀ {K} → known I ≡ just K → KDen v K ρ'
 
 record Ok {Δ} E ρ ρ' where
   inductive
@@ -121,8 +117,12 @@ Desc b v _ ρ' = ⊥
 Descs b [] [] ρ' = ⊤
 Descs b (v ∷ vs) (M ∷ Ms) ρ' = Desc b v M ρ' × Descs b vs Ms ρ'
 
+Strong = Desc true
+Den = Desc false
+
 KDen v (P.val K) ρ' = Den v K ρ'
 KDen v (P.fun {Δ} N E) ρ' = Σ[ ρ ∈ S.Env Δ ] v ≡ S.clo N ρ × Ok E ρ ρ'
+Kn v I ρ' = ∀ {K} → known I ≡ just K → KDen v K ρ'
 
 Strongs Dens : ∀ {Γ Δ} → All S.Val Δ → All (Tm Γ) Δ → S.Env Γ → Set
 Strongs = Descs true

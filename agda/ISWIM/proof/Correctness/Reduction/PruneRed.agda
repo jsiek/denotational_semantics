@@ -105,13 +105,14 @@ data Caps ρ where
 Hyp : ∀ {k k'} → (Fin k → Bool) → VM k k' → (Fin k → Fin k') → Set
 Hyp u ρ r = ∀ x → T (u x) → ρ x ≡ just (r x)
 
+under : ∀ {k k' u} {ρ : VM k k'} {r} → Hyp (λ x → u (suc x)) ρ r → Hyp u (extρ ρ) (ext r)
+under h zero _ = refl
+under h (suc x) t rewrite h x t = refl
+
 opt≈ : ∀ {k k' A} {ρ : VM k k'} {r} (M : Tm k A) → Hyp (uses M) ρ r → ρ ⊢ M ≈ opt r M
 opts≈ : ∀ {k k' n} {ρ : VM k k'} {r} (Ms : Vec (Tm k Any) n) → Hyp (usesV Ms) ρ r → Pointwise (ρ ⊢_≈_) Ms (opts r Ms)
 caps≈ : ∀ {k k' n} {ρ : VM k k'} {r} (u : Fin n → Bool) (Ms : Vec (Tm k Any) n) → Hyp (usesV Ms) ρ r
   → Caps ρ (flags u Ms) Ms (select (flags u Ms) (opts r Ms))
-under : ∀ {k k' u} {ρ : VM k k'} {r} → Hyp (λ x → u (suc x)) ρ r → Hyp u (extρ ρ) (ext r)
-under h zero _ = refl
-under h (suc x) t rewrite h x t = refl
 opt≈ (` x) h = var≈ (h x (lemma x))
   where lemma : ∀ {k} (x : Fin k) → T (uses (` x) x)
         lemma x with x Fin≟ x

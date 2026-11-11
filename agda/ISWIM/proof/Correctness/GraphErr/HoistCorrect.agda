@@ -102,24 +102,14 @@ gl : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → GL M D
 gls : ∀ {Σ Γ n} (Ms : Vec (S.Tm Γ Any) n) (D : Made Σ) → let o = globs Ms D in
   Ext D (Out.made o) × (∀ T → Agr T (Out.made o) → ∀ {ρ ρ'} → EnvR ρ ρ'
     → ∀ i → nthD (⟦ Ms ⟧s₄ ρ) i ≃ nthD (⟦ Out.res o ⟧s[ T ] ρ') i)
-
 gl₁ : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (F : Sem → Sem) → Cong₁ F
   → (∀ {Σ'} (L : Tm Σ' Γ₁ A) {T ρ} → ⟦ f L ⟧[ T ] ρ ≡ F ⟦ L ⟧[ T ] ρ)
   → (L : S.Tm Γ₁ A) (D : Made Σ) → let o = glob₁ f L D in
   Ext D (Out.made o) × (∀ T → Agr T (Out.made o) → ∀ {ρ ρ'} → EnvR ρ ρ' → F ⟦ L ⟧₄ ρ ≃ ⟦ Out.res o ⟧[ T ] ρ')
-gl₁ f F cF hf L D with glob L D | gl L D
-... | out s D' L' | ⟨ e , h ⟩ = ⟨ e , (λ T a ρ~ → ≃-trans (cF (h T a) ρ~) (≃-reflexive (sym (hf L')))) ⟩
-
 gl₂ : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (F : Sem → Sem → Sem) → Cong₂ F
   → (∀ {Σ'} (L : Tm Σ' Γ₁ A) (M : Tm Σ' Γ₂ B) {T ρ} → ⟦ f L M ⟧[ T ] ρ ≡ F ⟦ L ⟧[ T ] ⟦ M ⟧[ T ] ρ)
   → (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B) (D : Made Σ) → let o = glob₂ f L M D in
   Ext D (Out.made o) × (∀ T → Agr T (Out.made o) → ∀ {ρ ρ'} → EnvR ρ ρ' → F ⟦ L ⟧₄ ⟦ M ⟧₄ ρ ≃ ⟦ Out.res o ⟧[ T ] ρ')
-gl₂ f F cF hf L M D with glob L D | gl L D
-... | out s₁ D₁ L' | ⟨ e₁ , h₁ ⟩ with glob M D₁ | gl M D₁
-...   | out s₂ D₂ M' | ⟨ e₂ , h₂ ⟩ =
-  ⟨ ext-trans s₁ e₁ e₂
-  , (λ T a ρ~ → ≃-trans (cF (λ ρ~ → ≃-trans (h₁ T (agr-ext s₂ e₂ a) ρ~) (≃-sym (wk-same s₂ L'))) (h₂ T a) ρ~)
-                        (≃-reflexive (sym (hf (wk (⊑-∋ s₂) L') M')))) ⟩
 
 gl (S.` x) D = ⟨ ext (λ _ _ → ≃-refl) , (λ T a ρ~ → ρ~ (idx x)) ⟩
 gl {Σ} (S.code N) D with glob N D | gl N D
@@ -160,6 +150,16 @@ gls (M ∷ Ms) D with glob M D | gl M D
   ⟨ ext-trans s₁ e₁ e₂
   , (λ { T a ρ~ zero → ≃-trans (h₁ T (agr-ext s₂ e₂ a) ρ~) (≃-sym (wk-same s₂ M'))
        ; T a ρ~ (suc i) → h₂ T a ρ~ i }) ⟩
+
+gl₁ f F cF hf L D with glob L D | gl L D
+... | out s D' L' | ⟨ e , h ⟩ = ⟨ e , (λ T a ρ~ → ≃-trans (cF (h T a) ρ~) (≃-reflexive (sym (hf L')))) ⟩
+
+gl₂ f F cF hf L M D with glob L D | gl L D
+... | out s₁ D₁ L' | ⟨ e₁ , h₁ ⟩ with glob M D₁ | gl M D₁
+...   | out s₂ D₂ M' | ⟨ e₂ , h₂ ⟩ =
+  ⟨ ext-trans s₁ e₁ e₂
+  , (λ T a ρ~ → ≃-trans (cF (λ ρ~ → ≃-trans (h₁ T (agr-ext s₂ e₂ a) ρ~) (≃-sym (wk-same s₂ L'))) (h₂ T a) ρ~)
+                        (≃-reflexive (sym (hf (wk (⊑-∋ s₂) L') M')))) ⟩
 
 {- The program ----------------------------------------------------------------------}
 

@@ -160,10 +160,6 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
 
   {- The fundamental lemma: code under a substitution of values -----------------}
 
-  rco≈ : ∀ {k} σ M → Vals k σ → WS k M → sub σ M ≈ sub σ (rco M)
-  rco≈s : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
-    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms)
-
   {- a construct h on the operands Ms after σ, and the target's chain for
      them, renamed by r, after ρ, which agrees with σ through r, with g
      on the atoms at the end -}
@@ -208,6 +204,10 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   chain₀ σ Ms vs ws fs h g lr fin =
     subst (λ X → h (sub-args σ Ms) ≈ sub σ (lift g X)) (rename-id-args (λ _ → refl) (rco-args Ms))
           (chain σ Ms vs ws fs (λ x → x) σ h g (λ _ → refl) lr fin)
+
+  rco≈ : ∀ {k} σ M → Vals k σ → WS k M → sub σ M ≈ sub σ (rco M)
+  rco≈s : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
+    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms)
 
   rco≈ σ (` x) vs w = val≈ (vs x w)
   rco≈ σ (fun-ref n ⦅ Nil ⦆) vs w = val≈ T.fun

@@ -163,6 +163,13 @@ conc-body≡ n (suc k) (bind a) = conc-body≡ n k a
 Args≈ : ℕ → List S.Val → List T.Val → Set
 Args≈ k vs ws = Pointwise _≈_ vs ws × length vs ≡ k
 
+project≈ : ∀ {n} (i : Fin n) {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
+project≈ i (tup≈ rs) = from-maybe-rel (proj-pw i rs)
+project≈ i (clo≈ _) = error
+project≈ i const≈ = error
+project≈ i (inl≈ _) = error
+project≈ i (inr≈ _) = error
+
 run≈ : ∀ ck {φ ρ₂ ρ₃} M → EnvRel φ ρ₂ ρ₃
   → RelResult _≈_ (S.eval ck ρ₂ M) (T.eval ck ρ₃ (concretize φ M))
 args≈ : ∀ ck {n k φ ρ₂ ρ₃ vs ws} (args : Args (replicate n ■)) → EnvRel φ ρ₂ ρ₃
@@ -175,13 +182,6 @@ call≈ : ∀ ck {φ ρ₂ ρ₃} N → EnvRel φ ρ₂ ρ₃
 branch≈ : ∀ ck {φ ρ₂ ρ₃ v w} M N → EnvRel φ ρ₂ ρ₃ → v ≈ w
   → RelResult _≈_ (S.branch ck ρ₂ M N v)
                   (T.branch ck ρ₃ (concretize (ext-ref φ) M) (concretize (ext-ref φ) N) w)
-
-project≈ : ∀ {n} (i : Fin n) {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
-project≈ i (tup≈ rs) = from-maybe-rel (proj-pw i rs)
-project≈ i (clo≈ _) = error
-project≈ i const≈ = error
-project≈ i (inl≈ _) = error
-project≈ i (inr≈ _) = error
 
 run≈ ck {φ} {ρ₂} {ρ₃} (` x) er with φ x | er x
 ... | var y | p = from-maybe-rel p

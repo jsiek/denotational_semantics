@@ -109,19 +109,25 @@ module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
   open KR K
   open S.Laws laws
 
-  ≈-trav : ∀ {k j A} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {M : Tm k A} {M'} → M ≈ M'
-    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x)) → (∀ x → VV (K₂.tm (τ x))) → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
-  ≈-travs : ∀ {k j n} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {Ms : Vec (Tm k Any) n} {Ms' : Vec (C.Tm k Any) n} → Pointwise _≈_ Ms Ms'
-    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x)) → (∀ x → VV (K₂.tm (τ x))) → Pointwise _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
   vvs-trav : ∀ {k j n} {τ : T.Sub 𝒦₂ k j} {Fs : Vec (C.Tm k Any) n} → All VV Fs → (∀ x → VV (K₂.tm (τ x)))
     → All VV (T.travs 𝒦₂ τ Fs)
+  vvs-trav [] vk = []
+  vvs-trav (var x ∷ vv) vk = vk x ∷ vvs-trav vv vk
+  vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
+
   ok-exts : ∀ {k j} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x))
     → ∀ x → K₁.tm (S.exts 𝒦₁ σ x) ≈ K₂.tm (T.exts 𝒦₂ τ x)
   ok-exts h zero = rel-vr zero
   ok-exts h (suc x) = rel-wk (h x)
+
   vv-exts : ∀ {k j} {τ : T.Sub 𝒦₂ k j} → (∀ x → VV (K₂.tm (τ x))) → ∀ x → VV (K₂.tm (T.exts 𝒦₂ τ x))
   vv-exts h zero = vv-vr zero
   vv-exts h (suc x) = vv-wk (h x)
+
+  ≈-trav : ∀ {k j A} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {M : Tm k A} {M'} → M ≈ M'
+    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x)) → (∀ x → VV (K₂.tm (τ x))) → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
+  ≈-travs : ∀ {k j n} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {Ms : Vec (Tm k Any) n} {Ms' : Vec (C.Tm k Any) n} → Pointwise _≈_ Ms Ms'
+    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x)) → (∀ x → VV (K₂.tm (τ x))) → Pointwise _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
 
   ≈-trav var≈ ok vk = ok _
   ≈-trav {σ = σ} {τ} (lam≈ {N = N} {σ = ρ} {Fs} n h vv) ok vk =
@@ -141,9 +147,6 @@ module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
   ≈-trav (project≈ r) ok vk = project≈ (≈-trav r ok vk)
   ≈-travs [] ok vk = []
   ≈-travs (r ∷ rs) ok vk = ≈-trav r ok vk ∷ ≈-travs rs ok vk
-  vvs-trav [] vk = []
-  vvs-trav (var x ∷ vv) vk = vk x ∷ vvs-trav vv vk
-  vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
 
 varKR : KR S.varK T.varK
 varKR = record { laws = S.varL ; rel-vr = λ _ → var≈ ; rel-wk = λ { var≈ → var≈ } ; vv-vr = var ; vv-wk = λ _ → var _ }

@@ -113,48 +113,6 @@ record Envs (ρ' ρ : Env) : Set₁ where
     ρ'~ : Con-env ρ'
     ρ⊳ : ρ' ⊳ₑ ρ
 
-split-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ
-  → ∀ V' → mem V' ⊆ ⟦ split M ⟧' ρ' → R V' (⟦ M ⟧ ρ)
-
-reflect-nth : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
-  → (i : Fin n) → ∀ V' → mem V' ⊆ nthD (⟦ del-map-args args ⟧₊' ρ') i
-  → R V' (nthD (⟦ args ⟧₊ ρ) i)
-
-reflect-𝒯 : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
-  → ∀ V' → mem V' ⊆ 𝒯 n (⟦ del-map-args args ⟧₊' ρ') → R V' (𝒯 n (⟦ args ⟧₊ ρ))
-
-{- a nonempty target set yields a nonempty source set -}
-ne-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → nonempty (⟦ split M ⟧' ρ') → nonempty (⟦ M ⟧ ρ)
-ne-reflect M E ⟨ v , v∈ ⟩ =
-  Obs.nonempty-obs (unfold (split-reflect M E (v ∷ []) (single⊆ v∈))) (λ ())
-
-{- the tagged parts of a reflected set are related -}
-tag-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → ∀ t W → mem W ⊆ Untag t (⟦ split M ⟧' ρ')
-  → R W (Untag t (⟦ M ⟧ ρ))
-tag-reflect M E t W W⊆ =
-  Obs.tag-obs (unfold (split-reflect M E (lmap (tag t) W) mW)) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
-  where
-  mW : mem (lmap (tag t) W) ⊆ _
-  mW d d∈ with ∈-map⁻ (tag t) d∈
-  ... | ⟨ x , ⟨ x∈ , refl ⟩ ⟩ = W⊆ x x∈
-
-{- the cases for case-op: by consistency, all the target results come from
-   the branch B on the side s of the scrutinee L -}
-reflect-branch : ∀ (s : Tag) (L B : AST) {ρ' ρ C} → Envs ρ' ρ
-  → ∀ v → tag s v ∈ ⟦ split L ⟧' ρ' → (∀ {a b} → tag s a ~ tag s b → a ~ b)
-  → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)
-  → ∀ V' → mem V' ⊆ ⟦ split B ⟧' (Untag s (⟦ split L ⟧' ρ') • ρ') → R V' C
-reflect-branch s L B {ρ'}{ρ} E v sv s~ B⊆ V' V'⊆ =
-  R-mono (B⊆ NE-s) (split-reflect B (envs NE' (Con-• (Untag-con s s~ (Clos3-con L ρ~)) ρ~) ρ'~' ρ⊳') V' V'⊆)
-  where
-  open Envs E
-  NE-s = Obs.nonempty-obs (unfold (tag-reflect L E s (v ∷ []) (single⊆ sv))) (λ ())
-  NE' = extend-nonempty-env NE NE-s
-  ρ'~' = Con-• (Untag-con s s~ (Clos4-con (split L) ρ'~)) ρ'~
-  ρ⊳' : (Untag s (⟦ split L ⟧' ρ') • ρ') ⊳ₑ (Untag s (⟦ L ⟧ ρ) • ρ)
-  ρ⊳' zero = tag-reflect L E s
-  ρ⊳' (suc x) = ρ⊳ x
-
 inl-ne : ∀ {D : 𝒫 Value} v → v ∈ inl ⟨ D , ptt ⟩ → nonempty D
 inl-ne (left d) d∈ = ⟨ d , d∈ ⟩
 
@@ -168,6 +126,30 @@ pair-tag : ∀ {A B : 𝒫 Value} t {d} → tag t d ∈ pair ⟨ A , ⟨ B , ptt
 pair-tag (tupT i) ()
 pair-tag leftT ()
 pair-tag rightT ()
+
+split-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ
+  → ∀ V' → mem V' ⊆ ⟦ split M ⟧' ρ' → R V' (⟦ M ⟧ ρ)
+
+reflect-nth : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
+  → (i : Fin n) → ∀ V' → mem V' ⊆ nthD (⟦ del-map-args args ⟧₊' ρ') i
+  → R V' (nthD (⟦ args ⟧₊ ρ) i)
+
+reflect-𝒯 : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
+  → ∀ V' → mem V' ⊆ 𝒯 n (⟦ del-map-args args ⟧₊' ρ') → R V' (𝒯 n (⟦ args ⟧₊ ρ))
+
+{- a nonempty target set yields a nonempty source set -}
+ne-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → nonempty (⟦ split M ⟧' ρ') → nonempty (⟦ M ⟧ ρ)
+
+{- the tagged parts of a reflected set are related -}
+tag-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → ∀ t W → mem W ⊆ Untag t (⟦ split M ⟧' ρ')
+  → R W (Untag t (⟦ M ⟧ ρ))
+
+{- the cases for case-op: by consistency, all the target results come from
+   the branch B on the side s of the scrutinee L -}
+reflect-branch : ∀ (s : Tag) (L B : AST) {ρ' ρ C} → Envs ρ' ρ
+  → ∀ v → tag s v ∈ ⟦ split L ⟧' ρ' → (∀ {a b} → tag s a ~ tag s b → a ~ b)
+  → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)
+  → ∀ V' → mem V' ⊆ ⟦ split B ⟧' (Untag s (⟦ split L ⟧' ρ') • ρ') → R V' C
 
 split-reflect (` x) E = Envs.ρ⊳ E x
 
@@ -352,6 +334,27 @@ reflect-𝒯 {suc n} args {ρ'}{ρ} E V' V'⊆ = fold record
     sub : mem (w ∷ W') ⊆ nthD Ds' i
     sub d d∈ with V'⊆ _ (W'⊆ d d∈)
     ... | ⟨ refl , ⟨ d∈' , _ ⟩ ⟩ = d∈'
+
+ne-reflect M E ⟨ v , v∈ ⟩ =
+  Obs.nonempty-obs (unfold (split-reflect M E (v ∷ []) (single⊆ v∈))) (λ ())
+
+tag-reflect M E t W W⊆ =
+  Obs.tag-obs (unfold (split-reflect M E (lmap (tag t) W) mW)) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
+  where
+  mW : mem (lmap (tag t) W) ⊆ _
+  mW d d∈ with ∈-map⁻ (tag t) d∈
+  ... | ⟨ x , ⟨ x∈ , refl ⟩ ⟩ = W⊆ x x∈
+
+reflect-branch s L B {ρ'}{ρ} E v sv s~ B⊆ V' V'⊆ =
+  R-mono (B⊆ NE-s) (split-reflect B (envs NE' (Con-• (Untag-con s s~ (Clos3-con L ρ~)) ρ~) ρ'~' ρ⊳') V' V'⊆)
+  where
+  open Envs E
+  NE-s = Obs.nonempty-obs (unfold (tag-reflect L E s (v ∷ []) (single⊆ sv))) (λ ())
+  NE' = extend-nonempty-env NE NE-s
+  ρ'~' = Con-• (Untag-con s s~ (Clos4-con (split L) ρ'~)) ρ'~
+  ρ⊳' : (Untag s (⟦ split L ⟧' ρ') • ρ') ⊳ₑ (Untag s (⟦ L ⟧ ρ) • ρ)
+  ρ⊳' zero = tag-reflect L E s
+  ρ⊳' (suc x) = ρ⊳ x
 
 {- The end theorem (backward half) --------------------------------------------}
 

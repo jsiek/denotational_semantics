@@ -192,17 +192,11 @@ fst-error v e rewrite T.value-red v | e = refl
 
 sim : ∀ {M M'} → M ≈ M' → Ans′ M (S.red M) M'
 sims : ∀ {n as as'} → Pw _≈_ {n} as as' → Ans T.red-args T.Values (Pw _≈_) as (S.red-args as) as'
-
 {- calling a closure: the operand, then the body -}
 call-ans : ∀ {n N N' Vs Vs' M M'} → N ≈ N' → Pw _≈_ {n} Vs Vs' → T.Values Vs' → M ≈ M'
   → Ans′ (app ⦅ clos-op n ⦅ cons (clear (bind (bind (ast N)))) Vs ⦆ ,, M ,, Nil ⦆)
          (S.app? (clos-op n ⦅ cons (clear (bind (bind (ast N)))) Vs ⦆) (S.red M) M)
          (C.app C.⦅ fun N' ,, C.tuple n C.⦅ Vs' ⦆ ,, M' ,, Nil ⦆)
-call-ans r rs vs s =
-  ans-in (frame {g = λ X → C.app C.⦅ _ ,, _ ,, X ,, Nil ⦆} _ (λ X → val-in (T.value-red (T.tuple vs))))
-         (call≈ r rs (≈-values vs rs) vs) (sim s)
-    λ w s' → to (one (trans (val-in (T.value-red (T.tuple vs))) (val-in (T.value-red w))))
-                (≈-subst ((λ { zero → s' ; (suc zero) → tuple≈ rs ; (suc (suc x)) → var≈ }) , tt) r)
 
 sim var≈ = error ε refl
 sim (clos≈ {n} {N' = N'} r rs) =
@@ -264,6 +258,12 @@ sim (let≈ r s) = ans-in (frame _ (λ _ → refl)) (λ r' → let≈ r' s) (sim
   λ v r' → to (one (val-in (T.value-red v))) (≈-[] tt r' s)
 sims [] = val ε T.[] []
 sims (r ∷ rs) = ans-cons T.red-args (λ _ _ → refl) T.value-red rs (sim r) (sims rs)
+
+call-ans r rs vs s =
+  ans-in (frame {g = λ X → C.app C.⦅ _ ,, _ ,, X ,, Nil ⦆} _ (λ X → val-in (T.value-red (T.tuple vs))))
+         (call≈ r rs (≈-values vs rs) vs) (sim s)
+    λ w s' → to (one (trans (val-in (T.value-red (T.tuple vs))) (val-in (T.value-red w))))
+                (≈-subst ((λ { zero → s' ; (suc zero) → tuple≈ rs ; (suc (suc x)) → var≈ }) , tt) r)
 
 {- The end theorem: for every Clos3 program ----------------------------------}
 

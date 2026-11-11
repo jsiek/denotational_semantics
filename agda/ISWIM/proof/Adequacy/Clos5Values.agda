@@ -333,11 +333,12 @@ module Den {Σ : List ℕ} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {n} (f : Σ 
   𝒱v [] = []
   𝒱v (w ∷ ws) = 𝒱 w ∷ 𝒱v ws
 
-  𝒱-ne : ∀ {A} (v : Val Σ A) → nonempty (𝒱 v)
-  𝒱v-ne : ∀ {n} (ws : Vec (Val Σ Any) n) → AllNE (𝒱v ws)
   len𝒱v : ∀ {n} (ws : Vec (Val Σ Any) n) → length (𝒱v ws) ≡ n
   len𝒱v [] = refl
   len𝒱v (w ∷ ws) = cong suc (len𝒱v ws)
+
+  𝒱-ne : ∀ {A} (v : Val Σ A) → nonempty (𝒱 v)
+  𝒱v-ne : ∀ {n} (ws : Vec (Val Σ Any) n) → AllNE (𝒱v ws)
   𝒱-ne (code f) = ⟨ ν , T-ν f ⟩
   𝒱-ne (pack c e) with 𝒱-ne c | 𝒱-ne e
   ... | ⟨ a , a∈ ⟩ | ⟨ b , b∈ ⟩ = ⟨ ⦅ a , b ⦆ , ⟨ a∈ , b∈ ⟩ ⟩

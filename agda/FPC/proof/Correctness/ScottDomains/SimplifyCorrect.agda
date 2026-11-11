@@ -82,14 +82,15 @@ open import FPC.Semantics.ScottDomains.FPC pt fe pe
 
 {- Renaming ---------------------------------------------------------------------}
 
-ren-＝ : ∀ {Γ Δ A} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (M : Tm Γ A) {ρ ρ' : ⟨ Env ⟩}
-  → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ＝ ρ (idx x)) → ⟦ ren r M ⟧ · ρ' ＝ ⟦ M ⟧ · ρ
-rens-nth : ∀ {Γ Δ Δ'} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (Ms : All (Tm Γ) Δ') {ρ ρ' : ⟨ Env ⟩}
-  → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ＝ ρ (idx x)) → ∀ i → (⟦ travs varK r Ms ⟧s · ρ') i ＝ (⟦ Ms ⟧s · ρ) i
 ren-ext : ∀ {Γ Δ C} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) {ρ ρ' : ⟨ Env ⟩} {d : ⟨ 𝔻 ⟩} → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ＝ ρ (idx x))
   → ∀ {B} (x : (C ∷ Γ) ∋ B) → (d • ρ') (idx (exts varK r x)) ＝ (d • ρ) (idx x)
 ren-ext r h Z = refl
 ren-ext r h (S x) = h x
+
+ren-＝ : ∀ {Γ Δ A} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (M : Tm Γ A) {ρ ρ' : ⟨ Env ⟩}
+  → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ＝ ρ (idx x)) → ⟦ ren r M ⟧ · ρ' ＝ ⟦ M ⟧ · ρ
+rens-nth : ∀ {Γ Δ Δ'} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) (Ms : All (Tm Γ) Δ') {ρ ρ' : ⟨ Env ⟩}
+  → (∀ {B} (x : Γ ∋ B) → ρ' (idx (r x)) ＝ ρ (idx x)) → ∀ i → (⟦ travs varK r Ms ⟧s · ρ') i ＝ (⟦ Ms ⟧s · ρ) i
 ren-＝ r (` x) h = h x
 ren-＝ r (lam N) {ρ} {ρ'} h = lamᶜ-cong ⟦ ren (exts varK r) N ⟧ ⟦ N ⟧ ρ' ρ (λ d _ → ren-＝ (exts varK r) N (ren-ext r h))
 ren-＝ r (app L M) h = ap₂ (λ a b → appᵈ · a · b) (ren-＝ r L h) (ren-＝ r M h)
@@ -388,8 +389,6 @@ case-ok : ∀ {Δ Γ A B C} fl (L : Tm Δ (A ⊹ B)) (M : Tm (A ∷ Δ) C) N {E 
   → defined-env γ' → Desc (⟦ L ⟧ · γ) I γ' → (b : Maybe (Tm Γ A ⊎ Tm Γ B)) → branch (known I) Eq.refl ≡ b
   → Desc (⟦ case L M N ⟧ · γ) (case-res fl E I M N b) γ'
 
-under-ok fl N {γ' = γ'} ok ne d p = tm (simp-ok fl N (ok-under d ok) (•-defined d γ' p ne))
-
 simp-ok fl (` x) ok ne = ok x
 simp-ok fl (lam N) {E} {γ} {γ'} ok ne =
   desc (lamᶜ-cong ⟦ N ⟧ ⟦ term (simp fl (under E) N) ⟧ γ γ' (under-ok fl N ok ne)) (λ { Eq.refl → kfun γ (lam N) Eq.refl ok refl })
@@ -410,6 +409,8 @@ simp-ok fl (unfold L) {E} ok ne = unfold-ok (simp fl E L) (simp-ok fl L ok ne)
 
 simps-ok fl (M ∷ Ms) ok ne zero = tm (simp-ok fl M ok ne)
 simps-ok fl (M ∷ Ms) ok ne (suc i) = simps-ok fl Ms ok ne i
+
+under-ok fl N {γ' = γ'} ok ne d p = tm (simp-ok fl N (ok-under d ok) (•-defined d γ' p ne))
 
 {- an application: β if the operator is a function, and otherwise a call -}
 app-ok fl (lam N) M ok ne d (is-lam .N) = let-ok fl N ok ne d

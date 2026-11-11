@@ -216,13 +216,10 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
 
   adequate : ∀ {n R Bs ψ} (k : Seq Σ n R Bs ψ) {bs : Blocks Σ n R Bs} → AdeqB bs → ∀ {η} {m : Mach Σ η ψ} {ρ R' F w}
     → 𝕄 ρ R' F m → w ∈ ⟦_⟧ˢ T k (blocksₛ T bs) ρ R' F → Σ[ v ∈ Val R ] Stable (λ ck → run ds ck bs η m k) (ret v) × 𝕍 w v
-
   {- a write of a value related to D, then k -}
   put-adeq : ∀ {n R Bs ψ τ ψ'} (d : Dst n ψ τ ψ') (k : Seq Σ n R Bs ψ') {bs : Blocks Σ n R Bs} → AdeqB bs → ∀ {η} {m : Mach Σ η ψ}
     {v : RV Σ η τ} {D ρ R' F w} → 𝕄 ρ R' F m → (∀ x → x ∈ D → 𝕍ᵐ (just τ) x v)
     → w ∈ putₛ T d D (⟦_⟧ˢ T k (blocksₛ T bs)) ρ R' F → Σ[ v' ∈ Val R ] Stable (λ ck → run ds ck bs η (put d v m) k) (ret v') × 𝕍 w v'
-  put-adeq d k AB M h w∈ with put-𝕄 d M h w∈
-  ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ M' , w∈' ⟩ ⟩ ⟩ ⟩ = adequate k AB M' w∈'
 
   adequate (movq a d ∷ k) AB M w∈ = put-adeq d k AB M (arg-𝕍 a M) w∈
   adequate (subq a r e ∷ k) AB {m = m} M w∈ =
@@ -263,6 +260,9 @@ module _ {T : Table Σ} (𝕋T : 𝕋 T) where
       Stable (λ ck → either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m))) (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m)))) (ret v') × 𝕍 _ v'
     sel (inr a) h = AB l₂ (λ { Z → h ; (S y) → 𝔾-drop p (𝕄.fr M) y }) w∈
     sel (inl a) h = ⊥-elim (h u (here refl))
+
+  put-adeq d k AB M h w∈ with put-𝕄 d M h w∈
+  ... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ M' , w∈' ⟩ ⟩ ⟩ ⟩ = adequate k AB M' w∈'
 
   blocks-adeq : ∀ {n R Bs} (bs : Blocks Σ n R Bs) → AdeqB bs
   blocks-adeq (bs ▷ k) Z G w∈ = adequate k (blocks-adeq bs) (𝕞 G (λ { rax _ _ → tt ; rdi _ _ → tt ; rsi _ _ → tt }) tt none) w∈

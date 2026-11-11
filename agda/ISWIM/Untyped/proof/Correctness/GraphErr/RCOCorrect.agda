@@ -228,15 +228,11 @@ module _ (T T' : Table) (TC : ∀ k → Con (T k)) (TT : ∀ k → T k ≃ T' k)
     → ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ
   rco-args-sem : ∀ {n} (Ms : Args (replicate n ■)) k ρ → WS-args k Ms → nonempty-env ρ → Con-env ρ → Good k ρ
     → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
-
   {- a construct c whose operator is O, on operands under their lets -}
   rco-op : ∀ {n} (c : Args (replicate n ■) → AST) (O : Kernel n) (Ms : Args (replicate n ■)) k ρ
     → WS-args k Ms → nonempty-env ρ → Con-env ρ → Good k ρ
     → (∀ T ρ As → ⟦ c As ⟧[ T ] ρ ≃ bindsₖ O (⟦ As ⟧₊[ T ] ρ))
     → ⟦ lift (λ _ → c) (rco-args Ms) ⟧[ T ] ρ ≃ ⟦ c Ms ⟧[ T' ] ρ
-  rco-op c O Ms k ρ ws NE C G den =
-    ≃-trans (lift-≃ T TC (λ _ → c) (rco-args Ms) O ρ NE C (rco-atomsOK T ρ k TV G Ms ws) (λ j ρ' As _ → den T ρ' As))
-            (≃-trans (bindsₖ-≃ O (rco-args-sem Ms k ρ ws NE C G)) (≃-sym (den T' ρ Ms)))
 
   rco-sem (` x) k ρ ws NE C G = ≃-refl
   rco-sem (fun-ref j ⦅ Nil ⦆) k ρ ws NE C G = TT j
@@ -276,6 +272,10 @@ module _ (T T' : Table) (TC : ∀ k → Con (T k)) (TT : ∀ k → T k ≃ T' k)
   rco-args-sem {zero} Nil k ρ ws NE C G = ptt
   rco-args-sem {suc n} (M ,, Ms) k ρ ⟨ wsM , wsMs ⟩ NE C G =
     ⟨ up (rco-sem M k ρ wsM NE C G) , rco-args-sem Ms k ρ wsMs NE C G ⟩
+
+  rco-op c O Ms k ρ ws NE C G den =
+    ≃-trans (lift-≃ T TC (λ _ → c) (rco-args Ms) O ρ NE C (rco-atomsOK T ρ k TV G Ms ws) (λ j ρ' As _ → den T ρ' As))
+            (≃-trans (bindsₖ-≃ O (rco-args-sem Ms k ρ ws NE C G)) (≃-sym (den T' ρ Ms)))
 
 
 {- Programs ---------------------------------------------------------------------}
