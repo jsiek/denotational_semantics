@@ -78,9 +78,9 @@
 \instr & \text{Operands} & a & ::= & x \mid c \mid f_k \mid \%r \mid \kw{fold}\;a \mid \kw{unfold}\;a
   \qquad \mathit{dst} ::= \%r \mid x
   \qquad r ::= \kw{rax} \mid \kw{rdi} \mid \kw{rsi}\\
- & \text{Objects} & o & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
+ & \text{Constructors} & \mathit{con} & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
  & \text{Instructions} & i & ::= & \kw{movq}\;a, \mathit{dst} \mid \kw{subq}\;a, \%r \mid \kw{cmpq}\;a_2, a_1
-  \mid \kw{sete}\;\mathit{dst} \mid \kw{alloc}\;o, \mathit{dst}\\
+  \mid \kw{sete}\;\mathit{dst} \mid \kw{alloc}\;\mathit{con}, \mathit{dst}\\
  & & & \mid & \kw{load}\;\kw{get}_i\;a, \mathit{dst} \mid \kw{fst}\;x, \%r \mid \kw{snd}\;x, \%r \mid \kw{callq}\;a\\
  & \text{Sequences} & s & ::= & i;\; s \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;y\;z\;l_1\;l_2\\
  & \text{Function Def.} & d & ::= & (\Phi;\, s_0, \ldots, s_{j-1};\, s)
@@ -225,8 +225,8 @@ register or a slot.
 The pass translates each simple expression of CFG into instructions
 that write its value to a destination, using the registers to stage
 arithmetic and calls. A closure ($\kw{pair}$), a tuple, or an
-injection becomes the instruction $\kw{alloc}\;o, \mathit{dst}$, which
-allocates the object $o$ on the heap. A call $\kw{callc}\;x\;a$ of the
+injection becomes the instruction $\kw{alloc}\;\mathit{con}, \mathit{dst}$, which
+allocates on the heap the result of the constructor $\mathit{con}$. A call $\kw{callc}\;x\;a$ of the
 closure in slot $x$ on the argument $a$ becomes the instruction
 sequence $\kw{fst}\;x, \%\kw{rax};\;\; \kw{snd}\;x, \%\kw{rdi};\;\;
 \kw{movq}\;a, \%\kw{rsi};\;\; \kw{callq}\;\%\kw{rax}$.  The first two

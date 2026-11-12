@@ -537,12 +537,12 @@ closes the open closure.
   \;\rulename{dst-slot}
 \]
 }
-An object $o$, which $\kw{alloc}$ allocates, is built from operands typed in
+A constructor $\mathit{con}$, which $\kw{alloc}$ allocates, builds a closure, a tuple, or an injection from operands typed in
 the state $\psi$. A closure $\kw{pair}(a_1, a_2)$ pairs the code of a
 definition with the tuple of its environment, whose types $\Delta$ its function
 type hides.
 {\small\figdefs
-\defhead{Typing of objects}{\Sigma; \Phi; \psi \vdash o : A}
+\defhead{Typing of constructors}{\Sigma; \Phi; \psi \vdash \mathit{con} : A}
 \[
   \dfrac{\Sigma; \Phi; \psi \vdash a_1 : \kw{code}(\Delta; A \rightarrow C) \quad
          \Sigma; \Phi; \psi \vdash a_2 : \kw{tup}(\Delta)}
@@ -558,7 +558,7 @@ type hides.
 \]
 }
 With $\psi = \langle \Theta; I; O; F \rangle$, the instructions are typed as
-follows, using the typing of operands, objects, and destinations above.
+follows, using the typing of operands, constructors, and destinations above.
 {\small\figdefs
 \defhead{Typing of instructions}{\Sigma; \Phi \vdash i : \psi \Rightarrow \psi'}
 \[
@@ -575,8 +575,8 @@ follows, using the typing of operands, objects, and destinations above.
   \dfrac{\Phi \vdash \mathit{dst} : \langle \Theta; I; O; \kw{set} \rangle \Rightarrow_{\kw{Bool}} \psi'}
         {\Sigma; \Phi \vdash \kw{sete}\; \mathit{dst} : \langle \Theta; I; O; \kw{set} \rangle \Rightarrow \psi'}\;\rulename{ins-sete}
   \qquad
-  \dfrac{\Sigma; \Phi; \psi \vdash o : A \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_A \psi'}
-        {\Sigma; \Phi \vdash \kw{alloc}\; o, \mathit{dst} : \psi \Rightarrow \psi'}\;\rulename{ins-alloc}
+  \dfrac{\Sigma; \Phi; \psi \vdash \mathit{con} : A \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_A \psi'}
+        {\Sigma; \Phi \vdash \kw{alloc}\; \mathit{con}, \mathit{dst} : \psi \Rightarrow \psi'}\;\rulename{ins-alloc}
   \\[6pt]
   \dfrac{\Sigma; \Phi; \psi \vdash a : \kw{tup}(\vec{A}) \quad 1 \leq i \leq |\vec{A}| \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_{A_i} \psi'}
         {\Sigma; \Phi \vdash \kw{load}\; \kw{get}_i\; a, \mathit{dst} : \psi \Rightarrow \psi'}\;\rulename{ins-load}
@@ -676,7 +676,7 @@ an instruction transforms the meaning $\kappa$ of the rest of the
 sequence. An unset register and an unset flag hold $\{\langle\rangle\}$.
 An operand means $\mathcal{O}\den{a}\sigma R = \mathcal{A}\den{a}\sigma$
 for an atom, $R(r)$ for $\%r$, and $\mathcal{O}\den{a}\sigma R$ for
-$\kw{fold}\;a$ and $\kw{unfold}\;a$. An object means the operator of its
+$\kw{fold}\;a$ and $\kw{unfold}\;a$. A constructor means the operator of its
 kind on the meanings of its operands ($\mathsf{pair}$, $\mathcal{T}$,
 $\mathsf{inl}$, $\mathsf{inr}$). A write to a destination, written
 $\mathit{put}$, updates a register, or binds a slot as an assignment in
@@ -700,7 +700,7 @@ CFG does.
   \den{\kw{cmpq}\; a_2, a_1}\kappa\,\sigma R F & = &
     \kappa\,\sigma\,R\,(\mathsf{prim}_{\kw{eq}}(\mathcal{O}\den{a_1}\sigma R, \mathcal{O}\den{a_2}\sigma R))\\
   \den{\kw{sete}\; \mathit{dst}}\kappa\,\sigma R F & = & \mathit{put}(\mathit{dst}, F)\,\kappa\,\sigma R F\\
-  \den{\kw{alloc}\; o, \mathit{dst}}\kappa\,\sigma R F & = & \mathit{put}(\mathit{dst}, \mathcal{O}\den{o}\sigma R)\,\kappa\,\sigma R F\\
+  \den{\kw{alloc}\; \mathit{con}, \mathit{dst}}\kappa\,\sigma R F & = & \mathit{put}(\mathit{dst}, \mathcal{O}\den{\mathit{con}}\sigma R)\,\kappa\,\sigma R F\\
   \den{\kw{load}\; \kw{get}_i\; a, \mathit{dst}}\kappa\,\sigma R F & = &
     \mathit{put}(\mathit{dst}, \pi_{\mathsf{tup}_i}(\mathcal{O}\den{a}\sigma R))\,\kappa\,\sigma R F\\
   \den{\kw{fst}\; x, \%r}\kappa\,\sigma R F & = & \kappa\,\sigma\,R[r{:=}\car(\sigma(x))]\,F\\

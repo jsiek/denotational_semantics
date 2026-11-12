@@ -143,10 +143,10 @@ $\kw{rsi}$ to a value or unset; the frame $\sigma$, which holds a value
 in each initialized slot; the environment $u$ of the open closure,
 if any; and the flag $b$, which is a Boolean or unset. We write $m(r)$
 for $R(r)$. $\mathit{arg}(a, m)$ converts an operand $a$ into a
-value, $\mathit{obj}(o, m)$ converts an object $o$ to be allocated
+value, $\mathit{obj}(\mathit{con}, m)$ converts a constructor $\mathit{con}$ to be allocated
 into a value, and $\mathit{put}(\mathit{dst}, v, m)$ stores $v$ in a destination
 $\mathit{dst}$.
-\defhead{Auxiliary definitions}{\mathit{arg}(a, m) = v \qquad \mathit{obj}(o, m) = v \qquad \mathit{put}(\mathit{dst}, v, m) = m'}
+\defhead{Auxiliary definitions}{\mathit{arg}(a, m) = v \qquad \mathit{obj}(\mathit{con}, m) = v \qquad \mathit{put}(\mathit{dst}, v, m) = m'}
 \begin{align*}
   \mathit{arg}(x,\; \langle R, \sigma, u, b\rangle) &= \sigma(x) \\
   \mathit{arg}(c,\; m) &= c \\
@@ -178,7 +178,7 @@ specifies.
       \mathit{put}(\mathit{dst}, \kw{inl}\,\kw{tup}(), m) & \text{if } b = \mathsf{true}\\
       \mathit{put}(\mathit{dst}, \kw{inr}\,\kw{tup}(), m) & \text{if } b = \mathsf{false}
     \end{cases} \\
-  \mathit{instr}(\kw{alloc}\; o, \mathit{dst},\; m) &= \mathit{put}(\mathit{dst}, \mathit{obj}(o, m), m) \\
+  \mathit{instr}(\kw{alloc}\; \mathit{con}, \mathit{dst},\; m) &= \mathit{put}(\mathit{dst}, \mathit{obj}(\mathit{con}, m), m) \\
   \mathit{instr}(\kw{load}\; \kw{get}_i\; a, \mathit{dst},\; m) &= \kw{tup}(v_1, \ldots, v_n) \leftarrow \mathit{arg}(a, m);\; \mathit{put}(\mathit{dst}, v_i, m) \\
   \mathit{instr}(\kw{fst}\; x, \%r,\; \langle R, \sigma, u, b\rangle) &= \kw{pair}(c, u') \leftarrow \sigma(x);\; \langle R^{\circ}[r{:=}c], \sigma, u', b\rangle \\
   \mathit{instr}(\kw{snd}\; \%r,\; \langle R, \sigma, u, b\rangle) &= \langle R[r{:=}u], \sigma, u, b\rangle
