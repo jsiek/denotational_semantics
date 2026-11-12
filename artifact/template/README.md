@@ -72,14 +72,14 @@ in Agda's libraries file (as `standard-library`), from this directory:
     make tables         # Tables 1 and 2
     make all            # the three
 
-`make check` runs `agda --safe agda/FPC/All.agda` and then
-`make pragma-check`, which fails if any file under `agda/` has a
-`postulate` or a pragma, other than the `--without-K` option of the
-abstract-binding-tree extract. `make check-scott` writes
-`_build/libraries` (Agda's default libraries file plus
-`vendor/TypeTopology/typetopology.agda-lib`) and runs
-`agda --library-file=_build/libraries -l standard-library -l TypeTopology -i agda --safe agda/AllScott.agda`.
-`make clean` removes Agda's interface files.
+* `make check` runs `agda --safe agda/FPC/All.agda` and then
+  `make pragma-check`, which fails if any file under `agda/` has a
+  `postulate` or a pragma other than `--without-K`.
+* `make check-scott` writes `_build/libraries` (Agda's default libraries file plus
+  `vendor/TypeTopology/typetopology.agda-lib`) and runs `agda
+  --library-file=_build/libraries -l standard-library -l TypeTopology -i agda
+  --safe agda/AllScott.agda`.
+* `make clean` cleans up Agda's interface files.
 
 ## Checking proofs interactively in Emacs
 
