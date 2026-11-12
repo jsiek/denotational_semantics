@@ -18,7 +18,11 @@ artifact gets
     with TypeTopology's LICENSE, the patch and a NOTICE;
   * loc.py (papers/PLDI-2027/loc.py, run with --artifact by `make tables`),
     and the files of artifact/template/ (the README, Makefile and
-    Dockerfile, and .dir-locals.el for Agda's Emacs mode).
+    Dockerfile, and .dir-locals.el for Agda's Emacs mode);
+  * the appendix of the paper, Appendix.pdf: the pages of
+    papers/PLDI-2027/paper.pdf from page APPENDIX_FROM on, cut out with
+    cpdf.  Build the paper first; the PDF is not checked for identifying
+    strings.
 
 TypeTopology is taken from _deps/TypeTopology, fetched and patched by
 `make scott-deps`; the script checks that it is at the pinned commit and
@@ -41,6 +45,8 @@ TT_URL = 'https://github.com/martinescardo/TypeTopology'
 PATCH = os.path.join(REPO, 'scott', 'typetopology-builtin-alias.patch')
 TEMPLATE = os.path.join(REPO, 'artifact', 'template')
 LOC = os.path.join(REPO, 'papers', 'PLDI-2027', 'loc.py')
+PAPER = os.path.join(REPO, 'papers', 'PLDI-2027', 'paper.pdf')
+APPENDIX_FROM = 25   # the page of the paper on which its appendix starts
 
 
 # --- the import closure --------------------------------------------------------
@@ -424,6 +430,16 @@ def main():
     open(os.path.join(out, 'loc.py'), 'w', encoding='utf-8').write('#!/usr/bin/env python3\n' + LOC_DOC + loc)
     for f in sorted(os.listdir(TEMPLATE)):
         shutil.copyfile(os.path.join(TEMPLATE, f), os.path.join(out, f))
+
+    # the appendix
+    if not os.path.isfile(PAPER):
+        sys.exit(f'export: {PAPER} is missing: build the paper first')
+    if not shutil.which('cpdf'):
+        sys.exit('export: cpdf is not installed (it cuts the appendix out of the paper)')
+    r = subprocess.run(['cpdf', PAPER, f'{APPENDIX_FROM}-end', '-o', os.path.join(out, 'Appendix.pdf')],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(f'export: cpdf fails on {PAPER}:\n{r.stdout}{r.stderr}')
 
     # Tables 1 and 2, measured on the exported tree, into the README, where
     # it says TABLES_OUTPUT (if it does)
