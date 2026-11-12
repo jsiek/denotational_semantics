@@ -87,7 +87,7 @@ Graph
 - Graph and Scott semantics for EnvClos and PairClos are important because they
   are related to our novel claim about split closure
 
-** TODO (Tianyu) check the syntax and type rules for FPC, EnvClos, PairClos and GlobalFun languages
+** DONE (Tianyu) check the syntax and type rules for FPC, Clos, EnvClos, PairClos and GlobalFun languages
 ** TODO (Darshal) check the syntax and type rules for MNF, Imp, CFG and Instrμ
 
 * TODO (Darshal/Tianyu) Documentation for artifact/supplementary material
