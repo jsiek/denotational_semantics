@@ -17,7 +17,7 @@
   \node (c3) at (2,0)  {EnvClos};
   \node (c4) at (2,-1) {PairClos};
   \node (c5) at (1,-1) {GlobalFun};
-  \node (mon) at (0,-1) {Mon};
+  \node (mon) at (0,-1) {MNF};
   \node (imp) at (0,-2) {Imp};
   \node (cfg) at (1,-2) {CFG};
   \node (x86) at (2,-2) {\instr};
@@ -60,7 +60,7 @@
 \text{GlobalFun} & \text{Terms} & K, L, M, N & ::= & \ldots \mid f_k
   \quad (\text{in place of } \kw{code})\\
  & \text{Function Def.} & d & ::= & \kw{code}\;(z, y.\,N) \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
-\text{Mon} & \text{Atoms} & a & ::= & x \mid c \mid f_k\\
+\text{MNF} & \text{Atoms} & a & ::= & x \mid c \mid f_k\\
  & \text{Operations} & o & ::= & \kw{pair} \mid \kw{callc} \mid \kw{tuple} \mid \kw{get}_i \mid \kw{inl}
   \mid \kw{inr} \mid \kw{prim}_p \mid \kw{fold} \mid \kw{unfold}\\
  & \text{Terms} & M, N & ::= & a \mid o\;\vec{a} \mid \kw{case}\;a\;(x.\,M)\;(y.\,N)
@@ -197,10 +197,11 @@ definitions and a main term.
 \paragraph{The back end}
 
 The pass \pass{remove complex operands}
-(\pass{RCO}, \S\ref{app:pass-rco}) translates from GlobalFun to Mon. It binds each operand that is not atomic to a variable with
-$\kw{let}$, so the operands of every operation in Mon are atomic.  The
+(\pass{RCO}, \S\ref{app:pass-rco}) translates from GlobalFun to MNF, a \emph{monadic normal form}
+\citep{Hatcliff:1994vn}. It binds each operand that is not atomic to a variable with
+$\kw{let}$, so the operands of every operation in MNF are atomic.  The
 atomic terms are variables, constants, and function names.  The
-\pass{lift locals} pass (\S\ref{app:pass-lift-locals}) translates from Mon to Imp. It gives each variable its own fixed location in the
+\pass{lift locals} pass (\S\ref{app:pass-lift-locals}) translates from MNF to Imp. It gives each variable its own fixed location in the
 function's stack frame, called a \emph{slot}. A function body declares
 its frame $\Phi$, which lists the types of its slots. The type system
 tracks which slots are initialized, so a program reads a slot only

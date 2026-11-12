@@ -262,7 +262,7 @@ PairClos, the target of \pass{split closure}, replaces closures and application 
 \]
 }
 
-\subsection{The GlobalFun and Mon Languages}
+\subsection{The GlobalFun and MNF Languages}
 \agda{FPC/Language/GlobalFun.agda, FPC/Language/Mon.agda, FPC/Semantics/GraphModel/GlobalFun.agda}
 
 GlobalFun, the target of \pass{hoist}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \Sigma_0, \ldots, \Sigma_{m-1}$
@@ -302,7 +302,7 @@ of its code, given the table $T_k$ of the definitions older than it
   \den{(d_0, \ldots, d_{m-1};\; M)} = \den{M}_T\rho_0
 \]
 }
-Mon, the target of \pass{remove complex operands}, has the syntax of Figure~\ref{fig:grammars}, is typed as GlobalFun,
+MNF, the target of \pass{remove complex operands}, has the syntax of Figure~\ref{fig:grammars}, is typed as GlobalFun,
 and has the meaning of its embedding into GlobalFun, because an atom and an
 operation on atoms are GlobalFun terms already.
 
@@ -324,7 +324,7 @@ $\kw{case}\;a\;x\;y\;e_1\;e_2$ writes the payload of the injection $a$
 to slot $x$ and runs $e_1$, or to slot $y$ and runs $e_2$. Both write a
 slot that is not initialized, so a write never overwrites a variable
 that is in scope. A constant $c$, a function reference $f_k$, and an
-operation on atoms $o\;\vec{a}$ are typed as in Mon, with the atoms of an
+operation on atoms $o\;\vec{a}$ are typed as in MNF, with the atoms of an
 operation typed by the rules here.
 {\small\figdefs
 \defhead{Typing of Imp}{\Sigma; \Phi; I \vdash e : C \qquad \Sigma; \Phi_p \vdash d : A \qquad \Sigma \vdash P : A}
@@ -976,7 +976,7 @@ A_n$ (each under its binders $\bar{x}_i$):
 \]
 Each definition refers only to the definitions made before it.
 
-\subsection{\pass{remove complex operands} (GlobalFun to Mon)}
+\subsection{\pass{remove complex operands} (GlobalFun to MNF)}
 \label{app:pass-rco}
 \agda{FPC/Compiler/RCO.agda (rco-program)}
 
@@ -1006,9 +1006,9 @@ fresh variable:
   \pass{rco}((d_0, \ldots, d_{m-1};\; M)) & = & (\pass{rco}(d_0), \ldots, \pass{rco}(d_{m-1});\; \pass{rco}(M))
 \end{array}
 \]
-where $o$ ranges over the operations of Mon (Figure~\ref{fig:grammars}).
+where $o$ ranges over the operations of MNF (Figure~\ref{fig:grammars}).
 
-\subsection{\pass{lift locals} (Mon to Imp)}
+\subsection{\pass{lift locals} (MNF to Imp)}
 \label{app:pass-lift-locals}
 \agda{FPC/Compiler/LiftLocals.agda (lift-program)}
 
@@ -1229,7 +1229,7 @@ continuation, and chains it over several operands.
 \paragraph{Lift locals}
 
 The semantics of Imp is in continuation-passing style, so the
-induction hypothesis relates a Mon term $e$ and its translation under
+induction hypothesis relates an MNF term $e$ and its translation under
 a continuation $\kappa$: $\kappa(\den{e}_T\,\rho) =
 \den{\pass{lift}_\Gamma(e)}_{T'}\,\sigma\,\kappa$, for an environment
 $\rho$ and a frame $\sigma$ that holds the value of each variable $v$
