@@ -23,20 +23,21 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 
 * Compiler correctness proofs
 
-|                     | Lemmas   |         |       |       |     |           |        | Theorems   |
-| Semantics \ Passes  | Simplify | Enclose | Split | Hoist | RCO | Explicate | Select | End-to-end |
-|---------------------+----------+---------+-------+-------+-----+-----------+--------+------------|
-| Graph Model (new)   |          |         | ＊ J✓ |       |     |           |        | ＊ T✓+D    |
-| Scott Domains (new) |          |         | ＊ J✓ |       |     |           |        | ＊ T✓+D    |
-| Reduction Semantics |          |         |       |       |     |           |        | ＊ T✓+D    |
-| Clocked Interpreter |          |         |       |       |     |           |        | ＊ T✓+D✓   |
-| CEK machine         |          |         |       |       |     |           |        | ＊ T✓+D    |
+|                     | Lemmas   |         |        |       |     |           |        | Theorems   |
+| Semantics \ Passes  | Simplify | Enclose | Split  | Hoist | RCO | Explicate | Select | End-to-end |
+|---------------------+----------+---------+--------+-------+-----+-----------+--------+------------|
+| Graph Model (new)   |          |         | ＊ J✓ |       |     |           |        | ＊ T✓+D   |
+| Scott Domains (new) |          |         | ＊ J✓ |       |     |           |        | ＊ T✓+D   |
+| Reduction Semantics |          |         |        |       |     |           |        | ＊ T✓+D   |
+| Clocked Interpreter |          |         |        |       |     |           |        | ＊ T✓+D✓ |
+| CEK machine         |          |         |        |       |     |           |        | ＊ T✓+D   |
+|                     |          |         |        |       |     |           |        |            |
 
 - The end-to-end theorems are top priority to be checked
 - Checking split pass for the denotational models is also high priority because of its novelty
 
 ** DONE (Tianyu) Check definition of compiler pass simplify
-** TODO (Darshal) Check definitions of compiler passes from enclose to select instructions
+** DONE (Darshal) Check definitions of compiler passes from enclose to select instructions
 ** TODO (Tianyu/Darshal) spot check the lemmas corresponding to the empty cells in the table above (low priority)
 
 * Comparison of semantics/proofs
@@ -70,14 +71,14 @@ Graph
 
 | Languages \ Semantics | Graph | Scott | Red | CEK | Interp |
 |-----------------------+-------+-------+-----+-----+--------|
-| ＊ FPC                | D✓    | J✓    | T✓  | T✓  | ＊ D✓  |
-| EnvClos               | J✓    | J✓    |     |     |        |
-| PairClos              | J✓    | J✓    |     |     |        |
+| ＊ FPC                | D✓   | J✓   | T✓ | T✓ | ＊ D✓ |
+| EnvClos               | J✓   | J✓   |     |     |        |
+| PairClos              | J✓   | J✓   |     |     |        |
 | GlobalFun             |       |       |     |     |        |
 | MNF (D✓)             |       |       |     |     |        |
-| Imp (D✓)             |       |       |     |     | D✓     |
-| CFG (D✓)             |       |       |     |     | D✓     |
-| ＊ Instrμ (D✓)       | D     |       |     |     | ＊ D✓  |
+| Imp (D✓)             |       |       |     |     | D✓    |
+| CFG (D✓)             |       |       |     |     | D✓    |
+| ＊ Instrμ (D✓)       | D     |       |     |     | ＊ D✓ |
 |                       |       |       |     |     |        |
 
 
