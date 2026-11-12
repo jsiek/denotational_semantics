@@ -566,10 +566,11 @@ $\varepsilon^\infty_n(\pi^\infty_n(d))$. At stage $n + 1$, the payload of a
 function is in $[\mathbb{D}_n \to \mathbb{D}_n]$ and the payload of a
 pair is in $\mathbb{D}_n^2$.
 
-A target closure is a pair $(c, e)$ of code and environment, and the
+A target closure is a pair $(c, e)$ of a curried function and an
+environment, and the
 meaning of $\kw{callc}$ calls it on an argument $a$ by
 $\mathit{call}(c, e, a) = \mathsf{app}(\mathsf{app}(c, e), a)$. The
-code is a curried function that the call applies twice, and applying a
+call applies the curried function twice, and applying a
 function of stage $k + 1$ gives a result of stage $k$. A call of a
 pair of stage $m + 2$ therefore gives its result at stage $m$:
 \[
@@ -719,7 +720,7 @@ stage $m + 2$ of the target pair is below the approximation at stage
 $m$ of the call of the pair itself, and part~2 of
 Lemma~\ref{lem:scott-stages} applies. In the call case, the
 approximation at stage $n$ of the result of a call is the supremum of
-the calls of the approximations of the code, the environment and the
+the calls of the approximations of the curried function, the environment and the
 argument, so part~3 reduces the call to the calls of approximations,
 and each of those is below an approximation of a call at a larger
 stage, of which the clause for pairs speaks.
