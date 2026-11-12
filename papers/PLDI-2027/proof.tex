@@ -108,23 +108,24 @@ The first two produce closures of an intermediate language, Clos,
 written $\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$, which bind a name
 $x_i$ for each captured value $M_i$. The last step, $\mathit{concretize}_\varphi$,
 stores the captured values in a tuple. Each variable $x$ satisfies $\den{x}\rho = \den{\varphi(x)}\rho'$, where
-its reference $\varphi(x)$ is either $x$ or $\kw{get}_i\,z$. Let $D_i = \den{M_i}\rho$ and
-$D'_i = \den{\mathit{concretize}_\varphi(M_i)}\rho'$, so that $D_i = D'_i$,
-and let $N' = \mathit{concretize}_{\varphi'}(N)$:
+its reference $\varphi(x)$ is either $x$ or $\kw{get}_i\,z$. Let $M'_i = \mathit{concretize}_\varphi(M_i)$,
+$D_i = \den{M_i}\rho$, $D'_i = \den{M'_i}\rho'$, and
+$N' = \mathit{concretize}_{\varphi'}(N)$:
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
   \den{\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}}\rho
     & = & \mathsf{guard}(\vec{D};\; \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y])) & \text{(meaning of a Clos closure)}\\
     & = & \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y]) & \text{(each $D_i$ is nonempty)}\\
+    & = & \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}', y{:=}Y]) & \text{(induction hypothesis for $\vec{M}$)}\\
     & = & \Lambda(\mlam{Y} \den{N'}\rho_0[z{:=}\mathcal{T}(\vec{D}'), y{:=}Y]) & \text{(induction hypothesis for $N$)}\\
     & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N'}\rho_0[z{:=}X, y{:=}Y])) \app \mathcal{T}(\vec{D}') & \text{(Lemma~\ref{lem:beta}, part 1)}\\
     & = & \den{\kw{clos}\;(z, y.\,N')\;\vec{M}'}\rho' & \text{(meaning of an EnvClos closure)}
 \end{array}
 \]}
-The induction hypothesis applies because the code reads $x_i$ as
+The induction hypothesis for $N$ applies because the code reads $x_i$ as
 $\kw{get}_i\,z$, and $\pi_{\mathsf{tup}_i}(\mathcal{T}(\vec{D}')) =
-D'_i = D_i$ when every $D'_i$ is nonempty.
+D'_i$ when every $D'_i$ is nonempty.
 Lemma~\ref{lem:beta} needs the tuple $\mathcal{T}(\vec{D}')$ to be
 nonempty and consistent.
 
