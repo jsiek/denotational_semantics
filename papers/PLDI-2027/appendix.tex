@@ -267,7 +267,7 @@ PairClos, the target of \pass{split closure}, replaces closures and application 
 
 GlobalFun, the target of \pass{hoist}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \Sigma_0, \ldots, \Sigma_{m-1}$
 of the signatures $\Sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
-definitions: the $k$-th definition, referred to by $f_k$, has environment
+definitions. The $k$-th definition, referred to by $f_k$, has environment
 types $\Delta_k$, argument type $A_k$, and result type $C_k$. A term is typed by the table and its context,
 $\Sigma; \Gamma \vdash M : A$, and a program by its table,
 $\Sigma \vdash P : A$. The other forms are typed as in PairClos.
@@ -314,8 +314,8 @@ a stack frame. A function body $(\Phi; e)$ declares its frame, the list
 $\Phi = A_0, \ldots, A_{n-1}$ of the types of its slots. We write
 $x : A \in \Phi$ when slot $x$ has type $A$, which it keeps for the whole
 body. A function body is
-typed by the types $\Phi_p$ of its parameters, $\Sigma; \Phi_p \vdash d : A$:
-its frame starts with the slots of the parameters, $0, \ldots, |\Phi_p| - 1$,
+typed by the types $\Phi_p$ of its parameters, $\Sigma; \Phi_p \vdash d : A$.
+Its frame starts with the slots of the parameters, $0, \ldots, |\Phi_p| - 1$,
 and its expression starts with exactly those slots initialized. An expression
 is typed by the set $I$ of the slots that are initialized where it starts, and
 a slot $x$ can be read only where it is initialized. An assignment
@@ -494,14 +494,14 @@ what it holds: a value of a type $A$, the code
 $\kw{opencode}(A \rightarrow C)$ of the open closure, or the environment
 $\kw{openenv}$ of the open closure; $\emptyset$ maps every register to
 nothing. The type $\kw{opencode}(A \rightarrow C)$ is the type of the function
-reference of the open closure, i.e., it refers to the name of the global
-function definition that takes an argument of type $A$ and returns a $C$.
+reference of the open closure, which names the global function definition
+that takes an argument of type $A$ and returns a $C$.
 $\kw{openenv}$ is the type of the closing environment of the open closure, the
 tuple of the values it captured. Neither names the types of the environment,
 which the function type $A \rightarrow C$ of the closure hides. We write $\tau$
 for any of these types of what a register holds,
 $\tau ::= A \mid \kw{opencode}(A \rightarrow C) \mid \kw{openenv}$; operands
-and destinations are typed at $\tau$, since they may be registers. The operands
+and destinations are typed at $\tau$, because they may be registers. The operands
 of an instruction are typed by these rules, with the atoms typed as in Imp,
 over the initialized slots of the state.
 {\small\figdefs
@@ -619,7 +619,7 @@ Because $\kw{jmp}$ does not change the initialized slots, it requires them to be
 $I_l$. Because $\kw{case}$ initializes slot $y$ or slot $z$, it requires blocks
 $l_1$ and $l_2$ to start with $I \cup \{y\}$ and $I \cup \{z\}$. Only the
 initialized slots pass from one block to the next. The registers, the open
-closure, and the flag do not, since every block starts with them unset.
+closure, and the flag do not, because every block starts with them unset.
 {\small\figdefs
 \defhead{Typing of sequences}{\Sigma; \Phi; \psi; \vec{I} \vdash s : A}
 \[

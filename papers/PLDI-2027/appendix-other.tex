@@ -184,8 +184,8 @@ specifies.
   \mathit{instr}(\kw{snd}\; \%r,\; \langle R, \sigma, u, b\rangle) &= \langle R[r{:=}u], \sigma, u, b\rangle
 \end{align*}
 Here $m$ on the right is the state on the left, and $R^{\circ}$ is the
-result of wiping $R$: the registers that held the code or the environment of
-an earlier open closure are unset, as $\mathit{wipe}(\Theta)$ unsets their
+result of wiping $R$, which unsets the registers that held the code or the
+environment of an earlier open closure, as $\mathit{wipe}(\Theta)$ unsets their
 types in \rulename{ins-fst} (Appendix~\ref{app:instr}). As in the interpreter of \fpc, a pattern on the left
 of $\leftarrow$ always matches, because instructions are typed by the
 state they start in.
