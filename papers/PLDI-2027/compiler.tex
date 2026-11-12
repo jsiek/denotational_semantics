@@ -40,9 +40,9 @@
 \end{figure}
 
 \begin{figure}[t]
-\small
+\footnotesize
 \[
-\begin{array}{@{}l@{\;\;}l@{\;\;}r@{\;}c@{\;}l@{}}
+\begin{array}{@{}l@{\;\;}l@{\;}r@{\;}c@{\;}l@{}}
  & \text{Variables} & x, y, z & & \text{(from Imp on, slots of a stack frame)}\\
  & \text{Labels} & l & & \text{(from CFG on, the number of a block $t_l$ or $s_l$)}\\
  & \text{Base types} & B & ::= & \kw{Nat} \mid \kw{Int} \mid \kw{Bool} \mid \kw{Unit} \mid \kw{Void}\\
@@ -50,16 +50,15 @@
   \mid A + C \mid \mu X.\, A \mid X \mid \kw{code}(\Delta; A \rightarrow C)\\
  & & \Delta, \Phi & ::= & A_1, \ldots, A_n\\[3pt]
 \fpc & \text{Terms} & K, L, M, N & ::= & x \mid \lambda x.\, N \mid L\;M \mid c
-  \mid \kw{tuple}\;\vec{M} \mid \kw{get}_i\,M \mid \kw{inl}\;M \mid \kw{inr}\;M
-  \mid \kw{case}\;L\;(x.\,M)\;(y.\,N)\\
- & & & \mid & \kw{prim}_p\;L\;M \mid \kw{let}\;x = M\;\kw{in}\;N
+  \mid \kw{tuple}\;\vec{M} \mid \kw{get}_i\,M \mid \kw{inl}\;M \mid \kw{inr}\;M\\
+ & & & \mid & \kw{case}\;L\;(x.\,M)\;(y.\,N) \mid \kw{prim}_p\;L\;M \mid \kw{let}\;x = M\;\kw{in}\;N
   \mid \kw{fold}\;M \mid \kw{unfold}\;M\\[3pt]
 \text{EnvClos} & \text{Terms} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(z, y.\,N)\;\vec{M}
-  \qquad (\text{in place of } \lambda x.\, N)\\
+  \quad (\text{in place of } \lambda x.\, N)\\
 \text{PairClos} & \text{Terms} & K, L, M, N & ::= & \ldots \mid \kw{code}\;(z, y.\,N) \mid \kw{pair}\;L\;M \mid \kw{callc}\;L\;M
-  \qquad (\text{in place of } \kw{clos} \text{ and } L\;M)\\
+  \quad (\text{in place of } \kw{clos} \text{ and } L\,M)\\
 \text{GlobalFun} & \text{Terms} & K, L, M, N & ::= & \ldots \mid f_k
-  \qquad (\text{in place of } \kw{code})\\
+  \quad (\text{in place of } \kw{code})\\
  & \text{Function Def.} & d & ::= & \kw{code}\;(z, y.\,N) \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
 \text{Mon} & \text{Atoms} & a & ::= & x \mid c \mid f_k\\
  & \text{Operations} & o & ::= & \kw{pair} \mid \kw{callc} \mid \kw{tuple} \mid \kw{get}_i \mid \kw{inl}
