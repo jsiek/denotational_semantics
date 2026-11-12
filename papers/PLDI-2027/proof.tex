@@ -97,9 +97,10 @@ The last step applies because the inlined body is simplified in $E_f$
 extended to replace $x$ by $M'$, and this static environment agrees
 with $\rho_f[x{:=}\den{M'}\rho']$ and $\rho'$. The invariant for $L$
 gives the agreement of $E_f$, and both $x$ and its replacement $M'$
-mean $\den{M'}\rho'$. The use of Lemma~\ref{lem:beta} needs $\den{M}\rho$ to be nonempty,
-which holds because a syntactic value denotes a nonempty set, and
-consistent, which holds because $\rho$ is. A $\beta$-redex
+mean $\den{M'}\rho'$. The use of Lemma~\ref{lem:beta} needs $\den{M}\rho$ to be nonempty
+and consistent. It is nonempty because it equals $\den{M'}\rho'$ by
+the induction hypothesis for $M$, and a syntactic value such as $M'$
+denotes a nonempty set. It is consistent because $\rho$ is. A $\beta$-redex
 $(\lambda x.\, N)\;M$ is the same calculation without the second step.
 
 
