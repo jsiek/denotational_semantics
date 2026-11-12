@@ -152,6 +152,7 @@ Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 \agda{FPC/Language/FPC.agda, FPC/Semantics/GraphModel/FPC.agda}
 
 \fpc\ is the source language, and the first pass, \pass{simplify}, maps it to itself. A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of variable types.
+{\small\figdefs
 \defhead{Typing of \fpc}{\Gamma \vdash M : A}
 \[
 \begin{array}{@{}c@{}}
@@ -162,31 +163,32 @@ Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
   \dfrac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}{\Gamma \vdash L\;M : C}
   \qquad
   \dfrac{c \text{ a constant of base type } B}{\Gamma \vdash c : B}
-  \\[14pt]
-  \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n)}
-        {\Gamma \vdash \kw{tuple}\;(M_1, \ldots, M_n) : \kw{tup}(A_1, \ldots, A_n)}
+  \\[6pt]
+  \dfrac{\overrightarrow{\Gamma \vdash M_i : A_i \quad}^{i}}
+        {\Gamma \vdash \kw{tuple}\;\vec{M} : \kw{tup}(\vec{A})}
   \qquad
-  \dfrac{\Gamma \vdash M : \kw{tup}(A_1, \ldots, A_n) \quad 1 \leq i \leq n}
+  \dfrac{\Gamma \vdash M : \kw{tup}(\vec{A}) \quad 1 \leq i \leq |\vec{A}|}
         {\Gamma \vdash \kw{get}_i\,M : A_i}
-  \\[14pt]
+  \\[6pt]
   \dfrac{\Gamma \vdash M : A}{\Gamma \vdash \kw{inl}\;M : A + C}
   \qquad
   \dfrac{\Gamma \vdash M : C}{\Gamma \vdash \kw{inr}\;M : A + C}
   \qquad
   \dfrac{\Gamma \vdash L : A + C \quad \Gamma, x{:}A \vdash M : D \quad \Gamma, y{:}C \vdash N : D}
         {\Gamma \vdash \kw{case}\;L\;(x.\,M)\;(y.\,N) : D}
-  \\[14pt]
+  \\[6pt]
   \dfrac{\Gamma \vdash L : \kw{Int} \quad \Gamma \vdash M : \kw{Int}}
         {\Gamma \vdash \kw{prim}_p\;L\;M : \mathit{out}(p)}
   \qquad
   \dfrac{\Gamma \vdash M : A \quad \Gamma, x{:}A \vdash N : C}
         {\Gamma \vdash \kw{let}\;x = M\;\kw{in}\;N : C}
-  \\[14pt]
+  \\[6pt]
   \dfrac{\Gamma \vdash M : A[\mu X.\, A / X]}{\Gamma \vdash \kw{fold}\;M : \mu X.\, A}
   \qquad
   \dfrac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \end{array}
 \]
+}
 Figure~\ref{fig:graph-ops} gives the semantics of \fpc.
 
 \subsection{The Clos and EnvClos Languages}
@@ -195,22 +197,25 @@ Figure~\ref{fig:graph-ops} gives the semantics of \fpc.
 Clos is the intermediate language between the steps of \pass{enclose}, whose closures bind a name for each captured value. EnvClos, the target of \pass{enclose} and the source of \pass{split closure}, stores the captured values of a closure in one tuple. Both type and interpret their other forms as \fpc\ does.
 A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
 its captured values.
+{\small\figdefs
 \defhead{Typing of closures}{\Gamma \vdash M : A}
 \[
-  \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
+  \dfrac{\overrightarrow{\Gamma \vdash M_i : A_i \quad}^{i} \qquad
          x_1{:}A_1, \ldots, x_n{:}A_n, y{:}A \vdash N : C}
         {\Gamma \vdash \kw{clos}\;(\vec{x}, y.\,N)\;\vec{M} : A \rightarrow C}\;\text{(Clos)}
 \]
 \[
-  \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
+  \dfrac{\overrightarrow{\Gamma \vdash M_i : A_i \quad}^{i} \qquad
          z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
         {\Gamma \vdash \kw{clos}\;(z, y.\,N)\;\vec{M} : A \rightarrow C}\;\text{(EnvClos)}
 \]
+}
 Below, $\den{\vec{M}}\rho$ stands for $\den{M_1}\rho, \ldots, \den{M_n}\rho$. A Clos closure is the function of its parameter $y$ whose code runs
 with the captured values for $x_1, \ldots, x_n$; closures are strict, so
 it is guarded by the captured values. An EnvClos closure applies the
 curried meaning of its code to the tuple of the captured values
 (Section~\ref{sec:approx-lr}).
+{\small\figdefs
 \defhead{Semantics of closures}{\den{M}\rho = D}
 \[
 \begin{array}{@{}l@{}}
@@ -224,11 +229,13 @@ curried meaning of its code to the tuple of the captured values
     \quad \text{(EnvClos)}
 \end{array}
 \]
+}
 
 \subsection{The PairClos Language}
 \agda{FPC/Language/PairClos.agda, FPC/Semantics/GraphModel/PairClos.agda}
 
 PairClos, the target of \pass{split closure}, replaces closures and application with code, pairs, and calls, and types and interprets its other forms as \fpc\ does.
+{\small\figdefs
 \defhead{Typing of PairClos}{\Gamma \vdash M : A}
 \[
   \dfrac{z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
@@ -242,6 +249,8 @@ PairClos, the target of \pass{split closure}, replaces closures and application 
   \dfrac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}
         {\Gamma \vdash \kw{callc}\;L\;M : C}
 \]
+}
+{\small\figdefs
 \defhead{Semantics of PairClos}{\den{M}\rho = D}
 \[
   \den{\kw{code}\;(z, y.\,N)}\rho =  \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y]))
@@ -251,27 +260,38 @@ PairClos, the target of \pass{split closure}, replaces closures and application 
 \[
   \den{\kw{callc}\;L\;M}\rho = (\car(\den{L}\rho) \app \cdr(\den{L}\rho)) \app \den{M}\rho
 \]
+}
 
 \subsection{The GlobalFun and Mon Languages}
 \agda{FPC/Language/GlobalFun.agda, FPC/Language/Mon.agda, FPC/Semantics/GraphModel/GlobalFun.agda}
 
-GlobalFun, the target of \pass{hoist}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
-of the signatures $\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
-definitions, and a term is typed by the table and its context,
-$\Sigma; \Gamma \vdash M : A$. The other forms are typed as in PairClos.
-\defhead{Typing of GlobalFun}{\Sigma; \Gamma \vdash M : A \qquad \vdash P : A}
+GlobalFun, the target of \pass{hoist}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \Sigma_0, \ldots, \Sigma_{m-1}$
+of the signatures $\Sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
+definitions. The $k$-th definition, referred to by $f_k$, has environment
+types $\Delta_k$, argument type $A_k$, and result type $C_k$. A term is typed by the table and its context,
+$\Sigma; \Gamma \vdash M : A$, and a program by its table,
+$\Sigma \vdash P : A$. The other forms are typed as in PairClos.
+{\small\figdefs
+\defhead{Typing of GlobalFun}{\Sigma; \Gamma \vdash M : A \qquad \Sigma \vdash P : A}
 \[
-  \dfrac{k < m}{\Sigma; \Gamma \vdash f_k : \kw{code}(\Delta_k; A_k \rightarrow C_k)}
-  \qquad
-  \dfrac{\Sigma; z{:}\kw{tup}(\Delta_k), y{:}A_k \vdash N_k : C_k \ (k < m)
-         \quad \Sigma; \emptyset \vdash M : A}
-        {\vdash (d_0, \ldots, d_{m-1};\; M) : A}
+  \dfrac{\Sigma_k = (\Delta_k; A_k \rightarrow C_k)}
+        {\Sigma; \Gamma \vdash f_k : \kw{code}(\Delta_k; A_k \rightarrow C_k)}
 \]
-where $d_k = \kw{code}\;(z, y.\,N_k)$. A term means a set given a table $T$ that gives each definition its
+\[
+  \dfrac{\overrightarrow{d_k = \kw{code}\;(z, y.\,N_k) \quad
+           \Sigma_k = (\Delta_k; A_k \rightarrow C_k) \quad
+           \Sigma; z{:}\kw{tup}(\Delta_k), y{:}A_k \vdash N_k : C_k \quad}^{k}
+         \qquad \Sigma; \emptyset \vdash M : A}
+        {\Sigma \vdash (\vec{d};\; M) : A}
+\]
+}
+The premises under the arrow stand for one copy for each index $k$ of a
+definition $d_k$ of $\vec{d}$. A term means a set given a table $T$ that gives each definition its
 meaning, $\den{M}_T\rho$; the other forms are interpreted as in
 PairClos, passing $T$ along. A definition means the curried function
 of its code, given the table $T_k$ of the definitions older than it
 ($T_k(j) = T(j)$ for $j < k$, and $T_k(j) = \emptyset$ otherwise).
+{\small\figdefs
 \defhead{Semantics of GlobalFun}{\den{M}_T\rho = D \qquad T(k) = D}
 \[
   \den{f_k}_T\rho = T(k)
@@ -281,6 +301,7 @@ of its code, given the table $T_k$ of the definitions older than it
 \[
   \den{(d_0, \ldots, d_{m-1};\; M)} = \den{M}_T\rho_0
 \]
+}
 Mon, the target of \pass{remove complex operands}, has the syntax of Figure~\ref{fig:grammars}, is typed as GlobalFun,
 and has the meaning of its embedding into GlobalFun, because an atom and an
 operation on atoms are GlobalFun terms already.
@@ -290,36 +311,55 @@ operation on atoms are GlobalFun terms already.
 
 Imp, the target of \pass{lift locals}, replaces variables by slots of
 a stack frame. A function body $(\Phi; e)$ declares its frame, the list
-$\Phi = A_0, \ldots, A_{n-1}$ of the types of its slots, and slot
-$x < n$ holds values of type $A_x$ for the whole body. An expression is
-typed by the set $I$ of the slots that are initialized where it starts,
-and an atom reads only an initialized slot. An assignment
+$\Phi = A_0, \ldots, A_{n-1}$ of the types of its slots. We write
+$x : A \in \Phi$ when slot $x$ has type $A$, which it keeps for the whole
+body. A function body is
+typed by the types $\Phi_p$ of its parameters, $\Sigma; \Phi_p \vdash d : A$.
+Its frame starts with the slots of the parameters, $0, \ldots, |\Phi_p| - 1$,
+and its expression starts with exactly those slots initialized. An expression
+is typed by the set $I$ of the slots that are initialized where it starts, and
+a slot $x$ can be read only where it is initialized. An assignment
 $x \mathrel{:=} e_1;\; e_2$ writes the value of $e_1$ to slot $x$, and
 $\kw{case}\;a\;x\;y\;e_1\;e_2$ writes the payload of the injection $a$
 to slot $x$ and runs $e_1$, or to slot $y$ and runs $e_2$. Both write a
 slot that is not initialized, so a write never overwrites a variable
-that is in scope. Simple expressions are typed as in Mon, over slots.
-\defhead{Typing of Imp}{\Sigma; \Phi; I \vdash e : C}
+that is in scope. A constant $c$, a function reference $f_k$, and an
+operation on atoms $o\;\vec{a}$ are typed as in Mon, with the atoms of an
+operation typed by the rules here.
+{\small\figdefs
+\defhead{Typing of Imp}{\Sigma; \Phi; I \vdash e : C \qquad \Sigma; \Phi_p \vdash d : A \qquad \Sigma \vdash P : A}
 \[
-  \dfrac{x \in I}{\Sigma; \Phi; I \vdash x : A_x}
+  \dfrac{x : A \in \Phi \quad x \in I}{\Sigma; \Phi; I \vdash x : A}
   \qquad
-  \dfrac{x \notin I \quad \Sigma; \Phi; I \vdash e_1 : A_x \quad
+  \dfrac{x : A \in \Phi \quad x \notin I \quad \Sigma; \Phi; I \vdash e_1 : A \quad
          \Sigma; \Phi; I \cup \{x\} \vdash e_2 : C}
         {\Sigma; \Phi; I \vdash x \mathrel{:=} e_1;\; e_2 : C}
 \]
 \[
-  \dfrac{\Sigma; \Phi; I \vdash a : A_x + A_y \quad x, y \notin I \quad
-         \Sigma; \Phi; I \cup \{x\} \vdash e_1 : C \quad
-         \Sigma; \Phi; I \cup \{y\} \vdash e_2 : C}
+  \dfrac{\begin{array}{c}
+           x : A_1 \in \Phi \quad y : A_2 \in \Phi \quad
+           \Sigma; \Phi; I \vdash a : A_1 + A_2 \quad x, y \notin I\\
+           \Sigma; \Phi; I \cup \{x\} \vdash e_1 : C \quad
+           \Sigma; \Phi; I \cup \{y\} \vdash e_2 : C
+         \end{array}}
         {\Sigma; \Phi; I \vdash \kw{case}\;a\;x\;y\;e_1\;e_2 : C}
 \]
 \[
-  \dfrac{\Sigma; \Phi_k; \{0, 1\} \vdash e_k : C_k \ (k < m)
-         \quad \Sigma; \Phi; \emptyset \vdash e : A}
-        {\vdash ((\Phi_0; e_0), \ldots, (\Phi_{m-1}; e_{m-1});\; (\Phi; e)) : A}
+  \dfrac{\Phi = \Phi_p, \Phi' \quad
+         \Sigma; \Phi; \{0, \ldots, |\Phi_p| - 1\} \vdash e : A}
+        {\Sigma; \Phi_p \vdash (\Phi; e) : A}
 \]
-A definition starts with its environment in slot 0 and its argument in
-slot 1, so its frame $\Phi_k$ starts with $\kw{tup}(\Delta_k), A_k$.
+\[
+  \dfrac{\overrightarrow{\Sigma_k = (\Delta_k; A_k \rightarrow C_k) \quad
+           \Sigma; \kw{tup}(\Delta_k), A_k \vdash d_k : C_k \quad}^{k}
+         \qquad \Sigma; \emptyset \vdash d : A}
+        {\Sigma \vdash (\vec{d};\; d) : A}
+\]
+}
+The premises under the arrow stand for one copy for each index $k$ of a
+definition $d_k$ of $\vec{d}$. A definition has two parameters, its
+environment in slot 0 and its argument in slot 1; the main function body has
+none, so it starts with no slot initialized.
 The semantics is in continuation-passing style. The frame
 $\sigma$ maps each slot to a set, and the continuation $\kappa$ takes
 the meaning of the expression. A write updates its slot in place. An
@@ -329,6 +369,7 @@ $\mathcal{A}\den{f_k}\sigma = T(k)$, and a simple expression
 $\mathcal{S}\den{o\;\vec{a}}\sigma$ applies the GlobalFun operator of
 $o$ to the meanings of its atoms. An assignment is strict in the value
 it assigns, like a $\kw{let}$.
+{\small\figdefs
 \defhead{Semantics of Imp}{\den{e}_T\sigma\kappa = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
@@ -344,6 +385,7 @@ it assigns, like a $\kw{let}$.
   \den{(\vec{d};\; (\Phi; e))} & = & \den{e}_T\rho_0\,(\mlam{D} D)
 \end{array}
 \]
+}
 
 \subsection{The CFG Language}
 \label{app:cfg}
@@ -351,47 +393,69 @@ it assigns, like a $\kw{let}$.
 
 CFG, the target of \pass{explicate control}, organizes each function
 body as a control-flow graph. A function body
-$(\Phi; t_0, \ldots, t_{j-1};\, t)$ declares its frame $\Phi$, as in
-Imp, and has numbered blocks $t_0, \ldots, t_{j-1}$ and a starting
-tail $t$. A tail is typed by the type $R$ of the function body's
-result, the list $\vec{I} = I_0, \ldots, I_{j-1}$ of the sets of slots
-that are initialized where the blocks it may jump to start, and the set
-$I$ of the slots that are initialized where it starts. A label $l$ is
+$(\Phi; \vec{t};\, t)$ declares its frame $\Phi$, as in
+Imp, and has numbered blocks $\vec{t}$ and a starting
+tail $t$. A tail has the result type $A$ of its function body, written
+$\Sigma; \Phi; \vec{I}; I \vdash t : A$, and is typed by the list
+$\vec{I}$ of the sets of slots that are initialized
+where the blocks it may jump to start, one set $I_l$ for each block $t_l$, and the set $I$ of the slots that are
+initialized where it starts. As in Imp, a function body is typed by the
+types $\Phi_p$ of its parameters, $\Sigma; \Phi_p \vdash d : A$, and its
+starting tail starts with exactly the slots of the parameters initialized.
+A program is typed by the same rule as in Imp, $\Sigma \vdash P : A$, with
+CFG function bodies in place of Imp ones, so the figure omits it. A label $l$ is
 an index into $\vec{I}$. Block $t_l$ is typed over the blocks older
-than it, so control flow is acyclic. Imp tracks the initialized slots by scope, and CFG tracks them along
+than it, whose sets are the first $l$ sets $\vec{I}_{<l}$ of $\vec{I}$, so
+control flow is acyclic. Imp tracks the initialized slots by scope, and CFG tracks them along
 the flow of control. An assignment
 $x \mathrel{:=} \rhs;\; t$ initializes slot $x$, and its tail $t$ may
-start with fewer initialized slots ($J \subseteq I \cup \{x\}$), which
-forgets the slots of variables whose scope has ended. The statement
+start with fewer initialized slots ($I' \subseteq I \cup \{x\}$), which
+forgets the slots of variables whose scope has ended. Join points need this.
+\pass{explicate control} (Appendix~\ref{app:pass-explicate}) translates an
+assignment of a $\kw{case}$ to slot $x$ into a $\kw{case}$ whose branches each
+assign $x$ and jump to one block for the rest. Each branch has also
+initialized its own payload slot, but $\kw{goto}$ requires the initialized
+slots to be exactly those of the block it jumps to. So each branch's
+assignment forgets its payload slot, and both branches reach the block with
+the same initialized slots. The statement
 $\kw{case}\;a\;x\;y\;l_1\;l_2$ writes the payload of the injection $a$
 to slot $x$ and jumps to block $l_1$, or to slot $y$ and jumps to
-block $l_2$.
-\defhead{Typing of CFG}{\Sigma; \Phi; R; \vec{I}; I \vdash t}
+block $l_2$. The judgment $\Sigma; \Phi; I \vdash \rhs : C$ types a simple
+expression $\rhs$, an atom or an operation on atoms $o\;\vec{a}$, by the
+rules for atoms and operations on atoms in Imp.
+{\small\figdefs
+\defhead{Typing of CFG}{\Sigma; \Phi; \vec{I}; I \vdash t : A \qquad \Sigma; \Phi_p \vdash d : A}
 \[
-  \dfrac{\Sigma; \Phi; I \vdash \rhs : R}{\Sigma; \Phi; R; \vec{I}; I \vdash \kw{return}\;\rhs}
+  \dfrac{\Sigma; \Phi; I \vdash \rhs : A}{\Sigma; \Phi; \vec{I}; I \vdash \kw{return}\;\rhs : A}
   \qquad
-  \dfrac{\Sigma; \Phi; I \vdash \rhs : A_x \quad J \subseteq I \cup \{x\} \quad
-         \Sigma; \Phi; R; \vec{I}; J \vdash t}
-        {\Sigma; \Phi; R; \vec{I}; I \vdash x \mathrel{:=} \rhs;\; t}
+  \dfrac{x : C \in \Phi \quad \Sigma; \Phi; I \vdash \rhs : C \quad I' \subseteq I \cup \{x\} \quad
+         \Sigma; \Phi; \vec{I}; I' \vdash t : A}
+        {\Sigma; \Phi; \vec{I}; I \vdash x \mathrel{:=} \rhs;\; t : A}
 \]
 \[
-  \dfrac{I_l = I}{\Sigma; \Phi; R; \vec{I}; I \vdash \kw{goto}\;l}
+  \dfrac{I_l = I}{\Sigma; \Phi; \vec{I}; I \vdash \kw{goto}\;l : A}
   \qquad
-  \dfrac{\Sigma; \Phi; I \vdash a : A_x + A_y \quad
-         I_{l_1} = I \cup \{x\} \quad I_{l_2} = I \cup \{y\}}
-        {\Sigma; \Phi; R; \vec{I}; I \vdash
-         \kw{case}\;a\;x\;y\;l_1\;l_2}
+  \dfrac{\begin{array}{c}
+           x : A_1 \in \Phi \quad y : A_2 \in \Phi \quad
+           \Sigma; \Phi; I \vdash a : A_1 + A_2\\
+           I_{l_1} = I \cup \{x\} \quad I_{l_2} = I \cup \{y\}
+         \end{array}}
+        {\Sigma; \Phi; \vec{I}; I \vdash
+         \kw{case}\;a\;x\;y\;l_1\;l_2 : A}
 \]
 \[
-  \dfrac{\Sigma; \Phi; R; I_0, \ldots, I_{l-1}; I_l \vdash t_l \ (l < j) \quad
-         \Sigma; \Phi; R; \vec{I}; I \vdash t}
-        {\Sigma; R; I \vdash (\Phi; t_0, \ldots, t_{j-1};\; t)}
+  \dfrac{\Phi = \Phi_p, \Phi' \quad
+         \overrightarrow{\Sigma; \Phi; \vec{I}_{<l}; I_l \vdash t_l : A \quad}^{l}
+         \quad \Sigma; \Phi; \vec{I}; \{0, \ldots, |\Phi_p| - 1\} \vdash t : A}
+        {\Sigma; \Phi_p \vdash (\Phi; \vec{t};\; t) : A}
 \]
-A definition's function body starts with slots 0 and 1 initialized and
-has result type $C_k$, and the main function body starts with no slot
-initialized. A tail means a set, given its frame $\sigma$ and the
+}
+The premises under the arrow stand for one copy for each index $l$ of a
+block $t_l$ of $\vec{t}$.
+A tail means a set, given its frame $\sigma$ and the
 meanings $B$ of the blocks it can see. A write updates its slot in
 place.
+{\small\figdefs
 \defhead{Semantics of CFG}{\den{t}_{T,B}\sigma = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
@@ -405,7 +469,8 @@ place.
       \mlam{X} B(l_2)(\sigma[y{:=}X]))
 \end{array}
 \]
-The blocks of a function body $(\Phi; t_0, \ldots, t_{j-1};\, t)$ mean
+}
+The blocks of a function body $(\Phi; \vec{t};\, t)$ mean
 $B(l)(\sigma) = \den{t_l}_{T,B_l}\sigma$, where $B_l$ gives the blocks
 older than $l$, and the function body means $\den{t}_{T,B}$. Definitions and
 programs are given meaning as in Imp, with the function body in place of the
@@ -415,19 +480,31 @@ expression and no continuation.
 \label{app:instr}
 \agda{FPC/Language/X86.agda, FPC/Semantics/GraphModel/X86.agda}
 
-\instr\ is the target language, produced by \pass{select instructions}; Section~\ref{sec:compiler} describes its instructions informally. A function body declares its frame $\Phi$, as in CFG. An instruction is typed by the type of the machine state it starts in
-and the one it leaves. A state type
-$\psi = \langle \Theta; I; O; F \rangle$ gives the types $\Theta$
-of the registers, the set $I$ of the initialized slots, the
-open closure $O$ (none, written $\cdot$, or a slot $x$ of a
-function type), and whether the flag $F$ is set. A register holds a
-value of a type $A$, the code $\kw{opencode}(A \rightarrow C)$ of the
-open closure, the environment $\kw{openenv}$ of the open closure, or
-nothing. The types $\kw{opencode}(A \rightarrow C)$ and $\kw{openenv}$
-refer to whichever closure is open, and they show only its argument
-and result types, as its function type does. The
-operands are typed by these rules, with the atoms typed as in Imp, over
-the initialized slots of the state.
+\instr\ is the target language, produced by \pass{select instructions};
+Section~\ref{sec:compiler} describes its instructions informally. A function
+body declares its frame $\Phi$, as in CFG. An instruction is typed by the type
+of the machine state it starts in and the one it leaves. A state type
+$\psi = \langle \Theta; I; O; F \rangle$ gives the types $\Theta$ of the
+registers, the set $I$ of the initialized slots, the open closure $O$, and
+whether the flag $F$ is set. The open closure $O$ is either none, written
+$\cdot$, or the initialized slot $x$, of a function type, that holds the
+closure that $\kw{fst}$ opened. The register types $\Theta$ map a register $r$
+to either nothing, indicating an unset register, or the type $\Theta(r)$ of
+what it holds: a value of a type $A$, the code
+$\kw{opencode}(A \rightarrow C)$ of the open closure, or the environment
+$\kw{openenv}$ of the open closure; $\emptyset$ maps every register to
+nothing. The type $\kw{opencode}(A \rightarrow C)$ is the type of the function
+reference of the open closure, which names the global function definition
+that takes an argument of type $A$ and returns a $C$.
+$\kw{openenv}$ is the type of the closing environment of the open closure, the
+tuple of the values it captured. Neither names the types of the environment,
+which the function type $A \rightarrow C$ of the closure hides. We write $\tau$
+for any of these types of what a register holds,
+$\tau ::= A \mid \kw{opencode}(A \rightarrow C) \mid \kw{openenv}$; operands
+and destinations are typed at $\tau$, because they may be registers. The operands
+of an instruction are typed by these rules, with the atoms typed as in Imp,
+over the initialized slots of the state.
+{\small\figdefs
 \defhead{Typing of operands}{\Sigma; \Phi; \psi \vdash a : \tau}
 \[
   \dfrac{\Sigma; \Phi; I \vdash a : A}{\Sigma; \Phi; \langle \Theta; I; O; F \rangle \vdash a : A}
@@ -439,102 +516,159 @@ the initialized slots of the state.
   \qquad
   \dfrac{\Sigma; \Phi; \psi \vdash a : \mu X.\, A}{\Sigma; \Phi; \psi \vdash \kw{unfold}\;a : A[\mu X.\, A / X]}
 \]
-A destination is written at a type $\tau$ and leaves a new state,
-$\Phi \vdash \mathit{dst} : \psi \Rightarrow_\tau \psi'$. A write to a slot
-initializes it, lets the rest start with fewer initialized slots, as in
-CFG, and closes the open closure.
+}
+A destination, where an instruction writes a value, is either a register or a
+slot of the frame. Writing a value of type $\tau$ to a destination $\mathit{dst}$ changes
+the state $\psi$ to a new state $\psi'$, written
+$\Phi \vdash \mathit{dst} : \psi \Rightarrow_\tau \psi'$. A register can hold a value of
+any type $\tau$ (\rulename{dst-reg}), but a slot $x$ holds only a value of the
+type $A$ that the frame gives it, $x : A \in \Phi$ (\rulename{dst-slot}). A
+write to a slot initializes it, lets the rest start with fewer initialized
+slots ($I' \subseteq I \cup \{x\}$), as in CFG (Appendix~\ref{app:cfg}), and
+closes the open closure.
+{\small\figdefs
 \defhead{Typing of destinations}{\Phi \vdash \mathit{dst} : \psi \Rightarrow_\tau \psi'}
 \[
   \Phi \vdash \%r : \langle \Theta; I; O; F \rangle \Rightarrow_\tau \langle \Theta[r{:}\tau]; I; O; F \rangle
+  \;\;\rulename{dst-reg}
   \qquad
-  \dfrac{J \subseteq I \cup \{x\}}
-        {\Phi \vdash x : \langle \Theta; I; O; F \rangle \Rightarrow_{A_x} \langle \Theta; J; \cdot; F \rangle}
+  \dfrac{x : A \in \Phi \quad I' \subseteq I \cup \{x\}}
+        {\Phi \vdash x : \langle \Theta; I; O; F \rangle \Rightarrow_{A} \langle \Theta; I'; \cdot; F \rangle}
+  \;\rulename{dst-slot}
 \]
-An object $\kw{pair}(a_1, a_2)$ has type $A \rightarrow C$ when
-$a_1 : \kw{code}(\Delta; A \rightarrow C)$ and $a_2 : \kw{tup}(\Delta)$;
-tuples and injections of operands are typed as in \fpc. With
-$\psi = \langle \Theta; I; O; F \rangle$ and operands typed in
-$\psi$, the instructions are typed as follows.
+}
+An object $o$, which $\kw{alloc}$ allocates, is built from operands typed in
+the state $\psi$. A closure $\kw{pair}(a_1, a_2)$ pairs the code of a
+definition with the tuple of its environment, whose types $\Delta$ its function
+type hides.
+{\small\figdefs
+\defhead{Typing of objects}{\Sigma; \Phi; \psi \vdash o : A}
+\[
+  \dfrac{\Sigma; \Phi; \psi \vdash a_1 : \kw{code}(\Delta; A \rightarrow C) \quad
+         \Sigma; \Phi; \psi \vdash a_2 : \kw{tup}(\Delta)}
+        {\Sigma; \Phi; \psi \vdash \kw{pair}(a_1, a_2) : A \rightarrow C}
+  \qquad
+  \dfrac{\overrightarrow{\Sigma; \Phi; \psi \vdash a_i : A_i \quad}^{i}}
+        {\Sigma; \Phi; \psi \vdash \kw{tuple}(\vec{a}) : \kw{tup}(\vec{A})}
+\]
+\[
+  \dfrac{\Sigma; \Phi; \psi \vdash a : A}{\Sigma; \Phi; \psi \vdash \kw{inl}(a) : A + C}
+  \qquad
+  \dfrac{\Sigma; \Phi; \psi \vdash a : C}{\Sigma; \Phi; \psi \vdash \kw{inr}(a) : A + C}
+\]
+}
+With $\psi = \langle \Theta; I; O; F \rangle$, the instructions are typed as
+follows, using the typing of operands, objects, and destinations above.
+{\small\figdefs
 \defhead{Typing of instructions}{\Sigma; \Phi \vdash i : \psi \Rightarrow \psi'}
 \[
 \begin{array}{@{}c@{}}
-  \dfrac{a : \tau \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_\tau \psi'}
-        {\Sigma; \Phi \vdash \kw{movq}\; a, \mathit{dst} : \psi \Rightarrow \psi'}
+  \dfrac{\Sigma; \Phi; \psi \vdash a : \tau \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_\tau \psi'}
+        {\Sigma; \Phi \vdash \kw{movq}\; a, \mathit{dst} : \psi \Rightarrow \psi'}\;\rulename{ins-movq}
   \qquad
-  \dfrac{a : \kw{Int} \quad \Theta(r) = \kw{Int}}
-        {\Sigma; \Phi \vdash \kw{subq}\; a, \%r : \psi \Rightarrow \psi}
-  \\[14pt]
-  \dfrac{a_1 : \kw{Int} \quad a_2 : \kw{Int}}
-        {\Sigma; \Phi \vdash \kw{cmpq}\; a_2, a_1 : \psi \Rightarrow \langle \Theta; I; O; \kw{set} \rangle}
-  \\[14pt]
+  \dfrac{\Sigma; \Phi; \psi \vdash a : \kw{Int} \quad \Theta(r) = \kw{Int}}
+        {\Sigma; \Phi \vdash \kw{subq}\; a, \%r : \psi \Rightarrow \psi}\;\rulename{ins-subq}
+  \\[6pt]
+  \dfrac{\Sigma; \Phi; \psi \vdash a_1 : \kw{Int} \quad \Sigma; \Phi; \psi \vdash a_2 : \kw{Int}}
+        {\Sigma; \Phi \vdash \kw{cmpq}\; a_2, a_1 : \psi \Rightarrow \langle \Theta; I; O; \kw{set} \rangle}\;\rulename{ins-cmpq}
+  \\[6pt]
   \dfrac{\Phi \vdash \mathit{dst} : \langle \Theta; I; O; \kw{set} \rangle \Rightarrow_{\kw{Bool}} \psi'}
-        {\Sigma; \Phi \vdash \kw{sete}\; \mathit{dst} : \langle \Theta; I; O; \kw{set} \rangle \Rightarrow \psi'}
+        {\Sigma; \Phi \vdash \kw{sete}\; \mathit{dst} : \langle \Theta; I; O; \kw{set} \rangle \Rightarrow \psi'}\;\rulename{ins-sete}
   \qquad
-  \dfrac{o : A \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_A \psi'}
-        {\Sigma; \Phi \vdash \kw{alloc}\; o, \mathit{dst} : \psi \Rightarrow \psi'}
-  \\[14pt]
-  \dfrac{a : \kw{tup}(A_1, \ldots, A_m) \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_{A_i} \psi'}
-        {\Sigma; \Phi \vdash \kw{load}\; \kw{get}_i\; a, \mathit{dst} : \psi \Rightarrow \psi'}
-  \\[14pt]
-  \dfrac{x \in I \quad A_x = A \rightarrow C}
+  \dfrac{\Sigma; \Phi; \psi \vdash o : A \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_A \psi'}
+        {\Sigma; \Phi \vdash \kw{alloc}\; o, \mathit{dst} : \psi \Rightarrow \psi'}\;\rulename{ins-alloc}
+  \\[6pt]
+  \dfrac{\Sigma; \Phi; \psi \vdash a : \kw{tup}(\vec{A}) \quad 1 \leq i \leq |\vec{A}| \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_{A_i} \psi'}
+        {\Sigma; \Phi \vdash \kw{load}\; \kw{get}_i\; a, \mathit{dst} : \psi \Rightarrow \psi'}\;\rulename{ins-load}
+  \\[6pt]
+  \dfrac{x : A \rightarrow C \in \Phi \quad x \in I}
         {\Sigma; \Phi \vdash \kw{fst}\; x, \%r : \psi \Rightarrow
-         \langle \mathit{wipe}(\Theta)[r{:}\kw{opencode}(A \rightarrow C)]; I; x; F \rangle}
-  \\[14pt]
+         \langle \mathit{wipe}(\Theta)[r{:}\kw{opencode}(A \rightarrow C)]; I; x; F \rangle}\;\rulename{ins-fst}
+  \\[6pt]
   \Sigma; \Phi \vdash \kw{snd}\; x, \%r : \langle \Theta; I; x; F \rangle \Rightarrow
-    \langle \Theta[r{:}\kw{openenv}]; I; x; F \rangle
-  \\[14pt]
-  \dfrac{a : \kw{opencode}(A \rightarrow C) \quad \Theta(\kw{rdi}) = \kw{openenv}
+    \langle \Theta[r{:}\kw{openenv}]; I; x; F \rangle\;\rulename{ins-snd}
+  \\[6pt]
+  \dfrac{\Sigma; \Phi; \psi \vdash a : \kw{opencode}(A \rightarrow C) \quad \Theta(\kw{rdi}) = \kw{openenv}
          \quad \Theta(\kw{rsi}) = A}
-        {\Sigma; \Phi \vdash \kw{callq}\; a : \psi \Rightarrow \langle \kw{rax}{:}C; I; \cdot; \kw{unset} \rangle}
+        {\Sigma; \Phi \vdash \kw{callq}\; a : \psi \Rightarrow \langle \kw{rax}{:}C; I; \cdot; \kw{unset} \rangle}\;\rulename{ins-callq}
 \end{array}
 \]
-The rules for $\kw{fst}$, $\kw{snd}$, and $\kw{callq}$ together ensure
-that a call combines the code and the environment of one closure. The
-instruction $\kw{fst}\;x, \%r$ opens the closure in slot $x$. It
-records $x$ as the open closure and gives $r$ the type
-$\kw{opencode}(A \rightarrow C)$, which hides the frame of the
-closure's environment, as the existential type of PairClos does. The
-instruction $\kw{snd}\;x, \%r$ requires $x$ to be the open closure and
-gives $r$ the type $\kw{openenv}$. The instruction $\kw{callq}$
-requires its code operand to have type $\kw{opencode}(A \rightarrow C)$,
-$\kw{rdi}$ to have type $\kw{openenv}$, and $\kw{rsi}$ to have type
-$A$. These types do not name the closure, so two further rules keep
-the code and the environment together. First, $\mathit{wipe}(\Theta)$
-unsets the registers that hold the code or the environment of an
-earlier open closure, so the registers of types
-$\kw{opencode}(A \rightarrow C)$ and $\kw{openenv}$ always belong to
-the same closure. Second, a write to a slot closes the open closure
-(the slot rule of the typing of destinations), so $\kw{snd}$ runs only
-while slot $x$ still holds the closure that $\kw{fst}$ opened. This
-rule costs nothing, because \pass{select instructions} writes no slot
-between $\kw{fst}$ and $\kw{callq}$. After
-the call, only $\kw{rax}$ is set, and no closure is open.
+}
+The rules for $\kw{fst}$, $\kw{snd}$, and $\kw{callq}$ ensure that a call
+combines the code and the environment of one closure, as
+Section~\ref{sec:compiler} requires. The types
+$\kw{opencode}(A \rightarrow C)$ and $\kw{openenv}$ do not name the closure, so
+two constraints keep its code and environment together. First,
+$\mathit{wipe}(\Theta)$ in \rulename{ins-fst} unsets the registers that hold
+the code or the environment of an earlier open closure. Second, a write to a
+slot closes the open closure (\rulename{dst-slot}), so $\kw{snd}$ runs only
+while slot $x$ still holds the closure that $\kw{fst}$ opened. This never
+rejects the code that \pass{select instructions} produces, because it writes no
+slot between $\kw{fst}$ and $\kw{callq}$. After the call, only $\kw{rax}$ is
+set, and no closure is open.
 
-A sequence $s$ is typed by the result
-type $R$, the sets $\vec{I}$ of initialized slots of the blocks it may jump to, and
-its starting state. As in CFG, $\kw{case}\;x\;y\;z\;l_1\;l_2$ writes the
-payload of the injection in slot $x$ to slot $y$ and jumps to block
-$l_1$, or to slot $z$ and jumps to block $l_2$.
-\defhead{Typing of sequences}{\Sigma; \Phi; R; \vec{I} \vdash s : \psi}
+A sequence $s$ has the result type $A$ of its function body, written $s : A$,
+in its starting state $\psi$ and with the sets $\vec{I}$ of initialized slots
+of the blocks it may jump to. $\kw{retq}$ requires that $\kw{rax}$ holds an
+$A$, and $\kw{jmp}$ need not constrain $A$, because the block it jumps to has
+the same result type $A$. As in CFG, $\kw{case}\;x\;y\;z\;l_1\;l_2$ writes the
+payload of the injection in slot $x$ to slot $y$ and jumps to block $l_1$, or
+to slot $z$ and jumps to block $l_2$. A label $l$ is an index into $\vec{I}$,
+and $I_l$ is the set of the slots that are initialized where block $l$ starts.
+Because $\kw{jmp}$ does not change the initialized slots, it requires them to be
+$I_l$. Because $\kw{case}$ initializes slot $y$ or slot $z$, it requires blocks
+$l_1$ and $l_2$ to start with $I \cup \{y\}$ and $I \cup \{z\}$. Only the
+initialized slots pass from one block to the next. The registers, the open
+closure, and the flag do not, because every block starts with them unset.
+{\small\figdefs
+\defhead{Typing of sequences}{\Sigma; \Phi; \psi; \vec{I} \vdash s : A}
 \[
-  \dfrac{\Sigma; \Phi \vdash i : \psi \Rightarrow \psi' \quad \Sigma; \Phi; R; \vec{I} \vdash s : \psi'}
-        {\Sigma; \Phi; R; \vec{I} \vdash i;\; s : \psi}
+  \dfrac{\Sigma; \Phi \vdash i : \psi \Rightarrow \psi' \quad \Sigma; \Phi; \psi'; \vec{I} \vdash s : A}
+        {\Sigma; \Phi; \psi; \vec{I} \vdash i;\; s : A}
   \qquad
-  \dfrac{\Theta(\kw{rax}) = R}{\Sigma; \Phi; R; \vec{I} \vdash \kw{retq} : \langle \Theta; I; O; F \rangle}
+  \dfrac{\Theta(\kw{rax}) = A}{\Sigma; \Phi; \langle \Theta; I; O; F \rangle; \vec{I} \vdash \kw{retq} : A}
 \]
 \[
-  \dfrac{I_l = I}{\Sigma; \Phi; R; \vec{I} \vdash \kw{jmp}\;l : \langle \Theta; I; O; F \rangle}
+  \dfrac{I_l = I}{\Sigma; \Phi; \langle \Theta; I; O; F \rangle; \vec{I} \vdash \kw{jmp}\;l : A}
   \qquad
-  \dfrac{x \in I \quad A_x = A_y + A_z \quad
-         I_{l_1} = I \cup \{y\} \quad I_{l_2} = I \cup \{z\}}
-        {\Sigma; \Phi; R; \vec{I} \vdash \kw{case}\;x\;y\;z\;l_1\;l_2 : \langle \Theta; I; O; F \rangle}
+  \dfrac{\begin{array}{c}
+           x : A_1 + A_2 \in \Phi \quad x \in I \quad y : A_1 \in \Phi \quad z : A_2 \in \Phi\\
+           I_{l_1} = I \cup \{y\} \quad I_{l_2} = I \cup \{z\}
+         \end{array}}
+        {\Sigma; \Phi; \langle \Theta; I; O; F \rangle; \vec{I} \vdash \kw{case}\;x\;y\;z\;l_1\;l_2 : A}
 \]
-A block starts in the state $\langle \emptyset; I_l; \cdot;
-\kw{unset} \rangle$, and blocks are acyclic as in CFG. A definition
-$d_k$ of signature $(\Delta_k; A_k \rightarrow C_k)$ starts with its
-environment in $\kw{rdi}$ and its argument in $\kw{rsi}$, in the state
-$\langle \kw{rdi}{:}\kw{tup}(\Delta_k), \kw{rsi}{:}A_k; \emptyset; \cdot;
-\kw{unset} \rangle$, and has result type $C_k$.
+}
+A function body $(\Phi; \vec{s};\, s)$ has result type $A$ in the state $\psi$
+that its start sequence $s$ begins in, written $\Sigma; \psi \vdash d : A$. As
+in CFG, block $s_l$ is typed over the blocks older than it, whose sets are the
+first $l$ sets $\vec{I}_{<l}$ of $\vec{I}$. A program is typed by the table
+$\Sigma$ of the signatures $\Sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
+definitions, as in GlobalFun, written $\Sigma \vdash P : A$.
+{\small\figdefs
+\defhead{Typing of function bodies and programs}{\Sigma; \psi \vdash d : A \qquad \Sigma \vdash P : A}
+\[
+  \dfrac{\overrightarrow{\Sigma; \Phi; \langle \emptyset; I_l; \cdot; \kw{unset} \rangle;
+           \vec{I}_{<l} \vdash s_l : A \quad}^{l}
+         \quad \Sigma; \Phi; \psi; \vec{I} \vdash s : A}
+        {\Sigma; \psi \vdash (\Phi; \vec{s};\; s) : A}
+\]
+\[
+  \dfrac{\begin{array}{c}
+           \overrightarrow{\Sigma_k = (\Delta_k; A_k \rightarrow C_k) \quad
+             \Sigma; \langle \kw{rdi}{:}\kw{tup}(\Delta_k), \kw{rsi}{:}A_k; \emptyset; \cdot;
+               \kw{unset} \rangle \vdash d_k : C_k \quad}^{k}\\
+           \Sigma; \langle \emptyset; \emptyset; \cdot; \kw{unset} \rangle \vdash d : A
+         \end{array}}
+        {\Sigma \vdash (\vec{d};\; d) : A}
+\]
+}
+The premises under an arrow stand for one copy for each index $l$ of a block
+$s_l$ of $\vec{s}$, or each index $k$ of a definition $d_k$ of $\vec{d}$. Each
+block $s_l$ starts with its registers and flag unset, no closure open, and the
+slots $I_l$ initialized, and may jump only to the blocks older than it, so
+blocks are acyclic as in CFG. A definition starts with its environment in
+$\kw{rdi}$, its argument in $\kw{rsi}$, and no slot initialized; the main
+function body starts with nothing set.
 
 The semantics of a sequence is a function of the frame $\sigma$, the
 registers $R$ (a map from registers to sets), and the flag $F$ (a set);
@@ -547,6 +681,7 @@ kind on the meanings of its operands ($\mathsf{pair}$, $\mathcal{T}$,
 $\mathsf{inl}$, $\mathsf{inr}$). A write to a destination, written
 $\mathit{put}$, updates a register, or binds a slot as an assignment in
 CFG does.
+{\small\figdefs
 \defhead{Writing a destination}{\mathit{put}(\mathit{dst}, D)\,\kappa\,\sigma R F = E}
 \[
   \mathit{put}(\%r, D)\,\kappa\,\sigma R F = \kappa\,\sigma\,R[r{:=}D]\,F
@@ -554,6 +689,8 @@ CFG does.
   \mathit{put}(x, D)\,\kappa\,\sigma R F =
     \Lambda(\mlam{X} \kappa\,(\sigma[x{:=}X])\,R\,F) \app D
 \]
+}
+{\small\figdefs
 \defhead{Semantics of instructions}{\den{i}\kappa\,\sigma R F = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
@@ -573,8 +710,10 @@ CFG does.
     \quad\text{where } C = (\mathcal{O}\den{a}\sigma R \app R(\kw{rdi})) \app R(\kw{rsi})
 \end{array}
 \]
+}
 Here $R_C$ maps $\kw{rax}$ to $C$ and the other registers to
 $\{\langle\rangle\}$; only a call can diverge, so only it is strict.
+{\small\figdefs
 \defhead{Semantics of sequences}{\den{s}_B\,\sigma R F = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
@@ -587,6 +726,7 @@ $\{\langle\rangle\}$; only a call can diverge, so only it is strict.
       \mlam{X} B(l_2)(\sigma[z{:=}X]))
 \end{array}
 \]
+}
 where a block means $B(l)(\sigma) = \den{s_l}_{B_l}\,\sigma\,R_0\,
 \{\langle\rangle\}$, with $R_0$ mapping every register to
 $\{\langle\rangle\}$ and $B_l$ giving the blocks older than $l$. A
