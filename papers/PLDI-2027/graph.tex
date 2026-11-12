@@ -175,7 +175,7 @@ argument $E$. For example, we apply the increment function to $3$ to get $4$,
 $\den{(\lambda x.\, x + 1)\; (2 + 1)} = \{4\}$.
 because the input of entry $[3] \mapsto 4$ is contained in
 $\den{2 + 1} = \{3\}$. Likewise, applying the twice function to
-$\lambda x.\, x + 1$ and then to $0$ gives $\{2\}$ because
+$(\lambda x.\, x + 1)$ and then to $0$ gives $\{2\}$ because
 $\{[0] \mapsto 1,\; [1] \mapsto 2\}$
 is contained in
 $\den{\lambda x.\, x + 1}$.
@@ -193,7 +193,7 @@ The empty tuple $\langle\rangle$ also fills the positions of an
 environment that hold no variable, because we represent environments
 as total functions whose positions are nonempty. The environment
 $\rho_0$ of a closed program maps every variable to
-$\{\langle\rangle\}$, and $\den{M} = \den{M}\rho_0$.
+$\{\langle\rangle\}$, and we define $\den{M} = \den{M}\rho_0$.
 
 \paragraph{Recursion and divergence}
 
@@ -206,21 +206,23 @@ $Z$ has a meaning whose tables contain smaller copies of themselves,
 like a set of nested dolls \citep{Siek:2017ab}.
 
 A program that diverges produces no evidence, so its meaning is the
-empty set. For example, $\Omega = \Delta\;(\kw{fold}\;\Delta)$ with
-$\Delta = \lambda x.\, (\kw{unfold}\;x)\; x$ denotes $\emptyset$, because an
-output of $\Omega$ would need an entry of $\den{\Delta}$ whose input
-contains a strictly smaller entry of $\den{\Delta}$ with the same
-output, and so on forever, which is impossible for finite elements.
+empty set. For example, let $\Omega = \Delta\;(\kw{fold}\;\Delta)$
+with $\Delta = (\lambda x.\, (\kw{unfold}\;x)\; x)$. Then $\den{\Omega}
+= \emptyset$ because an output of $\Omega$ would need an entry of
+$\den{\Delta}$ whose input contains a strictly smaller entry of
+$\den{\Delta}$ with the same output, and so on forever, which is
+impossible for inductively defined elements.
 
 
 \paragraph{Consistency}
 
-We write $u \sim v$ when the elements $u$ and $v$ are consistent, which means
-that they could describe the same value. Appendix~\ref{app:consistency} gives
-the definition. The operator $\Lambda$ builds only entries whose inputs are
-consistent, which rules out entries such as $[1, 2] \mapsto 3$ in the meaning of
-$\lambda x.\, x + 1$, because the input $[1, 2]$ of that entry
-describes no single argument.
+We write $u \sim v$ when the elements $u$ and $v$ are consistent,
+which means that they could describe the same
+value. Appendix~\ref{app:consistency} gives the definition. The
+operator $\Lambda$ builds only entries whose inputs are consistent,
+which rules out entries such as $[3, 5] \mapsto 6$ in the meaning of
+$\lambda x.\, x + 1$, because the input $[3, 5]$ of that entry
+describes no single argument, i.e. $3$ conflicts with $5$.
 %
 Our model requires consistency because the proof for the \pass{split closure} pass needs it (Section~\ref{sec:approx-lr}). A call in PairClos takes
 the code from one pair and the environment from another, so a
