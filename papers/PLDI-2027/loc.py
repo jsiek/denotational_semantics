@@ -633,6 +633,14 @@ GROUPS = [
      [MU + 'Language/*.agda', MU + 'Compiler/*.agda', MUP + 'Compiler/HoistOlder.agda']),
     ('mu-infra', 'heterogeneous vectors: lookup, collecting, selecting, relating',
      [MU + 'Framework/*.agda', MUP + 'Framework/AllProp.agda']),
+    # the properties of the typed frames (reads after writes, agreement,
+    # restriction), which the machine and interpreter proofs of lift locals,
+    # explicate control and select instructions use; the denotational
+    # columns prove their agreement lemmas in their own proofs
+    ('mu-op+mu-ck+mu-red', 'lemmas shared by the passes', [MUP + 'Framework/SlotsProp.agda']),
+    # the values of the typed frames, which the machines and interpreters of
+    # Impμ, CFGμ and X86μ hold
+    ('mu-op+mu-ck+mu-red', 'semantics of the languages', [MU + 'Semantics/Slots.agda']),
     # simplify's syntactic lemmas are used by its four proofs: counted in the
     # simplify row of each column, as in the main table
     ('mu-den+mu-op+mu-ck+mu-red', 'simplify', [MUP + 'Compiler/SimplifyFacts.agda']),
@@ -699,7 +707,7 @@ GROUPS = [
     # tables' lemmas, which X86μ adequacy uses (as X86ᵀ's uses Clos5ᵀ's)
     ('mu-adeq+mu-adeq-cek+mu-adeq-red', 'Clos5', [MUP + 'Adequacy/GlobalFunCommon.agda']),
     ('mu-adeq', 'Clos5', [MUP + 'Adequacy/GlobalFunValues.agda']),
-    ('mu-adeq', 'X86', [MUP + 'Adequacy/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
+    ('mu-adeq', 'X86', [MUP + 'Adequacy/X86' + x + '.agda' for x in ('Common', 'Slots', 'LogRel', 'Soundness', '')]),
     ('mu-adeq+mu-adeq-cek+mu-adeq-red', 'well-formedness of compiled programs', [MUP + 'Adequacy/X86Compiled.agda']),
     ('mu-adeq', 'end to end', [MUP + 'Adequacy/EndToEnd.agda']),
     # the alternative: adequacy for the CEK machines of FPC and X86μ
@@ -2067,7 +2075,7 @@ SA = MU + 'proof/Adequacy/ScottDomains/'
 SCOTT_ADEQ_ROWS = [
     ('ISWIM', [SA + x + '.agda' for x in ('Soundness', 'LogRel', 'FPC')]),
     ('Clos5', []),
-    ('X86', [SA + 'X86' + x + '.agda' for x in ('Soundness', 'LogRel', '')]),
+    ('X86', [SA + 'X86' + x + '.agda' for x in ('Frame', 'Soundness', 'LogRel', '')]),
     ('well-formedness of compiled programs', [SA + 'X86Compiled.agda']),
     ('end to end', [SA + 'EndToEnd.agda']),
 ]

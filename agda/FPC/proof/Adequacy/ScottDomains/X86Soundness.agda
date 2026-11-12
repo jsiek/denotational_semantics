@@ -13,10 +13,11 @@
   code pointer means its entry of the table), by induction on the
   clock, the blocks and the sequence, as the interpreter runs. A
   machine state m agrees with a state S of the semantics (Agree): each
-  slot, each set register and the set flag of m mean what S holds, and
-  the open closure is that of its slot (OpR, X86Common.agda). Typed code
-  reads no unset register and no unset flag, so S may hold anything
-  there. Each instruction but callq maps S to a state that agrees with
+  initialized slot, each set register and the set flag of m mean what S
+  holds (the frames, by X86Frame.agda), and the open closure is that of
+  its slot (OpR, X86Common.agda). Typed code reads no slot that is not
+  initialized, no unset register and no unset flag, so S may hold
+  anything there. Each instruction but callq maps S to a state that agrees with
   the next machine state; a slot write and a call are strict, but every
   value means a defined element. fold and unfold (↑, ↓) are the
   identity on meanings.
@@ -31,12 +32,10 @@ open import UF.Base using (ap₂)
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Framework.abt.GSubst using (_•_)
-open import Framework.Lookup using (pop)
-open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋)
 open import Language.Prim using (sub; eq; bool) renaming (δ to δᴾ)
 open import FPC.Language.Type using (Type; Ctx; base; tup; _⊹_; _⇒_; μ; code;
   _∋_; Z; S; idx)
-open import FPC.Language.X86
+open import FPC.Language.X86 hiding (none)
 open import FPC.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.X86 using (RV; MV; RegVals; rv;
@@ -44,6 +43,7 @@ open import FPC.Semantics.ClockedInterpreters.X86 using (RV; MV; RegVals; rv;
   args; put; obj; equal; bit; size; code-of; env-of; run; jump; call) renaming
   (⟨_,_,_,_⟩ to mach)
 open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
+open import FPC.Semantics.Slots using (Slots; read; write; empty)
 open import Semantics.Interp.Clock using (Result; timeout; error; ret; _>>=_)
 open import Semantics.Observation using (o-const)
 
@@ -67,8 +67,10 @@ open import proof.Framework.Scott.Ops pt fe pe hiding (Val) renaming (Env to
 open import proof.Framework.Scott.Semantics pt fe pe using (Den; abs; init;
   init-defined; code₂-β; module Over)
 open import Semantics.Scott.Prim pt fe pe using (primD; out)
-open import FPC.Semantics.ScottDomains.Ops pt fe pe using (Table; tables)
-open import FPC.Semantics.ScottDomains.CFG pt fe pe using (drop)
+open import FPC.Semantics.ScottDomains.Ops pt fe pe using (Table; tables;
+  absAt) renaming (write to writeᵈ)
+open import FPC.proof.Adequacy.ScottDomains.X86Frame pt fe pe using
+  (module Frames)
 open import FPC.Semantics.ScottDomains.X86 pt fe pe using (RegsD; 𝕊; Kont;
   regsᶜ; flagᶜ; ⟦_⟧ˢ; codeₜ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; called-regs) renaming (put to
   putₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to runₛ)
@@ -145,8 +147,8 @@ module _ {Σ : List DSig}
 
   {- Agreement of the machine with a state of the semantics -------------------}
 
-  FrameAgree : ∀ {Δ} → ⟨ Envᵈ ⟩ → Frame Δ → 𝓤₁ ̇
-  FrameAgree {Δ} σ φ = ∀ {A} (x : Δ ∋ A) → σ (idx x) ＝ 𝒱 (lookup φ x)
+  {- each initialized slot means what the environment holds there -}
+  open Frames {V = Val} (λ d v → d ＝ 𝒱 v) renaming (FR to FrameAgree)
 
   FlagAgree : ∀ {b} → ⟨ 𝔻 ⟩ → Flag Σ b → 𝓤₁ ̇
   FlagAgree {true} F b = F ＝ 𝒱 (bit {Σ} b)
@@ -156,7 +158,7 @@ module _ {Σ : List DSig}
   RegsAgree {Γ = Γ} R ρ =
     ∀ r {τ} (e : Γ ‹ r › ≡ just τ) → R r ＝ 𝒱ᵣ τ (cast e (ρ ⦅ r ⦆))
 
-  record Agree {η ψ} (S : ⟨ 𝕊 ⟩) (m : Mach Σ η ψ) : 𝓤₁ ̇ where
+  record Agree {η Δ₀} {ψ : St Δ₀} (S : ⟨ 𝕊 ⟩) (m : Mach Σ η ψ) : 𝓤₁ ̇ where
    constructor agr
    field
     fr : FrameAgree (pr₁ S) (frame m)
@@ -164,21 +166,6 @@ module _ {Σ : List DSig}
     fl : FlagAgree (pr₂ (pr₂ S)) (flag m)
     op : OpR (frame m) (St.op ψ) η (clo m)
   open Agree
-
-  frame-drop : ∀ {Δ' Δ}
-    → (p : Δ' ⊑ Δ)
-    → {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ}
-    → FrameAgree σ φ
-    → FrameAgree (drop p · σ) (pop p φ)
-  frame-drop here⊑ h x = h x
-  frame-drop (there⊑ p) {σ} {v ∷ φ} h x =
-    frame-drop p {σ = λ i → σ (succ i)} (λ y → h (S y)) x
-
-  frame-ext : ∀ {Δ A} {σ : ⟨ Envᵈ ⟩} {φ : Frame Δ} (v : Val A)
-    → FrameAgree σ φ
-    → FrameAgree (𝒱 v • σ) (v ∷ φ)
-  frame-ext v h Z = refl
-  frame-ext v h (S x) = h x
 
   regs-upd : ∀ r {η Γ τ} {R : ⟨ RegsD ⟩} {ρ : RegVals Σ η Γ} {D} {v : RV Σ η τ}
     → RegsAgree R ρ
@@ -214,10 +201,10 @@ module _ {Σ : List DSig}
 
   {- Operands and objects -----------------------------------------------------}
 
-  module _ {η ψ} {S : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ} (A : Agree S m) where
+  module _ {η Δ₀} {ψ : St Δ₀} {S : ⟨ 𝕊 ⟩} {m : Mach Σ η ψ} (A : Agree S m) where
 
    arg-agree : ∀ {τ} (a : Arg Σ ψ τ) → 𝒪 T a · S ＝ 𝒱ᵣ τ (arg a m)
-   arg-agree (atom (var x)) = fr A x
+   arg-agree (atom (var x i)) = slot-at (fr A) x i
    arg-agree (atom (lit B c)) = refl
    arg-agree (atom (ref f)) = refl
    arg-agree (reg r e) = rg A r e
@@ -238,22 +225,20 @@ module _ {Σ : List DSig}
    obj-agree (inr a) = ap (inrᵈ ·_) (arg-agree a)
 
   {- a write to d -}
-  put-agree : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {η} {m : Mach Σ η ψ}
+  put-agree : ∀ {Δ} {ψ ψ' : St Δ} {τ} (d : Dst ψ τ ψ') {η} {m : Mach Σ η ψ}
     {v : RV Σ η τ} (S : ⟨ 𝕊 ⟩) (D : Den 𝕊) (κ : Kont)
     → Agree S m
     → D · S ＝ 𝒱ᵣ τ v
     → Σ S' ꞉ ⟨ 𝕊 ⟩ , Agree S' (put d v m) × (putₛ T d D κ · S ＝ κ · S')
   put-agree (reg r) 𝔰 D κ (agr fa ra fla oa) hD =
     _ , agr fa (regs-upd r ra hD) fla oa , refl
-  put-agree {τ = τ} (slot p _) {η} {v = v} (σ , RF) D κ (agr fa ra fla oa) hD =
-    ((D · (σ , RF)) • (drop p · σ) , RF) , agr fr' ra fla none ,
+  put-agree {τ = ty A} (slot x p) {η} {v = v} (σ , RF) D κ (agr fa ra fla oa)
+    hD =
+    (writeᵈ (idx x) σ (D · (σ , RF)) , RF) ,
+    agr (fr-restrict p (fr-write x hD fa)) ra fla none ,
     (app-Λ _ (D · (σ , RF))
-     ∙ seq-defined (D · (σ , RF)) (κ · ((D · (σ , RF)) • (drop p · σ) , RF))
-       (transport defined (hD ⁻¹) (𝒱ᵣ-defined {η} τ v)))
-   where
-    fr' : FrameAgree ((D · (σ , RF)) • (drop p · σ)) (v ∷ pop p _)
-    fr' Z = hD
-    fr' (S x) = frame-drop p fa x
+     ∙ seq-defined (D · (σ , RF)) (κ · (writeᵈ (idx x) σ (D · (σ , RF)) , RF))
+       (transport defined (hD ⁻¹) (𝒱-defined v)))
 
   {- Soundness ----------------------------------------------------------------}
 
@@ -266,19 +251,19 @@ module _ {Σ : List DSig}
     → Sound r d'
   sound-＝ refl s = s
 
-  sound-run : ∀ ck {n R Bs ψ} (bs : Blocks Σ n R Bs) η (m : Mach Σ η ψ)
-    (k : Seq Σ n R Bs ψ) (S : ⟨ 𝕊 ⟩)
+  sound-run : ∀ ck {Δ R Bs ψ} (bs : Blocks Σ Δ R Bs) η (m : Mach Σ η ψ)
+    (k : Seq Σ Δ R Bs ψ) (S : ⟨ 𝕊 ⟩)
     → Agree S m
     → Sound (run ds ck bs η m k) (⟦_⟧ˢ T k (blocksₛ T bs) · S)
-  sound-jump : ∀ ck {n R Bs Δ} (bs : Blocks Σ n R Bs) η (l : Bs ∋ Δ)
-    (φ : Frame Δ) (σ : ⟨ Envᵈ ⟩)
+  sound-jump : ∀ ck {Δ R Bs I} (bs : Blocks Σ Δ R Bs) η (l : Bs ∋ I)
+    (φ : Slots Val Δ I) (σ : ⟨ Envᵈ ⟩)
     → FrameAgree σ φ
     → Sound (jump ds ck bs η l φ) (blocksₛ T bs l · σ)
   sound-call : ∀ ck {η A B} (c : Val (code η A B)) (e : Val (tup η)) (w : Val A)
     → Sound (call ds ck c e w) (appᵈ · (appᵈ · 𝒱 c · 𝒱 e) · 𝒱 w)
   {- a write, then k -}
-  sound-put : ∀ ck {n R Bs ψ τ ψ'} (bs : Blocks Σ n R Bs) η (d : Dst n ψ τ ψ')
-    (k : Seq Σ n R Bs ψ')
+  sound-put : ∀ ck {Δ R Bs} {ψ ψ' : St Δ} {τ} (bs : Blocks Σ Δ R Bs) η
+    (d : Dst ψ τ ψ') (k : Seq Σ Δ R Bs ψ')
       {m : Mach Σ η ψ} {v : RV Σ η τ} (S : ⟨ 𝕊 ⟩) (D : Den 𝕊)
     → Agree S m
     → D · S ＝ 𝒱ᵣ τ v
@@ -308,24 +293,27 @@ module _ {Σ : List DSig}
     nth-𝒱 : (v : Val (tup _)) → proj (pos i) · 𝒱 v ＝ 𝒱 (nth i v)
     nth-𝒱 (tup ws) =
       proj-tuple _ (𝒱s ws) (𝒱s-defined ws) (pos i) ∙ 𝒱s-lookup ws i
-  sound-run ck bs η m (loadfst x r ∷ k) (σ , R , F) A =
+  sound-run ck bs η m (loadfst x i r ∷ k) (σ , R , F) A =
     sound-run ck bs (size v) _ k _
       (agr (fr A)
-        (regs-upd r (regs-wipe (rg A)) (ap (car ·_) (fr A x) ∙ car-𝒱 v))
-        (fl A) agree)
+        (regs-upd r (regs-wipe (rg A))
+          (ap (car ·_) (slot-at (fr A) x i) ∙ car-𝒱 v))
+        (fl A) (agree i))
    where
-    v = lookup (frame m) x
+    v = read (frame m) x i
     car-𝒱 : ∀ {A B} (v : Val (A ⇒ B)) → car · 𝒱 v ＝ 𝒱 (code-of v)
     car-𝒱 (pack c e) = car-pair (𝒱 c) (𝒱 e) (𝒱-defined c) (𝒱-defined e)
   sound-run ck bs η m (loadsnd {x = opened x} r ∷ k) (σ , R , F) A =
     sound-run ck bs η _ k _
-      (agr (fr A) (regs-upd r (rg A) (snd-𝒱 (op A) (fr A x))) (fl A) (op A))
+      (agr (fr A) (regs-upd r (rg A) (snd-𝒱 (op A) (fr A))) (fl A) (op A))
    where
-    snd-𝒱 : ∀ {Δ A B} {φ : Frame Δ} {x : Δ ∋ A ⇒ B} {η'} {o : Val (tup η')}
+    snd-𝒱 : ∀ {Δ I A B} {φ : Slots Val Δ I} {x : Δ ∋ A ⇒ B} {η'}
+      {o : Val (tup η')}
       → OpR φ (just (opened x)) η' o
-      → σ (idx x) ＝ 𝒱 (lookup φ x)
+      → FrameAgree σ φ
       → cdr · σ (idx x) ＝ 𝒱 o
-    snd-𝒱 {φ = φ} {x} agree h = ap (cdr ·_) h ∙ cdr-𝒱 (lookup φ x)
+    snd-𝒱 {φ = φ} {x} (agree i) h =
+      ap (cdr ·_) (slot-at h x i) ∙ cdr-𝒱 (read φ x i)
      where
       cdr-𝒱 : ∀ {A B} (v : Val (A ⇒ B)) → cdr · 𝒱 v ＝ 𝒱 (env-of v)
       cdr-𝒱 (pack c e) = cdr-pair (𝒱 c) (𝒱 e) (𝒱-defined c) (𝒱-defined e)
@@ -351,31 +339,31 @@ module _ {Σ : List DSig}
   sound-run ck bs η m (retq e) 𝔰 A = ret (rg A rax e ⁻¹)
   sound-run ck bs η m (jmp l) (σ , RF) A =
     sound-jump ck bs η l (frame m) σ (fr A)
-  sound-run ck bs η m (case x p _ l₁ l₂) (σ , RF) A =
-    sel (lookup (frame m) x) (fr A x)
+  sound-run ck bs η m (case x i y z l₁ l₂) (σ , RF) A =
+    sel (read (frame m) x i) (slot-at (fr A) x i)
    where
     br : ⟨ Br ⟩
     br =
-      (strict · (abs (blocksₛ T bs l₁) · (drop p · σ))
-        , strict · (abs (blocksₛ T bs l₂) · (drop p · σ)))
+      (strict · (absAt (idx y) (blocksₛ T bs l₁) · σ)
+        , strict · (absAt (idx z) (blocksₛ T bs l₂) · σ))
     sel : (v : Val (_ ⊹ _))
       → σ (idx x) ＝ 𝒱 v
       → Sound
-        (either v (λ u → jump ds ck bs η l₁ (u ∷ pop p (frame m)))
-          (λ u → jump ds ck bs η l₂ (u ∷ pop p (frame m))))
+        (either v (λ u → jump ds ck bs η l₁ (write (frame m) y u))
+          (λ u → jump ds ck bs η l₂ (write (frame m) z u)))
           (cases · σ (idx x) · br)
     sel (inl u) h =
       sound-＝ ((ap (λ - → cases · - · br) h ∙ cases-inl (𝒱 u) (𝒱-defined u) _ _
-                 ∙ strict-defined (abs (blocksₛ T bs l₁) · (drop p · σ)) (𝒱 u)
+                 ∙ strict-defined (absAt (idx y) (blocksₛ T bs l₁) · σ) (𝒱 u)
                      (𝒱-defined u)) ⁻¹)
-        (sound-jump ck bs η l₁ (u ∷ pop p (frame m)) _
-            (frame-ext u (frame-drop p (fr A))))
+        (sound-jump ck bs η l₁ (write (frame m) y u) _
+            (fr-write y refl (fr A)))
     sel (inr u) h =
       sound-＝ ((ap (λ - → cases · - · br) h ∙ cases-inr (𝒱 u) (𝒱-defined u) _ _
-                 ∙ strict-defined (abs (blocksₛ T bs l₂) · (drop p · σ)) (𝒱 u)
+                 ∙ strict-defined (absAt (idx z) (blocksₛ T bs l₂) · σ) (𝒱 u)
                      (𝒱-defined u)) ⁻¹)
-        (sound-jump ck bs η l₂ (u ∷ pop p (frame m)) _
-            (frame-ext u (frame-drop p (fr A))))
+        (sound-jump ck bs η l₂ (write (frame m) z u) _
+            (fr-write z refl (fr A)))
 
   sound-jump ck (bs ▷ k) η Z φ σ h =
     sound-run ck bs η (mach (rv tt tt tt) φ tt tt) k (σ , (λ _ → init) , init)
@@ -385,10 +373,11 @@ module _ {Σ : List DSig}
   sound-call zero c e w = timeout
   sound-call (succ ck) {η} (code f) e w =
     sound-＝ (eqB ⁻¹)
-      (sound-run ck (Body.blocks (lookup ds f)) η (mach (rv tt e w) [] tt tt)
+      (sound-run ck (Body.blocks (lookup ds f)) η
+          (mach (rv tt e w) (empty (Body.frame (lookup ds f))) tt tt)
           (Body.start (lookup ds f))
          ((λ _ → init) , argsₛ (𝒱 e) (𝒱 w) , init)
-         (agr (λ ())
+         (agr fr-empty
              (λ { rax () ; rdi ≡-refl → refl ; rsi ≡-refl → refl }) ⋆ none))
    where
     eqB : appᵈ · (appᵈ · T f · 𝒱 e) · 𝒱 w
@@ -405,14 +394,15 @@ module _ {Σ : List DSig}
     sound-＝ (e ⁻¹) (sound-run ck bs η _ k S' A')
 
   {- main, run from no slot, no register and no flag, means the program -}
-  soundness : ∀ {A} (b : Body Σ A (entry [])) ck
+  soundness : ∀ {A} (b : Body Σ A begin) ck
     → Sound
       (run ds ck (Body.blocks b)
-        [] (mach (rv tt tt tt) [] tt tt) (Body.start b)) ⟦ program ds b ⟧ₜ
+        [] (mach (rv tt tt tt) (empty (Body.frame b)) tt tt) (Body.start b))
+      ⟦ program ds b ⟧ₜ
   soundness b ck =
     sound-run ck (Body.blocks b)
-      [] (mach (rv tt tt tt) [] tt tt) (Body.start b) _
-      (agr (λ ()) (λ { rax () ; rdi () ; rsi () }) ⋆ none)
+      [] (mach (rv tt tt tt) (empty (Body.frame b)) tt tt) (Body.start b) _
+      (agr fr-empty (λ { rax () ; rdi () ; rsi () }) ⋆ none)
 
   {- Observations of constants ------------------------------------------------}
 

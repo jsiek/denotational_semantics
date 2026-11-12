@@ -30,8 +30,8 @@ open import proof.Framework.GraphModel.Domain using () renaming (const to
   dconst)
 open import FPC.proof.Semantics.GraphModel.Ops using (ConT; tables)
 open import FPC.Language.Type using (Type)
-open import FPC.Language.X86 using (DSig; Body; called; entry; Program; program;
-  body)
+open import FPC.Language.X86 using (DSig; Body; called; begin; Program;
+  program; body)
 open import FPC.Language.FPC using (Tm)
 open import FPC.Compiler.Pipeline using (compile)
 open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ₜ; codeₜ)
@@ -88,23 +88,23 @@ module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) �
     empty-timeout (ret {v} v⊆) ne with 𝒱-ne v
     ... | ⟨ d , d∈ ⟩ = ⊥-elim (ne ⟨ d , v⊆ d d∈ ⟩)
 
-  const-iff : ∀ {A} (b : Body Σ A (entry [])) {B} {k : base-rep B}
+  const-iff : ∀ {A} (b : Body Σ A begin) {B} {k : base-rep B}
     → (dconst k ∈ ⟦ program ds b ⟧ₜ)
       ⇔ Terminates (sem (program ds b)) (o-const B k)
-  const-iff (body n bs s) =
-    ⟨ (λ k∈ → let ⟨ v , ⟨ ⟨ c , e ⟩ , r ⟩ ⟩ = LR.adequacy ds (body n bs s) k∈ in
+  const-iff (body Δ bs s) =
+    ⟨ (λ k∈ → let ⟨ v , ⟨ ⟨ c , e ⟩ , r ⟩ ⟩ = LR.adequacy ds (body Δ bs s) k∈ in
          ⟨ c
              , trans (cong (outcome obs) (e c ≤-refl))
                (cong just (LR.𝕍-const ds v r)) ⟩)
-    , (λ { ⟨ ck , e ⟩ → const-in (S.soundness ds cT cl (body n bs s) ck) e }) ⟩
+    , (λ { ⟨ ck , e ⟩ → const-in (S.soundness ds cT cl (body Δ bs s) ck) e }) ⟩
 
-  diverges-iff : ∀ {A} (b : Body Σ A (entry []))
+  diverges-iff : ∀ {A} (b : Body Σ A begin)
     → Diverges (sem (program ds b)) ⇔ (¬ nonempty ⟦ program ds b ⟧ₜ)
-  diverges-iff (body n bs s) =
+  diverges-iff (body Δ bs s) =
     ⟨ (λ { div ⟨ d , d∈ ⟩ →
-        let ⟨ v , ⟨ ⟨ c , e ⟩ , _ ⟩ ⟩ = LR.adequacy ds (body n bs s) d∈ in
+        let ⟨ v , ⟨ ⟨ c , e ⟩ , _ ⟩ ⟩ = LR.adequacy ds (body Δ bs s) d∈ in
              ret≢timeout (trans (sym (e c ≤-refl)) (div c)) })
-    , (λ ne ck → empty-timeout (S.soundness ds cT cl (body n bs s) ck) ne) ⟩
+    , (λ ne ck → empty-timeout (S.soundness ds cT cl (body Δ bs s) ck) ne) ⟩
 
 {- a program whose table is consistent and contains the code of each
    definition -}

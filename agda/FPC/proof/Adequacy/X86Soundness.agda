@@ -13,7 +13,8 @@
   (FPC/proof/Adequacy/AbstractMachines/X86Soundness.agda), a location (a
   register or a slot, numbered as in 𝓛) denotes not the whole meaning 𝒱 v of the
   value v it holds (GlobalFunValues.agda) but a finite part of it (an
-  approximation, Apx), as the semantics binds a slot to a finite set and calls
+  approximation, Apx); a slot that is not initialized holds no part (∅,
+  𝓢 of X86Slots.agda), as the semantics binds a slot to a finite set and calls
   code on finite parts of %rdi and %rsi. But the proof is by induction on the
   clock, the blocks and the sequence instead of over the steps of a machine, so
   there is no call stack and no continuation: what the interpreter returns from
@@ -25,8 +26,10 @@
   (seq-mono). A call makes, from approximations of the callee's start
   (merged into one, merge), the entries X ↦ (Y ↦ w) of the code that
   the caller applies (call-⊆). case binds the payload of the injection
-  in its slot, as a slot write does, and takes the branch of 𝒞 for its
-  side.
+  in the slot of its branch, as a slot write does, and takes the branch
+  of 𝒞 for its side. A slot write updates the frame in place, so the
+  approximation before it is the one after it, without the slot
+  written (clear).
 
   load snd reads the environment of the open closure, which the
   interpreter keeps apart from its slot: it is the closure's (OpR, which
@@ -37,7 +40,8 @@
 -}
 
 open import Data.List using (List)
-open import FPC.Language.X86
+open import FPC.Language.X86 hiding (_∈_; _⊆_; none)
+open import FPC.Language.X86 using () renaming (_∈_ to _∈ᴵ_)
 open import FPC.Framework.AllUtil using (All; lookup)
 open import Framework.Membership using (_∋_)
 open import proof.Framework.GraphModel.SetsAsPredicates using (_⊆_)
@@ -63,18 +67,20 @@ open import proof.Framework.GraphModel.Ops using (⋆; Λ; 𝒞; nthD; ⋆-mono;
 open import proof.Framework.GraphModel.Env using (Env; _⊆ₑ_; •-~)
 open import proof.Semantics.Graph.Prim using (primD; primD-mono)
 open import FPC.proof.Semantics.GraphModel.Ops using (Table; init)
-open import FPC.proof.Semantics.GraphModel.CFG using (Meanings; drop; drop-mono;
-  𝒜-mono)
+  renaming (_[_≔_] to _[_≔ᶠ_])
+open import FPC.proof.Semantics.GraphModel.CFG using (Meanings; 𝒜-mono)
+  renaming (≔-mono to ≔ᶠ-mono)
 open import FPC.Semantics.GraphModel.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_⟧ₜ; 𝒪; 𝒪s; object;
-  called-regs; RegsD; Kont) renaming (put to putₛ; _[_≔_] to _[_≔ₛ_]; args to
-  argsₛ; blocks to blocksₛ; run to runₛ)
+  called-regs; RegsD; Kont) renaming (put to putₛ; _[_≔ʳ_] to _[_≔ₛ_]; args
+  to argsₛ; blocks to blocksₛ; run to runₛ)
 open import FPC.Semantics.ClockedInterpreters.GlobalFun using (module Vals)
 open import FPC.Semantics.ClockedInterpreters.X86
 open import proof.Semantics.Interp.Clock using (Result)
-open import Framework.Lookup using (pop)
-open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import FPC.Framework.AllUtil using ([]; _∷_; pos)
+open import FPC.Semantics.Slots using (Slots; read; write; restrict; empty)
 open import FPC.proof.Adequacy.X86Common using (OpR; none; agree)
+import FPC.proof.Adequacy.X86Slots as XS
+open XS using (≔-⊆)
 open import FPC.proof.Adequacy.GlobalFunValues using (module Den; pair-inv;
   inl-inv; inr-inv; 𝒯L[]-inv)
 open import FPC.proof.Adequacy.Tuples using (At; 𝒯L; At-length)
@@ -100,8 +106,15 @@ open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym;
   trans; cong; subst)
 open import Relation.Nullary using (yes; no)
+open import Relation.Nullary.Decidable using (recompute)
+open import Data.Bool.Properties using (T?)
+open import Data.Nat.Properties using (suc-injective)
 
-open Vals Σ renaming (Env to Frame)
+open Vals Σ hiding (Env)
+
+{- a frame of values, with the initialized slots I -}
+Frame : (Δ : Ctx) → Inits Δ → Set
+Frame = Slots Val
 
 T : Table Σ
 T = tables codeₜ ds
@@ -148,26 +161,27 @@ projₛ-mono i D⊆ d = D⊆ (tup[ pos i ] d)
 
 module _ {ρ ρ' : Env Value} {R R' : RegsD} (s : ρ ⊆ₑ ρ') (h : R ⊆ᵣ R') where
 
-  𝒪-mono : ∀ {ψ τ} (a : Arg Σ ψ τ) → 𝒪 T a ρ R ⊆ 𝒪 T a ρ' R'
+  𝒪-mono : ∀ {Δ} {ψ : St Δ} {τ} (a : Arg Σ ψ τ) → 𝒪 T a ρ R ⊆ 𝒪 T a ρ' R'
   𝒪-mono (atom a) = 𝒜-mono s a
   𝒪-mono (reg r _) = h r
   𝒪-mono (a ↑) = 𝒪-mono a
   𝒪-mono (a ↓) = 𝒪-mono a
 
-  𝒪s-mono : ∀ {ψ Δ} (as : All (λ A → Arg Σ ψ (ty A)) Δ)
-    → results-rel-pres _⊆_ (replicate (length Δ) ■) (𝒪s T as ρ R)
+  𝒪s-mono : ∀ {Δ} {ψ : St Δ} {Δs} (as : All (λ A → Arg Σ ψ (ty A)) Δs)
+    → results-rel-pres _⊆_ (replicate (length Δs) ■) (𝒪s T as ρ R)
     (𝒪s T as ρ' R')
   𝒪s-mono [] = ptt
   𝒪s-mono (a ∷ as) = ⟨ lift (𝒪-mono a) , 𝒪s-mono as ⟩
 
-  object-mono : ∀ {ψ A} (o : Obj Σ ψ A) → object T o ρ R ⊆ object T o ρ' R'
+  object-mono : ∀ {Δ} {ψ : St Δ} {A} (o : Obj Σ ψ A)
+    → object T o ρ R ⊆ object T o ρ' R'
   object-mono (pair c e) =
     lower (pair-mono _ _ ⟨ lift (𝒪-mono c) , ⟨ lift (𝒪-mono e) , ptt ⟩ ⟩)
   object-mono (tuple as) = lower (𝒯-mono _ _ _ (𝒪s-mono as))
   object-mono (inl a) = lower (inl-mono _ _ ⟨ lift (𝒪-mono a) , ptt ⟩)
   object-mono (inr a) = lower (inr-mono _ _ ⟨ lift (𝒪-mono a) , ptt ⟩)
 
-put-mono : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {D D' κ ρ ρ' R R' F F'}
+put-mono : ∀ {Δ} {ψ ψ' : St Δ} {τ} (d : Dst ψ τ ψ') {D D' κ ρ ρ' R R' F F'}
   → D ⊆ D'
   → MonoK κ
   → ρ ⊆ₑ ρ'
@@ -175,14 +189,14 @@ put-mono : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {D D' κ ρ ρ' R R' F F'}
   → F ⊆ F'
   → putₛ T d D κ ρ R F ⊆ putₛ T d D' κ ρ' R' F'
 put-mono (reg r) D⊆ mκ s h f = mκ s (≔-mono r h D⊆) f
-put-mono (slot p _) D⊆ mκ s h f =
+put-mono (slot x _) D⊆ mκ s h f =
   lower
     (⋆-mono _ _
       ⟨ Λ-mono _ _
-        ⟨ (λ X Y X⊆ → lift (mκ (•-~ _⊆_ (drop-mono p s) X⊆) h f)) , ptt ⟩
+        ⟨ (λ X Y X⊆ → lift (mκ (≔ᶠ-mono (idx x) s X⊆) h f)) , ptt ⟩
           , ⟨ lift D⊆ , ptt ⟩ ⟩)
 
-instr-mono : ∀ {n ψ ψ'} (i : Instr Σ n ψ ψ') {κ}
+instr-mono : ∀ {Δ} {ψ ψ' : St Δ} (i : Instr Σ ψ ψ') {κ}
   → MonoK κ
   → MonoK (⟦_⟧ⁱ T i κ)
 instr-mono (movq a d) mκ s h f = put-mono d (𝒪-mono s h a) mκ s h f
@@ -194,7 +208,7 @@ instr-mono (sete d) mκ s h f = put-mono d f mκ s h f
 instr-mono (alloc o d) mκ s h f = put-mono d (object-mono s h o) mκ s h f
 instr-mono (load i a d) mκ s h f =
   put-mono d (projₛ-mono i (𝒪-mono s h a)) mκ s h f
-instr-mono (loadfst x r) mκ s h f =
+instr-mono (loadfst x _ r) mκ s h f =
   mκ s (≔-mono r h (lower (car-mono _ _ ⟨ lift (s (idx x)) , ptt ⟩))) f
 instr-mono (loadsnd {x = opened x} r) mκ s h f =
   mκ s (≔-mono r h (lower (cdr-mono _ _ ⟨ lift (s _) , ptt ⟩))) f
@@ -206,32 +220,32 @@ instr-mono (callq a _ _) mκ s h f w ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ =
            ⟨ ⋆-mono _ _ ⟨ lift (𝒪-mono s h a) , ⟨ lift (h rdi) , ptt ⟩ ⟩
              , ⟨ lift (h rsi) , ptt ⟩ ⟩)
 
-MonoB : ∀ {Bs : List Ctx} → Meanings Bs → Set₁
-MonoB {Bs} B = ∀ {Δ} (l : Bs ∋ Δ) {ρ ρ'} → ρ ⊆ₑ ρ' → B l ρ ⊆ B l ρ'
+MonoB : ∀ {Δ} {Bs : List (Inits Δ)} → Meanings Bs → Set₁
+MonoB {Bs = Bs} B = ∀ {I} (l : Bs ∋ I) {ρ ρ'} → ρ ⊆ₑ ρ' → B l ρ ⊆ B l ρ'
 
-seq-mono : ∀ {n Rt Bs ψ} (k : Seq Σ n Rt Bs ψ) {B : Meanings Bs}
+seq-mono : ∀ {Δ Rt Bs ψ} (k : Seq Σ Δ Rt Bs ψ) {B : Meanings Bs}
   → MonoB B
   → MonoK (⟦_⟧ˢ T k B)
 seq-mono (i ∷ k) mB = instr-mono i (seq-mono k mB)
 seq-mono (retq _) mB s h f = h rax
 seq-mono (jmp l) mB s h f = mB l s
-seq-mono (case x p _ l₁ l₂) mB s h f = lower (𝒞-mono _ _ ⟨ lift (s (idx x))
+seq-mono (case x _ y z l₁ l₂) mB s h f = lower (𝒞-mono _ _ ⟨ lift (s (idx x))
   ,
-      ⟨ (λ X Y X⊆ → lift (mB l₁ (•-~ _⊆_ (drop-mono p s) X⊆)))
-        , ⟨ (λ X Y X⊆ → lift (mB l₂ (•-~ _⊆_ (drop-mono p s) X⊆))) , ptt ⟩ ⟩ ⟩)
+      ⟨ (λ X Y X⊆ → lift (mB l₁ (≔ᶠ-mono (idx y) s X⊆)))
+        , ⟨ (λ X Y X⊆ → lift (mB l₂ (≔ᶠ-mono (idx z) s X⊆))) , ptt ⟩ ⟩ ⟩)
 
-blocks-mono : ∀ {n Rt Bs} (bs : Blocks Σ n Rt Bs) → MonoB (blocksₛ T bs)
+blocks-mono : ∀ {Δ Rt Bs} (bs : Blocks Σ Δ Rt Bs) → MonoB (blocksₛ T bs)
 blocks-mono (bs ▷ k) Z s = seq-mono k (blocks-mono bs) s (λ _ → ⊆r) ⊆r
 blocks-mono (bs ▷ k) (S l) = blocks-mono bs l
 
-K : ∀ {n Rt Bs ψ} → Seq Σ n Rt Bs ψ → Blocks Σ n Rt Bs → Kont
+K : ∀ {Δ Rt Bs ψ} → Seq Σ Δ Rt Bs ψ → Blocks Σ Δ Rt Bs → Kont
 K k bs = ⟦_⟧ˢ T k (blocksₛ T bs)
 
-K-mono : ∀ {n Rt Bs ψ} (k : Seq Σ n Rt Bs ψ) bs → MonoK (K k bs)
+K-mono : ∀ {Δ Rt Bs ψ} (k : Seq Σ Δ Rt Bs ψ) bs → MonoK (K k bs)
 K-mono k bs = seq-mono k (blocks-mono bs)
 
 {- a jump runs the block, from its frame -}
-blocks-at : ∀ {n Rt Bs Δ} (bs : Blocks Σ n Rt Bs) (l : Bs ∋ Δ) {ρ}
+blocks-at : ∀ {Δ Rt Bs I} (bs : Blocks Σ Δ Rt Bs) (l : Bs ∋ I) {ρ}
   → K (Blk.start (block bs l)) (Blk.blocks (block bs l)) ρ (λ _ → init) init
     ⊆ blocksₛ T bs l ρ
 blocks-at (bs ▷ k) Z = ⊆r
@@ -275,14 +289,19 @@ ix<3 rax i ()
 ix<3 rdi i ()
 ix<3 rsi i ()
 
-𝓛 : ∀ {η Γ Δ} → RegVals Σ η Γ → Frame Δ → ℕ → 𝒫 Value
+{- what the slots of a frame hold -}
+𝓢 : ∀ {Δ I} → Frame Δ I → ℕ → 𝒫 Value
+𝓢 = XS.𝓢 𝒱
+
+𝓛 : ∀ {η Γ Δ I} → RegVals Σ η Γ → Frame Δ I → ℕ → 𝒫 Value
 𝓛 {Γ = Γ} ρ φ 0 = 𝒱ᵐ (Regs.ax Γ) (RegVals.ax ρ)
 𝓛 {Γ = Γ} ρ φ 1 = 𝒱ᵐ (Regs.di Γ) (RegVals.di ρ)
 𝓛 {Γ = Γ} ρ φ 2 = 𝒱ᵐ (Regs.si Γ) (RegVals.si ρ)
-𝓛 ρ φ (suc (suc (suc i))) = 𝓔 φ i
+𝓛 ρ φ (suc (suc (suc i))) = 𝓢 φ i
 
 {- after r := v, the other locations are unchanged -}
-upd-𝓛 : ∀ r {η Γ Δ τ} {ρ : RegVals Σ η Γ} {φ : Frame Δ} {v : MV Σ η τ}
+upd-𝓛 : ∀ r {η Γ Δ I τ} {ρ : RegVals Σ η Γ} {φ : Frame Δ I}
+  {v : MV Σ η τ}
   → (  ∀ l
      → l ≢ ix r
      → 𝓛 (_[_≔_] {τ = τ} ρ r v) φ l ⊆ 𝓛 ρ φ l)
@@ -297,7 +316,7 @@ upd-𝓛 rsi =
   ⟨ (λ { 0 _ → ⊆r ; 1 _ → ⊆r ; 2 ne → ⊥-elim (ne refl) ; (suc (suc (suc i))) _
     → ⊆r }) , ⊆r ⟩
 
-wipe-𝓛 : ∀ {η η' Γ Δ} {ρ : RegVals Σ η Γ} {φ : Frame Δ} l
+wipe-𝓛 : ∀ {η η' Γ Δ I} {ρ : RegVals Σ η Γ} {φ : Frame Δ I} l
   → 𝓛 (wipeᵣ {η' = η'} ρ) φ l ⊆ 𝓛 ρ φ l
 wipe-𝓛 {Γ = rt a b c} =
   λ { 0 → wipe-𝒱 a ; 1 → wipe-𝒱 b ; 2 → wipe-𝒱 c ; (suc (suc (suc i))) → ⊆r }
@@ -312,7 +331,7 @@ Apx = ℕ → List Value
 ρ̂ : Apx → RegsD
 ρ̂ A r = mem (A (ix r))
 
-AL : ∀ {η ψ} → Apx → Mach Σ η ψ → Set
+AL : ∀ {η Δ} {ψ : St Δ} → Apx → Mach Σ η ψ → Set
 AL A m = ∀ l → mem (A l) ⊆ 𝓛 (regs m) (frame m) l
 
 Ext : Apx → Apx → Set
@@ -377,47 +396,42 @@ upd rax E h = λ { rax → h ; rdi → E 1 (λ ()) ; rsi → E 2 (λ ()) }
 upd rdi E h = λ { rax → E 0 (λ ()) ; rdi → h ; rsi → E 2 (λ ()) }
 upd rsi E h = λ { rax → E 0 (λ ()) ; rdi → E 1 (λ ()) ; rsi → h }
 
-{- the slots before a write of slot p, from those after it -}
-undrop : ∀ {Δ' Δ : Ctx} → Δ' ⊑ Δ → (ℕ → List Value) → ℕ → List Value
-undrop here⊑ f = f
-undrop (there⊑ p) f zero = []
-undrop (there⊑ p) f (suc i) = undrop p f i
+clear-⊆ : ∀ {A l l'} → mem (clear A l l') ⊆ mem (A l')
+clear-⊆ {A} {l} {l'} with l' ≟ l
+... | yes _ = λ _ ()
+... | no _ = ⊆r
 
-undrop-AL : ∀ {Δ' Δ}
-  → (p : Δ' ⊑ Δ)
-  → ∀ {f} {φ : Frame Δ}
-  → (∀ j → mem (f j) ⊆ 𝓔 (pop p φ) j)
-  → ∀ i
-  → mem (undrop p f i) ⊆ 𝓔 φ i
-undrop-AL here⊑ h = h
-undrop-AL (there⊑ p) {φ = v ∷ φ} h zero = λ _ ()
-undrop-AL (there⊑ p) {φ = v ∷ φ} h (suc i) = undrop-AL p h i
+{- the location of slot x -}
+lx : ∀ {Δ : Ctx} {A} → Δ ∋ A → ℕ
+lx x = suc (suc (suc (idx x)))
 
-drop-undrop : ∀ {Δ' Δ}
-  → (p : Δ' ⊑ Δ)
-  → ∀ f
-  → (λ j → mem (f j)) ⊆ₑ drop p (λ i → mem (undrop p f i))
-drop-undrop here⊑ f j = ⊆r
-drop-undrop (there⊑ p) f = drop-undrop p f
+{- the slots before a write of v to slot y, from those after it: all
+   but slot y -}
+clear-slots : ∀ {Δ B I} {φ : Frame Δ I} (y : Δ ∋ B) {u : Val B} {A' : Apx}
+  → (∀ j → mem (A' (suc (suc (suc j)))) ⊆ 𝓢 (write φ y u) j)
+  → ∀ j
+  → mem (clear A' (lx y) (suc (suc (suc j)))) ⊆ 𝓢 φ j
+clear-slots {φ = φ} y {u} {A'} al j with suc (suc (suc j)) ≟ lx y
+... | yes _ = λ _ ()
+... | no ne = λ d d∈ →
+  XS.𝓢-write-other 𝒱 φ y u j (λ e → ne (cong (λ i → suc (suc (suc i))) e))
+    d (al j d d∈)
 
-und : ∀ {Δ' Δ : Ctx} → Δ' ⊑ Δ → Apx → Apx
-und p A' =
-  λ { 0 → A' 0 ; 1 → A' 1 ; 2 → A' 2 ; (suc (suc (suc i)))
-    → undrop p (λ j → A' (suc (suc (suc (suc j))))) i }
-
-und-AL : ∀ {Δ' Δ A η Γ}
-  → (p : Δ' ⊑ Δ)
-  → ∀ {A'} {ρ : RegVals Σ η Γ} {φ : Frame Δ} {v : Val A}
-  → (∀ l → mem (A' l) ⊆ 𝓛 ρ (v ∷ pop p φ) l)
-  → ∀ l
-  → mem (und p A' l) ⊆ 𝓛 ρ φ l
-und-AL p al' =
-  λ { 0 → al' 0 ; 1 → al' 1 ; 2 → al' 2 ; (suc (suc (suc i)))
-    → undrop-AL p (λ j → al' (suc (suc (suc (suc j))))) i }
+{- the frame after a write of slot y, from the approximation without it -}
+fr-clear : ∀ {Δ B} (y : Δ ∋ B) {A' A : Apx} {X}
+  → Ext (clear A' (lx y)) A
+  → mem (A' (lx y)) ⊆ X
+  → σ̂ A' ⊆ₑ (σ̂ A [ idx y ≔ᶠ X ])
+fr-clear y {A'} E hX =
+  ≔-⊆ (idx y)
+    (λ j ne d d∈ →
+      E (suc (suc (suc j))) d
+        (clear-≢ (λ e → ne (suc-injective (suc-injective (suc-injective e))))
+          d d∈)) hX
 
 {- a jump, from a state with no register and no flag -}
-jump-⊆ : ∀ {n Rt Bs Δ} (bs : Blocks Σ n Rt Bs) (l : Bs ∋ Δ) {A' : Apx} {η'}
-  {φ : Frame Δ}
+jump-⊆ : ∀ {Δ Rt Bs I} (bs : Blocks Σ Δ Rt Bs) (l : Bs ∋ I) {A' : Apx} {η'}
+  {φ : Frame Δ I}
   → (∀ l' → mem (A' l') ⊆ 𝓛 {η'} {unset} (rv tt tt tt) φ l')
   → K (Blk.start (block bs l)) (Blk.blocks (block bs l)) (σ̂ A') (ρ̂ A') ∅
     ⊆ blocksₛ T bs l (σ̂ A')
@@ -426,7 +440,7 @@ jump-⊆ bs l al' u u∈ = blocks-at bs l u
       (λ { rax → ∅⊆ (al' 0) ; rdi → ∅⊆ (al' 1) ; rsi → ∅⊆ (al' 2) })
       (λ _ ()) u u∈)
 
-unset-AL : ∀ {A' : Apx} {η η' Γ Δ} {ρ : RegVals Σ η Γ} {φ : Frame Δ}
+unset-AL : ∀ {A' : Apx} {η η' Γ Δ I} {ρ : RegVals Σ η Γ} {φ : Frame Δ I}
   → (∀ l → mem (A' l) ⊆ 𝓛 {η'} {unset} (rv tt tt tt) φ l)
   → ∀ l
   → mem (A' l) ⊆ 𝓛 ρ φ l
@@ -466,28 +480,29 @@ unfold-𝒱 : ∀ {A} (v : Val (μ A)) → 𝒱 (unfold-v v) ⊆ 𝒱 v
 unfold-𝒱 (fold v) = ⊆r
 
 {- the environment of the open closure is the second component of its slot -}
-snd-𝒱 : ∀ {Δ A B} {φ : Frame Δ} {x : Δ ∋ A ⇒ B} {η o z}
+snd-𝒱 : ∀ {Δ A B I} {φ : Frame Δ I} {x : Δ ∋ A ⇒ B} {η o z}
   → OpR φ (just (opened x)) η o
   → z ∈ 𝒱 o
-  → Σ[ c ∈ Value ] ⦅ c , z ⦆ ∈ 𝒱 (lookup φ x)
-snd-𝒱 {φ = φ} {x} agree = snd (lookup φ x)
+  → Σ[ i ∈ x ∈ᴵ I ] Σ[ c ∈ Value ] ⦅ c , z ⦆ ∈ 𝒱 (read φ x i)
+snd-𝒱 {I = I} {φ = φ} {x} (agree i) z∈ =
+  ⟨ recompute (T? _) i , snd (read φ x i) z∈ ⟩
   where snd : ∀ (v : Val _) {z} → z ∈ 𝒱 (env-of v)
          → Σ[ c ∈ Value ] ⦅ c , z ⦆ ∈ 𝒱 v
         snd (pack c e) z∈ = ⟨ proj₁ (𝒱-ne c) , ⟨ proj₂ (𝒱-ne c) , z∈ ⟩ ⟩
 
-put-inv : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {η} {m : Mach Σ η ψ} {v}
+put-inv : ∀ {Δ} {ψ ψ' : St Δ} {τ} (d : Dst ψ τ ψ') {η} {m : Mach Σ η ψ} {v}
   → OpR (frame m) (St.op ψ) η (clo m)
   → OpR (frame (put d v m)) (St.op ψ') η (clo (put d v m))
 put-inv (reg r) i = i
-put-inv (slot p _) i = none
+put-inv (slot x _) i = none
 
 {- Growing an approximation, from A₀, so that P holds -}
-record Grow {η ψ} (m : Mach Σ η ψ) (P : Apx → Set) : Set where
+record Grow {η Δ} {ψ : St Δ} (m : Mach Σ η ψ) (P : Apx → Set) : Set where
   constructor grow
   field grown : ∀ A₀ → AL A₀ m → Σ[ A ∈ Apx ] AL A m × Ext A₀ A × P A
 open Grow
 
-module _ {η ψ} {m : Mach Σ η ψ} where
+module _ {η Δ} {ψ : St Δ} {m : Mach Σ η ψ} where
 
   grow-at : ∀ l W
     → mem W ⊆ 𝓛 (regs m) (frame m) l
@@ -547,8 +562,8 @@ module _ {η ψ} {m : Mach Σ η ψ} where
   grow-arg : ∀ {τ} (a : Arg Σ ψ τ) W
     → mem W ⊆ 𝒱ᵐ (just τ) (arg a m)
     → Grow m (λ A → mem W ⊆ 𝒪 T a (σ̂ A) (ρ̂ A))
-  grow-arg (atom (var x)) W W⊆ =
-    grow-at _ W (λ d d∈ → 𝓔-lookup (frame m) x d (W⊆ d d∈))
+  grow-arg (atom (var x i)) W W⊆ =
+    grow-at _ W (λ d d∈ → XS.𝓢-read 𝒱 (frame m) x i d (W⊆ d d∈))
   grow-arg (atom (lit B c)) W W⊆ =
     grow λ A₀ al → ⟨ A₀ , ⟨ al , ⟨ (λ _ → ⊆r) , W⊆ ⟩ ⟩ ⟩
   grow-arg (atom (ref f)) W W⊆ =
@@ -622,7 +637,7 @@ module _ {η ψ} {m : Mach Σ η ψ} where
   grow-obj (tuple (_ ∷ _)) ⟨⟩ ()
 
   {- an element of a component of a tuple -}
-  grow-load : ∀ {Δ B} (i : Δ ∋ B) (a : Arg Σ ψ (ty (tup Δ))) z
+  grow-load : ∀ {Δ' B} (i : Δ' ∋ B) (a : Arg Σ ψ (ty (tup Δ'))) z
     → z ∈ 𝒱 (nth i (arg a m))
     → Grow m (λ A → z ∈ projD (pos i) ⟨ 𝒪 T a (σ̂ A) (ρ̂ A) , ptt ⟩)
   grow-load i a z z∈ = gw (arg a m) z∈ (grow-arg a)
@@ -641,11 +656,12 @@ module _ {η ψ} {m : Mach Σ η ψ} where
 𝓕 {false} _ = ∅
 
 {- what k, with the blocks bs, denotes from some approximation of m -}
-𝒮 : ∀ {n Rt Bs ψ η} → Seq Σ n Rt Bs ψ → Blocks Σ n Rt Bs → Mach Σ η ψ → 𝒫 Value
+𝒮 : ∀ {Δ Rt Bs ψ η} → Seq Σ Δ Rt Bs ψ → Blocks Σ Δ Rt Bs → Mach Σ η ψ
+  → 𝒫 Value
 𝒮 k bs m z = Σ[ A ∈ Apx ] AL A m × z ∈ K k bs (σ̂ A) (ρ̂ A) (𝓕 (flag m))
 
 {- a block starts with its frame, no register and no flag -}
-entryₘ : ∀ {η Δ} → Frame Δ → Mach Σ η (entry Δ)
+entryₘ : ∀ {η Δ I} → Frame Δ I → Mach Σ η (entry I)
 entryₘ φ = ⟨ rv tt tt tt , φ , tt , tt ⟩
 
 nn : ∀ {P Q R : Apx → Set} → Σ[ A ∈ Apx ] P A × Q A × R A
@@ -661,9 +677,9 @@ widen D⊆ = holds-map (λ v v⊆ z z∈ → D⊆ z (v⊆ z z∈))
 {- Writes ---------------------------------------------------------------------}
 
 {- r := v, after the other registers are made ρ' -}
-reg-⊆ : ∀ {n Rt Bs η η' Γ Γ' Δ O O' F τ} (r : Reg)
-  {k : Seq Σ n Rt Bs (st (Γ' [ r ↦ just τ ]) Δ O' F)} {bs}
-    {m : Mach Σ η (st Γ Δ O F)} {ρ' : RegVals Σ η' Γ'} {o' : Opened Σ η' O'}
+reg-⊆ : ∀ {Δ Rt Bs η η' Γ Γ'} {I : Inits Δ} {O O' F τ} (r : Reg)
+  {k : Seq Σ Δ Rt Bs (st (Γ' [ r ↦ just τ ]) I O' F)} {bs}
+    {m : Mach Σ η (st Γ I O F)} {ρ' : RegVals Σ η' Γ'} {o' : Opened Σ η' O'}
       {v : RV Σ η' τ} (D : Apx → 𝒫 Value)
   → (∀ l → 𝓛 ρ' (frame m) l ⊆ 𝓛 (regs m) (frame m) l)
   → (∀ W → mem W ⊆ 𝒱ᵐ (just τ) v → Grow m (λ A → mem W ⊆ D A))
@@ -692,7 +708,8 @@ reg-⊆ {τ = τ} r {k} {bs} {m = m} {v = v} D h g z ⟨ A' , ⟨ al' , z∈ ⟩
   E′ l ne d d∈ = E l d (clear-≢ ne d d∈)
 
 {- d := v -}
-put-⊆ : ∀ {n Rt Bs ψ τ ψ'} (d : Dst n ψ τ ψ') {k : Seq Σ n Rt Bs ψ'} {bs η}
+put-⊆ : ∀ {Δ Rt Bs} {ψ ψ' : St Δ} {τ} (d : Dst ψ τ ψ')
+  {k : Seq Σ Δ Rt Bs ψ'} {bs η}
   {m : Mach Σ η ψ} {v : RV Σ η τ} (D : Apx → 𝒫 Value)
   → (∀ W → mem W ⊆ 𝒱ᵐ (just τ) v → Grow m (λ A → mem W ⊆ D A))
   → 𝒮 k bs (put d v m)
@@ -701,27 +718,49 @@ put-⊆ : ∀ {n Rt Bs ψ τ ψ'} (d : Dst n ψ τ ψ') {k : Seq Σ n Rt Bs ψ'}
         ∈ putₛ T d (D A) (K k bs) (σ̂ A) (ρ̂ A) (𝓕 (flag m))
 put-⊆ (reg r) {k} {bs} {m = m} {v} D g =
   reg-⊆ r {k} {bs} {m} {regs m} {clo m} {v} D (λ _ → ⊆r) g
-put-⊆ (slot {A = A₁} p _) {k} {bs} {m = m} {v} D g z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩
-    with grown (g (ext (A' 3) (𝒱-ne v)) (ext-⊆ (A' 3) (𝒱-ne v) (al' 3)))
-      (und p A') (und-AL p al')
+put-⊆ (slot x p) {k} {bs} {m = m} {v} D g z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩
+    with grown (g (ext (A' (lx x)) (𝒱-ne v)) (ext-⊆ (A' (lx x)) (𝒱-ne v) Wv))
+      (clear A' (lx x)) al₀
+  where
+  Wv : mem (A' (lx x)) ⊆ 𝒱 v
+  Wv d d∈ =
+    XS.𝓢-write-same 𝒱 (frame m) x v d
+      (XS.𝓢-restrict 𝒱 (write (frame m) x v) p (idx x) d (al' (lx x) d d∈))
+  al₀ : AL (clear A' (lx x)) m
+  al₀ 0 = λ d d∈ → al' 0 d (clear-⊆ {A'} {lx x} d d∈)
+  al₀ 1 = λ d d∈ → al' 1 d (clear-⊆ {A'} {lx x} d d∈)
+  al₀ 2 = λ d d∈ → al' 2 d (clear-⊆ {A'} {lx x} d d∈)
+  al₀ (suc (suc (suc j))) =
+    clear-slots {φ = frame m} x {v} {A'}
+      (λ j d d∈ →
+        XS.𝓢-restrict 𝒱 (write (frame m) x v) p j d
+          (al' (suc (suc (suc j))) d d∈)) j
 ... | ⟨ A , ⟨ al , ⟨ E , W⊆ ⟩ ⟩ ⟩ =
   ⟨ A , ⟨ al , ⟨ ne-mem (ext-ne _ (𝒱-ne v)) W⊆
   ,
-    ⟨ ext (A' 3) (𝒱-ne v)
-      , ⟨ ⟨ K-mono k bs fr (λ { rax → E 0 ; rdi → E 1 ; rsi → E 2 }) ⊆r z z∈
+    ⟨ ext (A' (lx x)) (𝒱-ne v)
+      , ⟨ ⟨ K-mono k bs fr
+              (λ { rax → E′ 0 (λ ()) ; rdi → E′ 1 (λ ()) ; rsi → E′ 2 (λ ()) })
+              ⊆r z z∈
                               ,
                                 ⟨ ext-ne _ (𝒱-ne v)
                                   , Con⇒≈ _ (𝒱-con v)
-                                    (ext-⊆ (A' 3) (𝒱-ne v) (al' 3)) ⟩ ⟩
+                                    (ext-⊆ (A' (lx x)) (𝒱-ne v) Wv) ⟩ ⟩
                             , ⟨ W⊆ , ext-ne _ (𝒱-ne v) ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
   where
-  fr : σ̂ A' ⊆ₑ (mem (ext (A' 3) (𝒱-ne v)) • drop p (σ̂ A))
-  fr zero d d∈ = ∈-++⁺ˡ d∈
-  fr (suc j) d d∈ = drop-mono p (σ̂E E) j d (drop-undrop p _ j d d∈)
+  Wv : mem (A' (lx x)) ⊆ 𝒱 v
+  Wv d d∈ =
+    XS.𝓢-write-same 𝒱 (frame m) x v d
+      (XS.𝓢-restrict 𝒱 (write (frame m) x v) p (idx x) d (al' (lx x) d d∈))
+  E′ : ∀ l → l ≢ lx x → mem (A' l) ⊆ mem (A l)
+  E′ l ne d d∈ = E l d (clear-≢ ne d d∈)
+  fr : σ̂ A' ⊆ₑ (σ̂ A [ idx x ≔ᶠ mem (ext (A' (lx x)) (𝒱-ne v)) ])
+  fr = fr-clear x E (λ d d∈ → ∈-++⁺ˡ d∈)
 
 {- the flag := b -}
-flag-⊆ : ∀ {n Rt Bs Γ Δ O F} {k : Seq Σ n Rt Bs (st Γ Δ O true)} {bs η}
-  {m : Mach Σ η (st Γ Δ O F)} b (G : Apx → 𝒫 Value)
+flag-⊆ : ∀ {Δ Rt Bs Γ} {I : Inits Δ} {O F}
+  {k : Seq Σ Δ Rt Bs (st Γ I O true)} {bs η} {m : Mach Σ η (st Γ I O F)} b
+  (G : Apx → 𝒫 Value)
   → Grow m (λ A → 𝒱 (bit {Σ} b) ⊆ G A)
   → 𝒮 k bs ⟨ regs m , frame m , clo m , b ⟩ ⊆ λ z →
     Σ[ A ∈ Apx ] AL A m × z ∈ K k bs (σ̂ A) (ρ̂ A) (G A)
@@ -735,7 +774,7 @@ flag-⊆ {k = k} {bs} b G g z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ with grown g A' al
 _∪ₐ_ : Apx → Apx → Apx
 (A ∪ₐ B) l = A l ++ B l
 
-module _ {η ψ} {m : Mach Σ η ψ} where
+module _ {η Δ} {ψ : St Δ} {m : Mach Σ η ψ} where
 
   grow-from : ∀ {P : Apx → Set}
     → (∀ {A B} → Ext A B → P A → P B)
@@ -763,17 +802,17 @@ Callee : ∀ {η A B} → Val (code η A B) → Val (tup η) → Val A → Val B
 Callee {η} (code f) e w v =
   𝒱 v
   ⊆ 𝒮 {η = η} (Body.start (lookup ds f)) (Body.blocks (lookup ds f))
-  ⟨ rv tt e w , [] , tt , tt ⟩
+  ⟨ rv tt e w , empty (Body.frame (lookup ds f)) , tt , tt ⟩
 
 {- callq: the callee's approximation gives the entries X ↦ (Y ↦ w) of the
    code that the caller applies -}
-call-⊆ : ∀ {n Rt Bs Γ Δ O F A B} {k : Seq Σ n Rt Bs (returned Δ B)} {bs η}
-  {m : Mach Σ η (st Γ Δ O F)}
-    (a : Arg Σ (st Γ Δ O F) (codeα A B)) e₁ e₂ {v}
+call-⊆ : ∀ {Δ Rt Bs Γ} {I : Inits Δ} {O F A B}
+  {k : Seq Σ Δ Rt Bs (returned I B)} {bs η} {m : Mach Σ η (st Γ I O F)}
+    (a : Arg Σ (st Γ I O F) (codeα A B)) e₁ e₂ {v}
   → Callee (arg a m) (cast e₁ (regs m ⦅ rdi ⦆)) (cast e₂ (regs m ⦅ rsi ⦆)) v
   → 𝒮 {η = η} k bs ⟨ rv v tt tt , frame m , tt , tt ⟩
     ⊆ 𝒮 (callq a e₁ e₂ ∷ k) bs m
-call-⊆ {n} {A = A₁} {B₁} {k = k} {bs} {η} {m} a e₁ e₂ {v} =
+call-⊆ {A = A₁} {B₁} {k = k} {bs} {η} {m} a e₁ e₂ {v} =
   gw (arg a m) (grow-arg {m = m} a)
   where
   e = cast {η = η} e₁ (regs m ⦅ rdi ⦆)
@@ -784,7 +823,8 @@ call-⊆ {n} {A = A₁} {B₁} {k = k} {bs} {η} {m} a e₁ e₂ {v} =
     → 𝒮 {η = η} k bs ⟨ rv v tt tt , frame m , tt , tt ⟩
       ⊆ 𝒮 (callq a e₁ e₂ ∷ k) bs m
   gw (code f) g cv z ⟨ Ac , ⟨ alc , z∈₀ ⟩ ⟩
-      with merge {η = η} {m = ⟨ rv tt e w , [] , tt , tt ⟩}
+      with merge {η = η}
+        {m = ⟨ rv tt e w , empty (Body.frame (lookup ds f)) , tt , tt ⟩}
         (λ A →
           K (Body.start (lookup ds f)) (Body.blocks (lookup ds f))
           (σ̂ A) (ρ̂ A) ∅)
@@ -821,7 +861,10 @@ call-⊆ {n} {A = A₁} {B₁} {k = k} {bs} {η} {m} a e₁ e₂ {v} =
     entries x x∈ with ∈-map⁻ ent x∈
     ... | ⟨ w' , ⟨ w'∈ , refl ⟩ ⟩ = closed f (ent w')
       ⟨ ⟨ K-mono (Body.start (lookup ds f)) (Body.blocks (lookup ds f))
-          (λ i → al' (suc (suc (suc i))))
+          (λ i d d∈ →
+            ⊥-elim
+              (XS.𝓢-empty 𝒱 (Body.frame (lookup ds f)) i d
+                (al' (suc (suc (suc i))) d d∈)))
             (λ { rax → ∅⊆ (al' 0) ; rdi → λ d d∈ → ∈-++⁺ˡ d∈ ; rsi → λ d d∈ →
                 ∈-++⁺ˡ d∈ }) (λ _ ()) w' (W⊆ w' w'∈)
         ,
@@ -848,12 +891,12 @@ call-⊆ {n} {A = A₁} {B₁} {k = k} {bs} {η} {m} a e₁ e₂ {v} =
 
 {- Soundness, by induction on the clock, the blocks and the sequence ----------}
 
-sound : ∀ {n Rt Bs ψ} ck (bs : Blocks Σ n Rt Bs) η (m : Mach Σ η ψ)
-  (k : Seq Σ n Rt Bs ψ)
+sound : ∀ {Δ Rt Bs ψ} ck (bs : Blocks Σ Δ Rt Bs) η (m : Mach Σ η ψ)
+  (k : Seq Σ Δ Rt Bs ψ)
   → OpR (frame m) (St.op ψ) η (clo m)
   → Holds (λ v → 𝒱 v ⊆ 𝒮 k bs m) (run ds ck bs η m k)
-sound-jump : ∀ {n Rt Bs Δ} ck (bs : Blocks Σ n Rt Bs) η (l : Bs ∋ Δ)
-  (φ : Frame Δ)
+sound-jump : ∀ {Δ Rt Bs I} ck (bs : Blocks Σ Δ Rt Bs) η (l : Bs ∋ I)
+  (φ : Frame Δ I)
   → Holds
     (λ v →
       𝒱 v ⊆ 𝒮 (Blk.start (block bs l)) (Blk.blocks (block bs l)) (entryₘ {η} φ))
@@ -885,7 +928,7 @@ sound ck bs η m (subq a r e ∷ k) i =
                   → prim-in sub (cast e (regs m ⦅ r ⦆)) (arg a m) h₁ h₂ d
                     (W⊆ d d∈) }) z z∈))
     (sound ck bs η
-        (put {n = 0} (reg {τ = ℤty} r)
+        (put (reg {τ = ℤty} r)
           (δ sub (cast {η = η} e (regs m ⦅ r ⦆)) (arg a m)) m) k i)
 sound ck bs η m (cmpq a₂ a₁ ∷ k) i =
   widen
@@ -922,22 +965,22 @@ sound ck bs η m (load j a d ∷ k) i =
                 (λ E → projₛ-mono j (𝒪-mono (σ̂E E) (ρ̂E E) a)) W
                   (λ z z∈ → grow-load j a z (W⊆ z z∈))) z z∈))
     (sound ck bs η (put d (nth j (arg a m)) m) k (put-inv d i))
-sound ck bs η m (loadfst x r ∷ k) i =
+sound ck bs η m (loadfst x j r ∷ k) i =
   widen
     (λ z z∈ →
       nn
-      (reg-⊆ r {k} {bs} {m} {wipeᵣ (regs m)} {env-of (lookup (frame m) x)}
-        {code-of (lookup (frame m) x)}
+      (reg-⊆ r {k} {bs} {m} {wipeᵣ (regs m)} {env-of (read (frame m) x j)}
+        {code-of (read (frame m) x j)}
           (λ A → carD ⟨ σ̂ A (idx x) , ptt ⟩) wipe-𝓛
           (λ W W⊆ →
               grow-each {m = m} _
               (λ E → lower (car-mono _ _ ⟨ lift (σ̂E E (idx x)) , ptt ⟩)) W
             (λ z z∈ →
-                fst (lookup (frame m) x) (grow-arg {m = m} (atom (var x)))
+                fst (read (frame m) x j) (grow-arg {m = m} (atom (var x j)))
                   (W⊆ z z∈))) z z∈))
-    (sound ck bs (size (lookup (frame m) x))
-       ⟨ wipeᵣ (regs m) [ r ≔ code-of (lookup (frame m) x) ] , frame m
-           , env-of (lookup (frame m) x) , flag m ⟩ k agree)
+    (sound ck bs (size (read (frame m) x j))
+       ⟨ wipeᵣ (regs m) [ r ≔ code-of (read (frame m) x j) ] , frame m
+           , env-of (read (frame m) x j) , flag m ⟩ k (agree j))
   where
   fst : ∀ (v : Val _) {z}
     → (∀ W → mem W ⊆ 𝒱 v → Grow m (λ A → mem W ⊆ σ̂ A (idx x)))
@@ -954,8 +997,8 @@ sound ck bs η m (loadsnd {x = opened x} r ∷ k) i =
           (λ W W⊆ →
               grow-each {m = m} _
               (λ E → lower (cdr-mono _ _ ⟨ lift (σ̂E E (idx x)) , ptt ⟩)) W
-            (λ z z∈ → let ⟨ c , c∈ ⟩ = snd-𝒱 i (W⊆ z z∈) in
-              grow-arg {m = m} (atom (var x)) _ (one c∈) ⊳ λ h →
+            (λ z z∈ → let ⟨ j , ⟨ c , c∈ ⟩ ⟩ = snd-𝒱 i (W⊆ z z∈) in
+              grow-arg {m = m} (atom (var x j)) _ (one c∈) ⊳ λ h →
                   ⟨ c , h _ (here refl) ⟩)) z z∈))
     (sound ck bs η ⟨ regs m [ r ≔ clo m ] , frame m , clo m , flag m ⟩ k i)
 sound ck bs η m (callq a e₁ e₂ ∷ k) i =
@@ -976,85 +1019,98 @@ sound ck bs η m (jmp l) i =
     (λ { z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩
       → ⟨ A' , ⟨ unset-AL al' , jump-⊆ bs l al' z z∈ ⟩ ⟩ })
       (sound-jump ck bs η l (frame m))
-sound ck bs η m s@(case x p _ l₁ l₂) i with lookup (frame m) x in eq
-... | inl u = widen ⊆′ (sound-jump ck bs η l₁ (u ∷ pop p (frame m)))
+sound ck bs η m s@(case x j y z l₁ l₂) i with read (frame m) x j in eq
+... | inl u = widen ⊆′ (sound-jump ck bs η l₁ (write (frame m) y u))
   where
   X : Apx → List Value
-  X A' = proj₁ (𝒱-ne u) ∷ A' 3
+  X A' = proj₁ (𝒱-ne u) ∷ A' (lx y)
   ⊆′ : 𝒮 (Blk.start (block bs l₁)) (Blk.blocks (block bs l₁))
-    (entryₘ {η} (u ∷ pop p (frame m))) ⊆ 𝒮 s bs m
-  ⊆′ z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ =
+    (entryₘ {η} (write (frame m) y u)) ⊆ 𝒮 s bs m
+  ⊆′ w ⟨ A' , ⟨ al' , w∈ ⟩ ⟩ =
     fin
-    (grown (grow-arg {m = m} (atom (var x)) (map left (X A')) Xin) (und p A')
-      (und-AL p (unset-AL al')))
+    (grown (grow-arg {m = m} (atom (var x j)) (map left (X A')) Xin)
+      (clear A' (lx y)) al₀)
     where
     X⊆ : mem (X A') ⊆ 𝒱 u
     X⊆ _ (here refl) = proj₂ (𝒱-ne u)
-    X⊆ d (there d∈) = al' 3 d d∈
-    Xin : mem (map left (X A')) ⊆ 𝒱 (lookup (frame m) x)
+    X⊆ d (there d∈) = XS.𝓢-write-same 𝒱 (frame m) y u d (al' (lx y) d d∈)
+    Xin : mem (map left (X A')) ⊆ 𝒱 (read (frame m) x j)
     Xin d d∈ with ∈-map⁻ left d∈
     ... | ⟨ d' , ⟨ d'∈ , refl ⟩ ⟩ =
       subst (λ v → left d' ∈ 𝒱 v) (sym eq) (X⊆ d' d'∈)
-    fin : Σ[ A ∈ Apx ] AL A m × Ext (und p A') A × mem (map left (X A'))
-      ⊆ σ̂ A (idx x) → z ∈ 𝒮 s bs m
+    al₀ : AL (clear A' (lx y)) m
+    al₀ 0 = λ d d∈ → ⊥-elim (al' 0 d (clear-⊆ {A'} {lx y} d d∈))
+    al₀ 1 = λ d d∈ → ⊥-elim (al' 1 d (clear-⊆ {A'} {lx y} d d∈))
+    al₀ 2 = λ d d∈ → ⊥-elim (al' 2 d (clear-⊆ {A'} {lx y} d d∈))
+    al₀ (suc (suc (suc j'))) =
+      clear-slots {φ = frame m} y {u} {A'} (λ j' → al' (suc (suc (suc j')))) j'
+    fin : Σ[ A ∈ Apx ] AL A m × Ext (clear A' (lx y)) A
+      × mem (map left (X A')) ⊆ σ̂ A (idx x)
+      → w ∈ 𝒮 s bs m
     fin ⟨ A , ⟨ al , ⟨ E , L⊆ ⟩ ⟩ ⟩ = ⟨ A , ⟨ al ,
-      inj₁ ⟨ proj₁ (𝒱-ne u) , ⟨ A' 3 , ⟨ (λ d d∈ → L⊆ (left d) (∈-map⁺ left d∈))
+      inj₁ ⟨ proj₁ (𝒱-ne u) , ⟨ A' (lx y)
+      , ⟨ (λ d d∈ → L⊆ (left d) (∈-map⁺ left d∈))
       ,
-          ⟨ blocks-mono bs l₁ fr z (jump-⊆ bs l₁ al' z z∈)
+          ⟨ blocks-mono bs l₁ (fr-clear y E (λ d d∈ → there d∈)) w
+              (jump-⊆ bs l₁ al' w w∈)
             , Con⇒≈ (X A') (𝒱-con u) X⊆ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-      where
-      fr : σ̂ A' ⊆ₑ (mem (X A') • drop p (σ̂ A))
-      fr zero d d∈ = there d∈
-      fr (suc j) d d∈ = drop-mono p (σ̂E E) j d (drop-undrop p _ j d d∈)
-... | inr u = widen ⊆′ (sound-jump ck bs η l₂ (u ∷ pop p (frame m)))
+... | inr u = widen ⊆′ (sound-jump ck bs η l₂ (write (frame m) z u))
   where
   X : Apx → List Value
-  X A' = proj₁ (𝒱-ne u) ∷ A' 3
+  X A' = proj₁ (𝒱-ne u) ∷ A' (lx z)
   ⊆′ : 𝒮 (Blk.start (block bs l₂)) (Blk.blocks (block bs l₂))
-    (entryₘ {η} (u ∷ pop p (frame m))) ⊆ 𝒮 s bs m
-  ⊆′ z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ =
+    (entryₘ {η} (write (frame m) z u)) ⊆ 𝒮 s bs m
+  ⊆′ w ⟨ A' , ⟨ al' , w∈ ⟩ ⟩ =
     fin
-    (grown (grow-arg {m = m} (atom (var x)) (map right (X A')) Xin) (und p A')
-      (und-AL p (unset-AL al')))
+    (grown (grow-arg {m = m} (atom (var x j)) (map right (X A')) Xin)
+      (clear A' (lx z)) al₀)
     where
     X⊆ : mem (X A') ⊆ 𝒱 u
     X⊆ _ (here refl) = proj₂ (𝒱-ne u)
-    X⊆ d (there d∈) = al' 3 d d∈
-    Xin : mem (map right (X A')) ⊆ 𝒱 (lookup (frame m) x)
+    X⊆ d (there d∈) = XS.𝓢-write-same 𝒱 (frame m) z u d (al' (lx z) d d∈)
+    Xin : mem (map right (X A')) ⊆ 𝒱 (read (frame m) x j)
     Xin d d∈ with ∈-map⁻ right d∈
     ... | ⟨ d' , ⟨ d'∈ , refl ⟩ ⟩ =
       subst (λ v → right d' ∈ 𝒱 v) (sym eq) (X⊆ d' d'∈)
-    fin : Σ[ A ∈ Apx ] AL A m × Ext (und p A') A × mem (map right (X A'))
-      ⊆ σ̂ A (idx x) → z ∈ 𝒮 s bs m
+    al₀ : AL (clear A' (lx z)) m
+    al₀ 0 = λ d d∈ → ⊥-elim (al' 0 d (clear-⊆ {A'} {lx z} d d∈))
+    al₀ 1 = λ d d∈ → ⊥-elim (al' 1 d (clear-⊆ {A'} {lx z} d d∈))
+    al₀ 2 = λ d d∈ → ⊥-elim (al' 2 d (clear-⊆ {A'} {lx z} d d∈))
+    al₀ (suc (suc (suc j'))) =
+      clear-slots {φ = frame m} z {u} {A'} (λ j' → al' (suc (suc (suc j')))) j'
+    fin : Σ[ A ∈ Apx ] AL A m × Ext (clear A' (lx z)) A
+      × mem (map right (X A')) ⊆ σ̂ A (idx x)
+      → w ∈ 𝒮 s bs m
     fin ⟨ A , ⟨ al , ⟨ E , L⊆ ⟩ ⟩ ⟩ = ⟨ A , ⟨ al ,
-      inj₂
-        ⟨ proj₁ (𝒱-ne u) , ⟨ A' 3 , ⟨ (λ d d∈ → L⊆ (right d) (∈-map⁺ right d∈))
+      inj₂ ⟨ proj₁ (𝒱-ne u) , ⟨ A' (lx z)
+      , ⟨ (λ d d∈ → L⊆ (right d) (∈-map⁺ right d∈))
       ,
-          ⟨ blocks-mono bs l₂ fr z (jump-⊆ bs l₂ al' z z∈)
+          ⟨ blocks-mono bs l₂ (fr-clear z E (λ d d∈ → there d∈)) w
+              (jump-⊆ bs l₂ al' w w∈)
             , Con⇒≈ (X A') (𝒱-con u) X⊆ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-      where
-      fr : σ̂ A' ⊆ₑ (mem (X A') • drop p (σ̂ A))
-      fr zero d d∈ = there d∈
-      fr (suc j) d d∈ = drop-mono p (σ̂E E) j d (drop-undrop p _ j d d∈)
 
 sound-jump ck (bs ▷ k) η Z φ = sound ck bs η (entryₘ φ) k none
 sound-jump ck (bs ▷ k) η (S l) φ = sound-jump ck bs η l φ
 
 sound-call zero c e w = timeout
 sound-call {η} (suc ck) (code f) e w =
-  sound ck (Body.blocks (lookup ds f)) η ⟨ rv tt e w , [] , tt , tt ⟩
-  (Body.start (lookup ds f)) none
+  sound ck (Body.blocks (lookup ds f)) η
+    ⟨ rv tt e w , empty (Body.frame (lookup ds f)) , tt , tt ⟩
+    (Body.start (lookup ds f)) none
 
 {- Soundness ------------------------------------------------------------------}
 
 {- what the interpreter returns from main, at any clock, is in the denotation
    of the program; and it does not err -}
-soundness : ∀ {A} (b : Body Σ A (entry [])) ck
+soundness : ∀ {A} (b : Body Σ A begin) ck
   → Holds (λ v → 𝒱 v ⊆ ⟦ program ds b ⟧ₜ)
-    (run ds ck (Body.blocks b) [] ⟨ rv tt tt tt , [] , tt , tt ⟩ (Body.start b))
-soundness (body n bs k) ck = widen start⊆ (sound ck bs [] (entryₘ []) k none)
+    (run ds ck (Body.blocks b) []
+      ⟨ rv tt tt tt , empty (Body.frame b) , tt , tt ⟩ (Body.start b))
+soundness (body Δ bs k) ck =
+  widen start⊆ (sound ck bs [] (entryₘ (empty Δ)) k none)
   where
-  start⊆ : 𝒮 k bs (entryₘ {[]} []) ⊆ ⟦ program ds (body n bs k) ⟧ₜ
+  start⊆ : 𝒮 k bs (entryₘ {[]} (empty Δ)) ⊆ ⟦ program ds (body Δ bs k) ⟧ₜ
   start⊆ z ⟨ A , ⟨ al , z∈ ⟩ ⟩ =
-    K-mono k bs (λ i → al (suc (suc (suc i))))
+    K-mono k bs
+      (λ i d d∈ → ⊥-elim (XS.𝓢-empty 𝒱 Δ i d (al (suc (suc (suc i))) d d∈)))
       (λ { rax → ∅⊆ (al 0) ; rdi → ∅⊆ (al 1) ; rsi → ∅⊆ (al 2) }) (λ _ ()) z z∈

@@ -60,6 +60,7 @@ import FPC.proof.Correctness.ScottDomains.CompilerCorrect
 import FPC.proof.Adequacy.ScottDomains.Soundness
 import FPC.proof.Adequacy.ScottDomains.LogRel
 import FPC.proof.Adequacy.ScottDomains.FPC
+import FPC.proof.Adequacy.ScottDomains.X86Frame
 import FPC.proof.Adequacy.ScottDomains.X86Soundness
 import FPC.proof.Adequacy.ScottDomains.X86LogRel
 import FPC.proof.Adequacy.ScottDomains.X86Compiled

@@ -182,18 +182,25 @@ These proofs adapt prior proofs of adequacy
 No one semantic style gives the smallest proof for every pass (RQ2),
 but for every pass, the smallest proof is either the graph-model proof
 or the interpreter proof. Not counting language-independent
-infrastructure, the interpreters give the smallest proof, at 31,151
+infrastructure, the interpreters give the smallest proof, at 35,860
 lexical tokens of Agda, and the graph model gives the second smallest,
-at 37,796. The sizes split by the kind of pass (RQ3). The denotational
+at 40,905. The sizes split by the kind of pass (RQ3). The denotational
 proofs tend to be the smallest for passes that preserve the meaning of
 a program exactly but change how it runs, such as the source
 optimizer \pass{simplify}. The operational proofs are several times
 smaller for \pass{split closure}, which changes the representation of
 closures (Section~\ref{sec:evaluation}).
 
-Appendix~\ref{app:scott} defines the Scott domains that we use, and
-for background on domain theory we refer the reader to
-\citet{Scott:1982aa}, \citet{Winskel:1993aa}, and
-\citet{Abramsky:1994cr}. The other appendices define the semantics of
-every language and every pass of the compiler, and the supplementary
-material contains our Agda development.
+Section~\ref{sec:compiler} presents the compiler, and
+Section~\ref{sec:graph-models} gives background on the graph model.
+Section~\ref{sec:compiler-proof} proves each pass correct for the graph
+model and \pass{split closure} correct for Scott domains.
+Section~\ref{sec:adequacy} proves the denotational semantics adequate,
+Section~\ref{sec:evaluation} compares the five proofs,
+Section~\ref{sec:related} discusses related work, and
+Section~\ref{sec:conclusion} concludes. Appendix~\ref{app:scott}
+defines the Scott domains that we use, and for background on domain
+theory we refer the reader to \citet{Scott:1982aa},
+\citet{Winskel:1993aa}, and \citet{Abramsky:1994cr}. The other
+appendices define the semantics of every language and every pass, and
+the supplementary material contains our Agda development.
