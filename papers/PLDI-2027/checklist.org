@@ -68,17 +68,17 @@ Graph
 
 * Definitions for languages and their semantics
 
-| Languages \ Semantics | Graph  | Scott  | Red | CEK | Interp |
-|-----------------------+--------+--------+-----+-----+--------|
-| ＊ FPC                | D✓    |        | T✓ | T✓ | ＊ D✓ |
-| EnvClos               | ＊ J✓ | ＊ J/M |     |     |        |
-| PairClos              | ＊ J✓ | ＊ J/M |     |     |        |
-| GlobalFun             |        |        |     |     |        |
-| MNF                   |        |        |     |     |        |
-| Imp                   |        |        |     |     |        |
-| CFG                   |        |        |     |     |        |
-| ＊ Instrμ             | D      |        |     |     | ＊ D✓ |
-|                       |        |        |     |     |        |
+| Languages \ Semantics | Graph | Scott | Red | CEK | Interp |
+|-----------------------+-------+-------+-----+-----+--------|
+| ＊ FPC                | D✓    | J✓    | T✓  | T✓  | ＊ D✓  |
+| EnvClos               | J✓    | J✓    |     |     |        |
+| PairClos              | J✓    | J✓    |     |     |        |
+| GlobalFun             |       |       |     |     |        |
+| MNF                   |       |       |     |     |        |
+| Imp                   |       |       |     |     |        |
+| CFG                   |       |       |     |     |        |
+| ＊ Instrμ             | D     |       |     |     | ＊ D✓  |
+|                       |       |       |     |     |        |
 
 
 - Checking correctness of one definition of semantics for FPC and Instrμ is
