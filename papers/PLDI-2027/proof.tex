@@ -69,18 +69,18 @@ otherwise both sides are empty.
 
 \paragraph{Simplify}
 
-For each variable, \pass{simplify} records the term that replaces it
-and, when it is bound to a statically known function, that function as
-a $\lambda$-abstraction $\langle \lambda x.\, N, E_f \rangle$ paired
-with the environment $E_f$ where it was defined
-(Appendix~\ref{app:pass-simplify}). The main lemma for
-\pass{simplify} carries the invariant that these records are true of
-the source environment $\rho$ and the target environment $\rho'$. If
-\pass{simplify} replaces a variable by the term $M'$, the variable
-means $\den{M'}\rho'$, and if \pass{simplify} records it as the
-function $\langle \lambda x.\, N, E_f \rangle$, it means
-$\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ of which
-$E_f$ is true. The key case is inlining. Suppose $L$ is statically known to be the function
+The pass \pass{simplify} keeps a static environment $E$
+(Appendix~\ref{app:pass-simplify}). It maps each variable to the term
+that replaces it and, when the variable is bound to a statically known
+function, to that function as a $\lambda$-abstraction
+$\langle \lambda x.\, N, E_f \rangle$ paired with the static
+environment $E_f$ where it was defined. The main lemma for
+\pass{simplify} carries the invariant that $E$ agrees with the source
+environment $\rho$ and the target environment $\rho'$. If $E$ replaces
+a variable by the term $M'$, the variable means $\den{M'}\rho'$, and if
+$E$ maps it to the function $\langle \lambda x.\, N, E_f \rangle$, it
+means $\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ such
+that $E_f$ agrees with $\rho_f$ and $\rho'$. The key case is inlining. Suppose $L$ is statically known to be the function
 $\langle \lambda x.\, N, E_f \rangle$, the operand $M$ simplifies to a
 small value $M'$, and the inlined body simplifies to $N'$. Then
 {\small
@@ -93,8 +93,11 @@ small value $M'$, and the inlined body simplifies to $N'$. Then
     & = & \den{N'}\rho' & \text{(induction hypothesis for $N$)}
 \end{array}
 \]}
-The last step applies because the record that replaces $x$ by $M'$ is
-true of $\rho_f[x{:=}\den{M'}\rho']$ and $\rho'$. The use of Lemma~\ref{lem:beta} needs $\den{M}\rho$ to be nonempty,
+The last step applies because the inlined body is simplified in $E_f$
+extended to replace $x$ by $M'$, and this static environment agrees
+with $\rho_f[x{:=}\den{M'}\rho']$ and $\rho'$. The invariant for $L$
+gives the agreement of $E_f$, and both $x$ and its replacement $M'$
+mean $\den{M'}\rho'$. The use of Lemma~\ref{lem:beta} needs $\den{M}\rho$ to be nonempty,
 which holds because a syntactic value denotes a nonempty set, and
 consistent, which holds because $\rho$ is. A $\beta$-redex
 $(\lambda x.\, N)\;M$ is the same calculation without the second step.
