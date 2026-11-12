@@ -5,10 +5,10 @@
 %% Numbers come from loc.md (loc.py --mu) and will change; update them
 %% before submission.
 
-\section{Proving the Compiler Correct}
+\section{Denotational Compiler Correctness}
 \label{sec:compiler-proof}
 
-This section proves the following two theorems about the whole
+This section proves the following two theorems about the \fpc{}
 compiler.
 
 \begin{theorem}[Compiler correctness, graph model]\label{thm:compiler}
@@ -27,9 +27,16 @@ $\den{\pass{compile}(M)} = \up{(c, ())}$. Moreover, $\den{M}\rho_0$ is
 defined if and only if $\den{\pass{compile}(M)}$ is defined.
 \end{theorem}
 
-Theorems~\ref{thm:compiler} and~\ref{thm:scott}, which we mechanize in Agda, answer RQ1 affirmatively. The same statements hold for closed terms of every type; we state them for $\kw{Int}$, the type of a whole program's result, to align them with the operational correctness results (Section~\ref{sec:evaluation}). Each proof composes one result per pass: an equation for every pass but
-\pass{split closure} (Lemma~\ref{lem:equational} for the graph model), and for \pass{split closure} the weaker statement of
-Lemma~\ref{lem:delay} (Lemma~\ref{lem:scott-delay} for Scott domains).
+Theorems~\ref{thm:compiler} and~\ref{thm:scott}, whose proofs we
+mechanize in Agda, answer RQ1 affirmatively. The same statements hold
+for closed terms of every type; we state them for $\kw{Int}$, the type
+of a whole program's result, to align them with the operational
+correctness results (Section~\ref{sec:evaluation}). Each
+whole-compiler proof is a composition of one lemma per pass: an
+equation for every pass but \pass{split closure}
+(Lemma~\ref{lem:equational} for the graph model), and for \pass{split
+  closure} the weaker statement of Lemma~\ref{lem:delay}
+(Lemma~\ref{lem:scott-delay} for Scott domains).
 
 This section first shows how we prove the passes other than \pass{split closure} (Section~\ref{sec:equational}). These proofs give the denotational half of the answer to RQ3. The section then shows why \pass{split closure} needs more (Section~\ref{sec:approx-lr}) and summarizes the Scott-domain proof of \pass{split closure} (Section~\ref{sec:scott-delay}).
 
