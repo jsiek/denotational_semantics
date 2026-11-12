@@ -14,18 +14,19 @@
 \subsection{Correctness of \pass{split closure} and the Approximant Logical Relation}
 \label{sec:approx-lr}
 
-The \pass{split closure} pass separates the code of each closure from its
-environment, making the closure a pair. Its proof is the hardest part of the compiler proof. This section
-shows why semantic reflection for \pass{split closure} resisted our earlier
-attempts and how the approximant logical relation proves it.
+The \pass{split closure} pass separates the code of each closure from
+its environment, making the closure a pair. Its proof is the hardest
+part of the compiler proof. This section shows why semantic reflection
+for \pass{split closure} resisted our earlier attempts and how the
+approximant logical relation proves it.
 
-In EnvClos, the source language of \pass{split closure}, a closure
-$\kw{clos}\;(z, y.\,N)\;\vec{M}$ still means a function. Its code $N$ is closed,
-with free variables $z$ for the environment and $y$ for the argument,
-and its meaning is a curried function of the environment $X$ and then
-the argument $Y$. The meaning of the closure is this function applied
-to the tuple of the captured values $\vec{M}$. An application $L\;M$
-applies a function:
+In EnvClos, the source of \pass{split closure}, a closure
+$\kw{clos}\;(z, y.\,N)\;\vec{M}$ still means a function.  Parameter
+$z$ is for the environment and $y$ is for the argument. The meaning of
+$N$ is a curried function of the environment $X$ and then the argument
+$Y$. The meaning of the closure is this function applied to 
+the captured values $\vec{M}$. An application $L\;M$ simply applies
+the function:
 \[
 \begin{array}{rcl}
     \den{\kw{clos}\;(z, y.\,N)\;\vec{M}}\rho & = &
@@ -36,7 +37,7 @@ applies a function:
 
 In PairClos, the target language, a closure is
 a pair of code and environment, and a call takes the pair apart. The
-meaning of $\kw{code}\;(z, y.\,N)$ is the same curried function as before. The
+meaning of $\kw{code}\;(z, y.\,N)$ is the curried function. The
 meaning of $\kw{pair}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
 $u$ from the code $L$ and $v$ from the environment $M$. A call applies
 the first components of the pairs to their second components and then
