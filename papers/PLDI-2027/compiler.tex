@@ -96,14 +96,13 @@ with sums, products, and iso-recursive types of
 \citet{Plotkin:1985aa}, extended with integers, to \instr, a typed
 low-level intermediate language, in eight passes through six
 intermediate languages. Figure~\ref{fig:pipeline} shows the sequence
-of passes and languages, which this section introduces and
-Section~\ref{sec:compiler-proof} proves correct.
-Figure~\ref{fig:grammars} presents the grammars of all the languages,
-and Appendix~\ref{app:types} gives their typing rules.\footnote{Every
-language is intrinsically typed in our Agda development, so every term
-is well typed by construction and no pass needs a precondition about
-scoping or typing.}
-Definitions of the passes are in the Appendix~\ref{app:passes}.
+of passes and languages.  Figure~\ref{fig:grammars} presents the
+grammars of all the languages and Appendix~\ref{app:types} gives their
+typing rules.\footnote{Every language is intrinsically typed in our
+Agda development, so every term is well typed by construction and no
+pass needs a precondition about scoping or typing.}
+Appendix~\ref{app:passes} lists the full definition of each compiler
+pass.
 
 Throughout Figure~\ref{fig:grammars}, $c$ ranges over constants, $p$
 over the primitives $\kw{sub}$ and $\kw{eq}$, and $f_k$ over the names
@@ -166,8 +165,8 @@ code $L$ and an environment $M$ of the same $\Delta$. Its type, $A
 \rightarrow C$, hides $\Delta$, as in the existential type $\exists
 \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times \kw{tup}(\Delta)$
 of typed closure conversion \citep{Minamide:1996ys}, so closures with
-different environments have the same type. Thus $\kw{pair}$ also packs
-an existential, but its dynamic semantics is the usual for a pair. The
+different environments have the same type. Thus $\kw{pair}$ packs
+the existential, but its dynamic semantics is the usual for a pair. The
 form $\kw{callc}\;L\;M$ calls the code of the closure $L$ with its
 environment and the argument $M$.
 \vspace{-5pt}
@@ -209,26 +208,28 @@ the types of its slots. The type system tracks which slots are
 initialized. The \pass{explicate control} pass
 (\S\ref{app:pass-explicate}) translates from Imp to CFG. It turns the
 nested $\kw{case}$s into a control-flow graph. A CFG program has a
-function body for each global definition and for the main program. A
-body consists of numbered blocks and a starting tail, and a block may
-jump only to blocks numbered before it, so control flow is acyclic.
+function body for each global definition and for the main program.
+The name of the tail non-terminal is short for tail position.  A
+function body consists of numbered blocks and a starting block, each
+of which is a tail.
 
 Finally, \pass{select instructions} (\S\ref{app:pass-select})
-translates from CFG to \instr, a typed low-level language in the style of TAL
-\citep{Morrisett:1999fk}, with an x86 flavor.  \instr\ has three
-registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$), a stack frame of
-slots, and an abstract heap. Programs have the same structure as in
-CFG. Instruction operands $a$ are slot numbers, constants, names of
-definitions, or registers. Instructions write to a destination $\mathit{dst}$, a
-register or a slot.
+translates from CFG to \instr, a typed low-level language in the style
+of TAL \citep{Morrisett:1999fk}, with an x86 flavor.  \instr\ has
+three registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$), a stack
+frame of slots, and an abstract heap. Programs have the same structure
+as in CFG. Instruction operands $a$ are slot numbers, constants, names
+of function definitions, or registers. Instructions write to a
+destination $\mathit{dst}$, a register or a slot.
 
 The pass translates each simple expression of CFG into instructions
 that write its value to a destination, using the registers to stage
 arithmetic and calls. A closure ($\kw{pair}$), a tuple, or an
-injection becomes the instruction $\kw{alloc}\;\mathit{con}, \mathit{dst}$, which
-allocates on the heap the result of the constructor $\mathit{con}$. A call $\kw{callc}\;x\;a$ of the
-closure in slot $x$ on the argument $a$ becomes the instruction
-sequence $\kw{fst}\;x, \%\kw{rax};\;\; \kw{snd}\;x, \%\kw{rdi};\;\;
+injection becomes the instruction $\kw{alloc}\;\mathit{con},
+\mathit{dst}$, which allocates on the heap the result of the
+constructor $\mathit{con}$. A call $\kw{callc}\;x\;a$ of the closure
+in slot $x$ on the argument $a$ becomes the instruction sequence
+$\kw{fst}\;x, \%\kw{rax};\;\; \kw{snd}\;x, \%\kw{rdi};\;\;
 \kw{movq}\;a, \%\kw{rsi};\;\; \kw{callq}\;\%\kw{rax}$.  The first two
 instructions load the code and the environment of the closure, the
 third puts the argument in place, and the call leaves its result in
