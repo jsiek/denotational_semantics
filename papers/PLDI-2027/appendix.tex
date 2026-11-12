@@ -341,7 +341,7 @@ it assigns, like a $\kw{let}$.
       \mlam{X} \den{e_2}_T\sigma[y{:=}X]\kappa)\\
   T(k) & = & \Lambda(\mlam{X} \Lambda(\mlam{Y}
     \den{e_k}_{T_k}\rho_0[0{:=}X, 1{:=}Y]\,(\mlam{D} D)))\\
-  \den{(\vec{b};\; (\Phi; e))} & = & \den{e}_T\rho_0\,(\mlam{D} D)
+  \den{(\vec{d};\; (\Phi; e))} & = & \den{e}_T\rho_0\,(\mlam{D} D)
 \end{array}
 \]
 
@@ -440,10 +440,10 @@ the initialized slots of the state.
   \dfrac{\Sigma; \Phi; \psi \vdash a : \mu X.\, A}{\Sigma; \Phi; \psi \vdash \kw{unfold}\;a : A[\mu X.\, A / X]}
 \]
 A destination is written at a type $\tau$ and leaves a new state,
-$\Phi \vdash d : \psi \Rightarrow_\tau \psi'$. A write to a slot
+$\Phi \vdash \mathit{dst} : \psi \Rightarrow_\tau \psi'$. A write to a slot
 initializes it, lets the rest start with fewer initialized slots, as in
 CFG, and closes the open closure.
-\defhead{Typing of destinations}{\Phi \vdash d : \psi \Rightarrow_\tau \psi'}
+\defhead{Typing of destinations}{\Phi \vdash \mathit{dst} : \psi \Rightarrow_\tau \psi'}
 \[
   \Phi \vdash \%r : \langle \Theta; I; O; F \rangle \Rightarrow_\tau \langle \Theta[r{:}\tau]; I; O; F \rangle
   \qquad
@@ -458,8 +458,8 @@ $\psi$, the instructions are typed as follows.
 \defhead{Typing of instructions}{\Sigma; \Phi \vdash i : \psi \Rightarrow \psi'}
 \[
 \begin{array}{@{}c@{}}
-  \dfrac{a : \tau \quad \Phi \vdash d : \psi \Rightarrow_\tau \psi'}
-        {\Sigma; \Phi \vdash \kw{movq}\; a, d : \psi \Rightarrow \psi'}
+  \dfrac{a : \tau \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_\tau \psi'}
+        {\Sigma; \Phi \vdash \kw{movq}\; a, \mathit{dst} : \psi \Rightarrow \psi'}
   \qquad
   \dfrac{a : \kw{Int} \quad \Theta(r) = \kw{Int}}
         {\Sigma; \Phi \vdash \kw{subq}\; a, \%r : \psi \Rightarrow \psi}
@@ -467,14 +467,14 @@ $\psi$, the instructions are typed as follows.
   \dfrac{a_1 : \kw{Int} \quad a_2 : \kw{Int}}
         {\Sigma; \Phi \vdash \kw{cmpq}\; a_2, a_1 : \psi \Rightarrow \langle \Theta; I; O; \kw{set} \rangle}
   \\[14pt]
-  \dfrac{\Phi \vdash d : \langle \Theta; I; O; \kw{set} \rangle \Rightarrow_{\kw{Bool}} \psi'}
-        {\Sigma; \Phi \vdash \kw{sete}\; d : \langle \Theta; I; O; \kw{set} \rangle \Rightarrow \psi'}
+  \dfrac{\Phi \vdash \mathit{dst} : \langle \Theta; I; O; \kw{set} \rangle \Rightarrow_{\kw{Bool}} \psi'}
+        {\Sigma; \Phi \vdash \kw{sete}\; \mathit{dst} : \langle \Theta; I; O; \kw{set} \rangle \Rightarrow \psi'}
   \qquad
-  \dfrac{o : A \quad \Phi \vdash d : \psi \Rightarrow_A \psi'}
-        {\Sigma; \Phi \vdash \kw{alloc}\; o, d : \psi \Rightarrow \psi'}
+  \dfrac{o : A \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_A \psi'}
+        {\Sigma; \Phi \vdash \kw{alloc}\; o, \mathit{dst} : \psi \Rightarrow \psi'}
   \\[14pt]
-  \dfrac{a : \kw{tup}(A_1, \ldots, A_m) \quad \Phi \vdash d : \psi \Rightarrow_{A_i} \psi'}
-        {\Sigma; \Phi \vdash \kw{load}\; \kw{get}_i\; a, d : \psi \Rightarrow \psi'}
+  \dfrac{a : \kw{tup}(A_1, \ldots, A_m) \quad \Phi \vdash \mathit{dst} : \psi \Rightarrow_{A_i} \psi'}
+        {\Sigma; \Phi \vdash \kw{load}\; \kw{get}_i\; a, \mathit{dst} : \psi \Rightarrow \psi'}
   \\[14pt]
   \dfrac{x \in I \quad A_x = A \rightarrow C}
         {\Sigma; \Phi \vdash \kw{fst}\; x, \%r : \psi \Rightarrow
@@ -531,7 +531,7 @@ $l_1$, or to slot $z$ and jumps to block $l_2$.
 \]
 A block starts in the state $\langle \emptyset; I_l; \cdot;
 \kw{unset} \rangle$, and blocks are acyclic as in CFG. A definition
-$b_k$ of signature $(\Delta_k; A_k \rightarrow C_k)$ starts with its
+$d_k$ of signature $(\Delta_k; A_k \rightarrow C_k)$ starts with its
 environment in $\kw{rdi}$ and its argument in $\kw{rsi}$, in the state
 $\langle \kw{rdi}{:}\kw{tup}(\Delta_k), \kw{rsi}{:}A_k; \emptyset; \cdot;
 \kw{unset} \rangle$, and has result type $C_k$.
@@ -547,7 +547,7 @@ kind on the meanings of its operands ($\mathsf{pair}$, $\mathcal{T}$,
 $\mathsf{inl}$, $\mathsf{inr}$). A write to a destination, written
 $\mathit{put}$, updates a register, or binds a slot as an assignment in
 CFG does.
-\defhead{Writing a destination}{\mathit{put}(d, D)\,\kappa\,\sigma R F = E}
+\defhead{Writing a destination}{\mathit{put}(\mathit{dst}, D)\,\kappa\,\sigma R F = E}
 \[
   \mathit{put}(\%r, D)\,\kappa\,\sigma R F = \kappa\,\sigma\,R[r{:=}D]\,F
   \qquad
@@ -557,15 +557,15 @@ CFG does.
 \defhead{Semantics of instructions}{\den{i}\kappa\,\sigma R F = D}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \den{\kw{movq}\; a, d}\kappa\,\sigma R F & = & \mathit{put}(d, \mathcal{O}\den{a}\sigma R)\,\kappa\,\sigma R F\\
+  \den{\kw{movq}\; a, \mathit{dst}}\kappa\,\sigma R F & = & \mathit{put}(\mathit{dst}, \mathcal{O}\den{a}\sigma R)\,\kappa\,\sigma R F\\
   \den{\kw{subq}\; a, \%r}\kappa\,\sigma R F & = &
     \kappa\,\sigma\,R[r{:=}\mathsf{prim}_{\kw{sub}}(R(r), \mathcal{O}\den{a}\sigma R)]\,F\\
   \den{\kw{cmpq}\; a_2, a_1}\kappa\,\sigma R F & = &
     \kappa\,\sigma\,R\,(\mathsf{prim}_{\kw{eq}}(\mathcal{O}\den{a_1}\sigma R, \mathcal{O}\den{a_2}\sigma R))\\
-  \den{\kw{sete}\; d}\kappa\,\sigma R F & = & \mathit{put}(d, F)\,\kappa\,\sigma R F\\
-  \den{\kw{alloc}\; o, d}\kappa\,\sigma R F & = & \mathit{put}(d, \mathcal{O}\den{o}\sigma R)\,\kappa\,\sigma R F\\
-  \den{\kw{load}\; \kw{get}_i\; a, d}\kappa\,\sigma R F & = &
-    \mathit{put}(d, \pi_{\mathsf{tup}_i}(\mathcal{O}\den{a}\sigma R))\,\kappa\,\sigma R F\\
+  \den{\kw{sete}\; \mathit{dst}}\kappa\,\sigma R F & = & \mathit{put}(\mathit{dst}, F)\,\kappa\,\sigma R F\\
+  \den{\kw{alloc}\; o, \mathit{dst}}\kappa\,\sigma R F & = & \mathit{put}(\mathit{dst}, \mathcal{O}\den{o}\sigma R)\,\kappa\,\sigma R F\\
+  \den{\kw{load}\; \kw{get}_i\; a, \mathit{dst}}\kappa\,\sigma R F & = &
+    \mathit{put}(\mathit{dst}, \pi_{\mathsf{tup}_i}(\mathcal{O}\den{a}\sigma R))\,\kappa\,\sigma R F\\
   \den{\kw{fst}\; x, \%r}\kappa\,\sigma R F & = & \kappa\,\sigma\,R[r{:=}\car(\sigma(x))]\,F\\
   \den{\kw{snd}\; x, \%r}\kappa\,\sigma R F & = & \kappa\,\sigma\,R[r{:=}\cdr(\sigma(x))]\,F\\
   \den{\kw{callq}\; a}\kappa\,\sigma R F & = &
@@ -1002,9 +1002,9 @@ Each function body keeps its frame $\Phi$, and an assignment to a slot
 becomes a write to that slot in place. The main function body uses $\pass{select}$, and
 each definition uses $\pass{select}^{+}$, whose prologue moves the
 environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
-1: $\pass{select}((b_0, \ldots, b_{m-1};\; b)) =
-(\pass{select}^{+}(b_0), \ldots, \pass{select}^{+}(b_{m-1});\;
-\pass{select}(b))$.
+1: $\pass{select}((d_0, \ldots, d_{m-1};\; d)) =
+(\pass{select}^{+}(d_0), \ldots, \pass{select}^{+}(d_{m-1});\;
+\pass{select}(d))$.
 
 \section{Calculations for the Other Equational Passes}
 \label{app:calculations}

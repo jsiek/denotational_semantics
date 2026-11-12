@@ -42,49 +42,50 @@
 \begin{figure}[t]
 \small
 \[
-\begin{array}{@{}l@{\;\;}r@{\;}c@{\;}l@{}}
-\text{Variables} & x, y, z & & \text{(from Imp on, slots of a stack frame)}\\
-\text{Base types} & B & ::= & \kw{Nat} \mid \kw{Int} \mid \kw{Bool} \mid \kw{Unit} \mid \kw{Void}\\
-\text{Types} & A, C & ::= & B \mid A \rightarrow C \mid \kw{tup}(A_1, \ldots, A_n)
+\begin{array}{@{}l@{\;\;}l@{\;\;}r@{\;}c@{\;}l@{}}
+ & \text{Variables} & x, y, z & & \text{(from Imp on, slots of a stack frame)}\\
+ & \text{Labels} & l & & \text{(from CFG on, the number of a block $t_l$ or $s_l$)}\\
+ & \text{Base types} & B & ::= & \kw{Nat} \mid \kw{Int} \mid \kw{Bool} \mid \kw{Unit} \mid \kw{Void}\\
+ & \text{Types} & A, C & ::= & B \mid A \rightarrow C \mid \kw{tup}(A_1, \ldots, A_n)
   \mid A + C \mid \mu X.\, A \mid X \mid \kw{code}(\Delta; A \rightarrow C)\\
- & \Delta, \Phi & ::= & A_1, \ldots, A_n\\[3pt]
-\fpc & K, L, M, N & ::= & x \mid \lambda x.\, N \mid L\;M \mid c
+ & & \Delta, \Phi & ::= & A_1, \ldots, A_n\\[3pt]
+\fpc & \text{Terms} & K, L, M, N & ::= & x \mid \lambda x.\, N \mid L\;M \mid c
   \mid \kw{tuple}\;\vec{M} \mid \kw{get}_i\,M \mid \kw{inl}\;M \mid \kw{inr}\;M
   \mid \kw{case}\;L\;(x.\,M)\;(y.\,N)\\
- & & \mid & \kw{prim}_p\;L\;M \mid \kw{let}\;x = M\;\kw{in}\;N
+ & & & \mid & \kw{prim}_p\;L\;M \mid \kw{let}\;x = M\;\kw{in}\;N
   \mid \kw{fold}\;M \mid \kw{unfold}\;M\\[3pt]
-\text{EnvClos} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(z, y.\,N)\;\vec{M}
+\text{EnvClos} & \text{Terms} & K, L, M, N & ::= & \ldots \mid \kw{clos}\;(z, y.\,N)\;\vec{M}
   \qquad (\text{in place of } \lambda x.\, N)\\
-\text{PairClos} & K, L, M, N & ::= & \ldots \mid \kw{code}\;(z, y.\,N) \mid \kw{pair}\;L\;M \mid \kw{callc}\;L\;M
+\text{PairClos} & \text{Terms} & K, L, M, N & ::= & \ldots \mid \kw{code}\;(z, y.\,N) \mid \kw{pair}\;L\;M \mid \kw{callc}\;L\;M
   \qquad (\text{in place of } \kw{clos} \text{ and } L\;M)\\
-\text{GlobalFun} & K, L, M, N & ::= & \ldots \mid f_k
+\text{GlobalFun} & \text{Terms} & K, L, M, N & ::= & \ldots \mid f_k
   \qquad (\text{in place of } \kw{code})\\
- & d & ::= & \kw{code}\;(z, y.\,N) \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
-\text{Mon} & a & ::= & x \mid c \mid f_k\\
- & o & ::= & \kw{pair} \mid \kw{callc} \mid \kw{tuple} \mid \kw{get}_i \mid \kw{inl}
+ & \text{Function Def.} & d & ::= & \kw{code}\;(z, y.\,N) \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
+\text{Mon} & \text{Atoms} & a & ::= & x \mid c \mid f_k\\
+ & \text{Operations} & o & ::= & \kw{pair} \mid \kw{callc} \mid \kw{tuple} \mid \kw{get}_i \mid \kw{inl}
   \mid \kw{inr} \mid \kw{prim}_p \mid \kw{fold} \mid \kw{unfold}\\
- & M, N & ::= & a \mid o\;\vec{a} \mid \kw{case}\;a\;(x.\,M)\;(y.\,N)
+ & \text{Terms} & M, N & ::= & a \mid o\;\vec{a} \mid \kw{case}\;a\;(x.\,M)\;(y.\,N)
   \mid \kw{let}\;x = M\;\kw{in}\;N
   \qquad P ::= (\vec{d};\, M)\\[3pt]
-\text{Imp} & a & ::= & x \mid c \mid f_k
+\text{Imp} & \text{Atoms} & a & ::= & x \mid c \mid f_k
   \qquad \rhs ::= a \mid o\;\vec{a}\\
- & e & ::= & \rhs \mid x \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;x\;y\;e_1\;e_2\\
- & b & ::= & (\Phi;\, e)
-  \qquad P ::= (\vec{b};\, b)\\[3pt]
-\text{CFG} & t & ::= & \kw{return}\;\rhs \mid x \mathrel{:=} \rhs;\; t \mid \kw{goto}\;l
+ & \text{Expressions} & e & ::= & \rhs \mid x \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;x\;y\;e_1\;e_2\\
+ & \text{Function Def.} & d & ::= & (\Phi;\, e)
+  \qquad P ::= (\vec{d};\, d)\\[3pt]
+\text{CFG} & \text{Tails} & t & ::= & \kw{return}\;\rhs \mid x \mathrel{:=} \rhs;\; t \mid \kw{goto}\;l
   \mid \kw{case}\;a\;x\;y\;l_1\;l_2\\
- & b & ::= & (\Phi;\, t_0, \ldots, t_{j-1};\, t)
-  \qquad P ::= (\vec{b};\, b)\\[3pt]
-\instr & a & ::= & x \mid c \mid f_k \mid \%r \mid \kw{fold}\;a \mid \kw{unfold}\;a
-  \qquad d ::= \%r \mid x
+ & \text{Function Def.} & d & ::= & (\Phi;\, t_0, \ldots, t_{j-1};\, t)
+  \qquad P ::= (\vec{d};\, d)\\[3pt]
+\instr & \text{Operands} & a & ::= & x \mid c \mid f_k \mid \%r \mid \kw{fold}\;a \mid \kw{unfold}\;a
+  \qquad \mathit{dst} ::= \%r \mid x
   \qquad r ::= \kw{rax} \mid \kw{rdi} \mid \kw{rsi}\\
- & o & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
- & i & ::= & \kw{movq}\;a, d \mid \kw{subq}\;a, \%r \mid \kw{cmpq}\;a_2, a_1
-  \mid \kw{sete}\;d \mid \kw{alloc}\;o, d \mid \kw{load}\;\kw{get}_i\;a, d\\
- & & \mid & \kw{fst}\;x, \%r \mid \kw{snd}\;x, \%r \mid \kw{callq}\;a\\
- & s & ::= & i;\; s \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;y\;z\;l_1\;l_2\\
- & b & ::= & (\Phi;\, s_0, \ldots, s_{j-1};\, s)
-  \qquad P ::= (\vec{b};\, b)
+ & \text{Objects} & o & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
+ & \text{Instructions} & i & ::= & \kw{movq}\;a, \mathit{dst} \mid \kw{subq}\;a, \%r \mid \kw{cmpq}\;a_2, a_1
+  \mid \kw{sete}\;\mathit{dst} \mid \kw{alloc}\;o, \mathit{dst} \mid \kw{load}\;\kw{get}_i\;a, \mathit{dst}\\
+ & & & \mid & \kw{fst}\;x, \%r \mid \kw{snd}\;x, \%r \mid \kw{callq}\;a\\
+ & \text{Sequences} & s & ::= & i;\; s \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;y\;z\;l_1\;l_2\\
+ & \text{Function Def.} & d & ::= & (\Phi;\, s_0, \ldots, s_{j-1};\, s)
+  \qquad P ::= (\vec{d};\, d)
 \end{array}
 \]
 \caption{The grammars of the compiler's languages.}
@@ -101,8 +102,7 @@ construction and no pass needs a precondition about scoping or
 typing.} In Figure~\ref{fig:grammars}, each closure language lists
 only the forms it adds to the one above it, and ``$\ldots$'' stands
 for the remaining forms of \fpc. Throughout, $c$ ranges over
-constants, $p$ over the primitives $\kw{sub}$ and $\kw{eq}$, $l$ over
-block labels, and $f_k$ over the names of a program's global
+constants, $p$ over the primitives $\kw{sub}$ and $\kw{eq}$, and $f_k$ over the names of a program's global
 definitions, where $f_k$ refers to the definition $d_k$. In the
 languages prior to Imp, $x$, $y$, and $z$ range over variables. From
 Imp on, they range over fixed locations in a function's stack frame,
@@ -216,13 +216,13 @@ translates to \instr, a typed low-level language in the style of TAL
 registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$), a stack frame of
 slots, and an abstract heap. Programs have the same structure as in
 CFG. Instruction operands $a$ are slots, constants, names of
-definitions, or registers. Instructions write to a destination $d$, a
+definitions, or registers. Instructions write to a destination $\mathit{dst}$, a
 register or a slot.
 
 The pass translates each simple expression of CFG into instructions
 that leave its value in a destination, using the registers to stage
 arithmetic and calls. A closure ($\kw{pair}$), a tuple, or an
-injection becomes the instruction $\kw{alloc}\;o, d$, which allocates
+injection becomes the instruction $\kw{alloc}\;o, \mathit{dst}$, which allocates
 the object $o$ on the heap. A call $\kw{callc}\;x\;a$ of the closure
 in slot $x$ on the argument $a$ becomes the instruction sequence
 $\kw{fst}\;x, \%\kw{rax};\;\;
