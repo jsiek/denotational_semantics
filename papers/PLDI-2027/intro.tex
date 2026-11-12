@@ -191,16 +191,16 @@ optimizer \pass{simplify}. The operational proofs are several times
 smaller for \pass{split closure}, which changes the representation of
 closures (Section~\ref{sec:evaluation}).
 
-Section~\ref{sec:compiler} presents the compiler, and
+Section~\ref{sec:compiler} presents the compiler and
 Section~\ref{sec:graph-models} gives background on the graph model.
-Section~\ref{sec:compiler-proof} proves each pass correct for the graph
-model and \pass{split closure} correct for Scott domains.
-Section~\ref{sec:adequacy} proves the denotational semantics adequate,
-Section~\ref{sec:evaluation} compares the five proofs,
-Section~\ref{sec:related} discusses related work, and
+Section~\ref{sec:compiler-proof} presents the correctness of each pass
+wrt. the graph model and the proof for \pass{split closure} wrt. Scott
+domains. Section~\ref{sec:adequacy} gives the adequacy theorems for
+the denotational semantics, Section~\ref{sec:evaluation} compares the
+five proofs, Section~\ref{sec:related} discusses related work, and
 Section~\ref{sec:conclusion} concludes. Appendix~\ref{app:scott}
-defines the Scott domains that we use, and for background on domain
-theory we refer the reader to \citet{Scott:1982aa},
-\citet{Winskel:1993aa}, and \citet{Abramsky:1994cr}. The other
-appendices define the semantics of every language and every pass, and
-the supplementary material contains our Agda development.
+defines the Scott domains. For background on domain theory, we refer
+the reader to \citet{Scott:1982aa}, \citet{Winskel:1993aa}, and
+\citet{Abramsky:1994cr}. The other appendices define the semantics of
+every language and compiler pass. Our Agda development is in the
+supplementary material.
