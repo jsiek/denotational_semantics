@@ -1306,7 +1306,7 @@ its instructions $\pass{tail}(t)$, for any registers $R$ and flag $F$.
 A call $x \mathrel{:=} \kw{callc}\;y\;a;\; t$ writes the result
 $C = (\car(\sigma(y)) \app \cdr(\sigma(y))) \app \mathcal{A}\den{a}\sigma$ to slot $x$. Let $s$ be
 the sequence $\kw{movq}\;\%\kw{rax}, x;\; \pass{tail}(t)$, let $R_C$
-hold $C$ in $\kw{rax}$, and let $R_1$ be $R$ with the code of the
+hold $C$ in $\kw{rax}$, and let $R_1$ be $R$ with the curried function of the
 closure in $\kw{rax}$, its environment in $\kw{rdi}$, and the argument
 in $\kw{rsi}$:
 {\small
@@ -1321,7 +1321,7 @@ in $\kw{rsi}$:
     & = & \den{\kw{fst}\;y,\%\kw{rax};\; \kw{snd}\;y,\%\kw{rdi};\; \kw{movq}\;a,\%\kw{rsi};\; s}\,\sigma\,R\,F & \text{(meaning of the loads)}
 \end{array}
 \]}
-The step for $\kw{callq}$ holds because $\kw{callq}$ applies the code
+The step for $\kw{callq}$ holds because $\kw{callq}$ applies the curried function
 $\car(\sigma(y))$ in $\kw{rax}$ to the environment $\cdr(\sigma(y))$ in
 $\kw{rdi}$ and then to the argument $\mathcal{A}\den{a}\sigma$ in
 $\kw{rsi}$, which gives $C$.
@@ -1332,7 +1332,7 @@ $\kw{rsi}$, which gives $C$.
 
 This appendix works clause~3 of the approximant logical relation (Figure~\ref{fig:alr}) through the example of Section~\ref{sec:approx-lr}: $\lambda y.\, x + y$ with $x$ bound to $9$, whose source meaning $D$ contains $[1] \mapsto 10$. Take the one-element list
 $V = [\pairv{u}{9}]$ with $u = [9] \mapsto ([1] \mapsto 10)$. The
-environment $[9]$ of the code entry is in $\cdr(V)$, so
+environment $[9]$ of the curried entry is in $\cdr(V)$, so
 $\entryin{[1]}{10}{V}$ is a usable entry, and $V$ maps $[1]$ to $[10]$. Clause~3 then asks that $D \app E \ALR [10]$ for
 every consistent $E$ related to $[1]$, that is, every $E$ that
 contains $1$. It holds because $D$ has the entry $[1] \mapsto 10$ and
@@ -1342,7 +1342,7 @@ $u' = [2] \mapsto ([1] \mapsto 3)$. Its environment $[2]$ is not in
 $\cdr(V') = \{9\}$, so $V'$ has no usable entry, clause~3 asks
 nothing, and $D \ALR V'$ holds although $3 \notin D \app E$. Both
 $V$ and $V'$ are lists of elements of the target closure, which pairs
-every entry of the code with the environment $9$.
+every entry of its curried function with the environment $9$.
 
 \paragraph{The shapes that fail}
 
@@ -1351,14 +1351,14 @@ combinations of a source side and a target side. The details follow.
 
 \emph{A single target element.} A clause for one pair that accepted
 environments from anywhere would have to account for junk entries such
-as the code entry for $[2]$ in the example above. We tried two
+as the curried entry for $[2]$ in the example above. We tried two
 variants in Agda: a single element against a single element, and one
 target element inside its whole target set. In the second, the
 function case must relate the whole argument set, which cannot shrink
 to match the index.
 
 \emph{A single source element or a finite source list.} A target
-closure that shows no usable code entry is related to every nonempty
+closure that shows no usable curried entry is related to every nonempty
 source set, such as the singleton of $[n] \mapsto n$ for each $n$, and
 no finite source side for $\lambda f.\,f$ has an entry for all of them;
 we check this case in Agda.

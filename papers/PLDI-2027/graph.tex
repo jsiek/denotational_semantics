@@ -224,10 +224,10 @@ which rules out entries such as $[3, 5] \mapsto 6$ in the meaning of
 $\lambda x.\, x + 1$, because the input $[3, 5]$ of that entry
 describes no single argument, i.e. $3$ conflicts with $5$.
 %
-Our model requires consistency because the proof for the \pass{split closure} pass needs it (Section~\ref{sec:approx-lr}). A call in PairClos takes
-the code from one pair and the environment from another, so a
-closure's meaning may combine the code of one pair with the
-environment of a different pair. Consistency ensures that the
+Our model requires consistency because the proof for the \pass{split closure} pass needs it (Section~\ref{sec:approx-lr}). The meaning of a call in PairClos takes
+the curried function from one pair and the environment from another,
+so it may combine the function of one pair with the environment of a
+different pair. Consistency ensures that the
 environments of these pairs are consistent with each other.
 
 
