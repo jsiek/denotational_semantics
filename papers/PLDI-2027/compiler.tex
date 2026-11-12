@@ -80,8 +80,8 @@
   \qquad r ::= \kw{rax} \mid \kw{rdi} \mid \kw{rsi}\\
  & \text{Objects} & o & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
  & \text{Instructions} & i & ::= & \kw{movq}\;a, \mathit{dst} \mid \kw{subq}\;a, \%r \mid \kw{cmpq}\;a_2, a_1
-  \mid \kw{sete}\;\mathit{dst} \mid \kw{alloc}\;o, \mathit{dst} \mid \kw{load}\;\kw{get}_i\;a, \mathit{dst}\\
- & & & \mid & \kw{fst}\;x, \%r \mid \kw{snd}\;x, \%r \mid \kw{callq}\;a\\
+  \mid \kw{sete}\;\mathit{dst} \mid \kw{alloc}\;o, \mathit{dst}\\
+ & & & \mid & \kw{load}\;\kw{get}_i\;a, \mathit{dst} \mid \kw{fst}\;x, \%r \mid \kw{snd}\;x, \%r \mid \kw{callq}\;a\\
  & \text{Sequences} & s & ::= & i;\; s \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;y\;z\;l_1\;l_2\\
  & \text{Function Def.} & d & ::= & (\Phi;\, s_0, \ldots, s_{j-1};\, s)
   \qquad P ::= (\vec{d};\, d)
@@ -137,7 +137,7 @@ operator.  Recursive types make self-application typable, so a program can defin
 
 \paragraph{The optimizer}
 
-The first pass, \pass{simplify} (\S\ref{app:pass-simplify}), is a simplified version of the
+The first pass, \pass{simplify} (\S\ref{app:pass-simplify}), translates from \fpc\ to \fpc. It is a simplified version of the
 optimizer cp0 of Chez Scheme \citep{Waddell:1997fk}. It propagates
 known values, folds constants, reduces a
 $\kw{case}$, projection, or $\kw{unfold}$ of a known value, and
@@ -146,8 +146,8 @@ inlines small known functions.
 \paragraph{Closure conversion}
 
 The next three passes perform closure conversion. The \pass{enclose}
-pass (\S\ref{app:pass-enclose}) turns each $\lambda$-abstraction into a closure
-$\kw{clos}\;(z, y.\,N)\;\vec{M}$ of EnvClos, which captures the values
+pass (\S\ref{app:pass-enclose}) translates from \fpc\ to EnvClos. It turns each $\lambda$-abstraction into a closure
+$\kw{clos}\;(z, y.\,N)\;\vec{M}$, which captures the values
 $\vec{M}$ of the variables that the code $N$ uses. The closure binds
 two variables in its code, the environment $z$ and the parameter $y$,
 and the code, which has no other free variables, reads the $i$th
@@ -187,7 +187,7 @@ environment and the argument $M$.
        {\Gamma \vdash \kw{callc}\;L\;M : C}
 \end{gather*}
 Finally, the \pass{hoist} pass (\S\ref{app:pass-globalize}), named after the hoisting phase of
-\citet{Morrisett:1999fk}, turns the code of every function into a
+\citet{Morrisett:1999fk}, translates from PairClos to GlobalFun. It turns the code of every function into a
 global definition $d_k$, and each occurrence of the code into a
 reference $f_k$ to it, so a GlobalFun program is a list of function
 definitions and a main term.
@@ -195,22 +195,22 @@ definitions and a main term.
 \paragraph{The back end}
 
 The pass \pass{remove complex operands}
-(\pass{RCO}, \S\ref{app:pass-rco}) binds each operand that is not atomic to a variable with
+(\pass{RCO}, \S\ref{app:pass-rco}) translates from GlobalFun to Mon. It binds each operand that is not atomic to a variable with
 $\kw{let}$, so the operands of every operation in Mon are atomic.  The
 atomic terms are variables, constants, and function names.  The
-\pass{lift locals} pass (\S\ref{app:pass-lift-locals}) gives each variable its own fixed location in the
+\pass{lift locals} pass (\S\ref{app:pass-lift-locals}) translates from Mon to Imp. It gives each variable its own fixed location in the
 function's stack frame, called a \emph{slot}. A function body declares
 its frame $\Phi$, which lists the types of its slots. The type system
 tracks which slots are initialized, so a program reads a slot only
-after it writes the slot. The \pass{explicate control} pass (\S\ref{app:pass-explicate}) turns
-the nested $\kw{case}$s of Imp into a control-flow graph. A CFG
+after it writes the slot. The \pass{explicate control} pass (\S\ref{app:pass-explicate}) translates from Imp to CFG. It turns
+the nested $\kw{case}$s into a control-flow graph. A CFG
 program has a function body for each global definition and for the
 main program. A body consists of numbered blocks and a starting tail,
 and a block may jump only to blocks numbered before it, so control
 flow is acyclic.
 
 Finally, \pass{select instructions} (\S\ref{app:pass-select})
-translates to \instr, a typed low-level language in the style of TAL
+translates from CFG to \instr, a typed low-level language in the style of TAL
 \citep{Morrisett:1999fk}, with an x86 flavor.  \instr\ has three
 registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$), a stack frame of
 slots, and an abstract heap. Programs have the same structure as in
