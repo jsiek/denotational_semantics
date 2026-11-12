@@ -51,7 +51,7 @@ to the argument:
 \end{array}
 \]
 The \pass{split closure} pass translates each closure into a pair and each
-application into a call. It translates every other construct
+application into a $\kw{callc}$. It translates every other construct
 homomorphically:
 \[
 \begin{array}{rcl}
@@ -115,7 +115,7 @@ on $M$.
 
 The backward half, reflection, must show that the source accounts for
 every element that the target produces. Here the representation of
-closures gets in the way. Consider the function $\lambda y.\, x + y$
+closures gets in the way. Consider the function $(\lambda y.\, x + y)$
 in an environment where $x$ is $9$. In EnvClos, its meaning 
 includes entries $[1] \mapsto 10$ and $[6] \mapsto 15$. After
 \pass{split closure}, its code takes the environment as an extra
@@ -126,7 +126,7 @@ parameter. The meaning of the code is a table with entries for
   [2] \mapsto ([1] \mapsto 3)  \qquad \ldots
 \]
 The program pairs this table only with environment $[9]$, so the entry
-for $[2]$ does not correspond to a source function. Worse, the
+for $[2]$ cannot be related to source function. Worse, the
 denotation of a call takes the table from $\car$ and the environment
 from $\cdr$ \emph{separately}, so it may combine the table of one pair
 with the environment of another.
