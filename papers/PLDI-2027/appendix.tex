@@ -1043,8 +1043,8 @@ and the main expression starts with no variables in scope.
 Every other form is a simple expression, with $\pass{lift}_\Gamma$
 applied to its atoms, and leaves $n$ unchanged. The frame $\Phi$ of a
 function body lists the types of its $n$ slots. When a variable is
-bound, its slot is not initialized, as Imp's assignment and $\kw{case}$
-rules require: the initialized slots are those of the variables in
+bound, its slot is uninitialized, as Imp's assignment and $\kw{case}$
+rules require. The initialized slots are those of the variables in
 scope, which are all below $n$, and the new variable's slot is $n$ or
 above. For example, \pass{lift
 locals} translates
@@ -1056,14 +1056,14 @@ $\$n$ is the integer constant $n$ and a bare number is a slot:
     \kw{prim}_{\kw{sub}}\;1\;\$1);\; \kw{prim}_{\kw{sub}}\;2\;\$2.
 \]
 The variables $z$ and $w$ of the right-hand side get slots 0 and 1, and $y$ gets
-slot 2, i.e., the first slot that the right-hand side leaves unused. Each
-variable is written to an uninitialized slot: $z$ to slot 0 where no other slot
-is initialized, $w$ to slot 1 where only slot 0 is, and $y$ to slot 2 where
-again no slot is initialized. Slots 0 and 1 were written by the right-hand side,
-but they count as initialized only in the scopes of $z$ and $w$, which end with
-the right-hand side. The Agda development lists the frame from the newest slot
+slot 2, which is the first slot that the right-hand side leaves unused. Each
+assignment writes an uninitialized slot. The assignment to $z$ writes slot 0
+where no other slot is initialized, the one to $w$ writes slot 1 where only
+slot 0 is, and the one to $y$ writes slot 2 where again no slot is initialized.
+The right-hand side writes slots 0 and 1, but they count as initialized only in
+the scopes of $z$ and $w$, which end with the right-hand side. The Agda development lists the frame from the newest slot
 to the oldest, and a slot is a de~Bruijn index into that list, so slot $k$ here
-is index $|\Phi| - 1 - k$ there: in the example, $y$, $w$, and $z$ are the
+is index $|\Phi| - 1 - k$ there. In the example, $y$, $w$, and $z$ are the
 indices 0, 1, and 2.
 
 \subsection{\pass{explicate control} (Imp to CFG)}
@@ -1120,7 +1120,7 @@ $\kw{rax}$ or a slot $x$,
   \omega ::= \kw{ret} \mid \kw{to}\;x
 \]
 and then the instructions $k$ run. We write $\bar{\omega}$
-for the destination of $\omega$: $\overline{\kw{ret}} = \%\kw{rax}$
+for the destination of $\omega$, where $\overline{\kw{ret}} = \%\kw{rax}$
 and $\overline{\kw{to}\;x} = x$. An atom is a slot, a constant, or a
 function reference, and a constant has a base type and a function
 reference a code type. So an atom of a function type or a sum type is
