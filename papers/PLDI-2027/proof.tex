@@ -55,17 +55,21 @@ $\den{M} = \den{p(M)}$.
 Each proof is by induction on the term, generalizing
 Lemma~\ref{lem:equational} to open terms in a source and a target
 environment in which each variable means the same as its translation,
-with side conditions such as nonemptiness and consistency. Every semantics is
-compositional and the passes translate most forms homomorphically, so
-most cases apply the same operator to equal arguments. The real work
-is in the few forms that a pass changes, where an equation about the
-operators of the graph model turns the source form into the target
-form. Below we give these calculations for \pass{simplify} and for the
-last step of \pass{enclose}. Appendix~\ref{app:calculations} gives the rest, including
-\pass{select instructions}, whose key case turns a call into
-$\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and $\kw{callq}$.
-Where a step needs a nonempty set, we show the nonempty case;
-otherwise both sides are empty.
+with side conditions such as nonemptiness and consistency. Every
+semantics is compositional and the passes translate most forms
+homomorphically, so most cases apply the same operator to equal
+arguments. The real work is in the few forms that a pass changes,
+where an equation about the operators of the graph model turns the
+source form into the target form. Below we give these calculations for
+\pass{simplify} and for the last step of \pass{enclose}. We skip over
+side conditions about non-empty and consistent denotations but of
+course they are present in the Agda mechanization.
+
+Appendix~\ref{app:calculations} gives the rest of the equational
+proofs, including the proof for \pass{select instructions}, whose key
+case turns a call into $\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and
+$\kw{callq}$.  Where a step needs a nonempty set, we show the nonempty
+case; otherwise both sides are empty.
 
 \paragraph{Simplify}
 
@@ -125,9 +129,7 @@ $N' = \mathit{concretize}_{\varphi'}(N)$:
 \]}
 The induction hypothesis for $N$ applies because the code reads $x_i$ as
 $\kw{get}_i\,z$, and $\pi_{\mathsf{tup}_i}(\mathcal{T}(\vec{D}')) =
-D'_i$ when every $D'_i$ is nonempty.
-Lemma~\ref{lem:beta} needs the tuple $\mathcal{T}(\vec{D}')$ to be
-nonempty and consistent.
+D'_i$.
 
 Each interesting case of the seven passes is a short chain of
 equations like these, which is why their denotational proofs are small
