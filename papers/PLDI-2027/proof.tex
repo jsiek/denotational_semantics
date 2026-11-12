@@ -72,25 +72,25 @@ otherwise both sides are empty.
 The pass \pass{simplify} keeps a static environment $E$
 (Appendix~\ref{app:pass-simplify}). It maps each variable to the term
 that replaces it and, when the variable is bound to a statically known
-function, to that function as a $\lambda$-abstraction
-$\langle \lambda x.\, N, E_f \rangle$ paired with the static
-environment $E_f$ where it was defined. The main lemma for
-\pass{simplify} carries the invariant that $E$ agrees with the source
-environment $\rho$ and the target environment $\rho'$. If $E$ replaces
-a variable by the term $M'$, the variable means $\den{M'}\rho'$, and if
-$E$ maps it to the function $\langle \lambda x.\, N, E_f \rangle$, it
-means $\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ such
-that $E_f$ agrees with $\rho_f$ and $\rho'$. The key case is inlining. Suppose $L$ is statically known to be the function
-$\langle \lambda x.\, N, E_f \rangle$, the operand $M$ simplifies to a
-small value $M'$, and the inlined body simplifies to $N'$. Then
+function, to that function as a $\lambda$-abstraction $\langle \lambda
+x.\, N, E_f \rangle$ paired with the static environment $E_f$ where it
+was defined. The main lemma for \pass{simplify} carries the invariant
+that $E$ agrees with the source environment $\rho$ and the target
+environment $\rho'$. If $E$ replaces a variable by the term $M'$, the
+variable means $\den{M'}\rho'$, and if $E$ maps it to the function
+$\langle \lambda x.\, N, E_f \rangle$, it means $\den{\lambda x.\,
+  N}\rho_f$ for some environment $\rho_f$ such that $E_f$ agrees with
+$\rho_f$ and $\rho'$. The key case is inlining. Suppose $L$ is
+statically known to be the function $\langle \lambda x.\, N, E_f
+\rangle$, the operand $M$ simplifies to a small value $M'$, and the
+body simplifies to $N'$. Then
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
   \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho & \text{(meaning of application)}\\
     & = & \den{\lambda x.\,N}\rho_f \app \den{M}\rho & \text{(invariant for $L$)}\\
     & = & \den{N}\rho_f[x{:=}\den{M}\rho] & \text{(Lemma~\ref{lem:beta}, part 1)}\\
-    & = & \den{N}\rho_f[x{:=}\den{M'}\rho'] & \text{(induction hypothesis for $M$)}\\
-    & = & \den{N'}\rho' & \text{(induction hypothesis for $N$)}
+    & = & \den{N}\rho_f[x{:=}\den{M'}\rho'] = \den{N'}\rho' & \text{(induction hypotheses for $M$ and $N$)}
 \end{array}
 \]}
 The last step applies because the inlined body is simplified in $E_f$
