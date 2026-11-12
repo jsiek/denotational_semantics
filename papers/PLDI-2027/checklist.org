@@ -11,8 +11,8 @@
 - A part of checking the proofs is to see whether the proofs can be made shorter (as time permits)
 - Check whether the Agda definitions match the Appendix
 
-** TODO Finish high priority tasks marked by ＊ followed by a person's initials in the tables below
-** TODO Finish lower priority tasks marked by a person's initials in the tables below
+** Finish high priority tasks marked by ＊ followed by a person's initials in the tables below
+** Finish lower priority tasks marked by a person's initials in the tables below
 
 D = Darshal
 J = Jeremy
@@ -37,7 +37,7 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 
 ** DONE (Tianyu) Check definition of compiler pass simplify
 ** TODO (Darshal) Check definitions of compiler passes from enclose to select instructions
-** TODO (Tianyu/Darshal) spot check the lemmas corresponding to the empty cells in the table above
+** TODO (Tianyu/Darshal) spot check the lemmas corresponding to the empty cells in the table above (low priority)
 
 * Comparison of semantics/proofs
 - when denotational equality => denotational proofs are small
@@ -45,7 +45,7 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 - "runs are similar" => operational proofs are small
 - proof size comparison: Graph > Scott, Interp > Graph, ...
 
-** TODO Check that the above claims are true as we go through the proofs
+** TODO Check that the above claims are true as we go through the proofs (low priority)
 
 * Adequacy
 
@@ -91,6 +91,9 @@ Graph
 ** TODO (Darshal) check the syntax and type rules for MNF, Imp, CFG and Instrμ
 
 * TODO (Darshal/Tianyu) Documentation for artifact/supplementary material
+* TODO (Tianyu) Prepare and submit the supplementary material (starting at 4pm, new repo, git export)
+* TODO (Everyone) Proof read the paper.
+* TODO (Jeremy) Initial submission.
 
 Documentation must summarize this document while highlighting the important
 proofs/definitions/statements in the entire agda formalization along with where
