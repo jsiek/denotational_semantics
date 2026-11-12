@@ -34,9 +34,9 @@
 \defhead{Operators on denotations}{\mathit{op}(D_1, \ldots, D_n) \subseteq \Elem}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  D \app E & = & \{\, w \mid V \mapsto w \in D,\; V \neq [\,],\; V \subseteq E \,\}\\
   \Lambda(F) & = & \{\, V \mapsto w \mid V \neq [\,],\; \mathsf{con}(V),\; w \in F(V) \,\} \cup \{\nu\}
     \quad (F \text{ a function on sets, e.g. } \mlam{X} E)\\
+  D \app E & = & \{\, w \mid V \mapsto w \in D,\; V \neq [\,],\; V \subseteq E \,\}\\
   \mathsf{pair}(D, E) & = & \{\, \pairv{u}{v} \mid u \in D,\; v \in E \,\}\\
   \car(D) & = & \{\, u \mid \pairv{u}{v} \in D \,\}\\
   \cdr(D) & = & \{\, v \mid \pairv{u}{v} \in D \,\}\\
@@ -145,14 +145,14 @@ set of elements.
 \paragraph{Operators}
 
 Each case of the semantics of \fpc\ (Figure~\ref{fig:graph-ops})
-applies an operator to the denotations of the parts of the term. In
+applies an operator to the denotations of the sub terms. In
 the semantics, an environment $\rho$ maps each variable to a set of
-elements, $\rho[x{:=}X]$ maps $x$ to $X$ and every other variable as
+elements, $\rho[x{:=}D]$ maps $x$ to $D$ and every other variable as
 $\rho$ does, and $\boldsymbol{\lambda}$ denotes a mathematical
 function.
 
 The meaning of a function, given by the operator $\Lambda$, is the set
-of entries $V \mapsto w$ such that the output $w$ is in the meaning of
+of all entries $V \mapsto w$ such that the output $w$ is in the meaning of
 the function's body in an environment that maps its parameter to the
 input $V$, together with $\nu$. The input $V$ must be nonempty and
 consistent, written $\mathsf{con}(V)$, which we explain at the end of
@@ -171,8 +171,8 @@ contains the entry
 ([0] \mapsto 2)
 \]
 whose input has one entry for each call to $f$. That input is included
-in $\den{\lambda x.\, x + 1}$, so applying the function to $\lambda
-x.\, x + 1$ and then to $0$ gives $\{2\}$.
+in $\den{\lambda x.\, x + 1}$, so applying the higher-order function
+to $\lambda x.\, x + 1$ and then to $0$ gives $\{2\}$.
 
 The other operators build and take apart data. The operator
 $\mathsf{pair}$ builds pairs, and $\car$ and $\cdr$ take their
