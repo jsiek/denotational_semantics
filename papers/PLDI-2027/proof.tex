@@ -31,16 +31,16 @@ Theorems~\ref{thm:compiler} and~\ref{thm:scott}, whose proofs we
 mechanize in Agda, answer RQ1 affirmatively. The same statements hold
 for closed terms of every type; we state them for $\kw{Int}$, the type
 of a whole program's result, to align them with the operational
-correctness results (Section~\ref{sec:evaluation}). Each
-whole-compiler proof is a composition of one lemma per pass: an
-equation for every pass but \pass{split closure}
-(Lemma~\ref{lem:equational} for the graph model), and for \pass{split
-  closure} the weaker statement of Lemma~\ref{lem:delay}
-(Lemma~\ref{lem:scott-delay} for Scott domains).
+correctness results (Section~\ref{sec:evaluation}). Each proof is a
+composition of one correctness lemma per pass.  We first show how most
+of the passes can be proved correct by equational reasoning
+(Section~\ref{sec:equational}). We then prove that the \pass{split
+  closure} pass is correct using a logical relation
+(Section~\ref{sec:approx-lr}). Finally, we sketch the corresponding
+proof of correctness for Scott domains
+(Section~\ref{sec:scott-delay}).
 
-This section first shows how we prove the passes other than \pass{split closure} (Section~\ref{sec:equational}). These proofs give the denotational half of the answer to RQ3. The section then shows why \pass{split closure} needs more (Section~\ref{sec:approx-lr}) and summarizes the Scott-domain proof of \pass{split closure} (Section~\ref{sec:scott-delay}).
-
-\subsection{Passes Proved by an Equation}
+\subsection{Passes Proved by Equational Reasoning}
 \label{sec:equational}
 
 For seven of the eight passes, correctness is an equation between the
@@ -55,47 +55,53 @@ $\den{M} = \den{p(M)}$.
 Each proof is by induction on the term, generalizing
 Lemma~\ref{lem:equational} to open terms in a source and a target
 environment in which each variable means the same as its translation,
-with side conditions such as nonemptiness and consistency. Every semantics is
-compositional and the passes translate most forms homomorphically, so
-most cases apply the same operator to equal arguments. The real work
-is in the few forms that a pass changes, where an equation about the
-operators of the graph model turns the source form into the target
-form. Below we give these calculations for \pass{simplify} and for the
-last step of \pass{enclose}. Appendix~\ref{app:calculations} gives the rest, including
-\pass{select instructions}, whose key case turns a call into
-$\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and $\kw{callq}$.
-Where a step needs a nonempty set, we show the nonempty case;
-otherwise both sides are empty.
+with side conditions such as nonemptiness and consistency. Every
+semantics is compositional and the passes translate most forms
+homomorphically, so most cases apply the same operator to equal
+arguments. The real work is in the few forms that a pass changes,
+where an equation about the operators of the graph model turns the
+source form into the target form. Below we give these calculations for
+\pass{simplify} and for the last step of \pass{enclose}. We skip over
+side conditions about non-empty and consistent denotations but of
+course they are present in the Agda mechanization.
+
+Appendix~\ref{app:calculations} gives the rest of the equational
+proofs, including the proof for \pass{select instructions}, whose key
+case turns a call into $\kw{fst}$, $\kw{snd}$, $\kw{movq}$, and
+$\kw{callq}$.  Where a step needs a nonempty set, we show the nonempty
+case; otherwise both sides are empty.
 
 \paragraph{Simplify}
 
-For each variable, \pass{simplify} records the term that replaces it
-and, when it is bound to a statically known function, that function as
-a $\lambda$-abstraction $\langle \lambda x.\, N, E_f \rangle$ paired
-with the environment $E_f$ where it was defined
-(Appendix~\ref{app:pass-simplify}). The main lemma for
-\pass{simplify} carries the invariant that these records are true of
-the source environment $\rho$ and the target environment $\rho'$. If
-\pass{simplify} replaces a variable by the term $M'$, the variable
-means $\den{M'}\rho'$, and if \pass{simplify} records it as the
-function $\langle \lambda x.\, N, E_f \rangle$, it means
-$\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ of which
-$E_f$ is true. The key case is inlining. Suppose $L$ is statically known to be the function
-$\langle \lambda x.\, N, E_f \rangle$, the operand $M$ simplifies to a
-small value, and the inlined body simplifies to $N'$. Then
+The pass \pass{simplify} keeps a static environment $E$
+(Appendix~\ref{app:pass-simplify}). It maps each variable to the term
+that replaces it and, when the variable is bound to a statically known
+function, to that function as a $\lambda$-abstraction $\langle \lambda
+x.\, N, E_f \rangle$ paired with the static environment $E_f$ where it
+was defined. The main lemma for \pass{simplify} carries the invariant
+that $E$ agrees with the source environment $\rho$ and the target
+environment $\rho'$. If $E$ replaces a variable by the term $M'$, the
+variable means $\den{M'}\rho'$, and if $E$ maps it to the function
+$\langle \lambda x.\, N, E_f \rangle$, it means $\den{\lambda x.\,
+  N}\rho_f$ for some environment $\rho_f$ such that $E_f$ agrees with
+$\rho_f$ and $\rho'$. The key case is inlining. Suppose $L$ is
+statically known to be the function $\langle \lambda x.\, N, E_f
+\rangle$, the operand $M$ simplifies to a small value $M'$, and the
+body simplifies to $N'$. Then
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
   \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho & \text{(meaning of application)}\\
-    & = & \den{\lambda x.\,N}\rho_f \app \den{M}\rho & \text{(invariant for $L$)}\\
-    & = & \den{N}\rho_f[x{:=}\den{M}\rho] & \text{(Lemma~\ref{lem:beta}, part 1)}\\
+    & = & \den{\lambda x.\,N}\rho_f \app \den{M'}\rho' & \text{(invariant for $L$, induction hypothesis for $M$)}\\
+    & = & \den{N}\rho_f[x{:=}\den{M'}\rho'] & \text{(Lemma~\ref{lem:beta}, part 1)}\\
     & = & \den{N'}\rho' & \text{(induction hypothesis for $N$)}
 \end{array}
 \]}
-The use of Lemma~\ref{lem:beta} needs $\den{M}\rho$ to be nonempty,
-which holds because a syntactic value denotes a nonempty set, and
-consistent, which holds because $\rho$ is. A $\beta$-redex
-$(\lambda x.\, N)\;M$ is the same calculation without the second step.
+The last step applies because the inlined body is simplified in $E_f$
+extended to replace $x$ by $M'$, and this static environment agrees
+with $\rho_f[x{:=}\den{M'}\rho']$ and $\rho'$. The invariant for $L$
+gives the agreement of $E_f$, and both $x$ and its replacement $M'$
+mean $\den{M'}\rho'$.
 
 
 \paragraph{Enclose}
@@ -106,25 +112,24 @@ The first two produce closures of an intermediate language, Clos,
 written $\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$, which bind a name
 $x_i$ for each captured value $M_i$. The last step, $\mathit{concretize}_\varphi$,
 stores the captured values in a tuple. Each variable $x$ satisfies $\den{x}\rho = \den{\varphi(x)}\rho'$, where
-its reference $\varphi(x)$ is either $x$ or $\kw{get}_i\,z$. Let $D_i = \den{M_i}\rho$ and
-$D'_i = \den{\mathit{concretize}_\varphi(M_i)}\rho'$, so that $D_i = D'_i$,
-and let $N' = \mathit{concretize}_{\varphi'}(N)$:
+its reference $\varphi(x)$ is either $x$ or $\kw{get}_i\,z$. Let $M'_i = \mathit{concretize}_\varphi(M_i)$,
+$D_i = \den{M_i}\rho$, $D'_i = \den{M'_i}\rho'$, and
+$N' = \mathit{concretize}_{\varphi'}(N)$:
 {\small
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
   \den{\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}}\rho
     & = & \mathsf{guard}(\vec{D};\; \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y])) & \text{(meaning of a Clos closure)}\\
     & = & \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y]) & \text{(each $D_i$ is nonempty)}\\
+    & = & \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}', y{:=}Y]) & \text{(induction hypothesis for $\vec{M}$)}\\
     & = & \Lambda(\mlam{Y} \den{N'}\rho_0[z{:=}\mathcal{T}(\vec{D}'), y{:=}Y]) & \text{(induction hypothesis for $N$)}\\
     & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N'}\rho_0[z{:=}X, y{:=}Y])) \app \mathcal{T}(\vec{D}') & \text{(Lemma~\ref{lem:beta}, part 1)}\\
     & = & \den{\kw{clos}\;(z, y.\,N')\;\vec{M}'}\rho' & \text{(meaning of an EnvClos closure)}
 \end{array}
 \]}
-The induction hypothesis applies because the code reads $x_i$ as
+The induction hypothesis for $N$ applies because the code reads $x_i$ as
 $\kw{get}_i\,z$, and $\pi_{\mathsf{tup}_i}(\mathcal{T}(\vec{D}')) =
-D'_i = D_i$ when every $D'_i$ is nonempty.
-Lemma~\ref{lem:beta} needs the tuple $\mathcal{T}(\vec{D}')$ to be
-nonempty and consistent.
+D'_i$.
 
 Each interesting case of the seven passes is a short chain of
 equations like these, which is why their denotational proofs are small
