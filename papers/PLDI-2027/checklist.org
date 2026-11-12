@@ -91,10 +91,10 @@ Graph
 ** DONE (Tianyu) check the syntax and type rules for FPC, Clos, EnvClos, PairClos and GlobalFun languages
 ** DONE (Darshal) check the syntax and type rules for MNF, Imp, CFG and Instrμ
 
-* TODO (Darshal/Tianyu) Documentation for artifact/supplementary material. Include the software versions to use
-* TODO (Tianyu) Prepare and submit the supplementary material (starting at 4pm, new repo, git export)
+* DONE (Darshal/Tianyu) Documentation for artifact/supplementary material. Include the software versions to use
+* DONE (Tianyu) Prepare and submit the supplementary material (starting at 4pm, new repo, git export)
 * TODO (Everyone) Proof read the paper.
-* TODO (Jeremy) Initial submission.
+* DONE (Jeremy) Initial submission.
 
 Documentation must summarize this document while highlighting the important
 proofs/definitions/statements in the entire agda formalization along with where
