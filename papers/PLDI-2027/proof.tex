@@ -93,15 +93,11 @@ body simplifies to $N'$. Then
     & = & \den{N'}\rho' & \text{(induction hypothesis for $N$)}
 \end{array}
 \]}
-The use of Lemma~\ref{lem:beta} needs $\den{M'}\rho'$ to be nonempty,
-which holds because $M'$ is a syntactic value, and consistent, which
-holds because it equals $\den{M}\rho$ and $\rho$ is consistent. The
-last step applies because the inlined body is simplified in $E_f$
+The last step applies because the inlined body is simplified in $E_f$
 extended to replace $x$ by $M'$, and this static environment agrees
 with $\rho_f[x{:=}\den{M'}\rho']$ and $\rho'$. The invariant for $L$
 gives the agreement of $E_f$, and both $x$ and its replacement $M'$
-mean $\den{M'}\rho'$. A $\beta$-redex $(\lambda x.\, N)\;M$ is the
-same calculation with $\rho$ and $E$ in place of $\rho_f$ and $E_f$.
+mean $\den{M'}\rho'$.
 
 
 \paragraph{Enclose}
