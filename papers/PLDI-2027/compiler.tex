@@ -17,7 +17,7 @@
   \node (c3) at (2,0)  {EnvClos};
   \node (c4) at (2,-1) {PairClos};
   \node (c5) at (1,-1) {GlobalFun};
-  \node (mon) at (0,-1) {Mon};
+  \node (mon) at (0,-1) {MNF};
   \node (imp) at (0,-2) {Imp};
   \node (cfg) at (1,-2) {CFG};
   \node (x86) at (2,-2) {\instr};
@@ -44,7 +44,7 @@
 \[
 \begin{array}{@{}l@{\;\;}l@{\;}r@{\;}c@{\;}l@{}}
  & \text{Variables} & x, y, z & & \text{(from Imp on, slots of a stack frame)}\\
- & \text{Labels} & l & & \text{(from CFG on, the number of a block $t_l$ or $s_l$)}\\
+ & \text{Labels} & l & & \text{(the number of a block, $t_l$ or $s_l$, in a function def. of CFG and \instr{})}\\
  & \text{Base types} & B & ::= & \kw{Nat} \mid \kw{Int} \mid \kw{Bool} \mid \kw{Unit} \mid \kw{Void}\\
  & \text{Types} & A, C & ::= & B \mid A \rightarrow C \mid \kw{tup}(A_1, \ldots, A_n)
   \mid A + C \mid \mu X.\, A \mid X \mid \kw{code}(\Delta; A \rightarrow C)\\
@@ -60,7 +60,7 @@
 \text{GlobalFun} & \text{Terms} & K, L, M, N & ::= & \ldots \mid f_k
   \quad (\text{in place of } \kw{code})\\
  & \text{Function Def.} & d & ::= & \kw{code}\;(z, y.\,N) \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
-\text{Mon} & \text{Atoms} & a & ::= & x \mid c \mid f_k\\
+\text{MNF} & \text{Atoms} & a & ::= & x \mid c \mid f_k\\
  & \text{Operations} & o & ::= & \kw{pair} \mid \kw{callc} \mid \kw{tuple} \mid \kw{get}_i \mid \kw{inl}
   \mid \kw{inr} \mid \kw{prim}_p \mid \kw{fold} \mid \kw{unfold}\\
  & \text{Terms} & M, N & ::= & a \mid o\;\vec{a} \mid \kw{case}\;a\;(x.\,M)\;(y.\,N)
@@ -92,23 +92,27 @@
 \end{figure}
 
 Our compiler translates \fpc, the call-by-value $\lambda$-calculus
-with sums, products, and iso-recursive types of \citet{Plotkin:1985aa}
-and \citet{Fiore:1994aa}, extended with integers, to \instr, a typed low-level intermediate language, in eight
-passes through six intermediate languages. Figure~\ref{fig:pipeline} shows the passes and languages, which this section defines and Section~\ref{sec:compiler-proof} proves correct.
-Figure~\ref{fig:grammars} presents the grammars of all the languages, and Appendix~\ref{app:types} gives their typing rules.\footnote{Every language is intrinsically
-typed in our Agda development, so every term is well typed by
-construction and no pass needs a precondition about scoping or
-typing.} In Figure~\ref{fig:grammars}, each closure language lists
-only the forms it adds to the one above it, and ``$\ldots$'' stands
-for the remaining forms of \fpc. Throughout, $c$ ranges over
-constants, $p$ over the primitives $\kw{sub}$ and $\kw{eq}$, and $f_k$ over the names of a program's global
-definitions, where $f_k$ refers to the definition $d_k$. In the
-languages prior to Imp, $x$, $y$, and $z$ range over variables. From
-Imp on, they range over fixed locations in a function's stack frame,
-as we explain below. We write a binder as one or more names followed by a period, and the binder binds the names in the term after the period. For example, in
-$\lambda x.\,N$ and $\kw{case}\;L\;(x.\,M)\;(y.\,N)$, the name $x$ is
-bound in $N$ and $M$, and $\kw{clos}\;(z, y.\,N)$ binds $z$
-and $y$ in $N$. Every language also has a graph-model semantics
+with sums, products, and iso-recursive types of
+\citet{Plotkin:1985aa}, extended with integers, to \instr, a typed
+low-level intermediate language, in eight passes through six
+intermediate languages. Figure~\ref{fig:pipeline} shows the sequence
+of passes and languages, which this section introduces and
+Section~\ref{sec:compiler-proof} proves correct.
+Figure~\ref{fig:grammars} presents the grammars of all the languages,
+and Appendix~\ref{app:types} gives their typing rules.\footnote{Every
+language is intrinsically typed in our Agda development, so every term
+is well typed by construction and no pass needs a precondition about
+scoping or typing.}
+Definitions of the passes are in the Appendix~\ref{app:passes}.
+
+Throughout Figure~\ref{fig:grammars}, $c$ ranges over constants, $p$
+over the primitives $\kw{sub}$ and $\kw{eq}$, and $f_k$ over the names
+of a program's global definitions, where $f_k$ refers to the
+definition $d_k$. In the languages prior to Imp, $x$, $y$, and $z$
+range over variables. From Imp on, they range over fixed locations in
+a function's stack frame. We write binders as one or more names
+followed by a period, and the scope of the binders is the term after
+the period. Every language has a graph-model semantics
 (Section~\ref{sec:graph-models}), given in full in
 Appendix~\ref{app:languages}.
 
@@ -126,14 +130,9 @@ unfolding into a term of the recursive type, and $\kw{unfold}$ turns it back:
   \qquad
   \frac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \]
-Neither coercion does anything at run time. \fpc\ has no recursion
-operator.  Recursive types make self-application typable, so a program can define the call-by-value fixed-point combinator:
-\[
-  \mathit{fix} = \lambda f.\, g\;(\kw{fold}\;g)
-  \quad\text{where}\;\;
-  g = \lambda x.\, f\;(\lambda v.\, (\kw{unfold}\;x)\;x\;v)
-  \quad\text{and}\;\; x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})
-\]
+Neither coercion does anything at run time. Recursive types make
+self-application typable, so a program can define the call-by-value
+fixed-point combinator to write recursive functions.
 
 \paragraph{The optimizer}
 
@@ -146,28 +145,30 @@ inlines small known functions.
 \paragraph{Closure conversion}
 
 The next three passes perform closure conversion. The \pass{enclose}
-pass (\S\ref{app:pass-enclose}) translates from \fpc\ to EnvClos. It turns each $\lambda$-abstraction into a closure
-$\kw{clos}\;(z, y.\,N)\;\vec{M}$, which captures the values
-$\vec{M}$ of the variables that the code $N$ uses. The closure binds
-two variables in its code, the environment $z$ and the parameter $y$,
-and the code, which has no other free variables, reads the $i$th
-captured value as $\kw{get}_i\,z$.\footnote{Our
-Agda development implements \pass{enclose} as three passes, which
-capture every variable in scope, drop the captured values that the
-code does not use, and store the rest in a tuple. The proof of
-\pass{enclose} composes their proofs, and Table~\ref{tab:loc} reports
-the sum of their sizes.} The \pass{split closure} pass (\S\ref{app:pass-delay}) then
-separates a closure into its code and its environment, translating
-from EnvClos to PairClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is
-closed code of type $\kw{code}(\Delta; A \rightarrow C)$, which
-expects an environment of type $\kw{tup}(\Delta)$ and an argument of
-type $A$. The form $\kw{pair}\;L\;M$ builds a closure, which is a pair of code
-$L$ and an environment $M$ of the same $\Delta$. Its type, $A \rightarrow C$, hides $\Delta$, as in the existential type
-$\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times
-\kw{tup}(\Delta)$ of typed closure conversion \citep{Minamide:1996ys},
-so closures with different environments have the same type. Thus
-$\kw{pair}$ also packs an existential, but it means just a pair. The form
-$\kw{callc}\;L\;M$ calls the code of the closure $L$ with its
+pass (\S\ref{app:pass-enclose}) translates from \fpc\ to EnvClos.  It
+turns each $\lambda$-abstraction into a closure $\kw{clos}\;(z,
+y.\,N)\;\vec{M}$, which captures the values $\vec{M}$ of the variables
+that the code $N$ uses. The closure binds two variables in its code,
+the environment $z$ and the parameter $y$, and the code, which has no
+other free variables, reads the $i$th captured value as
+$\kw{get}_i\,z$.\footnote{Our Agda development implements
+\pass{enclose} as three passes, which capture every variable in scope,
+drop the captured values that the code does not use, and store the
+rest in a tuple. The proof of \pass{enclose} composes their proofs,
+and Table~\ref{tab:loc} reports the sum of their sizes.} The
+\pass{split closure} pass (\S\ref{app:pass-delay}) then separates a
+closure into its code and its environment, translating from EnvClos to
+PairClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is closed code of
+type $\kw{code}(\Delta; A \rightarrow C)$, which expects an
+environment of type $\kw{tup}(\Delta)$ and an argument of type
+$A$. The form $\kw{pair}\;L\;M$ builds a closure, which is a pair of
+code $L$ and an environment $M$ of the same $\Delta$. Its type, $A
+\rightarrow C$, hides $\Delta$, as in the existential type $\exists
+\Delta.\, \kw{code}(\Delta; A \rightarrow C) \times \kw{tup}(\Delta)$
+of typed closure conversion \citep{Minamide:1996ys}, so closures with
+different environments have the same type. Thus $\kw{pair}$ also packs
+an existential, but its dynamic semantics is the usual for a pair. The
+form $\kw{callc}\;L\;M$ calls the code of the closure $L$ with its
 environment and the argument $M$.
 \vspace{-5pt}
 \begin{gather*}
@@ -186,61 +187,61 @@ environment and the argument $M$.
         \end{array}}
        {\Gamma \vdash \kw{callc}\;L\;M : C}
 \end{gather*}
-Finally, the \pass{hoist} pass (\S\ref{app:pass-globalize}), named after the hoisting phase of
-\citet{Morrisett:1999fk}, translates from PairClos to GlobalFun. It turns the code of every function into a
+Finally, the \pass{hoist} pass (\S\ref{app:pass-globalize}) (similar
+to the hoisting phase of \citet{Morrisett:1999fk}) translates from
+PairClos to GlobalFun. It turns the code of every function into a
 global definition $d_k$, and each occurrence of the code into a
 reference $f_k$ to it, so a GlobalFun program is a list of function
 definitions and a main term.
 
 \paragraph{The back end}
 
-The pass \pass{remove complex operands}
-(\pass{RCO}, \S\ref{app:pass-rco}) translates from GlobalFun to Mon. It binds each operand that is not atomic to a variable with
-$\kw{let}$, so the operands of every operation in Mon are atomic.  The
-atomic terms are variables, constants, and function names.  The
-\pass{lift locals} pass (\S\ref{app:pass-lift-locals}) translates from Mon to Imp. It gives each variable its own fixed location in the
-function's stack frame, called a \emph{slot}. A function body declares
-its frame $\Phi$, which lists the types of its slots. The type system
-tracks which slots are initialized, so a program reads a slot only
-after it writes the slot. The \pass{explicate control} pass (\S\ref{app:pass-explicate}) translates from Imp to CFG. It turns
-the nested $\kw{case}$s into a control-flow graph. A CFG
-program has a function body for each global definition and for the
-main program. A body consists of numbered blocks and a starting tail,
-and a block may jump only to blocks numbered before it, so control
-flow is acyclic.
+The pass \pass{remove complex operands} (\pass{RCO},
+\S\ref{app:pass-rco}) translates from GlobalFun to MNF, a
+\emph{monadic normal form} \citep{Hatcliff:1994vn}. It binds each
+operand that is not atomic to a variable with $\kw{let}$, so the
+operands of every operation in MNF are atomic.  The atomic terms are
+variables, constants, and function names.  The \pass{lift locals} pass
+(\S\ref{app:pass-lift-locals}) translates from MNF to Imp. It gives
+each variable its own location in the function's stack frame, called a
+\emph{slot}. A function body declares its frame $\Phi$, which lists
+the types of its slots. The type system tracks which slots are
+initialized. The \pass{explicate control} pass
+(\S\ref{app:pass-explicate}) translates from Imp to CFG. It turns the
+nested $\kw{case}$s into a control-flow graph. A CFG program has a
+function body for each global definition and for the main program. A
+body consists of numbered blocks and a starting tail, and a block may
+jump only to blocks numbered before it, so control flow is acyclic.
 
 Finally, \pass{select instructions} (\S\ref{app:pass-select})
 translates from CFG to \instr, a typed low-level language in the style of TAL
 \citep{Morrisett:1999fk}, with an x86 flavor.  \instr\ has three
 registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$), a stack frame of
 slots, and an abstract heap. Programs have the same structure as in
-CFG. Instruction operands $a$ are slots, constants, names of
+CFG. Instruction operands $a$ are slot numbers, constants, names of
 definitions, or registers. Instructions write to a destination $\mathit{dst}$, a
 register or a slot.
 
 The pass translates each simple expression of CFG into instructions
-that leave its value in a destination, using the registers to stage
+that write its value to a destination, using the registers to stage
 arithmetic and calls. A closure ($\kw{pair}$), a tuple, or an
-injection becomes the instruction $\kw{alloc}\;o, \mathit{dst}$, which allocates
-the object $o$ on the heap. A call $\kw{callc}\;x\;a$ of the closure
-in slot $x$ on the argument $a$ becomes the instruction sequence
-$\kw{fst}\;x, \%\kw{rax};\;\;
- \kw{snd}\;x, \%\kw{rdi};\;\;
- \kw{movq}\;a, \%\kw{rsi};\;\;
- \kw{callq}\;\%\kw{rax}$.
-The first two instructions load the code and the environment of the
-closure, the third puts the argument in place, and the call leaves its
-result in $\kw{rax}$. The type system allows only one closure to be
-open at a time, so that a call never combines the code of one closure
-with the environment of another. The coercions $\kw{fold}$ and
-$\kw{unfold}$ become annotations on operands, $\kw{fold}\;a$ and
-$\kw{unfold}\;a$, that do nothing.
+injection becomes the instruction $\kw{alloc}\;o, \mathit{dst}$, which
+allocates the object $o$ on the heap. A call $\kw{callc}\;x\;a$ of the
+closure in slot $x$ on the argument $a$ becomes the instruction
+sequence $\kw{fst}\;x, \%\kw{rax};\;\; \kw{snd}\;x, \%\kw{rdi};\;\;
+\kw{movq}\;a, \%\kw{rsi};\;\; \kw{callq}\;\%\kw{rax}$.  The first two
+instructions load the code and the environment of the closure, the
+third puts the argument in place, and the call leaves its result in
+$\kw{rax}$. The type system allows only one closure to be open at a
+time, so that a call never combines the code of one closure with the
+environment of another. The coercions $\kw{fold}$ and $\kw{unfold}$
+become annotations on operands, $\kw{fold}\;a$ and $\kw{unfold}\;a$,
+that do nothing.
 
 \instr\ abstracts from a real instruction set. Its heap is abstract,
 with no addresses or memory layout, and control flow within a function
-is acyclic, so loops are recursive calls. Neither abstraction concerns
-closure conversion, because in \instr, as in machine code, a closure is
-a heap object that pairs a function's code pointer with a tuple of
-captured values, and the caller passes the tuple, along with the
-argument, in argument-passing registers before it calls the code
-pointer.
+is acyclic. Neither abstraction concerns closure conversion, because
+in \instr, as in machine code, a closure is a heap object that pairs a
+function's code pointer with a tuple of captured values, and the
+caller passes the tuple, along with the argument, in argument-passing
+registers before it calls the code pointer.

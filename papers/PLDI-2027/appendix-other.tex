@@ -159,13 +159,13 @@ $\mathit{dst}$.
   \mathit{obj}(\kw{inl}(a),\; m) &= \kw{inl}\,(\mathit{arg}(a, m)) \\
   \mathit{obj}(\kw{inr}(a),\; m) &= \kw{inr}\,(\mathit{arg}(a, m)) \\[4pt]
   \mathit{put}(\%r, v,\; \langle R, \sigma, u, b\rangle) &= \langle R[r{:=}v], \sigma, u, b\rangle \\
-  \mathit{put}(x, v,\; \langle R, \sigma, u, b\rangle) &= \langle R, \sigma[x{:=}v]|_J, \mathsf{none}, b\rangle
+  \mathit{put}(x, v,\; \langle R, \sigma, u, b\rangle) &= \langle R, \sigma[x{:=}v]|_{I'}, \mathsf{none}, b\rangle
 \end{align*}
-Here $\sigma[x{:=}v]$ updates slot $x$ in place, and $|_J$ keeps the
-slots $J$ that the rest of the sequence starts with (the slot rule of
-the typing of destinations, Appendix~\ref{app:instr}), which forgets the
+Here $\sigma[x{:=}v]$ updates slot $x$ in place, and $|_{I'}$ keeps the
+slots $I'$ that the rest of the sequence starts with (\rulename{dst-slot},
+Appendix~\ref{app:instr}), which forgets the
 values of variables whose scope has ended. Writing a slot also closes
-the open closure. The slot rule resets the open closure to $\cdot$, and
+the open closure. \rulename{dst-slot} resets the open closure to $\cdot$, and
 $\mathit{put}$ closes it by setting it to $\mathsf{none}$. The
 instructions other than $\kw{callq}$ update the state as $\mathit{instr}$
 specifies.
@@ -183,9 +183,10 @@ specifies.
   \mathit{instr}(\kw{fst}\; x, \%r,\; \langle R, \sigma, u, b\rangle) &= \kw{pair}(c, u') \leftarrow \sigma(x);\; \langle R^{\circ}[r{:=}c], \sigma, u', b\rangle \\
   \mathit{instr}(\kw{snd}\; \%r,\; \langle R, \sigma, u, b\rangle) &= \langle R[r{:=}u], \sigma, u, b\rangle
 \end{align*}
-Here $m$ on the right is the state on the left, and $R^{\circ}$ is $R$
-with the registers that held the code or the environment of an earlier
-open closure unset. As in the interpreter of \fpc, a pattern on the left
+Here $m$ on the right is the state on the left, and $R^{\circ}$ is the
+result of wiping $R$, which unsets the registers that held the code or the
+environment of an earlier open closure, as $\mathit{wipe}(\Theta)$ unsets their
+types in \rulename{ins-fst} (Appendix~\ref{app:instr}). As in the interpreter of \fpc, a pattern on the left
 of $\leftarrow$ always matches, because instructions are typed by the
 state they start in.
 The interpreter $\mathit{run}_k(B, m, s)$ runs a sequence $s$ in the

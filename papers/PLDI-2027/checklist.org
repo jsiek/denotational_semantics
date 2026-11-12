@@ -29,7 +29,7 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 | Graph Model (new)   |          |         | ＊ J✓ |       |     |           |        | ＊ T✓+D    |
 | Scott Domains (new) |          |         | ＊ J✓ |       |     |           |        | ＊ T✓+D    |
 | Reduction Semantics |          |         |       |       |     |           |        | ＊ T✓+D    |
-| Clocked Interpreter |          |         |       |       |     |           |        | ＊ T+D     |
+| Clocked Interpreter |          |         |       |       |     |           |        | ＊ T✓+D✓   |
 | CEK machine         |          |         |       |       |     |           |        | ＊ T✓+D    |
 
 - The end-to-end theorems are top priority to be checked
@@ -74,10 +74,10 @@ Graph
 | EnvClos               | J✓    | J✓    |     |     |        |
 | PairClos              | J✓    | J✓    |     |     |        |
 | GlobalFun             |       |       |     |     |        |
-| MNF                   |       |       |     |     |        |
-| Imp                   |       |       |     |     |        |
-| CFG                   |       |       |     |     |        |
-| ＊ Instrμ             | D     |       |     |     | ＊ D✓  |
+| MNF (D✓)             |       |       |     |     |        |
+| Imp (D✓)             |       |       |     |     | D✓     |
+| CFG (D✓)             |       |       |     |     | D✓     |
+| ＊ Instrμ (D✓)       | D     |       |     |     | ＊ D✓  |
 |                       |       |       |     |     |        |
 
 
@@ -88,7 +88,7 @@ Graph
   are related to our novel claim about split closure
 
 ** DONE (Tianyu) check the syntax and type rules for FPC, Clos, EnvClos, PairClos and GlobalFun languages
-** TODO (Darshal) check the syntax and type rules for MNF, Imp, CFG and Instrμ
+** DONE (Darshal) check the syntax and type rules for MNF, Imp, CFG and Instrμ
 
 * TODO (Darshal/Tianyu) Documentation for artifact/supplementary material. Include the software versions to use
 * TODO (Tianyu) Prepare and submit the supplementary material (starting at 4pm, new repo, git export)

@@ -40,9 +40,10 @@ languages that target a first-order language must go through closure
 conversion, which involves a change of representation, and that is
 more challenging to reason about in denotational semantics. Recall
 that \emph{closure conversion} replaces each function with a pair of
-code and the values of its free variables, and each function call with
-code that takes the pair
-apart~\citep{Guy-L.-Steele:1978yq,Cardelli:1984aa}.
+code and the values of its free variables, and replaces each function
+call with code that takes the pair
+apart~\citep{Guy-L.-Steele:1978yq,Cardelli:1984aa} and calls
+its first component with the second component as an extra argument.
 
 To date, every proof of compiler correctness with respect to a
 denotational semantics stops short of closure conversion for a
@@ -122,24 +123,24 @@ graph
 elements~\citep{Scott:1976lq,Engeler:1981aa,Plotkin:1993ab}. Each
 element is a finite description of the program's behavior, and in
 particular, the semantics of a function is given by a set of elements
-that represent input--output entries.  To prove semantic reflection we
-introduce a new kind of relation between denotations, the
-\emph{approximant logical relation}. Our key insight is to relate a
-finite set of target graph elements (a finite approximation) to a
-possibly infinite source denotation, and to define the relation by
-recursion on the depth of the elements in the finite set
-(Lemma~\ref{lem:delay} in Section~\ref{sec:approx-lr}).  Our second
-model uses Scott domains, in which a program denotes an element of a
-universal domain of tagged values~\citep{Scott:1982aa}.  There we
+that represent input--output entries.  To prove semantic reflection
+for closure conversion we introduce a new kind of relation between
+denotations, the \emph{approximant logical relation}. Our key insight
+is to relate a finite set of target graph elements (a finite
+approximation) to a possibly infinite source denotation, and to define
+the relation by recursion on the depth of the elements in the finite
+set (Lemma~\ref{lem:delay} in Section~\ref{sec:approx-lr}).  Our
+second model uses Scott domains, in which a program denotes an element
+of a universal domain of tagged values~\citep{Scott:1982aa}.  There we
 define the relation by recursion on the stages of the bilimit that
 constructs the domain (Lemma~\ref{lem:scott-delay} in
 Section~\ref{sec:scott-delay}), as \citet{Reynolds:1974aa} did to
 relate the direct and continuation semantics of an untyped
 $\lambda$-calculus. Other styles of denotational semantics remain to
 be evaluated for compiler correctness and closure conversion, among
-them synthetic domain theory \citep{Rosolini:1986aa,Hyland:1991aa} and
-its guarded variant \citep{Birkedal:2011aa,Mogelberg:2016aa}, guarded
-interaction trees \citep{Frumin:2024aa}, categorical semantics
+them synthetic domain theory
+\citep{Rosolini:1986aa,Hyland:1991aa,Birkedal:2011aa,Mogelberg:2016aa},
+guarded interaction trees \citep{Frumin:2024aa}, categorical semantics
 \citep{Fiore:1994aa}, the partiality monad \citep{Danielsson:2012aa},
 and game semantics \citep{Hyland:2000ve}.
 
@@ -148,36 +149,29 @@ two correctness proofs for the eight-pass compiler from \fpc{} to a
 typed low-level intermediate language. For seven of the eight passes,
 correctness is expressed as equality of denotations
 (Lemma~\ref{lem:equational}) and the proofs are by induction on terms
-and use equational reasoning.  The exception is the pass that
-separates the code of each closure from its environment, \pass{split
-  closure}, whose reflection proof uses the approximant logical
-relation for the graph model and the relation on stages of the bilimit
-for Scott domains.
+and use equational reasoning. The exception is closure conversion, in
+particular the \pass{split closure} pass that separates the code of each
+closure from its environment, whose semantic reflection proof requires
+the logical relations we discussed above.
 
-To answer RQ2 and RQ3, we compare the two denotational proofs with
-proofs of correctness of the same compiler with respect to three
-operational semantics
-(Propositions~\ref{prop:interp}--\ref{prop:reduction}), each proved
-using the technique usual for its style: clocked interpreters with
+To answer RQ2 and RQ3, we compare the two denotational proofs of
+correctness for our \fpc{} compiler with three more proofs of
+correctness, each with respect to an operational semantics
+(Propositions~\ref{prop:interp}--\ref{prop:reduction}) and proved
+using the standard technique for its style: clocked interpreters with
 relations on values, abstract machines with simulations, and reduction
-semantics with simulations.
-%
-We mechanize all five compiler correctness proofs in the Agda proof
-assistant \citep{Agda}.
-%
-Earlier work that compares proofs of
-compiler correctness focuses on a single phase or pass of a compiler
-\citep{Owens:2016aa,Kahn:2025aa,Knothe:2026aa}; ours is the first on a
-whole compiler for a higher-order language.  Each of the five
-correctness results is with respect to a different semantics, so one
-might wonder whether the semantics and therefore the results are
-equivalent. To check that our mechanized semantics agree, we prove the
-graph model adequate with respect to the interpreters, the abstract
-machines, and the reduction semantics, and the Scott-domain semantics
-adequate with respect to the interpreters
+semantics with simulations.  We mechanize all five compiler
+correctness proofs in the Agda proof assistant \citep{Agda}.  Earlier
+work that compares proofs of compiler correctness focuses on a single
+phase of a compiler \citep{Owens:2016aa,Kahn:2025aa,Knothe:2026aa};
+ours is the first on a whole compiler for a higher-order language.
+Each of the five correctness results is with respect to a different
+semantics, so one might wonder if the semantics and therefore the
+results are equivalent. To check that our mechanized semantics agree,
+we prove the graph model adequate with respect to the interpreters,
+the abstract machines, and the reduction semantics, and the
+Scott-domain semantics adequate with respect to the interpreters
 (Proposition~\ref{prop:adequacy}), so the five results are equivalent.
-These proofs adapt prior proofs of adequacy
-\citep{Plotkin:1977oc,Plotkin:1985aa,Siek:2017ab}.
 
 No one semantic style gives the smallest proof for every pass (RQ2),
 but for every pass, the smallest proof is either the graph-model proof
@@ -191,16 +185,16 @@ optimizer \pass{simplify}. The operational proofs are several times
 smaller for \pass{split closure}, which changes the representation of
 closures (Section~\ref{sec:evaluation}).
 
-Section~\ref{sec:compiler} presents the compiler, and
+Section~\ref{sec:compiler} presents the compiler and
 Section~\ref{sec:graph-models} gives background on the graph model.
-Section~\ref{sec:compiler-proof} proves each pass correct for the graph
-model and \pass{split closure} correct for Scott domains.
-Section~\ref{sec:adequacy} proves the denotational semantics adequate,
-Section~\ref{sec:evaluation} compares the five proofs,
-Section~\ref{sec:related} discusses related work, and
+Section~\ref{sec:compiler-proof} presents the correctness of each pass
+wrt. the graph model and the proof for \pass{split closure} wrt. Scott
+domains. Section~\ref{sec:adequacy} gives the adequacy theorems for
+the denotational semantics, Section~\ref{sec:evaluation} compares the
+five proofs, Section~\ref{sec:related} discusses related work, and
 Section~\ref{sec:conclusion} concludes. Appendix~\ref{app:scott}
-defines the Scott domains that we use, and for background on domain
-theory we refer the reader to \citet{Scott:1982aa},
-\citet{Winskel:1993aa}, and \citet{Abramsky:1994cr}. The other
-appendices define the semantics of every language and every pass, and
-the supplementary material contains our Agda development.
+defines the Scott domains. For background on domain theory, we refer
+the reader to \citet{Scott:1982aa}, \citet{Winskel:1993aa}, and
+\citet{Abramsky:1994cr}. The other appendices define the semantics of
+every language and compiler pass. Our Agda development is in the
+supplementary material.
