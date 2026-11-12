@@ -196,54 +196,52 @@ definitions and a main term.
 
 \paragraph{The back end}
 
-The pass \pass{remove complex operands}
-(\pass{RCO}, \S\ref{app:pass-rco}) translates from GlobalFun to MNF, a \emph{monadic normal form}
-\citep{Hatcliff:1994vn}. It binds each operand that is not atomic to a variable with
-$\kw{let}$, so the operands of every operation in MNF are atomic.  The
-atomic terms are variables, constants, and function names.  The
-\pass{lift locals} pass (\S\ref{app:pass-lift-locals}) translates from MNF to Imp. It gives each variable its own fixed location in the
-function's stack frame, called a \emph{slot}. A function body declares
-its frame $\Phi$, which lists the types of its slots. The type system
-tracks which slots are initialized, so a program reads a slot only
-after it writes the slot. The \pass{explicate control} pass (\S\ref{app:pass-explicate}) translates from Imp to CFG. It turns
-the nested $\kw{case}$s into a control-flow graph. A CFG
-program has a function body for each global definition and for the
-main program. A body consists of numbered blocks and a starting tail,
-and a block may jump only to blocks numbered before it, so control
-flow is acyclic.
+The pass \pass{remove complex operands} (\pass{RCO},
+\S\ref{app:pass-rco}) translates from GlobalFun to MNF, a
+\emph{monadic normal form} \citep{Hatcliff:1994vn}. It binds each
+operand that is not atomic to a variable with $\kw{let}$, so the
+operands of every operation in MNF are atomic.  The atomic terms are
+variables, constants, and function names.  The \pass{lift locals} pass
+(\S\ref{app:pass-lift-locals}) translates from MNF to Imp. It gives
+each variable its own location in the function's stack frame, called a
+\emph{slot}. A function body declares its frame $\Phi$, which lists
+the types of its slots. The type system tracks which slots are
+initialized. The \pass{explicate control} pass
+(\S\ref{app:pass-explicate}) translates from Imp to CFG. It turns the
+nested $\kw{case}$s into a control-flow graph. A CFG program has a
+function body for each global definition and for the main program. A
+body consists of numbered blocks and a starting tail, and a block may
+jump only to blocks numbered before it, so control flow is acyclic.
 
 Finally, \pass{select instructions} (\S\ref{app:pass-select})
 translates from CFG to \instr, a typed low-level language in the style of TAL
 \citep{Morrisett:1999fk}, with an x86 flavor.  \instr\ has three
 registers ($\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$), a stack frame of
 slots, and an abstract heap. Programs have the same structure as in
-CFG. Instruction operands $a$ are slots, constants, names of
+CFG. Instruction operands $a$ are slot numbers, constants, names of
 definitions, or registers. Instructions write to a destination $\mathit{dst}$, a
 register or a slot.
 
 The pass translates each simple expression of CFG into instructions
-that leave its value in a destination, using the registers to stage
+that write its value to a destination, using the registers to stage
 arithmetic and calls. A closure ($\kw{pair}$), a tuple, or an
-injection becomes the instruction $\kw{alloc}\;o, \mathit{dst}$, which allocates
-the object $o$ on the heap. A call $\kw{callc}\;x\;a$ of the closure
-in slot $x$ on the argument $a$ becomes the instruction sequence
-$\kw{fst}\;x, \%\kw{rax};\;\;
- \kw{snd}\;x, \%\kw{rdi};\;\;
- \kw{movq}\;a, \%\kw{rsi};\;\;
- \kw{callq}\;\%\kw{rax}$.
-The first two instructions load the code and the environment of the
-closure, the third puts the argument in place, and the call leaves its
-result in $\kw{rax}$. The type system allows only one closure to be
-open at a time, so that a call never combines the code of one closure
-with the environment of another. The coercions $\kw{fold}$ and
-$\kw{unfold}$ become annotations on operands, $\kw{fold}\;a$ and
-$\kw{unfold}\;a$, that do nothing.
+injection becomes the instruction $\kw{alloc}\;o, \mathit{dst}$, which
+allocates the object $o$ on the heap. A call $\kw{callc}\;x\;a$ of the
+closure in slot $x$ on the argument $a$ becomes the instruction
+sequence $\kw{fst}\;x, \%\kw{rax};\;\; \kw{snd}\;x, \%\kw{rdi};\;\;
+\kw{movq}\;a, \%\kw{rsi};\;\; \kw{callq}\;\%\kw{rax}$.  The first two
+instructions load the code and the environment of the closure, the
+third puts the argument in place, and the call leaves its result in
+$\kw{rax}$. The type system allows only one closure to be open at a
+time, so that a call never combines the code of one closure with the
+environment of another. The coercions $\kw{fold}$ and $\kw{unfold}$
+become annotations on operands, $\kw{fold}\;a$ and $\kw{unfold}\;a$,
+that do nothing.
 
 \instr\ abstracts from a real instruction set. Its heap is abstract,
 with no addresses or memory layout, and control flow within a function
-is acyclic, so loops are recursive calls. Neither abstraction concerns
-closure conversion, because in \instr, as in machine code, a closure is
-a heap object that pairs a function's code pointer with a tuple of
-captured values, and the caller passes the tuple, along with the
-argument, in argument-passing registers before it calls the code
-pointer.
+is acyclic. Neither abstraction concerns closure conversion, because
+in \instr, as in machine code, a closure is a heap object that pairs a
+function's code pointer with a tuple of captured values, and the
+caller passes the tuple, along with the argument, in argument-passing
+registers before it calls the code pointer.
