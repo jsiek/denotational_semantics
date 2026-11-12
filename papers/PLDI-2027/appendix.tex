@@ -676,9 +676,10 @@ an instruction transforms the meaning $\kappa$ of the rest of the
 sequence. An unset register and an unset flag hold $\{\langle\rangle\}$.
 An operand means $\mathcal{O}\den{a}\sigma R = \mathcal{A}\den{a}\sigma$
 for an atom, $R(r)$ for $\%r$, and $\mathcal{O}\den{a}\sigma R$ for
-$\kw{fold}\;a$ and $\kw{unfold}\;a$. A constructor means the operator of its
-kind on the meanings of its operands ($\mathsf{pair}$, $\mathcal{T}$,
-$\mathsf{inl}$, $\mathsf{inr}$). A write to a destination, written
+$\kw{fold}\;a$ and $\kw{unfold}\;a$. The meaning
+$\mathcal{O}\den{\mathit{con}}\sigma R$ of a constructor, which
+$\kw{alloc}$ allocates, applies $\mathsf{pair}$, $\mathcal{T}$,
+$\mathsf{inl}$, or $\mathsf{inr}$ to the meanings of its operands. A write to a destination, written
 $\mathit{put}$, updates a register, or binds a slot as an assignment in
 CFG does.
 {\small\figdefs
@@ -712,7 +713,9 @@ CFG does.
 \]
 }
 Here $R_C$ maps $\kw{rax}$ to $C$ and the other registers to
-$\{\langle\rangle\}$; only a call can diverge, so only it is strict.
+$\{\langle\rangle\}$. Only a call can diverge, so only $\kw{callq}$
+needs a $\mathsf{guard}$, which makes the rest of the sequence strict
+in the result $C$.
 {\small\figdefs
 \defhead{Semantics of sequences}{\den{s}_B\,\sigma R F = D}
 \[
@@ -734,8 +737,16 @@ definition means
 $T(k) = \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{s}_B\,\rho_0\,R_{X,Y}\,
 \{\langle\rangle\}))$ for its function body $s$ with blocks $B$, where
 $R_{X,Y}$ maps $\kw{rdi}$ to $X$, $\kw{rsi}$ to $Y$, and $\kw{rax}$ to
-$\{\langle\rangle\}$; the tables are as in GlobalFun. A program means its main function body in $\rho_0$ and $R_0$, with the flag
-$\{\langle\rangle\}$.
+$\{\langle\rangle\}$; the tables are as in GlobalFun. A program means
+its main function body:
+\[
+  \den{(\vec{d};\; (\Phi; s_0, \ldots, s_{j-1};\; s))} =
+  \den{s}_B\,\rho_0\,R_0\,\{\langle\rangle\}
+\]
+Its start sequence $s$ runs with the meanings $B$ of its blocks $s_0,
+\ldots, s_{j-1}$, as above, in the frame $\rho_0$, which maps every
+slot to $\{\langle\rangle\}$, with the registers $R_0$, which are all
+unset, and with the flag $\{\langle\rangle\}$, which is unset.
 
 \section{The Compiler Passes}
 \label{app:passes}
