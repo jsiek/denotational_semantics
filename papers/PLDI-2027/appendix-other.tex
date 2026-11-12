@@ -181,7 +181,7 @@ specifies.
   \mathit{instr}(\kw{alloc}\; \mathit{con}, \mathit{dst},\; m) &= \mathit{put}(\mathit{dst}, \mathit{obj}(\mathit{con}, m), m) \\
   \mathit{instr}(\kw{load}\; \kw{get}_i\; a, \mathit{dst},\; m) &= \kw{tup}(v_1, \ldots, v_n) \leftarrow \mathit{arg}(a, m);\; \mathit{put}(\mathit{dst}, v_i, m) \\
   \mathit{instr}(\kw{fst}\; x, \%r,\; \langle R, \sigma, u, b\rangle) &= \kw{pair}(c, u') \leftarrow \sigma(x);\; \langle R^{\circ}[r{:=}c], \sigma, u', b\rangle \\
-  \mathit{instr}(\kw{snd}\; \%r,\; \langle R, \sigma, u, b\rangle) &= \langle R[r{:=}u], \sigma, u, b\rangle
+  \mathit{instr}(\kw{snd}\; x, \%r,\; \langle R, \sigma, u, b\rangle) &= \langle R[r{:=}u], \sigma, u, b\rangle
 \end{align*}
 Here $m$ on the right is the state on the left, and $R^{\circ}$ is the
 result of wiping $R$, which unsets the registers that held the code or the
