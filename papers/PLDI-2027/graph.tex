@@ -156,13 +156,14 @@ of all entries $V \mapsto w$ such that the output $w$ is in the meaning of
 the function's body in an environment that maps its parameter to the
 input $V$, together with $\nu$. The input $V$ must be nonempty and
 consistent, written $\mathsf{con}(V)$, which we explain at the end of
-this section. Because of $\nu$, a $\lambda$-abstraction has a nonempty
-meaning, as befits a value in a call-by-value language, even if it is
-never applied. The operator $D \app E$ gives the meaning of
-application. It collects the outputs of the entries of $D$ whose input
-is contained in the argument $E$. For example, $\den{\lambda x.\, x +
-  1}$ contains the entry $[n] \mapsto n{+}1$ for every integer $n$, and
-$\den{(\lambda x.\, x + 1)\; 3} = \{4\}$.
+this section. For example, $\den{\lambda x.\, x + 1}$ contains the
+entry $[n] \mapsto n{+}1$ for every integer $n$. Because of $\nu$, a
+$\lambda$-abstraction has a nonempty meaning, as befits a value in a
+call-by-value language, even if it is never applied. The operator
+$D \app E$ gives the meaning of application. It collects the outputs
+of the entries of $D$ whose input is contained in the argument $E$.
+For example, $\den{(\lambda x.\, x + 1)\; 3} = \{4\}$ because the
+input of the entry $[3] \mapsto 4$ is contained in $\den{3} = \{3\}$.
 %
 For a higher-order example, $\den{\lambda f.\, \lambda x.\, f\;(f\;x)}$
 contains the entry
