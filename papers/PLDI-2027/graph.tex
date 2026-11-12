@@ -94,14 +94,14 @@ A denotational semantics maps each program to a mathematical object
 that describes its behavior. In a graph model, that object is a set of
 finite pieces of evidence about the behavior, which we call
 \emph{elements}. Our model is a variant of the model of
-\citet{Engeler:1981aa}, which we extend with pairs, tuples, and
-disjoint sums. Figure~\ref{fig:graph-ops} defines elements, several
-semantic operators on sets of elements, and the semantics of \fpc. We
-first explain how the model represents functions, then introduce the
-elements, and then the operators. We review how the model handles
-recursion and divergence, and why we require sets of elements to be
-consistent. We end this section with the properties of the semantics
-that our proofs rely on, including a $\beta$-law.
+\citet{Engeler:1981aa}, which we extend with constants, pairs, tuples,
+and disjoint sums. Figure~\ref{fig:graph-ops} defines elements,
+several semantic operators on sets of elements, and the semantics of
+\fpc. We first explain how the model represents functions, then
+introduce the elements, and then the operators. We review how the
+model handles recursion and divergence, and why we require sets of
+elements to be consistent. We end this section with the properties of
+the semantics that our proofs rely on, including a $\beta$-law.
 
 \paragraph{Functions as tables}
 
@@ -132,15 +132,15 @@ set of elements is expected, and assume the natural conversion takes
 place.}  and whose output $w$ is an element.\footnote{The input of an
 entry could instead be a single element, as in filter models
 \citep{Barendregt:1983aa}, but a list makes the metatheory cleaner
-because the argument of a function is often a function, and $V$
-can contain one entry for each call to it.} The element $\nu$
-records that a term evaluates to a function, without describing any of
-the function's rows. The other elements describe the data of our
-languages: a constant $c$; a pair $\pairv{u}{v}$, which we use
-for closures; a tuple element $\mathsf{tup}_i(v)$, which says that
-component $i$ of a tuple is described by $v$; the injections
-$\mathsf{left}(v)$ and $\mathsf{right}(v)$ of a sum; and the empty
-tuple $\langle\rangle$.  A denotation is a set of elements.
+because the argument of a function is often a function, and $V$ can
+contain one entry for each call to it.} The element $\nu$ records that
+a term evaluates to a function, without describing any of the
+function's rows. The other elements describe the data of our
+languages: a constant $c$, a pair $\pairv{u}{v}$, a tuple element
+$\mathsf{tup}_i(v)$ which says that component $i$ of a tuple is
+described by $v$, the empty tuple $\langle\rangle$, and the injections
+$\mathsf{left}(v)$ and $\mathsf{right}(v)$ of a sum. A denotation is a
+set of elements.
 
 \paragraph{Operators}
 
