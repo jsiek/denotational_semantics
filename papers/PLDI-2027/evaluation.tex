@@ -228,22 +228,21 @@ tokens in the graph model and 15,211 with Scott domains, against 773
 to 2,534 in the operational styles. For the graph model, most of the
 difference has three sources. First, the denotational proof needs two
 directions, while a simulation proof gets the backward direction for
-free from forward simulation and the determinism of the target.
-%% The graph model has an analogue of determinism, the consistency of
-%% denotations, and it does part of the job. If the source produces a
-%% constant, the forward direction puts that constant in the target, and
-%% consistency rules out any other. But the graph model represents
-%% divergence as the empty set, the absence of evidence, and a forward
-%% relation cannot carry absence. Showing that a diverging program
-%% compiles to a diverging program is therefore a separate argument, and
-%% that argument is reflection.
-Second, reflection needs the finite lists, the self-contained calls,
-and the lemma that extracts them from a target call. Third, the
-$\beta$-law of Lemma~\ref{lem:beta} holds only under side conditions
-of nonemptiness, consistency, and continuity, which an operational
-semantics does not need. The Scott-domain proof shares the first
-source, and its stage relations replace the other two with the costs
-discussed next.
+free from forward simulation and the determinism of the target.  The
+graph model has an analogue of determinism, the consistency of
+denotations, and it does part of the job. If the source produces a
+constant, the forward direction puts that constant in the target, and
+consistency rules out any other. But the graph model represents
+divergence as the empty set, the absence of evidence, and a forward
+relation cannot carry absence. Showing that a diverging program
+compiles to a diverging program is therefore a separate argument, and
+that argument is reflection. Second, reflection needs the finite
+lists, the self-contained calls, and the lemma that extracts them from
+a target call. Third, the $\beta$-law of Lemma~\ref{lem:beta} holds
+only under side conditions of nonemptiness, consistency, and
+continuity, which a machine does not need. The Scott-domain proof
+shares the first source, and its stage relations replace the other two
+with the costs discussed next.
 
 \paragraph{The graph model is smaller than Scott domains.}
 
