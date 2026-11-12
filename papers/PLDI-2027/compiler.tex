@@ -44,7 +44,7 @@
 \[
 \begin{array}{@{}l@{\;\;}l@{\;}r@{\;}c@{\;}l@{}}
  & \text{Variables} & x, y, z & & \text{(from Imp on, slots of a stack frame)}\\
- & \text{Labels} & l & & \text{(from CFG on, the number of a block $t_l$ or $s_l$)}\\
+ & \text{Labels} & l & & \text{(the number of a block, $t_l$ or $s_l$, in a function def. of CFG and \instr{})}\\
  & \text{Base types} & B & ::= & \kw{Nat} \mid \kw{Int} \mid \kw{Bool} \mid \kw{Unit} \mid \kw{Void}\\
  & \text{Types} & A, C & ::= & B \mid A \rightarrow C \mid \kw{tup}(A_1, \ldots, A_n)
   \mid A + C \mid \mu X.\, A \mid X \mid \kw{code}(\Delta; A \rightarrow C)\\
@@ -92,23 +92,27 @@
 \end{figure}
 
 Our compiler translates \fpc, the call-by-value $\lambda$-calculus
-with sums, products, and iso-recursive types of \citet{Plotkin:1985aa}
-and \citet{Fiore:1994aa}, extended with integers, to \instr, a typed low-level intermediate language, in eight
-passes through six intermediate languages. Figure~\ref{fig:pipeline} shows the passes and languages, which this section defines and Section~\ref{sec:compiler-proof} proves correct.
-Figure~\ref{fig:grammars} presents the grammars of all the languages, and Appendix~\ref{app:types} gives their typing rules.\footnote{Every language is intrinsically
-typed in our Agda development, so every term is well typed by
-construction and no pass needs a precondition about scoping or
-typing.} In Figure~\ref{fig:grammars}, each closure language lists
-only the forms it adds to the one above it, and ``$\ldots$'' stands
-for the remaining forms of \fpc. Throughout, $c$ ranges over
-constants, $p$ over the primitives $\kw{sub}$ and $\kw{eq}$, and $f_k$ over the names of a program's global
-definitions, where $f_k$ refers to the definition $d_k$. In the
-languages prior to Imp, $x$, $y$, and $z$ range over variables. From
-Imp on, they range over fixed locations in a function's stack frame,
-as we explain below. We write a binder as one or more names followed by a period, and the binder binds the names in the term after the period. For example, in
-$\lambda x.\,N$ and $\kw{case}\;L\;(x.\,M)\;(y.\,N)$, the name $x$ is
-bound in $N$ and $M$, and $\kw{clos}\;(z, y.\,N)$ binds $z$
-and $y$ in $N$. Every language also has a graph-model semantics
+with sums, products, and iso-recursive types of
+\citet{Plotkin:1985aa}, extended with integers, to \instr, a typed
+low-level intermediate language, in eight passes through six
+intermediate languages. Figure~\ref{fig:pipeline} shows the sequence
+of passes and languages, which this section introduces and
+Section~\ref{sec:compiler-proof} proves correct.
+Figure~\ref{fig:grammars} presents the grammars of all the languages,
+and Appendix~\ref{app:types} gives their typing rules.\footnote{Every
+language is intrinsically typed in our Agda development, so every term
+is well typed by construction and no pass needs a precondition about
+scoping or typing.}
+Definitions of the passes are in the Appendix~\ref{app:passes}.
+
+Throughout Figure~\ref{fig:grammars}, $c$ ranges over constants, $p$
+over the primitives $\kw{sub}$ and $\kw{eq}$, and $f_k$ over the names
+of a program's global definitions, where $f_k$ refers to the
+definition $d_k$. In the languages prior to Imp, $x$, $y$, and $z$
+range over variables. From Imp on, they range over fixed locations in
+a function's stack frame. We write binders as one or more names
+followed by a period, and the scope of the binders is the term after
+the period. Every language has a graph-model semantics
 (Section~\ref{sec:graph-models}), given in full in
 Appendix~\ref{app:languages}.
 
@@ -126,14 +130,9 @@ unfolding into a term of the recursive type, and $\kw{unfold}$ turns it back:
   \qquad
   \frac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \]
-Neither coercion does anything at run time. \fpc\ has no recursion
-operator.  Recursive types make self-application typable, so a program can define the call-by-value fixed-point combinator:
-\[
-  \mathit{fix} = \lambda f.\, g\;(\kw{fold}\;g)
-  \quad\text{where}\;\;
-  g = \lambda x.\, f\;(\lambda v.\, (\kw{unfold}\;x)\;x\;v)
-  \quad\text{and}\;\; x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})
-\]
+Neither coercion does anything at run time. Recursive types make
+self-application typable, so a program can define the call-by-value
+fixed-point combinator to write recursive functions.
 
 \paragraph{The optimizer}
 
@@ -146,28 +145,30 @@ inlines small known functions.
 \paragraph{Closure conversion}
 
 The next three passes perform closure conversion. The \pass{enclose}
-pass (\S\ref{app:pass-enclose}) translates from \fpc\ to EnvClos. It turns each $\lambda$-abstraction into a closure
-$\kw{clos}\;(z, y.\,N)\;\vec{M}$, which captures the values
-$\vec{M}$ of the variables that the code $N$ uses. The closure binds
-two variables in its code, the environment $z$ and the parameter $y$,
-and the code, which has no other free variables, reads the $i$th
-captured value as $\kw{get}_i\,z$.\footnote{Our
-Agda development implements \pass{enclose} as three passes, which
-capture every variable in scope, drop the captured values that the
-code does not use, and store the rest in a tuple. The proof of
-\pass{enclose} composes their proofs, and Table~\ref{tab:loc} reports
-the sum of their sizes.} The \pass{split closure} pass (\S\ref{app:pass-delay}) then
-separates a closure into its code and its environment, translating
-from EnvClos to PairClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is
-closed code of type $\kw{code}(\Delta; A \rightarrow C)$, which
-expects an environment of type $\kw{tup}(\Delta)$ and an argument of
-type $A$. The form $\kw{pair}\;L\;M$ builds a closure, which is a pair of code
-$L$ and an environment $M$ of the same $\Delta$. Its type, $A \rightarrow C$, hides $\Delta$, as in the existential type
-$\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times
-\kw{tup}(\Delta)$ of typed closure conversion \citep{Minamide:1996ys},
-so closures with different environments have the same type. Thus
-$\kw{pair}$ also packs an existential, but it means just a pair. The form
-$\kw{callc}\;L\;M$ calls the code of the closure $L$ with its
+pass (\S\ref{app:pass-enclose}) translates from \fpc\ to EnvClos.  It
+turns each $\lambda$-abstraction into a closure $\kw{clos}\;(z,
+y.\,N)\;\vec{M}$, which captures the values $\vec{M}$ of the variables
+that the code $N$ uses. The closure binds two variables in its code,
+the environment $z$ and the parameter $y$, and the code, which has no
+other free variables, reads the $i$th captured value as
+$\kw{get}_i\,z$.\footnote{Our Agda development implements
+\pass{enclose} as three passes, which capture every variable in scope,
+drop the captured values that the code does not use, and store the
+rest in a tuple. The proof of \pass{enclose} composes their proofs,
+and Table~\ref{tab:loc} reports the sum of their sizes.} The
+\pass{split closure} pass (\S\ref{app:pass-delay}) then separates a
+closure into its code and its environment, translating from EnvClos to
+PairClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is closed code of
+type $\kw{code}(\Delta; A \rightarrow C)$, which expects an
+environment of type $\kw{tup}(\Delta)$ and an argument of type
+$A$. The form $\kw{pair}\;L\;M$ builds a closure, which is a pair of
+code $L$ and an environment $M$ of the same $\Delta$. Its type, $A
+\rightarrow C$, hides $\Delta$, as in the existential type $\exists
+\Delta.\, \kw{code}(\Delta; A \rightarrow C) \times \kw{tup}(\Delta)$
+of typed closure conversion \citep{Minamide:1996ys}, so closures with
+different environments have the same type. Thus $\kw{pair}$ also packs
+an existential, but its dynamic semantics is the usual for a pair. The
+form $\kw{callc}\;L\;M$ calls the code of the closure $L$ with its
 environment and the argument $M$.
 \vspace{-5pt}
 \begin{gather*}
@@ -186,8 +187,9 @@ environment and the argument $M$.
         \end{array}}
        {\Gamma \vdash \kw{callc}\;L\;M : C}
 \end{gather*}
-Finally, the \pass{hoist} pass (\S\ref{app:pass-globalize}), named after the hoisting phase of
-\citet{Morrisett:1999fk}, translates from PairClos to GlobalFun. It turns the code of every function into a
+Finally, the \pass{hoist} pass (\S\ref{app:pass-globalize}) (similar
+to the hoisting phase of \citet{Morrisett:1999fk}) translates from
+PairClos to GlobalFun. It turns the code of every function into a
 global definition $d_k$, and each occurrence of the code into a
 reference $f_k$ to it, so a GlobalFun program is a list of function
 definitions and a main term.
