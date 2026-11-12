@@ -157,23 +157,23 @@ the function's body in an environment that maps its parameter to the
 input $V$, together with $\nu$. The input $V$ must be nonempty and
 consistent, written $\mathsf{con}(V)$, which we explain at the end of
 this section. For example, $\den{\lambda x.\, x + 1}$ contains the
-entry $[n] \mapsto n{+}1$ for every integer $n$. Because of $\nu$, a
-$\lambda$-abstraction has a nonempty meaning, as befits a value in a
-call-by-value language, even if it is never applied. The operator
-$D \app E$ gives the meaning of application. It collects the outputs
-of the entries of $D$ whose input is contained in the argument $E$.
-For example, $\den{(\lambda x.\, x + 1)\; 3} = \{4\}$ because the
-input of the entry $[3] \mapsto 4$ is contained in $\den{3} = \{3\}$.
-%
-For a higher-order example, $\den{\lambda f.\, \lambda x.\, f\;(f\;x)}$
-contains the entry
+entry $[n] \mapsto n{+}1$ for every integer $n$. For a higher-order
+example, $\den{\lambda f.\, \lambda x.\, f\;(f\;x)}$ contains the entry
 \[
 [\, [0] \mapsto 1,\; [1] \mapsto 2 \,] \mapsto
 ([0] \mapsto 2)
 \]
-whose input has one entry for each call to $f$. That input is included
-in $\den{\lambda x.\, x + 1}$, so applying the higher-order function
-to $\lambda x.\, x + 1$ and then to $0$ gives $\{2\}$.
+whose input has one entry for each call to $f$. Because of $\nu$, a
+$\lambda$-abstraction has a nonempty meaning, as befits a value in a
+call-by-value language, even if it is never applied.
+
+The operator $D \app E$ gives the meaning of application. It collects
+the outputs of the entries of $D$ whose input is contained in the
+argument $E$. For example, $\den{(\lambda x.\, x + 1)\; 3} = \{4\}$
+because the input of the entry $[3] \mapsto 4$ is contained in
+$\den{3} = \{3\}$. Likewise, applying the higher-order function to
+$\lambda x.\, x + 1$ and then to $0$ gives $\{2\}$ because the input
+of the entry above is contained in $\den{\lambda x.\, x + 1}$.
 
 The other operators build and take apart data. The operator
 $\mathsf{pair}$ builds pairs, and $\car$ and $\cdr$ take their
