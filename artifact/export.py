@@ -3,7 +3,10 @@
 
     python3 artifact/export.py OUTDIR        (from the repository root)
 
-OUTDIR must not exist, or be empty.  The artifact gets
+OUTDIR must not exist, be empty, or hold an earlier export: then the
+files of that export (those its MANIFEST.sha256 lists) are replaced, and
+whatever else is there (a .git, Agda's _build) is left alone.  The
+artifact gets
 
   * the import closure of agda/FPC/All.agda and agda/AllScott.agda (and so
     none of the ISWIM pipelines, agda/ISWIM/, nor agda/old/,
@@ -14,7 +17,12 @@ OUTDIR must not exist, or be empty.  The artifact gets
     with scott/typetopology-builtin-alias.patch, under vendor/TypeTopology/,
     with TypeTopology's LICENSE, the patch and a NOTICE;
   * loc.py (papers/PLDI-2027/loc.py, run with --artifact by `make tables`),
-    and the README, Makefile and Dockerfile of artifact/template/.
+    and the files of artifact/template/ (the README, Makefile and
+    Dockerfile, and .dir-locals.el for Agda's Emacs mode);
+  * the appendix of the paper, Appendix.pdf: the pages of
+    papers/PLDI-2027/paper.pdf from page APPENDIX_FROM on, cut out with
+    cpdf.  Build the paper first; the PDF is not checked for identifying
+    strings.
 
 TypeTopology is taken from _deps/TypeTopology, fetched and patched by
 `make scott-deps`; the script checks that it is at the pinned commit and
@@ -26,7 +34,7 @@ identifying string (see BANNED), or if a rewrite no longer applies.  It
 also lists the paths that comments mention but that are not in the
 artifact (informational).
 """
-import hashlib, os, re, shutil, subprocess, sys
+import atexit, hashlib, os, re, shutil, subprocess, sys, tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOTS = ['agda/FPC/All.agda', 'agda/AllScott.agda']
@@ -37,6 +45,8 @@ TT_URL = 'https://github.com/martinescardo/TypeTopology'
 PATCH = os.path.join(REPO, 'scott', 'typetopology-builtin-alias.patch')
 TEMPLATE = os.path.join(REPO, 'artifact', 'template')
 LOC = os.path.join(REPO, 'papers', 'PLDI-2027', 'loc.py')
+PAPER = os.path.join(REPO, 'papers', 'PLDI-2027', 'paper.pdf')
+APPENDIX_FROM = 25   # the page of the paper on which its appendix starts
 
 
 # --- the import closure --------------------------------------------------------
@@ -236,6 +246,37 @@ def dangling(out):
 
 # --- the export -----------------------------------------------------------------
 
+def install(out, dest):
+    """Move the export from out to dest, in place of the earlier export
+    there: the files that the MANIFEST.sha256 of dest lists are removed,
+    with the directories that this empties; other files of dest stay."""
+    def sha(f):
+        return hashlib.sha256(open(f, 'rb').read()).hexdigest()
+    manifest = open(os.path.join(dest, 'MANIFEST.sha256')).read()
+    old = {rel: d for d, rel in (l.split('  ', 1) for l in manifest.split('\n') if l)
+           if os.path.isfile(os.path.join(dest, rel))}
+    old['MANIFEST.sha256'] = sha(os.path.join(dest, 'MANIFEST.sha256'))
+    new = sorted(os.path.relpath(os.path.join(root, name), out)
+                 for root, _, files in os.walk(out) for name in files)
+    changed = sorted(rel for rel, d in old.items() if sha(os.path.join(dest, rel)) != d)
+    if changed:
+        sys.exit(f'export: files of the earlier export in {dest} have been changed since '
+                 '(restore or delete them):\n  ' + '\n  '.join(changed))
+    in_the_way = [rel for rel in new if rel not in old and os.path.lexists(os.path.join(dest, rel))]
+    if in_the_way:
+        sys.exit(f'export: files of {dest} that are not of the earlier export are in the way:\n  '
+                 + '\n  '.join(in_the_way))
+    for rel in old:
+        os.remove(os.path.join(dest, rel))
+        d = os.path.dirname(os.path.join(dest, rel))
+        while d != dest and not os.listdir(d):
+            os.rmdir(d)
+            d = os.path.dirname(d)
+    for rel in new:
+        os.makedirs(os.path.dirname(os.path.join(dest, rel)), exist_ok=True)
+        shutil.move(os.path.join(out, rel), os.path.join(dest, rel))
+
+
 def tt_checked():
     """TypeTopology is at the pinned commit, with the patch applied."""
     if not os.path.isfile(os.path.join(TT, '.fetched-' + TT_COMMIT)):
@@ -328,9 +369,14 @@ column.
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
-    out = os.path.abspath(sys.argv[1])
-    if os.path.exists(out) and os.listdir(out):
-        sys.exit(f'export: {out} exists and is not empty')
+    dest = os.path.abspath(sys.argv[1])
+    previous = os.path.exists(dest) and bool(os.listdir(dest))
+    if previous and not os.path.isfile(os.path.join(dest, 'MANIFEST.sha256')):
+        sys.exit(f'export: {dest} is not empty, and has no MANIFEST.sha256 of an earlier export')
+    # an earlier export is replaced once the new one is complete
+    out = tempfile.mkdtemp(prefix='export-') if previous else dest
+    if previous:
+        atexit.register(shutil.rmtree, out, ignore_errors=True)
     os.chdir(REPO)
     tt_checked()
     agda, tt = closure()
@@ -385,14 +431,23 @@ def main():
     for f in sorted(os.listdir(TEMPLATE)):
         shutil.copyfile(os.path.join(TEMPLATE, f), os.path.join(out, f))
 
-    # Tables 1 and 2, measured on the exported tree, into the README
+    # the appendix
+    if not os.path.isfile(PAPER):
+        sys.exit(f'export: {PAPER} is missing: build the paper first')
+    if not shutil.which('cpdf'):
+        sys.exit('export: cpdf is not installed (it cuts the appendix out of the paper)')
+    r = subprocess.run(['cpdf', PAPER, f'{APPENDIX_FROM}-end', '-o', os.path.join(out, 'Appendix.pdf')],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(f'export: cpdf fails on {PAPER}:\n{r.stdout}{r.stderr}')
+
+    # Tables 1 and 2, measured on the exported tree, into the README, where
+    # it says TABLES_OUTPUT (if it does)
     r = subprocess.run([sys.executable, 'loc.py', '--artifact'], cwd=out, capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit(f'export: loc.py --artifact fails on the exported tree:\n{r.stdout}{r.stderr}')
     readme = os.path.join(out, 'README.md')
     text = open(readme, encoding='utf-8').read()
-    if text.count('TABLES_OUTPUT') != 1:
-        sys.exit('export: the README has no TABLES_OUTPUT')
     text = text.replace('TABLES_OUTPUT', r.stdout.strip().replace('## ', '#### '))
     open(readme, 'w', encoding='utf-8').write(text)
     shutil.rmtree(os.path.join(out, '__pycache__'), ignore_errors=True)
@@ -408,9 +463,11 @@ def main():
             nbytes += len(data)
             lines.append(f'{hashlib.sha256(data).hexdigest()}  {os.path.relpath(path, out)}')
     open(os.path.join(out, 'MANIFEST.sha256'), 'w').write('\n'.join(sorted(lines, key=lambda l: l[66:])) + '\n')
-    print(f'exported to {out}: {len(agda)} Agda files of ours, {len(tt)} of TypeTopology, '
+    if previous:
+        install(out, dest)
+    print(f'exported to {dest}: {len(agda)} Agda files of ours, {len(tt)} of TypeTopology, '
           f'{len(lines)} files in all, {nbytes // 1024} KiB')
-    refs = dangling(out)
+    refs = dangling(dest)
     if refs:
         print('paths mentioned in comments but not in the artifact (informational):')
         for r in sorted(refs):
