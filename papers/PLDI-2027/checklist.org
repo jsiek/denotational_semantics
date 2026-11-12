@@ -23,14 +23,14 @@ Add a check mark ✓ next to the initials in table cells below to indicate that 
 
 * Compiler correctness proofs
 
-|                     | Lemmas   |         |        |       |     |           |        | Theorems   |
-| Semantics \ Passes  | Simplify | Enclose | Split  | Hoist | RCO | Explicate | Select | End-to-end |
-|---------------------+----------+---------+--------+-------+-----+-----------+--------+------------|
-| Graph Model (new)   |          |         | ＊ J✓ |       |     |           |        | ＊ T+D     |
-| Scott Domains (new) |          |         | ＊ J✓ |       |     |           |        | ＊ T+D     |
-| Reduction Semantics |          |         |        |       |     |           |        | ＊ T+D     |
-| Clocked Interpreter |          |         |        |       |     |           |        | ＊ T+D✓   |
-| CEK machine         |          |         |        |       |     |           |        | ＊ T+D     |
+|                     | Lemmas   |         |       |       |     |           |        | Theorems   |
+| Semantics \ Passes  | Simplify | Enclose | Split | Hoist | RCO | Explicate | Select | End-to-end |
+|---------------------+----------+---------+-------+-------+-----+-----------+--------+------------|
+| Graph Model (new)   |          |         | ＊ J✓ |       |     |           |        | ＊ T✓+D    |
+| Scott Domains (new) |          |         | ＊ J✓ |       |     |           |        | ＊ T✓+D    |
+| Reduction Semantics |          |         |       |       |     |           |        | ＊ T✓+D    |
+| Clocked Interpreter |          |         |       |       |     |           |        | ＊ T✓+D✓   |
+| CEK machine         |          |         |       |       |     |           |        | ＊ T✓+D    |
 
 - The end-to-end theorems are top priority to be checked
 - Checking split pass for the denotational models is also high priority because of its novelty
@@ -90,7 +90,7 @@ Graph
 ** DONE (Tianyu) check the syntax and type rules for FPC, Clos, EnvClos, PairClos and GlobalFun languages
 ** DONE (Darshal) check the syntax and type rules for MNF, Imp, CFG and Instrμ
 
-* TODO (Darshal/Tianyu) Documentation for artifact/supplementary material
+* TODO (Darshal/Tianyu) Documentation for artifact/supplementary material. Include the software versions to use
 * TODO (Tianyu) Prepare and submit the supplementary material (starting at 4pm, new repo, git export)
 * TODO (Everyone) Proof read the paper.
 * TODO (Jeremy) Initial submission.
