@@ -1042,9 +1042,11 @@ and the main expression starts with no variables in scope.
 \]
 Every other form is a simple expression, with $\pass{lift}_\Gamma$
 applied to its atoms, and leaves $n$ unchanged. The frame $\Phi$ of a
-function body lists the types of its $n$ slots. A variable's slot is
-not initialized where the variable is bound, because the slots in scope
-are all below $n$, as Imp's typing requires. For example, \pass{lift
+function body lists the types of its $n$ slots. When a variable is
+bound, its slot is not initialized, as Imp's assignment and $\kw{case}$
+rules require: the initialized slots are those of the variables in
+scope, which are all below $n$, and the new variable's slot is $n$ or
+above. For example, \pass{lift
 locals} translates
 $\kw{let}\;y = (\kw{let}\;z = 5\;\kw{in}\;\kw{let}\;w = z - 1\;\kw{in}\;w - 1)\;\kw{in}\;y - 2$
 into the following expression, in which, as in AT\&T syntax,
@@ -1053,6 +1055,16 @@ $\$n$ is the integer constant $n$ and a bare number is a slot:
   2 \mathrel{:=} (0 \mathrel{:=} \$5;\; 1 \mathrel{:=} \kw{prim}_{\kw{sub}}\;0\;\$1;\;
     \kw{prim}_{\kw{sub}}\;1\;\$1);\; \kw{prim}_{\kw{sub}}\;2\;\$2.
 \]
+The variables $z$ and $w$ of the right-hand side get slots 0 and 1, and $y$ gets
+slot 2, i.e., the first slot that the right-hand side leaves unused. Each
+variable is written to an uninitialized slot: $z$ to slot 0 where no other slot
+is initialized, $w$ to slot 1 where only slot 0 is, and $y$ to slot 2 where
+again no slot is initialized. Slots 0 and 1 were written by the right-hand side,
+but they count as initialized only in the scopes of $z$ and $w$, which end with
+the right-hand side. The Agda development lists the frame from the newest slot
+to the oldest, and a slot is a de~Bruijn index into that list, so slot $k$ here
+is index $|\Phi| - 1 - k$ there: in the example, $y$, $w$, and $z$ are the
+indices 0, 1, and 2.
 
 \subsection{\pass{explicate control} (Imp to CFG)}
 \label{app:pass-explicate}
@@ -1108,9 +1120,11 @@ $\kw{rax}$ or a slot $x$,
   \omega ::= \kw{ret} \mid \kw{to}\;x
 \]
 and then the instructions $k$ run. We write $\bar{\omega}$
-for the destination, $\%\kw{rax}$ or $x$. An operand of a function
-type or a sum type is a slot $x$, because no constant has those types,
-so $\kw{callc}$ and $\kw{case}$ take a slot.
+for the destination of $\omega$: $\overline{\kw{ret}} = \%\kw{rax}$
+and $\overline{\kw{to}\;x} = x$. An atom is a slot, a constant, or a
+function reference, and a constant has a base type and a function
+reference a code type. So an atom of a function type or a sum type is
+a slot $x$, and therefore $\kw{callc}$ and $\kw{case}$ take a slot.
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \pass{sel}(a, \omega, k) & = & \kw{movq}\; a, \bar{\omega};\; k\\
