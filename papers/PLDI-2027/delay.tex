@@ -14,18 +14,19 @@
 \subsection{Correctness of \pass{split closure} and the Approximant Logical Relation}
 \label{sec:approx-lr}
 
-The \pass{split closure} pass separates the code of each closure from its
-environment, making the closure a pair. Its proof is the hardest part of the compiler proof. This section
-shows why semantic reflection for \pass{split closure} resisted our earlier
-attempts and how the approximant logical relation proves it.
+The \pass{split closure} pass separates the code of each closure from
+its environment, making the closure a pair. Its proof is the hardest
+part of the compiler proof. This section shows why semantic reflection
+for \pass{split closure} resisted our earlier attempts and how the
+approximant logical relation proves it.
 
-In EnvClos, the source language of \pass{split closure}, a closure
-$\kw{clos}\;(z, y.\,N)\;\vec{M}$ still means a function. Its code $N$ is closed,
-with free variables $z$ for the environment and $y$ for the argument,
-and its meaning is a curried function of the environment $X$ and then
-the argument $Y$. The meaning of the closure is this function applied
-to the tuple of the captured values $\vec{M}$. An application $L\;M$
-applies a function:
+In EnvClos, the source of \pass{split closure}, a closure
+$\kw{clos}\;(z, y.\,N)\;\vec{M}$ still means a function.  Parameter
+$z$ is for the environment and $y$ is for the argument. The meaning of
+$N$ is a curried function of the environment $X$ and then the argument
+$Y$. The meaning of the closure is this function applied to 
+the captured values $\vec{M}$. An application $L\;M$ simply applies
+the function:
 \[
 \begin{array}{rcl}
     \den{\kw{clos}\;(z, y.\,N)\;\vec{M}}\rho & = &
@@ -36,7 +37,7 @@ applies a function:
 
 In PairClos, the target language, a closure is
 a pair of code and environment, and a call takes the pair apart. The
-meaning of $\kw{code}\;(z, y.\,N)$ is the same curried function as before. The
+meaning of $\kw{code}\;(z, y.\,N)$ is the curried function. The
 meaning of $\kw{pair}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
 $u$ from the code $L$ and $v$ from the environment $M$. A call applies
 the first components of the pairs to their second components and then
@@ -50,7 +51,7 @@ to the argument:
 \end{array}
 \]
 The \pass{split closure} pass translates each closure into a pair and each
-application into a call. It translates every other construct
+application into a $\kw{callc}$. It translates every other construct
 homomorphically:
 \[
 \begin{array}{rcl}
@@ -114,7 +115,7 @@ on $M$.
 
 The backward half, reflection, must show that the source accounts for
 every element that the target produces. Here the representation of
-closures gets in the way. Consider the function $\lambda y.\, x + y$
+closures gets in the way. Consider the function $(\lambda y.\, x + y)$
 in an environment where $x$ is $9$. In EnvClos, its meaning 
 includes entries $[1] \mapsto 10$ and $[6] \mapsto 15$. After
 \pass{split closure}, its code takes the environment as an extra
@@ -125,7 +126,7 @@ parameter. The meaning of the code is a table with entries for
   [2] \mapsto ([1] \mapsto 3)  \qquad \ldots
 \]
 The program pairs this table only with environment $[9]$, so the entry
-for $[2]$ does not correspond to a source function. Worse, the
+for $[2]$ cannot be related to source function. Worse, the
 denotation of a call takes the table from $\car$ and the environment
 from $\cdr$ \emph{separately}, so it may combine the table of one pair
 with the environment of another.
